@@ -6,18 +6,21 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/controller/types/generics"
-	"github.com/momentum-xyz/controller/universe"
+	"github.com/momentum-xyz/ubercontroller/database"
+	"github.com/momentum-xyz/ubercontroller/types/generics"
+	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
 var _ universe.Worlds = (*Worlds)(nil)
 
 type Worlds struct {
+	db     database.DB
 	worlds *generics.SyncMap[uuid.UUID, universe.World]
 }
 
-func NewWorlds() *Worlds {
+func NewWorlds(db database.DB) *Worlds {
 	return &Worlds{
+		db:     db,
 		worlds: generics.NewSyncMap[uuid.UUID, universe.World](),
 	}
 }
@@ -35,6 +38,6 @@ func (w *Worlds) GetWorlds() *generics.SyncMap[uuid.UUID, universe.World] {
 	return w.worlds
 }
 
-func (w *Worlds) Load() error {
+func (w *Worlds) Load(ctx context.Context) error {
 	return errors.Errorf("implement me")
 }

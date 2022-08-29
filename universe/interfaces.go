@@ -1,12 +1,13 @@
 package universe
 
 import (
+	"context"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 
-	"github.com/momentum-xyz/controller/pkg/cmath"
-	"github.com/momentum-xyz/controller/types"
-	"github.com/momentum-xyz/controller/types/generics"
+	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
+	"github.com/momentum-xyz/ubercontroller/types"
+	"github.com/momentum-xyz/ubercontroller/types/generics"
 )
 
 type Node interface {
@@ -14,7 +15,12 @@ type Node interface {
 	types.Initializer
 	types.RunStopper
 
-	Load() error
+	GetWorlds() Worlds
+	GetAssets2d() Assets2d
+	GetAssets3d() Assets3d
+	GetSpaceTypes() SpaceTypes
+
+	Load(ctx context.Context) error
 }
 
 type Worlds interface {
@@ -23,14 +29,14 @@ type Worlds interface {
 	GetWorld(worldID uuid.UUID) (World, bool)
 	GetWorlds() *generics.SyncMap[uuid.UUID, World]
 
-	Load() error
+	Load(ctx context.Context) error
 }
 
 type World interface {
 	Space
 	types.RunStopper
 
-	Load() error
+	Load(ctx context.Context) error
 }
 
 type Space interface {
@@ -46,14 +52,16 @@ type Space interface {
 	SetTheta(theta float64, updateDB bool) error
 	GetPosition() cmath.Vec3
 	SetPosition(pos cmath.Vec3, updateDB bool) error
+	GetOwnerID() uuid.UUID
+	SetOwnerID(ownerID uuid.UUID, updateDB bool) error
 
 	Update(recursive bool) error
-	LoadFromEntry(entry *SpaceEntry) error
+	LoadFromEntry(ctx context.Context, entry *SpaceEntry) error
 
-	GetAsset2D() Asset2D
-	GetAsset3D() Asset3D
-	SetAsset2D(asset2d Asset2D, updateDB bool) error
-	SetAsset3D(asset3d Asset3D, updateDB bool) error
+	GetAsset2D() Asset2d
+	SetAsset2D(asset2d Asset2d, updateDB bool) error
+	GetAsset3D() Asset3d
+	SetAsset3D(asset3d Asset3d, updateDB bool) error
 
 	GetSpaceType() SpaceType
 	SetSpaceType(spaceType SpaceType, updateDB bool) error
@@ -67,9 +75,6 @@ type Space interface {
 	AddSpaces(spaces []Space, updateDB bool) error
 	RemoveSpace(spaceID uuid.UUID, recursive, updateDB bool) (bool, error)
 	RemoveSpaces(spaceIDs []uuid.UUID, recursive, updateDB bool) (bool, error)
-
-	GetOwner() User
-	SetOwner(owner User, updateDB bool) error
 
 	GetUser(userID uuid.UUID, recursive bool) (User, bool)
 	GetUsers(recursive bool) *generics.SyncMap[uuid.UUID, User]
@@ -100,7 +105,7 @@ type SpaceTypes interface {
 
 	GetSpaceType(spaceTypeID uuid.UUID) (SpaceType, bool)
 
-	Load() error
+	Load(ctx context.Context) error
 }
 
 type SpaceType interface {
@@ -114,50 +119,50 @@ type SpaceType interface {
 	GetDescription() *string
 	SetDescription(description *string, updateDB bool) error
 
-	LoadFromEntry(entry *SpaceTypeEntry) error
+	LoadFromEntry(ctx context.Context, entry *SpaceTypeEntry) error
 
 	GetOptions() *SpaceOptionsEntry
 	SetOptions(options *SpaceOptionsEntry, updateDB bool) error
 }
 
-type Assets2D interface {
+type Assets2d interface {
 	types.Initializer
 
-	GetAsset2D(asset2DID uuid.UUID) (Asset2D, bool)
+	GetAsset2d(asset2dID uuid.UUID) (Asset2d, bool)
 
-	Load() error
+	Load(ctx context.Context) error
 }
 
-type Asset2D interface {
+type Asset2d interface {
 	types.IDer
 	types.Initializer
 
 	GetName() string
 	SetName(name string, updateDB bool) error
 
-	LoadFromEntry(entry *Asset2DEntry) error
+	LoadFromEntry(ctx context.Context, entry *Asset2dEntry) error
 
-	GetOptions() *Asset2DOptionsEntry
-	SetOptions(options *Asset2DOptionsEntry, updateDB bool) error
+	GetOptions() *Asset2dOptionsEntry
+	SetOptions(options *Asset2dOptionsEntry, updateDB bool) error
 }
 
-type Assets3D interface {
+type Assets3d interface {
 	types.Initializer
 
-	GetAsset3D(asset3DID uuid.UUID) (Asset3D, bool)
+	GetAsset3d(asset3dID uuid.UUID) (Asset3d, bool)
 
-	Load() error
+	Load(ctx context.Context) error
 }
 
-type Asset3D interface {
+type Asset3d interface {
 	types.IDer
 	types.Initializer
 
 	GetName() string
 	SetName(name string, updateDB bool) error
 
-	LoadFromEntry(entry *Asset3DEntry) error
+	LoadFromEntry(ctx context.Context, entry *Asset3dEntry) error
 
-	GetOptions() *Asset3DOptionsEntry
-	SetOptions(options *Asset3DOptionsEntry, updateDB bool) error
+	GetOptions() *Asset3dOptionsEntry
+	SetOptions(options *Asset3dOptionsEntry, updateDB bool) error
 }

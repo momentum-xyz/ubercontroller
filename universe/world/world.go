@@ -7,9 +7,10 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/momentum-xyz/controller/types"
-	"github.com/momentum-xyz/controller/universe"
-	"github.com/momentum-xyz/controller/universe/space"
+	"github.com/momentum-xyz/ubercontroller/database"
+	"github.com/momentum-xyz/ubercontroller/types"
+	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/universe/space"
 )
 
 var _ universe.World = (*World)(nil)
@@ -20,9 +21,9 @@ type World struct {
 	log *zap.SugaredLogger
 }
 
-func NewWorld(id uuid.UUID) *World {
+func NewWorld(id uuid.UUID, db database.DB) *World {
 	world := &World{}
-	world.Space = space.NewSpace(id, world)
+	world.Space = space.NewSpace(id, db, world)
 
 	return world
 }

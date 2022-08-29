@@ -5,8 +5,8 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/controller/types/generics"
-	"github.com/momentum-xyz/controller/universe"
+	"github.com/momentum-xyz/ubercontroller/types/generics"
+	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
 func (w *World) GetUser(userID uuid.UUID, recursive bool) (universe.User, bool) {

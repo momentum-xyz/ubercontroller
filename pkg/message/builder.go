@@ -7,9 +7,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 
-	"github.com/momentum-xyz/controller/logger"
-	"github.com/momentum-xyz/controller/pkg/cmath"
-	"github.com/momentum-xyz/controller/utils"
+	"github.com/momentum-xyz/ubercontroller/logger"
+	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
+	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/posbus-protocol/flatbuff/go/api"
 	"github.com/momentum-xyz/posbus-protocol/posbus"
 )
@@ -72,7 +72,7 @@ func (mb *Builder) ReleaseBuilder(builder *flatbuffers.Builder) {
 }
 
 func (mb *Builder) MsgSetWorld(
-	worldId uuid.UUID, name string, avatarControllerId, skyboxControllerId uuid.UUID, lodDistances []uint32,
+	worldId uuid.UUID, name string, avatarubercontrollerId, skyboxubercontrollerId uuid.UUID, lodDistances []uint32,
 	decorations []DecorationMetadata,
 ) *websocket.PreparedMessage {
 	builder := mb.GetBuilder()
@@ -106,8 +106,8 @@ func (mb *Builder) MsgSetWorld(
 
 	api.SetWorldStart(builder)
 	api.SetWorldAddWorldId(builder, mb.SerializeGUID(builder, worldId))
-	api.SetWorldAddAvatarControllerId(builder, mb.SerializeGUID(builder, avatarControllerId))
-	api.SetWorldAddSkyboxControllerId(builder, mb.SerializeGUID(builder, skyboxControllerId))
+	api.SetWorldAddAvatarubercontrollerId(builder, mb.SerializeGUID(builder, avatarubercontrollerId))
+	api.SetWorldAddSkyboxubercontrollerId(builder, mb.SerializeGUID(builder, skyboxubercontrollerId))
 	api.SetWorldAddLodDistances(builder, lodsOffset)
 	api.SetWorldAddDecorations(builder, decsOffset)
 	api.SetWorldAddName(builder, nameObj)

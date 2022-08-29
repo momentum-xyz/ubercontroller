@@ -1,10 +1,10 @@
 all: build
 
 build:
-	go build -o ./bin/controller ./cmd/service
+	go build -o ./bin/ubercontroller ./cmd/service
 
 run: build
-	./bin/controller
+	./bin/ubercontroller
 
 test:
 	go test -v -race ./...

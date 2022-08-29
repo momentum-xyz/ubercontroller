@@ -8,10 +8,11 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/momentum-xyz/controller/pkg/cmath"
-	"github.com/momentum-xyz/controller/types"
-	"github.com/momentum-xyz/controller/types/generics"
-	"github.com/momentum-xyz/controller/universe"
+	"github.com/momentum-xyz/ubercontroller/database"
+	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
+	"github.com/momentum-xyz/ubercontroller/types"
+	"github.com/momentum-xyz/ubercontroller/types/generics"
+	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
 var _ universe.Space = (*Space)(nil)
@@ -19,25 +20,27 @@ var _ universe.Space = (*Space)(nil)
 type Space struct {
 	ctx       context.Context
 	log       *zap.SugaredLogger
+	db        database.DB
 	Users     *generics.SyncMap[uuid.UUID, universe.User]
 	children  *generics.SyncMap[uuid.UUID, universe.Space]
 	mu        sync.RWMutex
 	id        uuid.UUID
-	owner     universe.User
 	world     universe.World
 	root      universe.Space
 	parent    universe.Space
 	theta     float64
 	position  cmath.Vec3
+	ownerID   uuid.UUID
 	options   *universe.SpaceOptionsEntry
-	asset2d   universe.Asset2D
-	asset3d   universe.Asset3D
+	asset2d   universe.Asset2d
+	asset3d   universe.Asset3d
 	spaceType universe.SpaceType
 }
 
-func NewSpace(id uuid.UUID, world universe.World) *Space {
+func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
 	return &Space{
 		id:       id,
+		db:       db,
 		Users:    generics.NewSyncMap[uuid.UUID, universe.User](),
 		children: generics.NewSyncMap[uuid.UUID, universe.Space](),
 		world:    world,
@@ -128,30 +131,45 @@ func (s *Space) SetPosition(position cmath.Vec3, updateDB bool) error {
 	return nil
 }
 
+func (s *Space) GetOwnerID() uuid.UUID {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	return s.ownerID
+}
+
+func (s *Space) SetOwnerID(ownerID uuid.UUID, updateDB bool) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.ownerID = ownerID
+
+	return nil
+}
+
 func (s *Space) Update(recursive bool) error {
 	return errors.Errorf("implement me")
 }
 
-// LoadFromEntry loads only internal data of the space exclude nested data like SpaceType, Asset2D, etc.
 func (s *Space) LoadFromEntry(entry *universe.SpaceEntry) error {
 	return errors.Errorf("implement me")
 }
 
-func (s *Space) GetAsset2D() universe.Asset2D {
+func (s *Space) GetAsset2D() universe.Asset2d {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	return s.asset2d
 }
 
-func (s *Space) GetAsset3D() universe.Asset3D {
+func (s *Space) GetAsset3D() universe.Asset3d {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	return s.asset3d
 }
 
-func (s *Space) SetAsset2D(asset2d universe.Asset2D, updateDB bool) error {
+func (s *Space) SetAsset2D(asset2d universe.Asset2d, updateDB bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -160,7 +178,7 @@ func (s *Space) SetAsset2D(asset2d universe.Asset2D, updateDB bool) error {
 	return nil
 }
 
-func (s *Space) SetAsset3D(asset3d universe.Asset3D, updateDB bool) error {
+func (s *Space) SetAsset3D(asset3d universe.Asset3d, updateDB bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

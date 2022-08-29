@@ -5,25 +5,9 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/controller/types/generics"
-	"github.com/momentum-xyz/controller/universe"
+	"github.com/momentum-xyz/ubercontroller/types/generics"
+	"github.com/momentum-xyz/ubercontroller/universe"
 )
-
-func (s *Space) GetOwner() universe.User {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	return s.owner
-}
-
-func (s *Space) SetOwner(owner universe.User, updateDB bool) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	s.owner = owner
-
-	return nil
-}
 
 func (s *Space) GetUser(userID uuid.UUID, recursive bool) (universe.User, bool) {
 	user, ok := s.Users.Load(userID)

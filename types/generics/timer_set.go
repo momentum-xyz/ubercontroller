@@ -6,7 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/controller/logger"
+	"github.com/momentum-xyz/ubercontroller/logger"
 )
 
 var log = logger.L()

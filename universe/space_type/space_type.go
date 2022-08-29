@@ -8,8 +8,9 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/momentum-xyz/controller/types"
-	"github.com/momentum-xyz/controller/universe"
+	"github.com/momentum-xyz/ubercontroller/database"
+	"github.com/momentum-xyz/ubercontroller/types"
+	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
 var _ universe.SpaceType = (*SpaceType)(nil)
@@ -17,6 +18,7 @@ var _ universe.SpaceType = (*SpaceType)(nil)
 type SpaceType struct {
 	ctx          context.Context
 	log          *zap.SugaredLogger
+	db           database.DB
 	mu           sync.RWMutex
 	id           uuid.UUID
 	name         string
@@ -25,9 +27,10 @@ type SpaceType struct {
 	options      *universe.SpaceOptionsEntry
 }
 
-func NewSpaceType(id uuid.UUID) *SpaceType {
+func NewSpaceType(id uuid.UUID, db database.DB) *SpaceType {
 	return &SpaceType{
 		id: id,
+		db: db,
 	}
 }
 
@@ -98,7 +101,6 @@ func (s *SpaceType) SetDescription(description *string, updateDB bool) error {
 	return nil
 }
 
-// LoadFromEntry loads only internal data of the space type exclude nested data like Asset2D, Asset3D, etc.
 func (s *SpaceType) LoadFromEntry(entry *universe.SpaceTypeEntry) error {
 	return errors.Errorf("implement me")
 }

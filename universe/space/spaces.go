@@ -5,8 +5,8 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/controller/types/generics"
-	"github.com/momentum-xyz/controller/universe"
+	"github.com/momentum-xyz/ubercontroller/types/generics"
+	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
 func (s *Space) GetSpace(spaceID uuid.UUID, recursive bool) (universe.Space, bool) {
