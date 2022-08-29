@@ -35,8 +35,6 @@ type Worlds interface {
 type World interface {
 	Space
 	types.RunStopper
-
-	Load(ctx context.Context) error
 }
 
 type Space interface {
@@ -48,26 +46,26 @@ type Space interface {
 	GetParent() Space
 	SetParent(parent Space, updateDB bool) error
 
-	GetTheta() float64
-	SetTheta(theta float64, updateDB bool) error
-	GetPosition() cmath.Vec3
-	SetPosition(pos cmath.Vec3, updateDB bool) error
 	GetOwnerID() uuid.UUID
 	SetOwnerID(ownerID uuid.UUID, updateDB bool) error
 
-	Update(recursive bool) error
-	LoadFromEntry(ctx context.Context, entry *SpaceEntry) error
+	GetPosition() cmath.Vec3
+	SetPosition(pos cmath.Vec3, updateDB bool) error
+
+	GetOptions() *SpaceOptionsEntry
+	SetOptions(options *SpaceOptionsEntry, updateDB bool) error
 
 	GetAsset2D() Asset2d
 	SetAsset2D(asset2d Asset2d, updateDB bool) error
+
 	GetAsset3D() Asset3d
 	SetAsset3D(asset3d Asset3d, updateDB bool) error
 
 	GetSpaceType() SpaceType
 	SetSpaceType(spaceType SpaceType, updateDB bool) error
 
-	GetOptions() *SpaceOptionsEntry
-	SetOptions(options *SpaceOptionsEntry, updateDB bool) error
+	Update(recursive bool) error
+	LoadFromEntry(ctx context.Context, entry *SpaceEntry, recursive bool) error
 
 	GetSpace(spaceID uuid.UUID, recursive bool) (Space, bool)
 	GetSpaces(recursive bool) *generics.SyncMap[uuid.UUID, Space]
@@ -140,10 +138,10 @@ type Asset2d interface {
 	GetName() string
 	SetName(name string, updateDB bool) error
 
-	LoadFromEntry(ctx context.Context, entry *Asset2dEntry) error
-
 	GetOptions() *Asset2dOptionsEntry
 	SetOptions(options *Asset2dOptionsEntry, updateDB bool) error
+
+	LoadFromEntry(ctx context.Context, entry *Asset2dEntry) error
 }
 
 type Assets3d interface {
@@ -161,8 +159,8 @@ type Asset3d interface {
 	GetName() string
 	SetName(name string, updateDB bool) error
 
-	LoadFromEntry(ctx context.Context, entry *Asset3dEntry) error
-
 	GetOptions() *Asset3dOptionsEntry
 	SetOptions(options *Asset3dOptionsEntry, updateDB bool) error
+
+	LoadFromEntry(ctx context.Context, entry *Asset3dEntry) error
 }

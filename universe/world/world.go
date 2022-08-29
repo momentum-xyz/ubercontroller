@@ -17,12 +17,14 @@ var _ universe.World = (*World)(nil)
 
 type World struct {
 	*space.Space
-	ctx context.Context
+	db  database.DB
 	log *zap.SugaredLogger
 }
 
 func NewWorld(id uuid.UUID, db database.DB) *World {
-	world := &World{}
+	world := &World{
+		db: db,
+	}
 	world.Space = space.NewSpace(id, db, world)
 
 	return world
@@ -35,19 +37,14 @@ func (w *World) Initialize(ctx context.Context) error {
 	}
 
 	w.log = log
-	w.ctx = ctx
 
 	return w.Space.Initialize(ctx)
 }
 
-func (w *World) Run() error {
+func (w *World) Run(ctx context.Context) error {
 	return errors.Errorf("implement me")
 }
 
 func (w *World) Stop() error {
-	return errors.Errorf("implement me")
-}
-
-func (w *World) Load() error {
 	return errors.Errorf("implement me")
 }

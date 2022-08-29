@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
@@ -18,20 +19,17 @@ import (
 var _ universe.Space = (*Space)(nil)
 
 type Space struct {
-	ctx       context.Context
-	log       *zap.SugaredLogger
 	db        database.DB
+	log       *zap.SugaredLogger
 	Users     *generics.SyncMap[uuid.UUID, universe.User]
 	children  *generics.SyncMap[uuid.UUID, universe.Space]
 	mu        sync.RWMutex
 	id        uuid.UUID
-	world     universe.World
-	root      universe.Space
-	parent    universe.Space
-	theta     float64
-	position  cmath.Vec3
 	ownerID   uuid.UUID
+	position  cmath.Vec3
 	options   *universe.SpaceOptionsEntry
+	world     universe.World
+	parent    universe.Space
 	asset2d   universe.Asset2d
 	asset3d   universe.Asset3d
 	spaceType universe.SpaceType
@@ -61,7 +59,6 @@ func (s *Space) Initialize(ctx context.Context) error {
 	}
 
 	s.log = log
-	s.ctx = ctx
 
 	return nil
 }
@@ -85,7 +82,6 @@ func (s *Space) SetParent(parent universe.Space, updateDB bool) error {
 	defer s.mu.Unlock()
 
 	if parent == nil {
-		s.root = nil
 		s.parent = nil
 		return nil
 	}
@@ -95,22 +91,6 @@ func (s *Space) SetParent(parent universe.Space, updateDB bool) error {
 	}
 
 	s.parent = parent
-
-	return nil
-}
-
-func (s *Space) GetTheta() float64 {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	return s.theta
-}
-
-func (s *Space) SetTheta(theta float64, updateDB bool) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	s.theta = theta
 
 	return nil
 }
@@ -151,8 +131,96 @@ func (s *Space) Update(recursive bool) error {
 	return errors.Errorf("implement me")
 }
 
-func (s *Space) LoadFromEntry(entry *universe.SpaceEntry) error {
-	return errors.Errorf("implement me")
+func (s *Space) LoadFromEntry(ctx context.Context, entry *universe.SpaceEntry, recursive bool) error {
+	if *entry.SpaceID != s.GetID() {
+		return errors.Errorf("space ids mismatch: %s != %s", *entry.SpaceID, s.GetID())
+	}
+
+	if err := s.loadSelfData(entry); err != nil {
+		return errors.WithMessage(err, "failed to load self data")
+	}
+	if err := s.loadDependencies(entry); err != nil {
+		return errors.WithMessage(err, "failed to load dependencies")
+	}
+
+	if !recursive {
+		return nil
+	}
+
+	spaces, err := s.db.SpacesGetSpacesByParentID(ctx, *entry.ParentID)
+	if err != nil {
+		return errors.WithMessagef(err, "failed to get spaces by parent id: %s", *entry.ParentID)
+	}
+
+	group, gctx := errgroup.WithContext(ctx)
+
+	for i := range spaces {
+		entry := spaces[i]
+
+		group.Go(func() error {
+			space := NewSpace(*entry.SpaceID, s.db, s.world)
+
+			if err := space.LoadFromEntry(gctx, &entry, recursive); err != nil {
+				return errors.WithMessagef(err, "failed to load space from entry: %s", space.GetID())
+			}
+			if err := space.SetParent(s, false); err != nil {
+				return errors.WithMessagef(err, "failed to set parent: %s", space.GetID())
+			}
+
+			s.children.Store(space.GetID(), space)
+
+			return nil
+		})
+	}
+
+	return group.Wait()
+}
+
+func (s *Space) loadSelfData(entry *universe.SpaceEntry) error {
+	if err := s.SetOwnerID(*entry.OwnerID, false); err != nil {
+		return errors.WithMessagef(err, "failed to set owner id: %s", *entry.OwnerID)
+	}
+	if err := s.SetPosition(*entry.Position, false); err != nil {
+		return errors.WithMessage(err, "failed to set position")
+	}
+	if err := s.SetOptions(entry.Options, false); err != nil {
+		return errors.WithMessage(err, "failed to set options")
+	}
+	return nil
+}
+
+func (s *Space) loadDependencies(entry *universe.SpaceEntry) error {
+	node := universe.GetNode()
+
+	spaceType, ok := node.GetSpaceTypes().GetSpaceType(*entry.SpaceTypeID)
+	if !ok {
+		return errors.Errorf("failed to get space type: %s", *entry.SpaceTypeID)
+	}
+	if err := s.SetSpaceType(spaceType, false); err != nil {
+		return errors.WithMessagef(err, "failed to set space type: %s", *entry.SpaceTypeID)
+	}
+
+	if entry.Asset2dID != nil {
+		asset2d, ok := node.GetAssets2d().GetAsset2d(*entry.Asset2dID)
+		if !ok {
+			return errors.Errorf("failed to get asset 2d: %s", *entry.Asset2dID)
+		}
+		if err := s.SetAsset2D(asset2d, false); err != nil {
+			return errors.WithMessagef(err, "failed to set asset 2d: %s", *entry.Asset2dID)
+		}
+	}
+
+	if entry.Asset3dID != nil {
+		asset3d, ok := node.GetAssets3d().GetAsset3d(*entry.Asset3dID)
+		if !ok {
+			return errors.Errorf("failed to get asset 3d: %s", *entry.Asset3dID)
+		}
+		if err := s.SetAsset3D(asset3d, false); err != nil {
+			return errors.WithMessagef(err, "failed to set asset 3d: %s", *entry.Asset3dID)
+		}
+	}
+
+	return nil
 }
 
 func (s *Space) GetAsset2D() universe.Asset2d {

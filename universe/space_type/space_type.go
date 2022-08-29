@@ -16,9 +16,8 @@ import (
 var _ universe.SpaceType = (*SpaceType)(nil)
 
 type SpaceType struct {
-	ctx          context.Context
-	log          *zap.SugaredLogger
 	db           database.DB
+	log          *zap.SugaredLogger
 	mu           sync.RWMutex
 	id           uuid.UUID
 	name         string
@@ -48,7 +47,6 @@ func (s *SpaceType) Initialize(ctx context.Context) error {
 	}
 
 	s.log = log
-	s.ctx = ctx
 
 	return nil
 }
@@ -101,7 +99,7 @@ func (s *SpaceType) SetDescription(description *string, updateDB bool) error {
 	return nil
 }
 
-func (s *SpaceType) LoadFromEntry(entry *universe.SpaceTypeEntry) error {
+func (s *SpaceType) LoadFromEntry(ctx context.Context, entry *universe.SpaceTypeEntry) error {
 	return errors.Errorf("implement me")
 }
 

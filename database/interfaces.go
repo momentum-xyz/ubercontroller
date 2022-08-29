@@ -2,8 +2,8 @@ package database
 
 import (
 	"context"
-
 	"github.com/google/uuid"
+	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
 type DB interface {
@@ -24,10 +24,11 @@ type NodesDB interface {
 }
 
 type WorldsDB interface {
-	WorldsGetWorldIDs(ctx context.Context) ([]uuid.UUID, error)
+	WorldsGetWorlds(ctx context.Context) ([]universe.SpaceEntry, error)
 }
 
 type SpacesDB interface {
+	SpacesGetSpacesByParentID(ctx context.Context, parentID uuid.UUID) ([]universe.SpaceEntry, error)
 }
 
 type UsersDB interface {

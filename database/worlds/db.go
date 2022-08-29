@@ -2,10 +2,8 @@ package worlds
 
 import (
 	"context"
-	"github.com/pkg/errors"
-
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/momentum-xyz/ubercontroller/universe"
 
 	"github.com/momentum-xyz/ubercontroller/database"
 )
@@ -22,6 +20,7 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 	}
 }
 
-func (db *DB) WorldsGetWorldIDs(ctx context.Context) ([]uuid.UUID, error) {
-	return nil, errors.Errorf("implement me")
+// TODO: implement
+func (db *DB) WorldsGetWorlds(ctx context.Context) ([]universe.SpaceEntry, error) {
+	return nil, nil
 }

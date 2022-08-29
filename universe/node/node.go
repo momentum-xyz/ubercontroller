@@ -2,6 +2,7 @@ package node
 
 import (
 	"context"
+	"github.com/hashicorp/go-multierror"
 	"sync"
 
 	"github.com/google/uuid"
@@ -17,7 +18,6 @@ import (
 var _ universe.Node = (*Node)(nil)
 
 type Node struct {
-	ctx        context.Context
 	db         database.DB
 	log        *zap.SugaredLogger
 	worlds     universe.Worlds
@@ -60,7 +60,6 @@ func (n *Node) Initialize(ctx context.Context) error {
 	}
 
 	n.log = log
-	n.ctx = ctx
 
 	return nil
 }
@@ -81,39 +80,70 @@ func (n *Node) GetSpaceTypes() universe.SpaceTypes {
 	return n.spaceTypes
 }
 
-func (n *Node) Run() error {
-	return errors.Errorf("implement me")
+func (n *Node) Run(ctx context.Context) error {
+	group, gctx := errgroup.WithContext(ctx)
+	worlds := n.GetWorlds().GetWorlds()
+
+	worlds.Mu.RLock()
+	for _, world := range worlds.Data {
+		world := world
+
+		group.Go(func() error {
+			if err := world.Run(gctx); err != nil {
+				return errors.WithMessagef(err, "failed to run world: %s", world.GetID())
+			}
+			return nil
+		})
+
+		return nil
+	}
+	worlds.Mu.RUnlock()
+
+	return group.Wait()
 }
 
 func (n *Node) Stop() error {
-	return errors.Errorf("implement me")
+	var wg sync.WaitGroup
+	var errs *multierror.Error
+	var errsMu sync.Mutex
+	worlds := n.GetWorlds().GetWorlds()
+
+	worlds.Mu.RLock()
+	for _, world := range worlds.Data {
+		wg.Add(1)
+
+		go func(world universe.World) {
+			defer wg.Done()
+
+			if err := world.Stop(); err != nil {
+				errsMu.Lock()
+				defer errsMu.Unlock()
+
+				errs = multierror.Append(errs, errors.WithMessagef(err, "failed to stop world: %s", world.GetID()))
+			}
+		}(world)
+	}
+	worlds.Mu.RUnlock()
+
+	return errs.ErrorOrNil()
 }
 
 func (n *Node) Load(ctx context.Context) error {
-	if err := n.LoadGlobalData(ctx); err != nil {
-		return errors.WithMessage(err, "failed to load global data")
+	group, gctx := errgroup.WithContext(ctx)
+
+	group.Go(func() error {
+		return n.assets2d.Load(gctx)
+	})
+	group.Go(func() error {
+		return n.assets3d.Load(gctx)
+	})
+	group.Go(func() error {
+		return n.spaceTypes.Load(gctx)
+	})
+
+	if err := group.Wait(); err != nil {
+		return errors.WithMessage(err, "failed to load node data")
 	}
 
-	_, err := n.db.WorldsGetWorldIDs(ctx)
-	if err != nil {
-		return errors.WithMessage(err, "failed to WorldsGetWorldIDs")
-	}
-
-	return nil
-}
-
-func (n *Node) LoadGlobalData(ctx context.Context) error {
-	group, ctx := errgroup.WithContext(ctx)
-
-	group.Go(func() error {
-		return n.assets2d.Load(ctx)
-	})
-	group.Go(func() error {
-		return n.assets3d.Load(ctx)
-	})
-	group.Go(func() error {
-		return n.spaceTypes.Load(ctx)
-	})
-
-	return group.Wait()
+	return n.worlds.Load(ctx)
 }

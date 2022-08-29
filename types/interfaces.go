@@ -15,7 +15,7 @@ type Initializer interface {
 }
 
 type Runner interface {
-	Run() error
+	Run(ctx context.Context) error
 }
 
 type Stopper interface {

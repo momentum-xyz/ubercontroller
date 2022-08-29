@@ -59,40 +59,41 @@ func run() error {
 	}
 
 	if err := node.Load(ctx); err != nil {
-		return errors.WithMessage(err, "failed to load node")
+		return errors.WithMessagef(err, "failed to load node: %s", node.GetID())
 	}
 
-	defer func() {
-		if err := node.Stop(); err != nil {
-			log.Error(errors.WithMessage(err, "failed to stop node"))
-		}
-	}()
+	if err := node.Run(ctx); err != nil {
+		return errors.WithMessagef(err, "failed to run node: %s", node.GetID())
+	}
 
-	return node.Run()
+	if err := node.Stop(); err != nil {
+		return errors.WithMessagef(err, "failed to stop node: %s", node.GetID())
+	}
+
+	return nil
 }
 
 func createNode(ctx context.Context, db database.DB) (universe.Node, error) {
 	worlds := worlds.NewWorlds(db)
+	assets2d := assets2d.NewAssets2D(db)
+	assets3d := assets3d.NewAssets3D(db)
+	spaceTypes := space_types.NewSpaceTypes(db)
+
+	node := node.NewNode(uuid.Nil, db, worlds, assets2d, assets3d, spaceTypes)
+	universe.InitializeNode(node)
+
 	if err := worlds.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize worlds")
 	}
-
-	assets2d := assets2d.NewAssets2D(db)
 	if err := assets2d.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize assets 2d")
 	}
-
-	assets3d := assets3d.NewAssets3D(db)
 	if err := assets3d.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize assets 3d")
 	}
-
-	spaceTypes := space_types.NewSpaceTypes(db)
 	if err := spaceTypes.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize space types")
 	}
-
-	node := node.NewNode(uuid.Nil, db, worlds, assets2d, assets3d, spaceTypes)
 	if err := node.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize node")
 	}
