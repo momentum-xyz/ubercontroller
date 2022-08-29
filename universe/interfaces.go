@@ -10,10 +10,27 @@ import (
 )
 
 type Node interface {
+	types.IDer
+	types.Initializer
+	types.RunStopper
+
+	Load() error
+}
+
+type Worlds interface {
+	types.Initializer
+
+	GetWorld(worldID uuid.UUID) (World, bool)
+	GetWorlds() *generics.SyncMap[uuid.UUID, World]
+
+	Load() error
 }
 
 type World interface {
 	Space
+	types.RunStopper
+
+	Load() error
 }
 
 type Space interface {
@@ -22,7 +39,6 @@ type Space interface {
 
 	GetWorld() World
 
-	GetRoot() Space
 	GetParent() Space
 	SetParent(parent Space, updateDB bool) error
 
@@ -31,25 +47,34 @@ type Space interface {
 	GetPosition() cmath.Vec3
 	SetPosition(pos cmath.Vec3, updateDB bool) error
 
-	Load(recursive bool) error
+	Update(recursive bool) error
+	LoadFromEntry(entry *SpaceEntry) error
+
+	GetAsset2D() Asset2D
+	GetAsset3D() Asset3D
+	SetAsset2D(asset2d Asset2D, updateDB bool) error
+	SetAsset3D(asset3d Asset3D, updateDB bool) error
+
+	GetSpaceType() SpaceType
+	SetSpaceType(spaceType SpaceType, updateDB bool) error
 
 	GetOptions() *SpaceOptionsEntry
 	SetOptions(options *SpaceOptionsEntry, updateDB bool) error
 
 	GetSpace(spaceID uuid.UUID, recursive bool) (Space, bool)
 	GetSpaces(recursive bool) *generics.SyncMap[uuid.UUID, Space]
-	AttachSpace(space Space, updateDB bool) error
-	AttachSpaces(spaces []Space, updateDB bool) error
-	DetachSpace(spaceID uuid.UUID, recursive, updateDB bool) (bool, error)
-	DetachSpaces(spaceIDs []uuid.UUID, recursive, updateDB bool) (bool, error)
+	AddSpace(space Space, updateDB bool) error
+	AddSpaces(spaces []Space, updateDB bool) error
+	RemoveSpace(spaceID uuid.UUID, recursive, updateDB bool) (bool, error)
+	RemoveSpaces(spaceIDs []uuid.UUID, recursive, updateDB bool) (bool, error)
 
 	GetOwner() User
 	SetOwner(owner User, updateDB bool) error
 
 	GetUser(userID uuid.UUID, recursive bool) (User, bool)
 	GetUsers(recursive bool) *generics.SyncMap[uuid.UUID, User]
-	AttachUser(user User, updateDB bool) error
-	DetachUser(user User, updateDB bool) error
+	AddUser(user User, updateDB bool) error
+	RemoveUser(user User, updateDB bool) error
 
 	SendToUser(userID uuid.UUID, msg *websocket.PreparedMessage, recursive bool) error
 	SendToUsers(msg *websocket.PreparedMessage, recursive bool) error
@@ -60,6 +85,8 @@ type Space interface {
 
 type User interface {
 	types.IDer
+	types.Initializer
+	types.RunStopper
 
 	GetWorld() World
 	SetWorld(world World, updateDB bool) error
@@ -69,9 +96,11 @@ type User interface {
 }
 
 type SpaceTypes interface {
-	Load() error
+	types.Initializer
 
-	Get(spaceTypeID uuid.UUID) (SpaceTypes, bool)
+	GetSpaceType(spaceTypeID uuid.UUID) (SpaceType, bool)
+
+	Load() error
 }
 
 type SpaceType interface {
@@ -85,7 +114,7 @@ type SpaceType interface {
 	GetDescription() *string
 	SetDescription(description *string, updateDB bool) error
 
-	Load() error
+	LoadFromEntry(entry *SpaceTypeEntry) error
 
 	GetOptions() *SpaceOptionsEntry
 	SetOptions(options *SpaceOptionsEntry, updateDB bool) error
@@ -94,7 +123,7 @@ type SpaceType interface {
 type Assets2D interface {
 	types.Initializer
 
-	Get(asset2DID uuid.UUID) (Assets2D, bool)
+	GetAsset2D(asset2DID uuid.UUID) (Asset2D, bool)
 
 	Load() error
 }
@@ -106,16 +135,16 @@ type Asset2D interface {
 	GetName() string
 	SetName(name string, updateDB bool) error
 
-	Load() error
+	LoadFromEntry(entry *Asset2DEntry) error
 
-	GetOptions() *SpaceAsset2DOptionsEntry
-	SetOptions(options *SpaceAsset2DOptionsEntry, updateDB bool) error
+	GetOptions() *Asset2DOptionsEntry
+	SetOptions(options *Asset2DOptionsEntry, updateDB bool) error
 }
 
 type Assets3D interface {
 	types.Initializer
 
-	Get(asset3DID uuid.UUID) (Asset3D, bool)
+	GetAsset3D(asset3DID uuid.UUID) (Asset3D, bool)
 
 	Load() error
 }
@@ -127,8 +156,8 @@ type Asset3D interface {
 	GetName() string
 	SetName(name string, updateDB bool) error
 
-	Load() error
+	LoadFromEntry(entry *Asset3DEntry) error
 
-	GetOptions() *SpaceAsset3DOptionsEntry
-	SetOptions(options *SpaceAsset3DOptionsEntry, updateDB bool) error
+	GetOptions() *Asset3DOptionsEntry
+	SetOptions(options *Asset3DOptionsEntry, updateDB bool) error
 }

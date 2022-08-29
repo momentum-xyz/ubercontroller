@@ -1,6 +1,7 @@
 package asset3d
 
 import (
+	"context"
 	"sync"
 
 	"github.com/google/uuid"
@@ -9,10 +10,12 @@ import (
 	"github.com/momentum-xyz/controller/universe"
 )
 
+var _ universe.Asset3D = (*Asset3D)(nil)
+
 type Asset3D struct {
-	id    uuid.UUID
 	mu    sync.RWMutex
-	entry *universe.SpaceAsset3DEntry
+	id    uuid.UUID
+	entry *universe.Asset3DEntry
 }
 
 func NewAsset3D(id uuid.UUID) *Asset3D {
@@ -22,33 +25,40 @@ func NewAsset3D(id uuid.UUID) *Asset3D {
 }
 
 func (a *Asset3D) GetID() uuid.UUID {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+
 	return a.id
+}
+
+func (a *Asset3D) Initialize(ctx context.Context) error {
+	return nil
 }
 
 func (a *Asset3D) GetName() string {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
-	return a.entry.Name
+	return *a.entry.Name
 }
 
 func (a *Asset3D) SetName(name string, updateDB bool) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	a.entry.Name = name
+	*a.entry.Name = name
 
 	return nil
 }
 
-func (a *Asset3D) GetOptions() *universe.SpaceAsset3DOptionsEntry {
+func (a *Asset3D) GetOptions() *universe.Asset3DOptionsEntry {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
 	return a.entry.Options
 }
 
-func (a *Asset3D) SetOptions(options *universe.SpaceAsset3DOptionsEntry, updateDB bool) error {
+func (a *Asset3D) SetOptions(options *universe.Asset3DOptionsEntry, updateDB bool) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
@@ -57,6 +67,6 @@ func (a *Asset3D) SetOptions(options *universe.SpaceAsset3DOptionsEntry, updateD
 	return nil
 }
 
-func (a *Asset3D) Load() error {
+func (a *Asset3D) LoadFromEntry(entry *universe.Asset3DEntry) error {
 	return errors.Errorf("implement me")
 }

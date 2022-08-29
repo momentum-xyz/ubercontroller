@@ -19,7 +19,7 @@ func (w *World) GetUsers(recursive bool) *generics.SyncMap[uuid.UUID, universe.U
 	return w.Users
 }
 
-func (w *World) AttachUser(user universe.User, updateDB bool) error {
+func (w *World) AddUser(user universe.User, updateDB bool) error {
 	w.Users.Mu.Lock()
 	defer w.Users.Mu.Unlock()
 
@@ -31,9 +31,9 @@ func (w *World) AttachUser(user universe.User, updateDB bool) error {
 	return nil
 }
 
-// DetachUser detaches user from world and space too.
+// RemoveUser removes user from world and space too.
 // TODO: think about rollback on error
-func (w *World) DetachUser(user universe.User, updateDB bool) error {
+func (w *World) RemoveUser(user universe.User, updateDB bool) error {
 	w.Users.Mu.Lock()
 	defer w.Users.Mu.Unlock()
 

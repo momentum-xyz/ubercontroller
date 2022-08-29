@@ -56,7 +56,7 @@ func (s *Space) GetSpaces(recursive bool) *generics.SyncMap[uuid.UUID, universe.
 	return spaces
 }
 
-func (s *Space) AttachSpace(space universe.Space, updateDB bool) error {
+func (s *Space) AddSpace(space universe.Space, updateDB bool) error {
 	s.children.Mu.Lock()
 	defer s.children.Mu.Unlock()
 
@@ -68,17 +68,17 @@ func (s *Space) AttachSpace(space universe.Space, updateDB bool) error {
 	return nil
 }
 
-func (s *Space) AttachSpaces(spaces []universe.Space, updateDB bool) error {
+func (s *Space) AddSpaces(spaces []universe.Space, updateDB bool) error {
 	var errs *multierror.Error
 	for i := range spaces {
-		if err := s.AttachSpace(spaces[i], updateDB); err != nil {
-			errs = multierror.Append(errs, errors.WithMessagef(err, "failed to attach space: %s", spaces[i].GetID()))
+		if err := s.AddSpace(spaces[i], updateDB); err != nil {
+			errs = multierror.Append(errs, errors.WithMessagef(err, "failed to add space: %s", spaces[i].GetID()))
 		}
 	}
 	return errs.ErrorOrNil()
 }
 
-func (s *Space) DetachSpace(spaceID uuid.UUID, recursive, updateDB bool) (bool, error) {
+func (s *Space) RemoveSpace(spaceID uuid.UUID, recursive, updateDB bool) (bool, error) {
 	s.children.Mu.Lock()
 	space, ok := s.children.Data[spaceID]
 	if ok {
@@ -101,11 +101,11 @@ func (s *Space) DetachSpace(spaceID uuid.UUID, recursive, updateDB bool) (bool, 
 	defer s.children.Mu.RUnlock()
 
 	for _, child := range s.children.Data {
-		detached, err := child.DetachSpace(spaceID, recursive, updateDB)
+		removed, err := child.RemoveSpace(spaceID, recursive, updateDB)
 		if err != nil {
-			return false, errors.WithMessagef(err, "failed to detach space: %s", spaceID)
+			return false, errors.WithMessagef(err, "failed to remove space: %s", spaceID)
 		}
-		if detached {
+		if removed {
 			return true, nil
 		}
 	}
@@ -113,15 +113,15 @@ func (s *Space) DetachSpace(spaceID uuid.UUID, recursive, updateDB bool) (bool, 
 	return false, nil
 }
 
-// DetachSpaces returns true in first value if any of spaces with space ids was detached.
-func (s *Space) DetachSpaces(spaceIDs []uuid.UUID, recursive, updateDB bool) (bool, error) {
+// RemoveSpaces returns true in first value if any of spaces with space ids was removed.
+func (s *Space) RemoveSpaces(spaceIDs []uuid.UUID, recursive, updateDB bool) (bool, error) {
 	var res bool
 	for i := range spaceIDs {
-		detached, err := s.DetachSpace(spaceIDs[i], recursive, updateDB)
+		removed, err := s.RemoveSpace(spaceIDs[i], recursive, updateDB)
 		if err != nil {
-			return false, errors.WithMessagef(err, "failed to detach space: %s", spaceIDs[i])
+			return false, errors.WithMessagef(err, "failed to remove space: %s", spaceIDs[i])
 		}
-		if detached {
+		if removed {
 			res = true
 		}
 	}

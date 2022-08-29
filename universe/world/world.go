@@ -39,6 +39,14 @@ func (w *World) Initialize(ctx context.Context) error {
 	return w.Space.Initialize(ctx)
 }
 
-func (w *World) Load(recursive bool) error {
+func (w *World) Run() error {
+	return errors.Errorf("implement me")
+}
+
+func (w *World) Stop() error {
+	return errors.Errorf("implement me")
+}
+
+func (w *World) Load() error {
 	return errors.Errorf("implement me")
 }

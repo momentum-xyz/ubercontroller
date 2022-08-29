@@ -1,4 +1,4 @@
-package spacetype
+package space_type
 
 import (
 	"context"
@@ -15,10 +15,10 @@ import (
 var _ universe.SpaceType = (*SpaceType)(nil)
 
 type SpaceType struct {
-	id           uuid.UUID
 	ctx          context.Context
 	log          *zap.SugaredLogger
 	mu           sync.RWMutex
+	id           uuid.UUID
 	name         string
 	categoryName string
 	description  *string
@@ -32,6 +32,9 @@ func NewSpaceType(id uuid.UUID) *SpaceType {
 }
 
 func (s *SpaceType) GetID() uuid.UUID {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
 	return s.id
 }
 
@@ -95,7 +98,8 @@ func (s *SpaceType) SetDescription(description *string, updateDB bool) error {
 	return nil
 }
 
-func (s *SpaceType) Load() error {
+// LoadFromEntry loads only internal data of the space type exclude nested data like Asset2D, Asset3D, etc.
+func (s *SpaceType) LoadFromEntry(entry *universe.SpaceTypeEntry) error {
 	return errors.Errorf("implement me")
 }
 

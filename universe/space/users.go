@@ -47,8 +47,8 @@ func (s *Space) GetUser(userID uuid.UUID, recursive bool) (universe.User, bool) 
 	return nil, false
 }
 
-// GetUsers returns new sync map with all nested Users if recursive is true,
-// otherwise the method returns existing sync map with Users dependent only to current space.
+// GetUsers returns new sync map with all nested users if recursive is true,
+// otherwise the method returns existing sync map with users dependent only to current space.
 func (s *Space) GetUsers(recursive bool) *generics.SyncMap[uuid.UUID, universe.User] {
 	if !recursive {
 		return s.Users
@@ -75,7 +75,7 @@ func (s *Space) GetUsers(recursive bool) *generics.SyncMap[uuid.UUID, universe.U
 	return users
 }
 
-func (s *Space) AttachUser(user universe.User, updateDB bool) error {
+func (s *Space) AddUser(user universe.User, updateDB bool) error {
 	s.Users.Mu.Lock()
 	defer s.Users.Mu.Unlock()
 
@@ -87,7 +87,7 @@ func (s *Space) AttachUser(user universe.User, updateDB bool) error {
 	return nil
 }
 
-func (s *Space) DetachUser(user universe.User, updateDB bool) error {
+func (s *Space) RemoveUser(user universe.User, updateDB bool) error {
 	s.Users.Mu.Lock()
 	defer s.Users.Mu.Unlock()
 

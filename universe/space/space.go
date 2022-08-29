@@ -17,19 +17,22 @@ import (
 var _ universe.Space = (*Space)(nil)
 
 type Space struct {
-	id       uuid.UUID
-	ctx      context.Context
-	log      *zap.SugaredLogger
-	Users    *generics.SyncMap[uuid.UUID, universe.User]
-	children *generics.SyncMap[uuid.UUID, universe.Space]
-	mu       sync.RWMutex
-	owner    universe.User
-	world    universe.World
-	root     universe.Space
-	parent   universe.Space
-	theta    float64
-	position cmath.Vec3
-	options  *universe.SpaceOptionsEntry
+	ctx       context.Context
+	log       *zap.SugaredLogger
+	Users     *generics.SyncMap[uuid.UUID, universe.User]
+	children  *generics.SyncMap[uuid.UUID, universe.Space]
+	mu        sync.RWMutex
+	id        uuid.UUID
+	owner     universe.User
+	world     universe.World
+	root      universe.Space
+	parent    universe.Space
+	theta     float64
+	position  cmath.Vec3
+	options   *universe.SpaceOptionsEntry
+	asset2d   universe.Asset2D
+	asset3d   universe.Asset3D
+	spaceType universe.SpaceType
 }
 
 func NewSpace(id uuid.UUID, world universe.World) *Space {
@@ -42,6 +45,9 @@ func NewSpace(id uuid.UUID, world universe.World) *Space {
 }
 
 func (s *Space) GetID() uuid.UUID {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
 	return s.id
 }
 
@@ -62,13 +68,6 @@ func (s *Space) GetWorld() universe.World {
 	defer s.mu.RUnlock()
 
 	return s.world
-}
-
-func (s *Space) GetRoot() universe.Space {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	return s.root
 }
 
 func (s *Space) GetParent() universe.Space {
@@ -92,7 +91,6 @@ func (s *Space) SetParent(parent universe.Space, updateDB bool) error {
 		return errors.Errorf("worlds mismatch: %s != %s", parent.GetWorld().GetID(), s.GetWorld().GetID())
 	}
 
-	s.root = parent.GetRoot()
 	s.parent = parent
 
 	return nil
@@ -130,8 +128,61 @@ func (s *Space) SetPosition(position cmath.Vec3, updateDB bool) error {
 	return nil
 }
 
-func (s *Space) Load(recursive bool) error {
+func (s *Space) Update(recursive bool) error {
 	return errors.Errorf("implement me")
+}
+
+// LoadFromEntry loads only internal data of the space exclude nested data like SpaceType, Asset2D, etc.
+func (s *Space) LoadFromEntry(entry *universe.SpaceEntry) error {
+	return errors.Errorf("implement me")
+}
+
+func (s *Space) GetAsset2D() universe.Asset2D {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	return s.asset2d
+}
+
+func (s *Space) GetAsset3D() universe.Asset3D {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	return s.asset3d
+}
+
+func (s *Space) SetAsset2D(asset2d universe.Asset2D, updateDB bool) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.asset2d = asset2d
+
+	return nil
+}
+
+func (s *Space) SetAsset3D(asset3d universe.Asset3D, updateDB bool) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.asset3d = asset3d
+
+	return nil
+}
+
+func (s *Space) GetSpaceType() universe.SpaceType {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	return s.spaceType
+}
+
+func (s *Space) SetSpaceType(spaceType universe.SpaceType, updateDB bool) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.spaceType = spaceType
+
+	return nil
 }
 
 func (s *Space) GetOptions() *universe.SpaceOptionsEntry {
