@@ -74,17 +74,14 @@ func run() error {
 }
 
 func createNode(ctx context.Context, db database.DB) (universe.Node, error) {
-	worlds := worlds.NewWorlds(db)
 	assets2d := assets2d.NewAssets2D(db)
 	assets3d := assets3d.NewAssets3D(db)
 	spaceTypes := space_types.NewSpaceTypes(db)
+	worlds := worlds.NewWorlds(db)
 
 	node := node.NewNode(uuid.Nil, db, worlds, assets2d, assets3d, spaceTypes)
 	universe.InitializeNode(node)
 
-	if err := worlds.Initialize(ctx); err != nil {
-		return nil, errors.WithMessage(err, "failed to initialize worlds")
-	}
 	if err := assets2d.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize assets 2d")
 	}
@@ -93,6 +90,9 @@ func createNode(ctx context.Context, db database.DB) (universe.Node, error) {
 	}
 	if err := spaceTypes.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize space types")
+	}
+	if err := worlds.Initialize(ctx); err != nil {
+		return nil, errors.WithMessage(err, "failed to initialize worlds")
 	}
 	if err := node.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize node")
@@ -115,12 +115,14 @@ func createDBConnection(ctx context.Context, cfg *config.Postgres) (*pgxpool.Poo
 
 func createDB(conn *pgxpool.Pool) (database.DB, error) {
 	common := commonDB.NewDB(conn)
+	spaces := spacesDB.NewDB(conn, common)
+
 	return db.NewDB(
 		conn,
 		common,
 		nodesDB.NewDB(conn, common),
-		worldsDB.NewDB(conn, common),
-		spacesDB.NewDB(conn, common),
+		worldsDB.NewDB(conn, common, spaces),
+		spaces,
 		usersDB.NewDB(conn, common),
 		assets2dDB.NewDB(conn, common),
 		assets3dDB.NewDB(conn, common),

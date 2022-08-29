@@ -2,10 +2,10 @@ package node
 
 import (
 	"context"
-	"github.com/hashicorp/go-multierror"
 	"sync"
 
 	"github.com/google/uuid"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
@@ -94,8 +94,6 @@ func (n *Node) Run(ctx context.Context) error {
 			}
 			return nil
 		})
-
-		return nil
 	}
 	worlds.Mu.RUnlock()
 
