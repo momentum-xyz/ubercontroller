@@ -2,40 +2,41 @@ package utils
 
 import (
 	"reflect"
-
-	"github.com/pkg/errors"
 )
 
-// MergeStructs merge optional structure with default one.
+// MergeStructs recursively merge optional structure with default one.
 // If optional struct is nil, return passed default one,
 // otherwise return pointer to new struct with merged fields.
 func MergeStructs[T any](opt, def *T) *T {
-	if opt == nil {
-		return def
+	var merge func(resVal, optVal, defVal reflect.Value)
+	merge = func(resVal, optVal, defVal reflect.Value) {
+		if optVal.IsNil() {
+			resVal.Set(defVal)
+			return
+		}
+
+		if resVal.Kind() == reflect.Pointer && resVal.Elem().Kind() == reflect.Struct {
+			resElem := resVal.Elem()
+			optElem := optVal.Elem()
+			defElem := defVal.Elem()
+			for i := 0; i < resElem.NumField(); i++ {
+				resField := resElem.Field(i)
+				optField := optElem.Field(i)
+				defField := defElem.Field(i)
+				merge(resField, optField, defField)
+			}
+			return
+		}
+
+		resVal.Set(optVal)
 	}
 
 	var t T
 	resVal := reflect.ValueOf(&t)
-	resElem := resVal.Elem()
+	optVal := reflect.ValueOf(opt)
+	defVal := reflect.ValueOf(def)
 
-	optElem := reflect.ValueOf(opt).Elem()
-	defElem := reflect.ValueOf(def).Elem()
-	if optElem.Kind() != reflect.Struct {
-		log.Errorf("Utils: MergeStructs: invalid type: %+v", errors.WithStack(errors.Errorf("%T is not a struture", opt)))
-		return def
-	}
-
-	for i := 0; i < resElem.NumField(); i++ {
-		resField := resElem.Field(i)
-
-		optField := optElem.Field(i)
-		if !optField.IsNil() {
-			resField.Set(optField)
-			continue
-		}
-
-		resField.Set(defElem.Field(i))
-	}
+	merge(resVal, optVal, defVal)
 
 	return resVal.Interface().(*T)
 }

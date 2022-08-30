@@ -96,6 +96,10 @@ func (a *Asset3d) SetOptions(options *entry.Asset3dOptions, updateDB bool) error
 	return nil
 }
 
-func (a *Asset3d) LoadFromEntry(ctx context.Context, entry *entry.Asset3d) error {
+func (a *Asset3d) LoadFromEntry(entry *entry.Asset3d) error {
+	return errors.Errorf("implement me")
+}
+
+func (a *Asset3d) Update(updateDB bool) error {
 	return errors.Errorf("implement me")
 }

@@ -27,11 +27,11 @@ type NodesDB interface {
 }
 
 type WorldsDB interface {
-	WorldsGetWorlds(ctx context.Context) ([]entry.Space, error)
+	WorldsGetWorlds(ctx context.Context) ([]*entry.Space, error)
 }
 
 type SpacesDB interface {
-	SpacesGetSpacesByParentID(ctx context.Context, parentID uuid.UUID) ([]entry.Space, error)
+	SpacesGetSpacesByParentID(ctx context.Context, parentID uuid.UUID) ([]*entry.Space, error)
 	SpacesUpdateSpaceParentID(ctx context.Context, spaceID, parentID uuid.UUID) error
 	SpacesUpdateSpacePosition(ctx context.Context, spaceID uuid.UUID, position cmath.Vec3) error
 	SpacesUpdateSpaceOwnerID(ctx context.Context, spaceID, ownerID uuid.UUID) error
@@ -45,16 +45,28 @@ type UsersDB interface {
 }
 
 type Assets2dDB interface {
+	Assets2dInsertAsset(ctx context.Context, asset2d *entry.Asset2d) error
+	Assets2dInsertAssets(ctx context.Context, assets2d []*entry.Asset2d) error
+	Assets2dRemoveAssetByID(ctx context.Context, asset2dID uuid.UUID) error
+	Assets2dRemoveAssetByIDs(ctx context.Context, asset2dIDs []uuid.UUID) error
 	Assets2dUpdateAssetName(ctx context.Context, asset2dID uuid.UUID, name string) error
 	Assets2dUpdateAssetOptions(ctx context.Context, asset2dID uuid.UUID, asset2dOptions *entry.Asset2dOptions) error
 }
 
 type Assets3dDB interface {
+	Assets3dInsertAsset(ctx context.Context, asset3d *entry.Asset3d) error
+	Assets3dInsertAssets(ctx context.Context, assets3d []*entry.Asset3d) error
+	Assets3dRemoveAssetByID(ctx context.Context, asset3dID uuid.UUID) error
+	Assets3dRemoveAssetByIDs(ctx context.Context, asset3dIDs []uuid.UUID) error
 	Assets3dUpdateAssetName(ctx context.Context, asset3dID uuid.UUID, name string) error
 	Assets3dUpdateAssetOptions(ctx context.Context, asset3dID uuid.UUID, asset3dOptions *entry.Asset3dOptions) error
 }
 
 type SpaceTypesDB interface {
+	SpaceTypesInsertSpaceType(ctx context.Context, spaceType *entry.SpaceType) error
+	SpaceTypesInsertSpaceTypes(ctx context.Context, spaceTypes []*entry.SpaceType) error
+	SpaceTypesRemoveSpaceTypeByID(ctx context.Context, spaceTypeID uuid.UUID) error
+	SpaceTypesRemoveSpaceTypeByIDs(ctx context.Context, spaceTypeIDs []uuid.UUID) error
 	SpaceTypesUpdateSpaceTypeName(ctx context.Context, spaceTypeID uuid.UUID, name string) error
 	SpaceTypesUpdateSpaceTypeCategoryName(ctx context.Context, spaceTypeID uuid.UUID, categoryName string) error
 	SpaceTypesUpdateSpaceTypeDescription(ctx context.Context, spaceTypeID uuid.UUID, description *string) error

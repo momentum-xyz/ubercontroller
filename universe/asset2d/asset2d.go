@@ -74,7 +74,11 @@ func (a *Asset2d) SetName(name string, updateDB bool) error {
 	return nil
 }
 
-func (a *Asset2d) LoadFromEntry(ctx context.Context, entry *entry.Asset2d) error {
+func (a *Asset2d) LoadFromEntry(entry *entry.Asset2d) error {
+	return errors.Errorf("implement me")
+}
+
+func (a *Asset2d) Update(updateDB bool) error {
 	return errors.Errorf("implement me")
 }
 

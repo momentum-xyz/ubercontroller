@@ -23,6 +23,26 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 }
 
 // TODO: implement
+func (db *DB) Assets3dInsertAsset(ctx context.Context, asset3d *entry.Asset3d) error {
+	return nil
+}
+
+// TODO: implement
+func (db *DB) Assets3dInsertAssets(ctx context.Context, assets3d []*entry.Asset3d) error {
+	return nil
+}
+
+// TODO: implement
+func (db *DB) Assets3dRemoveAssetByID(ctx context.Context, asset3dID uuid.UUID) error {
+	return nil
+}
+
+// TODO: implement
+func (db *DB) Assets3dRemoveAssetByIDs(ctx context.Context, asset3dIDs []uuid.UUID) error {
+	return nil
+}
+
+// TODO: implement
 func (db *DB) Assets3dUpdateAssetName(ctx context.Context, asset3dID uuid.UUID, name string) error {
 	return nil
 }

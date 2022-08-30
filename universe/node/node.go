@@ -84,7 +84,7 @@ func (n *Node) GetSpaceTypes() universe.SpaceTypes {
 }
 
 func (n *Node) Run(ctx context.Context) error {
-	group, gctx := errgroup.WithContext(ctx)
+	group, _ := errgroup.WithContext(ctx)
 	worlds := n.GetWorlds().GetWorlds()
 
 	worlds.Mu.RLock()
@@ -92,7 +92,7 @@ func (n *Node) Run(ctx context.Context) error {
 		world := world
 
 		group.Go(func() error {
-			if err := world.Run(gctx); err != nil {
+			if err := world.Run(ctx); err != nil {
 				return errors.WithMessagef(err, "failed to run world: %s", world.GetID())
 			}
 			return nil
@@ -130,16 +130,16 @@ func (n *Node) Stop() error {
 }
 
 func (n *Node) Load(ctx context.Context) error {
-	group, gctx := errgroup.WithContext(ctx)
+	group, _ := errgroup.WithContext(ctx)
 
 	group.Go(func() error {
-		return n.assets2d.Load(gctx)
+		return n.assets2d.Load(ctx)
 	})
 	group.Go(func() error {
-		return n.assets3d.Load(gctx)
+		return n.assets3d.Load(ctx)
 	})
 	group.Go(func() error {
-		return n.spaceTypes.Load(gctx)
+		return n.spaceTypes.Load(ctx)
 	})
 
 	if err := group.Wait(); err != nil {
@@ -147,4 +147,8 @@ func (n *Node) Load(ctx context.Context) error {
 	}
 
 	return n.worlds.Load(ctx)
+}
+
+func (n *Node) Update(updateDB bool) error {
+	return errors.Errorf("implement me")
 }

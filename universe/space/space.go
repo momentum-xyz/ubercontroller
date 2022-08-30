@@ -252,11 +252,11 @@ func (s *Space) SetOptions(options *entry.SpaceOptions, updateDB bool) error {
 	return nil
 }
 
-func (s *Space) Update(recursive bool) error {
+func (s *Space) Update(recursive, updateDB bool) error {
 	return errors.Errorf("implement me")
 }
 
-func (s *Space) LoadFromEntry(ctx context.Context, entry *entry.Space, recursive bool) error {
+func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 	if *entry.SpaceID != s.GetID() {
 		return errors.Errorf("space ids mismatch: %s != %s", *entry.SpaceID, s.GetID())
 	}
@@ -272,12 +272,12 @@ func (s *Space) LoadFromEntry(ctx context.Context, entry *entry.Space, recursive
 		return nil
 	}
 
-	spaces, err := s.db.SpacesGetSpacesByParentID(ctx, s.GetID())
+	spaces, err := s.db.SpacesGetSpacesByParentID(s.ctx, s.GetID())
 	if err != nil {
 		return errors.WithMessagef(err, "failed to get spaces by parent id: %s", s.GetID())
 	}
 
-	group, gctx := errgroup.WithContext(ctx)
+	group, _ := errgroup.WithContext(s.ctx)
 
 	for i := range spaces {
 		entry := spaces[i]
@@ -285,14 +285,14 @@ func (s *Space) LoadFromEntry(ctx context.Context, entry *entry.Space, recursive
 		group.Go(func() error {
 			space := NewSpace(*entry.SpaceID, s.db, s.world)
 
-			if err := space.LoadFromEntry(gctx, &entry, recursive); err != nil {
+			if err := space.Initialize(s.ctx); err != nil {
+				return errors.WithMessagef(err, "failed to initialize space: %s", space.GetID())
+			}
+			if err := space.LoadFromEntry(entry, recursive); err != nil {
 				return errors.WithMessagef(err, "failed to load space from entry: %s", space.GetID())
 			}
 			if err := space.SetParent(s, false); err != nil {
 				return errors.WithMessagef(err, "failed to set parent: %s", space.GetID())
-			}
-			if err := space.Initialize(gctx); err != nil {
-				return errors.WithMessagef(err, "failed to initialize space: %s", space.GetID())
 			}
 
 			s.children.Store(space.GetID(), space)

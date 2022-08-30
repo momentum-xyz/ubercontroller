@@ -47,7 +47,7 @@ func (w *Worlds) Load(ctx context.Context) error {
 		return errors.WithMessage(err, "failed to get worlds from db")
 	}
 
-	group, gctx := errgroup.WithContext(ctx)
+	group, _ := errgroup.WithContext(ctx)
 
 	for i := range worlds {
 		entry := worlds[i]
@@ -55,11 +55,11 @@ func (w *Worlds) Load(ctx context.Context) error {
 		group.Go(func() error {
 			world := world.NewWorld(*entry.SpaceID, w.db)
 
-			if err := world.LoadFromEntry(gctx, &entry, true); err != nil {
-				return errors.WithMessagef(err, "failed to load world from entry: %s", world.GetID())
-			}
-			if err := world.Initialize(gctx); err != nil {
+			if err := world.Initialize(ctx); err != nil {
 				return errors.WithMessagef(err, "failed to initialize world: %s", world.GetID())
+			}
+			if err := world.LoadFromEntry(entry, true); err != nil {
+				return errors.WithMessagef(err, "failed to load world from entry: %s", world.GetID())
 			}
 
 			w.worlds.Store(world.GetID(), world)
@@ -69,4 +69,8 @@ func (w *Worlds) Load(ctx context.Context) error {
 	}
 
 	return group.Wait()
+}
+
+func (w *Worlds) Update(updateDB bool) error {
+	return errors.Errorf("implement me")
 }

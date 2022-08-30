@@ -23,6 +23,7 @@ type Node interface {
 	GetSpaceTypes() SpaceTypes
 
 	Load(ctx context.Context) error
+	Update(updateDB bool) error
 }
 
 type Worlds interface {
@@ -32,6 +33,7 @@ type Worlds interface {
 	GetWorlds() *generics.SyncMap[uuid.UUID, World]
 
 	Load(ctx context.Context) error
+	Update(updateDB bool) error
 }
 
 type World interface {
@@ -67,8 +69,8 @@ type Space interface {
 	GetSpaceType() SpaceType
 	SetSpaceType(spaceType SpaceType, updateDB bool) error
 
-	Update(recursive bool) error
-	LoadFromEntry(ctx context.Context, entry *entry.Space, recursive bool) error
+	LoadFromEntry(entry *entry.Space, recursive bool) error
+	Update(recursive, updateDB bool) error
 
 	GetSpace(spaceID uuid.UUID, recursive bool) (Space, bool)
 	GetSpaces(recursive bool) *generics.SyncMap[uuid.UUID, Space]
@@ -102,8 +104,14 @@ type SpaceTypes interface {
 	types.Initializer
 
 	GetSpaceType(spaceTypeID uuid.UUID) (SpaceType, bool)
+	GetSpaceTypes(spaceTypeIDs []uuid.UUID) (*generics.SyncMap[uuid.UUID, SpaceType], error)
+	AddSpaceType(spaceType SpaceType, updateDB bool) error
+	AddSpaceTypes(spaceTypes []SpaceType, updateDB bool) error
+	RemoveSpaceType(spaceType SpaceType, updateDB bool) error
+	RemoveSpaceTypes(spaceTypes []SpaceType, updateDB bool) error
 
 	Load(ctx context.Context) error
+	Update(updateDB bool) error
 }
 
 type SpaceType interface {
@@ -122,15 +130,22 @@ type SpaceType interface {
 	GetOptions() *entry.SpaceOptions
 	SetOptions(options *entry.SpaceOptions, updateDB bool) error
 
-	LoadFromEntry(ctx context.Context, entry *entry.SpaceType) error
+	LoadFromEntry(entry *entry.SpaceType) error
+	Update(updateDB bool) error
 }
 
 type Assets2d interface {
 	types.Initializer
 
 	GetAsset2d(asset2dID uuid.UUID) (Asset2d, bool)
+	GetAssets2d(asset2dIDs []uuid.UUID) (*generics.SyncMap[uuid.UUID, Asset2d], error)
+	AddAsset2d(asset2d Asset2d, updateDB bool) error
+	AddAssets2d(assets2d []Asset2d, updateDB bool) error
+	RemoveAsset2d(asset2d Asset2d, updateDB bool) error
+	RemoveAssets2d(assets2d []Asset2d, updateDB bool) error
 
 	Load(ctx context.Context) error
+	Update(updateDB bool) error
 }
 
 type Asset2d interface {
@@ -143,15 +158,22 @@ type Asset2d interface {
 	GetOptions() *entry.Asset2dOptions
 	SetOptions(options *entry.Asset2dOptions, updateDB bool) error
 
-	LoadFromEntry(ctx context.Context, entry *entry.Asset2d) error
+	LoadFromEntry(entry *entry.Asset2d) error
+	Update(updateDB bool) error
 }
 
 type Assets3d interface {
 	types.Initializer
 
 	GetAsset3d(asset3dID uuid.UUID) (Asset3d, bool)
+	GetAssets3d(asset3dIDs []uuid.UUID) (*generics.SyncMap[uuid.UUID, Asset3d], error)
+	AddAsset3d(asset3d Asset3d, updateDB bool) error
+	AddAssets3d(assets3d []Asset3d, updateDB bool) error
+	RemoveAsset3d(asset3d Asset3d, updateDB bool) error
+	RemoveAssets3d(assets3d []Asset3d, updateDB bool) error
 
 	Load(ctx context.Context) error
+	Update(updateDB bool) error
 }
 
 type Asset3d interface {
@@ -164,5 +186,6 @@ type Asset3d interface {
 	GetOptions() *entry.Asset3dOptions
 	SetOptions(options *entry.Asset3dOptions, updateDB bool) error
 
-	LoadFromEntry(ctx context.Context, entry *entry.Asset3d) error
+	LoadFromEntry(entry *entry.Asset3d) error
+	Update(updateDB bool) error
 }

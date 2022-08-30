@@ -24,7 +24,7 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 }
 
 // TODO: implement
-func (db *DB) SpacesGetSpacesByParentID(ctx context.Context, parentID uuid.UUID) ([]entry.Space, error) {
+func (db *DB) SpacesGetSpacesByParentID(ctx context.Context, parentID uuid.UUID) ([]*entry.Space, error) {
 	return nil, nil
 }
 
