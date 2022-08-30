@@ -2,11 +2,13 @@ package universe
 
 import (
 	"context"
+
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types"
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/types/generics"
 )
 
@@ -52,8 +54,9 @@ type Space interface {
 	GetPosition() cmath.Vec3
 	SetPosition(pos cmath.Vec3, updateDB bool) error
 
-	GetOptions() *SpaceOptionsEntry
-	SetOptions(options *SpaceOptionsEntry, updateDB bool) error
+	GetOptions() *entry.SpaceOptions
+	GetEffectiveOptions() *entry.SpaceOptions
+	SetOptions(options *entry.SpaceOptions, updateDB bool) error
 
 	GetAsset2D() Asset2d
 	SetAsset2D(asset2d Asset2d, updateDB bool) error
@@ -65,7 +68,7 @@ type Space interface {
 	SetSpaceType(spaceType SpaceType, updateDB bool) error
 
 	Update(recursive bool) error
-	LoadFromEntry(ctx context.Context, entry *SpaceEntry, recursive bool) error
+	LoadFromEntry(ctx context.Context, entry *entry.Space, recursive bool) error
 
 	GetSpace(spaceID uuid.UUID, recursive bool) (Space, bool)
 	GetSpaces(recursive bool) *generics.SyncMap[uuid.UUID, Space]
@@ -81,9 +84,6 @@ type Space interface {
 
 	SendToUser(userID uuid.UUID, msg *websocket.PreparedMessage, recursive bool) error
 	SendToUsers(msg *websocket.PreparedMessage, recursive bool) error
-
-	//GetSpaceAttributes() *SpaceAttributes
-	//GetUserSpaceAttributes() *UserSpaceAttributes
 }
 
 type User interface {
@@ -112,15 +112,17 @@ type SpaceType interface {
 
 	GetName() string
 	SetName(name string, updateDB bool) error
+
 	GetCategoryName() string
 	SetCategoryName(categoryName string, updateDB bool) error
+
 	GetDescription() *string
 	SetDescription(description *string, updateDB bool) error
 
-	LoadFromEntry(ctx context.Context, entry *SpaceTypeEntry) error
+	GetOptions() *entry.SpaceOptions
+	SetOptions(options *entry.SpaceOptions, updateDB bool) error
 
-	GetOptions() *SpaceOptionsEntry
-	SetOptions(options *SpaceOptionsEntry, updateDB bool) error
+	LoadFromEntry(ctx context.Context, entry *entry.SpaceType) error
 }
 
 type Assets2d interface {
@@ -138,10 +140,10 @@ type Asset2d interface {
 	GetName() string
 	SetName(name string, updateDB bool) error
 
-	GetOptions() *Asset2dOptionsEntry
-	SetOptions(options *Asset2dOptionsEntry, updateDB bool) error
+	GetOptions() *entry.Asset2dOptions
+	SetOptions(options *entry.Asset2dOptions, updateDB bool) error
 
-	LoadFromEntry(ctx context.Context, entry *Asset2dEntry) error
+	LoadFromEntry(ctx context.Context, entry *entry.Asset2d) error
 }
 
 type Assets3d interface {
@@ -159,8 +161,8 @@ type Asset3d interface {
 	GetName() string
 	SetName(name string, updateDB bool) error
 
-	GetOptions() *Asset3dOptionsEntry
-	SetOptions(options *Asset3dOptionsEntry, updateDB bool) error
+	GetOptions() *entry.Asset3dOptions
+	SetOptions(options *entry.Asset3dOptions, updateDB bool) error
 
-	LoadFromEntry(ctx context.Context, entry *Asset3dEntry) error
+	LoadFromEntry(ctx context.Context, entry *entry.Asset3d) error
 }

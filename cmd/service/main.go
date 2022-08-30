@@ -116,7 +116,6 @@ func createDBConnection(ctx context.Context, cfg *config.Postgres) (*pgxpool.Poo
 func createDB(conn *pgxpool.Pool) (database.DB, error) {
 	common := commonDB.NewDB(conn)
 	spaces := spacesDB.NewDB(conn, common)
-
 	return db.NewDB(
 		conn,
 		common,

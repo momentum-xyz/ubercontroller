@@ -31,8 +31,8 @@ func (s *Space) GetUser(userID uuid.UUID, recursive bool) (universe.User, bool) 
 	return nil, false
 }
 
-// GetUsers returns new sync map with all nested users if recursive is true,
-// otherwise the method returns existing sync map with users dependent only to current space.
+// GetUsers return new sync map with all nested users if recursive is true,
+// otherwise the method return existing sync map with users dependent only to current space.
 func (s *Space) GetUsers(recursive bool) *generics.SyncMap[uuid.UUID, universe.User] {
 	if !recursive {
 		return s.Users

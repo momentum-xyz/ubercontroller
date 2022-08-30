@@ -31,17 +31,17 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 	return nil
 }
 
-// RemoveUser removes user from world and space too.
+// RemoveUser remove user from world and space.
 // TODO: think about rollback on error
 func (w *World) RemoveUser(user universe.User, updateDB bool) error {
 	w.Users.Mu.Lock()
 	defer w.Users.Mu.Unlock()
 
-	if err := user.SetWorld(nil, updateDB); err != nil {
-		return errors.WithMessagef(err, "failed to set world to user: %s", user.GetID())
-	}
 	if err := user.SetSpace(nil, updateDB); err != nil {
 		return errors.WithMessagef(err, "failed to set space to user: %s", user.GetID())
+	}
+	if err := user.SetWorld(nil, updateDB); err != nil {
+		return errors.WithMessagef(err, "failed to set world to user: %s", user.GetID())
 	}
 	delete(w.Users.Data, user.GetID())
 

@@ -11,6 +11,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/space"
+	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 var _ universe.World = (*World)(nil)
@@ -31,8 +32,8 @@ func NewWorld(id uuid.UUID, db database.DB) *World {
 }
 
 func (w *World) Initialize(ctx context.Context) error {
-	log, ok := ctx.Value(types.ContextLoggerKey).(*zap.SugaredLogger)
-	if !ok {
+	log := utils.GetFromAny(ctx.Value(types.ContextLoggerKey), (*zap.SugaredLogger)(nil))
+	if log == nil {
 		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.ContextLoggerKey))
 	}
 

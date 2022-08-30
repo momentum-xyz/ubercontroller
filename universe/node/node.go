@@ -13,13 +13,15 @@ import (
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 var _ universe.Node = (*Node)(nil)
 
 type Node struct {
-	db         database.DB
+	ctx        context.Context
 	log        *zap.SugaredLogger
+	db         database.DB
 	worlds     universe.Worlds
 	assets2d   universe.Assets2d
 	assets3d   universe.Assets3d
@@ -54,11 +56,12 @@ func (n *Node) GetID() uuid.UUID {
 }
 
 func (n *Node) Initialize(ctx context.Context) error {
-	log, ok := ctx.Value(types.ContextLoggerKey).(*zap.SugaredLogger)
-	if !ok {
+	log := utils.GetFromAny(ctx.Value(types.ContextLoggerKey), (*zap.SugaredLogger)(nil))
+	if log == nil {
 		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.ContextLoggerKey))
 	}
 
+	n.ctx = ctx
 	n.log = log
 
 	return nil

@@ -7,7 +7,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 
 	"github.com/momentum-xyz/ubercontroller/database"
-	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 )
 
 type DB struct {
@@ -24,6 +24,6 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB, spacesDB database.Spa
 	}
 }
 
-func (db *DB) WorldsGetWorlds(ctx context.Context) ([]universe.SpaceEntry, error) {
+func (db *DB) WorldsGetWorlds(ctx context.Context) ([]entry.Space, error) {
 	return db.spaces.SpacesGetSpacesByParentID(ctx, uuid.Nil)
 }

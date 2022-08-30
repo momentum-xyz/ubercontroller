@@ -32,8 +32,8 @@ func (s *Space) GetSpace(spaceID uuid.UUID, recursive bool) (universe.Space, boo
 	return nil, false
 }
 
-// GetSpaces returns new sync map with all nested children if recursive is true,
-// otherwise the method returns existing sync map with children dependent only to current space.
+// GetSpaces return new sync map with all nested children if recursive is true,
+// otherwise the method return existing sync map with children dependent only to current space.
 func (s *Space) GetSpaces(recursive bool) *generics.SyncMap[uuid.UUID, universe.Space] {
 	if !recursive {
 		return s.children
@@ -113,7 +113,7 @@ func (s *Space) RemoveSpace(spaceID uuid.UUID, recursive, updateDB bool) (bool, 
 	return false, nil
 }
 
-// RemoveSpaces returns true in first value if any of spaces with space ids was removed.
+// RemoveSpaces return true in first value if any of spaces with space ids was removed.
 func (s *Space) RemoveSpaces(spaceIDs []uuid.UUID, recursive, updateDB bool) (bool, error) {
 	var res bool
 	for i := range spaceIDs {

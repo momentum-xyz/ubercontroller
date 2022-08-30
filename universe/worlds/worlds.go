@@ -44,7 +44,7 @@ func (w *Worlds) GetWorlds() *generics.SyncMap[uuid.UUID, universe.World] {
 func (w *Worlds) Load(ctx context.Context) error {
 	worlds, err := w.db.WorldsGetWorlds(ctx)
 	if err != nil {
-		return errors.WithMessage(err, "failed to get world entries")
+		return errors.WithMessage(err, "failed to get worlds from db")
 	}
 
 	group, gctx := errgroup.WithContext(ctx)
@@ -57,6 +57,9 @@ func (w *Worlds) Load(ctx context.Context) error {
 
 			if err := world.LoadFromEntry(gctx, &entry, true); err != nil {
 				return errors.WithMessagef(err, "failed to load world from entry: %s", world.GetID())
+			}
+			if err := world.Initialize(gctx); err != nil {
+				return errors.WithMessagef(err, "failed to initialize world: %s", world.GetID())
 			}
 
 			w.worlds.Store(world.GetID(), world)
