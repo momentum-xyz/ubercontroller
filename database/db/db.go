@@ -9,8 +9,8 @@ import (
 var _ database.DB = (*DB)(nil)
 
 type DB struct {
-	conn   *pgxpool.Pool
-	common database.CommonDB
+	conn *pgxpool.Pool
+	database.CommonDB
 	database.NodesDB
 	database.WorldsDB
 	database.SpacesDB
@@ -33,7 +33,7 @@ func NewDB(
 ) *DB {
 	return &DB{
 		conn:         conn,
-		common:       common,
+		CommonDB:     common,
 		NodesDB:      nodes,
 		WorldsDB:     worlds,
 		SpacesDB:     spaces,

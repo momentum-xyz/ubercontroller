@@ -10,6 +10,7 @@ import (
 )
 
 type DB interface {
+	CommonDB
 	NodesDB
 	WorldsDB
 	SpacesDB

@@ -6,9 +6,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-// MergeStructs merges optional structure with default one.
-// If optional struct is nil, returns passed default one,
-// otherwise returns pointer to new struct with merged fields.
+// MergeStructs merge optional structure with default one.
+// If optional struct is nil, return passed default one,
+// otherwise return pointer to new struct with merged fields.
 func MergeStructs[T any](opt, def *T) *T {
 	if opt == nil {
 		return def
