@@ -45,8 +45,8 @@ type UsersDB interface {
 }
 
 type Assets2dDB interface {
-	Assets2dInsertAsset(ctx context.Context, asset2d *entry.Asset2d) error
-	Assets2dInsertAssets(ctx context.Context, assets2d []*entry.Asset2d) error
+	Assets2dUpsetAsset(ctx context.Context, asset2d *entry.Asset2d) error
+	Assets2dUpsetAssets(ctx context.Context, assets2d []*entry.Asset2d) error
 	Assets2dRemoveAssetByID(ctx context.Context, asset2dID uuid.UUID) error
 	Assets2dRemoveAssetByIDs(ctx context.Context, asset2dIDs []uuid.UUID) error
 	Assets2dUpdateAssetName(ctx context.Context, asset2dID uuid.UUID, name string) error
@@ -54,8 +54,8 @@ type Assets2dDB interface {
 }
 
 type Assets3dDB interface {
-	Assets3dInsertAsset(ctx context.Context, asset3d *entry.Asset3d) error
-	Assets3dInsertAssets(ctx context.Context, assets3d []*entry.Asset3d) error
+	Assets3dUpsetAsset(ctx context.Context, asset3d *entry.Asset3d) error
+	Assets3dUpsetAssets(ctx context.Context, assets3d []*entry.Asset3d) error
 	Assets3dRemoveAssetByID(ctx context.Context, asset3dID uuid.UUID) error
 	Assets3dRemoveAssetByIDs(ctx context.Context, asset3dIDs []uuid.UUID) error
 	Assets3dUpdateAssetName(ctx context.Context, asset3dID uuid.UUID, name string) error
@@ -63,8 +63,8 @@ type Assets3dDB interface {
 }
 
 type SpaceTypesDB interface {
-	SpaceTypesInsertSpaceType(ctx context.Context, spaceType *entry.SpaceType) error
-	SpaceTypesInsertSpaceTypes(ctx context.Context, spaceTypes []*entry.SpaceType) error
+	SpaceTypesUpsetSpaceType(ctx context.Context, spaceType *entry.SpaceType) error
+	SpaceTypesUpsetSpaceTypes(ctx context.Context, spaceTypes []*entry.SpaceType) error
 	SpaceTypesRemoveSpaceTypeByID(ctx context.Context, spaceTypeID uuid.UUID) error
 	SpaceTypesRemoveSpaceTypeByIDs(ctx context.Context, spaceTypeIDs []uuid.UUID) error
 	SpaceTypesUpdateSpaceTypeName(ctx context.Context, spaceTypeID uuid.UUID, name string) error

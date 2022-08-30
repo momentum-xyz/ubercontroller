@@ -87,6 +87,6 @@ func (s *Space) SendToUser(userID uuid.UUID, msg *websocket.PreparedMessage, rec
 	return errors.Errorf("implement me")
 }
 
-func (s *Space) SendToUsers(msg *websocket.PreparedMessage, recursive bool) error {
+func (s *Space) Broadcast(msg *websocket.PreparedMessage, recursive bool) error {
 	return errors.Errorf("implement me")
 }

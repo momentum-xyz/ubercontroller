@@ -23,12 +23,12 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 }
 
 // TODO: implement
-func (db *DB) Assets3dInsertAsset(ctx context.Context, asset3d *entry.Asset3d) error {
+func (db *DB) Assets3dUpsetAsset(ctx context.Context, asset3d *entry.Asset3d) error {
 	return nil
 }
 
 // TODO: implement
-func (db *DB) Assets3dInsertAssets(ctx context.Context, assets3d []*entry.Asset3d) error {
+func (db *DB) Assets3dUpsetAssets(ctx context.Context, assets3d []*entry.Asset3d) error {
 	return nil
 }
 

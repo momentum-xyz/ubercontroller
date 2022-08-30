@@ -23,12 +23,12 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 }
 
 // TODO: implement
-func (db *DB) SpaceTypesInsertSpaceType(ctx context.Context, spaceType *entry.SpaceType) error {
+func (db *DB) SpaceTypesUpsetSpaceType(ctx context.Context, spaceType *entry.SpaceType) error {
 	return nil
 }
 
 // TODO: implement
-func (db *DB) SpaceTypesInsertSpaceTypes(ctx context.Context, spaceTypes []*entry.SpaceType) error {
+func (db *DB) SpaceTypesUpsetSpaceTypes(ctx context.Context, spaceTypes []*entry.SpaceType) error {
 	return nil
 }
 

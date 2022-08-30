@@ -85,7 +85,7 @@ type Space interface {
 	RemoveUser(user User, updateDB bool) error
 
 	SendToUser(userID uuid.UUID, msg *websocket.PreparedMessage, recursive bool) error
-	SendToUsers(msg *websocket.PreparedMessage, recursive bool) error
+	Broadcast(msg *websocket.PreparedMessage, recursive bool) error
 }
 
 type User interface {
