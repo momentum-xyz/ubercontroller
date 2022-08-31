@@ -24,6 +24,10 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB, spacesDB database.Spa
 	}
 }
 
+func (db *DB) WorldsGetWorldIDs(ctx context.Context) ([]uuid.UUID, error) {
+	return db.spaces.SpacesGetSpaceIDsByParentID(ctx, uuid.Nil)
+}
+
 func (db *DB) WorldsGetWorlds(ctx context.Context) ([]*entry.Space, error) {
 	return db.spaces.SpacesGetSpacesByParentID(ctx, uuid.Nil)
 }

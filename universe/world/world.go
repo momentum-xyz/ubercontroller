@@ -3,12 +3,14 @@ package world
 import (
 	"context"
 
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types"
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/space"
 	"github.com/momentum-xyz/ubercontroller/utils"
@@ -42,10 +44,40 @@ func (w *World) Initialize(ctx context.Context) error {
 	return w.Space.Initialize(ctx)
 }
 
+// TODO: implement
 func (w *World) Run(ctx context.Context) error {
-	return errors.Errorf("implement me")
+	return nil
 }
 
+// TODO: implement
 func (w *World) Stop() error {
-	return errors.Errorf("implement me")
+	return nil
+}
+
+func (w *World) RegisterAPI(r *gin.Engine) {
+
+}
+
+func (w *World) Load(ctx context.Context) error {
+	entry, err := w.db.SpacesGetSpaceByID(ctx, w.GetID())
+	if err != nil {
+		return errors.WithMessage(err, "failed to get space by id")
+	}
+
+	return w.LoadFromEntry(entry, true)
+}
+
+func (w *World) Save(ctx context.Context) error {
+	spaces := w.GetSpaces(true)
+
+	entries := make([]*entry.Space, len(spaces))
+	for _, space := range spaces {
+		entries = append(entries, space.GetEntry())
+	}
+
+	if err := w.db.SpacesUpsertSpaces(ctx, entries); err != nil {
+		return errors.WithMessage(err, "failed to upsert spaces")
+	}
+
+	return nil
 }

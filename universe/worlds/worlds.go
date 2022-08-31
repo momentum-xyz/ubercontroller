@@ -3,19 +3,25 @@ package worlds
 import (
 	"context"
 
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/momentum-xyz/ubercontroller/database"
+	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/generics"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/world"
+	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 var _ universe.Worlds = (*Worlds)(nil)
 
 type Worlds struct {
+	ctx    context.Context
+	log    *zap.SugaredLogger
 	db     database.DB
 	worlds *generics.SyncMap[uuid.UUID, universe.World]
 }
@@ -28,6 +34,14 @@ func NewWorlds(db database.DB) *Worlds {
 }
 
 func (w *Worlds) Initialize(ctx context.Context) error {
+	log := utils.GetFromAny(ctx.Value(types.ContextLoggerKey), (*zap.SugaredLogger)(nil))
+	if log == nil {
+		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.ContextLoggerKey))
+	}
+
+	w.ctx = ctx
+	w.log = log
+
 	return nil
 }
 
@@ -36,30 +50,190 @@ func (w *Worlds) GetWorld(worldID uuid.UUID) (universe.World, bool) {
 	return world, ok
 }
 
-// GetWorlds returns existing sync map with all stored worlds.
-func (w *Worlds) GetWorlds() *generics.SyncMap[uuid.UUID, universe.World] {
-	return w.worlds
+func (w *Worlds) GetWorlds() map[uuid.UUID]universe.World {
+	worlds := make(map[uuid.UUID]universe.World)
+
+	w.worlds.Mu.RLock()
+	defer w.worlds.Mu.RUnlock()
+
+	for id, world := range w.worlds.Data {
+		worlds[id] = world
+	}
+
+	return worlds
+}
+
+func (w *Worlds) AddWorld(world universe.World, updateDB bool) error {
+	w.worlds.Mu.Lock()
+	defer w.worlds.Mu.Unlock()
+
+	if _, ok := w.worlds.Data[world.GetID()]; ok {
+		return errors.Errorf("world already exists")
+	}
+
+	if updateDB {
+		if err := world.Save(w.ctx); err != nil {
+			return errors.WithMessage(err, "failed to save world")
+		}
+	}
+
+	w.worlds.Data[world.GetID()] = world
+
+	return nil
+}
+
+func (w *Worlds) AddWorlds(worlds []universe.World, updateDB bool) error {
+	w.worlds.Mu.Lock()
+	defer w.worlds.Mu.Unlock()
+
+	for i := range worlds {
+		if _, ok := w.worlds.Data[worlds[i].GetID()]; ok {
+			return errors.Errorf("world already exists: %s", worlds[i].GetID())
+		}
+	}
+
+	if updateDB {
+		group, _ := errgroup.WithContext(w.ctx)
+		for i := range worlds {
+			world := worlds[i]
+
+			group.Go(func() error {
+				if err := world.Save(w.ctx); err != nil {
+					return errors.WithMessagef(err, "failed to save world: %s", world.GetID())
+				}
+				return nil
+			})
+		}
+		if err := group.Wait(); err != nil {
+			return errors.WithMessage(err, "failed to update db")
+		}
+	}
+
+	for i := range worlds {
+		w.worlds.Data[worlds[i].GetID()] = worlds[i]
+	}
+
+	return nil
+}
+
+func (w *Worlds) RemoveWorld(world universe.World, updateDB bool) error {
+	w.worlds.Mu.Lock()
+	defer w.worlds.Mu.Unlock()
+
+	if _, ok := w.worlds.Data[world.GetID()]; !ok {
+		return errors.Errorf("world not found")
+	}
+
+	if updateDB {
+		spaces := world.GetSpaces(true)
+		ids := make([]uuid.UUID, len(spaces))
+		for _, space := range spaces {
+			ids = append(ids, space.GetID())
+		}
+		if err := w.db.SpacesRemoveSpacesByIDs(w.ctx, ids); err != nil {
+			return errors.WithMessage(err, "failed to remove spaces by ids")
+		}
+	}
+
+	delete(w.worlds.Data, world.GetID())
+
+	return nil
+}
+
+func (w *Worlds) RemoveWorlds(worlds []universe.World, updateDB bool) error {
+	w.worlds.Mu.Lock()
+	defer w.worlds.Mu.Unlock()
+
+	for i := range worlds {
+		if _, ok := w.worlds.Data[worlds[i].GetID()]; !ok {
+			return errors.Errorf("world not found: %s", worlds[i].GetID())
+		}
+	}
+
+	if updateDB {
+		group, _ := errgroup.WithContext(w.ctx)
+		for i := range worlds {
+			world := worlds[i]
+
+			group.Go(func() error {
+				spaces := world.GetSpaces(true)
+				ids := make([]uuid.UUID, len(spaces))
+				for i := range spaces {
+					ids = append(ids, spaces[i].GetID())
+				}
+
+				if err := w.db.SpacesRemoveSpacesByIDs(w.ctx, ids); err != nil {
+					return errors.WithMessagef(err, "failed to remove spaces by ids: %s", world.GetID())
+				}
+
+				return nil
+			})
+		}
+		if err := group.Wait(); err != nil {
+			return errors.WithMessage(err, "failed to update db")
+		}
+	}
+
+	for i := range worlds {
+		delete(w.worlds.Data, worlds[i].GetID())
+	}
+
+	return nil
+}
+
+func (w *Worlds) Run(ctx context.Context) error {
+	w.worlds.Mu.RLock()
+	defer w.worlds.Mu.RUnlock()
+
+	for _, world := range w.worlds.Data {
+		world := world
+
+		go func() {
+			if err := world.Run(ctx); err != nil {
+				w.log.Error(errors.WithMessagef(err, "failed to run world: %s", world.GetID()))
+			}
+		}()
+	}
+
+	return nil
+}
+
+func (w *Worlds) Stop() error {
+	w.worlds.Mu.RLock()
+	defer w.worlds.Mu.RUnlock()
+
+	for _, world := range w.worlds.Data {
+		if err := world.Stop(); err != nil {
+			return errors.WithMessagef(err, "failed to stop world: %s", world.GetID())
+		}
+	}
+
+	return nil
+}
+
+func (w *Worlds) RegisterAPI(r *gin.Engine) {
+
 }
 
 func (w *Worlds) Load(ctx context.Context) error {
-	worlds, err := w.db.WorldsGetWorlds(ctx)
+	worldIDs, err := w.db.WorldsGetWorldIDs(ctx)
 	if err != nil {
-		return errors.WithMessage(err, "failed to get worlds from db")
+		return errors.WithMessage(err, "failed to get world ids from db")
 	}
 
 	group, _ := errgroup.WithContext(ctx)
 
-	for i := range worlds {
-		entry := worlds[i]
+	for i := range worldIDs {
+		worldID := worldIDs[i]
 
 		group.Go(func() error {
-			world := world.NewWorld(*entry.SpaceID, w.db)
+			world := world.NewWorld(worldID, w.db)
 
 			if err := world.Initialize(ctx); err != nil {
 				return errors.WithMessagef(err, "failed to initialize world: %s", world.GetID())
 			}
-			if err := world.LoadFromEntry(entry, true); err != nil {
-				return errors.WithMessagef(err, "failed to load world from entry: %s", world.GetID())
+			if err := world.Load(ctx); err != nil {
+				return errors.WithMessagef(err, "failed to load world: %s", world.GetID())
 			}
 
 			w.worlds.Store(world.GetID(), world)
@@ -71,6 +245,22 @@ func (w *Worlds) Load(ctx context.Context) error {
 	return group.Wait()
 }
 
-func (w *Worlds) Update(updateDB bool) error {
-	return errors.Errorf("implement me")
+func (w *Worlds) Save(ctx context.Context) error {
+	w.worlds.Mu.RLock()
+	defer w.worlds.Mu.RUnlock()
+
+	group, _ := errgroup.WithContext(ctx)
+
+	for _, world := range w.worlds.Data {
+		world := world
+
+		group.Go(func() error {
+			if err := world.Save(ctx); err != nil {
+				return errors.WithMessagef(err, "failed to save world: %s", world.GetID())
+			}
+			return nil
+		})
+	}
+
+	return group.Wait()
 }

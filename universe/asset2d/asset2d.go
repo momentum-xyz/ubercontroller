@@ -22,14 +22,15 @@ type Asset2d struct {
 	log   *zap.SugaredLogger
 	db    database.DB
 	mu    sync.RWMutex
-	id    uuid.UUID
 	entry *entry.Asset2d
 }
 
-func NewAsset2D(id uuid.UUID, db database.DB) *Asset2d {
+func NewAsset2d(id uuid.UUID, db database.DB) *Asset2d {
 	return &Asset2d{
-		id: id,
 		db: db,
+		entry: &entry.Asset2d{
+			Asset2dID: &id,
+		},
 	}
 }
 
@@ -37,7 +38,7 @@ func (a *Asset2d) GetID() uuid.UUID {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
-	return a.id
+	return *a.entry.Asset2dID
 }
 
 func (a *Asset2d) Initialize(ctx context.Context) error {
@@ -64,7 +65,7 @@ func (a *Asset2d) SetName(name string, updateDB bool) error {
 	defer a.mu.Unlock()
 
 	if updateDB {
-		if err := a.db.Assets2dUpdateAssetName(a.ctx, a.id, name); err != nil {
+		if err := a.db.Assets2dUpdateAssetName(a.ctx, *a.entry.Asset2dID, name); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -72,14 +73,6 @@ func (a *Asset2d) SetName(name string, updateDB bool) error {
 	*a.entry.Name = name
 
 	return nil
-}
-
-func (a *Asset2d) LoadFromEntry(entry *entry.Asset2d) error {
-	return errors.Errorf("implement me")
-}
-
-func (a *Asset2d) Update(updateDB bool) error {
-	return errors.Errorf("implement me")
 }
 
 func (a *Asset2d) GetOptions() *entry.Asset2dOptions {
@@ -94,12 +87,25 @@ func (a *Asset2d) SetOptions(options *entry.Asset2dOptions, updateDB bool) error
 	defer a.mu.Unlock()
 
 	if updateDB {
-		if err := a.db.Assets2dUpdateAssetOptions(a.ctx, a.id, options); err != nil {
+		if err := a.db.Assets2dUpdateAssetOptions(a.ctx, *a.entry.Asset2dID, options); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
 
 	a.entry.Options = options
+
+	return nil
+}
+
+func (a *Asset2d) GetEntry() *entry.Asset2d {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+
+	return a.entry
+}
+
+func (a *Asset2d) LoadFromEntry(entry *entry.Asset2d) error {
+	a.entry = entry
 
 	return nil
 }

@@ -23,6 +23,11 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 }
 
 // TODO: implement
+func (db *DB) SpaceTypesGetSpaceTypes(ctx context.Context) ([]*entry.SpaceType, error) {
+	return nil, nil
+}
+
+// TODO: implement
 func (db *DB) SpaceTypesUpsetSpaceType(ctx context.Context, spaceType *entry.SpaceType) error {
 	return nil
 }
@@ -38,7 +43,7 @@ func (db *DB) SpaceTypesRemoveSpaceTypeByID(ctx context.Context, spaceTypeID uui
 }
 
 // TODO: implement
-func (db *DB) SpaceTypesRemoveSpaceTypeByIDs(ctx context.Context, spaceTypeIDs []uuid.UUID) error {
+func (db *DB) SpaceTypesRemoveSpaceTypesByIDs(ctx context.Context, spaceTypeIDs []uuid.UUID) error {
 	return nil
 }
 

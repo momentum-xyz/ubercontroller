@@ -2,14 +2,16 @@ package node
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -19,9 +21,11 @@ import (
 var _ universe.Node = (*Node)(nil)
 
 type Node struct {
+	cfg        *config.Config
 	ctx        context.Context
 	log        *zap.SugaredLogger
 	db         database.DB
+	router     *gin.Engine
 	worlds     universe.Worlds
 	assets2d   universe.Assets2d
 	assets3d   universe.Assets3d
@@ -32,6 +36,7 @@ type Node struct {
 
 func NewNode(
 	id uuid.UUID,
+	cfg *config.Config,
 	db database.DB,
 	worlds universe.Worlds,
 	assets2D universe.Assets2d,
@@ -40,7 +45,9 @@ func NewNode(
 ) *Node {
 	return &Node{
 		id:         id,
+		cfg:        cfg,
 		db:         db,
+		router:     gin.Default(),
 		worlds:     worlds,
 		assets2d:   assets2D,
 		assets3d:   assets3D,
@@ -64,6 +71,19 @@ func (n *Node) Initialize(ctx context.Context) error {
 	n.ctx = ctx
 	n.log = log
 
+	if err := n.assets2d.Initialize(ctx); err != nil {
+		return errors.WithMessage(err, "failed to initialize assets 2d")
+	}
+	if err := n.assets3d.Initialize(ctx); err != nil {
+		return errors.WithMessage(err, "failed to initialize assets 3d")
+	}
+	if err := n.spaceTypes.Initialize(ctx); err != nil {
+		return errors.WithMessage(err, "failed to initialize space types")
+	}
+	if err := n.worlds.Initialize(ctx); err != nil {
+		return errors.WithMessage(err, "failed to initialize worlds")
+	}
+
 	return nil
 }
 
@@ -84,49 +104,22 @@ func (n *Node) GetSpaceTypes() universe.SpaceTypes {
 }
 
 func (n *Node) Run(ctx context.Context) error {
-	group, _ := errgroup.WithContext(ctx)
-	worlds := n.GetWorlds().GetWorlds()
-
-	worlds.Mu.RLock()
-	for _, world := range worlds.Data {
-		world := world
-
-		group.Go(func() error {
-			if err := world.Run(ctx); err != nil {
-				return errors.WithMessagef(err, "failed to run world: %s", world.GetID())
-			}
-			return nil
-		})
+	if err := n.worlds.Run(ctx); err != nil {
+		return errors.WithMessage(err, "failed to run worlds")
 	}
-	worlds.Mu.RUnlock()
-
-	return group.Wait()
+	return n.router.Run(fmt.Sprintf("%s:%d", n.cfg.Settings.Address, n.cfg.Settings.Port))
 }
 
 func (n *Node) Stop() error {
-	var wg sync.WaitGroup
-	var errs *multierror.Error
-	var errsMu sync.Mutex
-	worlds := n.GetWorlds().GetWorlds()
+	return n.worlds.Stop()
+}
 
-	worlds.Mu.RLock()
-	for _, world := range worlds.Data {
-		wg.Add(1)
-
-		go func(world universe.World) {
-			defer wg.Done()
-
-			if err := world.Stop(); err != nil {
-				errsMu.Lock()
-				defer errsMu.Unlock()
-
-				errs = multierror.Append(errs, errors.WithMessagef(err, "failed to stop world: %s", world.GetID()))
-			}
-		}(world)
-	}
-	worlds.Mu.RUnlock()
-
-	return errs.ErrorOrNil()
+// TODO: reimplement
+func (n *Node) RegisterAPI(r *gin.Engine) {
+	n.assets2d.RegisterAPI(n.router)
+	n.assets3d.RegisterAPI(n.router)
+	n.spaceTypes.RegisterAPI(n.router)
+	n.worlds.RegisterAPI(n.router)
 }
 
 func (n *Node) Load(ctx context.Context) error {
@@ -146,9 +139,30 @@ func (n *Node) Load(ctx context.Context) error {
 		return errors.WithMessage(err, "failed to load node data")
 	}
 
-	return n.worlds.Load(ctx)
+	if err := n.worlds.Load(ctx); err != nil {
+		return errors.WithMessage(err, "failed to load worlds")
+	}
+
+	n.RegisterAPI(n.router)
+
+	return nil
 }
 
-func (n *Node) Update(updateDB bool) error {
-	return errors.Errorf("implement me")
+func (n *Node) Save(ctx context.Context) error {
+	group, _ := errgroup.WithContext(ctx)
+
+	group.Go(func() error {
+		return n.assets2d.Save(ctx)
+	})
+	group.Go(func() error {
+		return n.assets3d.Save(ctx)
+	})
+	group.Go(func() error {
+		return n.spaceTypes.Save(ctx)
+	})
+	group.Go(func() error {
+		return n.worlds.Save(ctx)
+	})
+
+	return group.Wait()
 }

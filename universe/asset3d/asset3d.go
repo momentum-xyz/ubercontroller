@@ -22,14 +22,15 @@ type Asset3d struct {
 	log   *zap.SugaredLogger
 	db    database.DB
 	mu    sync.RWMutex
-	id    uuid.UUID
 	entry *entry.Asset3d
 }
 
-func NewAsset3D(id uuid.UUID, db database.DB) *Asset3d {
+func NewAsset3d(id uuid.UUID, db database.DB) *Asset3d {
 	return &Asset3d{
-		id: id,
 		db: db,
+		entry: &entry.Asset3d{
+			Asset3dID: &id,
+		},
 	}
 }
 
@@ -37,7 +38,7 @@ func (a *Asset3d) GetID() uuid.UUID {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
-	return a.id
+	return *a.entry.Asset3dID
 }
 
 func (a *Asset3d) Initialize(ctx context.Context) error {
@@ -64,7 +65,7 @@ func (a *Asset3d) SetName(name string, updateDB bool) error {
 	defer a.mu.Unlock()
 
 	if updateDB {
-		if err := a.db.Assets3dUpdateAssetName(a.ctx, a.id, name); err != nil {
+		if err := a.db.Assets3dUpdateAssetName(a.ctx, *a.entry.Asset3dID, name); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -86,7 +87,7 @@ func (a *Asset3d) SetOptions(options *entry.Asset3dOptions, updateDB bool) error
 	defer a.mu.Unlock()
 
 	if updateDB {
-		if err := a.db.Assets3dUpdateAssetOptions(a.ctx, a.id, options); err != nil {
+		if err := a.db.Assets3dUpdateAssetOptions(a.ctx, *a.entry.Asset3dID, options); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -96,10 +97,15 @@ func (a *Asset3d) SetOptions(options *entry.Asset3dOptions, updateDB bool) error
 	return nil
 }
 
-func (a *Asset3d) LoadFromEntry(entry *entry.Asset3d) error {
-	return errors.Errorf("implement me")
+func (a *Asset3d) GetEntry() *entry.Asset3d {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+
+	return a.entry
 }
 
-func (a *Asset3d) Update(updateDB bool) error {
-	return errors.Errorf("implement me")
+func (a *Asset3d) LoadFromEntry(entry *entry.Asset3d) error {
+	a.entry = entry
+
+	return nil
 }

@@ -24,8 +24,28 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 }
 
 // TODO: implement
+func (db *DB) SpacesGetSpaceByID(ctx context.Context, spaceID uuid.UUID) (*entry.Space, error) {
+	return nil, nil
+}
+
+// TODO: implement
+func (db *DB) SpacesGetSpaceIDsByParentID(ctx context.Context, parentID uuid.UUID) ([]uuid.UUID, error) {
+	return nil, nil
+}
+
+// TODO: implement
 func (db *DB) SpacesGetSpacesByParentID(ctx context.Context, parentID uuid.UUID) ([]*entry.Space, error) {
 	return nil, nil
+}
+
+// TODO: implement
+func (db *DB) SpacesRemoveSpaceByID(ctx context.Context, spaceID uuid.UUID) error {
+	return nil
+}
+
+// TODO: implement
+func (db *DB) SpacesRemoveSpacesByIDs(ctx context.Context, spaceIDs []uuid.UUID) error {
+	return nil
 }
 
 // TODO: implement
@@ -60,5 +80,15 @@ func (db *DB) SpacesUpdateSpaceSpaceTypeID(ctx context.Context, spaceID, spaceTy
 
 // TODO: implement
 func (db *DB) SpacesUpdateSpaceOptions(ctx context.Context, spaceID uuid.UUID, options *entry.SpaceOptions) error {
+	return nil
+}
+
+// TODO: implement
+func (db *DB) SpacesUpsertSpace(ctx context.Context, space *entry.Space) error {
+	return nil
+}
+
+// TODO: implement
+func (db *DB) SpacesUpsertSpaces(ctx context.Context, spaces []*entry.Space) error {
 	return nil
 }

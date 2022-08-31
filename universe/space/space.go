@@ -252,8 +252,30 @@ func (s *Space) SetOptions(options *entry.SpaceOptions, updateDB bool) error {
 	return nil
 }
 
-func (s *Space) Update(recursive, updateDB bool) error {
-	return errors.Errorf("implement me")
+func (s *Space) GetEntry() *entry.Space {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	entry := entry.Space{
+		SpaceID:  &s.id,
+		OwnerID:  &s.ownerID,
+		Options:  s.options,
+		Position: &s.position,
+	}
+	if s.spaceType != nil {
+		entry.SpaceTypeID = utils.GetPtr(s.spaceType.GetID())
+	}
+	if s.parent != nil {
+		entry.ParentID = utils.GetPtr(s.parent.GetID())
+	}
+	if s.asset2d != nil {
+		entry.Asset2dID = utils.GetPtr(s.asset2d.GetID())
+	}
+	if s.asset3d != nil {
+		entry.Asset3dID = utils.GetPtr(s.asset3d.GetID())
+	}
+
+	return &entry
 }
 
 func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {

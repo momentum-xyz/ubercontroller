@@ -2,6 +2,7 @@ package types
 
 import (
 	"context"
+	"github.com/gin-gonic/gin"
 
 	"github.com/google/uuid"
 )
@@ -25,4 +26,21 @@ type Stopper interface {
 type RunStopper interface {
 	Runner
 	Stopper
+}
+
+type Loader interface {
+	Load(ctx context.Context) error
+}
+
+type Saver interface {
+	Save(ctx context.Context) error
+}
+
+type LoadSaver interface {
+	Loader
+	Saver
+}
+
+type APIRegister interface {
+	RegisterAPI(r *gin.Engine)
 }

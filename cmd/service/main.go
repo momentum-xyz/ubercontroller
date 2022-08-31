@@ -53,7 +53,7 @@ func run() error {
 		return errors.WithMessage(err, "failed to create db")
 	}
 
-	node, err := createNode(ctx, db)
+	node, err := createNode(ctx, cfg, db)
 	if err != nil {
 		return errors.WithMessage(err, "failed to create node")
 	}
@@ -73,27 +73,18 @@ func run() error {
 	return nil
 }
 
-func createNode(ctx context.Context, db database.DB) (universe.Node, error) {
-	assets2d := assets2d.NewAssets2D(db)
-	assets3d := assets3d.NewAssets3D(db)
-	spaceTypes := space_types.NewSpaceTypes(db)
-	worlds := worlds.NewWorlds(db)
-
-	node := node.NewNode(uuid.Nil, db, worlds, assets2d, assets3d, spaceTypes)
+func createNode(ctx context.Context, cfg *config.Config, db database.DB) (universe.Node, error) {
+	node := node.NewNode(
+		uuid.Nil,
+		cfg,
+		db,
+		worlds.NewWorlds(db),
+		assets2d.NewAssets2d(db),
+		assets3d.NewAssets3d(db),
+		space_types.NewSpaceTypes(db),
+	)
 	universe.InitializeNode(node)
 
-	if err := assets2d.Initialize(ctx); err != nil {
-		return nil, errors.WithMessage(err, "failed to initialize assets 2d")
-	}
-	if err := assets3d.Initialize(ctx); err != nil {
-		return nil, errors.WithMessage(err, "failed to initialize assets 3d")
-	}
-	if err := spaceTypes.Initialize(ctx); err != nil {
-		return nil, errors.WithMessage(err, "failed to initialize space types")
-	}
-	if err := worlds.Initialize(ctx); err != nil {
-		return nil, errors.WithMessage(err, "failed to initialize worlds")
-	}
 	if err := node.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize node")
 	}

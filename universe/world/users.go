@@ -5,7 +5,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/ubercontroller/types/generics"
 	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
@@ -14,12 +13,20 @@ func (w *World) GetUser(userID uuid.UUID, recursive bool) (universe.User, bool) 
 	return user, ok
 }
 
-// GetUsers always returns existing sync map with all users in all dependent spaces.
-func (w *World) GetUsers(recursive bool) *generics.SyncMap[uuid.UUID, universe.User] {
-	return w.Users
+func (w *World) GetUsers(recursive bool) map[uuid.UUID]universe.User {
+	users := make(map[uuid.UUID]universe.User)
+
+	w.Users.Mu.RLock()
+	defer w.Users.Mu.RUnlock()
+
+	for id, user := range w.Users.Data {
+		users[id] = user
+	}
+
+	return users
 }
 
-func (w *World) AddUser(user universe.User, updateDB bool) error {
+func (w *World) AttachUser(user universe.User, updateDB bool) error {
 	w.Users.Mu.Lock()
 	defer w.Users.Mu.Unlock()
 
@@ -33,7 +40,7 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 
 // RemoveUser remove user from world and space.
 // TODO: think about rollback on error
-func (w *World) RemoveUser(user universe.User, updateDB bool) error {
+func (w *World) DetachUser(user universe.User, updateDB bool) error {
 	w.Users.Mu.Lock()
 	defer w.Users.Mu.Unlock()
 
