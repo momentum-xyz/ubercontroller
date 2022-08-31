@@ -25,7 +25,7 @@ type Space struct {
 	log       *zap.SugaredLogger
 	db        database.DB
 	Users     *generics.SyncMap[uuid.UUID, universe.User]
-	children  *generics.SyncMap[uuid.UUID, universe.Space]
+	Children  *generics.SyncMap[uuid.UUID, universe.Space]
 	mu        sync.RWMutex
 	id        uuid.UUID
 	ownerID   uuid.UUID
@@ -43,7 +43,7 @@ func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
 		id:       id,
 		db:       db,
 		Users:    generics.NewSyncMap[uuid.UUID, universe.User](),
-		children: generics.NewSyncMap[uuid.UUID, universe.Space](),
+		Children: generics.NewSyncMap[uuid.UUID, universe.Space](),
 		world:    world,
 	}
 }
@@ -290,8 +290,6 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 		return errors.WithMessage(err, "failed to load dependencies")
 	}
 
-	universe.GetNode().AddAPIRegister(s)
-
 	if !recursive {
 		return nil
 	}
@@ -319,7 +317,7 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 				return errors.WithMessagef(err, "failed to set parent: %s", space.GetID())
 			}
 
-			s.children.Store(space.GetID(), space)
+			s.Children.Store(space.GetID(), space)
 
 			return nil
 		})

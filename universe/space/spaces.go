@@ -10,7 +10,7 @@ import (
 )
 
 func (s *Space) GetSpace(spaceID uuid.UUID, recursive bool) (universe.Space, bool) {
-	space, ok := s.children.Load(spaceID)
+	space, ok := s.Children.Load(spaceID)
 	if ok {
 		return space, true
 	}
@@ -19,10 +19,10 @@ func (s *Space) GetSpace(spaceID uuid.UUID, recursive bool) (universe.Space, boo
 		return nil, false
 	}
 
-	s.children.Mu.RLock()
-	defer s.children.Mu.RUnlock()
+	s.Children.Mu.RLock()
+	defer s.Children.Mu.RUnlock()
 
-	for _, child := range s.children.Data {
+	for _, child := range s.Children.Data {
 		space, ok := child.GetSpace(spaceID, recursive)
 		if ok {
 			return space, true
@@ -37,10 +37,10 @@ func (s *Space) GetSpace(spaceID uuid.UUID, recursive bool) (universe.Space, boo
 func (s *Space) GetSpaces(recursive bool) map[uuid.UUID]universe.Space {
 	spaces := make(map[uuid.UUID]universe.Space)
 
-	s.children.Mu.RLock()
-	defer s.children.Mu.RUnlock()
+	s.Children.Mu.RLock()
+	defer s.Children.Mu.RUnlock()
 
-	for id, child := range s.children.Data {
+	for id, child := range s.Children.Data {
 		spaces[id] = child
 		if !recursive {
 			continue
@@ -55,8 +55,8 @@ func (s *Space) GetSpaces(recursive bool) map[uuid.UUID]universe.Space {
 }
 
 func (s *Space) AddSpace(space universe.Space, updateDB bool) error {
-	s.children.Mu.Lock()
-	defer s.children.Mu.Unlock()
+	s.Children.Mu.Lock()
+	defer s.Children.Mu.Unlock()
 
 	if err := space.SetParent(s, false); err != nil {
 		return errors.WithMessagef(err, "failed to set parent to space: %s", space.GetID())
@@ -68,14 +68,14 @@ func (s *Space) AddSpace(space universe.Space, updateDB bool) error {
 		}
 	}
 
-	s.children.Data[space.GetID()] = space
+	s.Children.Data[space.GetID()] = space
 
 	return nil
 }
 
 func (s *Space) AddSpaces(spaces []universe.Space, updateDB bool) error {
-	s.children.Mu.Lock()
-	defer s.children.Mu.Unlock()
+	s.Children.Mu.Lock()
+	defer s.Children.Mu.Unlock()
 
 	for i := range spaces {
 		if err := spaces[i].SetParent(s, false); err != nil {
@@ -94,16 +94,16 @@ func (s *Space) AddSpaces(spaces []universe.Space, updateDB bool) error {
 	}
 
 	for i := range spaces {
-		s.children.Data[spaces[i].GetID()] = spaces[i]
+		s.Children.Data[spaces[i].GetID()] = spaces[i]
 	}
 
 	return nil
 }
 
 func (s *Space) RemoveSpace(space universe.Space, recursive, updateDB bool) (bool, error) {
-	s.children.Mu.Lock()
-	if _, ok := s.children.Data[space.GetID()]; ok {
-		defer s.children.Mu.Unlock()
+	s.Children.Mu.Lock()
+	if _, ok := s.Children.Data[space.GetID()]; ok {
+		defer s.Children.Mu.Unlock()
 
 		if err := space.SetParent(nil, false); err != nil {
 			return false, errors.WithMessage(err, "failed to set parent")
@@ -115,20 +115,20 @@ func (s *Space) RemoveSpace(space universe.Space, recursive, updateDB bool) (boo
 			}
 		}
 
-		delete(s.children.Data, space.GetID())
+		delete(s.Children.Data, space.GetID())
 
 		return true, nil
 	}
-	s.children.Mu.Unlock()
+	s.Children.Mu.Unlock()
 
 	if !recursive {
 		return true, nil
 	}
 
-	s.children.Mu.RLock()
-	defer s.children.Mu.RUnlock()
+	s.Children.Mu.RLock()
+	defer s.Children.Mu.RUnlock()
 
-	for _, child := range s.children.Data {
+	for _, child := range s.Children.Data {
 		removed, err := child.RemoveSpace(space, recursive, updateDB)
 		if err != nil {
 			return false, errors.WithMessage(err, "failed to remove space")

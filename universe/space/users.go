@@ -18,10 +18,10 @@ func (s *Space) GetUser(userID uuid.UUID, recursive bool) (universe.User, bool) 
 		return nil, false
 	}
 
-	s.children.Mu.RLock()
-	defer s.children.Mu.RUnlock()
+	s.Children.Mu.RLock()
+	defer s.Children.Mu.RUnlock()
 
-	for _, child := range s.children.Data {
+	for _, child := range s.Children.Data {
 		if user, ok := child.GetUser(userID, recursive); ok {
 			return user, true
 		}
@@ -45,10 +45,10 @@ func (s *Space) GetUsers(recursive bool) map[uuid.UUID]universe.User {
 		return users
 	}
 
-	s.children.Mu.RLock()
-	defer s.children.Mu.RUnlock()
+	s.Children.Mu.RLock()
+	defer s.Children.Mu.RUnlock()
 
-	for _, space := range s.children.Data {
+	for _, space := range s.Children.Data {
 		for id, user := range space.GetUsers(recursive) {
 			users[id] = user
 		}

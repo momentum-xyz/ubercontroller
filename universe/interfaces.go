@@ -42,12 +42,12 @@ type World interface {
 	Space
 	types.RunStopper
 	types.LoadSaver
+	types.APIRegister
 }
 
 type Space interface {
 	types.IDer
 	types.Initializer
-	types.APIRegister
 
 	GetWorld() World
 
