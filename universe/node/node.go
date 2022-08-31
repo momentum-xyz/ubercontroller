@@ -103,6 +103,10 @@ func (n *Node) GetSpaceTypes() universe.SpaceTypes {
 	return n.spaceTypes
 }
 
+func (n *Node) AddAPIRegister(register types.APIRegister) {
+	register.RegisterAPI(n.router)
+}
+
 func (n *Node) Run(ctx context.Context) error {
 	if err := n.worlds.Run(ctx); err != nil {
 		return errors.WithMessage(err, "failed to run worlds")
@@ -112,14 +116,6 @@ func (n *Node) Run(ctx context.Context) error {
 
 func (n *Node) Stop() error {
 	return n.worlds.Stop()
-}
-
-// TODO: reimplement
-func (n *Node) RegisterAPI(r *gin.Engine) {
-	n.assets2d.RegisterAPI(n.router)
-	n.assets3d.RegisterAPI(n.router)
-	n.spaceTypes.RegisterAPI(n.router)
-	n.worlds.RegisterAPI(n.router)
 }
 
 func (n *Node) Load(ctx context.Context) error {
@@ -143,7 +139,7 @@ func (n *Node) Load(ctx context.Context) error {
 		return errors.WithMessage(err, "failed to load worlds")
 	}
 
-	n.RegisterAPI(n.router)
+	n.AddAPIRegister(n)
 
 	return nil
 }

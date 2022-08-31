@@ -3,7 +3,6 @@ package worlds
 import (
 	"context"
 
-	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -211,10 +210,6 @@ func (w *Worlds) Stop() error {
 	return nil
 }
 
-func (w *Worlds) RegisterAPI(r *gin.Engine) {
-
-}
-
 func (w *Worlds) Load(ctx context.Context) error {
 	worldIDs, err := w.db.WorldsGetWorldIDs(ctx)
 	if err != nil {
@@ -242,7 +237,13 @@ func (w *Worlds) Load(ctx context.Context) error {
 		})
 	}
 
-	return group.Wait()
+	if err := group.Wait(); err != nil {
+		return errors.WithMessage(err, "failed to load worlds")
+	}
+
+	universe.GetNode().AddAPIRegister(w)
+
+	return nil
 }
 
 func (w *Worlds) Save(ctx context.Context) error {

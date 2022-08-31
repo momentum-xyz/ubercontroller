@@ -3,7 +3,6 @@ package world
 import (
 	"context"
 
-	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -54,17 +53,19 @@ func (w *World) Stop() error {
 	return nil
 }
 
-func (w *World) RegisterAPI(r *gin.Engine) {
-
-}
-
 func (w *World) Load(ctx context.Context) error {
 	entry, err := w.db.SpacesGetSpaceByID(ctx, w.GetID())
 	if err != nil {
 		return errors.WithMessage(err, "failed to get space by id")
 	}
 
-	return w.LoadFromEntry(entry, true)
+	if err := w.LoadFromEntry(entry, true); err != nil {
+		return errors.WithMessage(err, "failed to load from entry")
+	}
+
+	universe.GetNode().AddAPIRegister(w)
+
+	return nil
 }
 
 func (w *World) Save(ctx context.Context) error {

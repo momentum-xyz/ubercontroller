@@ -20,6 +20,8 @@ type Node interface {
 	GetAssets2d() Assets2d
 	GetAssets3d() Assets3d
 	GetSpaceTypes() SpaceTypes
+
+	AddAPIRegister(register types.APIRegister)
 }
 
 type Worlds interface {
@@ -40,12 +42,12 @@ type World interface {
 	Space
 	types.RunStopper
 	types.LoadSaver
-	types.APIRegister
 }
 
 type Space interface {
 	types.IDer
 	types.Initializer
+	types.APIRegister
 
 	GetWorld() World
 

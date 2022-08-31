@@ -3,7 +3,6 @@ package space_types
 import (
 	"context"
 
-	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -155,10 +154,6 @@ func (s *SpaceTypes) RemoveSpaceTypes(spaceTypes []universe.SpaceType, updateDB 
 	return nil
 }
 
-func (s *SpaceTypes) RegisterAPI(r *gin.Engine) {
-
-}
-
 func (s *SpaceTypes) Load(ctx context.Context) error {
 	spaceTypes, err := s.db.SpaceTypesGetSpaceTypes(ctx)
 	if err != nil {
@@ -177,6 +172,8 @@ func (s *SpaceTypes) Load(ctx context.Context) error {
 
 		s.spaceTypes.Store(*spaceTypes[i].SpaceTypeID, spaceType)
 	}
+
+	universe.GetNode().AddAPIRegister(s)
 
 	return nil
 }

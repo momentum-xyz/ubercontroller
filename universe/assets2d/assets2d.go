@@ -3,7 +3,6 @@ package assets2d
 import (
 	"context"
 
-	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -155,10 +154,6 @@ func (a *Assets2d) RemoveAssets2d(assets2d []universe.Asset2d, updateDB bool) er
 	return nil
 }
 
-func (a *Assets2d) RegisterAPI(r *gin.Engine) {
-
-}
-
 func (a *Assets2d) Load(ctx context.Context) error {
 	assets, err := a.db.Assets2dGetAssets(ctx)
 	if err != nil {
@@ -176,6 +171,8 @@ func (a *Assets2d) Load(ctx context.Context) error {
 		}
 		a.assets.Store(*assets[i].Asset2dID, asset)
 	}
+
+	universe.GetNode().AddAPIRegister(a)
 
 	return nil
 }

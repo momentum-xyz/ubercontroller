@@ -290,6 +290,8 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 		return errors.WithMessage(err, "failed to load dependencies")
 	}
 
+	universe.GetNode().AddAPIRegister(s)
+
 	if !recursive {
 		return nil
 	}
