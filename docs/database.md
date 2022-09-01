@@ -1,5 +1,5 @@
 # Database
-This chapter describes how database connections work inside the controller and what is required in order to connect to an instance.
+This page describes how database connections work inside the controller and what is required in order to connect to an instance.
 
 ### Prerequisites
 You will need an active PostgreSQL instance to be able to utilize the database related functionality inside the application.
@@ -20,7 +20,7 @@ The following environment variables are required in order to connect to the data
 ### Design
 An overview of the current data model that the controller is utilizing can be seen on the diagram below:
 
-![momentum4_datamodel](momentum4_db_schema.svg)
+![momentum4_datamodel](images/momentum4_db_schema.svg)
 
 ### Interfaces
 An interface for the database functions can be found in the database folder (interfaces.go), the names of the functions should describe themselves.

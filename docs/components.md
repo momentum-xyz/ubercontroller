@@ -13,4 +13,4 @@ This application consists of multiple system components that interact with each 
 For information regarding terminology please consult the 'terminology' page. A diagram representing the structure of the controller can be seen on the image below.
 
 
-![controller_restructuring_data_model](controller_restructuring_data_model.jpeg)
+![controller_restructuring_data_model](images/controller_restructuring_data_model.jpeg)
