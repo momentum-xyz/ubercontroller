@@ -39,7 +39,8 @@ func main() {
 func run() error {
 	cfg := config.GetConfig()
 
-	ctx, cancel := context.WithCancel(context.WithValue(context.Background(), types.ContextLoggerKey, log))
+	ctx := context.WithValue(context.Background(), types.ContextLoggerKey, log)
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	pool, err := createDBConnection(ctx, &cfg.Postgres)
