@@ -38,7 +38,7 @@ func (w *World) AttachUser(user universe.User, updateDB bool) error {
 	return nil
 }
 
-// RemoveUser remove user from world and space.
+// DetachUser detach user from world and space.
 // TODO: think about rollback on error
 func (w *World) DetachUser(user universe.User, updateDB bool) error {
 	w.Users.Mu.Lock()

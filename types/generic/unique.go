@@ -1,4 +1,4 @@
-package generics
+package generic
 
 type Unique[V any] struct {
 	val V

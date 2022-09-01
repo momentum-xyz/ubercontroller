@@ -122,7 +122,7 @@ func (s *Space) RemoveSpace(space universe.Space, recursive, updateDB bool) (boo
 	s.Children.Mu.Unlock()
 
 	if !recursive {
-		return true, nil
+		return false, nil
 	}
 
 	s.Children.Mu.RLock()

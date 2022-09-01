@@ -13,7 +13,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
-	"github.com/momentum-xyz/ubercontroller/types/generics"
+	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
@@ -24,8 +24,8 @@ type Space struct {
 	ctx       context.Context
 	log       *zap.SugaredLogger
 	db        database.DB
-	Users     *generics.SyncMap[uuid.UUID, universe.User]
-	Children  *generics.SyncMap[uuid.UUID, universe.Space]
+	Users     *generic.SyncMap[uuid.UUID, universe.User]
+	Children  *generic.SyncMap[uuid.UUID, universe.Space]
 	mu        sync.RWMutex
 	id        uuid.UUID
 	ownerID   uuid.UUID
@@ -42,8 +42,8 @@ func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
 	return &Space{
 		id:       id,
 		db:       db,
-		Users:    generics.NewSyncMap[uuid.UUID, universe.User](),
-		Children: generics.NewSyncMap[uuid.UUID, universe.Space](),
+		Users:    generic.NewSyncMap[uuid.UUID, universe.User](),
+		Children: generic.NewSyncMap[uuid.UUID, universe.Space](),
 		world:    world,
 	}
 }
@@ -294,15 +294,15 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 		return nil
 	}
 
-	spaces, err := s.db.SpacesGetSpacesByParentID(s.ctx, s.GetID())
+	entries, err := s.db.SpacesGetSpacesByParentID(s.ctx, s.GetID())
 	if err != nil {
 		return errors.WithMessagef(err, "failed to get spaces by parent id: %s", s.GetID())
 	}
 
 	group, _ := errgroup.WithContext(s.ctx)
 
-	for i := range spaces {
-		entry := spaces[i]
+	for i := range entries {
+		entry := entries[i]
 
 		group.Go(func() error {
 			space := NewSpace(*entry.SpaceID, s.db, s.world)

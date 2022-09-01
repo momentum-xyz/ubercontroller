@@ -10,7 +10,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
-	"github.com/momentum-xyz/ubercontroller/types/generics"
+	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/space_type"
 	"github.com/momentum-xyz/ubercontroller/utils"
@@ -22,13 +22,13 @@ type SpaceTypes struct {
 	ctx        context.Context
 	log        *zap.SugaredLogger
 	db         database.DB
-	spaceTypes *generics.SyncMap[uuid.UUID, universe.SpaceType]
+	spaceTypes *generic.SyncMap[uuid.UUID, universe.SpaceType]
 }
 
 func NewSpaceTypes(db database.DB) *SpaceTypes {
 	return &SpaceTypes{
 		db:         db,
-		spaceTypes: generics.NewSyncMap[uuid.UUID, universe.SpaceType](),
+		spaceTypes: generic.NewSyncMap[uuid.UUID, universe.SpaceType](),
 	}
 }
 
@@ -154,23 +154,23 @@ func (s *SpaceTypes) RemoveSpaceTypes(spaceTypes []universe.SpaceType, updateDB 
 	return nil
 }
 
-func (s *SpaceTypes) Load(ctx context.Context) error {
-	spaceTypes, err := s.db.SpaceTypesGetSpaceTypes(ctx)
+func (s *SpaceTypes) Load() error {
+	entries, err := s.db.SpaceTypesGetSpaceTypes(s.ctx)
 	if err != nil {
 		return errors.WithMessage(err, "failed to get space types")
 	}
 
-	for i := range spaceTypes {
-		spaceType := space_type.NewSpaceType(*spaceTypes[i].SpaceTypeID, s.db)
+	for i := range entries {
+		spaceType := space_type.NewSpaceType(*entries[i].SpaceTypeID, s.db)
 
-		if err := spaceType.Initialize(ctx); err != nil {
-			return errors.WithMessagef(err, "failed to initialize space type: %s", *spaceTypes[i].SpaceTypeID)
+		if err := spaceType.Initialize(s.ctx); err != nil {
+			return errors.WithMessagef(err, "failed to initialize space type: %s", *entries[i].SpaceTypeID)
 		}
-		if err := spaceType.LoadFromEntry(spaceTypes[i]); err != nil {
-			return errors.WithMessagef(err, "failed to load space type from entry: %s", *spaceTypes[i].SpaceTypeID)
+		if err := spaceType.LoadFromEntry(entries[i]); err != nil {
+			return errors.WithMessagef(err, "failed to load space type from entry: %s", *entries[i].SpaceTypeID)
 		}
 
-		s.spaceTypes.Store(*spaceTypes[i].SpaceTypeID, spaceType)
+		s.spaceTypes.Store(*entries[i].SpaceTypeID, spaceType)
 	}
 
 	universe.GetNode().AddAPIRegister(s)
@@ -178,7 +178,7 @@ func (s *SpaceTypes) Load(ctx context.Context) error {
 	return nil
 }
 
-func (s *SpaceTypes) Save(ctx context.Context) error {
+func (s *SpaceTypes) Save() error {
 	s.spaceTypes.Mu.RLock()
 	defer s.spaceTypes.Mu.RUnlock()
 
@@ -187,7 +187,7 @@ func (s *SpaceTypes) Save(ctx context.Context) error {
 		entries = append(entries, spaceType.GetEntry())
 	}
 
-	if err := s.db.SpaceTypesUpsetSpaceTypes(ctx, entries); err != nil {
+	if err := s.db.SpaceTypesUpsetSpaceTypes(s.ctx, entries); err != nil {
 		return errors.WithMessage(err, "failed to upsert space types")
 	}
 

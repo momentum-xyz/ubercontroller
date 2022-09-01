@@ -71,19 +71,6 @@ func (n *Node) Initialize(ctx context.Context) error {
 	n.ctx = ctx
 	n.log = log
 
-	if err := n.assets2d.Initialize(ctx); err != nil {
-		return errors.WithMessage(err, "failed to initialize assets 2d")
-	}
-	if err := n.assets3d.Initialize(ctx); err != nil {
-		return errors.WithMessage(err, "failed to initialize assets 3d")
-	}
-	if err := n.spaceTypes.Initialize(ctx); err != nil {
-		return errors.WithMessage(err, "failed to initialize space types")
-	}
-	if err := n.worlds.Initialize(ctx); err != nil {
-		return errors.WithMessage(err, "failed to initialize worlds")
-	}
-
 	return nil
 }
 
@@ -107,8 +94,8 @@ func (n *Node) AddAPIRegister(register types.APIRegister) {
 	register.RegisterAPI(n.router)
 }
 
-func (n *Node) Run(ctx context.Context) error {
-	if err := n.worlds.Run(ctx); err != nil {
+func (n *Node) Run() error {
+	if err := n.worlds.Run(); err != nil {
 		return errors.WithMessage(err, "failed to run worlds")
 	}
 	return n.router.Run(fmt.Sprintf("%s:%d", n.cfg.Settings.Address, n.cfg.Settings.Port))
@@ -118,24 +105,24 @@ func (n *Node) Stop() error {
 	return n.worlds.Stop()
 }
 
-func (n *Node) Load(ctx context.Context) error {
-	group, _ := errgroup.WithContext(ctx)
+func (n *Node) Load() error {
+	group, _ := errgroup.WithContext(n.ctx)
 
 	group.Go(func() error {
-		return n.assets2d.Load(ctx)
+		return n.assets2d.Load()
 	})
 	group.Go(func() error {
-		return n.assets3d.Load(ctx)
+		return n.assets3d.Load()
 	})
 	group.Go(func() error {
-		return n.spaceTypes.Load(ctx)
+		return n.spaceTypes.Load()
 	})
 
 	if err := group.Wait(); err != nil {
 		return errors.WithMessage(err, "failed to load node data")
 	}
 
-	if err := n.worlds.Load(ctx); err != nil {
+	if err := n.worlds.Load(); err != nil {
 		return errors.WithMessage(err, "failed to load worlds")
 	}
 
@@ -144,20 +131,20 @@ func (n *Node) Load(ctx context.Context) error {
 	return nil
 }
 
-func (n *Node) Save(ctx context.Context) error {
-	group, _ := errgroup.WithContext(ctx)
+func (n *Node) Save() error {
+	group, _ := errgroup.WithContext(n.ctx)
 
 	group.Go(func() error {
-		return n.assets2d.Save(ctx)
+		return n.assets2d.Save()
 	})
 	group.Go(func() error {
-		return n.assets3d.Save(ctx)
+		return n.assets3d.Save()
 	})
 	group.Go(func() error {
-		return n.spaceTypes.Save(ctx)
+		return n.spaceTypes.Save()
 	})
 	group.Go(func() error {
-		return n.worlds.Save(ctx)
+		return n.worlds.Save()
 	})
 
 	return group.Wait()

@@ -16,7 +16,7 @@ type Initializer interface {
 }
 
 type Runner interface {
-	Run(ctx context.Context) error
+	Run() error
 }
 
 type Stopper interface {
@@ -29,11 +29,11 @@ type RunStopper interface {
 }
 
 type Loader interface {
-	Load(ctx context.Context) error
+	Load() error
 }
 
 type Saver interface {
-	Save(ctx context.Context) error
+	Save() error
 }
 
 type LoadSaver interface {

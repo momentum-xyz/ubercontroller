@@ -19,8 +19,9 @@ var _ universe.World = (*World)(nil)
 
 type World struct {
 	*space.Space
-	db  database.DB
+	ctx context.Context
 	log *zap.SugaredLogger
+	db  database.DB
 }
 
 func NewWorld(id uuid.UUID, db database.DB) *World {
@@ -38,13 +39,14 @@ func (w *World) Initialize(ctx context.Context) error {
 		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.ContextLoggerKey))
 	}
 
+	w.ctx = ctx
 	w.log = log
 
 	return w.Space.Initialize(ctx)
 }
 
 // TODO: implement
-func (w *World) Run(ctx context.Context) error {
+func (w *World) Run() error {
 	return nil
 }
 
@@ -53,8 +55,8 @@ func (w *World) Stop() error {
 	return nil
 }
 
-func (w *World) Load(ctx context.Context) error {
-	entry, err := w.db.SpacesGetSpaceByID(ctx, w.GetID())
+func (w *World) Load() error {
+	entry, err := w.db.SpacesGetSpaceByID(w.ctx, w.GetID())
 	if err != nil {
 		return errors.WithMessage(err, "failed to get space by id")
 	}
@@ -68,7 +70,7 @@ func (w *World) Load(ctx context.Context) error {
 	return nil
 }
 
-func (w *World) Save(ctx context.Context) error {
+func (w *World) Save() error {
 	spaces := w.GetSpaces(true)
 
 	entries := make([]*entry.Space, len(spaces))
@@ -76,7 +78,7 @@ func (w *World) Save(ctx context.Context) error {
 		entries = append(entries, space.GetEntry())
 	}
 
-	if err := w.db.SpacesUpsertSpaces(ctx, entries); err != nil {
+	if err := w.db.SpacesUpsertSpaces(w.ctx, entries); err != nil {
 		return errors.WithMessage(err, "failed to upsert spaces")
 	}
 
