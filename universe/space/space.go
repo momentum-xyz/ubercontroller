@@ -29,7 +29,7 @@ type Space struct {
 	mu        sync.RWMutex
 	id        uuid.UUID
 	ownerID   uuid.UUID
-	position  cmath.Vec3
+	position  *cmath.Vec3
 	options   *entry.SpaceOptions
 	world     universe.World
 	parent    universe.Space
@@ -90,9 +90,9 @@ func (s *Space) SetParent(parent universe.Space, updateDB bool) error {
 	}
 
 	if updateDB {
-		var parentID uuid.UUID
+		var parentID *uuid.UUID
 		if parent != nil {
-			parentID = parent.GetID()
+			parentID = utils.GetPtr(parent.GetID())
 		}
 		if err := s.db.SpacesUpdateSpaceParentID(s.ctx, s.id, parentID); err != nil {
 			return errors.WithMessage(err, "failed to update db")
@@ -104,14 +104,14 @@ func (s *Space) SetParent(parent universe.Space, updateDB bool) error {
 	return nil
 }
 
-func (s *Space) GetPosition() cmath.Vec3 {
+func (s *Space) GetPosition() *cmath.Vec3 {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	return s.position
 }
 
-func (s *Space) SetPosition(position cmath.Vec3, updateDB bool) error {
+func (s *Space) SetPosition(position *cmath.Vec3, updateDB bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -155,21 +155,14 @@ func (s *Space) GetAsset2D() universe.Asset2d {
 	return s.asset2d
 }
 
-func (s *Space) GetAsset3D() universe.Asset3d {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	return s.asset3d
-}
-
 func (s *Space) SetAsset2D(asset2d universe.Asset2d, updateDB bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if updateDB {
-		var asset2dID uuid.UUID
+		var asset2dID *uuid.UUID
 		if asset2d != nil {
-			asset2dID = asset2d.GetID()
+			asset2dID = utils.GetPtr(asset2d.GetID())
 		}
 		if err := s.db.SpacesUpdateSpaceAsset2dID(s.ctx, s.id, asset2dID); err != nil {
 			return errors.WithMessage(err, "failed to update db")
@@ -181,14 +174,21 @@ func (s *Space) SetAsset2D(asset2d universe.Asset2d, updateDB bool) error {
 	return nil
 }
 
+func (s *Space) GetAsset3D() universe.Asset3d {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	return s.asset3d
+}
+
 func (s *Space) SetAsset3D(asset3d universe.Asset3d, updateDB bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if updateDB {
-		var asset3dID uuid.UUID
+		var asset3dID *uuid.UUID
 		if asset3d != nil {
-			asset3dID = asset3d.GetID()
+			asset3dID = utils.GetPtr(asset3d.GetID())
 		}
 		if err := s.db.SpacesUpdateSpaceAsset3dID(s.ctx, s.id, asset3dID); err != nil {
 			return errors.WithMessage(err, "failed to update db")
@@ -208,15 +208,15 @@ func (s *Space) GetSpaceType() universe.SpaceType {
 }
 
 func (s *Space) SetSpaceType(spaceType universe.SpaceType, updateDB bool) error {
+	if spaceType == nil {
+		return errors.Errorf("invalid space type: nil")
+	}
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if updateDB {
-		var spaceTypeID uuid.UUID
-		if spaceType != nil {
-			spaceTypeID = spaceType.GetID()
-		}
-		if err := s.db.SpacesUpdateSpaceSpaceTypeID(s.ctx, s.id, spaceTypeID); err != nil {
+		if err := s.db.SpacesUpdateSpaceSpaceTypeID(s.ctx, s.id, spaceType.GetID()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -260,7 +260,7 @@ func (s *Space) GetEntry() *entry.Space {
 		SpaceID:  &s.id,
 		OwnerID:  &s.ownerID,
 		Options:  s.options,
-		Position: &s.position,
+		Position: s.position,
 	}
 	if s.spaceType != nil {
 		entry.SpaceTypeID = utils.GetPtr(s.spaceType.GetID())
@@ -294,7 +294,7 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 		return nil
 	}
 
-	entries, err := s.db.SpacesGetSpacesByParentID(s.ctx, s.GetID())
+	entries, err := s.db.SpacesGetSpacesByParentID(s.ctx, utils.GetPtr(s.GetID()))
 	if err != nil {
 		return errors.WithMessagef(err, "failed to get spaces by parent id: %s", s.GetID())
 	}
@@ -330,7 +330,7 @@ func (s *Space) loadSelfData(entry *entry.Space) error {
 	if err := s.SetOwnerID(*entry.OwnerID, false); err != nil {
 		return errors.WithMessagef(err, "failed to set owner id: %s", *entry.OwnerID)
 	}
-	if err := s.SetPosition(*entry.Position, false); err != nil {
+	if err := s.SetPosition(entry.Position, false); err != nil {
 		return errors.WithMessage(err, "failed to set position")
 	}
 	if err := s.SetOptions(entry.Options, false); err != nil {

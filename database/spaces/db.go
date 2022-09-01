@@ -29,12 +29,12 @@ func (db *DB) SpacesGetSpaceByID(ctx context.Context, spaceID uuid.UUID) (*entry
 }
 
 // TODO: implement
-func (db *DB) SpacesGetSpaceIDsByParentID(ctx context.Context, parentID uuid.UUID) ([]uuid.UUID, error) {
+func (db *DB) SpacesGetSpaceIDsByParentID(ctx context.Context, parentID *uuid.UUID) ([]uuid.UUID, error) {
 	return nil, nil
 }
 
 // TODO: implement
-func (db *DB) SpacesGetSpacesByParentID(ctx context.Context, parentID uuid.UUID) ([]*entry.Space, error) {
+func (db *DB) SpacesGetSpacesByParentID(ctx context.Context, parentID *uuid.UUID) ([]*entry.Space, error) {
 	return nil, nil
 }
 
@@ -49,12 +49,12 @@ func (db *DB) SpacesRemoveSpacesByIDs(ctx context.Context, spaceIDs []uuid.UUID)
 }
 
 // TODO: implement
-func (db *DB) SpacesUpdateSpaceParentID(ctx context.Context, spaceID, parentID uuid.UUID) error {
+func (db *DB) SpacesUpdateSpaceParentID(ctx context.Context, spaceID uuid.UUID, parentID *uuid.UUID) error {
 	return nil
 }
 
 // TODO: implement
-func (db *DB) SpacesUpdateSpacePosition(ctx context.Context, spaceID uuid.UUID, position cmath.Vec3) error {
+func (db *DB) SpacesUpdateSpacePosition(ctx context.Context, spaceID uuid.UUID, position *cmath.Vec3) error {
 	return nil
 }
 
@@ -64,12 +64,12 @@ func (db *DB) SpacesUpdateSpaceOwnerID(ctx context.Context, spaceID, ownerID uui
 }
 
 // TODO: implement
-func (db *DB) SpacesUpdateSpaceAsset2dID(ctx context.Context, spaceID, asset2dID uuid.UUID) error {
+func (db *DB) SpacesUpdateSpaceAsset2dID(ctx context.Context, spaceID uuid.UUID, asset2dID *uuid.UUID) error {
 	return nil
 }
 
 // TODO: implement
-func (db *DB) SpacesUpdateSpaceAsset3dID(ctx context.Context, spaceID, asset3dID uuid.UUID) error {
+func (db *DB) SpacesUpdateSpaceAsset3dID(ctx context.Context, spaceID uuid.UUID, asset3dID *uuid.UUID) error {
 	return nil
 }
 

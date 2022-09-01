@@ -33,17 +33,17 @@ type WorldsDB interface {
 
 type SpacesDB interface {
 	SpacesGetSpaceByID(ctx context.Context, spaceID uuid.UUID) (*entry.Space, error)
-	SpacesGetSpaceIDsByParentID(ctx context.Context, parentID uuid.UUID) ([]uuid.UUID, error)
-	SpacesGetSpacesByParentID(ctx context.Context, parentID uuid.UUID) ([]*entry.Space, error)
+	SpacesGetSpaceIDsByParentID(ctx context.Context, parentID *uuid.UUID) ([]uuid.UUID, error)
+	SpacesGetSpacesByParentID(ctx context.Context, parentID *uuid.UUID) ([]*entry.Space, error)
 	SpacesUpsertSpace(ctx context.Context, space *entry.Space) error
 	SpacesUpsertSpaces(ctx context.Context, spaces []*entry.Space) error
 	SpacesRemoveSpaceByID(ctx context.Context, spaceID uuid.UUID) error
 	SpacesRemoveSpacesByIDs(ctx context.Context, spaceIDs []uuid.UUID) error
-	SpacesUpdateSpaceParentID(ctx context.Context, spaceID, parentID uuid.UUID) error
-	SpacesUpdateSpacePosition(ctx context.Context, spaceID uuid.UUID, position cmath.Vec3) error
+	SpacesUpdateSpaceParentID(ctx context.Context, spaceID uuid.UUID, parentID *uuid.UUID) error
+	SpacesUpdateSpacePosition(ctx context.Context, spaceID uuid.UUID, position *cmath.Vec3) error
 	SpacesUpdateSpaceOwnerID(ctx context.Context, spaceID, ownerID uuid.UUID) error
-	SpacesUpdateSpaceAsset2dID(ctx context.Context, spaceID, asset2dID uuid.UUID) error
-	SpacesUpdateSpaceAsset3dID(ctx context.Context, spaceID, asset3dID uuid.UUID) error
+	SpacesUpdateSpaceAsset2dID(ctx context.Context, spaceID uuid.UUID, asset2dID *uuid.UUID) error
+	SpacesUpdateSpaceAsset3dID(ctx context.Context, spaceID uuid.UUID, asset3dID *uuid.UUID) error
 	SpacesUpdateSpaceSpaceTypeID(ctx context.Context, spaceID, spaceTypeID uuid.UUID) error
 	SpacesUpdateSpaceOptions(ctx context.Context, spaceID uuid.UUID, options *entry.SpaceOptions) error
 }
