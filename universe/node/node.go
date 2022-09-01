@@ -3,12 +3,14 @@ package node
 import (
 	"context"
 	"fmt"
+	"os"
 	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/momentum-xyz/ubercontroller/config"
@@ -47,7 +49,6 @@ func NewNode(
 		id:         id,
 		cfg:        cfg,
 		db:         db,
-		router:     gin.Default(),
 		worlds:     worlds,
 		assets2d:   assets2D,
 		assets3d:   assets3D,
@@ -70,6 +71,15 @@ func (n *Node) Initialize(ctx context.Context) error {
 
 	n.ctx = ctx
 	n.log = log
+
+	consoleWriter := zapcore.Lock(os.Stdout)
+	gin.DefaultWriter = consoleWriter
+
+	r := gin.New()
+	r.Use(gin.LoggerWithWriter(consoleWriter))
+	r.Use(gin.RecoveryWithWriter(consoleWriter))
+
+	n.router = r
 
 	return nil
 }
