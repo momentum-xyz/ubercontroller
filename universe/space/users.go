@@ -57,7 +57,7 @@ func (s *Space) GetUsers(recursive bool) map[uuid.UUID]universe.User {
 	return users
 }
 
-func (s *Space) AttachUser(user universe.User, updateDB bool) error {
+func (s *Space) AddUser(user universe.User, updateDB bool) error {
 	s.Users.Mu.Lock()
 	defer s.Users.Mu.Unlock()
 
@@ -69,7 +69,7 @@ func (s *Space) AttachUser(user universe.User, updateDB bool) error {
 	return nil
 }
 
-func (s *Space) DetachUser(user universe.User, updateDB bool) error {
+func (s *Space) RemoveUser(user universe.User, updateDB bool) error {
 	s.Users.Mu.Lock()
 	defer s.Users.Mu.Unlock()
 

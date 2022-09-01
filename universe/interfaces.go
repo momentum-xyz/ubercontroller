@@ -85,8 +85,8 @@ type Space interface {
 
 	GetUser(userID uuid.UUID, recursive bool) (User, bool)
 	GetUsers(recursive bool) map[uuid.UUID]User
-	AttachUser(user User, updateDB bool) error
-	DetachUser(user User, updateDB bool) error
+	AddUser(user User, updateDB bool) error
+	RemoveUser(user User, updateDB bool) error
 
 	SendToUser(userID uuid.UUID, msg *websocket.PreparedMessage, recursive bool) error
 	Broadcast(msg *websocket.PreparedMessage, recursive bool) error
