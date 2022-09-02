@@ -4,14 +4,19 @@ import (
 	"reflect"
 )
 
-// MergeStructs recursively merge optional structure with default one.
-// If optional struct is nil, return passed default one,
-// otherwise return pointer to new struct with merged fields.
-func MergeStructs[T any](opt, def *T) *T {
+// MergeStructs recursively merge optional structure with default one
+// and returns pointer to merged structure.
+// If optional struct is nil, returns passed default one.
+// If default struct is nil returns optional one.
+func MergeStructs[T any, PtrT *T](opt, def PtrT) PtrT {
 	var merge func(resVal, optVal, defVal reflect.Value)
 	merge = func(resVal, optVal, defVal reflect.Value) {
 		if optVal.IsNil() {
 			resVal.Set(defVal)
+			return
+		}
+		if defVal.IsNil() {
+			resVal.Set(optVal)
 			return
 		}
 

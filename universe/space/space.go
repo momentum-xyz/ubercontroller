@@ -237,9 +237,11 @@ func (s *Space) GetEffectiveOptions() *entry.SpaceOptions {
 	return utils.MergeStructs(s.GetOptions(), s.GetSpaceType().GetOptions())
 }
 
-func (s *Space) SetOptions(options *entry.SpaceOptions, updateDB bool) error {
+func (s *Space) SetOptions(setFn utils.SetFn[entry.SpaceOptions, *entry.SpaceOptions], updateDB bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	options := setFn(s.options)
 
 	if updateDB {
 		if err := s.db.SpacesUpdateSpaceOptions(s.ctx, s.id, options); err != nil {
@@ -333,7 +335,7 @@ func (s *Space) loadSelfData(entry *entry.Space) error {
 	if err := s.SetPosition(entry.Position, false); err != nil {
 		return errors.WithMessage(err, "failed to set position")
 	}
-	if err := s.SetOptions(entry.Options, false); err != nil {
+	if err := s.SetOptions(utils.SetWithReplace(entry.Options), false); err != nil {
 		return errors.WithMessage(err, "failed to set options")
 	}
 	return nil

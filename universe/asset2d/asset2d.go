@@ -82,9 +82,11 @@ func (a *Asset2d) GetOptions() *entry.Asset2dOptions {
 	return a.entry.Options
 }
 
-func (a *Asset2d) SetOptions(options *entry.Asset2dOptions, updateDB bool) error {
+func (a *Asset2d) SetOptions(setFn utils.SetFn[entry.Asset2dOptions, *entry.Asset2dOptions], updateDB bool) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
+
+	options := setFn(a.entry.Options)
 
 	if updateDB {
 		if err := a.db.Assets2dUpdateAssetOptions(a.ctx, *a.entry.Asset2dID, options); err != nil {
