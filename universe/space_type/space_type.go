@@ -13,6 +13,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
 var _ universe.SpaceType = (*SpaceType)(nil)
@@ -174,11 +175,11 @@ func (s *SpaceType) GetOptions() *entry.SpaceOptions {
 	return s.options
 }
 
-func (s *SpaceType) SetOptions(setFn utils.SetFn[entry.SpaceOptions], updateDB bool) error {
+func (s *SpaceType) SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	options := setFn(s.options)
+	options := modifyFn(s.options)
 
 	if updateDB {
 		if err := s.db.SpaceTypesUpdateSpaceTypeOptions(s.ctx, s.id, options); err != nil {
@@ -225,7 +226,7 @@ func (s *SpaceType) LoadFromEntry(entry *entry.SpaceType) error {
 	if err := s.SetDescription(entry.Description, false); err != nil {
 		return errors.WithMessage(err, "failed to set description")
 	}
-	if err := s.SetOptions(utils.SetWithReplace(entry.Options), false); err != nil {
+	if err := s.SetOptions(modify.ReplaceWith(entry.Options), false); err != nil {
 		return errors.WithMessage(err, "failed to set options")
 	}
 

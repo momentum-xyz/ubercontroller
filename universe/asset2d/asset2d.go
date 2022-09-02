@@ -13,6 +13,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
 var _ universe.Asset2d = (*Asset2d)(nil)
@@ -82,11 +83,11 @@ func (a *Asset2d) GetOptions() *entry.Asset2dOptions {
 	return a.entry.Options
 }
 
-func (a *Asset2d) SetOptions(setFn utils.SetFn[entry.Asset2dOptions], updateDB bool) error {
+func (a *Asset2d) SetOptions(modifyFn modify.Fn[entry.Asset2dOptions], updateDB bool) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	options := setFn(a.entry.Options)
+	options := modifyFn(a.entry.Options)
 
 	if updateDB {
 		if err := a.db.Assets2dUpdateAssetOptions(a.ctx, *a.entry.Asset2dID, options); err != nil {

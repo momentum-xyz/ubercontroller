@@ -16,6 +16,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
 var _ universe.Space = (*Space)(nil)
@@ -234,14 +235,14 @@ func (s *Space) GetOptions() *entry.SpaceOptions {
 }
 
 func (s *Space) GetEffectiveOptions() *entry.SpaceOptions {
-	return utils.MergeStructs(s.GetOptions(), s.GetSpaceType().GetOptions())
+	return utils.Merge(s.GetOptions(), s.GetSpaceType().GetOptions())
 }
 
-func (s *Space) SetOptions(setFn utils.SetFn[entry.SpaceOptions], updateDB bool) error {
+func (s *Space) SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	options := setFn(s.options)
+	options := modifyFn(s.options)
 
 	if updateDB {
 		if err := s.db.SpacesUpdateSpaceOptions(s.ctx, s.id, options); err != nil {
@@ -335,7 +336,7 @@ func (s *Space) loadSelfData(entry *entry.Space) error {
 	if err := s.SetPosition(entry.Position, false); err != nil {
 		return errors.WithMessage(err, "failed to set position")
 	}
-	if err := s.SetOptions(utils.SetWithReplace(entry.Options), false); err != nil {
+	if err := s.SetOptions(modify.ReplaceWith(entry.Options), false); err != nil {
 		return errors.WithMessage(err, "failed to set options")
 	}
 	return nil
