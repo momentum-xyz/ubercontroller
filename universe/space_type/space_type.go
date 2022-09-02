@@ -174,7 +174,7 @@ func (s *SpaceType) GetOptions() *entry.SpaceOptions {
 	return s.options
 }
 
-func (s *SpaceType) SetOptions(setFn utils.SetFn[entry.SpaceOptions, *entry.SpaceOptions], updateDB bool) error {
+func (s *SpaceType) SetOptions(setFn utils.SetFn[entry.SpaceOptions], updateDB bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

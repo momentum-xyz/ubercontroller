@@ -63,7 +63,7 @@ type Space interface {
 
 	GetOptions() *entry.SpaceOptions
 	GetEffectiveOptions() *entry.SpaceOptions
-	SetOptions(setFn utils.SetFn[entry.SpaceOptions, *entry.SpaceOptions], updateDB bool) error
+	SetOptions(setFn utils.SetFn[entry.SpaceOptions], updateDB bool) error
 
 	GetAsset2D() Asset2d
 	SetAsset2D(asset2d Asset2d, updateDB bool) error
@@ -133,7 +133,7 @@ type SpaceType interface {
 	SetDescription(description *string, updateDB bool) error
 
 	GetOptions() *entry.SpaceOptions
-	SetOptions(setFn utils.SetFn[entry.SpaceOptions, *entry.SpaceOptions], updateDB bool) error
+	SetOptions(setFn utils.SetFn[entry.SpaceOptions], updateDB bool) error
 
 	GetAsset2d() Asset2d
 	SetAsset2d(asset2d Asset2d, updateDB bool) error
@@ -166,7 +166,7 @@ type Asset2d interface {
 	SetName(name string, updateDB bool) error
 
 	GetOptions() *entry.Asset2dOptions
-	SetOptions(setFn utils.SetFn[entry.Asset2dOptions, *entry.Asset2dOptions], updateDB bool) error
+	SetOptions(setFn utils.SetFn[entry.Asset2dOptions], updateDB bool) error
 
 	GetEntry() *entry.Asset2d
 	LoadFromEntry(entry *entry.Asset2d) error
@@ -193,7 +193,7 @@ type Asset3d interface {
 	SetName(name string, updateDB bool) error
 
 	GetOptions() *entry.Asset3dOptions
-	SetOptions(setFn utils.SetFn[entry.Asset3dOptions, *entry.Asset3dOptions], updateDB bool) error
+	SetOptions(setFn utils.SetFn[entry.Asset3dOptions], updateDB bool) error
 
 	GetEntry() *entry.Asset3d
 	LoadFromEntry(entry *entry.Asset3d) error

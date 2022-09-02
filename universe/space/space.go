@@ -237,7 +237,7 @@ func (s *Space) GetEffectiveOptions() *entry.SpaceOptions {
 	return utils.MergeStructs(s.GetOptions(), s.GetSpaceType().GetOptions())
 }
 
-func (s *Space) SetOptions(setFn utils.SetFn[entry.SpaceOptions, *entry.SpaceOptions], updateDB bool) error {
+func (s *Space) SetOptions(setFn utils.SetFn[entry.SpaceOptions], updateDB bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
