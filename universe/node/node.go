@@ -100,7 +100,7 @@ func (n *Node) GetSpaceTypes() universe.SpaceTypes {
 	return n.spaceTypes
 }
 
-func (n *Node) AddAPIRegister(register types.APIRegister) {
+func (n *Node) AddAPIRegister(register universe.APIRegister) {
 	register.RegisterAPI(n.router)
 }
 

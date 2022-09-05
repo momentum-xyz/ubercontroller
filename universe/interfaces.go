@@ -1,35 +1,75 @@
 package universe
 
 import (
+	"context"
+
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
-	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
+type IDer interface {
+	GetID() uuid.UUID
+}
+
+type Initializer interface {
+	Initialize(ctx context.Context) error
+}
+
+type Runner interface {
+	Run() error
+}
+
+type Stopper interface {
+	Stop() error
+}
+
+type RunStopper interface {
+	Runner
+	Stopper
+}
+
+type Loader interface {
+	Load() error
+}
+
+type Saver interface {
+	Save() error
+}
+
+type LoadSaver interface {
+	Loader
+	Saver
+}
+
+type APIRegister interface {
+	RegisterAPI(r *gin.Engine)
+}
+
 type Node interface {
-	types.IDer
-	types.Initializer
-	types.RunStopper
-	types.LoadSaver
-	types.APIRegister
+	IDer
+	Initializer
+	RunStopper
+	LoadSaver
+	APIRegister
 
 	GetWorlds() Worlds
 	GetAssets2d() Assets2d
 	GetAssets3d() Assets3d
 	GetSpaceTypes() SpaceTypes
 
-	AddAPIRegister(register types.APIRegister)
+	AddAPIRegister(register APIRegister)
 }
 
 type Worlds interface {
-	types.Initializer
-	types.RunStopper
-	types.LoadSaver
-	types.APIRegister
+	Initializer
+	RunStopper
+	LoadSaver
+	APIRegister
 
 	GetWorld(worldID uuid.UUID) (World, bool)
 	GetWorlds() map[uuid.UUID]World
@@ -41,14 +81,14 @@ type Worlds interface {
 
 type World interface {
 	Space
-	types.RunStopper
-	types.LoadSaver
-	types.APIRegister
+	RunStopper
+	LoadSaver
+	APIRegister
 }
 
 type Space interface {
-	types.IDer
-	types.Initializer
+	IDer
+	Initializer
 
 	GetWorld() World
 
@@ -94,10 +134,10 @@ type Space interface {
 }
 
 type User interface {
-	types.IDer
-	types.Initializer
-	types.RunStopper
-	types.APIRegister
+	IDer
+	Initializer
+	RunStopper
+	APIRegister
 
 	GetWorld() World
 	SetWorld(world World, updateDB bool) error
@@ -107,9 +147,9 @@ type User interface {
 }
 
 type SpaceTypes interface {
-	types.Initializer
-	types.LoadSaver
-	types.APIRegister
+	Initializer
+	LoadSaver
+	APIRegister
 
 	GetSpaceType(spaceTypeID uuid.UUID) (SpaceType, bool)
 	GetSpaceTypes() map[uuid.UUID]SpaceType
@@ -120,8 +160,8 @@ type SpaceTypes interface {
 }
 
 type SpaceType interface {
-	types.IDer
-	types.Initializer
+	IDer
+	Initializer
 
 	GetName() string
 	SetName(name string, updateDB bool) error
@@ -146,9 +186,9 @@ type SpaceType interface {
 }
 
 type Assets2d interface {
-	types.Initializer
-	types.LoadSaver
-	types.APIRegister
+	Initializer
+	LoadSaver
+	APIRegister
 
 	GetAsset2d(asset2dID uuid.UUID) (Asset2d, bool)
 	GetAssets2d() map[uuid.UUID]Asset2d
@@ -159,8 +199,8 @@ type Assets2d interface {
 }
 
 type Asset2d interface {
-	types.IDer
-	types.Initializer
+	IDer
+	Initializer
 
 	GetName() string
 	SetName(name string, updateDB bool) error
@@ -173,9 +213,9 @@ type Asset2d interface {
 }
 
 type Assets3d interface {
-	types.Initializer
-	types.LoadSaver
-	types.APIRegister
+	Initializer
+	LoadSaver
+	APIRegister
 
 	GetAsset3d(asset3dID uuid.UUID) (Asset3d, bool)
 	GetAssets3d() map[uuid.UUID]Asset3d
@@ -186,8 +226,8 @@ type Assets3d interface {
 }
 
 type Asset3d interface {
-	types.IDer
-	types.Initializer
+	IDer
+	Initializer
 
 	GetName() string
 	SetName(name string, updateDB bool) error
