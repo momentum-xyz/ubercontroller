@@ -155,6 +155,8 @@ func (a *Assets3d) RemoveAssets3d(assets3d []universe.Asset3d, updateDB bool) er
 }
 
 func (a *Assets3d) Load() error {
+	a.log.Info("Loading assets 3d...")
+
 	entries, err := a.db.Assets3dGetAssets(a.ctx)
 	if err != nil {
 		return errors.WithMessage(err, "failed to get assets 3d")

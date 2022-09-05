@@ -22,15 +22,15 @@ type Space struct {
 }
 
 type SpaceOptions struct {
-	Options2d            *SpaceOptions2d
-	Options3d            *SpaceOptions3d
-	FrameTemplate        *SpaceFrameTemplate
-	ChildPlacement       *SpaceChildPlacement
-	AllowedSubspaceTypes []uuid.UUID
-	InfoUIID             *uuid.UUID
-	Minimap              *bool
-	Visible              *byte
-	Secret               *bool
+	Options2d        *SpaceOptions2d
+	Options3d        *SpaceOptions3d
+	FrameTemplates   *SpaceFrameTemplates `db:"frame_templates"`
+	ChildPlacement   *SpaceChildPlacement `db:"child_placement"`
+	AllowedSubspaces []uuid.UUID          `db:"allowed_subspaces"`
+	InfoUIID         *uuid.UUID           `db:"infoui_id"`
+	Minimap          *bool                `db:"minimap"`
+	Visible          *byte                `db:"visible"`
+	Secret           *bool
 }
 
 type SpaceOptions2d struct {
@@ -39,7 +39,7 @@ type SpaceOptions2d struct {
 type SpaceOptions3d struct {
 }
 
-type SpaceFrameTemplate struct {
+type SpaceFrameTemplates struct {
 }
 
 type SpaceChildPlacement struct {

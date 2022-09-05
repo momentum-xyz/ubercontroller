@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 
@@ -82,7 +81,12 @@ func createNode(ctx context.Context, cfg *config.Config, db database.DB) (univer
 	assets3d := assets3d.NewAssets3d(db)
 	spaceTypes := space_types.NewSpaceTypes(db)
 
-	node := node.NewNode(uuid.Nil, cfg, db, worlds, assets2d, assets3d, spaceTypes)
+	nodeEntry, err := db.NodesGetNode(ctx)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to get node")
+	}
+
+	node := node.NewNode(*nodeEntry.SpaceID, cfg, db, worlds, assets2d, assets3d, spaceTypes)
 	universe.InitializeNode(node)
 
 	if err := worlds.Initialize(ctx); err != nil {

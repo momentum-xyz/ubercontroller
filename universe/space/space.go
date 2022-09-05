@@ -91,11 +91,10 @@ func (s *Space) SetParent(parent universe.Space, updateDB bool) error {
 	}
 
 	if updateDB {
-		var parentID *uuid.UUID
-		if parent != nil {
-			parentID = utils.GetPtr(parent.GetID())
+		if parent == nil {
+			return errors.Errorf("parent is nil")
 		}
-		if err := s.db.SpacesUpdateSpaceParentID(s.ctx, s.id, parentID); err != nil {
+		if err := s.db.SpacesUpdateSpaceParentID(s.ctx, s.id, parent.GetID()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -297,7 +296,7 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 		return nil
 	}
 
-	entries, err := s.db.SpacesGetSpacesByParentID(s.ctx, utils.GetPtr(s.GetID()))
+	entries, err := s.db.SpacesGetSpacesByParentID(s.ctx, s.GetID())
 	if err != nil {
 		return errors.WithMessagef(err, "failed to get spaces by parent id: %s", s.GetID())
 	}

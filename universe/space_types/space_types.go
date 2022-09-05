@@ -155,6 +155,8 @@ func (s *SpaceTypes) RemoveSpaceTypes(spaceTypes []universe.SpaceType, updateDB 
 }
 
 func (s *SpaceTypes) Load() error {
+	s.log.Info("Loading space types...")
+
 	entries, err := s.db.SpaceTypesGetSpaceTypes(s.ctx)
 	if err != nil {
 		return errors.WithMessage(err, "failed to get space types")

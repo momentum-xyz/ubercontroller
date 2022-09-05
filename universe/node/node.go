@@ -116,6 +116,7 @@ func (n *Node) Stop() error {
 }
 
 func (n *Node) Load() error {
+	n.log.Info("Loading node...")
 	group, _ := errgroup.WithContext(n.ctx)
 
 	group.Go(func() error {

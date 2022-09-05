@@ -56,6 +56,8 @@ func (w *World) Stop() error {
 }
 
 func (w *World) Load() error {
+	w.log.Infof("Loading world: %s", w.GetID())
+
 	entry, err := w.db.SpacesGetSpaceByID(w.ctx, w.GetID())
 	if err != nil {
 		return errors.WithMessage(err, "failed to get space by id")

@@ -155,6 +155,8 @@ func (a *Assets2d) RemoveAssets2d(assets2d []universe.Asset2d, updateDB bool) er
 }
 
 func (a *Assets2d) Load() error {
+	a.log.Info("Loading assets 2d...")
+
 	entries, err := a.db.Assets2dGetAssets(a.ctx)
 	if err != nil {
 		return errors.WithMessage(err, "failed to get assets 2d")

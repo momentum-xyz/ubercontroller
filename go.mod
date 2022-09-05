@@ -3,6 +3,7 @@ module github.com/momentum-xyz/ubercontroller
 go 1.19
 
 require (
+	github.com/georgysavva/scany v1.1.0
 	github.com/gin-gonic/gin v1.8.1
 	github.com/google/flatbuffers v2.0.7+incompatible
 	github.com/google/uuid v1.3.0
@@ -42,7 +43,7 @@ require (
 	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90 // indirect
 	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
-	golang.org/x/sys v0.0.0-20210806184541-e5e7981a1069 // indirect
+	golang.org/x/sys v0.0.0-20210823070655-63515b42dcdf // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

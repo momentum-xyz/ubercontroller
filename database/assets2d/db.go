@@ -10,6 +10,8 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 )
 
+var _ database.Assets2dDB = (*DB)(nil)
+
 type DB struct {
 	conn   *pgxpool.Pool
 	common database.CommonDB

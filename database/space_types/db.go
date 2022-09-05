@@ -2,13 +2,21 @@ package space_types
 
 import (
 	"context"
+	"github.com/pkg/errors"
 
+	"github.com/georgysavva/scany/pgxscan"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
 
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 )
+
+const (
+	getSpaceTypesQuery = `SELECT * FROM space_type;`
+)
+
+var _ database.SpaceTypesDB = (*DB)(nil)
 
 type DB struct {
 	conn   *pgxpool.Pool
@@ -24,7 +32,11 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 
 // TODO: implement
 func (db *DB) SpaceTypesGetSpaceTypes(ctx context.Context) ([]*entry.SpaceType, error) {
-	return nil, nil
+	var spaceTypes []*entry.SpaceType
+	if err := pgxscan.Select(ctx, db.conn, &spaceTypes, getSpaceTypesQuery); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return spaceTypes, nil
 }
 
 // TODO: implement
