@@ -20,7 +20,7 @@ The following environment variables are required in order to connect to the data
 ### Design
 An overview of the current data model that the controller is utilizing can be seen on the diagram below:
 
-![momentum4_datamodel](images/momentum4_db_schema.svg)
+![momentum4_datamodel](../images/momentum4_db_schema.svg)
 
 ### Interfaces
 An interface for the database functions can be found in the database folder (interfaces.go), the names of the functions should describe themselves.
@@ -47,9 +47,9 @@ A tree of the database directory can be seen below
 │ ├── users
 │ │ └── db.go
 │ └── worlds
-│     └── db.go
+│   └── db.go
 ```
 
 ### Queries
-<mark>Queries are only being executed when they need to, every database transaction is synchronized with the memory storage. This means that instead of querying the database directly, the controller will check if the requested data is already present in memory before executing a new query.</mark>
+Queries are only being executed when they need to, every database transaction is synchronized in memory. This means that instead of querying the database directly, the controller will check if the requested data is already present in memory before executing a new query.
 
