@@ -27,14 +27,11 @@ Or you can use the following CLI command:
 make run
 ```
 
-### Authentication
-<mark>TODO Summarize -> redirect to autentication.md for more information</mark>
+### Core
+<mark>TODO Summarize -> redirect to core/general.md for more information</mark>
 
 ### Database
-<mark>TODO Summarize -> redirect to database.md for more information</mark>
+<mark>TODO Summarize -> redirect to database/general.md for more information</mark>
 
-### Message Broker
-<mark>TODO Summarize -> redirect to messaging.md for more information</mark>
-
-### Influx
-<mark>TODO Summarize -> redirect to influx.md for more information</mark>
+### Plugins
+<mark>TODO Summarize -> redirect to plugins/general.md for more information</mark>
