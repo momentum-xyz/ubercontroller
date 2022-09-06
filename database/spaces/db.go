@@ -13,16 +13,32 @@ import (
 )
 
 const (
-	getSpaceByIDQuery          = `SELECT * FROM space WHERE space_id = $1;`
-	getSpaceIDsByParentIDQuery = `SELECT space_id FROM space WHERE parent_id = $1;`
-	getSpacesByParentIDQuery   = `SELECT * FROM space WHERE parent_id = $1;`
-	removeSpaceByIDQuery       = `DELETE FROM space WHERE space_id = $1;`
-	removeSpacesByIDsQuery     = `DELETE FROM space WHERE space_id IN ($1);`
-	updateSpaceParentIDQuery   = `UPDATE space SET parent_id = $2 WHERE space_id = $1;`
-	updateSpacePositionQuery   = `UPDATE space SET position = $2 WHERE space_id = $1;`
-	updateSpaceOwnerIDQuery    = `UPDATE space SET owner_id = $2 WHERE space_id = $1;`
-	updateSpaceAsset2dIDQuery  = `UPDATE space SET asset_2d_id = $2 WHERE space_id = $1;`
-	updateSpaceAsset3dIDQuery  = `UPDATE space SET asset_3d_id = $2 WHERE space_id = $1;`
+	getSpaceByIDQuery           = `SELECT * FROM space WHERE space_id = $1;`
+	getSpaceIDsByParentIDQuery  = `SELECT space_id FROM space WHERE parent_id = $1;`
+	getSpacesByParentIDQuery    = `SELECT * FROM space WHERE parent_id = $1;`
+	removeSpaceByIDQuery        = `DELETE FROM space WHERE space_id = $1;`
+	removeSpacesByIDsQuery      = `DELETE FROM space WHERE space_id IN ($1);`
+	updateSpaceParentIDQuery    = `UPDATE space SET parent_id = $2 WHERE space_id = $1;`
+	updateSpacePositionQuery    = `UPDATE space SET position = $2 WHERE space_id = $1;`
+	updateSpaceOwnerIDQuery     = `UPDATE space SET owner_id = $2 WHERE space_id = $1;`
+	updateSpaceAsset2dIDQuery   = `UPDATE space SET asset_2d_id = $2 WHERE space_id = $1;`
+	updateSpaceAsset3dIDQuery   = `UPDATE space SET asset_3d_id = $2 WHERE space_id = $1;`
+	updateSpaceSpaceTypeIDQuery = `UPDATE space SET space_type_id = $2 WHERE space_id = $1;`
+	updateSpaceOptionsQuery     = `UPDATE space SET options = $2 WHERE space_id = $1;`
+	upsertSpaceQuery            = `INSERT INTO space
+    									(space_id, space_type_id, owner_id, parent_id, asset_2d_id, asset_3d_id, options, position, created_at, updated_at)
+									VALUES
+									    ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+									ON CONFLICT (space_id)
+									DO UPDATE SET
+										space_type_id = $2,
+									    owner_id = $3,
+									    parent_id = $4,
+									    asset_2d_id = $5,
+									    asset_3d_id = $6,
+									    options = $7,
+									    position = $8,
+									    updated_at = CURRENT_TIMESTAMP;`
 )
 
 var _ database.SpacesDB = (*DB)(nil)
@@ -112,18 +128,26 @@ func (db *DB) SpacesUpdateSpaceAsset3dID(ctx context.Context, spaceID uuid.UUID,
 	return nil
 }
 
-// TODO: implement
 func (db *DB) SpacesUpdateSpaceSpaceTypeID(ctx context.Context, spaceID, spaceTypeID uuid.UUID) error {
+	if _, err := db.conn.Exec(ctx, updateSpaceSpaceTypeIDQuery, spaceID, spaceTypeID); err != nil {
+		return errors.WithMessage(err, "failed to exec db")
+	}
 	return nil
 }
 
-// TODO: implement
 func (db *DB) SpacesUpdateSpaceOptions(ctx context.Context, spaceID uuid.UUID, options *entry.SpaceOptions) error {
+	if _, err := db.conn.Exec(ctx, updateSpaceOptionsQuery, spaceID, options); err != nil {
+		return errors.WithMessage(err, "failed to exec db")
+	}
 	return nil
 }
 
-// TODO: implement
 func (db *DB) SpacesUpsertSpace(ctx context.Context, space *entry.Space) error {
+	if _, err := db.conn.Exec(ctx, upsertSpaceQuery,
+		space.SpaceID, space.SpaceTypeID, space.OwnerID, space.ParentID, space.Asset2dID, space.Asset3dID,
+		space.Options, space.Position); err != nil {
+		return errors.WithMessage(err, "failed to exec db")
+	}
 	return nil
 }
 

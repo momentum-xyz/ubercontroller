@@ -30,32 +30,19 @@ type Space struct {
 }
 
 type SpaceOptions struct {
-	Asset2dOptions   *SpaceAsset2dOptions               `db:"asset_2d_options"`
-	Asset3dOptions   *SpaceAsset3dOptions               `db:"asset_3d_options"`
-	FrameTemplates   map[string]*SpaceFrameTemplate     `db:"frame_templates"`
-	ChildPlacements  map[uuid.UUID]*SpaceChildPlacement `db:"child_placement"`
-	AllowedSubspaces []uuid.UUID                        `db:"allowed_subspaces"`
-	InfoUIID         *uuid.UUID                         `db:"infoui_id"`
-	Minimap          *bool                              `db:"minimap"`
-	Visible          *SpaceVisibleType                  `db:"visible"`
-	Private          *bool                              `db:"private"`
-	// should gone
-	DefaultTiles []DefaultTile `db:"default_tiles"`
-}
-
-type SpaceAsset2dOptions struct {
-}
-
-type SpaceAsset3dOptions struct {
-}
-
-type SpaceFrameTemplate struct {
+	Asset2dOptions   any                                `db:"asset_2d_options" json:"asset_2d_options"`
+	Asset3dOptions   any                                `db:"asset_3d_options" json:"asset_3d_options"`
+	FrameTemplates   map[string]any                     `db:"frame_templates" json:"frame_templates"`
+	ChildPlacements  map[uuid.UUID]*SpaceChildPlacement `db:"child_placement" json:"child_placement"`
+	AllowedSubspaces []uuid.UUID                        `db:"allowed_subspaces" json:"allowed_subspaces"`
+	DefaultTiles     []any                              `db:"default_tiles" json:"default_tiles"`
+	InfoUIID         *uuid.UUID                         `db:"infoui_id" json:"infoui_id"`
+	Minimap          *bool                              `db:"minimap" json:"minimap"`
+	Visible          *SpaceVisibleType                  `db:"visible" json:"visible"`
+	Private          *bool                              `db:"private" json:"private"`
 }
 
 type SpaceChildPlacement struct {
-	Algo    *string        `db:"algo"`
-	Options map[string]any `db:"options"`
-}
-
-type DefaultTile struct {
+	Algo    *string        `db:"algo" json:"algo"`
+	Options map[string]any `db:"options" json:"options"`
 }

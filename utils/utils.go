@@ -30,13 +30,13 @@ func Merge[T any](opt, def *T) *T {
 			return
 		}
 
-		optElem := optVal.Elem()
-		if optVal.Kind() == reflect.Pointer && optElem.Kind() == reflect.Struct {
+		if optVal.Kind() == reflect.Pointer && optVal.Elem().Kind() == reflect.Struct {
+			optElem := optVal.Elem()
+			defElem := defVal.Elem()
 			if resVal.IsNil() {
 				resVal.Set(reflect.New(optElem.Type()))
 			}
 			resElem := resVal.Elem()
-			defElem := defVal.Elem()
 
 			for i := 0; i < resElem.NumField(); i++ {
 				resField := resElem.Field(i)
