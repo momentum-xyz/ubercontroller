@@ -1,0 +1,23 @@
+name: build-deploy
+
+on:
+  push:
+    branches:
+      - develop
+      - master
+
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+*
+
+jobs:
+  build:
+    runs-on: self-hosted  # ubuntu-latest
+    steps:
+      - id: build
+        uses: OdysseyMomentumExperience/docker-build-action@v3
+        with:
+          registry-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
+          registry-user: ${{ secrets.REGISTRY_USERNAME }}
+          registry-pass: ${{ secrets.REGISTRY_PASSWORD }}
+    outputs:
+      version: ${{ steps.build.outputs.version }}
