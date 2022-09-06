@@ -177,6 +177,8 @@ func (s *SpaceTypes) Load() error {
 
 	universe.GetNode().AddAPIRegister(s)
 
+	s.log.Info("Space types loaded")
+
 	return nil
 }
 

@@ -3,11 +3,17 @@ package assets3d
 import (
 	"context"
 
+	"github.com/georgysavva/scany/pgxscan"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+)
+
+const (
+	getAssetsQuery = `SELECT * FROM asset_3d;`
 )
 
 var _ database.Assets3dDB = (*DB)(nil)
@@ -24,9 +30,12 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 	}
 }
 
-// TODO: implement
 func (db *DB) Assets3dGetAssets(ctx context.Context) ([]*entry.Asset3d, error) {
-	return nil, nil
+	var assets []*entry.Asset3d
+	if err := pgxscan.Select(ctx, db.conn, &assets, getAssetsQuery); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return assets, nil
 }
 
 // TODO: implement

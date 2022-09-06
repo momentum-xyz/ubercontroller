@@ -5,10 +5,6 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
-	"go.uber.org/zap"
-	"golang.org/x/sync/errgroup"
-
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types"
@@ -17,6 +13,8 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
 )
 
 var _ universe.Space = (*Space)(nil)
@@ -86,8 +84,8 @@ func (s *Space) SetParent(parent universe.Space, updateDB bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if parent != nil && parent.GetWorld().GetID() != s.GetWorld().GetID() {
-		return errors.Errorf("worlds mismatch: %s != %s", parent.GetWorld().GetID(), s.GetWorld().GetID())
+	if parent != nil && parent.GetWorld().GetID() != s.world.GetID() {
+		return errors.Errorf("worlds mismatch: %s != %s", parent.GetWorld().GetID(), s.world.GetID())
 	}
 
 	if updateDB {
@@ -281,6 +279,8 @@ func (s *Space) GetEntry() *entry.Space {
 }
 
 func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
+	s.log.Debugf("Loading space %s...", *entry.SpaceID)
+
 	if *entry.SpaceID != s.GetID() {
 		return errors.Errorf("space ids mismatch: %s != %s", *entry.SpaceID, s.GetID())
 	}
@@ -301,31 +301,25 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 		return errors.WithMessagef(err, "failed to get spaces by parent id: %s", s.GetID())
 	}
 
-	group, _ := errgroup.WithContext(s.ctx)
-
 	for i := range entries {
 		entry := entries[i]
 
-		group.Go(func() error {
-			space := NewSpace(*entry.SpaceID, s.db, s.world)
+		space := NewSpace(*entry.SpaceID, s.db, s.world)
 
-			if err := space.Initialize(s.ctx); err != nil {
-				return errors.WithMessagef(err, "failed to initialize space: %s", space.GetID())
-			}
-			if err := space.LoadFromEntry(entry, recursive); err != nil {
-				return errors.WithMessagef(err, "failed to load space from entry: %s", space.GetID())
-			}
-			if err := space.SetParent(s, false); err != nil {
-				return errors.WithMessagef(err, "failed to set parent: %s", space.GetID())
-			}
+		if err := space.Initialize(s.ctx); err != nil {
+			return errors.WithMessagef(err, "failed to initialize space: %s", space.GetID())
+		}
+		if err := space.LoadFromEntry(entry, recursive); err != nil {
+			return errors.WithMessagef(err, "failed to load space from entry: %s", space.GetID())
+		}
+		if err := space.SetParent(s, false); err != nil {
+			return errors.WithMessagef(err, "failed to set parent: %s", space.GetID())
+		}
 
-			s.Children.Store(space.GetID(), space)
-
-			return nil
-		})
+		s.Children.Store(space.GetID(), space)
 	}
 
-	return group.Wait()
+	return nil
 }
 
 func (s *Space) loadSelfData(entry *entry.Space) error {

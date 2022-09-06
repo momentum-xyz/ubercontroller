@@ -116,7 +116,8 @@ func (n *Node) Stop() error {
 }
 
 func (n *Node) Load() error {
-	n.log.Info("Loading node...")
+	n.log.Infof("Loading node %s...", n.GetID())
+
 	group, _ := errgroup.WithContext(n.ctx)
 
 	group.Go(func() error {
@@ -125,12 +126,13 @@ func (n *Node) Load() error {
 	group.Go(func() error {
 		return n.assets3d.Load()
 	})
-	group.Go(func() error {
-		return n.spaceTypes.Load()
-	})
 
 	if err := group.Wait(); err != nil {
-		return errors.WithMessage(err, "failed to load node data")
+		return errors.WithMessage(err, "failed to load assets")
+	}
+
+	if err := n.spaceTypes.Load(); err != nil {
+		return errors.WithMessage(err, "failed to load space types")
 	}
 
 	if err := n.worlds.Load(); err != nil {
@@ -138,6 +140,8 @@ func (n *Node) Load() error {
 	}
 
 	n.AddAPIRegister(n)
+
+	n.log.Infof("Node loaded: %s", n.GetID())
 
 	return nil
 }

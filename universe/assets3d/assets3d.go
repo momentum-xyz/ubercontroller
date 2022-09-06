@@ -177,6 +177,8 @@ func (a *Assets3d) Load() error {
 
 	universe.GetNode().AddAPIRegister(a)
 
+	a.log.Info("Assets 3d loaded")
+
 	return nil
 }
 

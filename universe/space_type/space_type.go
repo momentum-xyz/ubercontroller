@@ -36,6 +36,12 @@ func NewSpaceType(id uuid.UUID, db database.DB) *SpaceType {
 	return &SpaceType{
 		id: id,
 		db: db,
+		options: &entry.SpaceOptions{
+			AllowedSubspaces: []uuid.UUID{},
+			Minimap:          utils.GetPtr(true),
+			Visible:          utils.GetPtr(entry.ReactUnitySpaceVisibleType),
+			Private:          utils.GetPtr(false),
+		},
 	}
 }
 
@@ -226,24 +232,28 @@ func (s *SpaceType) LoadFromEntry(entry *entry.SpaceType) error {
 	if err := s.SetDescription(entry.Description, false); err != nil {
 		return errors.WithMessage(err, "failed to set description")
 	}
-	if err := s.SetOptions(modify.ReplaceWith(entry.Options), false); err != nil {
+	if err := s.SetOptions(modify.MergeWith(entry.Options), false); err != nil {
 		return errors.WithMessage(err, "failed to set options")
 	}
 
-	asset2d, ok := node.GetAssets2d().GetAsset2d(*entry.Asset2dID)
-	if !ok {
-		return errors.Errorf("asset 2d not found: %s", *entry.Asset2dID)
-	}
-	if err := s.SetAsset2d(asset2d, false); err != nil {
-		return errors.WithMessagef(err, "failed to set asset 2d: %s", *entry.Asset2dID)
+	if entry.Asset2dID != nil {
+		asset2d, ok := node.GetAssets2d().GetAsset2d(*entry.Asset2dID)
+		if !ok {
+			return errors.Errorf("asset 2d not found: %s", *entry.Asset2dID)
+		}
+		if err := s.SetAsset2d(asset2d, false); err != nil {
+			return errors.WithMessagef(err, "failed to set asset 2d: %s", *entry.Asset2dID)
+		}
 	}
 
-	asset3d, ok := node.GetAssets3d().GetAsset3d(*entry.Asset3dID)
-	if !ok {
-		return errors.Errorf("asset 3d not found: %s", *entry.Asset3dID)
-	}
-	if err := s.SetAsset3d(asset3d, false); err != nil {
-		return errors.WithMessagef(err, "failed to set asset 3d: %s", *entry.Asset3dID)
+	if entry.Asset3dID != nil {
+		asset3d, ok := node.GetAssets3d().GetAsset3d(*entry.Asset3dID)
+		if !ok {
+			return errors.Errorf("asset 3d not found: %s", *entry.Asset3dID)
+		}
+		if err := s.SetAsset3d(asset3d, false); err != nil {
+			return errors.WithMessagef(err, "failed to set asset 3d: %s", *entry.Asset3dID)
+		}
 	}
 
 	return nil

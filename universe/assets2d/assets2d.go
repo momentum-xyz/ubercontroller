@@ -176,6 +176,8 @@ func (a *Assets2d) Load() error {
 
 	universe.GetNode().AddAPIRegister(a)
 
+	a.log.Info("Assets 2d loaded")
+
 	return nil
 }
 
