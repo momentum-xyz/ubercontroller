@@ -27,11 +27,13 @@ Or you can use the following CLI command:
 make run
 ```
 
+
+
 ### Core
 <mark>TODO Summarize -> redirect to core/general.md for more information</mark>
 
 ### Database
 <mark>TODO Summarize -> redirect to database/general.md for more information</mark>
 
-### Plugins
+### Plugin infrastructure
 <mark>TODO Summarize -> redirect to plugins/general.md for more information</mark>

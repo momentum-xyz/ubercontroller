@@ -1,5 +1,6 @@
 # General
 This page describes the core functionality of the ubercontroller.
+The ``universe`` directory contains all core entities of the application.
 
 ### Authentication
 <mark>TODO Summarize -> redirect to authentication.md for more information</mark>
