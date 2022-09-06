@@ -1,3 +1,6 @@
+DOCKER_IMAGE="ubercontroller"
+DOCKER_TAG="develop"
+
 all: build
 
 build:
@@ -9,8 +12,12 @@ run: build
 test:
 	go test -v -race ./...
 
-# docker run ...
-docker:
-	echo "Not implemented"
+docker-build: DOCKER_BUILDKIT=1
+docker-build:
+	docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
 
-.PHONY: build run test docker
+# docker run ...
+docker: docker-build
+	docker run --rm ${DOCKER_IMAGE}:${DOCKER_TAG}
+
+.PHONY: build run test docker docker-build
