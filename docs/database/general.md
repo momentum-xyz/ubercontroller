@@ -8,14 +8,16 @@ For testing purposes, we recommend setting up a Docker instance.
 ### Configuration
 The following environment variables are required in order to connect to the database instance, these variables need to be set in the config.yaml file.
 
-| Variable     | Description                   |
-|--------------|-------------------------------|
-| DB_DATABASE  | Name of the database schema   |
-| PGDB_HOST    | Instance hostname             |
-| DB_PORT      | Instance port number          |
-| DB_USERNAME  | Username                      |
-| DB_PASSWORD  | Password (if set)             |
-| DB_MAX_CONNS | Maximum amount of connections |
+Yaml Module: `postgres`
+
+| Variable    | Description                   |
+|-------------|-------------------------------|
+| database    | Name of the database schema   |
+| host        | Instance hostname             |
+| port        | Instance port number          |
+| username    | Username                      |
+| password    | Password (if set)             |
+| max_conns   | Maximum amount of connections |
 
 ### Design
 An overview of the current data model that the controller is utilizing can be seen on the diagram below:
