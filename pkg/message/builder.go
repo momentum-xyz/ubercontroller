@@ -7,11 +7,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 
+	"github.com/momentum-xyz/posbus-protocol/flatbuff/go/api"
+	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/momentum-xyz/ubercontroller/logger"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/utils"
-	"github.com/momentum-xyz/posbus-protocol/flatbuff/go/api"
-	"github.com/momentum-xyz/posbus-protocol/posbus"
 )
 
 type ObjectDefinition struct {
@@ -106,8 +106,8 @@ func (mb *Builder) MsgSetWorld(
 
 	api.SetWorldStart(builder)
 	api.SetWorldAddWorldId(builder, mb.SerializeGUID(builder, worldId))
-	api.SetWorldAddAvatarubercontrollerId(builder, mb.SerializeGUID(builder, avatarubercontrollerId))
-	api.SetWorldAddSkyboxubercontrollerId(builder, mb.SerializeGUID(builder, skyboxubercontrollerId))
+	api.SetWorldAddAvatarControllerId(builder, mb.SerializeGUID(builder, avatarubercontrollerId))
+	api.SetWorldAddSkyboxControllerId(builder, mb.SerializeGUID(builder, skyboxubercontrollerId))
 	api.SetWorldAddLodDistances(builder, lodsOffset)
 	api.SetWorldAddDecorations(builder, decsOffset)
 	api.SetWorldAddName(builder, nameObj)

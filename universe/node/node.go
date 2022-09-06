@@ -2,14 +2,18 @@ package node
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"sync"
 
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -19,9 +23,11 @@ import (
 var _ universe.Node = (*Node)(nil)
 
 type Node struct {
+	cfg        *config.Config
 	ctx        context.Context
 	log        *zap.SugaredLogger
 	db         database.DB
+	router     *gin.Engine
 	worlds     universe.Worlds
 	assets2d   universe.Assets2d
 	assets3d   universe.Assets3d
@@ -32,6 +38,7 @@ type Node struct {
 
 func NewNode(
 	id uuid.UUID,
+	cfg *config.Config,
 	db database.DB,
 	worlds universe.Worlds,
 	assets2D universe.Assets2d,
@@ -40,6 +47,7 @@ func NewNode(
 ) *Node {
 	return &Node{
 		id:         id,
+		cfg:        cfg,
 		db:         db,
 		worlds:     worlds,
 		assets2d:   assets2D,
@@ -64,6 +72,15 @@ func (n *Node) Initialize(ctx context.Context) error {
 	n.ctx = ctx
 	n.log = log
 
+	consoleWriter := zapcore.Lock(os.Stdout)
+	gin.DefaultWriter = consoleWriter
+
+	r := gin.New()
+	r.Use(gin.LoggerWithWriter(consoleWriter))
+	r.Use(gin.RecoveryWithWriter(consoleWriter))
+
+	n.router = r
+
 	return nil
 }
 
@@ -83,72 +100,63 @@ func (n *Node) GetSpaceTypes() universe.SpaceTypes {
 	return n.spaceTypes
 }
 
-func (n *Node) Run(ctx context.Context) error {
-	group, _ := errgroup.WithContext(ctx)
-	worlds := n.GetWorlds().GetWorlds()
+func (n *Node) AddAPIRegister(register universe.APIRegister) {
+	register.RegisterAPI(n.router)
+}
 
-	worlds.Mu.RLock()
-	for _, world := range worlds.Data {
-		world := world
-
-		group.Go(func() error {
-			if err := world.Run(ctx); err != nil {
-				return errors.WithMessagef(err, "failed to run world: %s", world.GetID())
-			}
-			return nil
-		})
+func (n *Node) Run() error {
+	if err := n.worlds.Run(); err != nil {
+		return errors.WithMessage(err, "failed to run worlds")
 	}
-	worlds.Mu.RUnlock()
-
-	return group.Wait()
+	return n.router.Run(fmt.Sprintf("%s:%d", n.cfg.Settings.Address, n.cfg.Settings.Port))
 }
 
 func (n *Node) Stop() error {
-	var wg sync.WaitGroup
-	var errs *multierror.Error
-	var errsMu sync.Mutex
-	worlds := n.GetWorlds().GetWorlds()
-
-	worlds.Mu.RLock()
-	for _, world := range worlds.Data {
-		wg.Add(1)
-
-		go func(world universe.World) {
-			defer wg.Done()
-
-			if err := world.Stop(); err != nil {
-				errsMu.Lock()
-				defer errsMu.Unlock()
-
-				errs = multierror.Append(errs, errors.WithMessagef(err, "failed to stop world: %s", world.GetID()))
-			}
-		}(world)
-	}
-	worlds.Mu.RUnlock()
-
-	return errs.ErrorOrNil()
+	return n.worlds.Stop()
 }
 
-func (n *Node) Load(ctx context.Context) error {
-	group, _ := errgroup.WithContext(ctx)
+func (n *Node) Load() error {
+	n.log.Info("Loading node...")
+	group, _ := errgroup.WithContext(n.ctx)
 
 	group.Go(func() error {
-		return n.assets2d.Load(ctx)
+		return n.assets2d.Load()
 	})
 	group.Go(func() error {
-		return n.assets3d.Load(ctx)
+		return n.assets3d.Load()
 	})
 	group.Go(func() error {
-		return n.spaceTypes.Load(ctx)
+		return n.spaceTypes.Load()
 	})
 
 	if err := group.Wait(); err != nil {
 		return errors.WithMessage(err, "failed to load node data")
 	}
 
-	return n.worlds.Load(ctx)
+	if err := n.worlds.Load(); err != nil {
+		return errors.WithMessage(err, "failed to load worlds")
+	}
+
+	n.AddAPIRegister(n)
+
+	return nil
 }
 
-func (n *Node) Update(updateDB bool) error {
-	return errors.Errorf("implement me")
+func (n *Node) Save() error {
+	group, _ := errgroup.WithContext(n.ctx)
+
+	group.Go(func() error {
+		return n.assets2d.Save()
+	})
+	group.Go(func() error {
+		return n.assets3d.Save()
+	})
+	group.Go(func() error {
+		return n.spaceTypes.Save()
+	})
+	group.Go(func() error {
+		return n.worlds.Save()
+	})
+
+	return group.Wait()
 }

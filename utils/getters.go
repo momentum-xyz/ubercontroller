@@ -8,6 +8,10 @@ import (
 
 var log = logger.L()
 
+func GetPtr[T any](v T) *T {
+	return &v
+}
+
 func GetFromAny[V any](val any, defaultValue V) V {
 	if val == nil {
 		return defaultValue

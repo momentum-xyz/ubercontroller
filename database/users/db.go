@@ -6,6 +6,8 @@ import (
 	"github.com/momentum-xyz/ubercontroller/database"
 )
 
+var _ database.UsersDB = (*DB)(nil)
+
 type DB struct {
 	conn   *pgxpool.Pool
 	common database.CommonDB

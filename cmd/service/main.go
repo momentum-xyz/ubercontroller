@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 
@@ -39,7 +38,8 @@ func main() {
 func run() error {
 	cfg := config.GetConfig()
 
-	ctx, cancel := context.WithCancel(context.WithValue(context.Background(), types.ContextLoggerKey, log))
+	ctx := context.WithValue(context.Background(), types.ContextLoggerKey, log)
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	pool, err := createDBConnection(ctx, &cfg.Postgres)
@@ -53,35 +53,45 @@ func run() error {
 		return errors.WithMessage(err, "failed to create db")
 	}
 
-	node, err := createNode(ctx, db)
+	node, err := createNode(ctx, cfg, db)
 	if err != nil {
 		return errors.WithMessage(err, "failed to create node")
 	}
 
-	if err := node.Load(ctx); err != nil {
+	if err := node.Load(); err != nil {
 		return errors.WithMessagef(err, "failed to load node: %s", node.GetID())
 	}
 
-	if err := node.Run(ctx); err != nil {
-		return errors.WithMessagef(err, "failed to run node: %s", node.GetID())
-	}
+	defer func() {
+		if err := node.Stop(); err != nil {
+			log.Error(errors.WithMessagef(err, "failed to stop node: %s", node.GetID()))
+		}
+	}()
 
-	if err := node.Stop(); err != nil {
-		return errors.WithMessagef(err, "failed to stop node: %s", node.GetID())
+	if err := node.Run(); err != nil {
+		return errors.WithMessagef(err, "failed to run node: %s", node.GetID())
 	}
 
 	return nil
 }
 
-func createNode(ctx context.Context, db database.DB) (universe.Node, error) {
-	assets2d := assets2d.NewAssets2D(db)
-	assets3d := assets3d.NewAssets3D(db)
-	spaceTypes := space_types.NewSpaceTypes(db)
+func createNode(ctx context.Context, cfg *config.Config, db database.DB) (universe.Node, error) {
 	worlds := worlds.NewWorlds(db)
+	assets2d := assets2d.NewAssets2d(db)
+	assets3d := assets3d.NewAssets3d(db)
+	spaceTypes := space_types.NewSpaceTypes(db)
 
-	node := node.NewNode(uuid.Nil, db, worlds, assets2d, assets3d, spaceTypes)
+	nodeEntry, err := db.NodesGetNode(ctx)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to get node")
+	}
+
+	node := node.NewNode(*nodeEntry.SpaceID, cfg, db, worlds, assets2d, assets3d, spaceTypes)
 	universe.InitializeNode(node)
 
+	if err := worlds.Initialize(ctx); err != nil {
+		return nil, errors.WithMessage(err, "failed to initialize worlds")
+	}
 	if err := assets2d.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize assets 2d")
 	}
@@ -90,9 +100,6 @@ func createNode(ctx context.Context, db database.DB) (universe.Node, error) {
 	}
 	if err := spaceTypes.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize space types")
-	}
-	if err := worlds.Initialize(ctx); err != nil {
-		return nil, errors.WithMessage(err, "failed to initialize worlds")
 	}
 	if err := node.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize node")

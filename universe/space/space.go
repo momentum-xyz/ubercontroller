@@ -13,9 +13,10 @@ import (
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
-	"github.com/momentum-xyz/ubercontroller/types/generics"
+	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
 var _ universe.Space = (*Space)(nil)
@@ -24,12 +25,12 @@ type Space struct {
 	ctx       context.Context
 	log       *zap.SugaredLogger
 	db        database.DB
-	Users     *generics.SyncMap[uuid.UUID, universe.User]
-	children  *generics.SyncMap[uuid.UUID, universe.Space]
+	Users     *generic.SyncMap[uuid.UUID, universe.User]
+	Children  *generic.SyncMap[uuid.UUID, universe.Space]
 	mu        sync.RWMutex
 	id        uuid.UUID
 	ownerID   uuid.UUID
-	position  cmath.Vec3
+	position  *cmath.Vec3
 	options   *entry.SpaceOptions
 	world     universe.World
 	parent    universe.Space
@@ -42,8 +43,8 @@ func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
 	return &Space{
 		id:       id,
 		db:       db,
-		Users:    generics.NewSyncMap[uuid.UUID, universe.User](),
-		children: generics.NewSyncMap[uuid.UUID, universe.Space](),
+		Users:    generic.NewSyncMap[uuid.UUID, universe.User](),
+		Children: generic.NewSyncMap[uuid.UUID, universe.Space](),
 		world:    world,
 	}
 }
@@ -90,11 +91,10 @@ func (s *Space) SetParent(parent universe.Space, updateDB bool) error {
 	}
 
 	if updateDB {
-		var parentID uuid.UUID
-		if parent != nil {
-			parentID = parent.GetID()
+		if parent == nil {
+			return errors.Errorf("parent is nil")
 		}
-		if err := s.db.SpacesUpdateSpaceParentID(s.ctx, s.id, parentID); err != nil {
+		if err := s.db.SpacesUpdateSpaceParentID(s.ctx, s.id, parent.GetID()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -104,14 +104,14 @@ func (s *Space) SetParent(parent universe.Space, updateDB bool) error {
 	return nil
 }
 
-func (s *Space) GetPosition() cmath.Vec3 {
+func (s *Space) GetPosition() *cmath.Vec3 {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	return s.position
 }
 
-func (s *Space) SetPosition(position cmath.Vec3, updateDB bool) error {
+func (s *Space) SetPosition(position *cmath.Vec3, updateDB bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -155,21 +155,14 @@ func (s *Space) GetAsset2D() universe.Asset2d {
 	return s.asset2d
 }
 
-func (s *Space) GetAsset3D() universe.Asset3d {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	return s.asset3d
-}
-
 func (s *Space) SetAsset2D(asset2d universe.Asset2d, updateDB bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if updateDB {
-		var asset2dID uuid.UUID
+		var asset2dID *uuid.UUID
 		if asset2d != nil {
-			asset2dID = asset2d.GetID()
+			asset2dID = utils.GetPtr(asset2d.GetID())
 		}
 		if err := s.db.SpacesUpdateSpaceAsset2dID(s.ctx, s.id, asset2dID); err != nil {
 			return errors.WithMessage(err, "failed to update db")
@@ -181,14 +174,21 @@ func (s *Space) SetAsset2D(asset2d universe.Asset2d, updateDB bool) error {
 	return nil
 }
 
+func (s *Space) GetAsset3D() universe.Asset3d {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	return s.asset3d
+}
+
 func (s *Space) SetAsset3D(asset3d universe.Asset3d, updateDB bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if updateDB {
-		var asset3dID uuid.UUID
+		var asset3dID *uuid.UUID
 		if asset3d != nil {
-			asset3dID = asset3d.GetID()
+			asset3dID = utils.GetPtr(asset3d.GetID())
 		}
 		if err := s.db.SpacesUpdateSpaceAsset3dID(s.ctx, s.id, asset3dID); err != nil {
 			return errors.WithMessage(err, "failed to update db")
@@ -208,15 +208,15 @@ func (s *Space) GetSpaceType() universe.SpaceType {
 }
 
 func (s *Space) SetSpaceType(spaceType universe.SpaceType, updateDB bool) error {
+	if spaceType == nil {
+		return errors.Errorf("invalid space type: nil")
+	}
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if updateDB {
-		var spaceTypeID uuid.UUID
-		if spaceType != nil {
-			spaceTypeID = spaceType.GetID()
-		}
-		if err := s.db.SpacesUpdateSpaceSpaceTypeID(s.ctx, s.id, spaceTypeID); err != nil {
+		if err := s.db.SpacesUpdateSpaceSpaceTypeID(s.ctx, s.id, spaceType.GetID()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -234,12 +234,14 @@ func (s *Space) GetOptions() *entry.SpaceOptions {
 }
 
 func (s *Space) GetEffectiveOptions() *entry.SpaceOptions {
-	return utils.MergeStructs(s.GetOptions(), s.GetSpaceType().GetOptions())
+	return utils.Merge(s.GetOptions(), s.GetSpaceType().GetOptions())
 }
 
-func (s *Space) SetOptions(options *entry.SpaceOptions, updateDB bool) error {
+func (s *Space) SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	options := modifyFn(s.options)
 
 	if updateDB {
 		if err := s.db.SpacesUpdateSpaceOptions(s.ctx, s.id, options); err != nil {
@@ -252,8 +254,30 @@ func (s *Space) SetOptions(options *entry.SpaceOptions, updateDB bool) error {
 	return nil
 }
 
-func (s *Space) Update(recursive, updateDB bool) error {
-	return errors.Errorf("implement me")
+func (s *Space) GetEntry() *entry.Space {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	entry := entry.Space{
+		SpaceID:  &s.id,
+		OwnerID:  &s.ownerID,
+		Options:  s.options,
+		Position: s.position,
+	}
+	if s.spaceType != nil {
+		entry.SpaceTypeID = utils.GetPtr(s.spaceType.GetID())
+	}
+	if s.parent != nil {
+		entry.ParentID = utils.GetPtr(s.parent.GetID())
+	}
+	if s.asset2d != nil {
+		entry.Asset2dID = utils.GetPtr(s.asset2d.GetID())
+	}
+	if s.asset3d != nil {
+		entry.Asset3dID = utils.GetPtr(s.asset3d.GetID())
+	}
+
+	return &entry
 }
 
 func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
@@ -272,15 +296,15 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 		return nil
 	}
 
-	spaces, err := s.db.SpacesGetSpacesByParentID(s.ctx, s.GetID())
+	entries, err := s.db.SpacesGetSpacesByParentID(s.ctx, s.GetID())
 	if err != nil {
 		return errors.WithMessagef(err, "failed to get spaces by parent id: %s", s.GetID())
 	}
 
 	group, _ := errgroup.WithContext(s.ctx)
 
-	for i := range spaces {
-		entry := spaces[i]
+	for i := range entries {
+		entry := entries[i]
 
 		group.Go(func() error {
 			space := NewSpace(*entry.SpaceID, s.db, s.world)
@@ -295,7 +319,7 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 				return errors.WithMessagef(err, "failed to set parent: %s", space.GetID())
 			}
 
-			s.children.Store(space.GetID(), space)
+			s.Children.Store(space.GetID(), space)
 
 			return nil
 		})
@@ -308,10 +332,10 @@ func (s *Space) loadSelfData(entry *entry.Space) error {
 	if err := s.SetOwnerID(*entry.OwnerID, false); err != nil {
 		return errors.WithMessagef(err, "failed to set owner id: %s", *entry.OwnerID)
 	}
-	if err := s.SetPosition(*entry.Position, false); err != nil {
+	if err := s.SetPosition(entry.Position, false); err != nil {
 		return errors.WithMessage(err, "failed to set position")
 	}
-	if err := s.SetOptions(entry.Options, false); err != nil {
+	if err := s.SetOptions(modify.ReplaceWith(entry.Options), false); err != nil {
 		return errors.WithMessage(err, "failed to set options")
 	}
 	return nil

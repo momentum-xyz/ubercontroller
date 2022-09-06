@@ -2,15 +2,15 @@ package space
 
 import (
 	"github.com/google/uuid"
-	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	"golang.org/x/sync/errgroup"
 
-	"github.com/momentum-xyz/ubercontroller/types/generics"
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
 func (s *Space) GetSpace(spaceID uuid.UUID, recursive bool) (universe.Space, bool) {
-	space, ok := s.children.Load(spaceID)
+	space, ok := s.Children.Load(spaceID)
 	if ok {
 		return space, true
 	}
@@ -19,10 +19,10 @@ func (s *Space) GetSpace(spaceID uuid.UUID, recursive bool) (universe.Space, boo
 		return nil, false
 	}
 
-	s.children.Mu.RLock()
-	defer s.children.Mu.RUnlock()
+	s.Children.Mu.RLock()
+	defer s.Children.Mu.RUnlock()
 
-	for _, child := range s.children.Data {
+	for _, child := range s.Children.Data {
 		space, ok := child.GetSpace(spaceID, recursive)
 		if ok {
 			return space, true
@@ -32,24 +32,22 @@ func (s *Space) GetSpace(spaceID uuid.UUID, recursive bool) (universe.Space, boo
 	return nil, false
 }
 
-// GetSpaces return new sync map with all nested children if recursive is true,
-// otherwise the method return existing sync map with children dependent only to current space.
-func (s *Space) GetSpaces(recursive bool) *generics.SyncMap[uuid.UUID, universe.Space] {
-	if !recursive {
-		return s.children
-	}
+// GetSpaces return map with all nested children if recursive is true,
+// otherwise the method return map with children dependent only to current space.
+func (s *Space) GetSpaces(recursive bool) map[uuid.UUID]universe.Space {
+	spaces := make(map[uuid.UUID]universe.Space)
 
-	spaces := generics.NewSyncMap[uuid.UUID, universe.Space]()
+	s.Children.Mu.RLock()
+	defer s.Children.Mu.RUnlock()
 
-	s.children.Mu.RLock()
-	defer s.children.Mu.RUnlock()
+	for id, child := range s.Children.Data {
+		spaces[id] = child
+		if !recursive {
+			continue
+		}
 
-	// maybe we will need lock here in future
-	for id, child := range s.children.Data {
-		spaces.Data[id] = child
-
-		for id, child := range child.GetSpaces(recursive).Data {
-			spaces.Data[id] = child
+		for id, child := range child.GetSpaces(recursive) {
+			spaces[id] = child
 		}
 	}
 
@@ -57,53 +55,83 @@ func (s *Space) GetSpaces(recursive bool) *generics.SyncMap[uuid.UUID, universe.
 }
 
 func (s *Space) AddSpace(space universe.Space, updateDB bool) error {
-	s.children.Mu.Lock()
-	defer s.children.Mu.Unlock()
+	s.Children.Mu.Lock()
+	defer s.Children.Mu.Unlock()
 
-	if err := space.SetParent(s, updateDB); err != nil {
+	if err := space.SetParent(s, false); err != nil {
 		return errors.WithMessagef(err, "failed to set parent to space: %s", space.GetID())
 	}
-	s.children.Data[space.GetID()] = space
+
+	if updateDB {
+		if err := s.db.SpacesUpsertSpace(s.ctx, space.GetEntry()); err != nil {
+			return errors.WithMessage(err, "failed to update db")
+		}
+	}
+
+	s.Children.Data[space.GetID()] = space
 
 	return nil
 }
 
 func (s *Space) AddSpaces(spaces []universe.Space, updateDB bool) error {
-	var errs *multierror.Error
+	s.Children.Mu.Lock()
+	defer s.Children.Mu.Unlock()
+
 	for i := range spaces {
-		if err := s.AddSpace(spaces[i], updateDB); err != nil {
-			errs = multierror.Append(errs, errors.WithMessagef(err, "failed to add space: %s", spaces[i].GetID()))
+		if err := spaces[i].SetParent(s, false); err != nil {
+			return errors.WithMessagef(err, "failed to set parent to space: %s", spaces[i].GetID())
 		}
 	}
-	return errs.ErrorOrNil()
+
+	if updateDB {
+		entries := make([]*entry.Space, len(spaces))
+		for i := range spaces {
+			entries[i] = spaces[i].GetEntry()
+		}
+		if err := s.db.SpacesUpsertSpaces(s.ctx, entries); err != nil {
+			return errors.WithMessage(err, "failed to update db")
+		}
+	}
+
+	for i := range spaces {
+		s.Children.Data[spaces[i].GetID()] = spaces[i]
+	}
+
+	return nil
 }
 
-func (s *Space) RemoveSpace(spaceID uuid.UUID, recursive, updateDB bool) (bool, error) {
-	s.children.Mu.Lock()
-	space, ok := s.children.Data[spaceID]
-	if ok {
-		defer s.children.Mu.Unlock()
+func (s *Space) RemoveSpace(space universe.Space, recursive, updateDB bool) (bool, error) {
+	s.Children.Mu.Lock()
+	if _, ok := s.Children.Data[space.GetID()]; ok {
+		defer s.Children.Mu.Unlock()
 
-		if err := space.SetParent(nil, updateDB); err != nil {
-			return false, errors.WithMessagef(err, "failed to set parent to space: %s", spaceID)
+		if err := space.SetParent(nil, false); err != nil {
+			return false, errors.WithMessage(err, "failed to set parent")
 		}
-		delete(s.children.Data, spaceID)
+
+		if updateDB {
+			if err := s.db.SpacesRemoveSpaceByID(s.ctx, space.GetID()); err != nil {
+				return false, errors.WithMessage(err, "failed to remove space by id")
+			}
+		}
+
+		delete(s.Children.Data, space.GetID())
 
 		return true, nil
 	}
-	s.children.Mu.Unlock()
+	s.Children.Mu.Unlock()
 
 	if !recursive {
-		return true, nil
+		return false, nil
 	}
 
-	s.children.Mu.RLock()
-	defer s.children.Mu.RUnlock()
+	s.Children.Mu.RLock()
+	defer s.Children.Mu.RUnlock()
 
-	for _, child := range s.children.Data {
-		removed, err := child.RemoveSpace(spaceID, recursive, updateDB)
+	for _, child := range s.Children.Data {
+		removed, err := child.RemoveSpace(space, recursive, updateDB)
 		if err != nil {
-			return false, errors.WithMessagef(err, "failed to remove space: %s", spaceID)
+			return false, errors.WithMessage(err, "failed to remove space")
 		}
 		if removed {
 			return true, nil
@@ -114,16 +142,24 @@ func (s *Space) RemoveSpace(spaceID uuid.UUID, recursive, updateDB bool) (bool, 
 }
 
 // RemoveSpaces return true in first value if any of spaces with space ids was removed.
-func (s *Space) RemoveSpaces(spaceIDs []uuid.UUID, recursive, updateDB bool) (bool, error) {
+func (s *Space) RemoveSpaces(spaces []universe.Space, recursive, updateDB bool) (bool, error) {
 	var res bool
-	for i := range spaceIDs {
-		removed, err := s.RemoveSpace(spaceIDs[i], recursive, updateDB)
-		if err != nil {
-			return false, errors.WithMessagef(err, "failed to remove space: %s", spaceIDs[i])
-		}
-		if removed {
-			res = true
-		}
+	group, _ := errgroup.WithContext(s.ctx)
+
+	for _, space := range spaces {
+		space := space
+
+		group.Go(func() error {
+			removed, err := s.RemoveSpace(space, recursive, updateDB)
+			if err != nil {
+				return errors.WithMessagef(err, "failed to remove space: %s", space.GetID())
+			}
+			if removed {
+				res = true
+			}
+			return nil
+		})
 	}
-	return res, nil
+
+	return res, group.Wait()
 }

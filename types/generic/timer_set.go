@@ -1,4 +1,4 @@
-package generics
+package generic
 
 import (
 	"context"

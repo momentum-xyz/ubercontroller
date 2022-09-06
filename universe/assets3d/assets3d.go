@@ -4,14 +4,15 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types"
-	"github.com/momentum-xyz/ubercontroller/types/generics"
+	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/universe/asset3d"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
@@ -21,13 +22,13 @@ type Assets3d struct {
 	ctx    context.Context
 	log    *zap.SugaredLogger
 	db     database.DB
-	assets *generics.SyncMap[uuid.UUID, universe.Asset3d]
+	assets *generic.SyncMap[uuid.UUID, universe.Asset3d]
 }
 
-func NewAssets3D(db database.DB) *Assets3d {
+func NewAssets3d(db database.DB) *Assets3d {
 	return &Assets3d{
 		db:     db,
-		assets: generics.NewSyncMap[uuid.UUID, universe.Asset3d](),
+		assets: generic.NewSyncMap[uuid.UUID, universe.Asset3d](),
 	}
 }
 
@@ -48,22 +49,17 @@ func (a *Assets3d) GetAsset3d(asset3dID uuid.UUID) (universe.Asset3d, bool) {
 	return asset, ok
 }
 
-func (a *Assets3d) GetAssets3d(asset3dIDs []uuid.UUID) (*generics.SyncMap[uuid.UUID, universe.Asset3d], error) {
+func (a *Assets3d) GetAssets3d() map[uuid.UUID]universe.Asset3d {
+	assets := make(map[uuid.UUID]universe.Asset3d)
+
 	a.assets.Mu.RLock()
 	defer a.assets.Mu.RUnlock()
 
-	assets := generics.NewSyncMap[uuid.UUID, universe.Asset3d]()
-
-	// maybe we will need lock here in future
-	for i := range asset3dIDs {
-		asset3d, ok := a.assets.Data[asset3dIDs[i]]
-		if !ok {
-			return nil, errors.Errorf("asset 2d not found: %s", asset3dIDs[i])
-		}
-		assets.Data[asset3dIDs[i]] = asset3d
+	for id, asset := range a.assets.Data {
+		assets[id] = asset
 	}
 
-	return assets, nil
+	return assets
 }
 
 func (a *Assets3d) AddAsset3d(asset3d universe.Asset3d, updateDB bool) error {
@@ -74,8 +70,10 @@ func (a *Assets3d) AddAsset3d(asset3d universe.Asset3d, updateDB bool) error {
 		return errors.Errorf("asset 3d already exists")
 	}
 
-	if err := asset3d.Update(updateDB); err != nil {
-		return errors.WithMessage(err, "failed to update asset 3d")
+	if updateDB {
+		if err := a.db.Assets3dUpsetAsset(a.ctx, asset3d.GetEntry()); err != nil {
+			return errors.WithMessage(err, "failed to update db")
+		}
 	}
 
 	a.assets.Data[asset3d.GetID()] = asset3d
@@ -84,13 +82,30 @@ func (a *Assets3d) AddAsset3d(asset3d universe.Asset3d, updateDB bool) error {
 }
 
 func (a *Assets3d) AddAssets3d(assets3d []universe.Asset3d, updateDB bool) error {
-	var errs *multierror.Error
+	a.assets.Mu.Lock()
+	defer a.assets.Mu.Unlock()
+
 	for i := range assets3d {
-		if err := a.AddAsset3d(assets3d[i], updateDB); err != nil {
-			errs = multierror.Append(errs, errors.WithMessagef(err, "failed to add asset 3d: %s", assets3d[i].GetID()))
+		if _, ok := a.assets.Data[assets3d[i].GetID()]; ok {
+			return errors.Errorf("asset 3d already exists: %s", assets3d[i].GetID())
 		}
 	}
-	return errs.ErrorOrNil()
+
+	if updateDB {
+		entries := make([]*entry.Asset3d, len(assets3d))
+		for i := range assets3d {
+			entries[i] = assets3d[i].GetEntry()
+		}
+		if err := a.db.Assets3dUpsetAssets(a.ctx, entries); err != nil {
+			return errors.WithMessage(err, "failed to update db")
+		}
+	}
+
+	for i := range assets3d {
+		a.assets.Data[assets3d[i].GetID()] = assets3d[i]
+	}
+
+	return nil
 }
 
 func (a *Assets3d) RemoveAsset3d(asset3d universe.Asset3d, updateDB bool) error {
@@ -127,7 +142,7 @@ func (a *Assets3d) RemoveAssets3d(assets3d []universe.Asset3d, updateDB bool) er
 		for i := range assets3d {
 			ids[i] = assets3d[i].GetID()
 		}
-		if err := a.db.Assets3dRemoveAssetByIDs(a.ctx, ids); err != nil {
+		if err := a.db.Assets3dRemoveAssetsByIDs(a.ctx, ids); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -139,18 +154,43 @@ func (a *Assets3d) RemoveAssets3d(assets3d []universe.Asset3d, updateDB bool) er
 	return nil
 }
 
-func (a *Assets3d) Load(ctx context.Context) error {
-	return errors.Errorf("implement me")
+func (a *Assets3d) Load() error {
+	a.log.Info("Loading assets 3d...")
+
+	entries, err := a.db.Assets3dGetAssets(a.ctx)
+	if err != nil {
+		return errors.WithMessage(err, "failed to get assets 3d")
+	}
+
+	for i := range entries {
+		asset := asset3d.NewAsset3d(*entries[i].Asset3dID, a.db)
+
+		if err := asset.Initialize(a.ctx); err != nil {
+			return errors.WithMessagef(err, "failed to initialize asset 3d: %s", *entries[i].Asset3dID)
+		}
+		if err := asset.LoadFromEntry(entries[i]); err != nil {
+			return errors.WithMessagef(err, "failed to load asset 3d from entry: %s", *entries[i].Asset3dID)
+		}
+
+		a.assets.Store(*entries[i].Asset3dID, asset)
+	}
+
+	universe.GetNode().AddAPIRegister(a)
+
+	return nil
 }
 
-func (a *Assets3d) Update(updateDB bool) error {
+func (a *Assets3d) Save() error {
 	a.assets.Mu.RLock()
 	defer a.assets.Mu.RUnlock()
 
-	for _, asset3d := range a.assets.Data {
-		if err := asset3d.Update(updateDB); err != nil {
-			return errors.WithMessagef(err, "failed to update asset 3d: %s", asset3d.GetID())
-		}
+	entries := make([]*entry.Asset3d, len(a.assets.Data))
+	for _, asset := range a.assets.Data {
+		entries = append(entries, asset.GetEntry())
+	}
+
+	if err := a.db.Assets3dUpsetAssets(a.ctx, entries); err != nil {
+		return errors.WithMessage(err, "failed to upsert assets 3d")
 	}
 
 	return nil

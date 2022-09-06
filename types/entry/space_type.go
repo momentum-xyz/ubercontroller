@@ -15,5 +15,5 @@ type SpaceType struct {
 	Description   *string       `db:"description"`
 	Options       *SpaceOptions `db:"options"`
 	CreatedAt     *time.Time    `db:"created_at"`
-	UpdatedAt     *time.Time    `db:"update_at"`
+	UpdatedAt     *time.Time    `db:"updated_at"`
 }

@@ -10,6 +10,8 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 )
 
+var _ database.Assets2dDB = (*DB)(nil)
+
 type DB struct {
 	conn   *pgxpool.Pool
 	common database.CommonDB
@@ -20,6 +22,11 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 		conn:   conn,
 		common: commonDB,
 	}
+}
+
+// TODO: implement
+func (db *DB) Assets2dGetAssets(ctx context.Context) ([]*entry.Asset2d, error) {
+	return nil, nil
 }
 
 // TODO: implement
@@ -38,7 +45,7 @@ func (db *DB) Assets2dRemoveAssetByID(ctx context.Context, asset2dID uuid.UUID) 
 }
 
 // TODO: implement
-func (db *DB) Assets2dRemoveAssetByIDs(ctx context.Context, asset2dIDs []uuid.UUID) error {
+func (db *DB) Assets2dRemoveAssetsByIDs(ctx context.Context, asset2dIDs []uuid.UUID) error {
 	return nil
 }
 
