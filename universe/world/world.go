@@ -69,6 +69,8 @@ func (w *World) Load() error {
 
 	universe.GetNode().AddAPIRegister(w)
 
+	w.log.Infof("World loaded: %s", w.GetID())
+
 	return nil
 }
 

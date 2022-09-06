@@ -3,8 +3,8 @@ package entry
 import "github.com/google/uuid"
 
 type Asset2d struct {
-	Asset2dID *uuid.UUID      `db:"2d_asset_id"`
-	Name      *string         `db:"3d_asset_name"`
+	Asset2dID *uuid.UUID      `db:"asset_2d_id"`
+	Name      *string         `db:"asset_2d_name"`
 	Options   *Asset2dOptions `db:"options"`
 }
 

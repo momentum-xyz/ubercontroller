@@ -256,6 +256,8 @@ func (w *Worlds) Load() error {
 
 	universe.GetNode().AddAPIRegister(w)
 
+	w.log.Info("Worlds loaded")
+
 	return nil
 }
 

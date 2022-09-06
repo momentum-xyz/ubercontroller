@@ -34,9 +34,9 @@ func (v Vec3) ToVec3f64() Vec3f64 {
 }*/
 
 type Vec3f64 struct {
-	X float64 `json:"x"`
-	Y float64 `json:"y"`
-	Z float64 `json:"z"`
+	X float64 `json:"x" db:"x"`
+	Y float64 `json:"y" db:"y"`
+	Z float64 `json:"z" db:"z"`
 }
 
 func (v Vec3f64) ToVec3() Vec3 {
