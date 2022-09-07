@@ -84,7 +84,7 @@ func (s *Space) AddSpaces(spaces []universe.Space, updateDB bool) error {
 	}
 
 	if updateDB {
-		entries := make([]*entry.Space, len(spaces))
+		entries := make([]*entry.Space, 0, len(spaces))
 		for i := range spaces {
 			entries[i] = spaces[i].GetEntry()
 		}
@@ -105,6 +105,7 @@ func (s *Space) RemoveSpace(space universe.Space, recursive, updateDB bool) (boo
 	if _, ok := s.Children.Data[space.GetID()]; ok {
 		defer s.Children.Mu.Unlock()
 
+		// TODO: move to morgue
 		if err := space.SetParent(nil, false); err != nil {
 			return false, errors.WithMessage(err, "failed to set parent")
 		}

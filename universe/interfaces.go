@@ -102,7 +102,6 @@ type Space interface {
 	SetPosition(position *cmath.Vec3, updateDB bool) error
 
 	GetOptions() *entry.SpaceOptions
-	GetEffectiveOptions() *entry.SpaceOptions
 	SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool) error
 
 	GetAsset2D() Asset2d

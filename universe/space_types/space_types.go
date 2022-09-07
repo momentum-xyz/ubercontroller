@@ -71,7 +71,7 @@ func (s *SpaceTypes) AddSpaceType(spaceType universe.SpaceType, updateDB bool) e
 	}
 
 	if updateDB {
-		if err := s.db.SpaceTypesUpsetSpaceType(s.ctx, spaceType.GetEntry()); err != nil {
+		if err := s.db.SpaceTypesUpsertSpaceType(s.ctx, spaceType.GetEntry()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -92,11 +92,11 @@ func (s *SpaceTypes) AddSpaceTypes(spaceTypes []universe.SpaceType, updateDB boo
 	}
 
 	if updateDB {
-		entries := make([]*entry.SpaceType, len(spaceTypes))
+		entries := make([]*entry.SpaceType, 0, len(spaceTypes))
 		for i := range spaceTypes {
 			entries[i] = spaceTypes[i].GetEntry()
 		}
-		if err := s.db.SpaceTypesUpsetSpaceTypes(s.ctx, entries); err != nil {
+		if err := s.db.SpaceTypesUpsertSpaceTypes(s.ctx, entries); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -138,7 +138,7 @@ func (s *SpaceTypes) RemoveSpaceTypes(spaceTypes []universe.SpaceType, updateDB 
 	}
 
 	if updateDB {
-		ids := make([]uuid.UUID, len(spaceTypes))
+		ids := make([]uuid.UUID, 0, len(spaceTypes))
 		for i := range spaceTypes {
 			ids[i] = spaceTypes[i].GetID()
 		}
@@ -183,17 +183,21 @@ func (s *SpaceTypes) Load() error {
 }
 
 func (s *SpaceTypes) Save() error {
+	s.log.Info("Saving spate types...")
+
 	s.spaceTypes.Mu.RLock()
 	defer s.spaceTypes.Mu.RUnlock()
 
-	entries := make([]*entry.SpaceType, len(s.spaceTypes.Data))
+	entries := make([]*entry.SpaceType, 0, len(s.spaceTypes.Data))
 	for _, spaceType := range s.spaceTypes.Data {
 		entries = append(entries, spaceType.GetEntry())
 	}
 
-	if err := s.db.SpaceTypesUpsetSpaceTypes(s.ctx, entries); err != nil {
+	if err := s.db.SpaceTypesUpsertSpaceTypes(s.ctx, entries); err != nil {
 		return errors.WithMessage(err, "failed to upsert space types")
 	}
+
+	s.log.Info("Space types saved")
 
 	return nil
 }

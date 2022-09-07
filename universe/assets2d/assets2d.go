@@ -71,7 +71,7 @@ func (a *Assets2d) AddAsset2d(asset2d universe.Asset2d, updateDB bool) error {
 	}
 
 	if updateDB {
-		if err := a.db.Assets2dUpsetAsset(a.ctx, asset2d.GetEntry()); err != nil {
+		if err := a.db.Assets2dUpsertAsset(a.ctx, asset2d.GetEntry()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -92,11 +92,11 @@ func (a *Assets2d) AddAssets2d(assets2d []universe.Asset2d, updateDB bool) error
 	}
 
 	if updateDB {
-		entries := make([]*entry.Asset2d, len(assets2d))
+		entries := make([]*entry.Asset2d, 0, len(assets2d))
 		for i := range assets2d {
 			entries[i] = assets2d[i].GetEntry()
 		}
-		if err := a.db.Assets2dUpsetAssets(a.ctx, entries); err != nil {
+		if err := a.db.Assets2dUpsertAssets(a.ctx, entries); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -138,7 +138,7 @@ func (a *Assets2d) RemoveAssets2d(assets2d []universe.Asset2d, updateDB bool) er
 	}
 
 	if updateDB {
-		ids := make([]uuid.UUID, len(assets2d))
+		ids := make([]uuid.UUID, 0, len(assets2d))
 		for i := range assets2d {
 			ids[i] = assets2d[i].GetID()
 		}
@@ -182,17 +182,22 @@ func (a *Assets2d) Load() error {
 }
 
 func (a *Assets2d) Save() error {
+	a.log.Info("Saving assets 2d...")
+
 	a.assets.Mu.RLock()
 	defer a.assets.Mu.RUnlock()
 
-	entries := make([]*entry.Asset2d, len(a.assets.Data))
+	entries := make([]*entry.Asset2d, 0, len(a.assets.Data))
 	for _, asset := range a.assets.Data {
+		a.log.Warnf("HERE 5: %+v", asset.GetEntry())
 		entries = append(entries, asset.GetEntry())
 	}
 
-	if err := a.db.Assets2dUpsetAssets(a.ctx, entries); err != nil {
+	if err := a.db.Assets2dUpsertAssets(a.ctx, entries); err != nil {
 		return errors.WithMessage(err, "failed to upsert assets 2d")
 	}
+
+	a.log.Info("Assets 2d saved")
 
 	return nil
 }

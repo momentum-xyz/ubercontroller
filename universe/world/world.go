@@ -75,9 +75,11 @@ func (w *World) Load() error {
 }
 
 func (w *World) Save() error {
+	w.log.Infof("Saving world: %s", w.GetID())
+
 	spaces := w.GetSpaces(true)
 
-	entries := make([]*entry.Space, len(spaces))
+	entries := make([]*entry.Space, 0, len(spaces))
 	for _, space := range spaces {
 		entries = append(entries, space.GetEntry())
 	}
@@ -85,6 +87,8 @@ func (w *World) Save() error {
 	if err := w.db.SpacesUpsertSpaces(w.ctx, entries); err != nil {
 		return errors.WithMessage(err, "failed to upsert spaces")
 	}
+
+	w.log.Infof("World saved: %s", w.GetID())
 
 	return nil
 }

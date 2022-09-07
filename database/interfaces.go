@@ -54,8 +54,8 @@ type UsersDB interface {
 
 type Assets2dDB interface {
 	Assets2dGetAssets(ctx context.Context) ([]*entry.Asset2d, error)
-	Assets2dUpsetAsset(ctx context.Context, asset2d *entry.Asset2d) error
-	Assets2dUpsetAssets(ctx context.Context, assets2d []*entry.Asset2d) error
+	Assets2dUpsertAsset(ctx context.Context, asset2d *entry.Asset2d) error
+	Assets2dUpsertAssets(ctx context.Context, assets2d []*entry.Asset2d) error
 	Assets2dRemoveAssetByID(ctx context.Context, asset2dID uuid.UUID) error
 	Assets2dRemoveAssetsByIDs(ctx context.Context, asset2dIDs []uuid.UUID) error
 	Assets2dUpdateAssetName(ctx context.Context, asset2dID uuid.UUID, name string) error
@@ -64,8 +64,8 @@ type Assets2dDB interface {
 
 type Assets3dDB interface {
 	Assets3dGetAssets(ctx context.Context) ([]*entry.Asset3d, error)
-	Assets3dUpsetAsset(ctx context.Context, asset3d *entry.Asset3d) error
-	Assets3dUpsetAssets(ctx context.Context, assets3d []*entry.Asset3d) error
+	Assets3dUpsertAsset(ctx context.Context, asset3d *entry.Asset3d) error
+	Assets3dUpsertAssets(ctx context.Context, assets3d []*entry.Asset3d) error
 	Assets3dRemoveAssetByID(ctx context.Context, asset3dID uuid.UUID) error
 	Assets3dRemoveAssetsByIDs(ctx context.Context, asset3dIDs []uuid.UUID) error
 	Assets3dUpdateAssetName(ctx context.Context, asset3dID uuid.UUID, name string) error
@@ -74,8 +74,8 @@ type Assets3dDB interface {
 
 type SpaceTypesDB interface {
 	SpaceTypesGetSpaceTypes(ctx context.Context) ([]*entry.SpaceType, error)
-	SpaceTypesUpsetSpaceType(ctx context.Context, spaceType *entry.SpaceType) error
-	SpaceTypesUpsetSpaceTypes(ctx context.Context, spaceTypes []*entry.SpaceType) error
+	SpaceTypesUpsertSpaceType(ctx context.Context, spaceType *entry.SpaceType) error
+	SpaceTypesUpsertSpaceTypes(ctx context.Context, spaceTypes []*entry.SpaceType) error
 	SpaceTypesRemoveSpaceTypeByID(ctx context.Context, spaceTypeID uuid.UUID) error
 	SpaceTypesRemoveSpaceTypesByIDs(ctx context.Context, spaceTypeIDs []uuid.UUID) error
 	SpaceTypesUpdateSpaceTypeName(ctx context.Context, spaceTypeID uuid.UUID, name string) error

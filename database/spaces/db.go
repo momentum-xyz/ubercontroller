@@ -2,8 +2,10 @@ package spaces
 
 import (
 	"context"
+
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 
@@ -26,7 +28,8 @@ const (
 	updateSpaceSpaceTypeIDQuery = `UPDATE space SET space_type_id = $2 WHERE space_id = $1;`
 	updateSpaceOptionsQuery     = `UPDATE space SET options = $2 WHERE space_id = $1;`
 	upsertSpaceQuery            = `INSERT INTO space
-    									(space_id, space_type_id, owner_id, parent_id, asset_2d_id, asset_3d_id, options, position, created_at, updated_at)
+    									(space_id, space_type_id, owner_id, parent_id, asset_2d_id,
+    									 asset_3d_id, options, position, created_at, updated_at)
 									VALUES
 									    ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 									ON CONFLICT (space_id)
@@ -151,7 +154,19 @@ func (db *DB) SpacesUpsertSpace(ctx context.Context, space *entry.Space) error {
 	return nil
 }
 
-// TODO: implement
 func (db *DB) SpacesUpsertSpaces(ctx context.Context, spaces []*entry.Space) error {
+	batch := &pgx.Batch{}
+	for _, space := range spaces {
+		batch.Queue(upsertSpaceQuery, space.SpaceID, space.SpaceTypeID, space.OwnerID,
+			space.ParentID, space.Asset2dID, space.Asset3dID, space.Options, space.Position)
+	}
+
+	batchRes := db.conn.SendBatch(ctx, batch)
+	defer batchRes.Close()
+
+	if _, err := batchRes.Exec(); err != nil {
+		return errors.WithMessage(err, "failed to exec db batch")
+	}
+
 	return nil
 }

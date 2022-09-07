@@ -147,6 +147,8 @@ func (n *Node) Load() error {
 }
 
 func (n *Node) Save() error {
+	n.log.Infof("Saving node: %s...", n.GetID())
+
 	group, _ := errgroup.WithContext(n.ctx)
 
 	group.Go(func() error {
@@ -162,5 +164,11 @@ func (n *Node) Save() error {
 		return n.worlds.Save()
 	})
 
-	return group.Wait()
+	if err := group.Wait(); err != nil {
+		return err
+	}
+
+	n.log.Infof("Node saved: %s", n.GetID())
+
+	return nil
 }

@@ -231,10 +231,6 @@ func (s *Space) GetOptions() *entry.SpaceOptions {
 	return s.options
 }
 
-func (s *Space) GetEffectiveOptions() *entry.SpaceOptions {
-	return utils.Merge(s.GetOptions(), s.GetSpaceType().GetOptions())
-}
-
 func (s *Space) SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
