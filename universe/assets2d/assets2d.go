@@ -189,7 +189,6 @@ func (a *Assets2d) Save() error {
 
 	entries := make([]*entry.Asset2d, 0, len(a.assets.Data))
 	for _, asset := range a.assets.Data {
-		a.log.Warnf("HERE 5: %+v", asset.GetEntry())
 		entries = append(entries, asset.GetEntry())
 	}
 

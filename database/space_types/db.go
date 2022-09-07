@@ -76,8 +76,10 @@ func (db *DB) SpaceTypesUpsertSpaceTypes(ctx context.Context, spaceTypes []*entr
 	batchRes := db.conn.SendBatch(ctx, batch)
 	defer batchRes.Close()
 
-	if _, err := batchRes.Exec(); err != nil {
-		return errors.WithMessage(err, "failed to exec db batch")
+	for i := 0; i < batch.Len(); i++ {
+		if _, err := batchRes.Exec(); err != nil {
+			return errors.WithMessage(err, "failed to exec db batch")
+		}
 	}
 
 	return nil
