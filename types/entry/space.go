@@ -46,3 +46,17 @@ type SpaceChildPlacement struct {
 	Algo    *string        `db:"algo" json:"algo"`
 	Options map[string]any `db:"options" json:"options"`
 }
+
+type SpaceAttribute struct {
+	PluginID uuid.UUID              `db:"plugin_id"`
+	SpaceID  uuid.UUID              `db:"space_id"`
+	Name     string                 `db:"attribute_name"`
+	Value    *SpaceAttributeValue   `db:"value"`
+	Options  *SpaceAttributeOptions `db:"options"`
+}
+
+type SpaceAttributeValue struct {
+}
+
+type SpaceAttributeOptions struct {
+}

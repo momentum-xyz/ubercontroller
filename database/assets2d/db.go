@@ -25,8 +25,7 @@ const (
 									($1, $2, $3)
 								ON CONFLICT (asset_2d_id)
 								DO UPDATE SET
-									asset_2d_name = $2,
-									options = $3;`
+									asset_2d_name = $2, options = $3;`
 )
 
 var _ database.Assets2dDB = (*DB)(nil)

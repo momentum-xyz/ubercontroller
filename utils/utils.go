@@ -18,38 +18,11 @@ func BinID(id uuid.UUID) []byte {
 
 // Merge recursively merge optional value with default one.
 func Merge[T any](opt, def *T) *T {
-	var merge func(resVal, optVal, defVal reflect.Value)
-
-	merge = func(resVal, optVal, defVal reflect.Value) {
-		if optVal.IsNil() {
-			resVal.Set(defVal)
-			return
-		}
-		if defVal.IsNil() {
-			resVal.Set(optVal)
-			return
-		}
-
-		if optVal.Kind() == reflect.Pointer && optVal.Elem().Kind() == reflect.Struct {
-			optElem := optVal.Elem()
-			defElem := defVal.Elem()
-			if resVal.IsNil() {
-				resVal.Set(reflect.New(optElem.Type()))
-			}
-			resElem := resVal.Elem()
-
-			for i := 0; i < resElem.NumField(); i++ {
-				resField := resElem.Field(i)
-				optField := optElem.Field(i)
-				defField := defElem.Field(i)
-
-				merge(resField, optField, defField)
-			}
-
-			return
-		}
-
-		resVal.Set(optVal)
+	if opt == nil {
+		return def
+	}
+	if def == nil {
+		return opt
 	}
 
 	var t T
@@ -60,4 +33,90 @@ func Merge[T any](opt, def *T) *T {
 	merge(resVal, optVal, defVal)
 
 	return resVal.Interface().(*T)
+}
+
+func merge(resVal, optVal, defVal reflect.Value) {
+	if optVal.Kind() == reflect.Invalid {
+		resVal.Set(defVal)
+		return
+	}
+	if defVal.Kind() == reflect.Invalid {
+		resVal.Set(optVal)
+		return
+	}
+
+	switch optVal.Kind() {
+	case reflect.Map:
+		mergeMap(resVal, optVal, defVal)
+		return
+	case reflect.Pointer:
+		if optVal.IsNil() {
+			resVal.Set(defVal)
+			return
+		}
+		if defVal.IsNil() {
+			resVal.Set(optVal)
+			return
+		}
+
+		switch optVal.Elem().Kind() {
+		case reflect.Struct:
+			mergeStruct(resVal, optVal, defVal)
+			return
+		}
+	}
+
+	resVal.Set(optVal)
+}
+
+func mergeMap(resVal, optVal, defVal reflect.Value) {
+	if resVal.IsNil() {
+		resVal.Set(reflect.MakeMap(optVal.Type()))
+	}
+
+	var keys []reflect.Value
+	for _, val := range append(optVal.MapKeys(), defVal.MapKeys()...) {
+		var found bool
+		for _, v := range keys {
+			if val == v {
+				found = true
+				break
+			}
+		}
+		if !found {
+			keys = append(keys, val)
+		}
+	}
+
+	for i := range keys {
+		optElem := optVal.MapIndex(keys[i])
+		defElem := defVal.MapIndex(keys[i])
+		var resElem reflect.Value
+		if optElem.Kind() != reflect.Invalid {
+			resElem = reflect.New(optElem.Type()).Elem()
+		} else {
+			resElem = reflect.New(defElem.Type()).Elem()
+		}
+
+		merge(resElem, optElem, defElem)
+
+		resVal.SetMapIndex(keys[i], resElem)
+	}
+}
+
+func mergeStruct(resVal, optVal, defVal reflect.Value) {
+	optElem := optVal.Elem()
+	defElem := defVal.Elem()
+	if resVal.IsNil() {
+		resVal.Set(reflect.New(optElem.Type()))
+	}
+	resElem := resVal.Elem()
+
+	for i := 0; i < resElem.NumField(); i++ {
+		resField := resElem.Field(i)
+		optField := optElem.Field(i)
+		defField := defElem.Field(i)
+
+		merge(resField, optField, defField)
+	}
 }

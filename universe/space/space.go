@@ -326,7 +326,7 @@ func (s *Space) loadSelfData(entry *entry.Space) error {
 	if err := s.SetPosition(entry.Position, false); err != nil {
 		return errors.WithMessage(err, "failed to set position")
 	}
-	if err := s.SetOptions(modify.ReplaceWith(entry.Options), false); err != nil {
+	if err := s.SetOptions(modify.MergeWith(entry.Options), false); err != nil {
 		return errors.WithMessage(err, "failed to set options")
 	}
 	return nil

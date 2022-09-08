@@ -34,14 +34,8 @@ const (
 									    ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 									ON CONFLICT (space_id)
 									DO UPDATE SET
-										space_type_id = $2,
-									    owner_id = $3,
-									    parent_id = $4,
-									    asset_2d_id = $5,
-									    asset_3d_id = $6,
-									    options = $7,
-									    position = $8,
-									    updated_at = CURRENT_TIMESTAMP;`
+										space_type_id = $2, owner_id = $3, parent_id = $4, asset_2d_id = $5,
+									    asset_3d_id = $6, options = $7, position = $8, updated_at = CURRENT_TIMESTAMP;`
 )
 
 var _ database.SpacesDB = (*DB)(nil)

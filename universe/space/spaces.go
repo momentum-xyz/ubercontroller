@@ -84,7 +84,7 @@ func (s *Space) AddSpaces(spaces []universe.Space, updateDB bool) error {
 	}
 
 	if updateDB {
-		entries := make([]*entry.Space, 0, len(spaces))
+		entries := make([]*entry.Space, len(spaces))
 		for i := range spaces {
 			entries[i] = spaces[i].GetEntry()
 		}

@@ -92,7 +92,7 @@ func (s *SpaceTypes) AddSpaceTypes(spaceTypes []universe.SpaceType, updateDB boo
 	}
 
 	if updateDB {
-		entries := make([]*entry.SpaceType, 0, len(spaceTypes))
+		entries := make([]*entry.SpaceType, len(spaceTypes))
 		for i := range spaceTypes {
 			entries[i] = spaceTypes[i].GetEntry()
 		}
@@ -138,7 +138,7 @@ func (s *SpaceTypes) RemoveSpaceTypes(spaceTypes []universe.SpaceType, updateDB 
 	}
 
 	if updateDB {
-		ids := make([]uuid.UUID, 0, len(spaceTypes))
+		ids := make([]uuid.UUID, len(spaceTypes))
 		for i := range spaceTypes {
 			ids[i] = spaceTypes[i].GetID()
 		}

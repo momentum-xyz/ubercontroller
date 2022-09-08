@@ -92,7 +92,7 @@ func (a *Assets2d) AddAssets2d(assets2d []universe.Asset2d, updateDB bool) error
 	}
 
 	if updateDB {
-		entries := make([]*entry.Asset2d, 0, len(assets2d))
+		entries := make([]*entry.Asset2d, len(assets2d))
 		for i := range assets2d {
 			entries[i] = assets2d[i].GetEntry()
 		}
@@ -138,7 +138,7 @@ func (a *Assets2d) RemoveAssets2d(assets2d []universe.Asset2d, updateDB bool) er
 	}
 
 	if updateDB {
-		ids := make([]uuid.UUID, 0, len(assets2d))
+		ids := make([]uuid.UUID, len(assets2d))
 		for i := range assets2d {
 			ids[i] = assets2d[i].GetID()
 		}
