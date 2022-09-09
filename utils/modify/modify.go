@@ -18,6 +18,6 @@ func ReplaceWith[T any](new *T) Fn[T] {
 
 func MergeWith[T any](new *T) Fn[T] {
 	return func(current *T) *T {
-		return utils.Merge(new, current)
+		return utils.MergeStructs(new, current)
 	}
 }

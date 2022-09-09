@@ -92,6 +92,8 @@ type Space interface {
 	IDer
 	Initializer
 
+	NewSpace(spaceID uuid.UUID) (Space, error)
+
 	GetWorld() World
 
 	GetParent() Space
@@ -107,7 +109,6 @@ type Space interface {
 	SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool) error
 
 	GetEffectiveOptions() *entry.SpaceOptions
-	OnSpaceTypeUpdate(spaceType SpaceType)
 
 	GetAsset2D() Asset2d
 	SetAsset2D(asset2d Asset2d, updateDB bool) error
@@ -121,7 +122,7 @@ type Space interface {
 	GetEntry() *entry.Space
 	LoadFromEntry(entry *entry.Space, recursive bool) error
 
-	NewSpace(spaceID uuid.UUID) (Space, error)
+	Update(recursive bool) error
 
 	GetSpace(spaceID uuid.UUID, recursive bool) (Space, bool)
 	GetSpaces(recursive bool) map[uuid.UUID]Space

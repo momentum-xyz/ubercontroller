@@ -2,8 +2,8 @@ package space
 
 import (
 	"github.com/google/uuid"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -18,8 +18,8 @@ func (s *Space) NewSpace(spaceID uuid.UUID) (universe.Space, error) {
 	if err := s.GetWorld().AddSpace(space, false); err != nil {
 		return nil, errors.WithMessagef(err, "failed to add space %s to world: %s", spaceID, s.GetWorld().GetID())
 	}
-	if err := space.SetParent(s, false); err != nil {
-		return nil, errors.WithMessagef(err, "failed to set parent %s to space: %s", s.GetID(), spaceID)
+	if err := s.AddSpace(space, false); err != nil {
+		return nil, errors.WithMessagef(err, "failed to add space %s to space: %s", spaceID, s.GetID())
 	}
 
 	return space, nil
@@ -75,11 +75,11 @@ func (s *Space) AddSpace(space universe.Space, updateDB bool) error {
 	defer s.Children.Mu.Unlock()
 
 	if space.GetWorld().GetID() != s.world.GetID() {
-		return errors.Errorf("worlds mismatch: %s != %s", space.GetWorld().GetID(), s.world.GetID())
+		return errors.Errorf("worlds mismatch: %s != %s", space.GetWorld().GetID(), s.GetWorld().GetID())
 	}
 
 	if err := space.SetParent(s, false); err != nil {
-		return errors.WithMessagef(err, "failed to set parent %s to space: %s", s.id, space.GetID())
+		return errors.WithMessagef(err, "failed to set parent %s to space: %s", s.GetID(), space.GetID())
 	}
 
 	if updateDB {
@@ -100,10 +100,10 @@ func (s *Space) AddSpaces(spaces []universe.Space, updateDB bool) error {
 
 	for i := range spaces {
 		if spaces[i].GetWorld().GetID() != s.world.GetID() {
-			return errors.Errorf("space %s: worlds mismatch: %s != %s", spaces[i].GetID(), spaces[i].GetWorld().GetID(), s.world.GetID())
+			return errors.Errorf("space %s: worlds mismatch: %s != %s", spaces[i].GetID(), spaces[i].GetWorld().GetID(), s.GetWorld().GetID())
 		}
 		if err := spaces[i].SetParent(s, false); err != nil {
-			return errors.WithMessagef(err, "failed to set parent %s to space: %s", s.id, spaces[i].GetID())
+			return errors.WithMessagef(err, "failed to set parent %s to space: %s", s.GetID(), spaces[i].GetID())
 		}
 	}
 
@@ -127,15 +127,14 @@ func (s *Space) AddSpaces(spaces []universe.Space, updateDB bool) error {
 // TODO: think about rollback on error
 func (s *Space) RemoveSpace(space universe.Space, recursive, updateDB bool) (bool, error) {
 	s.Children.Mu.Lock()
-	if space.GetWorld().GetID() != s.world.GetID() {
+	if space.GetWorld().GetID() != s.GetWorld().GetID() {
 		s.Children.Mu.Unlock()
-		return false, errors.Errorf("worlds mismatch: %s != %s", space.GetWorld().GetID(), s.world.GetID())
+		return false, errors.Errorf("worlds mismatch: %s != %s", space.GetWorld().GetID(), s.GetWorld().GetID())
 	}
 
 	if _, ok := s.Children.Data[space.GetID()]; ok {
 		defer s.Children.Mu.Unlock()
 
-		// TODO: move to morgue
 		if err := space.SetParent(nil, false); err != nil {
 			return false, errors.WithMessagef(err, "failed to set parent nil to space: %s", space.GetID())
 		}
@@ -162,7 +161,7 @@ func (s *Space) RemoveSpace(space universe.Space, recursive, updateDB bool) (boo
 	for _, child := range s.Children.Data {
 		removed, err := child.RemoveSpace(space, recursive, updateDB)
 		if err != nil {
-			return false, errors.WithMessage(err, "failed to remove space")
+			return false, errors.WithMessagef(err, "failed to remove space: %s", space.GetID())
 		}
 		if removed {
 			return true, nil
@@ -172,25 +171,18 @@ func (s *Space) RemoveSpace(space universe.Space, recursive, updateDB bool) (boo
 	return false, nil
 }
 
-// RemoveSpaces return true in first value if any of spaces with space ids was removed.
+// RemoveSpaces return true in first value if all spaces with space ids was removed.
 func (s *Space) RemoveSpaces(spaces []universe.Space, recursive, updateDB bool) (bool, error) {
-	var res bool
-	group, _ := errgroup.WithContext(s.ctx)
-
-	for _, space := range spaces {
-		space := space
-
-		group.Go(func() error {
-			removed, err := s.RemoveSpace(space, recursive, updateDB)
-			if err != nil {
-				return errors.WithMessagef(err, "failed to remove space: %s", space.GetID())
-			}
-			if removed {
-				res = true
-			}
-			return nil
-		})
+	res := true
+	var errs *multierror.Error
+	for i := range spaces {
+		removed, err := s.RemoveSpace(spaces[i], recursive, updateDB)
+		if err != nil {
+			errs = multierror.Append(errs, errors.WithMessagef(err, "failed to remove space: %s", spaces[i].GetID()))
+		}
+		if !removed {
+			res = false
+		}
 	}
-
-	return res, group.Wait()
+	return res, errs.ErrorOrNil()
 }

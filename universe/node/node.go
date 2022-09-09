@@ -24,6 +24,7 @@ import (
 var _ universe.Node = (*Node)(nil)
 
 type Node struct {
+	id         uuid.UUID
 	cfg        *config.Config
 	ctx        context.Context
 	log        *zap.SugaredLogger
@@ -34,7 +35,6 @@ type Node struct {
 	assets3d   universe.Assets3d
 	spaceTypes universe.SpaceTypes
 	mu         sync.RWMutex
-	id         uuid.UUID
 }
 
 func NewNode(

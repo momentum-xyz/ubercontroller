@@ -61,6 +61,6 @@ func TestMerge(t *testing.T) {
 		},
 	}
 
-	res := Merge(&opt, &def)
+	res := MergeStructs(&opt, &def)
 	assert.Equal(t, exp, res)
 }

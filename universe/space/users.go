@@ -61,14 +61,11 @@ func (s *Space) AddUser(user universe.User, updateDB bool) error {
 	s.Users.Mu.Lock()
 	defer s.Users.Mu.Unlock()
 
-	if user.GetWorld().GetID() != s.world.GetID() {
-		return errors.Errorf("worlds mismatch: %s != %s", user.GetWorld().GetID(), s.world.GetID())
+	if user.GetWorld().GetID() != s.GetWorld().GetID() {
+		return errors.Errorf("worlds mismatch: %s != %s", user.GetWorld().GetID(), s.GetWorld().GetID())
 	}
 	if err := user.SetSpace(s, updateDB); err != nil {
-		return errors.WithMessagef(err, "failed to set space %s to user: %s", s.id, user.GetID())
-	}
-	if err := s.world.AddUser(user, updateDB); err != nil {
-		return errors.WithMessagef(err, "failed to add user %s to world: %s", user.GetID(), s.world.GetID())
+		return errors.WithMessagef(err, "failed to set space %s to user: %s", s.GetID(), user.GetID())
 	}
 	s.Users.Data[user.GetID()] = user
 

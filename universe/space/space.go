@@ -21,22 +21,23 @@ import (
 var _ universe.Space = (*Space)(nil)
 
 type Space struct {
+	id               uuid.UUID
+	world            universe.World
 	ctx              context.Context
 	log              *zap.SugaredLogger
 	db               database.DB
 	Users            *generic.SyncMap[uuid.UUID, universe.User]
 	Children         *generic.SyncMap[uuid.UUID, universe.Space]
 	mu               sync.RWMutex
-	id               uuid.UUID
 	ownerID          uuid.UUID
 	position         *cmath.Vec3
 	options          *entry.SpaceOptions
-	effectiveOptions *entry.SpaceOptions
-	world            universe.World
 	parent           universe.Space
 	asset2d          universe.Asset2d
 	asset3d          universe.Asset3d
 	spaceType        universe.SpaceType
+	entry            *entry.Space
+	effectiveOptions *entry.SpaceOptions
 }
 
 func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
@@ -66,9 +67,6 @@ func (s *Space) Initialize(ctx context.Context) error {
 }
 
 func (s *Space) GetWorld() universe.World {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
 	return s.world
 }
 
@@ -97,6 +95,7 @@ func (s *Space) SetParent(parent universe.Space, updateDB bool) error {
 	}
 
 	s.parent = parent
+	s.clearCache()
 
 	return nil
 }
@@ -114,11 +113,12 @@ func (s *Space) SetPosition(position *cmath.Vec3, updateDB bool) error {
 
 	if updateDB {
 		if err := s.db.SpacesUpdateSpacePosition(s.ctx, s.id, position); err != nil {
-			return errors.WithMessage(err, "failed to udpate db")
+			return errors.WithMessage(err, "failed to update db")
 		}
 	}
 
 	s.position = position
+	s.clearCache()
 
 	return nil
 }
@@ -141,6 +141,7 @@ func (s *Space) SetOwnerID(ownerID uuid.UUID, updateDB bool) error {
 	}
 
 	s.ownerID = ownerID
+	s.clearCache()
 
 	return nil
 }
@@ -167,6 +168,7 @@ func (s *Space) SetAsset2D(asset2d universe.Asset2d, updateDB bool) error {
 	}
 
 	s.asset2d = asset2d
+	s.clearCache()
 
 	return nil
 }
@@ -193,6 +195,7 @@ func (s *Space) SetAsset3D(asset3d universe.Asset3d, updateDB bool) error {
 	}
 
 	s.asset3d = asset3d
+	s.clearCache()
 
 	return nil
 }
@@ -210,17 +213,16 @@ func (s *Space) SetSpaceType(spaceType universe.SpaceType, updateDB bool) error 
 	}
 
 	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if updateDB {
 		if err := s.db.SpacesUpdateSpaceSpaceTypeID(s.ctx, s.id, spaceType.GetID()); err != nil {
-			s.mu.Unlock()
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
 
 	s.spaceType = spaceType
-	s.mu.Unlock()
-
-	s.OnSpaceTypeUpdate(spaceType)
+	s.clearCache()
 
 	return nil
 }
@@ -234,34 +236,20 @@ func (s *Space) GetOptions() *entry.SpaceOptions {
 
 func (s *Space) SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool) error {
 	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	options := modifyFn(s.options)
 
 	if updateDB {
 		if err := s.db.SpacesUpdateSpaceOptions(s.ctx, s.id, options); err != nil {
-			s.mu.Unlock()
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
 
 	s.options = options
-	s.mu.Unlock()
-
-	s.OnSpaceTypeUpdate(s.GetSpaceType())
+	s.clearCache()
 
 	return nil
-}
-
-func (s *Space) OnSpaceTypeUpdate(spaceType universe.SpaceType) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if s.spaceType == nil {
-		return
-	}
-
-	if spaceType.GetID() == s.spaceType.GetID() {
-		s.effectiveOptions = nil
-	}
 }
 
 func (s *Space) GetEffectiveOptions() *entry.SpaceOptions {
@@ -269,35 +257,58 @@ func (s *Space) GetEffectiveOptions() *entry.SpaceOptions {
 	defer s.mu.Unlock()
 
 	if s.effectiveOptions == nil {
-		s.effectiveOptions = utils.Merge(s.options, s.spaceType.GetOptions())
+		s.effectiveOptions = utils.MergeStructs(s.options, s.spaceType.GetOptions())
 	}
 	return s.effectiveOptions
 }
 
 func (s *Space) GetEntry() *entry.Space {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	entry := entry.Space{
-		SpaceID:  &s.id,
-		OwnerID:  &s.ownerID,
-		Options:  s.options,
-		Position: s.position,
-	}
-	if s.spaceType != nil {
-		entry.SpaceTypeID = utils.GetPtr(s.spaceType.GetID())
-	}
-	if s.parent != nil {
-		entry.ParentID = utils.GetPtr(s.parent.GetID())
-	}
-	if s.asset2d != nil {
-		entry.Asset2dID = utils.GetPtr(s.asset2d.GetID())
-	}
-	if s.asset3d != nil {
-		entry.Asset3dID = utils.GetPtr(s.asset3d.GetID())
+	if s.entry == nil {
+		s.entry = &entry.Space{
+			SpaceID:  &s.id,
+			OwnerID:  &s.ownerID,
+			Options:  s.options,
+			Position: s.position,
+		}
+		if s.spaceType != nil {
+			s.entry.SpaceTypeID = utils.GetPtr(s.spaceType.GetID())
+		}
+		if s.parent != nil {
+			s.entry.ParentID = utils.GetPtr(s.parent.GetID())
+		}
+		if s.asset2d != nil {
+			s.entry.Asset2dID = utils.GetPtr(s.asset2d.GetID())
+		}
+		if s.asset3d != nil {
+			s.entry.Asset3dID = utils.GetPtr(s.asset3d.GetID())
+		}
 	}
 
-	return &entry
+	return s.entry
+}
+
+func (s *Space) Update(recursive bool) error {
+	s.mu.Lock()
+	s.clearCache()
+	s.mu.Unlock()
+
+	if !recursive {
+		return nil
+	}
+
+	s.Children.Mu.RLock()
+	defer s.Children.Mu.RUnlock()
+
+	for _, child := range s.Children.Data {
+		if err := child.Update(recursive); err != nil {
+			return errors.WithMessagef(err, "failed to update child: %s", child.GetID())
+		}
+	}
+
+	return nil
 }
 
 func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
@@ -382,4 +393,9 @@ func (s *Space) loadDependencies(entry *entry.Space) error {
 	}
 
 	return nil
+}
+
+func (s *Space) clearCache() {
+	s.entry = nil
+	s.effectiveOptions = nil
 }

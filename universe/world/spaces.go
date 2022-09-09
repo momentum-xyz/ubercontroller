@@ -6,6 +6,10 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
+func (w *World) Update(recursive bool) error {
+	return w.Space.Update(false)
+}
+
 func (w *World) GetSpace(spaceID uuid.UUID, recursive bool) (universe.Space, bool) {
 	return w.Space.GetSpace(spaceID, false)
 }

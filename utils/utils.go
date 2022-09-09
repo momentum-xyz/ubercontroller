@@ -16,8 +16,8 @@ func BinID(id uuid.UUID) []byte {
 	return binID
 }
 
-// Merge recursively merge optional value with default one.
-func Merge[T any](opt, def *T) *T {
+// MergeStructs recursively merge optional struct with default one.
+func MergeStructs[T any](opt, def *T) *T {
 	if opt == nil {
 		return def
 	}

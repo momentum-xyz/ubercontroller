@@ -19,17 +19,18 @@ import (
 var _ universe.SpaceType = (*SpaceType)(nil)
 
 type SpaceType struct {
+	id           uuid.UUID
 	ctx          context.Context
 	log          *zap.SugaredLogger
 	db           database.DB
 	mu           sync.RWMutex
-	id           uuid.UUID
 	name         string
 	categoryName string
 	description  *string
 	options      *entry.SpaceOptions
 	asset2d      universe.Asset2d
 	asset3d      universe.Asset3d
+	entry        *entry.SpaceType
 }
 
 func NewSpaceType(id uuid.UUID, db database.DB) *SpaceType {
@@ -79,6 +80,7 @@ func (s *SpaceType) SetName(name string, updateDB bool) error {
 	}
 
 	s.name = name
+	s.clearCache()
 
 	return nil
 }
@@ -101,6 +103,7 @@ func (s *SpaceType) SetCategoryName(categoryName string, updateDB bool) error {
 	}
 
 	s.categoryName = categoryName
+	s.clearCache()
 
 	return nil
 }
@@ -123,6 +126,7 @@ func (s *SpaceType) SetDescription(description *string, updateDB bool) error {
 	}
 
 	s.description = description
+	s.clearCache()
 
 	return nil
 }
@@ -145,6 +149,7 @@ func (s *SpaceType) SetAsset2d(asset2d universe.Asset2d, updateDB bool) error {
 	}
 
 	s.asset2d = asset2d
+	s.clearCache()
 
 	return nil
 }
@@ -167,6 +172,7 @@ func (s *SpaceType) SetAsset3d(asset3d universe.Asset3d, updateDB bool) error {
 	}
 
 	s.asset3d = asset3d
+	s.clearCache()
 
 	return nil
 }
@@ -190,11 +196,20 @@ func (s *SpaceType) SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB 
 	}
 
 	s.options = options
+	s.clearCache()
 	s.mu.Unlock()
 
 	for _, world := range universe.GetNode().GetWorlds().GetWorlds() {
 		for _, space := range world.GetSpaces(true) {
-			space.OnSpaceTypeUpdate(s)
+			if space.GetSpaceType() == nil {
+				continue
+			}
+			if space.GetSpaceType().GetID() != s.GetID() {
+				continue
+			}
+			if err := space.Update(true); err != nil {
+				return errors.WithMessagef(err, "failed to update space: %s", space.GetID())
+			}
 		}
 	}
 
@@ -202,24 +217,30 @@ func (s *SpaceType) SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB 
 }
 
 func (s *SpaceType) GetEntry() *entry.SpaceType {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	entry := entry.SpaceType{
-		SpaceTypeID:   utils.GetPtr(s.id),
-		SpaceTypeName: &s.name,
-		CategoryName:  &s.categoryName,
-		Description:   s.description,
-		Options:       s.options,
-	}
-	if s.asset2d != nil {
-		entry.Asset2dID = utils.GetPtr(s.asset2d.GetID())
-	}
-	if s.asset3d != nil {
-		entry.Asset3dID = utils.GetPtr(s.asset3d.GetID())
+	if s.entry == nil {
+		s.entry = &entry.SpaceType{
+			SpaceTypeID:   utils.GetPtr(s.id),
+			SpaceTypeName: &s.name,
+			CategoryName:  &s.categoryName,
+			Description:   s.description,
+			Options:       s.options,
+		}
+		if s.asset2d != nil {
+			s.entry.Asset2dID = utils.GetPtr(s.asset2d.GetID())
+		}
+		if s.asset3d != nil {
+			s.entry.Asset3dID = utils.GetPtr(s.asset3d.GetID())
+		}
 	}
 
-	return &entry
+	return s.entry
+}
+
+func (s *SpaceType) clearCache() {
+	s.entry = nil
 }
 
 func (s *SpaceType) LoadFromEntry(entry *entry.SpaceType) error {
