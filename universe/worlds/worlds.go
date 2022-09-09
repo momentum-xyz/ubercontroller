@@ -2,8 +2,10 @@ package worlds
 
 import (
 	"context"
+	"sync"
 
 	"github.com/google/uuid"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
@@ -44,16 +46,29 @@ func (w *Worlds) Initialize(ctx context.Context) error {
 	return nil
 }
 
+func (w *Worlds) NewWorld(worldID uuid.UUID) (universe.World, error) {
+	world := world.NewWorld(worldID, w.db)
+
+	if err := world.Initialize(w.ctx); err != nil {
+		return nil, errors.WithMessagef(err, "failed to initialize world: %s", worldID)
+	}
+	if err := w.AddWorld(world, false); err != nil {
+		return nil, errors.WithMessagef(err, "failed to add world: %s", worldID)
+	}
+
+	return world, nil
+}
+
 func (w *Worlds) GetWorld(worldID uuid.UUID) (universe.World, bool) {
 	world, ok := w.worlds.Load(worldID)
 	return world, ok
 }
 
 func (w *Worlds) GetWorlds() map[uuid.UUID]universe.World {
-	worlds := make(map[uuid.UUID]universe.World)
-
 	w.worlds.Mu.RLock()
 	defer w.worlds.Mu.RUnlock()
+
+	worlds := make(map[uuid.UUID]universe.World, len(w.worlds.Data))
 
 	for id, world := range w.worlds.Data {
 		worlds[id] = world
@@ -235,16 +250,14 @@ func (w *Worlds) Load() error {
 		worldID := worldIDs[i]
 
 		group.Go(func() error {
-			world := world.NewWorld(worldID, w.db)
-
-			if err := world.Initialize(w.ctx); err != nil {
-				return errors.WithMessagef(err, "failed to initialize world: %s", world.GetID())
+			world, err := w.NewWorld(worldID)
+			if err != nil {
+				return errors.WithMessagef(err, "failed to create new world: %s", worldID)
 			}
 			if err := world.Load(); err != nil {
-				return errors.WithMessagef(err, "failed to load world: %s", world.GetID())
+				return errors.WithMessagef(err, "failed to load world: %s", worldID)
 			}
-
-			w.worlds.Store(world.GetID(), world)
+			w.worlds.Store(worldID, world)
 
 			return nil
 		})
@@ -264,27 +277,30 @@ func (w *Worlds) Load() error {
 func (w *Worlds) Save() error {
 	w.log.Info("Saving worlds...")
 
+	var wg sync.WaitGroup
+	var errs *multierror.Error
+	var errsMu sync.Mutex
+
 	w.worlds.Mu.RLock()
 	defer w.worlds.Mu.RUnlock()
 
-	group, _ := errgroup.WithContext(w.ctx)
+	for i := range w.worlds.Data {
+		wg.Add(1)
 
-	for _, world := range w.worlds.Data {
-		world := world
+		go func(world universe.World) {
+			defer wg.Done()
 
-		group.Go(func() error {
 			if err := world.Save(); err != nil {
-				return errors.WithMessagef(err, "failed to save world: %s", world.GetID())
+				errsMu.Lock()
+				defer errsMu.Unlock()
+				errs = multierror.Append(errs, errors.WithMessagef(err, "failed to save world: %s", world.GetID()))
 			}
-			return nil
-		})
+		}(w.worlds.Data[i])
 	}
 
-	if err := group.Wait(); err != nil {
-		return err
-	}
+	wg.Wait()
 
 	w.log.Info("Worlds saved")
 
-	return nil
+	return errs.ErrorOrNil()
 }

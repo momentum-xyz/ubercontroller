@@ -1,4 +1,4 @@
-package assets3d
+package assets_3d
 
 import "github.com/gin-gonic/gin"
 

@@ -46,9 +46,6 @@ func NewSpaceType(id uuid.UUID, db database.DB) *SpaceType {
 }
 
 func (s *SpaceType) GetID() uuid.UUID {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
 	return s.id
 }
 
@@ -183,17 +180,23 @@ func (s *SpaceType) GetOptions() *entry.SpaceOptions {
 
 func (s *SpaceType) SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool) error {
 	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	options := modifyFn(s.options)
 
 	if updateDB {
 		if err := s.db.SpaceTypesUpdateSpaceTypeOptions(s.ctx, s.id, options); err != nil {
+			s.mu.Unlock()
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
 
 	s.options = options
+	s.mu.Unlock()
+
+	for _, world := range universe.GetNode().GetWorlds().GetWorlds() {
+		for _, space := range world.GetSpaces(true) {
+			space.OnSpaceTypeUpdate(s)
+		}
+	}
 
 	return nil
 }

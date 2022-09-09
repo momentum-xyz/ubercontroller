@@ -33,9 +33,8 @@ func (s *Space) GetUser(userID uuid.UUID, recursive bool) (universe.User, bool) 
 // GetUsers return map with all nested users if recursive is true,
 // otherwise the method return map with users dependent only to current space.
 func (s *Space) GetUsers(recursive bool) map[uuid.UUID]universe.User {
-	users := make(map[uuid.UUID]universe.User)
-
 	s.Users.Mu.RLock()
+	users := make(map[uuid.UUID]universe.User, len(s.Users.Data))
 	for id, user := range s.Users.Data {
 		users[id] = user
 	}
@@ -57,12 +56,19 @@ func (s *Space) GetUsers(recursive bool) map[uuid.UUID]universe.User {
 	return users
 }
 
+// TODO: think about rollback on error
 func (s *Space) AddUser(user universe.User, updateDB bool) error {
 	s.Users.Mu.Lock()
 	defer s.Users.Mu.Unlock()
 
+	if user.GetWorld().GetID() != s.world.GetID() {
+		return errors.Errorf("worlds mismatch: %s != %s", user.GetWorld().GetID(), s.world.GetID())
+	}
 	if err := user.SetSpace(s, updateDB); err != nil {
-		return errors.WithMessagef(err, "failed to set space to user: %s", user.GetID())
+		return errors.WithMessagef(err, "failed to set space %s to user: %s", s.id, user.GetID())
+	}
+	if err := s.world.AddUser(user, updateDB); err != nil {
+		return errors.WithMessagef(err, "failed to add user %s to world: %s", user.GetID(), s.world.GetID())
 	}
 	s.Users.Data[user.GetID()] = user
 
@@ -73,8 +79,11 @@ func (s *Space) RemoveUser(user universe.User, updateDB bool) error {
 	s.Users.Mu.Lock()
 	defer s.Users.Mu.Unlock()
 
+	if user.GetWorld().GetID() != s.world.GetID() {
+		return errors.Errorf("worlds mismatch: %s != %s", user.GetWorld().GetID(), s.world.GetID())
+	}
 	if err := user.SetSpace(nil, updateDB); err != nil {
-		return errors.WithMessagef(err, "failed to set space to user: %s", user.GetID())
+		return errors.WithMessagef(err, "failed to set space nil to user: %s", user.GetID())
 	}
 	delete(s.Users.Data, user.GetID())
 

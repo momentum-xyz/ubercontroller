@@ -44,16 +44,29 @@ func (s *SpaceTypes) Initialize(ctx context.Context) error {
 	return nil
 }
 
+func (s *SpaceTypes) NewSpaceType(spaceTypeID uuid.UUID) (universe.SpaceType, error) {
+	spaceType := space_type.NewSpaceType(spaceTypeID, s.db)
+
+	if err := spaceType.Initialize(s.ctx); err != nil {
+		return nil, errors.WithMessagef(err, "failed to initialize space type: %s", spaceTypeID)
+	}
+	if err := s.AddSpaceType(spaceType, false); err != nil {
+		return nil, errors.WithMessagef(err, "failed to add space type: %s", spaceTypeID)
+	}
+
+	return spaceType, nil
+}
+
 func (s *SpaceTypes) GetSpaceType(spaceTypeID uuid.UUID) (universe.SpaceType, bool) {
 	spaceType, ok := s.spaceTypes.Load(spaceTypeID)
 	return spaceType, ok
 }
 
 func (s *SpaceTypes) GetSpaceTypes() map[uuid.UUID]universe.SpaceType {
-	spaceTypes := make(map[uuid.UUID]universe.SpaceType)
-
 	s.spaceTypes.Mu.RLock()
 	defer s.spaceTypes.Mu.RUnlock()
+
+	spaceTypes := make(map[uuid.UUID]universe.SpaceType, len(s.spaceTypes.Data))
 
 	for id, spaceType := range s.spaceTypes.Data {
 		spaceTypes[id] = spaceType
@@ -163,15 +176,13 @@ func (s *SpaceTypes) Load() error {
 	}
 
 	for i := range entries {
-		spaceType := space_type.NewSpaceType(*entries[i].SpaceTypeID, s.db)
-
-		if err := spaceType.Initialize(s.ctx); err != nil {
-			return errors.WithMessagef(err, "failed to initialize space type: %s", *entries[i].SpaceTypeID)
+		spaceType, err := s.NewSpaceType(*entries[i].SpaceTypeID)
+		if err != nil {
+			return errors.WithMessagef(err, "failed to create new space type: %s", entries[i].SpaceTypeID)
 		}
 		if err := spaceType.LoadFromEntry(entries[i]); err != nil {
 			return errors.WithMessagef(err, "failed to load space type from entry: %s", *entries[i].SpaceTypeID)
 		}
-
 		s.spaceTypes.Store(*entries[i].SpaceTypeID, spaceType)
 	}
 

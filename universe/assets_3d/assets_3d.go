@@ -1,4 +1,4 @@
-package assets3d
+package assets_3d
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/asset3d"
+	"github.com/momentum-xyz/ubercontroller/universe/asset_3d"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
@@ -44,16 +44,29 @@ func (a *Assets3d) Initialize(ctx context.Context) error {
 	return nil
 }
 
+func (a *Assets3d) NewAsset3d(asset3dID uuid.UUID) (universe.Asset3d, error) {
+	asset3d := asset_3d.NewAsset3d(asset3dID, a.db)
+
+	if err := asset3d.Initialize(a.ctx); err != nil {
+		return nil, errors.WithMessagef(err, "failed to initialize asset 3d: %s", asset3dID)
+	}
+	if err := a.AddAsset3d(asset3d, false); err != nil {
+		return nil, errors.WithMessagef(err, "failed to add asset 3d: %s", asset3dID)
+	}
+
+	return asset3d, nil
+}
+
 func (a *Assets3d) GetAsset3d(asset3dID uuid.UUID) (universe.Asset3d, bool) {
 	asset, ok := a.assets.Load(asset3dID)
 	return asset, ok
 }
 
 func (a *Assets3d) GetAssets3d() map[uuid.UUID]universe.Asset3d {
-	assets := make(map[uuid.UUID]universe.Asset3d)
-
 	a.assets.Mu.RLock()
 	defer a.assets.Mu.RUnlock()
+
+	assets := make(map[uuid.UUID]universe.Asset3d, len(a.assets.Data))
 
 	for id, asset := range a.assets.Data {
 		assets[id] = asset
@@ -163,16 +176,14 @@ func (a *Assets3d) Load() error {
 	}
 
 	for i := range entries {
-		asset := asset3d.NewAsset3d(*entries[i].Asset3dID, a.db)
-
-		if err := asset.Initialize(a.ctx); err != nil {
-			return errors.WithMessagef(err, "failed to initialize asset 3d: %s", *entries[i].Asset3dID)
+		asset3d, err := a.NewAsset3d(*entries[i].Asset3dID)
+		if err != nil {
+			return errors.WithMessagef(err, "failed to create new asset 3d: %s", entries[i].Asset3dID)
 		}
-		if err := asset.LoadFromEntry(entries[i]); err != nil {
-			return errors.WithMessagef(err, "failed to load asset 3d from entry: %s", *entries[i].Asset3dID)
+		if err := asset3d.LoadFromEntry(entries[i]); err != nil {
+			return errors.WithMessagef(err, "failed to load asset 3d from entry: %s", entries[i].Asset3dID)
 		}
-
-		a.assets.Store(*entries[i].Asset3dID, asset)
+		a.assets.Store(*entries[i].Asset3dID, asset3d)
 	}
 
 	universe.GetNode().AddAPIRegister(a)

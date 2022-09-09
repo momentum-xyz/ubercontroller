@@ -1,4 +1,4 @@
-package asset2d
+package asset_2d
 
 import (
 	"context"
@@ -36,9 +36,6 @@ func NewAsset2d(id uuid.UUID, db database.DB) *Asset2d {
 }
 
 func (a *Asset2d) GetID() uuid.UUID {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-
 	return *a.entry.Asset2dID
 }
 

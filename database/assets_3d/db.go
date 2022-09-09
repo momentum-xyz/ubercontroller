@@ -1,10 +1,11 @@
-package assets3d
+package assets_3d
 
 import (
 	"context"
 
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/google/uuid"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -23,9 +24,9 @@ const (
 									(asset_3d_id, asset_3d_name, options)
 								VALUES
 									($1, $2, $3)
-								ON CONFLICT (asset_2d_id)
+								ON CONFLICT (asset_3d_id)
 								DO UPDATE SET
-									asset_2d_name = $2, options = $3;`
+									asset_3d_name = $2, options = $3;`
 )
 
 var _ database.Assets3dDB = (*DB)(nil)
@@ -66,13 +67,14 @@ func (db *DB) Assets3dUpsertAssets(ctx context.Context, assets3d []*entry.Asset3
 	batchRes := db.conn.SendBatch(ctx, batch)
 	defer batchRes.Close()
 
+	var errs *multierror.Error
 	for i := 0; i < batch.Len(); i++ {
 		if _, err := batchRes.Exec(); err != nil {
-			return errors.WithMessage(err, "failed to exec db batch")
+			errs = multierror.Append(errs, err)
 		}
 	}
 
-	return nil
+	return errs.ErrorOrNil()
 }
 
 func (db *DB) Assets3dRemoveAssetByID(ctx context.Context, asset3dID uuid.UUID) error {

@@ -21,21 +21,22 @@ import (
 var _ universe.Space = (*Space)(nil)
 
 type Space struct {
-	ctx       context.Context
-	log       *zap.SugaredLogger
-	db        database.DB
-	Users     *generic.SyncMap[uuid.UUID, universe.User]
-	Children  *generic.SyncMap[uuid.UUID, universe.Space]
-	mu        sync.RWMutex
-	id        uuid.UUID
-	ownerID   uuid.UUID
-	position  *cmath.Vec3
-	options   *entry.SpaceOptions
-	world     universe.World
-	parent    universe.Space
-	asset2d   universe.Asset2d
-	asset3d   universe.Asset3d
-	spaceType universe.SpaceType
+	ctx              context.Context
+	log              *zap.SugaredLogger
+	db               database.DB
+	Users            *generic.SyncMap[uuid.UUID, universe.User]
+	Children         *generic.SyncMap[uuid.UUID, universe.Space]
+	mu               sync.RWMutex
+	id               uuid.UUID
+	ownerID          uuid.UUID
+	position         *cmath.Vec3
+	options          *entry.SpaceOptions
+	effectiveOptions *entry.SpaceOptions
+	world            universe.World
+	parent           universe.Space
+	asset2d          universe.Asset2d
+	asset3d          universe.Asset3d
+	spaceType        universe.SpaceType
 }
 
 func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
@@ -49,9 +50,6 @@ func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
 }
 
 func (s *Space) GetID() uuid.UUID {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
 	return s.id
 }
 
@@ -208,19 +206,21 @@ func (s *Space) GetSpaceType() universe.SpaceType {
 
 func (s *Space) SetSpaceType(spaceType universe.SpaceType, updateDB bool) error {
 	if spaceType == nil {
-		return errors.Errorf("invalid space type: nil")
+		return errors.Errorf("space type is nil")
 	}
 
 	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	if updateDB {
 		if err := s.db.SpacesUpdateSpaceSpaceTypeID(s.ctx, s.id, spaceType.GetID()); err != nil {
+			s.mu.Unlock()
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
 
 	s.spaceType = spaceType
+	s.mu.Unlock()
+
+	s.OnSpaceTypeUpdate(spaceType)
 
 	return nil
 }
@@ -234,19 +234,44 @@ func (s *Space) GetOptions() *entry.SpaceOptions {
 
 func (s *Space) SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool) error {
 	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	options := modifyFn(s.options)
 
 	if updateDB {
 		if err := s.db.SpacesUpdateSpaceOptions(s.ctx, s.id, options); err != nil {
+			s.mu.Unlock()
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
 
 	s.options = options
+	s.mu.Unlock()
+
+	s.OnSpaceTypeUpdate(s.GetSpaceType())
 
 	return nil
+}
+
+func (s *Space) OnSpaceTypeUpdate(spaceType universe.SpaceType) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.spaceType == nil {
+		return
+	}
+
+	if spaceType.GetID() == s.spaceType.GetID() {
+		s.effectiveOptions = nil
+	}
+}
+
+func (s *Space) GetEffectiveOptions() *entry.SpaceOptions {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.effectiveOptions == nil {
+		s.effectiveOptions = utils.Merge(s.options, s.spaceType.GetOptions())
+	}
+	return s.effectiveOptions
 }
 
 func (s *Space) GetEntry() *entry.Space {
@@ -279,7 +304,7 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 	s.log.Debugf("Loading space %s...", *entry.SpaceID)
 
 	if *entry.SpaceID != s.GetID() {
-		return errors.Errorf("space ids mismatch: %s != %s", *entry.SpaceID, s.GetID())
+		return errors.Errorf("space ids mismatch: %s != %s", entry.SpaceID, s.GetID())
 	}
 
 	if err := s.loadSelfData(entry); err != nil {
@@ -299,21 +324,14 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 	}
 
 	for i := range entries {
-		entry := entries[i]
-
-		space := NewSpace(*entry.SpaceID, s.db, s.world)
-
-		if err := space.Initialize(s.ctx); err != nil {
-			return errors.WithMessagef(err, "failed to initialize space: %s", space.GetID())
+		space, err := s.NewSpace(*entries[i].SpaceID)
+		if err != nil {
+			return errors.WithMessagef(err, "failed to create new space: %s", entries[i].SpaceID)
 		}
-		if err := space.LoadFromEntry(entry, recursive); err != nil {
-			return errors.WithMessagef(err, "failed to load space from entry: %s", space.GetID())
+		if err := space.LoadFromEntry(entries[i], recursive); err != nil {
+			return errors.WithMessagef(err, "failed to load space from entry: %s", entries[i].SpaceID)
 		}
-		if err := space.SetParent(s, false); err != nil {
-			return errors.WithMessagef(err, "failed to set parent: %s", space.GetID())
-		}
-
-		s.Children.Store(space.GetID(), space)
+		s.Children.Store(*entries[i].SpaceID, space)
 	}
 
 	return nil
@@ -321,7 +339,7 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 
 func (s *Space) loadSelfData(entry *entry.Space) error {
 	if err := s.SetOwnerID(*entry.OwnerID, false); err != nil {
-		return errors.WithMessagef(err, "failed to set owner id: %s", *entry.OwnerID)
+		return errors.WithMessagef(err, "failed to set owner id: %s", entry.OwnerID)
 	}
 	if err := s.SetPosition(entry.Position, false); err != nil {
 		return errors.WithMessage(err, "failed to set position")
@@ -337,29 +355,29 @@ func (s *Space) loadDependencies(entry *entry.Space) error {
 
 	spaceType, ok := node.GetSpaceTypes().GetSpaceType(*entry.SpaceTypeID)
 	if !ok {
-		return errors.Errorf("failed to get space type: %s", *entry.SpaceTypeID)
+		return errors.Errorf("failed to get space type: %s", entry.SpaceTypeID)
 	}
 	if err := s.SetSpaceType(spaceType, false); err != nil {
-		return errors.WithMessagef(err, "failed to set space type: %s", *entry.SpaceTypeID)
+		return errors.WithMessagef(err, "failed to set space type: %s", entry.SpaceTypeID)
 	}
 
 	if entry.Asset2dID != nil {
 		asset2d, ok := node.GetAssets2d().GetAsset2d(*entry.Asset2dID)
 		if !ok {
-			return errors.Errorf("failed to get asset 2d: %s", *entry.Asset2dID)
+			return errors.Errorf("failed to get asset 2d: %s", entry.Asset2dID)
 		}
 		if err := s.SetAsset2D(asset2d, false); err != nil {
-			return errors.WithMessagef(err, "failed to set asset 2d: %s", *entry.Asset2dID)
+			return errors.WithMessagef(err, "failed to set asset 2d: %s", entry.Asset2dID)
 		}
 	}
 
 	if entry.Asset3dID != nil {
 		asset3d, ok := node.GetAssets3d().GetAsset3d(*entry.Asset3dID)
 		if !ok {
-			return errors.Errorf("failed to get asset 3d: %s", *entry.Asset3dID)
+			return errors.Errorf("failed to get asset 3d: %s", entry.Asset3dID)
 		}
 		if err := s.SetAsset3D(asset3d, false); err != nil {
-			return errors.WithMessagef(err, "failed to set asset 3d: %s", *entry.Asset3dID)
+			return errors.WithMessagef(err, "failed to set asset 3d: %s", entry.Asset3dID)
 		}
 	}
 

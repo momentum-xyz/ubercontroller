@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -57,9 +58,6 @@ func NewNode(
 }
 
 func (n *Node) GetID() uuid.UUID {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	return n.id
 }
 
@@ -149,26 +147,57 @@ func (n *Node) Load() error {
 func (n *Node) Save() error {
 	n.log.Infof("Saving node: %s...", n.GetID())
 
-	group, _ := errgroup.WithContext(n.ctx)
+	var wg sync.WaitGroup
+	var errs *multierror.Error
+	var errsMu sync.Mutex
 
-	group.Go(func() error {
-		return n.assets2d.Save()
-	})
-	group.Go(func() error {
-		return n.assets3d.Save()
-	})
-	group.Go(func() error {
-		return n.spaceTypes.Save()
-	})
-	group.Go(func() error {
-		return n.worlds.Save()
-	})
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
 
-	if err := group.Wait(); err != nil {
-		return err
-	}
+		if err := n.assets2d.Save(); err != nil {
+			errsMu.Lock()
+			defer errsMu.Unlock()
+			errs = multierror.Append(errs, errors.WithMessage(err, "failed to save assets 2d"))
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		if err := n.assets3d.Save(); err != nil {
+			errsMu.Lock()
+			defer errsMu.Unlock()
+			errs = multierror.Append(errs, errors.WithMessage(err, "failed to save assets 3d"))
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		if err := n.spaceTypes.Save(); err != nil {
+			errsMu.Lock()
+			defer errsMu.Unlock()
+			errs = multierror.Append(errs, errors.WithMessage(err, "failed to save space types"))
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		if err := n.worlds.Save(); err != nil {
+			errsMu.Lock()
+			defer errsMu.Unlock()
+			errs = multierror.Append(errs, errors.WithMessage(err, "failed to save worlds"))
+		}
+	}()
+
+	wg.Wait()
 
 	n.log.Infof("Node saved: %s", n.GetID())
 
-	return nil
+	return errs.ErrorOrNil()
 }

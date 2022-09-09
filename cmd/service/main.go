@@ -8,8 +8,8 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
-	assets2dDB "github.com/momentum-xyz/ubercontroller/database/assets2d"
-	assets3dDB "github.com/momentum-xyz/ubercontroller/database/assets3d"
+	assets2dDB "github.com/momentum-xyz/ubercontroller/database/assets_2d"
+	assets3dDB "github.com/momentum-xyz/ubercontroller/database/assets_3d"
 	commonDB "github.com/momentum-xyz/ubercontroller/database/common"
 	"github.com/momentum-xyz/ubercontroller/database/db"
 	nodesDB "github.com/momentum-xyz/ubercontroller/database/nodes"
@@ -20,8 +20,8 @@ import (
 	"github.com/momentum-xyz/ubercontroller/logger"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/assets2d"
-	"github.com/momentum-xyz/ubercontroller/universe/assets3d"
+	"github.com/momentum-xyz/ubercontroller/universe/assets_2d"
+	"github.com/momentum-xyz/ubercontroller/universe/assets_3d"
 	"github.com/momentum-xyz/ubercontroller/universe/node"
 	"github.com/momentum-xyz/ubercontroller/universe/space_types"
 	"github.com/momentum-xyz/ubercontroller/universe/worlds"
@@ -77,8 +77,8 @@ func run() error {
 
 func createNode(ctx context.Context, cfg *config.Config, db database.DB) (universe.Node, error) {
 	worlds := worlds.NewWorlds(db)
-	assets2d := assets2d.NewAssets2d(db)
-	assets3d := assets3d.NewAssets3d(db)
+	assets2d := assets_2d.NewAssets2d(db)
+	assets3d := assets_3d.NewAssets3d(db)
 	spaceTypes := space_types.NewSpaceTypes(db)
 
 	nodeEntry, err := db.NodesGetNode(ctx)

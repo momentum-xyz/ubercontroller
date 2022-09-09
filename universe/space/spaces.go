@@ -9,6 +9,22 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
+func (s *Space) NewSpace(spaceID uuid.UUID) (universe.Space, error) {
+	space := NewSpace(spaceID, s.db, s.GetWorld())
+
+	if err := space.Initialize(s.ctx); err != nil {
+		return nil, errors.WithMessagef(err, "failed to initialize space: %s", spaceID)
+	}
+	if err := s.GetWorld().AddSpace(space, false); err != nil {
+		return nil, errors.WithMessagef(err, "failed to add space %s to world: %s", spaceID, s.GetWorld().GetID())
+	}
+	if err := space.SetParent(s, false); err != nil {
+		return nil, errors.WithMessagef(err, "failed to set parent %s to space: %s", s.GetID(), spaceID)
+	}
+
+	return space, nil
+}
+
 func (s *Space) GetSpace(spaceID uuid.UUID, recursive bool) (universe.Space, bool) {
 	space, ok := s.Children.Load(spaceID)
 	if ok {
@@ -35,10 +51,10 @@ func (s *Space) GetSpace(spaceID uuid.UUID, recursive bool) (universe.Space, boo
 // GetSpaces return map with all nested children if recursive is true,
 // otherwise the method return map with children dependent only to current space.
 func (s *Space) GetSpaces(recursive bool) map[uuid.UUID]universe.Space {
-	spaces := make(map[uuid.UUID]universe.Space)
-
 	s.Children.Mu.RLock()
 	defer s.Children.Mu.RUnlock()
+
+	spaces := make(map[uuid.UUID]universe.Space, len(s.Children.Data))
 
 	for id, child := range s.Children.Data {
 		spaces[id] = child
@@ -58,8 +74,12 @@ func (s *Space) AddSpace(space universe.Space, updateDB bool) error {
 	s.Children.Mu.Lock()
 	defer s.Children.Mu.Unlock()
 
+	if space.GetWorld().GetID() != s.world.GetID() {
+		return errors.Errorf("worlds mismatch: %s != %s", space.GetWorld().GetID(), s.world.GetID())
+	}
+
 	if err := space.SetParent(s, false); err != nil {
-		return errors.WithMessagef(err, "failed to set parent to space: %s", space.GetID())
+		return errors.WithMessagef(err, "failed to set parent %s to space: %s", s.id, space.GetID())
 	}
 
 	if updateDB {
@@ -73,13 +93,17 @@ func (s *Space) AddSpace(space universe.Space, updateDB bool) error {
 	return nil
 }
 
+// TODO: think about rollaback on error
 func (s *Space) AddSpaces(spaces []universe.Space, updateDB bool) error {
 	s.Children.Mu.Lock()
 	defer s.Children.Mu.Unlock()
 
 	for i := range spaces {
+		if spaces[i].GetWorld().GetID() != s.world.GetID() {
+			return errors.Errorf("space %s: worlds mismatch: %s != %s", spaces[i].GetID(), spaces[i].GetWorld().GetID(), s.world.GetID())
+		}
 		if err := spaces[i].SetParent(s, false); err != nil {
-			return errors.WithMessagef(err, "failed to set parent to space: %s", spaces[i].GetID())
+			return errors.WithMessagef(err, "failed to set parent %s to space: %s", s.id, spaces[i].GetID())
 		}
 	}
 
@@ -100,19 +124,25 @@ func (s *Space) AddSpaces(spaces []universe.Space, updateDB bool) error {
 	return nil
 }
 
+// TODO: think about rollback on error
 func (s *Space) RemoveSpace(space universe.Space, recursive, updateDB bool) (bool, error) {
 	s.Children.Mu.Lock()
+	if space.GetWorld().GetID() != s.world.GetID() {
+		s.Children.Mu.Unlock()
+		return false, errors.Errorf("worlds mismatch: %s != %s", space.GetWorld().GetID(), s.world.GetID())
+	}
+
 	if _, ok := s.Children.Data[space.GetID()]; ok {
 		defer s.Children.Mu.Unlock()
 
 		// TODO: move to morgue
 		if err := space.SetParent(nil, false); err != nil {
-			return false, errors.WithMessage(err, "failed to set parent")
+			return false, errors.WithMessagef(err, "failed to set parent nil to space: %s", space.GetID())
 		}
 
 		if updateDB {
 			if err := s.db.SpacesRemoveSpaceByID(s.ctx, space.GetID()); err != nil {
-				return false, errors.WithMessage(err, "failed to remove space by id")
+				return false, errors.WithMessage(err, "failed to update db")
 			}
 		}
 

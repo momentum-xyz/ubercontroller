@@ -5,6 +5,7 @@ import (
 
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/google/uuid"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -72,13 +73,14 @@ func (db *DB) SpaceTypesUpsertSpaceTypes(ctx context.Context, spaceTypes []*entr
 	batchRes := db.conn.SendBatch(ctx, batch)
 	defer batchRes.Close()
 
+	var errs *multierror.Error
 	for i := 0; i < batch.Len(); i++ {
 		if _, err := batchRes.Exec(); err != nil {
-			return errors.WithMessage(err, "failed to exec db batch")
+			errs = multierror.Append(errs, err)
 		}
 	}
 
-	return nil
+	return errs.ErrorOrNil()
 }
 
 func (db *DB) SpaceTypesRemoveSpaceTypeByID(ctx context.Context, spaceTypeID uuid.UUID) error {

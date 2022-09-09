@@ -71,6 +71,8 @@ type Worlds interface {
 	LoadSaver
 	APIRegister
 
+	NewWorld(worldID uuid.UUID) (World, error)
+
 	GetWorld(worldID uuid.UUID) (World, bool)
 	GetWorlds() map[uuid.UUID]World
 	AddWorld(world World, updateDB bool) error
@@ -104,6 +106,9 @@ type Space interface {
 	GetOptions() *entry.SpaceOptions
 	SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool) error
 
+	GetEffectiveOptions() *entry.SpaceOptions
+	OnSpaceTypeUpdate(spaceType SpaceType)
+
 	GetAsset2D() Asset2d
 	SetAsset2D(asset2d Asset2d, updateDB bool) error
 
@@ -115,6 +120,8 @@ type Space interface {
 
 	GetEntry() *entry.Space
 	LoadFromEntry(entry *entry.Space, recursive bool) error
+
+	NewSpace(spaceID uuid.UUID) (Space, error)
 
 	GetSpace(spaceID uuid.UUID, recursive bool) (Space, bool)
 	GetSpaces(recursive bool) map[uuid.UUID]Space
@@ -149,6 +156,8 @@ type SpaceTypes interface {
 	Initializer
 	LoadSaver
 	APIRegister
+
+	NewSpaceType(spaceTypeID uuid.UUID) (SpaceType, error)
 
 	GetSpaceType(spaceTypeID uuid.UUID) (SpaceType, bool)
 	GetSpaceTypes() map[uuid.UUID]SpaceType
@@ -189,6 +198,8 @@ type Assets2d interface {
 	LoadSaver
 	APIRegister
 
+	NewAsset2d(asset2dID uuid.UUID) (Asset2d, error)
+
 	GetAsset2d(asset2dID uuid.UUID) (Asset2d, bool)
 	GetAssets2d() map[uuid.UUID]Asset2d
 	AddAsset2d(asset2d Asset2d, updateDB bool) error
@@ -215,6 +226,8 @@ type Assets3d interface {
 	Initializer
 	LoadSaver
 	APIRegister
+
+	NewAsset3d(asset3dID uuid.UUID) (Asset3d, error)
 
 	GetAsset3d(asset3dID uuid.UUID) (Asset3d, bool)
 	GetAssets3d() map[uuid.UUID]Asset3d
