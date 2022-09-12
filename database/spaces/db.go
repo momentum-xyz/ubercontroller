@@ -162,7 +162,7 @@ func (db *DB) SpacesUpsertSpaces(ctx context.Context, spaces []*entry.Space) err
 	var errs *multierror.Error
 	for i := 0; i < batch.Len(); i++ {
 		if _, err := batchRes.Exec(); err != nil {
-			errs = multierror.Append(errs, err)
+			errs = multierror.Append(errs, errors.WithMessagef(err, "failed to exec db for: %s", spaces[i].SpaceID))
 		}
 	}
 

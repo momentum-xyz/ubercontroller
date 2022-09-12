@@ -79,10 +79,6 @@ func (s *SpaceTypes) AddSpaceType(spaceType universe.SpaceType, updateDB bool) e
 	s.spaceTypes.Mu.Lock()
 	defer s.spaceTypes.Mu.Unlock()
 
-	if _, ok := s.spaceTypes.Data[spaceType.GetID()]; ok {
-		return errors.Errorf("space type already exists")
-	}
-
 	if updateDB {
 		if err := s.db.SpaceTypesUpsertSpaceType(s.ctx, spaceType.GetEntry()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
@@ -97,12 +93,6 @@ func (s *SpaceTypes) AddSpaceType(spaceType universe.SpaceType, updateDB bool) e
 func (s *SpaceTypes) AddSpaceTypes(spaceTypes []universe.SpaceType, updateDB bool) error {
 	s.spaceTypes.Mu.Lock()
 	defer s.spaceTypes.Mu.Unlock()
-
-	for i := range spaceTypes {
-		if _, ok := s.spaceTypes.Data[spaceTypes[i].GetID()]; ok {
-			return errors.Errorf("space type already exists")
-		}
-	}
 
 	if updateDB {
 		entries := make([]*entry.SpaceType, len(spaceTypes))

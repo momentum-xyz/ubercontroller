@@ -79,10 +79,6 @@ func (a *Assets3d) AddAsset3d(asset3d universe.Asset3d, updateDB bool) error {
 	a.assets.Mu.Lock()
 	defer a.assets.Mu.Unlock()
 
-	if _, ok := a.assets.Data[asset3d.GetID()]; ok {
-		return errors.Errorf("asset 3d already exists")
-	}
-
 	if updateDB {
 		if err := a.db.Assets3dUpsertAsset(a.ctx, asset3d.GetEntry()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
@@ -97,12 +93,6 @@ func (a *Assets3d) AddAsset3d(asset3d universe.Asset3d, updateDB bool) error {
 func (a *Assets3d) AddAssets3d(assets3d []universe.Asset3d, updateDB bool) error {
 	a.assets.Mu.Lock()
 	defer a.assets.Mu.Unlock()
-
-	for i := range assets3d {
-		if _, ok := a.assets.Data[assets3d[i].GetID()]; ok {
-			return errors.Errorf("asset 3d already exists: %s", assets3d[i].GetID())
-		}
-	}
 
 	if updateDB {
 		entries := make([]*entry.Asset3d, len(assets3d))

@@ -70,7 +70,7 @@ func (db *DB) Assets3dUpsertAssets(ctx context.Context, assets3d []*entry.Asset3
 	var errs *multierror.Error
 	for i := 0; i < batch.Len(); i++ {
 		if _, err := batchRes.Exec(); err != nil {
-			errs = multierror.Append(errs, err)
+			errs = multierror.Append(errs, errors.WithMessagef(err, "failed to exec db for: %s", assets3d[i].Asset3dID))
 		}
 	}
 

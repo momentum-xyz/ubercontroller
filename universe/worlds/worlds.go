@@ -81,10 +81,6 @@ func (w *Worlds) AddWorld(world universe.World, updateDB bool) error {
 	w.worlds.Mu.Lock()
 	defer w.worlds.Mu.Unlock()
 
-	if _, ok := w.worlds.Data[world.GetID()]; ok {
-		return errors.Errorf("world already exists")
-	}
-
 	if updateDB {
 		if err := world.Save(); err != nil {
 			return errors.WithMessage(err, "failed to save world")
@@ -99,12 +95,6 @@ func (w *Worlds) AddWorld(world universe.World, updateDB bool) error {
 func (w *Worlds) AddWorlds(worlds []universe.World, updateDB bool) error {
 	w.worlds.Mu.Lock()
 	defer w.worlds.Mu.Unlock()
-
-	for i := range worlds {
-		if _, ok := w.worlds.Data[worlds[i].GetID()]; ok {
-			return errors.Errorf("world already exists: %s", worlds[i].GetID())
-		}
-	}
 
 	if updateDB {
 		group, _ := errgroup.WithContext(w.ctx)

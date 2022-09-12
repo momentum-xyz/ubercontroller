@@ -76,7 +76,7 @@ func (db *DB) SpaceTypesUpsertSpaceTypes(ctx context.Context, spaceTypes []*entr
 	var errs *multierror.Error
 	for i := 0; i < batch.Len(); i++ {
 		if _, err := batchRes.Exec(); err != nil {
-			errs = multierror.Append(errs, err)
+			errs = multierror.Append(errs, errors.WithMessagef(err, "failed to exec db for: %s", spaceTypes[i].SpaceTypeID))
 		}
 	}
 

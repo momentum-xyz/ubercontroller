@@ -79,10 +79,6 @@ func (a *Assets2d) AddAsset2d(asset2d universe.Asset2d, updateDB bool) error {
 	a.assets.Mu.Lock()
 	defer a.assets.Mu.Unlock()
 
-	if _, ok := a.assets.Data[asset2d.GetID()]; ok {
-		return errors.Errorf("asset 2d already exists")
-	}
-
 	if updateDB {
 		if err := a.db.Assets2dUpsertAsset(a.ctx, asset2d.GetEntry()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
@@ -97,12 +93,6 @@ func (a *Assets2d) AddAsset2d(asset2d universe.Asset2d, updateDB bool) error {
 func (a *Assets2d) AddAssets2d(assets2d []universe.Asset2d, updateDB bool) error {
 	a.assets.Mu.Lock()
 	defer a.assets.Mu.Unlock()
-
-	for i := range assets2d {
-		if _, ok := a.assets.Data[assets2d[i].GetID()]; ok {
-			return errors.Errorf("asset 2d already exists: %s", assets2d[i].GetID())
-		}
-	}
 
 	if updateDB {
 		entries := make([]*entry.Asset2d, len(assets2d))
