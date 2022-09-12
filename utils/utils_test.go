@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMerge(t *testing.T) {
+func TestMergePTRs(t *testing.T) {
 	t.Parallel()
 
 	type T1 struct {
@@ -61,6 +61,6 @@ func TestMerge(t *testing.T) {
 		},
 	}
 
-	res := MergeStructs(&opt, &def)
+	res := MergePTRs(&opt, &def)
 	assert.Equal(t, exp, res)
 }

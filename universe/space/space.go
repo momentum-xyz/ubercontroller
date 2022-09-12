@@ -257,7 +257,7 @@ func (s *Space) GetEffectiveOptions() *entry.SpaceOptions {
 	defer s.mu.Unlock()
 
 	if s.effectiveOptions == nil {
-		s.effectiveOptions = utils.MergeStructs(s.options, s.spaceType.GetOptions())
+		s.effectiveOptions = utils.MergePTRs(s.options, s.spaceType.GetOptions())
 	}
 	return s.effectiveOptions
 }
