@@ -15,6 +15,7 @@ import (
 
 // Config : structure to hold configuration
 type Config struct {
+	Auth     Auth     `yaml:"auth"`
 	Common   Common   `yaml:"common"`
 	Settings Local    `yaml:"settings"`
 	MQTT     MQTT     `yaml:"mqtt"`

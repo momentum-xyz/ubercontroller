@@ -2,6 +2,7 @@ package world
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/config"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -20,6 +21,7 @@ var _ universe.World = (*World)(nil)
 type World struct {
 	*space.Space
 	ctx context.Context
+	cfg config.Config
 	log *zap.SugaredLogger
 	db  database.DB
 }
