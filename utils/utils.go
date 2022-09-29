@@ -1,7 +1,10 @@
 package utils
 
 import (
+	"encoding/base64"
+	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -119,4 +122,16 @@ func mergeStruct(resVal, optVal, defVal reflect.Value) {
 
 		merge(resField, optField, defField)
 	}
+}
+
+func ParseJWT(p string) ([]byte, error) {
+	parts := strings.Split(p, ".")
+	if len(parts) < 2 {
+		return nil, fmt.Errorf("oidc: malformed jwt, expected 3 parts got %d", len(parts))
+	}
+	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return nil, fmt.Errorf("oidc: malformed jwt payload: %v", err)
+	}
+	return payload, nil
 }
