@@ -16,7 +16,7 @@ func (v *Vec3) Plus(v2 Vec3) {
 	v.Z += v2.Z
 }
 
-func (v Vec3) ToVec3f64() Vec3f64 {
+func (v *Vec3) ToVec3f64() Vec3f64 {
 	return Vec3f64{
 		float64(v.X),
 		float64(v.Y),
@@ -39,7 +39,7 @@ type Vec3f64 struct {
 	Z float64 `json:"z" db:"z"`
 }
 
-func (v Vec3f64) ToVec3() Vec3 {
+func (v *Vec3f64) ToVec3() Vec3 {
 	return Vec3{
 		float32(v.X),
 		float32(v.Y),

@@ -15,6 +15,7 @@ import (
 	nodesDB "github.com/momentum-xyz/ubercontroller/database/nodes"
 	spaceTypesDB "github.com/momentum-xyz/ubercontroller/database/space_types"
 	spacesDB "github.com/momentum-xyz/ubercontroller/database/spaces"
+	userTypesDB "github.com/momentum-xyz/ubercontroller/database/user_types"
 	usersDB "github.com/momentum-xyz/ubercontroller/database/users"
 	worldsDB "github.com/momentum-xyz/ubercontroller/database/worlds"
 	"github.com/momentum-xyz/ubercontroller/logger"
@@ -133,5 +134,6 @@ func createDB(conn *pgxpool.Pool) (database.DB, error) {
 		assets2dDB.NewDB(conn, common),
 		assets3dDB.NewDB(conn, common),
 		spaceTypesDB.NewDB(conn, common),
+		userTypesDB.NewDB(conn, common),
 	), nil
 }

@@ -43,10 +43,10 @@ func NewSendPosBuffer(id uuid.UUID) []byte {
 	return buf
 }
 
-func (mb *Builder) NewPosBusMessageBuffer(msgid uint32, len int) []byte {
+func (mb *Builder) NewPosBusMessageBuffer(msgId uint32, len int) []byte {
 	msg := make([]byte, posbus.MsgTypeSize*2+len)
-	binary.LittleEndian.PutUint32(msg, msgid)
-	binary.LittleEndian.PutUint32(msg[posbus.MsgTypeSize+len:], ^msgid)
+	binary.LittleEndian.PutUint32(msg, msgId)
+	binary.LittleEndian.PutUint32(msg[posbus.MsgTypeSize+len:], ^msgId)
 	return msg
 }
 
@@ -72,7 +72,7 @@ func (mb *Builder) ReleaseBuilder(builder *flatbuffers.Builder) {
 }
 
 func (mb *Builder) MsgSetWorld(
-	worldId uuid.UUID, name string, avatarubercontrollerId, skyboxubercontrollerId uuid.UUID, lodDistances []uint32,
+	worldId uuid.UUID, name string, avatarControllerId, skyboxControllerId uuid.UUID, lodDistances []uint32,
 	decorations []DecorationMetadata,
 ) *websocket.PreparedMessage {
 	builder := mb.GetBuilder()
@@ -86,7 +86,7 @@ func (mb *Builder) MsgSetWorld(
 	for i := len(lodDistances) - 1; i >= 0; i-- {
 		builder.PrependUint32(lodDistances[i])
 	}
-	lodsOffset := builder.EndVector(len(lodDistances))
+	LODsOffset := builder.EndVector(len(lodDistances))
 	var decorationOffsets []flatbuffers.UOffsetT
 	for i := len(decorations) - 1; i >= 0; i-- {
 		pos := decorations[i].Position
@@ -106,9 +106,9 @@ func (mb *Builder) MsgSetWorld(
 
 	api.SetWorldStart(builder)
 	api.SetWorldAddWorldId(builder, mb.SerializeGUID(builder, worldId))
-	api.SetWorldAddAvatarControllerId(builder, mb.SerializeGUID(builder, avatarubercontrollerId))
-	api.SetWorldAddSkyboxControllerId(builder, mb.SerializeGUID(builder, skyboxubercontrollerId))
-	api.SetWorldAddLodDistances(builder, lodsOffset)
+	api.SetWorldAddAvatarControllerId(builder, mb.SerializeGUID(builder, avatarControllerId))
+	api.SetWorldAddSkyboxControllerId(builder, mb.SerializeGUID(builder, skyboxControllerId))
+	api.SetWorldAddLodDistances(builder, LODsOffset)
 	api.SetWorldAddDecorations(builder, decsOffset)
 	api.SetWorldAddName(builder, nameObj)
 	msgOffset := api.SetWorldEnd(builder)
@@ -126,7 +126,6 @@ func (mb *Builder) FinishMessage(
 	builder.Finish(flatBuffMsgOffset)
 	rawBytes := builder.FinishedBytes()
 
-	// logger.Logln(4, hex.EncodeToString(rawBytes))
 	return mb.WrapMessage(rawBytes)
 }
 
@@ -147,9 +146,9 @@ func (mb *Builder) FinishMessageBytes(
 }
 
 func (mb *Builder) SerializeGUID(builder *flatbuffers.Builder, uuid uuid.UUID) flatbuffers.UOffsetT {
-	swapedBytes := unityUUID(uuid[:])
-	least := binary.LittleEndian.Uint64(swapedBytes[0:8])
-	most := binary.LittleEndian.Uint64(swapedBytes[8:])
+	swappedBytes := unityUUID(uuid[:])
+	least := binary.LittleEndian.Uint64(swappedBytes[0:8])
+	most := binary.LittleEndian.Uint64(swappedBytes[8:])
 	return api.CreateID(builder, least, most)
 }
 
@@ -165,7 +164,8 @@ func (mb *Builder) MsgObjectDefinition(obj ObjectDefinition) *websocket.Prepared
 	api.ObjectDefinitionStart(builder)
 	api.ObjectDefinitionAddObjectId(builder, mb.SerializeGUID(builder, obj.ObjectID))
 	api.ObjectDefinitionAddName(builder, objName)
-	api.ObjectDefinitionAddPosition(builder,
+	api.ObjectDefinitionAddPosition(
+		builder,
 		api.CreateVec3(builder, obj.Position.X, obj.Position.Y, obj.Position.Z),
 	)
 	api.ObjectDefinitionAddParentId(builder, mb.SerializeGUID(builder, obj.ParentID))
@@ -188,7 +188,6 @@ func (mb *Builder) MsgAddStaticObjects(objects []ObjectDefinition) *websocket.Pr
 	var objectOffsets []flatbuffers.UOffsetT
 	for i := len(objects) - 1; i >= 0; i-- {
 		obj := objects[i]
-		// Logln(4, "EE:", obj.objectID.String())
 		nameObj := builder.CreateString(obj.Name)
 
 		api.ObjectDefinitionStart(builder)

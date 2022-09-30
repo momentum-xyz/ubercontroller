@@ -2,6 +2,7 @@ package universe
 
 import (
 	"context"
+	influxWrite "github.com/influxdata/influxdb-client-go/v2/api/write"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -63,6 +64,9 @@ type Node interface {
 	GetSpaceTypes() SpaceTypes
 
 	AddAPIRegister(register APIRegister)
+
+	WriteInfluxPoint(point *influxWrite.Point) error
+	HashID(userId uuid.UUID) string
 }
 
 type Worlds interface {
@@ -86,6 +90,7 @@ type World interface {
 	RunStopper
 	LoadSaver
 	APIRegister
+	WriteInfluxPoint(point *influxWrite.Point) error
 }
 
 type Space interface {
@@ -151,6 +156,11 @@ type User interface {
 
 	GetSpace() Space
 	SetSpace(space Space, updateDB bool) error
+	Update() error
+
+	GetUserType() UserType
+	SetUserType(userType UserType, updateDB bool) error
+	AddInfluxTags(prefix string, p *influxWrite.Point) *influxWrite.Point
 }
 
 type SpaceTypes interface {
@@ -192,6 +202,38 @@ type SpaceType interface {
 
 	GetEntry() *entry.SpaceType
 	LoadFromEntry(entry *entry.SpaceType) error
+}
+
+type UserTypes interface {
+	Initializer
+	LoadSaver
+	APIRegister
+
+	NewUserType(userTypeID uuid.UUID) (UserType, error)
+
+	GetUserType(userTypeID uuid.UUID) (UserType, bool)
+	GetUserTypes() map[uuid.UUID]UserType
+	AddUserType(spaceType UserType, updateDB bool) error
+	AddUserTypes(spaceTypes []UserType, updateDB bool) error
+	RemoveUserType(spaceType UserType, updateDB bool) error
+	RemoveUserTypes(spaceTypes []UserType, updateDB bool) error
+}
+
+type UserType interface {
+	IDer
+	Initializer
+
+	GetName() string
+	SetName(name string, updateDB bool) error
+
+	GetDescription() *string
+	SetDescription(description *string, updateDB bool) error
+
+	GetOptions() *entry.UserOptions
+	SetOptions(modifyFn modify.Fn[entry.UserOptions], updateDB bool) error
+
+	GetEntry() *entry.UserType
+	LoadFromEntry(entry *entry.UserType) error
 }
 
 type Assets2d interface {
@@ -250,4 +292,88 @@ type Asset3d interface {
 
 	GetEntry() *entry.Asset3d
 	LoadFromEntry(entry *entry.Asset3d) error
+}
+
+type Plugin interface {
+	IDer
+	Initializer
+
+	GetName() string
+	SetName(name string, updateDB bool) error
+
+	GetOptions() *entry.PluginOptions
+	SetOptions(modifyFn modify.Fn[entry.PluginOptions], updateDB bool) error
+
+	GetDescription() *string
+	SetDescription(modifyFn modify.Fn[string], updateDB bool) error
+
+	GetEntry() *entry.Asset3d
+	LoadFromEntry(entry *entry.Asset3d) error
+}
+
+type Plugins interface {
+	Initializer
+	LoadSaver
+	APIRegister
+
+	NewPlugin(pluginID uuid.UUID) (Plugin, error)
+	GetPlugin(pluginID uuid.UUID) (Plugin, bool)
+
+	GetPlugins() map[uuid.UUID]Plugin
+	AddPlugin(plugin Plugin, updateDB bool) error
+	AddPlugins(plugins []Plugin, updateDB bool) error
+	RemovePlugin(plugin Plugin, updateDB bool) error
+	RemovePlugins(plugins []Plugin, updateDB bool) error
+}
+
+type Attribute interface {
+	Initializer
+
+	GetID() entry.AttributeID
+	GetName() string
+	GetPluginID() uuid.UUID
+
+	GetOptions() *entry.AttributeOptions
+	SetOptions(modifyFn modify.Fn[entry.AttributeOptions], updateDB bool) error
+
+	GetDescription() *string
+	SetDescription(description *string, updateDB bool) error
+
+	GetEntry() *entry.Attribute
+	LoadFromEntry(entry *entry.Attribute) error
+}
+
+type Attributes interface {
+	Initializer
+	LoadSaver
+	APIRegister
+
+	NewAttribute(attributeId entry.AttributeID) (Attribute, error)
+	GetAttribute(pluginID uuid.UUID, name string) (Attribute, bool)
+
+	GetAttributes() map[entry.AttributeID]Attribute
+	AddAttribute(attribute Attribute, updateDB bool) error
+	AddAttributes(attributes []Attribute, updateDB bool) error
+	RemoveAttribute(attribute Attribute, updateDB bool) error
+	RemoveAttributes(attributes []Attribute, updateDB bool) error
+}
+
+type AttributeList[indexType comparable] interface {
+	Initializer
+
+	GetID(id indexType) entry.AttributeID
+	GetName(id indexType) string
+	GetPluginID(id indexType) uuid.UUID
+
+	GetOptions(id indexType) *entry.AttributeOptions
+	GetEffectiveOptions(id indexType) *entry.AttributeOptions
+	SetOptions(id indexType, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool) error
+
+	GetValue(id indexType) *string
+	SetValue(id indexType, modifyFn modify.Fn[string], updateDB bool) error
+
+	AddAttribute(id indexType)
+
+	//GetEntry(id indexType) *entry.Attribute
+	//LoadFromEntry(entry *entry.Attribute) error
 }

@@ -38,6 +38,8 @@ type Space struct {
 	spaceType        universe.SpaceType
 	entry            *entry.Space
 	effectiveOptions *entry.SpaceOptions
+	attributes       universe.AttributeList[entry.AttributeID]
+	userAttributes   universe.AttributeList[UserAttributeIndex]
 }
 
 func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
@@ -52,6 +54,11 @@ func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
 
 func (s *Space) GetID() uuid.UUID {
 	return s.id
+}
+
+// todo: implement this via attributes
+func (s *Space) GetName() string {
+	return "unknown"
 }
 
 func (s *Space) Initialize(ctx context.Context) error {
@@ -355,7 +362,7 @@ func (s *Space) loadSelfData(entry *entry.Space) error {
 	if err := s.SetPosition(entry.Position, false); err != nil {
 		return errors.WithMessage(err, "failed to set position")
 	}
-	if err := s.SetOptions(modify.MergeWith(entry.Options), false); err != nil {
+	if err := s.SetOptions(modify.ReplaceWith(entry.Options), false); err != nil {
 		return errors.WithMessage(err, "failed to set options")
 	}
 	return nil

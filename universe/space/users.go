@@ -68,7 +68,7 @@ func (s *Space) AddUser(user universe.User, updateDB bool) error {
 		return errors.WithMessagef(err, "failed to set space %s to user: %s", s.GetID(), user.GetID())
 	}
 	s.Users.Data[user.GetID()] = user
-
+	s.sendSpaceEnterLeaveStats(user, 1)
 	return nil
 }
 
@@ -83,7 +83,7 @@ func (s *Space) RemoveUser(user universe.User, updateDB bool) error {
 		return errors.WithMessagef(err, "failed to set space nil to user: %s", user.GetID())
 	}
 	delete(s.Users.Data, user.GetID())
-
+	s.sendSpaceEnterLeaveStats(user, 1)
 	return nil
 }
 

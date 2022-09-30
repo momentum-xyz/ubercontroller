@@ -2,6 +2,7 @@ package world
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/mplugin"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -19,9 +20,10 @@ var _ universe.World = (*World)(nil)
 
 type World struct {
 	*space.Space
-	ctx context.Context
-	log *zap.SugaredLogger
-	db  database.DB
+	ctx              context.Context
+	log              *zap.SugaredLogger
+	db               database.DB
+	pluginController *mplugin.PluginController
 }
 
 func NewWorld(id uuid.UUID, db database.DB) *World {
@@ -29,6 +31,7 @@ func NewWorld(id uuid.UUID, db database.DB) *World {
 		db: db,
 	}
 	world.Space = space.NewSpace(id, db, world)
+	world.pluginController = mplugin.NewPluginController(id)
 
 	return world
 }
