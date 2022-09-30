@@ -2,9 +2,13 @@ package node
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 	u "github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/pkg/errors"
 	"net/http"
 	"strings"
 )
@@ -62,7 +66,6 @@ func (n *Node) Check(c *gin.Context) {
 	}
 
 	if accessToken != nil {
-		// Check existence of user
 		var idT idToken
 		jwt, err := u.ParseJWT(requestBody.IdToken)
 		if err != nil {
@@ -78,17 +81,56 @@ func (n *Node) Check(c *gin.Context) {
 			return
 		}
 
-		if !idT.Guest.IsGuest {
-			// Set usertype to user?
-			// Create user
-		} else {
-			// Set usertype to temporary user?
-			// Create user
+		uuid, err := n.GetUserIDFromToken(accessToken.Subject, idT)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"message": "can not get userID from token"})
+			return
 		}
+
+		fmt.Printf("uuid: %s", uuid)
 
 		// Check for invitation
 		// Assign rights based on invitation?
 
 		c.JSON(http.StatusOK, gin.H{"message": accessToken})
+	}
+}
+
+func (n *Node) GetUserIDFromToken(accessTokenSubject string, idT idToken) (uuid.UUID, error) {
+	parsedUuid, err := uuid.Parse(accessTokenSubject)
+	if err != nil {
+		return uuid.Nil, errors.WithMessage(err, "failed to parse uuid")
+	}
+
+	userEntry, err := n.db.UsersGetUserByID(n.ctx, parsedUuid)
+	if err != nil {
+		return uuid.Nil, errors.WithMessage(err, "failed to get user by id")
+	}
+
+	if userEntry != nil {
+		return userEntry.UserID, nil
+	}
+
+	if !idT.Guest.IsGuest {
+		if len(idT.Web3Address) < 0 {
+			fmt.Errorf("idToken does not contain a web3 address")
+		}
+
+		// _ = n.db.UsersUpsertUser(n.ctx, NewUser())
+		// Set usertype to user?
+		// Create user
+	} else {
+		// Set usertype to temporary user?
+		// Create user
+	}
+	return uuid.Nil, nil
+}
+
+func NewUser(userTypeID uuid.UUID) *entry.User {
+	return &entry.User{
+		UserID:     uuid.New(),
+		UserTypeID: userTypeID,
+		Profile:    nil,
+		Options:    nil,
 	}
 }

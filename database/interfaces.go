@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-
 	"github.com/google/uuid"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
@@ -19,6 +18,10 @@ type DB interface {
 	Assets3dDB
 	SpaceTypesDB
 }
+
+const Size = 16
+
+type UUID [Size]byte
 
 type CommonDB interface {
 }
@@ -50,6 +53,8 @@ type SpacesDB interface {
 }
 
 type UsersDB interface {
+	UsersGetUserByID(ctx context.Context, userID uuid.UUID) (*entry.User, error)
+	UsersUpsertUser(ctx context.Context, user *entry.User) error
 }
 
 type Assets2dDB interface {
@@ -82,4 +87,8 @@ type SpaceTypesDB interface {
 	SpaceTypesUpdateSpaceTypeCategoryName(ctx context.Context, spaceTypeID uuid.UUID, categoryName string) error
 	SpaceTypesUpdateSpaceTypeDescription(ctx context.Context, spaceTypeID uuid.UUID, description *string) error
 	SpaceTypesUpdateSpaceTypeOptions(ctx context.Context, spaceTypeID uuid.UUID, options *entry.SpaceOptions) error
+}
+
+type UserTypesDB interface {
+	UserTypesGetUserTypeByName(ctx context.Context, userTypeName entry.UserTypeName) (*entry.UserType, error)
 }
