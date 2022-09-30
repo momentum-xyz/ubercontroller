@@ -1,19 +1,18 @@
 package entry
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type UserTypeName string
 
 type UserType struct {
-	UserTypeID   *uuid.UUID    `db:"user_type_id"`
-	UserTypeName *UserTypeName `db:"user_type_name"`
-	Description  *string       `db:"description"`
-	Options      any           `db:"options"`
+	UserTypeID   *uuid.UUID   `db:"user_type_id"`
+	UserTypeName *string      `db:"user_type_name"`
+	Description  *string      `db:"description"`
+	Options      *UserOptions `db:"options"`
+	CreatedAt    *time.Time   `db:"created_at"`
+	UpdatedAt    *time.Time   `db:"updated_at"`
 }
-
-const (
-	USER           UserTypeName = "User"
-	DEITY          UserTypeName = "Deity"
-	TEMPORARY_USER UserTypeName = "Temporary User"
-	TOKEN_GROUPS   UserTypeName = "Token Groups"
-)

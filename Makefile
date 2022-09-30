@@ -5,6 +5,7 @@ all: build
 
 build:
 	go build -o ./bin/ubercontroller ./cmd/service
+	cd plugins && make
 
 run: build
 	./bin/ubercontroller

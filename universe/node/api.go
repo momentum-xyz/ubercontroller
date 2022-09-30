@@ -6,7 +6,6 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/momentum-xyz/ubercontroller/types/entry"
 	u "github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/pkg/errors"
 	"net/http"
@@ -96,15 +95,15 @@ func (n *Node) Check(c *gin.Context) {
 	}
 }
 
-func (n *Node) GetUserIDFromToken(accessTokenSubject string, idT idToken) (uuid.UUID, error) {
+func (n *Node) GetUserIDFromToken(accessTokenSubject string, idT idToken) (*uuid.UUID, error) {
 	parsedUuid, err := uuid.Parse(accessTokenSubject)
 	if err != nil {
-		return uuid.Nil, errors.WithMessage(err, "failed to parse uuid")
+		return nil, errors.WithMessage(err, "failed to parse uuid")
 	}
 
 	userEntry, err := n.db.UsersGetUserByID(n.ctx, parsedUuid)
 	if err != nil {
-		return uuid.Nil, errors.WithMessage(err, "failed to get user by id")
+		return nil, errors.WithMessage(err, "failed to get user by id")
 	}
 
 	if userEntry != nil {
@@ -123,14 +122,15 @@ func (n *Node) GetUserIDFromToken(accessTokenSubject string, idT idToken) (uuid.
 		// Set usertype to temporary user?
 		// Create user
 	}
-	return uuid.Nil, nil
+	return nil, nil
 }
 
-func NewUser(userTypeID uuid.UUID) *entry.User {
-	return &entry.User{
-		UserID:     uuid.New(),
-		UserTypeID: userTypeID,
-		Profile:    nil,
-		Options:    nil,
-	}
-}
+//
+//func NewUser(userTypeID uuid.UUID) *entry.User {
+//	return &entry.User{
+//		UserID:     uuid.New(),
+//		UserTypeID: userTypeID,
+//		Profile:    nil,
+//		Options:    nil,
+//	}
+//}

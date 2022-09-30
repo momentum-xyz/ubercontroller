@@ -48,15 +48,18 @@ type SpaceChildPlacement struct {
 }
 
 type SpaceAttribute struct {
-	PluginID uuid.UUID              `db:"plugin_id"`
-	SpaceID  uuid.UUID              `db:"space_id"`
-	Name     string                 `db:"attribute_name"`
-	Value    *SpaceAttributeValue   `db:"value"`
-	Options  *SpaceAttributeOptions `db:"options"`
+	PluginID uuid.UUID         `db:"plugin_id"`
+	SpaceID  uuid.UUID         `db:"space_id"`
+	Name     string            `db:"attribute_name"`
+	Value    *AttributeValue   `db:"value"`
+	Options  *AttributeOptions `db:"options"`
 }
 
-type SpaceAttributeValue struct {
-}
-
-type SpaceAttributeOptions struct {
+type SpaceUserAttribute struct {
+	PluginID uuid.UUID         `db:"plugin_id"`
+	SpaceID  uuid.UUID         `db:"space_id"`
+	UserID   uuid.UUID         `db:"user_id"`
+	Name     string            `db:"attribute_name"`
+	Value    *AttributeValue   `db:"value"`
+	Options  *AttributeOptions `db:"options"`
 }

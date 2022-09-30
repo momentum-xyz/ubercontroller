@@ -18,6 +18,14 @@ type DB struct {
 	database.Assets2dDB
 	database.Assets3dDB
 	database.SpaceTypesDB
+	database.UserTypesDB
+	database.AttributesDB
+	database.PluginsDB
+	database.SpaceAttributesDB
+	database.UserAttributesDB
+	database.SpaceUserAttributesDB
+	database.UserUserAttributesDB
+	database.NodeAttributesDB
 }
 
 func NewDB(
@@ -30,6 +38,7 @@ func NewDB(
 	assets2d database.Assets2dDB,
 	assets3d database.Assets3dDB,
 	spaceTypes database.SpaceTypesDB,
+	userTypes database.UserTypesDB,
 ) *DB {
 	return &DB{
 		conn:         conn,
@@ -41,5 +50,6 @@ func NewDB(
 		Assets2dDB:   assets2d,
 		Assets3dDB:   assets3d,
 		SpaceTypesDB: spaceTypes,
+		UserTypesDB:  userTypes,
 	}
 }

@@ -3,6 +3,7 @@ package node
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"sync"
 
@@ -16,25 +17,33 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
+	"github.com/momentum-xyz/ubercontroller/mplugin"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils"
+
+	influx_api "github.com/influxdata/influxdb-client-go/v2/api"
 )
 
 var _ universe.Node = (*Node)(nil)
 
 type Node struct {
-	id         uuid.UUID
-	cfg        *config.Config
-	ctx        context.Context
-	log        *zap.SugaredLogger
-	db         database.DB
-	router     *gin.Engine
-	worlds     universe.Worlds
-	assets2d   universe.Assets2d
-	assets3d   universe.Assets3d
-	spaceTypes universe.SpaceTypes
-	mu         sync.RWMutex
+	id            uuid.UUID
+	name          string
+	cfg           *config.Config
+	ctx           context.Context
+	log           *zap.SugaredLogger
+	db            database.DB
+	router        *gin.Engine
+	worlds        universe.Worlds
+	assets2d      universe.Assets2d
+	assets3d      universe.Assets3d
+	spaceTypes    universe.SpaceTypes
+	userTypes     universe.UserTypes
+	pluginManager *mplugin.PluginManager
+	mu            sync.RWMutex
+	influx        influx_api.WriteAPIBlocking
+	handshakeChan chan *HandshakeData
 }
 
 func NewNode(
@@ -61,6 +70,10 @@ func (n *Node) GetID() uuid.UUID {
 	return n.id
 }
 
+func (n *Node) GetName() string {
+	return n.name
+}
+
 func (n *Node) Initialize(ctx context.Context) error {
 	log := utils.GetFromAny(ctx.Value(types.ContextLoggerKey), (*zap.SugaredLogger)(nil))
 	if log == nil {
@@ -78,7 +91,7 @@ func (n *Node) Initialize(ctx context.Context) error {
 	r.Use(gin.RecoveryWithWriter(consoleWriter))
 
 	n.router = r
-
+	n.pluginManager = mplugin.NewPluginManager()
 	return nil
 }
 
@@ -98,14 +111,28 @@ func (n *Node) GetSpaceTypes() universe.SpaceTypes {
 	return n.spaceTypes
 }
 
+func (n *Node) GetUserTypes() universe.UserTypes {
+	return n.userTypes
+}
+
 func (n *Node) AddAPIRegister(register universe.APIRegister) {
 	register.RegisterAPI(n.router)
+}
+
+func (n *Node) HealthCheck(ctx *gin.Context) {
+	type HealthStatus struct {
+		Status string `json:"status"`
+	}
+	ctx.JSON(http.StatusOK, HealthStatus{Status: "OK"})
 }
 
 func (n *Node) Run() error {
 	if err := n.worlds.Run(); err != nil {
 		return errors.WithMessage(err, "failed to run worlds")
 	}
+	n.router.GET("/posbus", n.PosBusConnectionHandler)
+	n.router.GET("/health", n.PosBusConnectionHandler)
+	go n.UserConnectionsProcessor()
 	return n.router.Run(fmt.Sprintf("%s:%d", n.cfg.Settings.Address, n.cfg.Settings.Port))
 }
 
@@ -118,12 +145,16 @@ func (n *Node) Load() error {
 
 	group, _ := errgroup.WithContext(n.ctx)
 
-	group.Go(func() error {
-		return n.assets2d.Load()
-	})
-	group.Go(func() error {
-		return n.assets3d.Load()
-	})
+	group.Go(
+		func() error {
+			return n.assets2d.Load()
+		},
+	)
+	group.Go(
+		func() error {
+			return n.assets3d.Load()
+		},
+	)
 
 	if err := group.Wait(); err != nil {
 		return errors.WithMessage(err, "failed to load assets")
