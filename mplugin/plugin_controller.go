@@ -155,6 +155,7 @@ func (p *PluginController) UnsubscribeHookByHookId(plugin PluginInterface, id Ho
 	return nil
 }
 
+// TODO: fix the bloody thing
 func TriggerHook[A any](p *PluginController, name string, arg A) error {
 	hooks, ok := p.hooksMap.Load(name)
 	if !ok {

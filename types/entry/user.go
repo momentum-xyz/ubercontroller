@@ -20,7 +20,8 @@ type UserOptions struct {
 }
 
 type UserProfile struct {
-	Name *string `db:"name" json:"name"`
+	Name      *string `db:"name" json:"name"`
+	OnBoarded *bool   `db:"onboarded" json:"onboarded"`
 }
 
 type UserAttribute struct {

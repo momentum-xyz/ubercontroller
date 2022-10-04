@@ -15,6 +15,7 @@ const (
 
 func (n *Node) WriteInfluxPoint(point *influxWrite.Point) error {
 	// TODO: uncomment once influx part ready
+	// TODO: pass stats as simple map and unwrap here
 	return nil
 	point.AddTag("Node ID", n.GetID().String())
 	point.AddTag("Node Name", n.GetName())
