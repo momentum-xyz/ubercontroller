@@ -92,5 +92,11 @@ func (n *Node) HandShake(socketConnection *websocket.Conn) {
 		return
 	}
 
-	n.DetectSpawnWorld(userID).SpawnUser(userID, sessionID, socketConnection)
+	user, err := n.LoadUser(userID)
+	if err != nil {
+		return
+	}
+	user.SetConnection(sessionID, socketConnection)
+
+	n.DetectSpawnWorld(userID).AddUser(user, false)
 }

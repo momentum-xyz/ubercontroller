@@ -1,6 +1,7 @@
 package user
 
 import (
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/pkg/errors"
@@ -31,7 +32,7 @@ func (u *User) StartIOPumps() {
 	u.conn.SetReadLimit(inMessageSizeLimit)
 	u.conn.SetReadDeadline(time.Now().Add(pongWait))
 	u.conn.SetPongHandler(func(string) error { u.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
-
+	go u.PingTicker()
 }
 
 func (u *User) ReadPump() {
@@ -71,81 +72,65 @@ func (u *User) ReadPump() {
 	u.log.Info("Connection: end of read pump")
 }
 
-func (u *User) WritePump() {
+func (u *User) PingTicker() {
 	ticker := time.NewTicker(pingPeriod)
-	defer func() {
-		//u.hub.unregister <- u
-		u.log.Info("Connection: end of write pump")
-	}()
-
+	pingMessage, _ := websocket.NewPreparedMessage(websocket.PingMessage, nil)
 	for {
 		select {
-		case message, ok := <-u.send:
-			if !ok {
-				u.log.Debug("Connection: write pump: chan closed")
-				return
-			}
-			if u.SendDirectly(message, ok) != nil {
-				return
-			}
-
-			// Add queued chat messages to the current websocket message.
-			n := len(u.send)
-			for i := 0; i < n; i++ {
-				message, ok := <-u.send
-				if u.SendDirectly(message, ok) != nil {
-					return
-				}
-			}
-
 		case <-ticker.C:
-			u.conn.SetWriteDeadline(time.Now().Add(writeWait))
-			if err := u.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+			//if u.quit.Load() {
+			//	return
+			//}
+			if err := u.SendDirectly(pingMessage); err != nil {
 				return
 			}
 		}
 	}
 }
 
-func (u *User) SendDirectly(message *websocket.PreparedMessage, ok bool) error {
+func (u *User) CloseHandler() {
+
+}
+
+func (u *User) SendDirectly(message *websocket.PreparedMessage) error {
+	u.sendMutex.Lock()
+	defer u.sendMutex.Unlock()
 	u.conn.SetWriteDeadline(time.Now().Add(writeWait))
-	if !ok {
-		// The hub closed the channel.
-		u.conn.WriteMessage(websocket.CloseMessage, []byte{})
-		return errors.New("socket closed")
-	}
 	err := u.conn.WritePreparedMessage(message)
 	if err != nil {
 		return errors.New("error pushing message")
+		u.CloseHandler()
 	}
-	return nil
+	return err
 }
 
 func (u *User) Send(m *websocket.PreparedMessage) {
 	if m == nil {
 		return
 	}
-	// protect by simple atomic, when acceptance to send chan is closed nCurrentSends is negative
-	if u.nCurrentSends.Load() >= 0 {
-		u.nCurrentSends.Add(1)
-		u.send <- m
-		u.nCurrentSends.Add(-1)
+	if u.readyToSend.Load() {
+		if false {
+			// TODO: push content of ring buffer
+
+		}
+		err := u.SendDirectly(m)
+		if err != nil {
+			// TODO: shutdown sequence
+		}
+	} else {
+		// TODO: put to ring buffer
 	}
 }
 
-func (u *User) CloseSendChannel() {
-	// cet current number of open sends
-	sends := u.nCurrentSends.Swap(chanIsClosed)
-	// drain send channel
-	ticker := time.NewTicker(time.Microsecond)
-	for u.nCurrentSends.Load() > chanIsClosed-sends {
-		select {
-		case _, _ = <-u.send:
+func (u *User) SetConnection(id uuid.UUID, socketConnection *websocket.Conn) error {
+	u.sessionID = id
+	u.conn = socketConnection
+	u.send = make(chan *websocket.PreparedMessage, 10)
+	u.quit.Store(false)
+	u.readyToSend.Store(false)
+	return nil
+}
 
-		case <-ticker.C:
-		}
-	}
-	u.log.Info("Channel is drained for user %v", u.id.String())
-	//at this point there are no sends are coming anymore GRANTED
-	close(u.send)
+func (u *User) GetSessionId() uuid.UUID {
+	return u.sessionID
 }

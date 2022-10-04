@@ -3,6 +3,7 @@ package node
 import (
 	"context"
 	"fmt"
+	user "github.com/momentum-xyz/ubercontroller/universe/user"
 	"net/http"
 	"os"
 	"sync"
@@ -239,4 +240,17 @@ func (n *Node) DetectSpawnWorld(userId uuid.UUID) universe.World {
 
 	}
 	return nil
+}
+
+func (n *Node) LoadUser(userID uuid.UUID) (universe.User, error) {
+	user := user.NewUser(userID, n.db)
+	if err := user.Initialize(n.ctx); err != nil {
+		return nil, errors.WithMessagef(err, "failed to initialize user: %s", userID)
+	}
+
+	if err := user.Load(); err != nil {
+		return nil, errors.WithMessagef(err, "failed to load user: %s", userID)
+	}
+
+	return user, nil
 }

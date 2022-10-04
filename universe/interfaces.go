@@ -62,6 +62,7 @@ type Node interface {
 	GetAssets2d() Assets2d
 	GetAssets3d() Assets3d
 	GetSpaceTypes() SpaceTypes
+	GetUserTypes() UserTypes
 
 	AddAPIRegister(register APIRegister)
 
@@ -91,7 +92,6 @@ type World interface {
 	LoadSaver
 	APIRegister
 	WriteInfluxPoint(point *influxWrite.Point) error
-	SpawnUser(userID uuid.UUID, sessionID uuid.UUID, socketConnection *websocket.Conn)
 }
 
 type Space interface {
@@ -162,6 +162,11 @@ type User interface {
 	GetUserType() UserType
 	SetUserType(userType UserType, updateDB bool) error
 	AddInfluxTags(prefix string, p *influxWrite.Point) *influxWrite.Point
+	SetConnection(SessionId uuid.UUID, socketConnection *websocket.Conn) error
+	GetSessionId() uuid.UUID
+
+	Send(m *websocket.PreparedMessage)
+	SendDirectly(message *websocket.PreparedMessage) error
 }
 
 type SpaceTypes interface {
