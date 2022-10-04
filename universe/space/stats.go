@@ -8,11 +8,6 @@ import (
 )
 
 func (s *Space) AddSpaceTags(prefix string, p *write.Point) *write.Point {
-	//Space UUID
-	//Space Type
-	//Space type UUID
-	//Space name
-
 	if prefix != "" {
 		prefix += " "
 	}

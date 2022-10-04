@@ -28,21 +28,22 @@ import (
 var _ universe.Node = (*Node)(nil)
 
 type Node struct {
-	id               uuid.UUID
-	name             string
-	cfg              *config.Config
-	ctx              context.Context
-	log              *zap.SugaredLogger
-	db               database.DB
-	router           *gin.Engine
-	worlds           universe.Worlds
-	assets2d         universe.Assets2d
-	assets3d         universe.Assets3d
-	spaceTypes       universe.SpaceTypes
-	userTypes        universe.UserTypes
-	mu               sync.RWMutex
-	influx           influx_api.WriteAPIBlocking
-	pluginController *mplugin.PluginController
+	id                  uuid.UUID
+	name                string
+	cfg                 *config.Config
+	ctx                 context.Context
+	log                 *zap.SugaredLogger
+	db                  database.DB
+	router              *gin.Engine
+	worlds              universe.Worlds
+	assets2d            universe.Assets2d
+	assets3d            universe.Assets3d
+	spaceTypes          universe.SpaceTypes
+	userTypes           universe.UserTypes
+	mu                  sync.RWMutex
+	influx              influx_api.WriteAPIBlocking
+	pluginController    *mplugin.PluginController
+	corePluginInterface *mplugin.PluginInterface
 }
 
 func NewNode(

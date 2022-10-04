@@ -24,6 +24,8 @@ type World struct {
 	log              *zap.SugaredLogger
 	db               database.DB
 	pluginController *mplugin.PluginController
+	//corePluginInstance  mplugin.PluginInstance
+	corePluginInterface mplugin.PluginInterface
 }
 
 func NewWorld(id uuid.UUID, db database.DB) *World {
@@ -32,8 +34,15 @@ func NewWorld(id uuid.UUID, db database.DB) *World {
 	}
 	world.Space = space.NewSpace(id, db, world)
 	world.pluginController = mplugin.NewPluginController(id)
-
+	//world.corePluginInstance, _ = world.pluginController.AddPlugin(world.GetID(), world.corePluginInitFunc)
+	world.pluginController.AddPlugin(world.GetID(), world.corePluginInitFunc)
 	return world
+}
+
+func (w *World) corePluginInitFunc(pi mplugin.PluginInterface) (mplugin.PluginInstance, error) {
+	instance := CorePluginInstance{PluginInterface: pi}
+	w.corePluginInterface = pi
+	return instance, nil
 }
 
 func (w *World) Initialize(ctx context.Context) error {

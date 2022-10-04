@@ -2,6 +2,7 @@ package mplugin
 
 import (
 	"github.com/google/uuid"
+	"github.com/momentum-xyz/controller/utils"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/pkg/errors"
 	"reflect"
@@ -24,7 +25,7 @@ type PluginController struct {
 	pluginInstances map[PluginID]internalPluginInterface
 	hooksMap        *generic.SyncMap[string, any]
 	parent          uuid.UUID
-	loadedPlugins   map[uuid.UUID]PluginInstance
+	loadedPlugins   *utils.SyncMap[uuid.UUID, PluginInstance]
 }
 
 func NewPluginController(parent uuid.UUID) *PluginController {
@@ -32,9 +33,19 @@ func NewPluginController(parent uuid.UUID) *PluginController {
 		pluginInstances: make(map[PluginID]internalPluginInterface),
 		hooksMap:        generic.NewSyncMap[string, any](),
 		secretList:      make(map[PluginID]uuid.UUID),
-		loadedPlugins:   make(map[uuid.UUID]PluginInstance),
+		loadedPlugins:   utils.NewSyncMap[uuid.UUID, PluginInstance](),
 	}
 	return &pc
+}
+
+func (p *PluginController) AddPlugin(pluginID uuid.UUID, f NewInstanceFunction) (PluginInstance, error) {
+	pi := p.NewPluginInterface(PluginID(pluginID))
+	instance, err := f(pi)
+	if err != nil {
+		return nil, errors.WithMessage(err, "To initialize plugin "+pluginID.String())
+	}
+	p.loadedPlugins.Store(pluginID, instance)
+	return instance, nil
 }
 
 func registerHook[A any](p *PluginController, name string, F A) (*HookEntries[A], error) {
@@ -52,7 +63,7 @@ func registerHook[A any](p *PluginController, name string, F A) (*HookEntries[A]
 	return he, nil
 }
 
-func (p *PluginController) NewPluginInstance(id PluginID) PluginInterface {
+func (p *PluginController) NewPluginInterface(id PluginID) PluginInterface {
 	secret := uuid.New()
 	p.secretList[id] = secret
 	pi := internalPluginInterface{id: id, secretId: secret, worldId: p.parent, pc: p}
