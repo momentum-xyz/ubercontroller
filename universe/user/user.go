@@ -32,7 +32,6 @@ type User struct {
 
 	lastPositionUpdateTimestamp int64
 	userType                    universe.UserType
-	name                        string
 	log                         *zap.SugaredLogger
 	ctx                         context.Context
 	send                        chan *websocket.PreparedMessage
@@ -169,7 +168,7 @@ func (u *User) GetID() uuid.UUID {
 }
 
 func (u *User) GetName() string {
-	return u.name
+	return *u.profile.Name
 }
 
 //SetUserType(userType UserType, updateDB bool) error

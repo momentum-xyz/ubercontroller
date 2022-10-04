@@ -22,6 +22,7 @@ type UserOptions struct {
 type UserProfile struct {
 	Name      *string `db:"name" json:"name"`
 	OnBoarded *bool   `db:"onboarded" json:"onboarded"`
+	Email     *string `db:"email" json:"email"`
 }
 
 type UserAttribute struct {

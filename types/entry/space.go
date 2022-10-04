@@ -40,6 +40,7 @@ type SpaceOptions struct {
 	Minimap          *bool                              `db:"minimap" json:"minimap"`
 	Visible          *SpaceVisibleType                  `db:"visible" json:"visible"`
 	Private          *bool                              `db:"private" json:"private"`
+	DashboardPlugins []string                           `db:"dashboard_plugins" json:"dashboard_plugins"`
 }
 
 type SpaceChildPlacement struct {
