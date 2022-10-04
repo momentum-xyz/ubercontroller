@@ -79,13 +79,13 @@ func (n *Node) HandShake(socketConnection *websocket.Conn) {
 			return []byte(""), nil
 		},
 	)
+	claims := parsed.Claims.(jwt.MapClaims)
 
 	userID := message.DeserializeGUID(handshake.UserId(nil))
 	sessionID := message.DeserializeGUID(handshake.SessionId(nil))
 	URL, _ := url.Parse(string(handshake.Url()))
 	n.log.Info("URL to use:", URL)
 
-	claims := parsed.Claims.(jwt.MapClaims)
 	userIDclaim, _ := uuid.Parse(utils.GetFromAnyMap(claims, "sub", ""))
 
 	if !((userID == userIDclaim) || (userIDclaim.String() == "69e1d7f6-3130-4005-9969-31edf9af9445") || (userIDclaim.String() == "eb50bbc8-ba4e-46a3-a480-a9b30141ce91")) {
