@@ -11,51 +11,45 @@ import (
 	"github.com/momentum-xyz/ubercontroller/pkg/message"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/pkg/errors"
+	"net/http"
 	"net/url"
 )
 
-type HandshakeData struct {
-	Connection       *websocket.Conn
-	UserID           uuid.UUID
-	SessionID        uuid.UUID
-	URL              *url.URL
-	RequestedWorldID uuid.UUID
+var WebsocketUpgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
 }
 
 func (n *Node) PosBusConnectionHandler(ctx *gin.Context) {
-	ws, err := utils.WebsocketUpgrader.Upgrade(ctx.Writer, ctx.Request, nil)
+	ws, err := WebsocketUpgrader.Upgrade(ctx.Writer, ctx.Request, nil)
 	if err != nil {
 		n.log.Error(errors.WithMessage(err, "error: socket upgrade error, aborting connection"))
 		return
 	}
 
-	hsData, ok := n.HandShake(ws)
-	if !ok {
-		return
-	}
-
-	n.handshakeChan <- hsData
+	n.HandShake(ws)
 }
 
-// PreHandShake TODO: it's "god" method needs to be simplified // antst: agree :)
-func (n *Node) HandShake(socketConnection *websocket.Conn) (*HandshakeData, bool) {
+// HandShake TODO: it's "god" method needs to be simplified // antst: agree :)
+func (n *Node) HandShake(socketConnection *websocket.Conn) {
 
 	mt, incomingMessage, err := socketConnection.ReadMessage()
 	if err != nil || mt != websocket.BinaryMessage {
 		n.log.Error(errors.WithMessagef(err, "error: wrong PreHandShake (1), aborting connection"))
-		return nil, false
+		return
 	}
 
 	msg := posbus.MsgFromBytes(incomingMessage)
 	if msg.Type() != posbus.MsgTypeFlatBufferMessage {
 		n.log.Error("error: wrong message received, not Handshake.")
-		return nil, false
+		return
 	}
 	msgObj := posbus.MsgFromBytes(incomingMessage).AsFlatBufferMessage()
 	msgType := msgObj.MsgType()
 	if msgType != api.MsgHandshake {
 		n.log.Error("error: wrong message type received, not Handshake.")
-		return nil, false
+		return
 	}
 
 	var handshake *api.Handshake
@@ -95,14 +89,8 @@ func (n *Node) HandShake(socketConnection *websocket.Conn) (*HandshakeData, bool
 	userIDclaim, _ := uuid.Parse(utils.GetFromAnyMap(claims, "sub", ""))
 
 	if !((userID == userIDclaim) || (userIDclaim.String() == "69e1d7f6-3130-4005-9969-31edf9af9445") || (userIDclaim.String() == "eb50bbc8-ba4e-46a3-a480-a9b30141ce91")) {
-		return nil, false
+		return
 	}
 
-	return &HandshakeData{
-		UserID:           userID,
-		SessionID:        sessionID,
-		URL:              URL,
-		Connection:       socketConnection,
-		RequestedWorldID: uuid.Nil,
-	}, true
+	n.DetectSpawnWorld(userID).SpawnUser(userID, sessionID, socketConnection)
 }

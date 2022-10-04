@@ -8,29 +8,31 @@ import (
 )
 
 //type SubscriberInterface[A any] interface {
-//	SubscribeHook(mplugin PluginInstance, name string, hook func(A) error) (HookID, error)
+//	SubscribeHook(mplugin PluginInterface, name string, hook func(A) error) (HookID, error)
 //}
 //
 //type Subscriber[A any] struct {
 //
 //}
 //
-//func (s Subscriber[A]) SubscribeHook(mplugin PluginInstance, name string, hook func(A) error) (HookID, error) {
+//func (s Subscriber[A]) SubscribeHook(mplugin PluginInterface, name string, hook func(A) error) (HookID, error) {
 //	subscribeHook()
 //}
 
 type PluginController struct {
 	secretList      map[PluginID]uuid.UUID
-	pluginInstances map[PluginID]internalPluginInstance
+	pluginInstances map[PluginID]internalPluginInterface
 	hooksMap        *generic.SyncMap[string, any]
 	parent          uuid.UUID
+	loadedPlugins   map[uuid.UUID]PluginInstance
 }
 
 func NewPluginController(parent uuid.UUID) *PluginController {
 	pc := PluginController{parent: parent,
-		pluginInstances: make(map[PluginID]internalPluginInstance),
+		pluginInstances: make(map[PluginID]internalPluginInterface),
 		hooksMap:        generic.NewSyncMap[string, any](),
 		secretList:      make(map[PluginID]uuid.UUID),
+		loadedPlugins:   make(map[uuid.UUID]PluginInstance),
 	}
 	return &pc
 }
@@ -50,10 +52,10 @@ func registerHook[A any](p *PluginController, name string, F A) (*HookEntries[A]
 	return he, nil
 }
 
-func (p *PluginController) NewPluginInstance(id PluginID) PluginInstance {
+func (p *PluginController) NewPluginInstance(id PluginID) PluginInterface {
 	secret := uuid.New()
 	p.secretList[id] = secret
-	pi := internalPluginInstance{id: id, secretId: secret, worldId: p.parent, pc: p}
+	pi := internalPluginInterface{id: id, secretId: secret, worldId: p.parent, pc: p}
 	return &pi
 }
 
@@ -81,7 +83,7 @@ func (p *PluginController) ValidPlugin(id PluginID, secret uuid.UUID) bool {
 //	return ft, nil
 //}
 
-func subscribeHook[A any](plugin PluginInstance, name string, hook func(A) error) (
+func subscribeHook[A any](plugin PluginInterface, name string, hook func(A) error) (
 	HookID, error,
 ) {
 	if plugin.getPluginController().ValidPlugin(plugin.GetId(), plugin.GetSecret()) {
@@ -109,7 +111,7 @@ func subscribeHook[A any](plugin PluginInstance, name string, hook func(A) error
 	return HookID(uuid.Nil), errors.New("Plugin is not authorized")
 }
 
-func (p *PluginController) UnsubscribeAllHooks(plugin PluginInstance) error {
+func (p *PluginController) UnsubscribeAllHooks(plugin PluginInterface) error {
 	if p.ValidPlugin(plugin.GetId(), plugin.GetSecret()) {
 		p.hooksMap.Mu.RLock()
 		defer p.hooksMap.Mu.RUnlock()
@@ -119,7 +121,7 @@ func (p *PluginController) UnsubscribeAllHooks(plugin PluginInstance) error {
 	}
 	return nil
 }
-func (p *PluginController) UnsubscribeHooksByName(plugin PluginInstance, name string) error {
+func (p *PluginController) UnsubscribeHooksByName(plugin PluginInterface, name string) error {
 	if p.ValidPlugin(plugin.GetId(), plugin.GetSecret()) {
 		p.hooksMap.Mu.RLock()
 		defer p.hooksMap.Mu.RUnlock()
@@ -131,7 +133,7 @@ func (p *PluginController) UnsubscribeHooksByName(plugin PluginInstance, name st
 	}
 	return nil
 }
-func (p *PluginController) UnsubscribeHookByHookId(plugin PluginInstance, id HookID) error {
+func (p *PluginController) UnsubscribeHookByHookId(plugin PluginInterface, id HookID) error {
 	if p.ValidPlugin(plugin.GetId(), plugin.GetSecret()) {
 		p.hooksMap.Mu.RLock()
 		defer p.hooksMap.Mu.RUnlock()

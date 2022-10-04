@@ -64,8 +64,8 @@ func (a *Attributes) NewAttribute(attributeId entry.AttributeID) (universe.Attri
 }
 
 func (a *Attributes) GetAttribute(attributeID entry.AttributeID) (universe.Attribute, bool) {
-	asset, ok := a.attributes.Load(attributeID)
-	return asset, ok
+	attribute, ok := a.attributes.Load(attributeID)
+	return attribute, ok
 }
 
 func (a *Attributes) GetAttributes() map[entry.AttributeID]universe.Attribute {
@@ -136,39 +136,39 @@ func (a *Attributes) RemoveAttribute(attribute universe.Attribute, updateDB bool
 	return nil
 }
 
-func (a *Attributes) RemoveAttributes(assets2d []universe.Attribute, updateDB bool) error {
+func (a *Attributes) RemoveAttributes(attributes []universe.Attribute, updateDB bool) error {
 	a.attributes.Mu.Lock()
 	defer a.attributes.Mu.Unlock()
 
-	for i := range assets2d {
-		if _, ok := a.attributes.Data[assets2d[i].GetID()]; !ok {
-			return errors.Errorf("attribute not found: %s", assets2d[i].GetID())
+	for i := range attributes {
+		if _, ok := a.attributes.Data[attributes[i].GetID()]; !ok {
+			return errors.Errorf("attribute not found: %s", attributes[i].GetID())
 		}
 	}
 
 	if updateDB {
-		ids := make([]entry.AttributeID, len(assets2d))
-		for i := range assets2d {
-			ids[i] = assets2d[i].GetID()
+		ids := make([]entry.AttributeID, len(attributes))
+		for i := range attributes {
+			ids[i] = attributes[i].GetID()
 		}
 		if err := a.db.AttributesRemoveAttributesByIDs(a.ctx, ids); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
 
-	for i := range assets2d {
-		delete(a.attributes.Data, assets2d[i].GetID())
+	for i := range attributes {
+		delete(a.attributes.Data, attributes[i].GetID())
 	}
 
 	return nil
 }
 
 func (a *Attributes) Load() error {
-	a.log.Info("Loading assets 2d...")
+	a.log.Info("Loading attributes...")
 
 	entries, err := a.db.AttributesGetAttributes(a.ctx)
 	if err != nil {
-		return errors.WithMessage(err, "failed to get assets 2d")
+		return errors.WithMessage(err, "failed to get attributes")
 	}
 
 	for i := range entries {
@@ -184,27 +184,27 @@ func (a *Attributes) Load() error {
 
 	universe.GetNode().AddAPIRegister(a)
 
-	a.log.Info("Assets 2d loaded")
+	a.log.Info("Attributes loaded")
 
 	return nil
 }
 
 func (a *Attributes) Save() error {
-	a.log.Info("Saving assets 2d...")
+	a.log.Info("Saving attributes...")
 
 	a.attributes.Mu.RLock()
 	defer a.attributes.Mu.RUnlock()
 
 	entries := make([]*entry.Attribute, 0, len(a.attributes.Data))
-	for _, asset := range a.attributes.Data {
-		entries = append(entries, asset.GetEntry())
+	for _, attribute := range a.attributes.Data {
+		entries = append(entries, attribute.GetEntry())
 	}
 
 	if err := a.db.AttributesUpsertAttributes(a.ctx, entries); err != nil {
-		return errors.WithMessage(err, "failed to upsert assets 2d")
+		return errors.WithMessage(err, "failed to upsert attributes")
 	}
 
-	a.log.Info("Assets 2d saved")
+	a.log.Info("Attributes saved")
 
 	return nil
 }

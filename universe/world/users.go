@@ -53,3 +53,11 @@ func (w *World) SendToUser(userID uuid.UUID, msg *websocket.PreparedMessage, rec
 func (w *World) SendToUsers(msg *websocket.PreparedMessage, recursive bool) error {
 	return errors.Errorf("implement me")
 }
+
+func (w *World) SpawnUser(userID uuid.UUID, sessionID uuid.UUID, socketConnection *websocket.Conn) {
+
+}
+
+func (w *World) DisconnectUser(userID uuid.UUID) {
+
+}

@@ -91,6 +91,7 @@ type World interface {
 	LoadSaver
 	APIRegister
 	WriteInfluxPoint(point *influxWrite.Point) error
+	SpawnUser(userID uuid.UUID, sessionID uuid.UUID, socketConnection *websocket.Conn)
 }
 
 type Space interface {
@@ -307,8 +308,8 @@ type Plugin interface {
 	GetDescription() *string
 	SetDescription(modifyFn modify.Fn[string], updateDB bool) error
 
-	GetEntry() *entry.Asset3d
-	LoadFromEntry(entry *entry.Asset3d) error
+	GetEntry() *entry.Plugin
+	LoadFromEntry(entry *entry.Plugin) error
 }
 
 type Plugins interface {
@@ -349,7 +350,7 @@ type Attributes interface {
 	APIRegister
 
 	NewAttribute(attributeId entry.AttributeID) (Attribute, error)
-	GetAttribute(pluginID uuid.UUID, name string) (Attribute, bool)
+	GetAttribute(entry.AttributeID) (Attribute, bool)
 
 	GetAttributes() map[entry.AttributeID]Attribute
 	AddAttribute(attribute Attribute, updateDB bool) error

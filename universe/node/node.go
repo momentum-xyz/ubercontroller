@@ -28,22 +28,21 @@ import (
 var _ universe.Node = (*Node)(nil)
 
 type Node struct {
-	id            uuid.UUID
-	name          string
-	cfg           *config.Config
-	ctx           context.Context
-	log           *zap.SugaredLogger
-	db            database.DB
-	router        *gin.Engine
-	worlds        universe.Worlds
-	assets2d      universe.Assets2d
-	assets3d      universe.Assets3d
-	spaceTypes    universe.SpaceTypes
-	userTypes     universe.UserTypes
-	pluginManager *mplugin.PluginManager
-	mu            sync.RWMutex
-	influx        influx_api.WriteAPIBlocking
-	handshakeChan chan *HandshakeData
+	id               uuid.UUID
+	name             string
+	cfg              *config.Config
+	ctx              context.Context
+	log              *zap.SugaredLogger
+	db               database.DB
+	router           *gin.Engine
+	worlds           universe.Worlds
+	assets2d         universe.Assets2d
+	assets3d         universe.Assets3d
+	spaceTypes       universe.SpaceTypes
+	userTypes        universe.UserTypes
+	mu               sync.RWMutex
+	influx           influx_api.WriteAPIBlocking
+	pluginController *mplugin.PluginController
 }
 
 func NewNode(
@@ -91,7 +90,7 @@ func (n *Node) Initialize(ctx context.Context) error {
 	r.Use(gin.RecoveryWithWriter(consoleWriter))
 
 	n.router = r
-	n.pluginManager = mplugin.NewPluginManager()
+	n.pluginController = mplugin.NewPluginController(n.id)
 	return nil
 }
 
@@ -132,7 +131,6 @@ func (n *Node) Run() error {
 	}
 	n.router.GET("/posbus", n.PosBusConnectionHandler)
 	n.router.GET("/health", n.PosBusConnectionHandler)
-	go n.UserConnectionsProcessor()
 	return n.router.Run(fmt.Sprintf("%s:%d", n.cfg.Settings.Address, n.cfg.Settings.Port))
 }
 
@@ -231,4 +229,13 @@ func (n *Node) Save() error {
 	n.log.Infof("Node saved: %s", n.GetID())
 
 	return errs.ErrorOrNil()
+}
+
+func (n *Node) DetectSpawnWorld(userId uuid.UUID) universe.World {
+	// TODO: implement. Temporary, just first world from the list
+	for _, v := range n.worlds.GetWorlds() {
+		return v
+
+	}
+	return nil
 }

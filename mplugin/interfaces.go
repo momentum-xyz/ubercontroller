@@ -2,7 +2,7 @@ package mplugin
 
 import "github.com/google/uuid"
 
-type PluginInstance interface {
+type PluginInterface interface {
 	GetId() PluginID
 	GetWorld() uuid.UUID
 	GetSecret() uuid.UUID
@@ -12,3 +12,11 @@ type PluginInstance interface {
 	UnsubscribeHooksByName(name string) error
 	UnsubscribeHookByHookId(id HookID) error
 }
+
+type PluginInstance interface {
+	Init() error
+	Run() error
+	Destroy() error
+}
+
+type NewInstanceFunction func(pluginInterface PluginInterface) (PluginInstance, error)

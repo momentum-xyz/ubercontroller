@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/momentum-xyz/ubercontroller/database/migrations"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/config"
@@ -114,6 +114,12 @@ func createDBConnection(ctx context.Context, cfg *config.Postgres) (*pgxpool.Poo
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to gen postgres config")
 	}
+
+	err = data.MigrateDatabase(config.ConnConfig)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to migrate database")
+	}
+
 	pool, err := pgxpool.ConnectConfig(ctx, config)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to create db pool")

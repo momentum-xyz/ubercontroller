@@ -4,6 +4,7 @@ DOCKER_TAG="develop"
 all: build
 
 build:
+	go generate ./...
 	go build -o ./bin/ubercontroller ./cmd/service
 	cd plugins && make
 
