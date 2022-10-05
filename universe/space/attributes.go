@@ -5,12 +5,12 @@ import (
 )
 
 type AttributeIndex struct {
-	PluginId uuid.UUID
-	Name     string
+	PluginId      uuid.UUID
+	AttributeName string
 }
 
 type UserAttributeIndex struct {
-	PluginId uuid.UUID
-	UserId   uuid.UUID
-	Name     string
+	PluginId      uuid.UUID
+	UserId        uuid.UUID
+	AttributeName string
 }

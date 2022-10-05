@@ -87,6 +87,9 @@ func (n *Node) Initialize(ctx context.Context) error {
 	consoleWriter := zapcore.Lock(os.Stdout)
 	gin.DefaultWriter = consoleWriter
 
+	//TODO: hash salt once it is present in the DB
+	utils.SetAnonymizer(n.id, uuid.Nil)
+
 	r := gin.New()
 	r.Use(gin.LoggerWithWriter(consoleWriter))
 	r.Use(gin.RecoveryWithWriter(consoleWriter))

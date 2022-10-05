@@ -38,8 +38,9 @@ type Space struct {
 	spaceType        universe.SpaceType
 	entry            *entry.Space
 	effectiveOptions *entry.SpaceOptions
-	attributes       universe.AttributeList[entry.AttributeID]
-	userAttributes   universe.AttributeList[UserAttributeIndex]
+
+	spaceAttributes     universe.AttributeList[entry.AttributeID]
+	userSpaceAttributes universe.AttributeList[UserAttributeIndex]
 }
 
 func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
@@ -56,7 +57,7 @@ func (s *Space) GetID() uuid.UUID {
 	return s.id
 }
 
-// todo: implement this via attributes
+// todo: implement this via spaceAttributes
 func (s *Space) GetName() string {
 	return "unknown"
 }

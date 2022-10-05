@@ -14,11 +14,7 @@ type PluginInterface interface {
 	UnsubscribeHookByHookId(id HookID) error
 }
 
-type PluginInstance interface {
-	Init() error
-	Run() error
-	Destroy() error
-}
+type PluginInstance any
 
 type NewInstanceFunction func(pluginInterface PluginInterface) (PluginInstance, error)
 

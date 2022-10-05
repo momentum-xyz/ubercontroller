@@ -67,7 +67,6 @@ type Node interface {
 	AddAPIRegister(register APIRegister)
 
 	WriteInfluxPoint(point *influxWrite.Point) error
-	HashID(userId uuid.UUID) string
 }
 
 type Worlds interface {

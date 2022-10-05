@@ -1,24 +1,25 @@
 package data
 
-//go:generate go-bindata -pkg data -o data/data.go -prefix ../../sql_migrations/ ../../sql_migrations/...
-
 import (
 	"context"
 	"database/sql"
+	"embed"
 	"fmt"
-	"github.com/golang-migrate/migrate"
-	"github.com/golang-migrate/migrate/database/postgres"
-	_ "github.com/golang-migrate/migrate/database/postgres"
-	bindata "github.com/golang-migrate/migrate/source/go_bindata"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v4"
 	_ "github.com/jackc/pgx/v4/stdlib"
-	"github.com/momentum-xyz/ubercontroller/database/migrations/data"
 	"github.com/pkg/errors"
+	"log"
 	"os"
 )
+
+//go:embed sql/*
+var migrationFS embed.FS
 
 func pgDBMigrationsConnect(cfg *pgx.ConnConfig) (*sql.DB, error) {
 
@@ -74,15 +75,10 @@ func MigrateDatabase(cfg *pgx.ConnConfig) error {
 	defer db.Close()
 
 	// get instance of migration data
-	s := bindata.Resource(
-		data.AssetNames(),
-		func(name string) ([]byte, error) {
-			return data.Asset(name)
-		},
-	)
-	d, err := bindata.WithInstance(s)
+
+	d, err := iofs.New(migrationFS, "sql")
 	if err != nil {
-		return errors.WithMessage(err, "Can not get migration data instance")
+		log.Fatal(err)
 	}
 
 	// get DB instance
@@ -92,7 +88,7 @@ func MigrateDatabase(cfg *pgx.ConnConfig) error {
 	}
 
 	// create migration instance
-	m, err := migrate.NewWithInstance("go-data", d, "pgx", pg)
+	m, err := migrate.NewWithInstance("iofs", d, "pgx", pg)
 	if err != nil {
 		return errors.WithMessage(err, "Can not open migration instance")
 	}

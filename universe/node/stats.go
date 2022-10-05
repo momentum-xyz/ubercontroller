@@ -2,9 +2,6 @@ package node
 
 import (
 	"context"
-	"encoding/hex"
-	"github.com/c0mm4nd/go-ripemd"
-	"github.com/google/uuid"
 	influxWrite "github.com/influxdata/influxdb-client-go/v2/api/write"
 	"time"
 )
@@ -26,16 +23,4 @@ func (n *Node) WriteInfluxPoint(point *influxWrite.Point) error {
 	}()
 
 	return n.influx.WritePoint(ctx, point)
-}
-
-func (n *Node) HashID(userId uuid.UUID) string {
-	hash := ripemd.New128()
-	nodeId := n.GetID()
-	for i := 0; i < 16; i += 2 {
-		hash.Write(userId[i : i+2])
-		hash.Write(nodeId[i : i+2])
-		// TODO: fix once salt is read in attributes
-		//hash.Write(n.userHashSalt[i : i+2])
-	}
-	return hex.EncodeToString(hash.Sum(nil))
 }
