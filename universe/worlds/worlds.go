@@ -46,7 +46,7 @@ func (w *Worlds) Initialize(ctx context.Context) error {
 	return nil
 }
 
-func (w *Worlds) NewWorld(worldID uuid.UUID) (universe.World, error) {
+func (w *Worlds) CreateWorld(worldID uuid.UUID) (universe.World, error) {
 	world := world.NewWorld(worldID, w.db)
 
 	if err := world.Initialize(w.ctx); err != nil {
@@ -240,7 +240,7 @@ func (w *Worlds) Load() error {
 		worldID := worldIDs[i]
 
 		group.Go(func() error {
-			world, err := w.NewWorld(worldID)
+			world, err := w.CreateWorld(worldID)
 			if err != nil {
 				return errors.WithMessagef(err, "failed to create new world: %s", worldID)
 			}

@@ -134,8 +134,6 @@ func (n *Node) Run() error {
 	if err := n.worlds.Run(); err != nil {
 		return errors.WithMessage(err, "failed to run worlds")
 	}
-	n.router.GET("/posbus", n.PosBusConnectionHandler)
-	n.router.GET("/health", n.PosBusConnectionHandler)
 	return n.router.Run(fmt.Sprintf("%s:%d", n.cfg.Settings.Address, n.cfg.Settings.Port))
 }
 
@@ -236,7 +234,7 @@ func (n *Node) Save() error {
 	return errs.ErrorOrNil()
 }
 
-func (n *Node) DetectSpawnWorld(userId uuid.UUID) universe.World {
+func (n *Node) detectSpawnWorld(userId uuid.UUID) universe.World {
 	// TODO: implement. Temporary, just first world from the list
 	for _, v := range n.worlds.GetWorlds() {
 		return v

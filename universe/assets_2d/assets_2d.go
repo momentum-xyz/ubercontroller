@@ -44,7 +44,7 @@ func (a *Assets2d) Initialize(ctx context.Context) error {
 	return nil
 }
 
-func (a *Assets2d) NewAsset2d(asset2dID uuid.UUID) (universe.Asset2d, error) {
+func (a *Assets2d) CreateAsset2d(asset2dID uuid.UUID) (universe.Asset2d, error) {
 	asset2d := asset_2d.NewAsset2d(asset2dID, a.db)
 
 	if err := asset2d.Initialize(a.ctx); err != nil {
@@ -166,7 +166,7 @@ func (a *Assets2d) Load() error {
 	}
 
 	for i := range entries {
-		asset2d, err := a.NewAsset2d(*entries[i].Asset2dID)
+		asset2d, err := a.CreateAsset2d(*entries[i].Asset2dID)
 		if err != nil {
 			return errors.WithMessagef(err, "failed to create new asset 2d: %s", entries[i].Asset2dID)
 		}

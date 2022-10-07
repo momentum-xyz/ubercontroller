@@ -1,10 +1,11 @@
-package data
+package migrations
 
 import (
 	"context"
 	"database/sql"
 	"embed"
 	"fmt"
+
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -14,117 +15,131 @@ import (
 	"github.com/jackc/pgx/v4"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/pkg/errors"
-	"log"
-	"os"
+	"go.uber.org/zap"
+
+	"github.com/momentum-xyz/ubercontroller/config"
+	"github.com/momentum-xyz/ubercontroller/types"
+	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 //go:embed sql/*
 var migrationFS embed.FS
 
-func pgDBMigrationsConnect(cfg *pgx.ConnConfig) (*sql.DB, error) {
-
-	db, err := sql.Open("pgx", cfg.ConnString())
-
+func pgDBMigrationsConnect(ctx context.Context, log *zap.SugaredLogger, cfg *config.Postgres) (*sql.DB, error) {
+	minCfg, err := cfg.MinVersion().GenConfig()
 	if err != nil {
-		return nil, errors.WithMessage(err, "Unable to connect to database server")
+		return nil, errors.WithMessage(err, "failed to generate min config")
 	}
-	err = db.Ping()
 
+	db, err := sql.Open("pgx", minCfg.ConnString())
 	if err != nil {
+		return nil, errors.WithMessage(err, "failed to connect to database")
+	}
+
+	if err := db.Ping(); err != nil {
 		var pgErr *pgconn.PgError
 		ok := errors.As(err, &pgErr)
 		if !ok || (ok && pgErr.Code != pgerrcode.InvalidCatalogName) {
-			return nil, errors.WithMessage(err, "Unknown error wth database connection")
+			return nil, errors.WithMessage(err, "unknown error with database connection")
 		}
-		fmt.Println("Database does not exist")
-		err = createNewDatabase(cfg)
-		if err != nil {
-			return nil, err
+
+		log.Info("Migration: database does not exist")
+		if err := createNewDatabase(ctx, log, cfg); err != nil {
+			return nil, errors.WithMessage(err, "failed to create new database")
 		}
-		return pgDBMigrationsConnect(cfg)
+
+		return pgDBMigrationsConnect(ctx, log, cfg)
 	}
-	db.SetMaxOpenConns(100)
+
+	db.SetMaxOpenConns(int(cfg.MAXCONNS))
+
 	return db, nil
 }
 
-func createNewDatabase(cfg *pgx.ConnConfig) error {
-	cfgNoBase := cfg.Copy()
+func createNewDatabase(ctx context.Context, log *zap.SugaredLogger, cfg *config.Postgres) error {
+	pgxCfg, err := cfg.GenConfig()
+	if err != nil {
+		return errors.WithMessage(err, "failed to generate config")
+	}
+
+	cfgNoBase := pgxCfg.ConnConfig
 	cfgNoBase.Database = ""
 
-	conn, err := pgx.ConnectConfig(context.Background(), cfgNoBase)
+	conn, err := pgx.ConnectConfig(ctx, cfgNoBase)
 	if err != nil {
-		return errors.WithMessage(err, "Unable to connect to database server")
+		return errors.WithMessage(err, "unable to connect to database")
 	}
 
-	fmt.Println("Creating database...")
-	_, err = conn.Exec(context.Background(), "CREATE DATABASE "+cfg.Database)
-	if err != nil {
-		return errors.WithMessage(err, "Can not create database")
+	log.Info("Migration: creating database...")
+	if _, err := conn.Exec(ctx, fmt.Sprintf(`CREATE DATABASE %s`, cfg.DATABASE)); err != nil {
+		return errors.WithMessage(err, "failed to create database")
 	}
-	conn.Close(context.Background())
+	conn.Close(ctx)
+
 	return nil
 }
 
-func MigrateDatabase(cfg *pgx.ConnConfig) error {
-	db, err := pgDBMigrationsConnect(cfg)
-	//fmt.Println("MIGRATE DATABASE")
+func MigrateDatabase(ctx context.Context, cfg *config.Postgres) error {
+	log := utils.GetFromAny(ctx.Value(types.ContextLoggerKey), (*zap.SugaredLogger)(nil))
+	if log == nil {
+		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.ContextLoggerKey))
+	}
+
+	db, err := pgDBMigrationsConnect(ctx, log, cfg)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		return errors.WithMessage(err, "failed to create migrations connect")
 	}
 	defer db.Close()
 
 	// get instance of migration data
-
-	d, err := iofs.New(migrationFS, "sql")
+	data, err := iofs.New(migrationFS, "sql")
 	if err != nil {
-		log.Fatal(err)
+		return errors.WithMessage(err, "failed to get migration data")
 	}
 
 	// get DB instance
 	pg, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
-		return errors.WithMessage(err, "Can not get DB instance")
+		return errors.WithMessage(err, "failed to get database instance")
 	}
 
 	// create migration instance
-	m, err := migrate.NewWithInstance("iofs", d, "pgx", pg)
+	m, err := migrate.NewWithInstance("iofs", data, "pgx", pg)
 	if err != nil {
-		return errors.WithMessage(err, "Can not open migration instance")
+		return errors.WithMessage(err, "failed to open migration instance")
 	}
 
 	var iver uint
-	for iver1, _ := d.First(); err == nil; iver1, err = d.Next(iver) {
+	for iver1, _ := data.First(); err == nil; iver1, err = data.Next(iver) {
 		iver = iver1
 	}
 
 	version, isDirty, err := m.Version()
-	fmt.Println("Version:", version, iver, isDirty, err)
+	log.Infof("Migration: version: %d, %d, %t, %+v", version, iver, isDirty, err)
 	if err != nil {
 		if err != migrate.ErrNilVersion {
-			return errors.WithMessage(err, "Can not obtain current migration version")
+			return errors.WithMessage(err, "failed to obtain current migration version")
 		}
-		fmt.Println("Empty (newly created) database detected, will seed!")
+		log.Info("Migration: empty (newly created) database detected, will seed!")
 	} else if version < iver {
 		if isDirty {
-			return errors.New("Database is dirty")
+			return errors.New("database is dirty")
 		}
-		fmt.Printf("Current DB schema verion=%d, available schema version=%d, will miigrate\n", iver, version)
+		log.Infof("Migration: current DB schema verion=%d, available schema version=%d, will miigrate", iver, version)
 	} else {
 		return nil
 	}
 
 	if isDirty {
-		return errors.WithMessage(err, "Database is dirty, avoiding migration")
+		return errors.WithMessage(err, "database is dirty, avoiding migration")
 	}
-	//fmt.Println("Version:", version, isDirty, err)
 
-	err = m.Up() // run your migrations and handle the errors above of course
-	if err != nil {
-		return errors.WithMessage(err, "Migration failed")
+	// run your migrations and handle the errors above of course
+	if err := m.Up(); err != nil {
+		return errors.WithMessage(err, "failed to migrate database")
 	}
 	version, _, _ = m.Version()
-	fmt.Println("Migration was successful, current schema version:", version)
+	log.Infof("Migration: success, current schema version: %d", version)
 
 	return nil
 }

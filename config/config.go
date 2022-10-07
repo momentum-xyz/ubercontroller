@@ -17,7 +17,7 @@ import (
 type Config struct {
 	Common   Common   `yaml:"common"`
 	Settings Local    `yaml:"settings"`
-	MQTT     MQTT     `yaml:"mqtt"`
+	Auth     Auth     `yaml:"auth"`
 	Postgres Postgres `yaml:"postgres"`
 	Influx   Influx   `yaml:"influx"`
 	UIClient UIClient `yaml:"ui_client"`
@@ -29,7 +29,7 @@ var log = logger.L()
 
 func (x *Config) Init() {
 	x.Common.Init()
-	x.MQTT.Init()
+	x.Auth.Init()
 	x.Postgres.Init()
 	x.Settings.Init()
 	x.UIClient.Init()

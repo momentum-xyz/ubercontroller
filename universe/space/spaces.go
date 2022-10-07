@@ -9,7 +9,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
-func (s *Space) NewSpace(spaceID uuid.UUID) (universe.Space, error) {
+func (s *Space) CreateSpace(spaceID uuid.UUID) (universe.Space, error) {
 	space := NewSpace(spaceID, s.db, s.GetWorld())
 
 	if err := space.Initialize(s.ctx); err != nil {

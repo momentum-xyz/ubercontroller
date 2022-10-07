@@ -1,11 +1,12 @@
 package mplugin
 
 import (
-	"github.com/google/uuid"
-	"github.com/momentum-xyz/controller/utils"
-	"github.com/momentum-xyz/ubercontroller/types/generic"
-	"github.com/pkg/errors"
 	"reflect"
+
+	"github.com/google/uuid"
+	"github.com/pkg/errors"
+
+	"github.com/momentum-xyz/ubercontroller/types/generic"
 )
 
 //type SubscriberInterface[A any] interface {
@@ -25,7 +26,7 @@ type PluginController struct {
 	pluginInstances map[PluginID]internalPluginInterface
 	hooksMap        *generic.SyncMap[string, any]
 	parent          uuid.UUID
-	loadedPlugins   *utils.SyncMap[uuid.UUID, PluginInstance]
+	loadedPlugins   *generic.SyncMap[uuid.UUID, PluginInstance]
 }
 
 func NewPluginController(parent uuid.UUID) *PluginController {
@@ -33,7 +34,7 @@ func NewPluginController(parent uuid.UUID) *PluginController {
 		pluginInstances: make(map[PluginID]internalPluginInterface),
 		hooksMap:        generic.NewSyncMap[string, any](),
 		secretList:      make(map[PluginID]uuid.UUID),
-		loadedPlugins:   utils.NewSyncMap[uuid.UUID, PluginInstance](),
+		loadedPlugins:   generic.NewSyncMap[uuid.UUID, PluginInstance](),
 	}
 	return &pc
 }

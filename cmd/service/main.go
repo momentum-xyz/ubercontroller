@@ -2,8 +2,9 @@ package main
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/universe/api"
+
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/momentum-xyz/ubercontroller/database/migrations"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/config"
@@ -12,6 +13,7 @@ import (
 	assets3dDB "github.com/momentum-xyz/ubercontroller/database/assets_3d"
 	commonDB "github.com/momentum-xyz/ubercontroller/database/common"
 	"github.com/momentum-xyz/ubercontroller/database/db"
+	"github.com/momentum-xyz/ubercontroller/database/migrations"
 	nodesDB "github.com/momentum-xyz/ubercontroller/database/nodes"
 	spaceTypesDB "github.com/momentum-xyz/ubercontroller/database/space_types"
 	spacesDB "github.com/momentum-xyz/ubercontroller/database/spaces"
@@ -42,6 +44,10 @@ func run() error {
 	ctx := context.WithValue(context.Background(), types.ContextLoggerKey, log)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+
+	if err := api.Initialize(ctx, cfg); err != nil {
+		return errors.WithMessage(err, "failed to initialize api")
+	}
 
 	pool, err := createDBConnection(ctx, &cfg.Postgres)
 	if err != nil {
@@ -115,8 +121,7 @@ func createDBConnection(ctx context.Context, cfg *config.Postgres) (*pgxpool.Poo
 		return nil, errors.WithMessage(err, "failed to gen postgres config")
 	}
 
-	err = data.MigrateDatabase(config.ConnConfig)
-	if err != nil {
+	if err := migrations.MigrateDatabase(ctx, cfg); err != nil {
 		return nil, errors.WithMessage(err, "failed to migrate database")
 	}
 
