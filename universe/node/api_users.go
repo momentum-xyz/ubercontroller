@@ -1,13 +1,16 @@
 package node
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
+	"github.com/momentum-xyz/ubercontroller/types"
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe/api"
+	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 func (n *Node) apiUsersCheck(c *gin.Context) {
@@ -17,54 +20,104 @@ func (n *Node) apiUsersCheck(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&inBody); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"message": errors.WithMessage(err, "failed to bind json"),
+			"message": errors.WithMessage(err, "failed to bind json").Error(),
 		})
 		return
 	}
 
-	token, err := api.VerifyToken(c, api.GetTokenFromRequest(c))
+	accessToken, idToken, code, err := n.apiCheckTokens(c, api.GetTokenFromRequest(c), inBody.IDToken)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-			"message": errors.WithMessage(err, "failed to verify token"),
+		c.AbortWithStatusJSON(code, gin.H{
+			"message": errors.WithMessage(err, "failed to check tokens").Error(),
 		})
 		return
 	}
 
-	idToken, err := api.ParseToken(inBody.IDToken)
+	userEntry, httpCode, err := n.apiGetOrCreateUserFromTokens(c, accessToken, idToken)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"message": errors.WithMessage(err, "failed to parse id token"),
+		c.AbortWithStatusJSON(httpCode, gin.H{
+			"message": errors.WithMessage(err, "failed get or create user from tokens").Error(),
 		})
 		return
 	}
 
-	if token.GetSubject() != idToken.Subject {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"message": fmt.Sprintf("tokens subject mismatch: %s != %s", token.GetSubject(), idToken.Subject),
-		})
-		return
+	// TODO: add invitation
+
+	var onBoarder bool
+	if userEntry.Profile != nil && userEntry.Profile.OnBoarded != nil && *userEntry.Profile.OnBoarded {
+		onBoarder = true
 	}
 
-	//userID, err := uuid.Parse(idToken.Subject)
-	//if err != nil {
-	//	c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-	//		"message": errors.WithMessage(err, "failed to parse user id"),
-	//	})
-	//	return
-	//}
+	c.JSON(http.StatusOK, gin.H{
+		"userOnboarded": onBoarder,
+	})
+}
 
-	//userEntry, err := n.db.UsersGetUserByID(n.ctx, userID)
-	//if err != nil {
-	//	userEntry = &entry.User{
-	//		UserID: &userID,
-	//		Profile: &entry.UserProfile{
-	//			Name:  &idToken.Name,
-	//			Email: &idToken.Email,
-	//		},
-	//	}
-	//}
-
-	if idToken.Guest.IsGuest {
-
+func (n *Node) apiCheckTokens(c *gin.Context, accessToken, idToken string) (api.Token, api.Token, int, error) {
+	parsedAccessToken, err := api.VerifyToken(c, accessToken)
+	if err != nil {
+		return api.Token{}, api.Token{}, http.StatusForbidden, errors.WithMessage(err,
+			"failed to verify access token",
+		)
 	}
+
+	parsedIDToken, err := api.ParseToken(idToken)
+	if err != nil {
+		return parsedAccessToken, parsedIDToken, http.StatusBadRequest, errors.WithMessage(err,
+			"failed to parse id token",
+		)
+	}
+
+	if parsedIDToken.Subject != parsedAccessToken.Subject {
+		return parsedAccessToken, parsedIDToken, http.StatusBadRequest, errors.WithMessage(
+			errors.Errorf("%s != %s", parsedIDToken.Subject, parsedAccessToken.Subject),
+			"tokens subject mismatch",
+		)
+	}
+
+	return parsedAccessToken, parsedIDToken, 0, nil
+}
+
+func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken api.Token) (*entry.User, int, error) {
+	userID, err := uuid.Parse(idToken.Subject)
+	if err != nil {
+		return nil, http.StatusBadRequest, errors.WithMessage(err, "failed to parse user id")
+	}
+
+	userEntry, err := n.db.UsersGetUserByID(n.ctx, userID)
+	if err == nil {
+		return userEntry, 0, nil
+	}
+
+	userEntry = &entry.User{
+		UserID: &userID,
+		Profile: &entry.UserProfile{
+			Name:  &idToken.Name,
+			Email: &idToken.Email,
+		},
+	}
+
+	provider, ok := utils.GetKeyByValueFromMap(n.cfg.Auth.OIDCURLs, accessToken.Issuer)
+	if !ok {
+		return nil, http.StatusBadRequest, errors.Errorf("failed to get oidc provider by oidc url: %s", accessToken.Issuer)
+	}
+
+	switch n.cfg.Auth.OIDCProviders[provider] {
+	case types.ConfigAuthWeb3ProviderType:
+		if idToken.Guest.IsGuest {
+			// TODO: set "Guest" user type
+		} else {
+			// TODO: set "User" user type
+			// TODO: validate idToken
+			// TODO: add wallet
+		}
+	default:
+		// TODO: set "User" user type
+	}
+
+	if err := n.db.UsersUpsertUser(c, userEntry); err != nil {
+		return nil, http.StatusInternalServerError, errors.WithMessagef(err, "failed to upsert user: %s", userEntry.UserID)
+	}
+
+	return userEntry, 0, nil
 }

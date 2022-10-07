@@ -9,7 +9,7 @@ import (
 
 type Postgres struct {
 	DATABASE string `yaml:"database" envconfig:"DB_DATABASE"`
-	HOST     string `yaml:"host" envconfig:"DB_HOST"`
+	HOST     string `yaml:"host" envconfig:"PGDB_HOST"`
 	PORT     uint   `yaml:"port" envconfig:"DB_PORT"`
 	USERNAME string `yaml:"username" envconfig:"DB_USERNAME"`
 	PASSWORD string `yaml:"password" envconfig:"DB_PASSWORD"`

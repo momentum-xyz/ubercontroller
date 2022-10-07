@@ -11,7 +11,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/zitadel/oidc/pkg/client"
 	"github.com/zitadel/oidc/pkg/client/rs"
-	"github.com/zitadel/oidc/pkg/oidc"
+
+	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 type Token struct {
@@ -29,37 +30,37 @@ type Token struct {
 	Email       string   `json:"email"`
 }
 
-func VerifyToken(ctx context.Context, tokenStr string) (oidc.IntrospectionResponse, error) {
-	token, err := ParseToken(tokenStr)
+func VerifyToken(ctx context.Context, token string) (Token, error) {
+	parsedToken, err := ParseToken(token)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to parse token")
+		return parsedToken, errors.WithMessage(err, "failed to parse token")
 	}
 
-	oidcProvider, ok := api.oidcProviders.Load(token.Issuer)
+	oidcProvider, ok := api.oidcProviders.Load(parsedToken.Issuer)
 	if !ok {
-		provider, err := createProvider(token.Issuer)
+		provider, err := createProvider(parsedToken.Issuer)
 		if err != nil {
-			return nil, errors.WithMessagef(err, "failed to create provider: %s", token.Issuer)
+			return parsedToken, errors.WithMessagef(err, "failed to create provider: %s", parsedToken.Issuer)
 		}
-		api.oidcProviders.Store(token.Issuer, provider)
+		api.oidcProviders.Store(parsedToken.Issuer, provider)
 		oidcProvider = provider
 	}
 
-	resp, err := rs.Introspect(ctx, oidcProvider, tokenStr)
+	resp, err := rs.Introspect(ctx, oidcProvider, token)
 	if err != nil {
-		return nil, errors.WithMessagef(err, "failed to introspect: %s", token.Issuer)
+		return parsedToken, errors.WithMessagef(err, "failed to introspect: %s", parsedToken.Issuer)
 	}
 
 	if !resp.IsActive() {
-		return nil, errors.Errorf("token is not active: %s", tokenStr)
+		return parsedToken, errors.Errorf("token is not active: %s", token)
 	}
 
-	return resp, nil
+	return parsedToken, nil
 }
 
 func GetTokenFromRequest(c *gin.Context) string {
 	authHeader := c.GetHeader("Authorization")
-	return strings.Replace(authHeader, "Bearer ", "", -1)
+	return strings.TrimPrefix(authHeader, "Bearer ")
 }
 
 func ParseToken(tokenStr string) (Token, error) {
@@ -82,7 +83,15 @@ func ParseToken(tokenStr string) (Token, error) {
 
 func createProvider(issuer string) (rs.ResourceServer, error) {
 	cfg := api.cfg.Auth
-	introspectURL := cfg.OIDCIntospectURLs[issuer]
+
+	provider, ok := utils.GetKeyByValueFromMap(cfg.OIDCURLs, issuer)
+	if !ok {
+		return nil, errors.Errorf("failed to get oidc provider by oidc url: %s", issuer)
+	}
+
+	clientID := cfg.OIDCClientIDs[provider]
+	secret := cfg.OIDCSecrets[provider]
+	introspectURL := cfg.OIDCIntospectURLs[provider]
 
 	opts := make([]rs.Option, 0, 1)
 	if introspectURL != "" {
@@ -93,12 +102,10 @@ func createProvider(issuer string) (rs.ResourceServer, error) {
 		opts = append(opts, rs.WithStaticEndpoints(oidcConfig.TokenEndpoint, introspectURL))
 	}
 
-	provider, err := rs.NewResourceServerClientCredentials(
-		issuer, cfg.OIDCClientIDs[issuer], cfg.OIDCSecrets[issuer], opts...,
-	)
+	oidcProvider, err := rs.NewResourceServerClientCredentials(issuer, clientID, secret, opts...)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "failed to create resource server client: %s", issuer)
 	}
 
-	return provider, nil
+	return oidcProvider, nil
 }
