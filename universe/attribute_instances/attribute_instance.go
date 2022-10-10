@@ -8,35 +8,44 @@ import (
 )
 
 type AttributeInstance struct {
-	id               entry.AttributeID
 	options          *entry.AttributeOptions
 	effectiveOptions *entry.AttributeOptions
 	value            *entry.AttributeValue
 	attribute        universe.Attribute
 }
 
-func (a *AttributeInstance) GetOptions() *entry.AttributeOptions {
-
-}
-func (a *AttributeInstance) SetOptions(modifyFn modify.Fn[entry.AttributeOptions], updateDB bool) error {
-
-}
-
-func (a *AttributeInstance) GetValue() *string {
-
-}
-func (a *AttributeInstance) SetValue(modifyFn modify.Fn[string], updateDB bool) error {
+func (a AttributeInstance) GetOptions() *entry.AttributeOptions {
+	return a.options
 
 }
 
-func (a *AttributeInstance) GetEntry() *entry.Attribute {
-
-}
-func (a *AttributeInstance) LoadFromEntry(entry *entry.Attribute) error {
-
+func (a AttributeInstance) SetOptions(modifyFn modify.Fn[entry.AttributeOptions], updateDB bool) error {
+	panic("implement me")
+	return nil
 }
 
-func (a *AttributeInstance) GetEffectiveOptions() *entry.AttributeOptions {
+func (a AttributeInstance) GetValue() *entry.AttributeValue {
+	return a.value
+}
+
+func (a AttributeInstance) SetValue(modifyFn modify.Fn[string], updateDB bool) error {
+	panic("implement me")
+	return nil
+
+}
+
+func (a AttributeInstance) GetEntry() *entry.Attribute {
+	panic("implement me")
+	return nil
+
+}
+
+func (a AttributeInstance) LoadFromEntry(entry *entry.Attribute) error {
+	panic("implement me")
+	return nil
+}
+
+func (a AttributeInstance) GetEffectiveOptions() *entry.AttributeOptions {
 	if a.effectiveOptions == nil {
 		a.effectiveOptions = utils.MergePTRs(a.options, a.attribute.GetOptions())
 	}

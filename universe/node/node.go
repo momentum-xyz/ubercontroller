@@ -41,6 +41,8 @@ type Node struct {
 	assets3d            universe.Assets3d
 	spaceTypes          universe.SpaceTypes
 	userTypes           universe.UserTypes
+	attributes          universe.Attributes
+	plugins             universe.Plugins
 	mu                  sync.RWMutex
 	influx              influx_api.WriteAPIBlocking
 	pluginController    *mplugin.PluginController
@@ -55,6 +57,9 @@ func NewNode(
 	assets2D universe.Assets2d,
 	assets3D universe.Assets3d,
 	spaceTypes universe.SpaceTypes,
+	attributes universe.Attributes,
+	plugins universe.Plugins,
+
 ) *Node {
 	return &Node{
 		id:         id,
@@ -64,6 +69,8 @@ func NewNode(
 		assets2d:   assets2D,
 		assets3d:   assets3D,
 		spaceTypes: spaceTypes,
+		attributes: attributes,
+		plugins:    plugins,
 	}
 }
 
@@ -109,6 +116,14 @@ func (n *Node) GetAssets2d() universe.Assets2d {
 
 func (n *Node) GetAssets3d() universe.Assets3d {
 	return n.assets3d
+}
+
+func (n *Node) GetPlugins() universe.Plugins {
+	return n.plugins
+}
+
+func (n *Node) GetAttributes() universe.Attributes {
+	return n.attributes
 }
 
 func (n *Node) GetSpaceTypes() universe.SpaceTypes {

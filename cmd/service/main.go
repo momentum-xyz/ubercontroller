@@ -2,30 +2,40 @@ package main
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/universe/api"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/ubercontroller/config"
-	"github.com/momentum-xyz/ubercontroller/database"
 	assets2dDB "github.com/momentum-xyz/ubercontroller/database/assets_2d"
 	assets3dDB "github.com/momentum-xyz/ubercontroller/database/assets_3d"
+	attributesDB "github.com/momentum-xyz/ubercontroller/database/attribute"
 	commonDB "github.com/momentum-xyz/ubercontroller/database/common"
-	"github.com/momentum-xyz/ubercontroller/database/db"
-	"github.com/momentum-xyz/ubercontroller/database/migrations"
+	nodeAttributesDB "github.com/momentum-xyz/ubercontroller/database/node_attributes"
 	nodesDB "github.com/momentum-xyz/ubercontroller/database/nodes"
+	pluginsDB "github.com/momentum-xyz/ubercontroller/database/plugin"
+	spaceAttributesDB "github.com/momentum-xyz/ubercontroller/database/space_attributes"
 	spaceTypesDB "github.com/momentum-xyz/ubercontroller/database/space_types"
+	spaceUserAttributesDB "github.com/momentum-xyz/ubercontroller/database/space_user_attributes"
 	spacesDB "github.com/momentum-xyz/ubercontroller/database/spaces"
+	userAttributesDB "github.com/momentum-xyz/ubercontroller/database/user_attributes"
 	userTypesDB "github.com/momentum-xyz/ubercontroller/database/user_types"
+	userUserAttributesDB "github.com/momentum-xyz/ubercontroller/database/user_user_attributes"
 	usersDB "github.com/momentum-xyz/ubercontroller/database/users"
 	worldsDB "github.com/momentum-xyz/ubercontroller/database/worlds"
+
+	"github.com/momentum-xyz/ubercontroller/config"
+	"github.com/momentum-xyz/ubercontroller/database"
+	"github.com/momentum-xyz/ubercontroller/database/db"
+	"github.com/momentum-xyz/ubercontroller/database/migrations"
 	"github.com/momentum-xyz/ubercontroller/logger"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/universe/api"
 	"github.com/momentum-xyz/ubercontroller/universe/assets_2d"
 	"github.com/momentum-xyz/ubercontroller/universe/assets_3d"
+	"github.com/momentum-xyz/ubercontroller/universe/attributes"
 	"github.com/momentum-xyz/ubercontroller/universe/node"
+	"github.com/momentum-xyz/ubercontroller/universe/plugins"
 	"github.com/momentum-xyz/ubercontroller/universe/space_types"
 	"github.com/momentum-xyz/ubercontroller/universe/worlds"
 )
@@ -87,13 +97,15 @@ func createNode(ctx context.Context, cfg *config.Config, db database.DB) (univer
 	assets2d := assets_2d.NewAssets2d(db)
 	assets3d := assets_3d.NewAssets3d(db)
 	spaceTypes := space_types.NewSpaceTypes(db)
+	attributes := attributes.NewAttributes(db)
+	plugins := plugins.NewPlugins(db)
 
 	nodeEntry, err := db.NodesGetNode(ctx)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to get node")
 	}
 
-	node := node.NewNode(*nodeEntry.SpaceID, cfg, db, worlds, assets2d, assets3d, spaceTypes)
+	node := node.NewNode(*nodeEntry.SpaceID, cfg, db, worlds, assets2d, assets3d, spaceTypes, attributes, plugins)
 	universe.InitializeNode(node)
 
 	if err := worlds.Initialize(ctx); err != nil {
@@ -107,6 +119,12 @@ func createNode(ctx context.Context, cfg *config.Config, db database.DB) (univer
 	}
 	if err := spaceTypes.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize space types")
+	}
+	if err := attributes.Initialize(ctx); err != nil {
+		return nil, errors.WithMessage(err, "failed to initialize attributes")
+	}
+	if err := plugins.Initialize(ctx); err != nil {
+		return nil, errors.WithMessage(err, "failed to initialize plugins")
 	}
 	if err := node.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize node")
@@ -146,5 +164,12 @@ func createDB(conn *pgxpool.Pool) (database.DB, error) {
 		assets3dDB.NewDB(conn, common),
 		spaceTypesDB.NewDB(conn, common),
 		userTypesDB.NewDB(conn, common),
+		attributesDB.NewDB(conn, common),
+		pluginsDB.NewDB(conn, common),
+		spaceAttributesDB.NewDB(conn, common),
+		spaceUserAttributesDB.NewDB(conn, common),
+		userAttributesDB.NewDB(conn, common),
+		userUserAttributesDB.NewDB(conn, common),
+		nodeAttributesDB.NewDB(conn, common),
 	), nil
 }

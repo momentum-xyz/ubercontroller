@@ -2,7 +2,6 @@ package space_attributes
 
 import (
 	"context"
-
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
@@ -64,11 +63,11 @@ func (db *DB) SpaceAttributesGetSpaceAttributes(ctx context.Context) ([]*entry.S
 func (db *DB) SpaceAttributesGetSpaceAttributesBySpaceId(
 	ctx context.Context, spaceId uuid.UUID,
 ) ([]*entry.SpaceAttribute, error) {
-	var assets []*entry.SpaceAttribute
-	if err := pgxscan.Select(ctx, db.conn, &assets, getSpaceAttributesQueryBySpaceId, spaceId); err != nil {
+	var attributes []*entry.SpaceAttribute
+	if err := pgxscan.Select(ctx, db.conn, &attributes, getSpaceAttributesQueryBySpaceId, spaceId); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
-	return assets, nil
+	return attributes, nil
 }
 
 func (db *DB) SpaceAttributesUpsertSpaceAttribute(ctx context.Context, spaceAttribute *entry.SpaceAttribute) error {

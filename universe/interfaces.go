@@ -63,6 +63,8 @@ type Node interface {
 	GetAssets3d() Assets3d
 	GetSpaceTypes() SpaceTypes
 	GetUserTypes() UserTypes
+	GetPlugins() Plugins
+	GetAttributes() Attributes
 
 	AddAPIRegister(register APIRegister)
 
@@ -367,18 +369,20 @@ type Attributes interface {
 type AttributeInstances[indexType comparable] interface {
 	Initializer
 
-	GetID(id indexType) entry.AttributeID
-	GetName(id indexType) string
-	GetPluginID(id indexType) uuid.UUID
+	//GetID(id indexType) entry.AttributeID
+	//GetName(id indexType) string
+	//GetPluginID(id indexType) uuid.UUID
 
 	GetOptions(id indexType) *entry.AttributeOptions
 	GetEffectiveOptions(id indexType) *entry.AttributeOptions
 	SetOptions(id indexType, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool) error
 
-	GetValue(id indexType) *string
+	GetValue(id indexType) *entry.AttributeValue
 	SetValue(id indexType, modifyFn modify.Fn[string], updateDB bool) error
 
-	AddAttributeInstance(id indexType)
+	AddAttributeInstance(
+		id indexType, value *entry.AttributeValue, options *entry.AttributeOptions, attribute Attribute,
+	)
 
 	//GetEntry(id indexType) *entry.Attribute
 	//LoadFromEntry(entry *entry.Attribute) error

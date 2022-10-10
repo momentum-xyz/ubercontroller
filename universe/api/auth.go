@@ -34,31 +34,36 @@ func VerifyToken(ctx context.Context, token string) (Token, error) {
 	}
 
 	// TODO: change this!
-	providerName := "web3"
-	if parsedToken.Guest.IsGuest {
-		providerName = "guest"
-	}
-
-	oidcProvider, ok := api.oidcProviders.Load(providerName)
-	if !ok {
-		provider, err := createProvider(providerName)
-		if err != nil {
-			return parsedToken, errors.WithMessagef(err, "failed to create provider: %s", providerName)
+	for _, provider := range api.cfg.Auth.OIDCProviders {
+		if err := verifyTokenByProvider(ctx, provider, parsedToken); err == nil {
+			return parsedToken, nil
 		}
-		api.oidcProviders.Store(providerName, provider)
-		oidcProvider = provider
 	}
 
-	resp, err := rs.Introspect(ctx, oidcProvider, token)
+	return parsedToken, errors.Errorf("failed to verify token: %s", parsedToken.RawToken)
+}
+
+func verifyTokenByProvider(ctx context.Context, provider string, token Token) error {
+	oidcProvider, ok := api.oidcProviders.Load(provider)
+	if !ok {
+		newProvider, err := createProvider(provider)
+		if err != nil {
+			return errors.WithMessagef(err, "failed to create provider: %s", provider)
+		}
+		api.oidcProviders.Store(provider, newProvider)
+		oidcProvider = newProvider
+	}
+
+	resp, err := rs.Introspect(ctx, oidcProvider, token.RawToken)
 	if err != nil {
-		return parsedToken, errors.WithMessagef(err, "failed to introspect: %s", providerName)
+		return errors.WithMessagef(err, "failed to introspect: %s", provider)
 	}
 
 	if !resp.IsActive() {
-		return parsedToken, errors.Errorf("token is not active: %s", token)
+		return errors.Errorf("token is not active: %s", token.RawToken)
 	}
 
-	return parsedToken, nil
+	return nil
 }
 
 func GetTokenFromRequest(c *gin.Context) string {
