@@ -35,6 +35,12 @@ type Builder struct {
 	builders chan *flatbuffers.Builder
 }
 
+var msgBuilder *Builder
+
+func GetBuilder() *Builder {
+	return msgBuilder
+}
+
 var log = logger.L()
 
 func NewSendPosBuffer(id uuid.UUID) []byte {
@@ -50,15 +56,15 @@ func (mb *Builder) NewPosBusMessageBuffer(msgId uint32, len int) []byte {
 	return msg
 }
 
-func InitBuilder(count int, size int) *Builder {
-	msgBuilder := &Builder{
+func InitBuilder(count int, size int) {
+	msgBuilder = &Builder{
 		builders: make(chan *flatbuffers.Builder, count),
 	}
 
 	for i := 0; i < count; i++ {
 		msgBuilder.builders <- flatbuffers.NewBuilder(size)
 	}
-	return msgBuilder
+	//return msgBuilder
 }
 
 func (mb *Builder) GetBuilder() *flatbuffers.Builder {

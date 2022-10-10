@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/universe/user_types"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -29,6 +28,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/database/db"
 	"github.com/momentum-xyz/ubercontroller/database/migrations"
 	"github.com/momentum-xyz/ubercontroller/logger"
+	"github.com/momentum-xyz/ubercontroller/pkg/message"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/api"
@@ -38,6 +38,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/node"
 	"github.com/momentum-xyz/ubercontroller/universe/plugins"
 	"github.com/momentum-xyz/ubercontroller/universe/space_types"
+	"github.com/momentum-xyz/ubercontroller/universe/user_types"
 	"github.com/momentum-xyz/ubercontroller/universe/worlds"
 )
 
@@ -56,6 +57,8 @@ func run() error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	//todo: change to pool
+	message.InitBuilder(20, 1024*32)
 	if err := api.Initialize(ctx, cfg); err != nil {
 		return errors.WithMessage(err, "failed to initialize api")
 	}
