@@ -35,7 +35,10 @@ func VerifyToken(ctx context.Context, token string) (Token, error) {
 
 	// TODO: change this!
 	for _, provider := range api.cfg.Auth.OIDCProviders {
-		if err := verifyTokenByProvider(ctx, provider, parsedToken); err == nil {
+		err := verifyTokenByProvider(ctx, provider, parsedToken)
+		if err != nil {
+			api.log.Warn(errors.WithMessagef(err, "Api: failed to verify token: %s", provider))
+		} else {
 			return parsedToken, nil
 		}
 	}
@@ -82,7 +85,7 @@ func ParseToken(token string) (Token, error) {
 	if err != nil {
 		return parsedToken, errors.WithMessage(err, "invalid token payload")
 	}
-	if err := json.Unmarshal(payload, &token); err != nil {
+	if err := json.Unmarshal(payload, &parsedToken); err != nil {
 		return parsedToken, errors.WithMessage(err, "failed to unmarshal payload")
 	}
 
@@ -97,6 +100,9 @@ func createProvider(provider string) (rs.ResourceServer, error) {
 	clientID := cfg.GetIDByProvider(provider)
 	secret := cfg.GetSecretByProvider(provider)
 	introspectURL := cfg.GetIntrospectURLByProvider(provider)
+
+	api.log.Infof("Api: creating oidc provider: %s, url: %s, client id: %s, secret: %s, introspect url: %s",
+		provider, oidcURL, clientID, secret, introspectURL)
 
 	opts := make([]rs.Option, 0, 1)
 	if introspectURL != "" {

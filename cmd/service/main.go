@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/universe/user_types"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -97,6 +98,7 @@ func createNode(ctx context.Context, cfg *config.Config, db database.DB) (univer
 	assets2d := assets_2d.NewAssets2d(db)
 	assets3d := assets_3d.NewAssets3d(db)
 	spaceTypes := space_types.NewSpaceTypes(db)
+	userTypes := user_types.NewUserTypes(db)
 	attributes := attributes.NewAttributes(db)
 	plugins := plugins.NewPlugins(db)
 
@@ -105,7 +107,18 @@ func createNode(ctx context.Context, cfg *config.Config, db database.DB) (univer
 		return nil, errors.WithMessage(err, "failed to get node")
 	}
 
-	node := node.NewNode(*nodeEntry.SpaceID, cfg, db, worlds, assets2d, assets3d, spaceTypes, attributes, plugins)
+	node := node.NewNode(
+		*nodeEntry.SpaceID,
+		cfg,
+		db,
+		worlds,
+		assets2d,
+		assets3d,
+		spaceTypes,
+		userTypes,
+		attributes,
+		plugins,
+	)
 	universe.InitializeNode(node)
 
 	if err := worlds.Initialize(ctx); err != nil {
@@ -119,6 +132,9 @@ func createNode(ctx context.Context, cfg *config.Config, db database.DB) (univer
 	}
 	if err := spaceTypes.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize space types")
+	}
+	if err := userTypes.Initialize(ctx); err != nil {
+		return nil, errors.WithMessage(err, "failed to initialize user types")
 	}
 	if err := attributes.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize attributes")

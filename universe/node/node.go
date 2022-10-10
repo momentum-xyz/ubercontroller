@@ -57,9 +57,9 @@ func NewNode(
 	assets2D universe.Assets2d,
 	assets3D universe.Assets3d,
 	spaceTypes universe.SpaceTypes,
+	userTypes universe.UserTypes,
 	attributes universe.Attributes,
 	plugins universe.Plugins,
-
 ) *Node {
 	return &Node{
 		id:         id,
@@ -69,6 +69,7 @@ func NewNode(
 		assets2d:   assets2D,
 		assets3d:   assets3D,
 		spaceTypes: spaceTypes,
+		userTypes:  userTypes,
 		attributes: attributes,
 		plugins:    plugins,
 	}
@@ -171,6 +172,10 @@ func (n *Node) Load() error {
 			return n.assets3d.Load()
 		},
 	)
+	group.Go(
+		func() error {
+			return n.userTypes.Load()
+		})
 
 	if err := group.Wait(); err != nil {
 		return errors.WithMessage(err, "failed to load assets")
