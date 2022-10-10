@@ -1,16 +1,14 @@
 package node
 
 import (
+	"github.com/google/uuid"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe/api"
-	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 func (n *Node) apiUsersCheck(c *gin.Context) {
@@ -91,32 +89,16 @@ func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken
 
 	userEntry = &entry.User{
 		UserID: &userID,
-		Profile: &entry.UserProfile{
-			Name:  &idToken.Name,
-			Email: &idToken.Email,
-		},
 	}
 
-	provider, ok := utils.GetKeyByValueFromMap(n.cfg.Auth.OIDCURLs, accessToken.Issuer)
-	if !ok {
-		return nil, http.StatusBadRequest, errors.Errorf("failed to get oidc provider by oidc url: %s", accessToken.Issuer)
-	}
+	// TODO: check issuer
 
-	switch n.cfg.Auth.OIDCProviders[provider] {
-	case types.ConfigAuthWeb3ProviderType:
-		if idToken.Guest.IsGuest {
-			// TODO: set "Guest" user type
-		} else {
-			// TODO: set "User" user type
-			// TODO: validate idToken
-			// TODO: add wallet
-		}
-	default:
+	if idToken.Guest.IsGuest {
+		// TODO: set "Guest" user type
+	} else {
 		// TODO: set "User" user type
-	}
-
-	if err := n.db.UsersUpsertUser(c, userEntry); err != nil {
-		return nil, http.StatusInternalServerError, errors.WithMessagef(err, "failed to upsert user: %s", userEntry.UserID)
+		// TODO: validate idToken
+		// TODO: add wallet
 	}
 
 	return userEntry, 0, nil

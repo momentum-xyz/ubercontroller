@@ -127,6 +127,7 @@ func MigrateDatabase(ctx context.Context, cfg *config.Postgres) error {
 		}
 		log.Infof("Migration: current DB schema verion=%d, available schema version=%d, will miigrate", iver, version)
 	} else {
+		log.Infoln("Migration: migration is not required")
 		return nil
 	}
 

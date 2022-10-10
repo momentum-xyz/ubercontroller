@@ -25,6 +25,26 @@ type Plugins struct {
 	plugins *generic.SyncMap[uuid.UUID, universe.Plugin]
 }
 
+func (a *Plugins) AddPlugin(plugin universe.Plugin, updateDB bool) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (a *Plugins) AddPlugins(plugins []universe.Plugin, updateDB bool) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (a *Plugins) RemovePlugin(plugin universe.Plugin, updateDB bool) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (a *Plugins) RemovePlugins(plugins []universe.Plugin, updateDB bool) error {
+	//TODO implement me
+	panic("implement me")
+}
+
 func NewPlugins(db database.DB) *Plugins {
 	return &Plugins{
 		db:      db,

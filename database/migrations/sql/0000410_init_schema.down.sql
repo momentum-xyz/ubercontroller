@@ -20,6 +20,12 @@ alter table "space_type" drop constraint "fk_24";
 
 alter table "space_type" drop constraint "fk_24_1";
 
+alter table "space_user_attribute" drop constraint "fk_10";
+
+alter table "space_user_attribute" drop constraint "fk_11";
+
+alter table "space_user_attribute" drop constraint "fk_9";
+
 alter table "user" drop constraint "fk_14";
 
 alter table "user_attribute" drop constraint "fk_12";
@@ -30,25 +36,15 @@ alter table "user_membership" drop constraint "fk_16";
 
 alter table "user_membership" drop constraint "fk_23";
 
-alter table "user_space" drop constraint "fk_15";
+alter table "user_space" drop constraint "fk_23_1";
 
-alter table "user_space" drop constraint "fk_22";
-
-alter table "user_space_attribute" drop constraint "fk_10";
-
-alter table "user_space_attribute" drop constraint "fk_11";
-
-alter table "user_space_attribute" drop constraint "fk_9";
+alter table "user_space" drop constraint "fk_24_2";
 
 alter table "user_user_attribute" drop constraint "fk_19";
 
 alter table "user_user_attribute" drop constraint "fk_20";
 
 alter table "user_user_attribute" drop constraint "fk_21";
-
-alter table "world_attribute" drop constraint "fk_17";
-
-alter table "world_attribute" drop constraint "fk_18";
 
 alter table "asset_2d" drop constraint "pk_1";
 
@@ -60,13 +56,13 @@ alter table "node_attributes" drop constraint "pk_6";
 
 alter table "plugin" drop constraint "pk_7";
 
-alter table "schema_migrations" drop constraint "schema_migrations_pkey";
-
 alter table "space" drop constraint "pk_13";
 
 alter table "space_attribute" drop constraint "pk_16";
 
 alter table "space_type" drop constraint "pk_19";
+
+alter table "space_user_attribute" drop constraint "pk_402";
 
 alter table "user" drop constraint "pk_21";
 
@@ -74,15 +70,13 @@ alter table "user_attribute" drop constraint "pk_102";
 
 alter table "user_membership" drop constraint "pk_203";
 
-alter table "user_space" drop constraint "pk_303";
-
-alter table "user_space_attribute" drop constraint "pk_402";
+alter table "user_space" drop constraint "pk_3";
 
 alter table "user_type" drop constraint "pk_501";
 
 alter table "user_user_attribute" drop constraint "pk_602";
 
-alter table "world_attribute" drop constraint "pk_703";
+drop index if exists "fk_1";
 
 drop index if exists "fk_10";
 
@@ -102,6 +96,8 @@ drop index if exists "fk_17";
 
 drop index if exists "fk_18";
 
+drop index if exists "fk_2";
+
 drop index if exists "fk_20";
 
 drop index if exists "fk_202";
@@ -109,10 +105,6 @@ drop index if exists "fk_202";
 drop index if exists "fk_203";
 
 drop index if exists "fk_3";
-
-drop index if exists "fk_302";
-
-drop index if exists "fk_303";
 
 drop index if exists "fk_401";
 
@@ -127,10 +119,6 @@ drop index if exists "fk_601";
 drop index if exists "fk_603";
 
 drop index if exists "fk_604";
-
-drop index if exists "fk_702";
-
-drop index if exists "fk_703";
 
 drop index if exists "fk_8";
 
@@ -158,7 +146,7 @@ drop index if exists "pk_203";
 
 drop index if exists "pk_21";
 
-drop index if exists "pk_303";
+drop index if exists "pk_3";
 
 drop index if exists "pk_4";
 
@@ -172,10 +160,6 @@ drop index if exists "pk_602";
 
 drop index if exists "pk_7";
 
-drop index if exists "pk_703";
-
-drop index if exists "schema_migrations_pkey";
-
 drop table "asset_2d";
 
 drop table "asset_3d";
@@ -186,13 +170,13 @@ drop table "node_attributes";
 
 drop table "plugin";
 
-drop table "schema_migrations";
-
 drop table "space";
 
 drop table "space_attribute";
 
 drop table "space_type";
+
+drop table "space_user_attribute";
 
 drop table "user";
 
@@ -202,12 +186,8 @@ drop table "user_membership";
 
 drop table "user_space";
 
-drop table "user_space_attribute";
-
 drop table "user_type";
 
 drop table "user_user_attribute";
-
-drop table "world_attribute";
 
 

@@ -11,8 +11,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/zitadel/oidc/pkg/client"
 	"github.com/zitadel/oidc/pkg/client/rs"
-
-	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 type Token struct {
@@ -26,8 +24,7 @@ type Token struct {
 	IssuedAt    int      `json:"iat"`
 	Web3Address string   `json:"web3_address"`
 	Web3Type    string   `json:"web3_type"`
-	Name        string   `json:"name"`
-	Email       string   `json:"email"`
+	RawToken    string   `json:"-"`
 }
 
 func VerifyToken(ctx context.Context, token string) (Token, error) {
@@ -36,19 +33,25 @@ func VerifyToken(ctx context.Context, token string) (Token, error) {
 		return parsedToken, errors.WithMessage(err, "failed to parse token")
 	}
 
-	oidcProvider, ok := api.oidcProviders.Load(parsedToken.Issuer)
+	// TODO: change this!
+	providerName := "web3"
+	if parsedToken.Guest.IsGuest {
+		providerName = "guest"
+	}
+
+	oidcProvider, ok := api.oidcProviders.Load(providerName)
 	if !ok {
-		provider, err := createProvider(parsedToken.Issuer)
+		provider, err := createProvider(providerName)
 		if err != nil {
-			return parsedToken, errors.WithMessagef(err, "failed to create provider: %s", parsedToken.Issuer)
+			return parsedToken, errors.WithMessagef(err, "failed to create provider: %s", providerName)
 		}
-		api.oidcProviders.Store(parsedToken.Issuer, provider)
+		api.oidcProviders.Store(providerName, provider)
 		oidcProvider = provider
 	}
 
 	resp, err := rs.Introspect(ctx, oidcProvider, token)
 	if err != nil {
-		return parsedToken, errors.WithMessagef(err, "failed to introspect: %s", parsedToken.Issuer)
+		return parsedToken, errors.WithMessagef(err, "failed to introspect: %s", providerName)
 	}
 
 	if !resp.IsActive() {
@@ -63,48 +66,45 @@ func GetTokenFromRequest(c *gin.Context) string {
 	return strings.TrimPrefix(authHeader, "Bearer ")
 }
 
-func ParseToken(tokenStr string) (Token, error) {
-	var token Token
+func ParseToken(token string) (Token, error) {
+	var parsedToken Token
 
-	parts := strings.Split(tokenStr, ".")
+	parts := strings.Split(token, ".")
 	if len(parts) < 2 {
-		return token, errors.Errorf("invalid token, expected 2 parts got %d", len(parts))
+		return parsedToken, errors.Errorf("invalid token, expected 2 parts got %d", len(parts))
 	}
 	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
 	if err != nil {
-		return token, errors.WithMessage(err, "invalid token payload")
+		return parsedToken, errors.WithMessage(err, "invalid token payload")
 	}
 	if err := json.Unmarshal(payload, &token); err != nil {
-		return token, errors.WithMessage(err, "failed to unmarshal payload")
+		return parsedToken, errors.WithMessage(err, "failed to unmarshal payload")
 	}
 
-	return token, nil
+	parsedToken.RawToken = token
+
+	return parsedToken, nil
 }
 
-func createProvider(issuer string) (rs.ResourceServer, error) {
+func createProvider(provider string) (rs.ResourceServer, error) {
 	cfg := api.cfg.Auth
-
-	provider, ok := utils.GetKeyByValueFromMap(cfg.OIDCURLs, issuer)
-	if !ok {
-		return nil, errors.Errorf("failed to get oidc provider by oidc url: %s", issuer)
-	}
-
-	clientID := cfg.OIDCClientIDs[provider]
-	secret := cfg.OIDCSecrets[provider]
-	introspectURL := cfg.OIDCIntospectURLs[provider]
+	oidcURL := cfg.OIDCURL
+	clientID := cfg.GetIDByProvider(provider)
+	secret := cfg.GetSecretByProvider(provider)
+	introspectURL := cfg.GetIntrospectURLByProvider(provider)
 
 	opts := make([]rs.Option, 0, 1)
 	if introspectURL != "" {
-		oidcConfig, err := client.Discover(issuer, http.DefaultClient)
+		oidcConfig, err := client.Discover(oidcURL, http.DefaultClient)
 		if err != nil {
-			return nil, errors.WithMessagef(err, "failed to discover issuer: %s", issuer)
+			return nil, errors.WithMessagef(err, "failed to discover provider: %s", provider)
 		}
 		opts = append(opts, rs.WithStaticEndpoints(oidcConfig.TokenEndpoint, introspectURL))
 	}
 
-	oidcProvider, err := rs.NewResourceServerClientCredentials(issuer, clientID, secret, opts...)
+	oidcProvider, err := rs.NewResourceServerClientCredentials(oidcURL, clientID, secret, opts...)
 	if err != nil {
-		return nil, errors.WithMessagef(err, "failed to create resource server client: %s", issuer)
+		return nil, errors.WithMessagef(err, "failed to create resource server client: %s", provider)
 	}
 
 	return oidcProvider, nil

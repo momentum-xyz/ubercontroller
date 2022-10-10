@@ -17,7 +17,7 @@ type Postgres struct {
 }
 
 func (x *Postgres) Init() {
-	x.DATABASE = "momentum3a"
+	x.DATABASE = "momentum4"
 	x.HOST = "localhost"
 	x.PASSWORD = ""
 	x.USERNAME = "postgres"

@@ -311,7 +311,7 @@ type Plugin interface {
 	SetOptions(modifyFn modify.Fn[entry.PluginOptions], updateDB bool) error
 
 	GetDescription() *string
-	SetDescription(modifyFn modify.Fn[string], updateDB bool) error
+	SetDescription(description *string, updateDB bool) error
 
 	GetEntry() *entry.Plugin
 	LoadFromEntry(entry *entry.Plugin) error
@@ -364,7 +364,7 @@ type Attributes interface {
 	RemoveAttributes(attributes []Attribute, updateDB bool) error
 }
 
-type AttributeList[indexType comparable] interface {
+type AttributeInstances[indexType comparable] interface {
 	Initializer
 
 	GetID(id indexType) entry.AttributeID
@@ -378,7 +378,7 @@ type AttributeList[indexType comparable] interface {
 	GetValue(id indexType) *string
 	SetValue(id indexType, modifyFn modify.Fn[string], updateDB bool) error
 
-	AddAttribute(id indexType)
+	AddAttributeInstance(id indexType)
 
 	//GetEntry(id indexType) *entry.Attribute
 	//LoadFromEntry(entry *entry.Attribute) error
