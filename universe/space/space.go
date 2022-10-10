@@ -357,7 +357,7 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 	}
 
 	for i := range entries {
-		space, err := s.NewSpace(*entries[i].SpaceID)
+		space, err := s.CreateSpace(*entries[i].SpaceID)
 		if err != nil {
 			return errors.WithMessagef(err, "failed to create new space: %s", entries[i].SpaceID)
 		}

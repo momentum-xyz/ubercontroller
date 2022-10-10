@@ -15,41 +15,39 @@ import (
 	"net/url"
 )
 
-var WebsocketUpgrader = websocket.Upgrader{
+var websocketUpgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true
 	},
 }
 
-func (n *Node) PosBusConnectionHandler(ctx *gin.Context) {
-	ws, err := WebsocketUpgrader.Upgrade(ctx.Writer, ctx.Request, nil)
+func (n *Node) apiPosBusHandler(c *gin.Context) {
+	ws, err := websocketUpgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		n.log.Error(errors.WithMessage(err, "error: socket upgrade error, aborting connection"))
 		return
 	}
 
-	n.HandShake(ws)
+	if err := n.handShake(ws); err != nil {
+		n.log.Error(errors.WithMessage(err, "failed to handle hand shake"))
+	}
 }
 
-// HandShake TODO: it's "god" method needs to be simplified // antst: agree :)
-func (n *Node) HandShake(socketConnection *websocket.Conn) {
-
+// handShake TODO: it's "god" method needs to be simplified // antst: agree :)
+func (n *Node) handShake(socketConnection *websocket.Conn) error {
 	mt, incomingMessage, err := socketConnection.ReadMessage()
 	if err != nil || mt != websocket.BinaryMessage {
-		n.log.Error(errors.WithMessagef(err, "error: wrong PreHandShake (1), aborting connection"))
-		return
+		return errors.WithMessagef(err, "error: wrong PreHandShake (1), aborting connection")
 	}
 
 	msg := posbus.MsgFromBytes(incomingMessage)
 	if msg.Type() != posbus.MsgTypeFlatBufferMessage {
-		n.log.Error("error: wrong message received, not Handshake.")
-		return
+		return errors.New("error: wrong message received, not handshake")
 	}
 	msgObj := posbus.MsgFromBytes(incomingMessage).AsFlatBufferMessage()
 	msgType := msgObj.MsgType()
 	if msgType != api.MsgHandshake {
-		n.log.Error("error: wrong message type received, not Handshake.")
-		return
+		return errors.New("error: wrong message type received, not handshake")
 	}
 
 	var handshake *api.Handshake
@@ -59,9 +57,9 @@ func (n *Node) HandShake(socketConnection *websocket.Conn) {
 		handshake.Init(unionTable.Bytes, unionTable.Pos)
 	}
 
-	n.log.Info("handshake for user:", message.DeserializeGUID(handshake.UserId(nil)))
-	n.log.Info("handshake version:", handshake.HandshakeVersion())
-	n.log.Info("protocol version:", handshake.ProtocolVersion())
+	n.log.Infof("Node: handshake for user %s:", message.DeserializeGUID(handshake.UserId(nil)))
+	n.log.Infof("Node: handshake version: %d", handshake.HandshakeVersion())
+	n.log.Infof("Node: protocol version: %d", handshake.ProtocolVersion())
 
 	token := string(handshake.UserToken())
 
@@ -83,20 +81,25 @@ func (n *Node) HandShake(socketConnection *websocket.Conn) {
 
 	userID := message.DeserializeGUID(handshake.UserId(nil))
 	sessionID := message.DeserializeGUID(handshake.SessionId(nil))
-	URL, _ := url.Parse(string(handshake.Url()))
-	n.log.Info("URL to use:", URL)
+	url, err := url.Parse(string(handshake.Url()))
+	if err != nil {
+		return errors.WithMessagef(err, "failed to parse url: %s", string(handshake.Url()))
+	}
+	n.log.Infof("Node: url to use: %s", url)
 
-	userIDclaim, _ := uuid.Parse(utils.GetFromAnyMap(claims, "sub", ""))
-
-	if !((userID == userIDclaim) || (userIDclaim.String() == "69e1d7f6-3130-4005-9969-31edf9af9445") || (userIDclaim.String() == "eb50bbc8-ba4e-46a3-a480-a9b30141ce91")) {
-		return
+	userIDClaim, err := uuid.Parse(utils.GetFromAnyMap(claims, "sub", ""))
+	if err != nil {
+		return errors.WithMessagef(err, "failed to parse id claim: %s", userID)
+	}
+	if !((userID == userIDClaim) || (userIDClaim.String() == "69e1d7f6-3130-4005-9969-31edf9af9445") || (userIDClaim.String() == "eb50bbc8-ba4e-46a3-a480-a9b30141ce91")) {
+		return nil
 	}
 
 	user, err := n.LoadUser(userID)
 	if err != nil {
-		return
+		return errors.WithMessagef(err, "failed to load user from entry: %s", userID)
 	}
 	user.SetConnection(sessionID, socketConnection)
 
-	n.DetectSpawnWorld(userID).AddUser(user, false)
+	return n.detectSpawnWorld(userID).AddUser(user, false)
 }

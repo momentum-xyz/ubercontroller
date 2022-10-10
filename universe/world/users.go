@@ -1,13 +1,15 @@
 package world
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"github.com/pkg/errors"
+
 	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/pkg/errors"
-	"time"
 )
 
 func (w *World) GetUser(userID uuid.UUID, recursive bool) (universe.User, bool) {
@@ -25,10 +27,10 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 	exUser, ok := w.GetUsers(false)[user.GetID()]
 	if ok {
 		if exUser != user {
-			if exUser.GetSessionId() == user.GetSessionId() {
-				w.log.Info("Same session, must be teleport or network failure")
+			if exUser.GetSessionID() == user.GetSessionID() {
+				w.log.Info("World: same session, must be teleport or network failure: world %s, user %s", w.GetID(), user.GetID())
 			} else {
-				w.log.Info("Double-login detected for %s", exUser.GetID())
+				w.log.Info("World: double-login detected for world %s, user %s", w.GetID(), exUser.GetID())
 
 				exUser.SendDirectly(posbus.NewSignalMsg(posbus.SignalDualConnection).WebsocketMessage())
 

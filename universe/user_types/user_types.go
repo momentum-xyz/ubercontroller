@@ -44,7 +44,7 @@ func (ut *UserTypes) Initialize(ctx context.Context) error {
 	return nil
 }
 
-func (ut *UserTypes) NewUserType(UserTypeID uuid.UUID) (universe.UserType, error) {
+func (ut *UserTypes) CreateUserType(UserTypeID uuid.UUID) (universe.UserType, error) {
 	UserType := user_type.NewUserType(UserTypeID, ut.db)
 
 	if err := UserType.Initialize(ut.ctx); err != nil {
@@ -166,7 +166,7 @@ func (ut *UserTypes) Load() error {
 	}
 
 	for i := range entries {
-		UserType, err := ut.NewUserType(*entries[i].UserTypeID)
+		UserType, err := ut.CreateUserType(*entries[i].UserTypeID)
 		if err != nil {
 			return errors.WithMessagef(err, "failed to create new user type: %ut", entries[i].UserTypeID)
 		}
