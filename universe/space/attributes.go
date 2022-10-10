@@ -2,7 +2,9 @@ package space
 
 import (
 	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
@@ -47,7 +49,7 @@ func (s *Space) loadSpaceAttributes() error {
 				},
 			)
 			if ok {
-				s.spaceAttributes.AddAttributeInstance(
+				s.spaceAttributes.SetAttributeInstance(
 					NewAttributeIndex(instance.PluginID, instance.Name), instance.Value, instance.Options, attr,
 				)
 			}
@@ -70,10 +72,15 @@ func (s *Space) loadSpaceUserAttributes() error {
 				},
 			)
 			if ok {
-				s.userSpaceAttributes.AddAttributeInstance(
+				ai := s.userSpaceAttributes.SetAttributeInstance(
 					NewUserAttributeIndex(instance.PluginID, instance.Name, instance.UserID), instance.Value,
 					instance.Options, attr,
 				)
+				opt := ai.GetEffectiveOptions()
+
+				if v, ok := (*opt)["render_type"]; ok && v == "texture" {
+
+				}
 			}
 
 		}
@@ -81,3 +88,19 @@ func (s *Space) loadSpaceUserAttributes() error {
 	}
 	return nil
 }
+
+func (s *Space) SetAttributesMsg(kind, name string, msg *websocket.PreparedMessage) {
+	m, ok := s.attributesMsg.Load(kind)
+	if !ok {
+		m = generic.NewSyncMap[string, *websocket.PreparedMessage]()
+		s.attributesMsg.Store(kind, m)
+	}
+	m.Store(name, msg)
+}
+
+//func (s *Space) SetSpaceAttribute() {
+//	s.userSpaceAttributes.SetAttributeInstance(
+//		NewUserAttributeIndex(instance.PluginID, instance.Name, instance.UserID), instance.Value,
+//		instance.Options, attr,
+//	)
+//}

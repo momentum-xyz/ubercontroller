@@ -2,8 +2,12 @@ package space
 
 import (
 	"context"
+	"github.com/gorilla/websocket"
+	"github.com/momentum-xyz/ubercontroller/pkg/message"
 	"github.com/momentum-xyz/ubercontroller/universe/attribute_instances"
+	//world2 "github.com/momentum-xyz/ubercontroller/universe/world"
 	"sync"
+	"sync/atomic"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -42,6 +46,9 @@ type Space struct {
 
 	spaceAttributes     universe.AttributeInstances[AttributeIndex]
 	userSpaceAttributes universe.AttributeInstances[UserAttributeIndex]
+
+	spawnMsg      atomic.Pointer[websocket.PreparedMessage]
+	attributesMsg *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
 }
 
 func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
@@ -52,6 +59,7 @@ func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
 		Children:            generic.NewSyncMap[uuid.UUID, universe.Space](),
 		spaceAttributes:     attribute_instances.NewAttributeInstances[AttributeIndex](db),
 		userSpaceAttributes: attribute_instances.NewAttributeInstances[UserAttributeIndex](db),
+		attributesMsg:       generic.NewSyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]](),
 		world:               world,
 	}
 }
@@ -337,6 +345,8 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 		return errors.WithMessage(err, "failed to load dependencies")
 	}
 
+	s.UpdateSpawnMessage()
+
 	if !recursive {
 		return nil
 	}
@@ -417,4 +427,63 @@ func (s *Space) loadDependencies(entry *entry.Space) error {
 func (s *Space) clearCache() {
 	s.entry = nil
 	s.effectiveOptions = nil
+}
+
+func (s *Space) UpdateSpawnMessage() {
+	v := s.spaceAttributes.GetValue(NewAttributeIndex(uuid.MustParse("f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0"), "name"))
+	name, ok := (*v)["name"].(string)
+	if !ok {
+		name = ""
+	}
+
+	opts := s.GetEffectiveOptions()
+	s.spawnMsg.Store(
+		message.GetBuilder().MsgObjectDefinition(
+			message.ObjectDefinition{
+				ObjectID:         s.id,
+				ParentID:         s.GetParent().GetID(),
+				AssetType:        s.asset3d.GetID(),
+				Name:             name,
+				Position:         *s.GetPosition(),
+				TetheredToParent: true,
+				Minimap:          *opts.Minimap,
+				InfoUI:           *opts.InfoUIID,
+			},
+		),
+	)
+}
+
+func (s *Space) SendSpawnMessage(f func(*websocket.PreparedMessage), recursive bool) {
+	f(s.spawnMsg.Load())
+	if recursive {
+		s.Children.Mu.RLock()
+		defer s.Children.Mu.RUnlock()
+
+		for _, space := range s.Children.Data {
+			space.SendSpawnMessage(f, true)
+		}
+		s.Children.Mu.RUnlock()
+	}
+
+}
+
+func (s *Space) SendAttributes(f func(*websocket.PreparedMessage), recursive bool) {
+	s.attributesMsg.Mu.RLock()
+	for _, g := range s.attributesMsg.Data {
+		for _, a := range g.Data {
+			f(a)
+		}
+	}
+	s.attributesMsg.Mu.RUnlock()
+
+	f(s.spawnMsg.Load())
+	if recursive {
+		s.Children.Mu.RLock()
+		defer s.Children.Mu.RUnlock()
+
+		for _, space := range s.Children.Data {
+			space.SendAttributes(f, true)
+		}
+		s.Children.Mu.RUnlock()
+	}
 }

@@ -143,7 +143,10 @@ type Space interface {
 	RemoveUser(user User, updateDB bool) error
 
 	SendToUser(userID uuid.UUID, msg *websocket.PreparedMessage, recursive bool) error
-	Broadcast(msg *websocket.PreparedMessage, recursive bool) error
+	Broadcast(msg *websocket.PreparedMessage, recursive bool)
+
+	SendSpawnMessage(f func(msg *websocket.PreparedMessage), recursive bool)
+	SendAttributes(f func(*websocket.PreparedMessage), recursive bool)
 }
 
 type User interface {
@@ -378,10 +381,18 @@ type AttributeInstances[indexType comparable] interface {
 	GetValue(id indexType) *entry.AttributeValue
 	SetValue(id indexType, modifyFn modify.Fn[string], updateDB bool) error
 
-	AddAttributeInstance(
+	SetAttributeInstance(
 		id indexType, value *entry.AttributeValue, options *entry.AttributeOptions, attribute Attribute,
-	)
+	) AttributeInstance
 
 	//GetEntry(id indexType) *entry.Attribute
 	//LoadFromEntry(entry *entry.Attribute) error
+}
+
+type AttributeInstance interface {
+	GetOptions() *entry.AttributeOptions
+	SetOptions(modifyFn modify.Fn[entry.AttributeOptions], updateDB bool) error
+	GetValue() *entry.AttributeValue
+	SetValue(modifyFn modify.Fn[string], updateDB bool) error
+	GetEffectiveOptions() *entry.AttributeOptions
 }

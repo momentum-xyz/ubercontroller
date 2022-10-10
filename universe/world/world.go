@@ -2,6 +2,7 @@ package world
 
 import (
 	"context"
+	"github.com/gorilla/websocket"
 	"github.com/momentum-xyz/ubercontroller/mplugin"
 
 	"github.com/google/uuid"
@@ -26,6 +27,7 @@ type World struct {
 	pluginController *mplugin.PluginController
 	//corePluginInstance  mplugin.PluginInstance
 	corePluginInterface mplugin.PluginInterface
+	broadcast           chan *websocket.PreparedMessage
 }
 
 func NewWorld(id uuid.UUID, db database.DB) *World {

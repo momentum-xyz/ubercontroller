@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/momentum-xyz/ubercontroller/database/migrations"
+	"github.com/momentum-xyz/ubercontroller/pkg/message"
 	"github.com/momentum-xyz/ubercontroller/universe/attributes"
 	"github.com/momentum-xyz/ubercontroller/universe/plugins"
 	"github.com/pkg/errors"
@@ -48,6 +49,8 @@ func main() {
 
 func run() error {
 	cfg := config.GetConfig()
+	//todo: change to pool
+	message.InitBuilder(20, 1024*32)
 
 	ctx := context.WithValue(context.Background(), types.ContextLoggerKey, log)
 	ctx, cancel := context.WithCancel(ctx)

@@ -17,7 +17,7 @@ import (
 var _ universe.AttributeInstances[uuid.UUID] = (*AttributeInstances[uuid.UUID])(nil)
 
 type AttributeInstances[indexType comparable] struct {
-	data map[indexType]AttributeInstance
+	data map[indexType]*AttributeInstance
 	ctx  context.Context
 	log  *zap.SugaredLogger
 	db   database.DB
@@ -27,7 +27,7 @@ type AttributeInstances[indexType comparable] struct {
 func NewAttributeInstances[indexType comparable](db database.DB) *AttributeInstances[indexType] {
 	return &AttributeInstances[indexType]{
 		db:   db,
-		data: make(map[indexType]AttributeInstance),
+		data: make(map[indexType]*AttributeInstance),
 	}
 }
 
@@ -91,10 +91,12 @@ func (a AttributeInstances[indexType]) SetValue(id indexType, modifyFn modify.Fn
 	panic("implement me")
 }
 
-func (a AttributeInstances[indexType]) AddAttributeInstance(
+func (a AttributeInstances[indexType]) SetAttributeInstance(
 	id indexType, value *entry.AttributeValue, options *entry.AttributeOptions, attr universe.Attribute,
-) {
+) universe.AttributeInstance {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	a.data[id] = AttributeInstance{value: value, options: options, attribute: attr}
+	na := &AttributeInstance{value: value, options: options, attribute: attr}
+	a.data[id] = na
+	return *na
 }
