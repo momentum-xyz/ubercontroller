@@ -115,7 +115,7 @@ func createDBConnection(ctx context.Context, cfg *config.Postgres) (*pgxpool.Poo
 		return nil, errors.WithMessage(err, "failed to gen postgres config")
 	}
 
-	err = data.MigrateDatabase(config.ConnConfig)
+	err = migrations.MigrateDatabase(cfg)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to migrate database")
 	}

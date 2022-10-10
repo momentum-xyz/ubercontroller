@@ -1,4 +1,4 @@
-package data
+package migrations
 
 import (
 	"context"
@@ -13,17 +13,21 @@ import (
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v4"
 	_ "github.com/jackc/pgx/v4/stdlib"
+	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/pkg/errors"
 	"log"
 	"os"
+	"regexp"
 )
 
 //go:embed sql/*
 var migrationFS embed.FS
 
 func pgDBMigrationsConnect(cfg *pgx.ConnConfig) (*sql.DB, error) {
-
-	db, err := sql.Open("pgx", cfg.ConnString())
+	cs := cfg.ConnString()
+	reg := regexp.MustCompile(`pool_max_conns=[0-9]*`)
+	cs = reg.ReplaceAllString(cs, "")
+	db, err := sql.Open("pgx", cs)
 
 	if err != nil {
 		return nil, errors.WithMessage(err, "Unable to connect to database server")
@@ -65,22 +69,21 @@ func createNewDatabase(cfg *pgx.ConnConfig) error {
 	return nil
 }
 
-func MigrateDatabase(cfg *pgx.ConnConfig) error {
-	db, err := pgDBMigrationsConnect(cfg)
+func MigrateDatabase(cfg *config.Postgres) error {
+	config, err := cfg.GenMigrateConfig()
+	db, err := pgDBMigrationsConnect(config)
 	//fmt.Println("MIGRATE DATABASE")
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 	defer db.Close()
-
 	// get instance of migration data
 
 	d, err := iofs.New(migrationFS, "sql")
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	// get DB instance
 	pg, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
@@ -111,6 +114,7 @@ func MigrateDatabase(cfg *pgx.ConnConfig) error {
 		}
 		fmt.Printf("Current DB schema verion=%d, available schema version=%d, will miigrate\n", iver, version)
 	} else {
+		fmt.Println("No DB migration required")
 		return nil
 	}
 
@@ -120,10 +124,13 @@ func MigrateDatabase(cfg *pgx.ConnConfig) error {
 	//fmt.Println("Version:", version, isDirty, err)
 
 	err = m.Up() // run your migrations and handle the errors above of course
+	fmt.Println("ff", err)
 	if err != nil {
 		return errors.WithMessage(err, "Migration failed")
 	}
+	fmt.Println("ff1")
 	version, _, _ = m.Version()
+	fmt.Println("ff2")
 	fmt.Println("Migration was successful, current schema version:", version)
 
 	return nil
