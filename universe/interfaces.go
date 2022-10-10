@@ -310,7 +310,7 @@ type Plugin interface {
 	SetOptions(modifyFn modify.Fn[entry.PluginOptions], updateDB bool) error
 
 	GetDescription() *string
-	SetDescription(modifyFn modify.Fn[string], updateDB bool) error
+	SetDescription(description *string, updateDB bool) error
 
 	GetEntry() *entry.Plugin
 	LoadFromEntry(entry *entry.Plugin) error

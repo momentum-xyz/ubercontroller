@@ -59,7 +59,8 @@ func (db *DB) AttributesGetAttributes(ctx context.Context) ([]*entry.Attribute, 
 
 func (db *DB) AttributesUpsertAttribute(ctx context.Context, attribute *entry.Attribute) error {
 	if _, err := db.conn.Exec(
-		ctx, upsertAttributeQuery, attribute.Name, attribute.PluginID, attribute.Description, attribute.Options,
+		ctx, upsertAttributeQuery, attribute.AttributeID.PluginID, attribute.AttributeID.Name, attribute.Description,
+		attribute.Options,
 	); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
@@ -70,7 +71,7 @@ func (db *DB) AttributesUpsertAttributes(ctx context.Context, attributes []*entr
 	batch := &pgx.Batch{}
 	for _, attribute := range attributes {
 		batch.Queue(
-			upsertAttributeQuery, attribute.Name, attribute.PluginID, attribute.Name, attribute.Description,
+			upsertAttributeQuery, attribute.AttributeID.PluginID, attribute.AttributeID.Name, attribute.Description,
 			attribute.Options,
 		)
 	}
@@ -82,7 +83,7 @@ func (db *DB) AttributesUpsertAttributes(ctx context.Context, attributes []*entr
 	for i := 0; i < batch.Len(); i++ {
 		if _, err := batchRes.Exec(); err != nil {
 			errs = multierror.Append(
-				errs, errors.WithMessagef(err, "failed to exec db for: %v", attributes[i].Name),
+				errs, errors.WithMessagef(err, "failed to exec db for: %v", attributes[i].AttributeID.Name)),
 			)
 		}
 	}
