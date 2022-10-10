@@ -1,4 +1,4 @@
-package attribute_data
+package attribute_instances
 
 import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -7,7 +7,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
-type AttributeData struct {
+type AttributeInstance struct {
 	id               entry.AttributeID
 	options          *entry.AttributeOptions
 	effectiveOptions *entry.AttributeOptions
@@ -15,28 +15,28 @@ type AttributeData struct {
 	attribute        universe.Attribute
 }
 
-func (a *AttributeData) GetOptions() *entry.AttributeOptions {
+func (a *AttributeInstance) GetOptions() *entry.AttributeOptions {
 
 }
-func (a *AttributeData) SetOptions(modifyFn modify.Fn[entry.AttributeOptions], updateDB bool) error {
-
-}
-
-func (a *AttributeData) GetValue() *string {
-
-}
-func (a *AttributeData) SetValue(modifyFn modify.Fn[string], updateDB bool) error {
+func (a *AttributeInstance) SetOptions(modifyFn modify.Fn[entry.AttributeOptions], updateDB bool) error {
 
 }
 
-func (a *AttributeData) GetEntry() *entry.Attribute {
+func (a *AttributeInstance) GetValue() *string {
 
 }
-func (a *AttributeData) LoadFromEntry(entry *entry.Attribute) error {
+func (a *AttributeInstance) SetValue(modifyFn modify.Fn[string], updateDB bool) error {
 
 }
 
-func (a *AttributeData) GetEffectiveOptions() *entry.AttributeOptions {
+func (a *AttributeInstance) GetEntry() *entry.Attribute {
+
+}
+func (a *AttributeInstance) LoadFromEntry(entry *entry.Attribute) error {
+
+}
+
+func (a *AttributeInstance) GetEffectiveOptions() *entry.AttributeOptions {
 	if a.effectiveOptions == nil {
 		a.effectiveOptions = utils.MergePTRs(a.options, a.attribute.GetOptions())
 	}
