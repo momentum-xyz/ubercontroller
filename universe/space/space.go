@@ -2,6 +2,7 @@ package space
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/universe/attribute_instances"
 	"sync"
 
 	"github.com/google/uuid"
@@ -39,17 +40,19 @@ type Space struct {
 	entry            *entry.Space
 	effectiveOptions *entry.SpaceOptions
 
-	spaceAttributes     universe.AttributeInstances[entry.AttributeID]
+	spaceAttributes     universe.AttributeInstances[AttributeIndex]
 	userSpaceAttributes universe.AttributeInstances[UserAttributeIndex]
 }
 
 func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
 	return &Space{
-		id:       id,
-		db:       db,
-		Users:    generic.NewSyncMap[uuid.UUID, universe.User](),
-		Children: generic.NewSyncMap[uuid.UUID, universe.Space](),
-		world:    world,
+		id:                  id,
+		db:                  db,
+		Users:               generic.NewSyncMap[uuid.UUID, universe.User](),
+		Children:            generic.NewSyncMap[uuid.UUID, universe.Space](),
+		spaceAttributes:     attribute_instances.NewAttributeInstances[AttributeIndex](db),
+		userSpaceAttributes: attribute_instances.NewAttributeInstances[UserAttributeIndex](db),
+		world:               world,
 	}
 }
 
@@ -70,7 +73,8 @@ func (s *Space) Initialize(ctx context.Context) error {
 
 	s.ctx = ctx
 	s.log = log
-
+	s.spaceAttributes.Initialize(s.ctx)
+	s.userSpaceAttributes.Initialize(s.ctx)
 	return nil
 }
 
@@ -356,15 +360,22 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 	return nil
 }
 
-func (s *Space) loadSelfData(entry *entry.Space) error {
-	if err := s.SetOwnerID(*entry.OwnerID, false); err != nil {
-		return errors.WithMessagef(err, "failed to set owner id: %s", entry.OwnerID)
+func (s *Space) loadSelfData(spaceEntry *entry.Space) error {
+	if err := s.SetOwnerID(*spaceEntry.OwnerID, false); err != nil {
+		return errors.WithMessagef(err, "failed to set owner id: %s", spaceEntry.OwnerID)
 	}
-	if err := s.SetPosition(entry.Position, false); err != nil {
+	if err := s.SetPosition(spaceEntry.Position, false); err != nil {
 		return errors.WithMessage(err, "failed to set position")
 	}
-	if err := s.SetOptions(modify.ReplaceWith(entry.Options), false); err != nil {
+	if err := s.SetOptions(modify.ReplaceWith(spaceEntry.Options), false); err != nil {
 		return errors.WithMessage(err, "failed to set options")
+	}
+
+	if err := s.loadSpaceAttributes(); err != nil {
+		return errors.WithMessage(err, "failed to  load space attributes")
+	}
+	if err := s.loadSpaceUserAttributes(); err != nil {
+		return errors.WithMessage(err, "failed to  load space_user  attributes")
 	}
 	return nil
 }
