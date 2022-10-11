@@ -182,7 +182,7 @@ func (db *DB) SpaceAttributesRemoveSpaceAttributeByPluginIDAndSpaceID(
 	return nil
 }
 
-func (db *DB) SpaceAttributesRemoveSpaceAttributeByPluginIDAndSpaceIDAndName(
+func (db *DB) SpaceAttributesRemoveSpaceAttributeByPluginIDAndNameAndSpaceID(
 	ctx context.Context, pluginId uuid.UUID, attributeName string, spaceID uuid.UUID,
 ) error {
 	if _, err := db.conn.Exec(

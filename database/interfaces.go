@@ -170,7 +170,7 @@ type SpaceAttributesDB interface {
 	SpaceAttributesRemoveSpaceAttributeByPluginIDAndSpaceID(
 		ctx context.Context, pluginID uuid.UUID, spaceID uuid.UUID,
 	) error
-	SpaceAttributesRemoveSpaceAttributeByPluginIDAndSpaceIDAndName(
+	SpaceAttributesRemoveSpaceAttributeByPluginIDAndNameAndSpaceID(
 		ctx context.Context, pluginID uuid.UUID, attributeName string, spaceID uuid.UUID,
 	) error
 	SpaceAttributesUpdateSpaceAttributeOptions(
@@ -184,9 +184,14 @@ type SpaceAttributesDB interface {
 
 type UserAttributesDB interface {
 	UserAttributesGetUserAttributes(ctx context.Context) ([]*entry.UserAttribute, error)
-	UserAttributesGetUserAttributesByUserID(ctx context.Context, userID uuid.UUID) ([]*entry.SpaceAttribute, error)
-	UserAttributesUpsertUserAttribute(ctx context.Context, userAttribute *entry.UserAttribute) error
-	UserAttributesUpsertUserAttributes(ctx context.Context, userAttributes []*entry.UserAttribute) error
+	UserAttributesGetUserAttributesByUserID(ctx context.Context, userID uuid.UUID) ([]*entry.UserAttribute, error)
+	UserAttributesGetUserAttributeByPluginIDAndNameAndUserID(
+		ctx context.Context, pluginID uuid.UUID, attributeName string, userID uuid.UUID,
+	) (*entry.UserAttribute, error)
+	UserAttributesUpsertUserAttribute( // TODO: we really need to think about it
+		ctx context.Context, userAttribute *entry.UserAttribute,
+		modifyValue modify.Fn[entry.AttributeValue], modifyOptions modify.Fn[entry.AttributeOptions],
+	) error
 	UserAttributesRemoveUserAttributeByName(ctx context.Context, attributeName string) error
 	UserAttributesRemoveUserAttributesByNames(ctx context.Context, attributeNames []string) error
 	UserAttributesRemoveUserAttributesByPluginID(ctx context.Context, pluginID uuid.UUID) error
@@ -203,7 +208,7 @@ type UserAttributesDB interface {
 	UserAttributesRemoveUserAttributeByPluginIDAndUserID(
 		ctx context.Context, pluginID uuid.UUID, userID uuid.UUID,
 	) error
-	UserAttributesRemoveUserAttributeByPluginIDAndUserIDAndName(
+	UserAttributesRemoveUserAttributeByPluginIDAndNameAndUserID(
 		ctx context.Context, pluginID uuid.UUID, attributeName string, userID uuid.UUID,
 	) error
 	UserAttributesUpdateUserAttributeOptions(
@@ -288,19 +293,19 @@ type SpaceUserAttributesDB interface {
 	SpaceUserAttributesRemoveSpaceUserAttributeByPluginIDAndSpaceID(
 		ctx context.Context, pluginID uuid.UUID, spaceID uuid.UUID,
 	) error
-	SpaceUserAttributesRemoveSpaceUserAttributeByPluginIDAndSpaceIDAndName(
+	SpaceUserAttributesRemoveSpaceUserAttributeByPluginIDAndNameAndSpaceID(
 		ctx context.Context, pluginID uuid.UUID, attributeName string, spaceID uuid.UUID,
 	) error
 	SpaceUserAttributesRemoveSpaceUserAttributeByPluginIDAndUserID(
 		ctx context.Context, pluginID uuid.UUID, userID uuid.UUID,
 	) error
-	SpaceUserAttributesRemoveSpaceUserAttributeByPluginIDAndUserIDAndName(
+	SpaceUserAttributesRemoveSpaceUserAttributeByPluginIDAndNameAndUserID(
 		ctx context.Context, pluginID uuid.UUID, attributeName string, userID uuid.UUID,
 	) error
 	SpaceUserAttributesRemoveSpaceUserAttributeByPluginIDAndSpaceIDAndUserID(
 		ctx context.Context, pluginID uuid.UUID, spaceID uuid.UUID, userID uuid.UUID,
 	) error
-	SpaceUserAttributesRemoveSpaceUserAttributeByPluginIDAndSpaceIDAndUserIDAndName(
+	SpaceUserAttributesRemoveSpaceUserAttributeByPluginIDAndNameAndSpaceIDAndUserID(
 		ctx context.Context, pluginID uuid.UUID, attributeName string, spaceID uuid.UUID, userID uuid.UUID,
 	) error
 	SpaceUserAttributesUpdateSpaceUserAttributeOptions(
@@ -366,19 +371,19 @@ type UserUserAttributesDB interface {
 	UserUserAttributesRemoveUserUserAttributeByPluginIDAndSourceUserID(
 		ctx context.Context, pluginID uuid.UUID, sourceUserID uuid.UUID,
 	) error
-	UserUserAttributesRemoveUserUserAttributeByPluginIDAndSourceUserIDAndName(
+	UserUserAttributesRemoveUserUserAttributeByPluginIDAndNameAndSourceUserID(
 		ctx context.Context, pluginID uuid.UUID, attributeName string, sourceUserID uuid.UUID,
 	) error
 	UserUserAttributesRemoveUserUserAttributeByPluginIDAndTargetUserID(
 		ctx context.Context, pluginID uuid.UUID, targetUserID uuid.UUID,
 	) error
-	UserUserAttributesRemoveUserUserAttributeByPluginIDAndTargetUserIDAndName(
+	UserUserAttributesRemoveUserUserAttributeByPluginIDAndNameAndTargetUserID(
 		ctx context.Context, pluginID uuid.UUID, attributeName string, targetUserID uuid.UUID,
 	) error
 	UserUserAttributesRemoveUserUserAttributeByPluginIDAndSourceUserIDAndTargetUserID(
 		ctx context.Context, pluginID uuid.UUID, sourceUserID uuid.UUID, targetUserID uuid.UUID,
 	) error
-	UserUserAttributesRemoveUserUserAttributeByPluginIDAndSourceUserIDAndTargetUserIDAndName(
+	UserUserAttributesRemoveUserUserAttributeByPluginIDAndNameAndSourceUserIDAndTargetUserID(
 		ctx context.Context, pluginID uuid.UUID, attributeName string, sourceUserID uuid.UUID,
 		targetUserID uuid.UUID,
 	) error

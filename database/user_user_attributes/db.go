@@ -297,7 +297,7 @@ func (db *DB) UserUserAttributesRemoveUserUserAttributeByPluginIDAndSourceUserID
 	return nil
 }
 
-func (db *DB) UserUserAttributesRemoveUserUserAttributeByPluginIDAndSourceUserIDAndName(
+func (db *DB) UserUserAttributesRemoveUserUserAttributeByPluginIDAndNameAndSourceUserID(
 	ctx context.Context, pluginId uuid.UUID, attributeName string, sourceUserID uuid.UUID,
 ) error {
 	if _, err := db.conn.Exec(
@@ -319,7 +319,7 @@ func (db *DB) UserUserAttributesRemoveUserUserAttributeByPluginIDAndTargetUserID
 	return nil
 }
 
-func (db *DB) UserUserAttributesRemoveUserUserAttributeByPluginIDAndTargetUserIDAndName(
+func (db *DB) UserUserAttributesRemoveUserUserAttributeByPluginIDAndNameAndTargetUserID(
 	ctx context.Context, pluginId uuid.UUID, attributeName string, targetUserId uuid.UUID,
 ) error {
 	if _, err := db.conn.Exec(
@@ -341,7 +341,7 @@ func (db *DB) UserUserAttributesRemoveUserUserAttributeByPluginIDAndSourceUserID
 	return nil
 }
 
-func (db *DB) UserUserAttributesRemoveUserUserAttributeByPluginIDAndSourceUserIDAndTargetUserIDAndName(
+func (db *DB) UserUserAttributesRemoveUserUserAttributeByPluginIDAndNameAndSourceUserIDAndTargetUserID(
 	ctx context.Context, pluginId uuid.UUID, attributeName string, sourceUserID uuid.UUID, targetUserId uuid.UUID,
 ) error {
 	if _, err := db.conn.Exec(
