@@ -11,7 +11,11 @@ RUN go mod download
 
 COPY . ./
 
-RUN go build -o ./bin/ubercontroller ./cmd/service
+
+# extra ldflag to make sure it works with alpine/musl
+RUN go build -ldflags "-extldflags '-fuse-ld=bfd'" -o ./bin/ubercontroller ./cmd/service
+#RUN go build -o ./bin/ubercontroller ./cmd/service
+
 
 # Runtime image
 FROM alpine:3.16 as runtime
