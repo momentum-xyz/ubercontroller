@@ -74,7 +74,7 @@ func (p *Plugins) Initialize(ctx context.Context) error {
 	return nil
 }
 
-func (p *Plugins) NewPlugin(pluginId uuid.UUID) (universe.Plugin, error) {
+func (p *Plugins) CreatePlugin(pluginId uuid.UUID) (universe.Plugin, error) {
 
 	plugin := plugin.NewPlugin(pluginId, p.db)
 
@@ -115,7 +115,7 @@ func (p *Plugins) Load() error {
 	}
 
 	for i := range entries {
-		plugin, err := p.NewPlugin(*entries[i].PluginID)
+		plugin, err := p.CreatePlugin(*entries[i].PluginID)
 		if err != nil {
 			return errors.WithMessagef(err, "failed to create new plugin: %s", entries[i].PluginID)
 		}
