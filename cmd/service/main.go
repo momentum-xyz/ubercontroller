@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -69,6 +71,7 @@ func run() error {
 	}
 	defer pool.Close()
 
+	tm1 := time.Now()
 	db, err := createDB(pool)
 	if err != nil {
 		return errors.WithMessage(err, "failed to create db")
@@ -82,7 +85,8 @@ func run() error {
 	if err := node.Load(); err != nil {
 		return errors.WithMessagef(err, "failed to load node: %s", node.GetID())
 	}
-
+	tm2 := time.Now()
+	fmt.Printf("Node loading time: %+v\n", tm2.Sub(tm1))
 	defer func() {
 		if err := node.Stop(); err != nil {
 			log.Error(errors.WithMessagef(err, "failed to stop node: %s", node.GetID()))

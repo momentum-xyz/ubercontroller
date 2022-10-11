@@ -2,15 +2,14 @@ package space
 
 import (
 	"context"
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/momentum-xyz/ubercontroller/pkg/message"
 	"github.com/momentum-xyz/ubercontroller/universe/attribute_instances"
-	"sync"
-	"sync/atomic"
-
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"sync"
+	"sync/atomic"
 
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
@@ -46,9 +45,10 @@ type Space struct {
 	spaceAttributes     universe.AttributeInstances[types.SpaceAttributeIndex]
 	spaceUserAttributes universe.AttributeInstances[types.SpaceUserAttributeIndex]
 
-	spawnMsg       atomic.Pointer[websocket.PreparedMessage]
-	attributesMsg  *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
-	actualPosition cmath.Vec3
+	spawnMsg          atomic.Pointer[websocket.PreparedMessage]
+	attributesMsg     *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
+	actualPosition    cmath.Vec3
+	broadcastPipeline chan *websocket.PreparedMessage
 }
 
 func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
@@ -60,6 +60,7 @@ func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
 		spaceAttributes:     attribute_instances.NewAttributeInstances[types.SpaceAttributeIndex](db),
 		spaceUserAttributes: attribute_instances.NewAttributeInstances[types.SpaceUserAttributeIndex](db),
 		attributesMsg:       generic.NewSyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]](),
+		broadcastPipeline:   make(chan *websocket.PreparedMessage), // todo: to switch to non-blocking once tested
 		world:               world,
 	}
 }
@@ -507,5 +508,20 @@ func (s *Space) SendAttributes(f func(*websocket.PreparedMessage), recursive boo
 			space.SendAttributes(f, true)
 		}
 		s.Children.Mu.RUnlock()
+	}
+}
+
+func (s *Space) StopRunner() {
+	s.broadcastPipeline <- nil
+}
+func (s *Space) Runner() {
+	for {
+		select {
+		case message := <-s.broadcastPipeline:
+			if message == nil {
+
+			}
+			go s.Broadcast(message, false)
+		}
 	}
 }

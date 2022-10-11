@@ -147,7 +147,7 @@ type Space interface {
 	RemoveUser(user User, updateDB bool) error
 
 	SendToUser(userID uuid.UUID, msg *websocket.PreparedMessage, recursive bool) error
-	Broadcast(msg *websocket.PreparedMessage, recursive bool)
+	Broadcast(msg *websocket.PreparedMessage, recursive bool) error
 
 	SendSpawnMessage(sendFn func(msg *websocket.PreparedMessage), recursive bool)
 	SendAttributes(sendFn func(*websocket.PreparedMessage), recursive bool)

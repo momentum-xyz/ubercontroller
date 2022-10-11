@@ -91,21 +91,20 @@ func (s *Space) SendToUser(userID uuid.UUID, msg *websocket.PreparedMessage, rec
 	return errors.Errorf("implement me")
 }
 
-func (s *Space) Broadcast(msg *websocket.PreparedMessage, recursive bool) {
+func (s *Space) Broadcast(msg *websocket.PreparedMessage, recursive bool) error {
 	//return errors.Errorf("implement me")
-	s.Users.Mu.RLock()
-	for _, user := range s.Users.Data {
-		user.Send(msg)
+	if msg == nil {
+		return nil
 	}
-	s.Users.Mu.RUnlock()
+	s.broadcastPipeline <- msg
+
 	if recursive {
 		s.Children.Mu.RLock()
 		defer s.Children.Mu.RUnlock()
-
 		for _, space := range s.Children.Data {
 			space.Broadcast(msg, true)
 		}
 		s.Children.Mu.RUnlock()
 	}
-	//return nil
+	return nil
 }
