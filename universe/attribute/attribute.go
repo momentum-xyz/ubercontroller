@@ -79,7 +79,7 @@ func (a *Attribute) SetOptions(modifyFn modify.Fn[entry.AttributeOptions], updat
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	options := modifyFn(a.entry.Options)
+	options := modifyFn(a.options)
 
 	if updateDB {
 		if err := a.db.AttributesUpdateAttributeOptions(a.ctx, a.id, options); err != nil {

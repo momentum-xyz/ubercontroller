@@ -2,7 +2,6 @@ package space_types
 
 import (
 	"context"
-
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"

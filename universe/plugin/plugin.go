@@ -35,7 +35,7 @@ func NewPlugin(id uuid.UUID, db database.DB) *Plugin {
 	return &Plugin{
 		db:      db,
 		id:      id,
-		options: &entry.PluginOptions{},
+		options: new(entry.PluginOptions),
 	}
 }
 
@@ -90,9 +90,7 @@ func (p *Plugin) SetName(name string, updateDB bool) error {
 func (p *Plugin) SetOptions(modifyFn modify.Fn[entry.PluginOptions], updateDB bool) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-
-	options := modifyFn(p.entry.Options)
-
+	options := modifyFn(p.options)
 	if updateDB {
 		if err := p.db.PluginsUpdatePluginOptions(p.ctx, p.id, options); err != nil {
 			return errors.WithMessage(err, "failed to update db")
@@ -136,19 +134,22 @@ func (p *Plugin) GetEntry() *entry.Plugin {
 }
 
 func (p *Plugin) LoadFromEntry(entry *entry.Plugin) error {
-
 	p.id = *entry.PluginID
 
 	var err error
-	if p.object, p.definedAttributes, p.newInstance, err = p.resolveSharedLibrary(entry.Options.File); err != nil {
-		return err
+	if entry.Options != nil {
+		if p.object, p.definedAttributes, p.newInstance, err = p.resolveSharedLibrary(entry.Options.File); err != nil {
+			return err
+		}
 	}
 	if err = p.SetDescription(entry.Description, false); err != nil {
 		return errors.WithMessage(err, "failed to set description")
 	}
+
 	if err = p.SetOptions(modify.MergeWith(entry.Options), false); err != nil {
 		return errors.WithMessage(err, "failed to set options")
 	}
+
 	if err = p.SetName(*entry.PluginName, false); err != nil {
 		return errors.WithMessage(err, "failed to set name")
 	}

@@ -1,6 +1,8 @@
 package modify
 
-import "github.com/momentum-xyz/ubercontroller/utils"
+import (
+	"github.com/momentum-xyz/ubercontroller/utils"
+)
 
 type Fn[T any] func(current *T) *T
 
@@ -17,6 +19,12 @@ func ReplaceWith[T any](new *T) Fn[T] {
 }
 
 func MergeWith[T any](new *T) Fn[T] {
+	return func(current *T) *T {
+		return utils.MergePTRs(new, current)
+	}
+}
+
+func MergeMapWith[T any](new *T) Fn[T] {
 	return func(current *T) *T {
 		return utils.MergePTRs(new, current)
 	}

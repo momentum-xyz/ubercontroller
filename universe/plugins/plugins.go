@@ -25,22 +25,32 @@ type Plugins struct {
 	plugins *generic.SyncMap[uuid.UUID, universe.Plugin]
 }
 
-func (a *Plugins) AddPlugin(plugin universe.Plugin, updateDB bool) error {
+func (p *Plugins) AddPlugin(plugin universe.Plugin, updateDB bool) error {
+	p.plugins.Mu.Lock()
+	defer p.plugins.Mu.Unlock()
+
+	if updateDB {
+		if err := p.db.PluginsUpsertPlugin(p.ctx, plugin.GetEntry()); err != nil {
+			return errors.WithMessage(err, "failed to update db")
+		}
+	}
+
+	p.plugins.Data[plugin.GetID()] = plugin
+
+	return nil
+}
+
+func (p *Plugins) AddPlugins(plugins []universe.Plugin, updateDB bool) error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (a *Plugins) AddPlugins(plugins []universe.Plugin, updateDB bool) error {
+func (p *Plugins) RemovePlugin(plugin universe.Plugin, updateDB bool) error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (a *Plugins) RemovePlugin(plugin universe.Plugin, updateDB bool) error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (a *Plugins) RemovePlugins(plugins []universe.Plugin, updateDB bool) error {
+func (p *Plugins) RemovePlugins(plugins []universe.Plugin, updateDB bool) error {
 	//TODO implement me
 	panic("implement me")
 }
@@ -52,92 +62,92 @@ func NewPlugins(db database.DB) *Plugins {
 	}
 }
 
-func (a *Plugins) Initialize(ctx context.Context) error {
+func (p *Plugins) Initialize(ctx context.Context) error {
 	log := utils.GetFromAny(ctx.Value(types.ContextLoggerKey), (*zap.SugaredLogger)(nil))
 	if log == nil {
 		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.ContextLoggerKey))
 	}
 
-	a.ctx = ctx
-	a.log = log
+	p.ctx = ctx
+	p.log = log
 
 	return nil
 }
 
-func (a *Plugins) NewPlugin(pluginId uuid.UUID) (universe.Plugin, error) {
+func (p *Plugins) NewPlugin(pluginId uuid.UUID) (universe.Plugin, error) {
 
-	plugin := plugin.NewPlugin(pluginId, a.db)
+	plugin := plugin.NewPlugin(pluginId, p.db)
 
-	if err := plugin.Initialize(a.ctx); err != nil {
+	if err := plugin.Initialize(p.ctx); err != nil {
 		return nil, errors.WithMessagef(err, "failed to initialize plugin: %s", pluginId)
 	}
-	if err := a.AddPlugin(plugin, false); err != nil {
+	if err := p.AddPlugin(plugin, false); err != nil {
 		return nil, errors.WithMessagef(err, "failed to add plugin: %s", pluginId)
 	}
 
 	return plugin, nil
 }
 
-func (a *Plugins) GetPlugin(pluginID uuid.UUID) (universe.Plugin, bool) {
-	plugin, ok := a.plugins.Load(pluginID)
+func (p *Plugins) GetPlugin(pluginID uuid.UUID) (universe.Plugin, bool) {
+	plugin, ok := p.plugins.Load(pluginID)
 	return plugin, ok
 }
 
-func (a *Plugins) GetPlugins() map[uuid.UUID]universe.Plugin {
-	a.plugins.Mu.RLock()
-	defer a.plugins.Mu.RUnlock()
+func (p *Plugins) GetPlugins() map[uuid.UUID]universe.Plugin {
+	p.plugins.Mu.RLock()
+	defer p.plugins.Mu.RUnlock()
 
-	plugins := make(map[uuid.UUID]universe.Plugin, len(a.plugins.Data))
+	plugins := make(map[uuid.UUID]universe.Plugin, len(p.plugins.Data))
 
-	for id, plugin := range a.plugins.Data {
+	for id, plugin := range p.plugins.Data {
 		plugins[id] = plugin
 	}
 
 	return plugins
 }
 
-func (a *Plugins) Load() error {
-	a.log.Info("Loading plugins...")
+func (p *Plugins) Load() error {
+	p.log.Info("Loading plugins...")
 
-	entries, err := a.db.PluginsGetPlugins(a.ctx)
+	entries, err := p.db.PluginsGetPlugins(p.ctx)
 	if err != nil {
 		return errors.WithMessage(err, "failed to get plugins")
 	}
 
 	for i := range entries {
-		plugin, err := a.NewPlugin(*entries[i].PluginID)
+		plugin, err := p.NewPlugin(*entries[i].PluginID)
 		if err != nil {
 			return errors.WithMessagef(err, "failed to create new plugin: %s", entries[i].PluginID)
 		}
 		if err := plugin.LoadFromEntry(entries[i]); err != nil {
 			return errors.WithMessagef(err, "failed to load plugin from entry: %s", entries[i].PluginID)
 		}
-		a.plugins.Store(*entries[i].PluginID, plugin)
+		p.plugins.Store(*entries[i].PluginID, plugin)
 	}
 
-	universe.GetNode().AddAPIRegister(a)
+	universe.GetNode().AddAPIRegister(p)
 
-	a.log.Info("Plugins loaded")
+	p.log.Info("Plugins loaded")
 
 	return nil
 }
 
-func (a *Plugins) Save() error {
-	a.log.Info("Saving plugins...")
+func (p *Plugins) Save() error {
+	p.log.Info("Saving plugins...")
 
-	a.plugins.Mu.RLock()
-	defer a.plugins.Mu.RUnlock()
+	p.plugins.Mu.RLock()
+	defer p.plugins.Mu.RUnlock()
 
-	entries := make([]*entry.Plugin, 0, len(a.plugins.Data))
-	for _, plugin := range a.plugins.Data {
+	entries := make([]*entry.Plugin, 0, len(p.plugins.Data))
+	for _, plugin := range p.plugins.Data {
 		entries = append(entries, plugin.GetEntry())
 	}
 
-	if err := a.db.PluginsUpsertPlugins(a.ctx, entries); err != nil {
+	if err := p.db.PluginsUpsertPlugins(p.ctx, entries); err != nil {
 		return errors.WithMessage(err, "failed to upsert plugins")
 	}
 
-	a.log.Info("Plugins saved")
+	p.log.Info("Plugins saved")
 
 	return nil
 }

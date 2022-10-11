@@ -5,7 +5,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/momentum-xyz/ubercontroller/pkg/message"
 	"github.com/momentum-xyz/ubercontroller/universe/attribute_instances"
-	//world2 "github.com/momentum-xyz/ubercontroller/universe/world"
 	"sync"
 	"sync/atomic"
 
@@ -47,8 +46,9 @@ type Space struct {
 	spaceAttributes     universe.AttributeInstances[AttributeIndex]
 	userSpaceAttributes universe.AttributeInstances[UserAttributeIndex]
 
-	spawnMsg      atomic.Pointer[websocket.PreparedMessage]
-	attributesMsg *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
+	spawnMsg       atomic.Pointer[websocket.PreparedMessage]
+	attributesMsg  *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
+	actualPosition cmath.Vec3
 }
 
 func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
@@ -83,6 +83,7 @@ func (s *Space) Initialize(ctx context.Context) error {
 	s.log = log
 	s.spaceAttributes.Initialize(s.ctx)
 	s.userSpaceAttributes.Initialize(s.ctx)
+
 	return nil
 }
 
@@ -127,6 +128,13 @@ func (s *Space) GetPosition() *cmath.Vec3 {
 	return s.position
 }
 
+func (s *Space) GetActualPosition() cmath.Vec3 {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	return s.actualPosition
+}
+
 func (s *Space) SetPosition(position *cmath.Vec3, updateDB bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -138,6 +146,9 @@ func (s *Space) SetPosition(position *cmath.Vec3, updateDB bool) error {
 	}
 
 	s.position = position
+	if s.position != nil {
+		s.actualPosition = *s.position
+	}
 	s.clearCache()
 
 	return nil
@@ -377,6 +388,7 @@ func (s *Space) loadSelfData(spaceEntry *entry.Space) error {
 	if err := s.SetPosition(spaceEntry.Position, false); err != nil {
 		return errors.WithMessage(err, "failed to set position")
 	}
+
 	if err := s.SetOptions(modify.ReplaceWith(spaceEntry.Options), false); err != nil {
 		return errors.WithMessage(err, "failed to set options")
 	}
@@ -431,23 +443,32 @@ func (s *Space) clearCache() {
 
 func (s *Space) UpdateSpawnMessage() {
 	v := s.spaceAttributes.GetValue(NewAttributeIndex(uuid.MustParse("f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0"), "name"))
-	name, ok := (*v)["name"].(string)
-	if !ok {
-		name = ""
-	}
+	name := utils.GetFromAnyMap(*v, "name", "")
 
 	opts := s.GetEffectiveOptions()
+
+	parent := uuid.Nil
+	if s.GetParent() != nil {
+		parent = s.GetParent().GetID()
+	}
+	asset3d := uuid.Nil
+	if s.asset3d != nil {
+		asset3d = s.asset3d.GetID()
+	}
+
+	uuidNilPtr := utils.GetPtr(uuid.Nil)
+	falsePtr := utils.GetPtr(false)
 	s.spawnMsg.Store(
 		message.GetBuilder().MsgObjectDefinition(
 			message.ObjectDefinition{
 				ObjectID:         s.id,
-				ParentID:         s.GetParent().GetID(),
-				AssetType:        s.asset3d.GetID(),
+				ParentID:         parent,
+				AssetType:        asset3d,
 				Name:             name,
-				Position:         *s.GetPosition(),
+				Position:         s.GetActualPosition(),
 				TetheredToParent: true,
-				Minimap:          *opts.Minimap,
-				InfoUI:           *opts.InfoUIID,
+				Minimap:          *utils.GetFromAny(opts.Minimap, falsePtr),
+				InfoUI:           *utils.GetFromAny(opts.InfoUIID, uuidNilPtr),
 			},
 		),
 	)

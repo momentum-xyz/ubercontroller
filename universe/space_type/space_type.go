@@ -256,6 +256,7 @@ func (s *SpaceType) LoadFromEntry(entry *entry.SpaceType) error {
 	if err := s.SetDescription(entry.Description, false); err != nil {
 		return errors.WithMessage(err, "failed to set description")
 	}
+
 	if err := s.SetOptions(modify.MergeWith(entry.Options), false); err != nil {
 		return errors.WithMessage(err, "failed to set options")
 	}

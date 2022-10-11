@@ -2,6 +2,7 @@ package utils
 
 import (
 	"github.com/pkg/errors"
+	"reflect"
 
 	"github.com/momentum-xyz/ubercontroller/logger"
 )
@@ -13,7 +14,14 @@ func GetPtr[T any](v T) *T {
 }
 
 func GetFromAny[V any](val any, defaultValue V) V {
+
 	if val == nil {
+		return defaultValue
+	}
+
+	// TODO: without reflect
+	vr := reflect.ValueOf(val)
+	if vr.Type().Kind() == reflect.Pointer && vr.IsNil() {
 		return defaultValue
 	}
 
@@ -22,7 +30,9 @@ func GetFromAny[V any](val any, defaultValue V) V {
 		return v
 	}
 
-	log.Errorf("Utils: GetFromAny: invalid value type: %+v", errors.WithStack(errors.Errorf("%T != %T", val, defaultValue)))
+	log.Errorf(
+		"Utils: GetFromAny: invalid value type: %+v", errors.WithStack(errors.Errorf("%T != %T", val, defaultValue)),
+	)
 	return defaultValue
 }
 

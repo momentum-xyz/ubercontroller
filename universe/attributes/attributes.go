@@ -167,6 +167,7 @@ func (a *Attributes) Load() error {
 	a.log.Info("Loading attributes...")
 
 	entries, err := a.db.AttributesGetAttributes(a.ctx)
+
 	if err != nil {
 		return errors.WithMessage(err, "failed to get attributes")
 	}

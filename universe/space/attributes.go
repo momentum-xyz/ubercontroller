@@ -38,8 +38,8 @@ func NewUserAttributeIndex(pluginId uuid.UUID, name string, userId uuid.UUID) Us
 }
 
 func (s *Space) loadSpaceAttributes() error {
+	if entries, err := s.db.SpaceAttributesGetSpaceAttributesBySpaceId(s.ctx, s.id); err == nil {
 
-	if entries, err := s.db.SpaceAttributesGetSpaceAttributesBySpaceId(s.ctx, s.id); err != nil {
 		node := universe.GetNode()
 		for _, instance := range entries {
 			attr, ok := node.GetAttributes().GetAttribute(
@@ -55,14 +55,13 @@ func (s *Space) loadSpaceAttributes() error {
 			}
 
 		}
-
 	}
 	return nil
 }
 
 func (s *Space) loadSpaceUserAttributes() error {
 
-	if entries, err := s.db.SpaceUserAttributesGetSpaceUserAttributesBySpaceId(s.ctx, s.id); err != nil {
+	if entries, err := s.db.SpaceUserAttributesGetSpaceUserAttributesBySpaceId(s.ctx, s.id); err == nil {
 		node := universe.GetNode()
 		for _, instance := range entries {
 			attr, ok := node.GetAttributes().GetAttribute(

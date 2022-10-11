@@ -178,10 +178,21 @@ func (n *Node) Load() error {
 		return errors.WithMessage(err, "failed to load assets")
 	}
 
+	if err := n.plugins.Load(); err != nil {
+		return errors.WithMessage(err, "failed to load space types")
+	}
+
+	if err := n.attributes.Load(); err != nil {
+		return errors.WithMessage(err, "failed to load attributes types")
+	}
+
 	if err := n.spaceTypes.Load(); err != nil {
 		return errors.WithMessage(err, "failed to load space types")
 	}
 
+	if err := n.spaceTypes.Load(); err != nil {
+		return errors.WithMessage(err, "failed to load space types")
+	}
 	if err := n.worlds.Load(); err != nil {
 		return errors.WithMessage(err, "failed to load worlds")
 	}
