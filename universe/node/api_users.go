@@ -93,9 +93,7 @@ func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken
 
 	// TODO: check issuer
 
-	//node := universe.GetNode()
 	if idToken.Guest.IsGuest {
-		//node.GetAttributes().
 		// TODO: set "Guest" user type
 	} else {
 		// TODO: set "User" user type

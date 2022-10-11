@@ -53,7 +53,7 @@ func (s *Space) loadSpaceUserAttributes() error {
 			},
 		)
 		if ok {
-			ai := s.spaceUserSpaceAttributes.SetAttributeInstance(
+			ai := s.spaceUserAttributes.SetAttributeInstance(
 				types.NewSpaceUserAttributeIndex(instance.PluginID, instance.Name, instance.UserID),
 				attr, instance.Value, instance.Options,
 			)
@@ -78,7 +78,7 @@ func (s *Space) SetAttributesMsg(kind, name string, msg *websocket.PreparedMessa
 }
 
 //func (s *Space) SetSpaceAttribute() {
-//	s.spaceUserSpaceAttributes.SetAttributeInstance(
+//	s.spaceUserAttributes.SetAttributeInstance(
 //		NewUserAttributeIndex(instance.PluginID, instance.Name, instance.UserID), instance.Value,
 //		instance.Options, attr,
 //	)
