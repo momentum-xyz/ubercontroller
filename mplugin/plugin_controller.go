@@ -133,6 +133,7 @@ func (p *PluginController) UnsubscribeAllHooks(plugin PluginInterface) error {
 	}
 	return nil
 }
+
 func (p *PluginController) UnsubscribeHooksByName(plugin PluginInterface, name string) error {
 	if p.ValidPlugin(plugin.GetId(), plugin.GetSecret()) {
 		p.hooksMap.Mu.RLock()

@@ -49,6 +49,7 @@ type Space struct {
 	attributesMsg     *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
 	actualPosition    cmath.Vec3
 	broadcastPipeline chan *websocket.PreparedMessage
+	messageAccept     atomic.Bool
 }
 
 func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
@@ -444,7 +445,11 @@ func (s *Space) clearCache() {
 }
 
 func (s *Space) UpdateSpawnMessage() {
-	v := s.spaceAttributes.GetValue(types.NewSpaceAttributeIndex(uuid.MustParse("f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0"), "name"))
+	v := s.spaceAttributes.GetValue(
+		types.NewSpaceAttributeIndex(
+			uuid.MustParse("f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0"), "name",
+		),
+	)
 	name := utils.GetFromAnyMap(*v, "name", "")
 
 	opts := s.GetEffectiveOptions()
@@ -514,14 +519,19 @@ func (s *Space) SendAttributes(f func(*websocket.PreparedMessage), recursive boo
 func (s *Space) StopRunner() {
 	s.broadcastPipeline <- nil
 }
+
 func (s *Space) Runner() {
 	for {
 		select {
 		case message := <-s.broadcastPipeline:
 			if message == nil {
-
+				return
 			}
-			go s.Broadcast(message, false)
+
 		}
 	}
+}
+
+func (s *Space) doBroadcast() {
+
 }
