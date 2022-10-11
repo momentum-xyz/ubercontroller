@@ -18,7 +18,6 @@ func BinID(id uuid.UUID) []byte {
 
 // MergePTRs recursively merge optional pointer with default one.
 func MergePTRs[T any](opt, def *T) *T {
-
 	if opt == nil {
 		return def
 	}
@@ -38,7 +37,6 @@ func MergePTRs[T any](opt, def *T) *T {
 }
 
 func merge(resVal, optVal, defVal reflect.Value) {
-
 	if optVal.Kind() == reflect.Invalid {
 		resVal.Set(defVal)
 		return
@@ -67,7 +65,6 @@ func merge(resVal, optVal, defVal reflect.Value) {
 			mergeStruct(resVal, optVal, defVal)
 			return
 		case reflect.Map:
-			//var v reflect.Value
 			mergeMap(resVal.Elem(), optVal.Elem(), defVal.Elem())
 			return
 		}

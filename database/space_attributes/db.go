@@ -60,7 +60,7 @@ func (db *DB) SpaceAttributesGetSpaceAttributes(ctx context.Context) ([]*entry.S
 	return assets, nil
 }
 
-func (db *DB) SpaceAttributesGetSpaceAttributesBySpaceId(
+func (db *DB) SpaceAttributesGetSpaceAttributesBySpaceID(
 	ctx context.Context, spaceId uuid.UUID,
 ) ([]*entry.SpaceAttribute, error) {
 	var attributes []*entry.SpaceAttribute
@@ -120,14 +120,14 @@ func (db *DB) SpaceAttributesRemoveSpaceAttributesByNames(ctx context.Context, a
 	return nil
 }
 
-func (db *DB) SpaceAttributesRemoveSpaceAttributesByPluginId(ctx context.Context, pluginID uuid.UUID) error {
+func (db *DB) SpaceAttributesRemoveSpaceAttributesByPluginID(ctx context.Context, pluginID uuid.UUID) error {
 	if _, err := db.conn.Exec(ctx, removeSpaceAttributesByPluginIdQuery, pluginID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) SpaceAttributesRemoveSpaceAttributeByPluginIdAndName(
+func (db *DB) SpaceAttributesRemoveSpaceAttributeByPluginIDAndName(
 	ctx context.Context, pluginID uuid.UUID, attributeName string,
 ) error {
 	if _, err := db.conn.Exec(
@@ -138,7 +138,7 @@ func (db *DB) SpaceAttributesRemoveSpaceAttributeByPluginIdAndName(
 	return nil
 }
 
-func (db *DB) SpaceAttributesRemoveSpaceAttributeBySpaceId(
+func (db *DB) SpaceAttributesRemoveSpaceAttributeBySpaceID(
 	ctx context.Context, spaceID uuid.UUID,
 ) error {
 	if _, err := db.conn.Exec(
@@ -149,7 +149,7 @@ func (db *DB) SpaceAttributesRemoveSpaceAttributeBySpaceId(
 	return nil
 }
 
-func (db *DB) SpaceAttributesRemoveSpaceAttributeByNameAndSpaceId(
+func (db *DB) SpaceAttributesRemoveSpaceAttributeByNameAndSpaceID(
 	ctx context.Context, attributeName string, spaceID uuid.UUID,
 ) error {
 	if _, err := db.conn.Exec(
@@ -160,7 +160,7 @@ func (db *DB) SpaceAttributesRemoveSpaceAttributeByNameAndSpaceId(
 	return nil
 }
 
-func (db *DB) SpaceAttributesRemoveSpaceAttributeByNamesAndSpaceId(
+func (db *DB) SpaceAttributesRemoveSpaceAttributeByNamesAndSpaceID(
 	ctx context.Context, attributeNames []string, spaceID uuid.UUID,
 ) error {
 	if _, err := db.conn.Exec(
@@ -171,7 +171,7 @@ func (db *DB) SpaceAttributesRemoveSpaceAttributeByNamesAndSpaceId(
 	return nil
 }
 
-func (db *DB) SpaceAttributesRemoveSpaceAttributeByPluginIdAndSpaceId(
+func (db *DB) SpaceAttributesRemoveSpaceAttributeByPluginIDAndSpaceID(
 	ctx context.Context, pluginId uuid.UUID, spaceID uuid.UUID,
 ) error {
 	if _, err := db.conn.Exec(
@@ -182,7 +182,7 @@ func (db *DB) SpaceAttributesRemoveSpaceAttributeByPluginIdAndSpaceId(
 	return nil
 }
 
-func (db *DB) SpaceAttributesRemoveSpaceAttributeByPluginIdAndSpaceIdAndName(
+func (db *DB) SpaceAttributesRemoveSpaceAttributeByPluginIDAndSpaceIDAndName(
 	ctx context.Context, pluginId uuid.UUID, attributeName string, spaceID uuid.UUID,
 ) error {
 	if _, err := db.conn.Exec(

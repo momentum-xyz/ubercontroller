@@ -8,10 +8,10 @@ import (
 )
 
 type AttributeInstance struct {
+	attribute        universe.Attribute
 	options          *entry.AttributeOptions
 	effectiveOptions *entry.AttributeOptions
 	value            *entry.AttributeValue
-	attribute        universe.Attribute
 }
 
 func (a AttributeInstance) GetOptions() *entry.AttributeOptions {
@@ -53,7 +53,7 @@ func (a AttributeInstance) GetEffectiveOptions() *entry.AttributeOptions {
 }
 
 //func (s *Space) LoadAttributes() error {
-//	entries, err := s.db.SpaceAttributesGetSpaceAttributesBySpaceId(s.ctx, s.GetID())
+//	entries, err := s.db.SpaceAttributesGetSpaceAttributesBySpaceID(s.ctx, s.GetID())
 //	if err != nil {
 //		return errors.WithMessage(err, "failed to load attribute data")
 //	}
@@ -66,7 +66,7 @@ func (a AttributeInstance) GetEffectiveOptions() *entry.AttributeOptions {
 //}
 //
 //func (s *Space) LoadUserAttributes() error {
-//	entries, err := s.db.SpaceUserAttributesGetSpaceUserAttributesBySpaceId(s.ctx, s.GetID())
+//	entries, err := s.db.SpaceUserAttributesGetSpaceUserAttributesBySpaceID(s.ctx, s.GetID())
 //	if err != nil {
 //		return errors.WithMessage(err, "failed to load user attribute data")
 //	}

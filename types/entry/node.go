@@ -7,9 +7,10 @@ type Node struct {
 }
 
 type NodeAttribute struct {
-	PluginID uuid.UUID       `db:"plugin_id"`
-	Name     string          `db:"attribute_name"`
-	Value    *AttributeValue `db:"value"`
+	PluginID uuid.UUID         `db:"plugin_id"`
+	Name     string            `db:"attribute_name"`
+	Value    *AttributeValue   `db:"value"`
+	Options  *AttributeOptions `db:"options"`
 }
 
 //

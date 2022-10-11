@@ -1,18 +1,20 @@
 package node
 
 import (
+	"net/http"
+	"net/url"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	flatbuffers "github.com/google/flatbuffers/go"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"github.com/pkg/errors"
+
 	"github.com/momentum-xyz/posbus-protocol/flatbuff/go/api"
 	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/momentum-xyz/ubercontroller/pkg/message"
 	"github.com/momentum-xyz/ubercontroller/utils"
-	"github.com/pkg/errors"
-	"net/http"
-	"net/url"
 )
 
 var websocketUpgrader = websocket.Upgrader{
@@ -64,7 +66,7 @@ func (n *Node) handShake(socketConnection *websocket.Conn) error {
 	token := string(handshake.UserToken())
 
 	// TODO: enable token check back!
-	//if err := auth.VerifyToken(token, n.cfg.Common.IntrospectURL); err != nil {
+	//if err := api.VerifyToken(token, n.cfg.Common.IntrospectURL); err != nil {
 	//	userID := message.DeserializeGUID(handshake.UserId(nil))
 	//	n.log.Errorf("error: wrong PreHandShake (invalid token: %s), aborting connection: %s", userID, err)
 	//	socketConnection.SetWriteDeadline(time.Now().Add(10 * time.Second))

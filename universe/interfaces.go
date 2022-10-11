@@ -9,6 +9,7 @@ import (
 	influxWrite "github.com/influxdata/influxdb-client-go/v2/api/write"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
+	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
@@ -65,6 +66,7 @@ type Node interface {
 	GetUserTypes() UserTypes
 	GetPlugins() Plugins
 	GetAttributes() Attributes
+	GetNodeAttributes() AttributeInstances[types.NodeAttributeIndex]
 
 	AddAPIRegister(register APIRegister)
 
@@ -147,8 +149,8 @@ type Space interface {
 	SendToUser(userID uuid.UUID, msg *websocket.PreparedMessage, recursive bool) error
 	Broadcast(msg *websocket.PreparedMessage, recursive bool)
 
-	SendSpawnMessage(f func(msg *websocket.PreparedMessage), recursive bool)
-	SendAttributes(f func(*websocket.PreparedMessage), recursive bool)
+	SendSpawnMessage(sendFn func(msg *websocket.PreparedMessage), recursive bool)
+	SendAttributes(sendFn func(*websocket.PreparedMessage), recursive bool)
 }
 
 type User interface {
@@ -166,11 +168,11 @@ type User interface {
 
 	GetUserType() UserType
 	SetUserType(userType UserType, updateDB bool) error
-	AddInfluxTags(prefix string, p *influxWrite.Point) *influxWrite.Point
-	SetConnection(SessionId uuid.UUID, socketConnection *websocket.Conn) error
+	AddInfluxTags(prefix string, point *influxWrite.Point) *influxWrite.Point
+	SetConnection(sessionID uuid.UUID, socketConnection *websocket.Conn) error
 	GetSessionID() uuid.UUID
 
-	Send(m *websocket.PreparedMessage)
+	Send(message *websocket.PreparedMessage)
 	SendDirectly(message *websocket.PreparedMessage) error
 }
 
@@ -384,7 +386,7 @@ type AttributeInstances[indexType comparable] interface {
 	SetValue(id indexType, modifyFn modify.Fn[string], updateDB bool) error
 
 	SetAttributeInstance(
-		id indexType, value *entry.AttributeValue, options *entry.AttributeOptions, attribute Attribute,
+		id indexType, attribute Attribute, value *entry.AttributeValue, options *entry.AttributeOptions,
 	) AttributeInstance
 
 	//GetEntry(id indexType) *entry.Attribute

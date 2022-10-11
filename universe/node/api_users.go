@@ -1,10 +1,10 @@
 package node
 
 import (
-	"github.com/google/uuid"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -93,7 +93,9 @@ func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken
 
 	// TODO: check issuer
 
+	//node := universe.GetNode()
 	if idToken.Guest.IsGuest {
+		//node.GetAttributes().
 		// TODO: set "Guest" user type
 	} else {
 		// TODO: set "User" user type

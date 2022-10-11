@@ -105,7 +105,7 @@ func (db *DB) AttributesRemoveAttributesByNames(ctx context.Context, attributeNa
 	return nil
 }
 
-func (db *DB) AttributesRemoveAttributesByPluginId(ctx context.Context, pluginID uuid.UUID) error {
+func (db *DB) AttributesRemoveAttributesByPluginID(ctx context.Context, pluginID uuid.UUID) error {
 	if _, err := db.conn.Exec(ctx, removeAttributesByPluginIdQuery, pluginID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}

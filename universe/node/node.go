@@ -3,6 +3,7 @@ package node
 import (
 	"context"
 	"fmt"
+	"github.com/momentum-xyz/ubercontroller/universe/attribute_instances"
 	user "github.com/momentum-xyz/ubercontroller/universe/user"
 	"net/http"
 	"os"
@@ -43,6 +44,7 @@ type Node struct {
 	userTypes           universe.UserTypes
 	attributes          universe.Attributes
 	plugins             universe.Plugins
+	nodeAttributes      universe.AttributeInstances[types.NodeAttributeIndex]
 	mu                  sync.RWMutex
 	influx              influx_api.WriteAPIBlocking
 	pluginController    *mplugin.PluginController
@@ -62,16 +64,17 @@ func NewNode(
 	plugins universe.Plugins,
 ) *Node {
 	return &Node{
-		id:         id,
-		cfg:        cfg,
-		db:         db,
-		worlds:     worlds,
-		assets2d:   assets2D,
-		assets3d:   assets3D,
-		spaceTypes: spaceTypes,
-		userTypes:  userTypes,
-		attributes: attributes,
-		plugins:    plugins,
+		id:             id,
+		cfg:            cfg,
+		db:             db,
+		worlds:         worlds,
+		assets2d:       assets2D,
+		assets3d:       assets3D,
+		spaceTypes:     spaceTypes,
+		userTypes:      userTypes,
+		attributes:     attributes,
+		plugins:        plugins,
+		nodeAttributes: attribute_instances.NewAttributeInstances[types.NodeAttributeIndex](db),
 	}
 }
 
@@ -91,6 +94,10 @@ func (n *Node) Initialize(ctx context.Context) error {
 
 	n.ctx = ctx
 	n.log = log
+
+	if err := n.nodeAttributes.Initialize(ctx); err != nil {
+		return errors.WithMessage(err, "failed to initialize node attributes")
+	}
 
 	consoleWriter := zapcore.Lock(os.Stdout)
 	gin.DefaultWriter = consoleWriter
@@ -127,6 +134,10 @@ func (n *Node) GetAttributes() universe.Attributes {
 	return n.attributes
 }
 
+func (n *Node) GetNodeAttributes() universe.AttributeInstances[types.NodeAttributeIndex] {
+	return n.nodeAttributes
+}
+
 func (n *Node) GetSpaceTypes() universe.SpaceTypes {
 	return n.spaceTypes
 }
@@ -161,7 +172,6 @@ func (n *Node) Load() error {
 	n.log.Infof("Loading node %s...", n.GetID())
 
 	group, _ := errgroup.WithContext(n.ctx)
-
 	group.Go(
 		func() error {
 			return n.assets2d.Load()
@@ -176,26 +186,33 @@ func (n *Node) Load() error {
 		func() error {
 			return n.userTypes.Load()
 		})
-
 	if err := group.Wait(); err != nil {
 		return errors.WithMessage(err, "failed to load assets")
+	}
+
+	group, _ = errgroup.WithContext(n.ctx)
+	group.Go(
+		func() error {
+			return n.attributes.Load()
+		},
+	)
+	group.Go(
+		func() error {
+			return n.spaceTypes.Load()
+		},
+	)
+	if err := group.Wait(); err != nil {
+		return errors.WithMessage(err, "failed to load additional data")
 	}
 
 	if err := n.plugins.Load(); err != nil {
 		return errors.WithMessage(err, "failed to load space types")
 	}
 
-	if err := n.attributes.Load(); err != nil {
-		return errors.WithMessage(err, "failed to load attributes types")
+	if err := n.loadSelfData(); err != nil {
+		return errors.WithMessage(err, "failed to load self data")
 	}
 
-	if err := n.spaceTypes.Load(); err != nil {
-		return errors.WithMessage(err, "failed to load space types")
-	}
-
-	if err := n.spaceTypes.Load(); err != nil {
-		return errors.WithMessage(err, "failed to load space types")
-	}
 	if err := n.worlds.Load(); err != nil {
 		return errors.WithMessage(err, "failed to load worlds")
 	}
@@ -263,6 +280,14 @@ func (n *Node) Save() error {
 	n.log.Infof("Node saved: %s", n.GetID())
 
 	return errs.ErrorOrNil()
+}
+
+func (n *Node) loadSelfData() error {
+	if err := n.loadNodeAttributes(); err != nil {
+		return errors.WithMessage(err, "failed to load node attributes")
+	}
+
+	return nil
 }
 
 func (n *Node) detectSpawnWorld(userId uuid.UUID) universe.World {

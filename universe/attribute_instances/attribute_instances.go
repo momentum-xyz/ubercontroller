@@ -87,7 +87,7 @@ func (a AttributeInstances[indexType]) GetValue(id indexType) *entry.AttributeVa
 	if instance, ok := a.data[id]; ok {
 		return instance.GetValue()
 	}
-	
+
 	return nil
 }
 
@@ -97,11 +97,11 @@ func (a AttributeInstances[indexType]) SetValue(id indexType, modifyFn modify.Fn
 }
 
 func (a AttributeInstances[indexType]) SetAttributeInstance(
-	id indexType, value *entry.AttributeValue, options *entry.AttributeOptions, attr universe.Attribute,
+	id indexType, attr universe.Attribute, value *entry.AttributeValue, options *entry.AttributeOptions,
 ) universe.AttributeInstance {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	na := &AttributeInstance{value: value, options: options, attribute: attr}
+	na := &AttributeInstance{attribute: attr, value: value, options: options}
 	a.data[id] = na
 	return *na
 }

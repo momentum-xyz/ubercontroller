@@ -14,15 +14,17 @@ func GetPtr[T any](v T) *T {
 }
 
 func GetFromAny[V any](val any, defaultValue V) V {
-
 	if val == nil {
 		return defaultValue
 	}
 
-	// TODO: without reflect
-	vr := reflect.ValueOf(val)
-	if vr.Type().Kind() == reflect.Pointer && vr.IsNil() {
-		return defaultValue
+	// TODO: check without reflect
+	rVal := reflect.ValueOf(val)
+	switch rVal.Type().Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		if rVal.IsNil() {
+			return defaultValue
+		}
 	}
 
 	v, ok := val.(V)

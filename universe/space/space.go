@@ -43,8 +43,8 @@ type Space struct {
 	entry            *entry.Space
 	effectiveOptions *entry.SpaceOptions
 
-	spaceAttributes     universe.AttributeInstances[AttributeIndex]
-	userSpaceAttributes universe.AttributeInstances[UserAttributeIndex]
+	spaceAttributes          universe.AttributeInstances[types.SpaceAttributeIndex]
+	spaceUserSpaceAttributes universe.AttributeInstances[types.SpaceUserAttributeIndex]
 
 	spawnMsg       atomic.Pointer[websocket.PreparedMessage]
 	attributesMsg  *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
@@ -53,14 +53,14 @@ type Space struct {
 
 func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
 	return &Space{
-		id:                  id,
-		db:                  db,
-		Users:               generic.NewSyncMap[uuid.UUID, universe.User](),
-		Children:            generic.NewSyncMap[uuid.UUID, universe.Space](),
-		spaceAttributes:     attribute_instances.NewAttributeInstances[AttributeIndex](db),
-		userSpaceAttributes: attribute_instances.NewAttributeInstances[UserAttributeIndex](db),
-		attributesMsg:       generic.NewSyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]](),
-		world:               world,
+		id:                       id,
+		db:                       db,
+		Users:                    generic.NewSyncMap[uuid.UUID, universe.User](),
+		Children:                 generic.NewSyncMap[uuid.UUID, universe.Space](),
+		spaceAttributes:          attribute_instances.NewAttributeInstances[types.SpaceAttributeIndex](db),
+		spaceUserSpaceAttributes: attribute_instances.NewAttributeInstances[types.SpaceUserAttributeIndex](db),
+		attributesMsg:            generic.NewSyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]](),
+		world:                    world,
 	}
 }
 
@@ -82,7 +82,7 @@ func (s *Space) Initialize(ctx context.Context) error {
 	s.ctx = ctx
 	s.log = log
 	s.spaceAttributes.Initialize(s.ctx)
-	s.userSpaceAttributes.Initialize(s.ctx)
+	s.spaceUserSpaceAttributes.Initialize(s.ctx)
 
 	return nil
 }
@@ -394,11 +394,12 @@ func (s *Space) loadSelfData(spaceEntry *entry.Space) error {
 	}
 
 	if err := s.loadSpaceAttributes(); err != nil {
-		return errors.WithMessage(err, "failed to  load space attributes")
+		return errors.WithMessage(err, "failed to load space attributes")
 	}
 	if err := s.loadSpaceUserAttributes(); err != nil {
-		return errors.WithMessage(err, "failed to  load space_user  attributes")
+		return errors.WithMessage(err, "failed to load space_user attributes")
 	}
+
 	return nil
 }
 
@@ -442,7 +443,7 @@ func (s *Space) clearCache() {
 }
 
 func (s *Space) UpdateSpawnMessage() {
-	v := s.spaceAttributes.GetValue(NewAttributeIndex(uuid.MustParse("f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0"), "name"))
+	v := s.spaceAttributes.GetValue(types.NewSpaceAttributeIndex(uuid.MustParse("f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0"), "name"))
 	name := utils.GetFromAnyMap(*v, "name", "")
 
 	opts := s.GetEffectiveOptions()
