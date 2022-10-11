@@ -1,5 +1,5 @@
 -- Core Plugin
- INSERT INTO plugin(plugin_id, plugin_name, description, created_at, updated_at)
+INSERT INTO plugin(plugin_id, plugin_name, description, created_at, updated_at)
 VALUES ('F0F0F0F0-0F0F-4FF0-AF0F-F0F0F0F0F0F0', 'core', 'backend core', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT (plugin_id) DO UPDATE SET plugin_name = excluded.plugin_name,
                                       description = excluded.description;

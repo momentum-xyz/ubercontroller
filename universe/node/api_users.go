@@ -7,8 +7,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
+	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/api"
+	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 func (n *Node) apiUsersCheck(c *gin.Context) {
@@ -82,7 +85,7 @@ func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken
 		return nil, http.StatusBadRequest, errors.WithMessage(err, "failed to parse user id")
 	}
 
-	userEntry, err := n.db.UsersGetUserByID(n.ctx, userID)
+	userEntry, err := n.db.UsersGetUserByID(c, userID)
 	if err == nil {
 		return userEntry, 0, nil
 	}
@@ -93,11 +96,42 @@ func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken
 
 	// TODO: check issuer
 
+	nodeSettings := n.GetNodeAttributes().GetValue(
+		types.NewNodeAttributeIndex(universe.GetSystemPluginID(), types.NodeSettingsAttributeName),
+	)
+	if nodeSettings == nil {
+		return nil, http.StatusInternalServerError, errors.Errorf("failed to get node settings: %+v", nodeSettings)
+	}
+
 	if idToken.Guest.IsGuest {
-		// TODO: set "Guest" user type
+		guestUserTypeID := utils.GetFromAnyMap(*nodeSettings, "guest_user_type", uuid.Nil)
+		if guestUserTypeID == uuid.Nil {
+			return nil, http.StatusInternalServerError, errors.Errorf("failed to get guest user type id")
+		}
+		userEntry.UserTypeID = &guestUserTypeID
+
+		if err := n.db.UsersUpsertUser(c, userEntry); err != nil {
+			return nil, http.StatusInternalServerError, errors.WithMessagef(err, "failed to upsert guest: %s", userEntry.UserID)
+		}
 	} else {
-		// TODO: set "User" user type
+		// TODO: check idToken web3 type
+
+		if idToken.Web3Address == "" {
+			return nil, http.StatusBadRequest, errors.Errorf("empty web3 address: %s", userEntry.UserID)
+		}
+
 		// TODO: validate idToken
+
+		normUserTypeID := utils.GetFromAnyMap(*nodeSettings, "normal_user_type", uuid.Nil)
+		if normUserTypeID == uuid.Nil {
+			return nil, http.StatusInternalServerError, errors.Errorf("failed to get normal user type id")
+		}
+		userEntry.UserTypeID = &normUserTypeID
+
+		if err := n.db.UsersUpsertUser(c, userEntry); err != nil {
+			return nil, http.StatusInternalServerError, errors.WithMessagef(err, "failed to upsert user: %s", userEntry.UserID)
+		}
+
 		// TODO: add wallet
 	}
 

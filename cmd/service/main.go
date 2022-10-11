@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -61,6 +62,11 @@ func run() error {
 
 	//todo: change to pool
 	message.InitBuilder(20, 1024*32)
+	if err := universe.InitializeIDs(
+		uuid.MustParse("f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0"),
+		uuid.MustParse("86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8")); err != nil {
+		return errors.WithMessage(err, "failed to initialize universe")
+	}
 	if err := api.Initialize(ctx, cfg); err != nil {
 		return errors.WithMessage(err, "failed to initialize api")
 	}

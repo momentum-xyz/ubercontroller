@@ -4,6 +4,11 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	NodeSettingsAttributeName = "node_settings"
+	UserWalletAttributeName   = "wallet"
+)
+
 type BaseAttributeIndex struct {
 	PluginID uuid.UUID
 	Name     string

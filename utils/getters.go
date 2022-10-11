@@ -1,8 +1,9 @@
 package utils
 
 import (
-	"github.com/pkg/errors"
 	"reflect"
+
+	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/logger"
 )
@@ -35,6 +36,7 @@ func GetFromAny[V any](val any, defaultValue V) V {
 	log.Errorf(
 		"Utils: GetFromAny: invalid value type: %+v", errors.WithStack(errors.Errorf("%T != %T", val, defaultValue)),
 	)
+
 	return defaultValue
 }
 

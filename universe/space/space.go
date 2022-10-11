@@ -447,7 +447,7 @@ func (s *Space) clearCache() {
 func (s *Space) UpdateSpawnMessage() {
 	v := s.spaceAttributes.GetValue(
 		types.NewSpaceAttributeIndex(
-			uuid.MustParse("f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0"), "name",
+			universe.GetSystemPluginID(), "name",
 		),
 	)
 	name := utils.GetFromAnyMap(*v, "name", "")

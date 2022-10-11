@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/utils/modify"
 
 	"github.com/google/uuid"
 
@@ -207,10 +208,11 @@ type UserAttributesDB interface {
 	) error
 	UserAttributesUpdateUserAttributeOptions(
 		ctx context.Context, pluginID uuid.UUID, attributeName string, userID uuid.UUID,
-		options *entry.AttributeOptions,
+		modifyFn modify.Fn[entry.AttributeOptions],
 	) error
 	UserAttributesUpdateUserAttributeValue(
-		ctx context.Context, pluginID uuid.UUID, attributeName string, userID uuid.UUID, value *entry.AttributeValue,
+		ctx context.Context, pluginID uuid.UUID, attributeName string, userID uuid.UUID,
+		modifyFn modify.Fn[entry.AttributeValue],
 	) error
 }
 

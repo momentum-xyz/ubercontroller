@@ -71,7 +71,7 @@ func createNewDatabase(ctx context.Context, log *zap.SugaredLogger, cfg *config.
 	}
 
 	log.Info("Migration: creating database...")
-	if _, err := conn.Exec(ctx, fmt.Sprintf(`CREATE DATABASE %s`, cfg.DATABASE)); err != nil {
+	if _, err := conn.Exec(ctx, fmt.Sprintf(`CREATE DATABASE %q`, cfg.DATABASE)); err != nil {
 		return errors.WithMessage(err, "failed to create database")
 	}
 	conn.Close(ctx)

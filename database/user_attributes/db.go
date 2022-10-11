@@ -2,6 +2,7 @@ package user_attributes
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/utils/modify"
 
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/google/uuid"
@@ -194,23 +195,27 @@ func (db *DB) UserAttributesRemoveUserAttributeByPluginIDAndUserIDAndName(
 }
 
 func (db *DB) UserAttributesUpdateUserAttributeOptions(
-	ctx context.Context, pluginID uuid.UUID, attributeName string, userId uuid.UUID, options *entry.AttributeOptions,
+	ctx context.Context, pluginID uuid.UUID, attributeName string, userId uuid.UUID,
+	modifyFn modify.Fn[entry.AttributeOptions],
 ) error {
-	if _, err := db.conn.Exec(
-		ctx, updateUserAttributeOptionsQuery, attributeName, pluginID, userId, options,
-	); err != nil {
-		return errors.WithMessage(err, "failed to exec db")
-	}
-	return nil
+	panic("TODO")
+	//if _, err := db.conn.Exec(
+	//	ctx, updateUserAttributeOptionsQuery, attributeName, pluginID, userId, options,
+	//); err != nil {
+	//	return errors.WithMessage(err, "failed to exec db")
+	//}
+	//return nil
 }
 
 func (db *DB) UserAttributesUpdateUserAttributeValue(
-	ctx context.Context, pluginID uuid.UUID, attributeName string, userId uuid.UUID, value *entry.AttributeValue,
+	ctx context.Context, pluginID uuid.UUID, attributeName string, userId uuid.UUID,
+	modifyFn modify.Fn[entry.AttributeValue],
 ) error {
-	if _, err := db.conn.Exec(
-		ctx, updateUserAttributeValueQuery, attributeName, pluginID, userId, value,
-	); err != nil {
-		return errors.WithMessage(err, "failed to exec db")
-	}
-	return nil
+	panic("TODO")
+	//if _, err := db.conn.Exec(
+	//	ctx, updateUserAttributeValueQuery, attributeName, pluginID, userId, value,
+	//); err != nil {
+	//	return errors.WithMessage(err, "failed to exec db")
+	//}
+	//return nil
 }
