@@ -1,10 +1,10 @@
 package config
 
 type Local struct {
-	Address          string `yaml:"bind_address" envconfig:"ubercontroller_BIND_ADDRESS"`
-	Port             uint   `yaml:"bind_port" envconfig:"ubercontroller_BIND_PORT"`
-	LogLevel         int    `yaml:"loglevel"  envconfig:"ubercontroller_LOGLEVEL"`
-	ExtensionStorage string `yaml:"storage"  envconfig:"ubercontroller_STORAGE"`
+	Address          string `yaml:"bind_address" envconfig:"UBERCONTROLLER_BIND_ADDRESS"`
+	Port             uint   `yaml:"bind_port" envconfig:"UBERCONTROLLER_BIND_PORT"`
+	LogLevel         int    `yaml:"loglevel"  envconfig:"UBERCONTROLLER_LOGLEVEL"`
+	ExtensionStorage string `yaml:"storage"  envconfig:"UBERCONTROLLER_STORAGE"`
 }
 
 func (x *Local) Init() {

@@ -46,10 +46,10 @@ func (a *Attributes) Initialize(ctx context.Context) error {
 
 func (a *Attributes) NewAttributeWithNameAndPluginID(pluginId uuid.UUID, name string) (universe.Attribute, error) {
 	id := entry.AttributeID{PluginID: pluginId, Name: name}
-	return a.NewAttribute(id)
+	return a.CreateAttribute(id)
 }
 
-func (a *Attributes) NewAttribute(attributeId entry.AttributeID) (universe.Attribute, error) {
+func (a *Attributes) CreateAttribute(attributeId entry.AttributeID) (universe.Attribute, error) {
 
 	attribute := attribute.NewAttribute(attributeId, a.db)
 
@@ -173,7 +173,7 @@ func (a *Attributes) Load() error {
 	}
 
 	for i := range entries {
-		attribute, err := a.NewAttribute(*entries[i].AttributeID)
+		attribute, err := a.CreateAttribute(*entries[i].AttributeID)
 		if err != nil {
 			return errors.WithMessagef(err, "failed to create new attribute: %s", entries[i].AttributeID)
 		}

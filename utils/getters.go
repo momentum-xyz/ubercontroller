@@ -42,3 +42,14 @@ func GetFromAnyMap[K comparable, V any](amap map[K]any, key K, defaultValue V) V
 	}
 	return defaultValue
 }
+
+func GetKeyByValueFromMap[K comparable, V comparable](m map[K]V, val V) (K, bool) {
+	for k, v := range m {
+		if v == val {
+			return k, true
+		}
+	}
+
+	var k K
+	return k, false
+}

@@ -83,7 +83,12 @@ func (a AttributeInstances[indexType]) SetOptions(
 func (a AttributeInstances[indexType]) GetValue(id indexType) *entry.AttributeValue {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
-	return a.data[id].GetValue()
+
+	if instance, ok := a.data[id]; ok {
+		return instance.GetValue()
+	}
+	
+	return nil
 }
 
 func (a AttributeInstances[indexType]) SetValue(id indexType, modifyFn modify.Fn[string], updateDB bool) error {

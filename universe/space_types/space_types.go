@@ -43,7 +43,7 @@ func (s *SpaceTypes) Initialize(ctx context.Context) error {
 	return nil
 }
 
-func (s *SpaceTypes) NewSpaceType(spaceTypeID uuid.UUID) (universe.SpaceType, error) {
+func (s *SpaceTypes) CreateSpaceType(spaceTypeID uuid.UUID) (universe.SpaceType, error) {
 	spaceType := space_type.NewSpaceType(spaceTypeID, s.db)
 
 	if err := spaceType.Initialize(s.ctx); err != nil {
@@ -165,7 +165,7 @@ func (s *SpaceTypes) Load() error {
 	}
 
 	for i := range entries {
-		spaceType, err := s.NewSpaceType(*entries[i].SpaceTypeID)
+		spaceType, err := s.CreateSpaceType(*entries[i].SpaceTypeID)
 		if err != nil {
 			return errors.WithMessagef(err, "failed to create new space type: %s", entries[i].SpaceTypeID)
 		}

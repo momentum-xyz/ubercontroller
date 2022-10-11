@@ -3,6 +3,7 @@ package config
 import (
 	"io"
 	"os"
+	"strings"
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/pborman/getopt/v2"
@@ -11,13 +12,14 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/momentum-xyz/ubercontroller/logger"
+	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 // Config : structure to hold configuration
 type Config struct {
 	Common   Common   `yaml:"common"`
 	Settings Local    `yaml:"settings"`
-	MQTT     MQTT     `yaml:"mqtt"`
+	Auth     Auth     `yaml:"auth"`
 	Postgres Postgres `yaml:"postgres"`
 	Influx   Influx   `yaml:"influx"`
 	UIClient UIClient `yaml:"ui_client"`
@@ -29,7 +31,7 @@ var log = logger.L()
 
 func (x *Config) Init() {
 	x.Common.Init()
-	x.MQTT.Init()
+	x.Auth.Init()
 	x.Postgres.Init()
 	x.Settings.Init()
 	x.UIClient.Init()
@@ -74,11 +76,25 @@ func readFile(cfg *Config) error {
 	}
 	defer f.Close()
 
-	if err := yaml.NewDecoder(f).Decode(cfg); err != nil {
+	data, err := io.ReadAll(f)
+	if err != nil {
 		if err != io.EOF {
-			return errors.WithMessage(err, "failed to decode file")
+			return errors.WithMessage(err, "failed to read file")
 		}
+		return nil
 	}
+
+	if err := yaml.Unmarshal(data, cfg); err != nil {
+		return errors.WithMessage(err, "failed to unmarshal data")
+	}
+
+	// filling config additional raw data
+	var rawData map[string]any
+	if err := yaml.Unmarshal(data, &rawData); err != nil {
+		return errors.WithMessage(err, "failed to unmarshal raw data")
+	}
+
+	cfg.Auth.rawData = utils.GetFromAnyMap(rawData, "auth", map[string]any{})
 
 	return nil
 }
@@ -108,4 +124,17 @@ func GetConfig() *Config {
 	prettyPrint(cfg)
 
 	return cfg
+}
+
+func getEnv(key string) (string, bool) {
+	key = strings.ToUpper(key)
+
+	for _, e := range os.Environ() {
+		pair := strings.SplitN(e, "=", 2)
+		if pair[0] == key {
+			return pair[1], true
+		}
+	}
+
+	return "", false
 }

@@ -131,6 +131,6 @@ func (u *User) SetConnection(id uuid.UUID, socketConnection *websocket.Conn) err
 	return nil
 }
 
-func (u *User) GetSessionId() uuid.UUID {
+func (u *User) GetSessionID() uuid.UUID {
 	return u.sessionID
 }

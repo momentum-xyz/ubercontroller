@@ -2,6 +2,7 @@ package universe
 
 import (
 	"context"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
@@ -76,7 +77,7 @@ type Worlds interface {
 	LoadSaver
 	APIRegister
 
-	NewWorld(worldID uuid.UUID) (World, error)
+	CreateWorld(worldID uuid.UUID) (World, error)
 
 	GetWorld(worldID uuid.UUID) (World, bool)
 	GetWorlds() map[uuid.UUID]World
@@ -91,6 +92,7 @@ type World interface {
 	RunStopper
 	LoadSaver
 	APIRegister
+
 	WriteInfluxPoint(point *influxWrite.Point) error
 }
 
@@ -98,7 +100,7 @@ type Space interface {
 	IDer
 	Initializer
 
-	NewSpace(spaceID uuid.UUID) (Space, error)
+	CreateSpace(spaceID uuid.UUID) (Space, error)
 
 	GetWorld() World
 
@@ -166,7 +168,7 @@ type User interface {
 	SetUserType(userType UserType, updateDB bool) error
 	AddInfluxTags(prefix string, p *influxWrite.Point) *influxWrite.Point
 	SetConnection(SessionId uuid.UUID, socketConnection *websocket.Conn) error
-	GetSessionId() uuid.UUID
+	GetSessionID() uuid.UUID
 
 	Send(m *websocket.PreparedMessage)
 	SendDirectly(message *websocket.PreparedMessage) error
@@ -177,7 +179,7 @@ type SpaceTypes interface {
 	LoadSaver
 	APIRegister
 
-	NewSpaceType(spaceTypeID uuid.UUID) (SpaceType, error)
+	CreateSpaceType(spaceTypeID uuid.UUID) (SpaceType, error)
 
 	GetSpaceType(spaceTypeID uuid.UUID) (SpaceType, bool)
 	GetSpaceTypes() map[uuid.UUID]SpaceType
@@ -218,7 +220,7 @@ type UserTypes interface {
 	LoadSaver
 	APIRegister
 
-	NewUserType(userTypeID uuid.UUID) (UserType, error)
+	CreateUserType(userTypeID uuid.UUID) (UserType, error)
 
 	GetUserType(userTypeID uuid.UUID) (UserType, bool)
 	GetUserTypes() map[uuid.UUID]UserType
@@ -250,7 +252,7 @@ type Assets2d interface {
 	LoadSaver
 	APIRegister
 
-	NewAsset2d(asset2dID uuid.UUID) (Asset2d, error)
+	CreateAsset2d(asset2dID uuid.UUID) (Asset2d, error)
 
 	GetAsset2d(asset2dID uuid.UUID) (Asset2d, bool)
 	GetAssets2d() map[uuid.UUID]Asset2d
@@ -279,7 +281,7 @@ type Assets3d interface {
 	LoadSaver
 	APIRegister
 
-	NewAsset3d(asset3dID uuid.UUID) (Asset3d, error)
+	CreateAsset3d(asset3dID uuid.UUID) (Asset3d, error)
 
 	GetAsset3d(asset3dID uuid.UUID) (Asset3d, bool)
 	GetAssets3d() map[uuid.UUID]Asset3d
@@ -325,9 +327,9 @@ type Plugins interface {
 	LoadSaver
 	APIRegister
 
-	NewPlugin(pluginID uuid.UUID) (Plugin, error)
-	GetPlugin(pluginID uuid.UUID) (Plugin, bool)
+	CreatePlugin(pluginID uuid.UUID) (Plugin, error)
 
+	GetPlugin(pluginID uuid.UUID) (Plugin, bool)
 	GetPlugins() map[uuid.UUID]Plugin
 	AddPlugin(plugin Plugin, updateDB bool) error
 	AddPlugins(plugins []Plugin, updateDB bool) error
@@ -357,9 +359,9 @@ type Attributes interface {
 	LoadSaver
 	APIRegister
 
-	NewAttribute(attributeId entry.AttributeID) (Attribute, error)
-	GetAttribute(entry.AttributeID) (Attribute, bool)
+	CreateAttribute(attributeId entry.AttributeID) (Attribute, error)
 
+	GetAttribute(entry.AttributeID) (Attribute, bool)
 	GetAttributes() map[entry.AttributeID]Attribute
 	AddAttribute(attribute Attribute, updateDB bool) error
 	AddAttributes(attributes []Attribute, updateDB bool) error
