@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"github.com/google/uuid"
 	"time"
 
@@ -92,7 +91,9 @@ func run() error {
 		return errors.WithMessagef(err, "failed to load node: %s", node.GetID())
 	}
 	tm2 := time.Now()
-	fmt.Printf("Node loading time: %+v\n", tm2.Sub(tm1))
+
+	log.Infof("Node loading time: %+v\n", tm2.Sub(tm1))
+
 	defer func() {
 		if err := node.Stop(); err != nil {
 			log.Error(errors.WithMessagef(err, "failed to stop node: %s", node.GetID()))
@@ -193,12 +194,12 @@ func createDB(conn *pgxpool.Pool) (database.DB, error) {
 		assets3dDB.NewDB(conn, common),
 		spaceTypesDB.NewDB(conn, common),
 		userTypesDB.NewDB(conn, common),
-		attributesDB.NewDB(conn, common),
 		pluginsDB.NewDB(conn, common),
+		attributesDB.NewDB(conn, common),
+		nodeAttributesDB.NewDB(conn, common),
 		spaceAttributesDB.NewDB(conn, common),
 		spaceUserAttributesDB.NewDB(conn, common),
 		userAttributesDB.NewDB(conn, common),
 		userUserAttributesDB.NewDB(conn, common),
-		nodeAttributesDB.NewDB(conn, common),
 	), nil
 }

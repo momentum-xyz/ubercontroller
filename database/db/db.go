@@ -39,14 +39,13 @@ func NewDB(
 	assets3d database.Assets3dDB,
 	spaceTypes database.SpaceTypesDB,
 	userTypes database.UserTypesDB,
-	attributes database.AttributesDB,
 	plugins database.PluginsDB,
+	attributes database.AttributesDB,
+	nodeAttributes database.NodeAttributesDB,
 	spaceAttributes database.SpaceAttributesDB,
 	spaceUserAttributes database.SpaceUserAttributesDB,
 	userAttributes database.UserAttributesDB,
 	userUserAttributes database.UserUserAttributesDB,
-	nodeAttributes database.NodeAttributesDB,
-
 ) *DB {
 	return &DB{
 		conn:                  conn,
