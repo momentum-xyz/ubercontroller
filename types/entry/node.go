@@ -1,16 +1,22 @@
 package entry
 
-import "github.com/google/uuid"
-
 type Node struct {
 	*Space
 }
 
+type NodeAttributeID struct {
+	AttributeID
+}
+
 type NodeAttribute struct {
-	PluginID uuid.UUID         `db:"plugin_id"`
-	Name     string            `db:"attribute_name"`
-	Value    *AttributeValue   `db:"value"`
-	Options  *AttributeOptions `db:"options"`
+	NodeAttributeID
+	AttributePayload
+}
+
+func NewNodeAttributeID(attributeID AttributeID) NodeAttributeID {
+	return NodeAttributeID{
+		AttributeID: attributeID,
+	}
 }
 
 //

@@ -25,19 +25,38 @@ type UserProfile struct {
 	Email     *string `db:"email" json:"email"`
 }
 
+type UserAttributeID struct {
+	AttributeID
+	UserID uuid.UUID `db:"user_id"`
+}
+
 type UserAttribute struct {
-	PluginID uuid.UUID         `db:"plugin_id"`
-	Name     string            `db:"attribute_name"`
-	UserID   uuid.UUID         `db:"user_id"`
-	Value    *AttributeValue   `db:"value"`
-	Options  *AttributeOptions `db:"options"`
+	UserAttributeID
+	AttributePayload
+}
+
+type UserUserAttributeID struct {
+	AttributeID
+	SourceUserID uuid.UUID `db:"source_user_id"`
+	TargetUserID uuid.UUID `db:"target_user_id"`
 }
 
 type UserUserAttribute struct {
-	PluginID     uuid.UUID         `db:"plugin_id"`
-	SourceUserID uuid.UUID         `db:"source_user_id"`
-	TargetUserID uuid.UUID         `db:"target_user_id"`
-	Name         string            `db:"attribute_name"`
-	Value        *AttributeValue   `db:"value"`
-	Options      *AttributeOptions `db:"options"`
+	UserUserAttributeID
+	AttributePayload
+}
+
+func NewUserAttributeID(attributeID AttributeID, userID uuid.UUID) UserAttributeID {
+	return UserAttributeID{
+		AttributeID: attributeID,
+		UserID:      userID,
+	}
+}
+
+func NewUserUserAttributeID(attributeID AttributeID, sourceUserID, targetUserID uuid.UUID) UserUserAttributeID {
+	return UserUserAttributeID{
+		AttributeID:  attributeID,
+		SourceUserID: sourceUserID,
+		TargetUserID: targetUserID,
+	}
 }

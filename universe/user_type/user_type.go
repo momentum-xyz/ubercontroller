@@ -27,7 +27,6 @@ type UserType struct {
 	name        string
 	description *string
 	options     *entry.UserOptions
-	entry       *entry.UserType
 }
 
 func NewUserType(id uuid.UUID, db database.DB) *UserType {
@@ -74,7 +73,6 @@ func (u *UserType) SetName(name string, updateDB bool) error {
 	}
 
 	u.name = name
-	u.clearCache()
 
 	return nil
 }
@@ -97,7 +95,6 @@ func (u *UserType) SetDescription(description *string, updateDB bool) error {
 	}
 
 	u.description = description
-	u.clearCache()
 
 	return nil
 }
@@ -121,7 +118,6 @@ func (u *UserType) SetOptions(modifyFn modify.Fn[entry.UserOptions], updateDB bo
 	}
 
 	u.options = options
-	u.clearCache()
 	u.mu.Unlock()
 
 	for _, world := range universe.GetNode().GetWorlds().GetWorlds() {
@@ -145,25 +141,17 @@ func (u *UserType) GetEntry() *entry.UserType {
 	u.mu.Lock()
 	defer u.mu.Unlock()
 
-	if u.entry == nil {
-		u.entry = &entry.UserType{
-			UserTypeID:   utils.GetPTR(u.id),
-			UserTypeName: &u.name,
-			Description:  u.description,
-			Options:      u.options,
-		}
+	return &entry.UserType{
+		UserTypeID:   utils.GetPTR(u.id),
+		UserTypeName: &u.name,
+		Description:  u.description,
+		Options:      u.options,
 	}
-
-	return u.entry
-}
-
-func (u *UserType) clearCache() {
-	u.entry = nil
 }
 
 func (u *UserType) LoadFromEntry(entry *entry.UserType) error {
-
 	u.id = *entry.UserTypeID
+
 	if err := u.SetName(*entry.UserTypeName, false); err != nil {
 		return errors.WithMessage(err, "failed to set name")
 	}

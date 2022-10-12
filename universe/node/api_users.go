@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/api"
@@ -98,11 +97,11 @@ func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken
 
 	// TODO: check issuer
 
-	nodeSettings := n.GetNodeAttributes().GetValue(
-		types.NewNodeAttributeIndex(universe.GetSystemPluginID(), types.NodeSettingsAttributeName),
+	nodeSettings, ok := n.GetNodeAttributeValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), "node_settings"),
 	)
-	if nodeSettings == nil {
-		return nil, http.StatusInternalServerError, errors.Errorf("failed to get node settings: %+v", nodeSettings)
+	if !ok {
+		return nil, http.StatusInternalServerError, errors.Errorf("failed to get node settings")
 	}
 
 	if idToken.Guest.IsGuest {
@@ -144,31 +143,33 @@ func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken
 
 		// adding wallet to user attributes
 		userAttribute := &entry.UserAttribute{
-			PluginID: universe.GetKusamaPluginID(),
-			Name:     types.UserWalletAttributeName,
-			UserID:   *userEntry.UserID,
+			UserAttributeID: entry.NewUserAttributeID(
+				entry.NewAttributeID(
+					universe.GetKusamaPluginID(),
+					"wallet",
+				),
+				*userEntry.UserID,
+			),
 		}
 
+		walletAddressKey := "address"
 		valueModifyFn := func(current *entry.AttributeValue) *entry.AttributeValue {
 			if current == nil {
 				value := entry.NewAttributeValue()
-				(*value)[types.UserWalletAddressAttributeValueKey] = []string{idToken.Web3Address}
+				(*value)[walletAddressKey] = []string{idToken.Web3Address}
 				return value
 			}
 
-			address := utils.GetFromAnyMap(
-				*current, types.UserWalletAddressAttributeValueKey, []any{idToken.Web3Address},
-			)
-
+			address := utils.GetFromAnyMap(*current, walletAddressKey, []any{idToken.Web3Address})
 			for i := range address {
 				if address[i] == idToken.Web3Address {
 					// we don't know where address slice was coming from
-					(*current)[types.UserWalletAddressAttributeValueKey] = address
+					(*current)[walletAddressKey] = address
 					return current
 				}
 			}
 
-			(*current)[types.UserWalletAddressAttributeValueKey] = append(address, idToken.Web3Address)
+			(*current)[walletAddressKey] = append(address, idToken.Web3Address)
 
 			return current
 		}

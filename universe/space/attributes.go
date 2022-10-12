@@ -2,16 +2,82 @@ package space
 
 import (
 	"github.com/gorilla/websocket"
+	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/modify"
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
-//var _ universe.AttributeIndexType = (*AttributeIndex)(nil)
-//var _ universe.AttributeIndexType = (*UserAttributeIndex)(nil)
+func (s *Space) GetSpaceAttributeValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool) {
+	payload, ok := s.spaceAttributes.Load(entry.NewSpaceAttributeID(attributeID, s.id))
+	if !ok {
+		return nil, false
+	}
+	return payload.Value, true
+}
+
+func (s *Space) GetSpaceAttributeOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool) {
+	payload, ok := s.spaceAttributes.Load(entry.NewSpaceAttributeID(attributeID, s.id))
+	if !ok {
+		return nil, false
+	}
+	return payload.Options, false
+}
+
+func (s *Space) GetSpaceAttributeEffectiveOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool) {
+	attr, ok := universe.GetNode().GetAttributes().GetAttribute(attributeID)
+	if !ok {
+		return nil, false
+	}
+	payload, ok := s.spaceAttributes.Load(entry.NewSpaceAttributeID(attributeID, s.id))
+	if !ok {
+		return nil, false
+	}
+	return utils.MergePTRs(payload.Options, attr.GetOptions()), true
+}
+
+func (s *Space) SetSpaceAttributeValue(
+	attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool,
+) error {
+	s.spaceAttributes.Mu.Lock()
+	defer s.spaceAttributes.Mu.Unlock()
+
+	payload, ok := s.spaceAttributes.Data[entry.NewSpaceAttributeID(attributeID, s.id)]
+	if !ok {
+		return errors.Errorf("space attribute not found")
+	}
+
+	payload.Value = modifyFn(payload.Value)
+
+	if updateDB {
+		panic("implement")
+	}
+
+	return nil
+}
+
+func (s *Space) SetSpaceAttributeOptions(
+	attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool,
+) error {
+	s.spaceAttributes.Mu.Lock()
+	defer s.spaceAttributes.Mu.Unlock()
+
+	payload, ok := s.spaceAttributes.Data[entry.NewSpaceAttributeID(attributeID, s.id)]
+	if !ok {
+		return errors.Errorf("space attribute not found")
+	}
+
+	payload.Options = modifyFn(payload.Options)
+
+	if updateDB {
+		panic("implement")
+	}
+
+	return nil
+}
 
 func (s *Space) loadSpaceAttributes() error {
 	entries, err := s.db.SpaceAttributesGetSpaceAttributesBySpaceID(s.ctx, s.id)
@@ -21,16 +87,11 @@ func (s *Space) loadSpaceAttributes() error {
 
 	node := universe.GetNode()
 	for _, instance := range entries {
-		attr, ok := node.GetAttributes().GetAttribute(
-			entry.AttributeID{
-				PluginID: instance.PluginID,
-				Name:     instance.Name,
-			},
-		)
-		if ok {
-			s.spaceAttributes.SetAttributeInstance(
-				types.NewSpaceAttributeIndex(instance.PluginID, instance.Name),
-				attr, instance.Value, instance.Options,
+		attributeID := entry.NewAttributeID(instance.PluginID, instance.Name)
+		if _, ok := node.GetAttributes().GetAttribute(attributeID); ok {
+			s.spaceAttributes.Store(
+				entry.NewSpaceAttributeID(attributeID, instance.SpaceID),
+				entry.NewAttributePayload(instance.Value, instance.Options),
 			)
 		}
 	}
@@ -46,22 +107,12 @@ func (s *Space) loadSpaceUserAttributes() error {
 
 	node := universe.GetNode()
 	for _, instance := range entries {
-		attr, ok := node.GetAttributes().GetAttribute(
-			entry.AttributeID{
-				PluginID: instance.PluginID,
-				Name:     instance.Name,
-			},
-		)
-		if ok {
-			ai := s.spaceUserAttributes.SetAttributeInstance(
-				types.NewSpaceUserAttributeIndex(instance.PluginID, instance.Name, instance.UserID),
-				attr, instance.Value, instance.Options,
+		attributeID := entry.NewAttributeID(instance.PluginID, instance.Name)
+		if _, ok := node.GetAttributes().GetAttribute(attributeID); ok {
+			s.spaceUserAttributes.Store(
+				entry.NewSpaceUserAttributeID(attributeID, instance.SpaceID, instance.UserID),
+				entry.NewAttributePayload(instance.Value, instance.Options),
 			)
-			opt := ai.GetEffectiveOptions()
-
-			if v, ok := (*opt)["render_type"]; ok && v == "texture" {
-
-			}
 		}
 	}
 

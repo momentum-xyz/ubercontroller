@@ -25,36 +25,6 @@ type Plugins struct {
 	plugins *generic.SyncMap[uuid.UUID, universe.Plugin]
 }
 
-func (p *Plugins) AddPlugin(plugin universe.Plugin, updateDB bool) error {
-	p.plugins.Mu.Lock()
-	defer p.plugins.Mu.Unlock()
-
-	if updateDB {
-		if err := p.db.PluginsUpsertPlugin(p.ctx, plugin.GetEntry()); err != nil {
-			return errors.WithMessage(err, "failed to update db")
-		}
-	}
-
-	p.plugins.Data[plugin.GetID()] = plugin
-
-	return nil
-}
-
-func (p *Plugins) AddPlugins(plugins []universe.Plugin, updateDB bool) error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (p *Plugins) RemovePlugin(plugin universe.Plugin, updateDB bool) error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (p *Plugins) RemovePlugins(plugins []universe.Plugin, updateDB bool) error {
-	//TODO implement me
-	panic("implement me")
-}
-
 func NewPlugins(db database.DB) *Plugins {
 	return &Plugins{
 		db:      db,
@@ -75,7 +45,6 @@ func (p *Plugins) Initialize(ctx context.Context) error {
 }
 
 func (p *Plugins) CreatePlugin(pluginId uuid.UUID) (universe.Plugin, error) {
-
 	plugin := plugin.NewPlugin(pluginId, p.db)
 
 	if err := plugin.Initialize(p.ctx); err != nil {
@@ -104,6 +73,36 @@ func (p *Plugins) GetPlugins() map[uuid.UUID]universe.Plugin {
 	}
 
 	return plugins
+}
+
+func (p *Plugins) AddPlugin(plugin universe.Plugin, updateDB bool) error {
+	p.plugins.Mu.Lock()
+	defer p.plugins.Mu.Unlock()
+
+	if updateDB {
+		if err := p.db.PluginsUpsertPlugin(p.ctx, plugin.GetEntry()); err != nil {
+			return errors.WithMessage(err, "failed to update db")
+		}
+	}
+
+	p.plugins.Data[plugin.GetID()] = plugin
+
+	return nil
+}
+
+func (p *Plugins) AddPlugins(plugins []universe.Plugin, updateDB bool) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *Plugins) RemovePlugin(plugin universe.Plugin, updateDB bool) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *Plugins) RemovePlugins(plugins []universe.Plugin, updateDB bool) error {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (p *Plugins) Load() error {

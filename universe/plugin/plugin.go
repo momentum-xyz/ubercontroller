@@ -23,7 +23,6 @@ type Plugin struct {
 
 	id                uuid.UUID
 	name              string
-	entry             *entry.Plugin
 	description       *string
 	options           *entry.PluginOptions
 	object            *plugin.Plugin
@@ -84,13 +83,16 @@ func (p *Plugin) SetName(name string, updateDB bool) error {
 	}
 
 	p.name = name
+
 	return nil
 }
 
 func (p *Plugin) SetOptions(modifyFn modify.Fn[entry.PluginOptions], updateDB bool) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
+
 	options := modifyFn(p.options)
+
 	if updateDB {
 		if err := p.db.PluginsUpdatePluginOptions(p.ctx, p.id, options); err != nil {
 			return errors.WithMessage(err, "failed to update db")
@@ -121,16 +123,11 @@ func (p *Plugin) GetEntry() *entry.Plugin {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if p.entry == nil {
-		p.entry = &entry.Plugin{
-
-			PluginID:    utils.GetPTR(p.id),
-			Description: p.description,
-			Options:     p.options,
-		}
+	return &entry.Plugin{
+		PluginID:    utils.GetPTR(p.id),
+		Description: p.description,
+		Options:     p.options,
 	}
-
-	return p.entry
 }
 
 func (p *Plugin) LoadFromEntry(entry *entry.Plugin) error {
@@ -142,19 +139,21 @@ func (p *Plugin) LoadFromEntry(entry *entry.Plugin) error {
 			return err
 		}
 	}
-	if err = p.SetDescription(entry.Description, false); err != nil {
-		return errors.WithMessage(err, "failed to set description")
-	}
-
-	if err = p.SetOptions(modify.MergeWith(entry.Options), false); err != nil {
-		return errors.WithMessage(err, "failed to set options")
-	}
 
 	if err = p.SetName(*entry.PluginName, false); err != nil {
 		return errors.WithMessage(err, "failed to set name")
 	}
+	if err = p.SetDescription(entry.Description, false); err != nil {
+		return errors.WithMessage(err, "failed to set description")
+	}
+	if err = p.SetOptions(modify.MergeWith(entry.Options), false); err != nil {
+		return errors.WithMessage(err, "failed to set options")
+	}
 
-	p.RegisterAttributes()
+	if err := p.RegisterAttributes(); err != nil {
+		return errors.WithMessage(err, "failed to register attributes")
+	}
+
 	return nil
 }
 

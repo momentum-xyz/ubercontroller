@@ -2,17 +2,17 @@ package space
 
 import (
 	"context"
-	"github.com/google/uuid"
-	"github.com/gorilla/websocket"
-	"github.com/momentum-xyz/ubercontroller/pkg/message"
-	"github.com/momentum-xyz/ubercontroller/universe/attribute_instances"
-	"github.com/pkg/errors"
-	"go.uber.org/zap"
 	"sync"
 	"sync/atomic"
 
+	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
+
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
+	"github.com/momentum-xyz/ubercontroller/pkg/message"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
@@ -39,11 +39,10 @@ type Space struct {
 	asset2d          universe.Asset2d
 	asset3d          universe.Asset3d
 	spaceType        universe.SpaceType
-	entry            *entry.Space
 	effectiveOptions *entry.SpaceOptions
 
-	spaceAttributes     universe.AttributeInstances[types.SpaceAttributeIndex]
-	spaceUserAttributes universe.AttributeInstances[types.SpaceUserAttributeIndex]
+	spaceAttributes     *generic.SyncMap[entry.SpaceAttributeID, *entry.AttributePayload]
+	spaceUserAttributes *generic.SyncMap[entry.SpaceUserAttributeID, *entry.AttributePayload]
 
 	spawnMsg          atomic.Pointer[websocket.PreparedMessage]
 	attributesMsg     *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
@@ -58,8 +57,8 @@ func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
 		db:                  db,
 		Users:               generic.NewSyncMap[uuid.UUID, universe.User](),
 		Children:            generic.NewSyncMap[uuid.UUID, universe.Space](),
-		spaceAttributes:     attribute_instances.NewAttributeInstances[types.SpaceAttributeIndex](db),
-		spaceUserAttributes: attribute_instances.NewAttributeInstances[types.SpaceUserAttributeIndex](db),
+		spaceAttributes:     generic.NewSyncMap[entry.SpaceAttributeID, *entry.AttributePayload](),
+		spaceUserAttributes: generic.NewSyncMap[entry.SpaceUserAttributeID, *entry.AttributePayload](),
 		attributesMsg:       generic.NewSyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]](),
 		broadcastPipeline:   make(chan *websocket.PreparedMessage), // todo: to switch to non-blocking once tested
 		world:               world,
@@ -83,8 +82,6 @@ func (s *Space) Initialize(ctx context.Context) error {
 
 	s.ctx = ctx
 	s.log = log
-	s.spaceAttributes.Initialize(s.ctx)
-	s.spaceUserAttributes.Initialize(s.ctx)
 
 	return nil
 }
@@ -118,7 +115,6 @@ func (s *Space) SetParent(parent universe.Space, updateDB bool) error {
 	}
 
 	s.parent = parent
-	s.clearCache()
 
 	return nil
 }
@@ -151,7 +147,6 @@ func (s *Space) SetPosition(position *cmath.Vec3, updateDB bool) error {
 	if s.position != nil {
 		s.actualPosition = *s.position
 	}
-	s.clearCache()
 
 	return nil
 }
@@ -174,7 +169,6 @@ func (s *Space) SetOwnerID(ownerID uuid.UUID, updateDB bool) error {
 	}
 
 	s.ownerID = ownerID
-	s.clearCache()
 
 	return nil
 }
@@ -201,7 +195,6 @@ func (s *Space) SetAsset2D(asset2d universe.Asset2d, updateDB bool) error {
 	}
 
 	s.asset2d = asset2d
-	s.clearCache()
 
 	return nil
 }
@@ -228,7 +221,6 @@ func (s *Space) SetAsset3D(asset3d universe.Asset3d, updateDB bool) error {
 	}
 
 	s.asset3d = asset3d
-	s.clearCache()
 
 	return nil
 }
@@ -255,7 +247,6 @@ func (s *Space) SetSpaceType(spaceType universe.SpaceType, updateDB bool) error 
 	}
 
 	s.spaceType = spaceType
-	s.clearCache()
 
 	return nil
 }
@@ -280,7 +271,7 @@ func (s *Space) SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool
 	}
 
 	s.options = options
-	s.clearCache()
+	s.effectiveOptions = nil
 
 	return nil
 }
@@ -299,33 +290,31 @@ func (s *Space) GetEntry() *entry.Space {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.entry == nil {
-		s.entry = &entry.Space{
-			SpaceID:  &s.id,
-			OwnerID:  &s.ownerID,
-			Options:  s.options,
-			Position: s.position,
-		}
-		if s.spaceType != nil {
-			s.entry.SpaceTypeID = utils.GetPTR(s.spaceType.GetID())
-		}
-		if s.parent != nil {
-			s.entry.ParentID = utils.GetPTR(s.parent.GetID())
-		}
-		if s.asset2d != nil {
-			s.entry.Asset2dID = utils.GetPTR(s.asset2d.GetID())
-		}
-		if s.asset3d != nil {
-			s.entry.Asset3dID = utils.GetPTR(s.asset3d.GetID())
-		}
+	entry := &entry.Space{
+		SpaceID:  &s.id,
+		OwnerID:  &s.ownerID,
+		Options:  s.options,
+		Position: s.position,
+	}
+	if s.spaceType != nil {
+		entry.SpaceTypeID = utils.GetPTR(s.spaceType.GetID())
+	}
+	if s.parent != nil {
+		entry.ParentID = utils.GetPTR(s.parent.GetID())
+	}
+	if s.asset2d != nil {
+		entry.Asset2dID = utils.GetPTR(s.asset2d.GetID())
+	}
+	if s.asset3d != nil {
+		entry.Asset3dID = utils.GetPTR(s.asset3d.GetID())
 	}
 
-	return s.entry
+	return entry
 }
 
 func (s *Space) Update(recursive bool) error {
 	s.mu.Lock()
-	s.clearCache()
+	s.effectiveOptions = nil
 	s.mu.Unlock()
 
 	if !recursive {
@@ -416,6 +405,13 @@ func (s *Space) loadDependencies(entry *entry.Space) error {
 		return errors.WithMessagef(err, "failed to set space type: %s", entry.SpaceTypeID)
 	}
 
+	if err := s.loadSpaceAttributes(); err != nil {
+		return errors.WithMessage(err, "failed to load space attributes")
+	}
+	if err := s.loadSpaceUserAttributes(); err != nil {
+		return errors.WithMessage(err, "failed to load space user attributes")
+	}
+
 	if entry.Asset2dID != nil {
 		asset2d, ok := node.GetAssets2d().GetAsset2d(*entry.Asset2dID)
 		if !ok {
@@ -439,17 +435,12 @@ func (s *Space) loadDependencies(entry *entry.Space) error {
 	return nil
 }
 
-func (s *Space) clearCache() {
-	s.entry = nil
-	s.effectiveOptions = nil
-}
-
 func (s *Space) UpdateSpawnMessage() {
-	v := s.spaceAttributes.GetValue(
-		types.NewSpaceAttributeIndex(
-			universe.GetSystemPluginID(), "name",
-		),
-	)
+	v, ok := s.GetSpaceAttributeValue(entry.NewAttributeID(universe.GetSystemPluginID(), "name"))
+	if !ok {
+		// QUESTION: what to do here? maybe return an error?
+	}
+
 	name := utils.GetFromAnyMap(*v, "name", "")
 
 	opts := s.GetEffectiveOptions()

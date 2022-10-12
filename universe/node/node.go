@@ -3,8 +3,6 @@ package node
 import (
 	"context"
 	"fmt"
-	"github.com/momentum-xyz/ubercontroller/universe/attribute_instances"
-	user "github.com/momentum-xyz/ubercontroller/universe/user"
 	"net/http"
 	"os"
 	"sync"
@@ -12,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
+	influx_api "github.com/influxdata/influxdb-client-go/v2/api"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -21,10 +20,11 @@ import (
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/mplugin"
 	"github.com/momentum-xyz/ubercontroller/types"
+	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/universe/user"
 	"github.com/momentum-xyz/ubercontroller/utils"
-
-	influx_api "github.com/influxdata/influxdb-client-go/v2/api"
 )
 
 var _ universe.Node = (*Node)(nil)
@@ -44,8 +44,7 @@ type Node struct {
 	userTypes           universe.UserTypes
 	attributes          universe.Attributes
 	plugins             universe.Plugins
-	nodeAttributes      universe.AttributeInstances[types.NodeAttributeIndex]
-	mu                  sync.RWMutex
+	nodeAttributes      *generic.SyncMap[entry.NodeAttributeID, *entry.AttributePayload]
 	influx              influx_api.WriteAPIBlocking
 	pluginController    *mplugin.PluginController
 	corePluginInterface *mplugin.PluginInterface
@@ -74,7 +73,7 @@ func NewNode(
 		userTypes:      userTypes,
 		attributes:     attributes,
 		plugins:        plugins,
-		nodeAttributes: attribute_instances.NewAttributeInstances[types.NodeAttributeIndex](db),
+		nodeAttributes: generic.NewSyncMap[entry.NodeAttributeID, *entry.AttributePayload](),
 	}
 }
 
@@ -95,10 +94,6 @@ func (n *Node) Initialize(ctx context.Context) error {
 	n.ctx = ctx
 	n.log = log
 
-	if err := n.nodeAttributes.Initialize(ctx); err != nil {
-		return errors.WithMessage(err, "failed to initialize node attributes")
-	}
-
 	consoleWriter := zapcore.Lock(os.Stdout)
 	gin.DefaultWriter = consoleWriter
 
@@ -111,6 +106,7 @@ func (n *Node) Initialize(ctx context.Context) error {
 
 	n.router = r
 	n.pluginController = mplugin.NewPluginController(n.id)
+
 	return nil
 }
 
@@ -134,10 +130,6 @@ func (n *Node) GetAttributes() universe.Attributes {
 	return n.attributes
 }
 
-func (n *Node) GetNodeAttributes() universe.AttributeInstances[types.NodeAttributeIndex] {
-	return n.nodeAttributes
-}
-
 func (n *Node) GetSpaceTypes() universe.SpaceTypes {
 	return n.spaceTypes
 }
@@ -150,17 +142,17 @@ func (n *Node) AddAPIRegister(register universe.APIRegister) {
 	register.RegisterAPI(n.router)
 }
 
-func (n *Node) HealthCheck(ctx *gin.Context) {
-	type HealthStatus struct {
-		Status string `json:"status"`
-	}
-	ctx.JSON(http.StatusOK, HealthStatus{Status: "OK"})
+func (n *Node) HealthCheck(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"status": "ok",
+	})
 }
 
 func (n *Node) Run() error {
 	if err := n.worlds.Run(); err != nil {
 		return errors.WithMessage(err, "failed to run worlds")
 	}
+
 	return n.router.Run(fmt.Sprintf("%s:%d", n.cfg.Settings.Address, n.cfg.Settings.Port))
 }
 

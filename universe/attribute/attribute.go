@@ -2,15 +2,17 @@ package attribute
 
 import (
 	"context"
+	"sync"
+
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
+	
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
-	"github.com/pkg/errors"
-	"go.uber.org/zap"
-	"sync"
 )
 
 type Attribute struct {
@@ -20,13 +22,9 @@ type Attribute struct {
 	mu  sync.RWMutex
 
 	id          entry.AttributeID
-	entry       *entry.Attribute
 	description *string
 	options     *entry.AttributeOptions
-}
-
-func NewAttributeWithNameAndPluginID(pluginId uuid.UUID, name string, db database.DB) *Attribute {
-	return NewAttribute(entry.AttributeID{PluginID: pluginId, Name: name}, db)
+	entry       *entry.Attribute
 }
 
 func NewAttribute(id entry.AttributeID, db database.DB) *Attribute {
@@ -35,6 +33,10 @@ func NewAttribute(id entry.AttributeID, db database.DB) *Attribute {
 		id:      id,
 		options: entry.NewAttributeOptions(),
 	}
+}
+
+func NewAttributeWithNameAndPluginID(pluginID uuid.UUID, name string, db database.DB) *Attribute {
+	return NewAttribute(entry.AttributeID{PluginID: pluginID, Name: name}, db)
 }
 
 func (a *Attribute) Initialize(ctx context.Context) error {
@@ -111,21 +113,16 @@ func (a *Attribute) GetEntry() *entry.Attribute {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	if a.entry == nil {
-		a.entry = &entry.Attribute{
-
-			AttributeID: utils.GetPTR(a.id),
-			Description: a.description,
-			Options:     a.options,
-		}
+	return &entry.Attribute{
+		AttributeID: utils.GetPTR(a.id),
+		Description: a.description,
+		Options:     a.options,
 	}
-
-	return a.entry
 }
 
 func (a *Attribute) LoadFromEntry(entry *entry.Attribute) error {
-
 	a.id = *entry.AttributeID
+
 	if err := a.SetDescription(entry.Description, false); err != nil {
 		return errors.WithMessage(err, "failed to set description")
 	}

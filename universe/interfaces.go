@@ -9,7 +9,6 @@ import (
 	influxWrite "github.com/influxdata/influxdb-client-go/v2/api/write"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
-	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
@@ -64,9 +63,18 @@ type Node interface {
 	GetAssets3d() Assets3d
 	GetSpaceTypes() SpaceTypes
 	GetUserTypes() UserTypes
-	GetPlugins() Plugins
 	GetAttributes() Attributes
-	GetNodeAttributes() AttributeInstances[types.NodeAttributeIndex]
+	GetPlugins() Plugins
+
+	GetNodeAttributeValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool)
+	GetNodeAttributeOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool)
+	GetNodeAttributeEffectiveOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool)
+	SetNodeAttributeValue(
+		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool,
+	) error
+	SetNodeAttributeOptions(
+		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool,
+	) error
 
 	AddAPIRegister(register APIRegister)
 
@@ -116,9 +124,8 @@ type Space interface {
 	SetPosition(position *cmath.Vec3, updateDB bool) error
 
 	GetOptions() *entry.SpaceOptions
-	SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool) error
-
 	GetEffectiveOptions() *entry.SpaceOptions
+	SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool) error
 
 	GetAsset2D() Asset2d
 	SetAsset2D(asset2d Asset2d, updateDB bool) error
@@ -151,29 +158,41 @@ type Space interface {
 
 	SendSpawnMessage(sendFn func(msg *websocket.PreparedMessage), recursive bool)
 	SendAttributes(sendFn func(*websocket.PreparedMessage), recursive bool)
+
+	GetSpaceAttributeValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool)
+	GetSpaceAttributeOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool)
+	GetSpaceAttributeEffectiveOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool)
+	SetSpaceAttributeValue(
+		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool,
+	) error
+	SetSpaceAttributeOptions(
+		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool,
+	) error
 }
 
 type User interface {
 	IDer
 	Initializer
 	RunStopper
-	APIRegister
 
 	GetWorld() World
 	SetWorld(world World, updateDB bool) error
 
 	GetSpace() Space
 	SetSpace(space Space, updateDB bool) error
+
 	Update() error
 
 	GetUserType() UserType
 	SetUserType(userType UserType, updateDB bool) error
-	AddInfluxTags(prefix string, point *influxWrite.Point) *influxWrite.Point
-	SetConnection(sessionID uuid.UUID, socketConnection *websocket.Conn) error
+
 	GetSessionID() uuid.UUID
+	SetConnection(sessionID uuid.UUID, socketConnection *websocket.Conn) error
 
 	Send(message *websocket.PreparedMessage)
 	SendDirectly(message *websocket.PreparedMessage) error
+
+	AddInfluxTags(prefix string, point *influxWrite.Point) *influxWrite.Point
 }
 
 type SpaceTypes interface {
@@ -363,40 +382,10 @@ type Attributes interface {
 
 	CreateAttribute(attributeId entry.AttributeID) (Attribute, error)
 
-	GetAttribute(entry.AttributeID) (Attribute, bool)
+	GetAttribute(attributeID entry.AttributeID) (Attribute, bool)
 	GetAttributes() map[entry.AttributeID]Attribute
 	AddAttribute(attribute Attribute, updateDB bool) error
 	AddAttributes(attributes []Attribute, updateDB bool) error
 	RemoveAttribute(attribute Attribute, updateDB bool) error
 	RemoveAttributes(attributes []Attribute, updateDB bool) error
-}
-
-type AttributeInstances[indexType comparable] interface {
-	Initializer
-
-	//GetID(id indexType) entry.AttributeID
-	//GetName(id indexType) string
-	//GetPluginID(id indexType) uuid.UUID
-
-	GetOptions(id indexType) *entry.AttributeOptions
-	GetEffectiveOptions(id indexType) *entry.AttributeOptions
-	SetOptions(id indexType, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool) error
-
-	GetValue(id indexType) *entry.AttributeValue
-	SetValue(id indexType, modifyFn modify.Fn[string], updateDB bool) error
-
-	SetAttributeInstance(
-		id indexType, attribute Attribute, value *entry.AttributeValue, options *entry.AttributeOptions,
-	) AttributeInstance
-
-	//GetEntry(id indexType) *entry.Attribute
-	//LoadFromEntry(entry *entry.Attribute) error
-}
-
-type AttributeInstance interface {
-	GetOptions() *entry.AttributeOptions
-	SetOptions(modifyFn modify.Fn[entry.AttributeOptions], updateDB bool) error
-	GetValue() *entry.AttributeValue
-	SetValue(modifyFn modify.Fn[string], updateDB bool) error
-	GetEffectiveOptions() *entry.AttributeOptions
 }

@@ -48,19 +48,38 @@ type SpaceChildPlacement struct {
 	Options map[string]any `db:"options" json:"options"`
 }
 
+type SpaceAttributeID struct {
+	AttributeID
+	SpaceID uuid.UUID `db:"space_id"`
+}
+
 type SpaceAttribute struct {
-	PluginID uuid.UUID         `db:"plugin_id"`
-	SpaceID  uuid.UUID         `db:"space_id"`
-	Name     string            `db:"attribute_name"`
-	Value    *AttributeValue   `db:"value"`
-	Options  *AttributeOptions `db:"options"`
+	SpaceAttributeID
+	AttributePayload
+}
+
+type SpaceUserAttributeID struct {
+	AttributeID
+	SpaceID uuid.UUID `db:"space_id"`
+	UserID  uuid.UUID `db:"user_id"`
 }
 
 type SpaceUserAttribute struct {
-	PluginID uuid.UUID         `db:"plugin_id"`
-	SpaceID  uuid.UUID         `db:"space_id"`
-	UserID   uuid.UUID         `db:"user_id"`
-	Name     string            `db:"attribute_name"`
-	Value    *AttributeValue   `db:"value"`
-	Options  *AttributeOptions `db:"options"`
+	SpaceUserAttributeID
+	AttributePayload
+}
+
+func NewSpaceAttributeID(attributeID AttributeID, spaceID uuid.UUID) SpaceAttributeID {
+	return SpaceAttributeID{
+		AttributeID: attributeID,
+		SpaceID:     spaceID,
+	}
+}
+
+func NewSpaceUserAttributeID(attributeID AttributeID, spaceID, userID uuid.UUID) SpaceUserAttributeID {
+	return SpaceUserAttributeID{
+		AttributeID: attributeID,
+		SpaceID:     spaceID,
+		UserID:      userID,
+	}
 }
