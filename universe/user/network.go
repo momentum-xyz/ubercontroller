@@ -65,7 +65,7 @@ func (u *User) readPump() {
 			u.OnMessage(posbus.MsgFromBytes(message))
 		}
 	}
-	// this close will trigger write defer function anyway
+	// this close will cascade writePump defer function anyway on next send
 	u.conn.Close()
 	u.log.Info("Connection: end of read pump")
 }
@@ -89,6 +89,7 @@ func (u *User) initiateShutDown(needToRemoveFromWorld bool) {
 func (u *User) writePump() {
 	needToRemoveFromWorld := true
 	defer func() {
+		u.log.Info("Connection: end of write pump")
 		u.initiateShutDown(needToRemoveFromWorld)
 	}()
 	ticker := time.NewTicker(pingPeriod)
