@@ -70,20 +70,23 @@ func (u *User) readPump() {
 	u.log.Info("Connection: end of read pump")
 }
 
-func (u *User) initiateShutDown() {
+func (u *User) initiateShutDown(needToRemoveFromWorld bool) {
 	ns := u.numSendsQueued.Swap(chanIsClosed)
 	for i := int64(0); i < ns; i++ {
 		<-u.send
 	}
 	close(u.send)
 	u.conn.Close()
-	u.world.RemoveUser(u, true)
+	if needToRemoveFromWorld {
+		u.world.RemoveUser(u, true)
+	}
 	return
 }
 
 func (u *User) writePump() {
+	needToRemoveFromWorld := true
 	defer func() {
-		go u.initiateShutDown()
+		go u.initiateShutDown(needToRemoveFromWorld)
 	}()
 	ticker := time.NewTicker(pingPeriod)
 	pingMessage, _ := websocket.NewPreparedMessage(websocket.PingMessage, nil)
@@ -95,6 +98,7 @@ func (u *User) writePump() {
 			u.numSendsQueued.Add(-1)
 			// sending nil to send chan will stop this evil loop
 			if message == nil {
+				needToRemoveFromWorld = false
 				return
 			}
 			if u.bufferSends.Load() == true {
