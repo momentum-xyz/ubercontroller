@@ -1,6 +1,7 @@
 package user
 
 import (
+	"container/list"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/momentum-xyz/posbus-protocol/posbus"
@@ -19,7 +20,7 @@ const (
 	// maximal size of buffer in messages, after which we drop connection as not-working
 	maxBufferSize = 10000
 	// Negative Number to indicate closed chan, large enough to be less than any number of outstanding
-	chanIsClosed = -0x1000000000
+	chanIsClosed = -0x3FFFFFFFFFFFFFFF
 )
 
 func (u *User) Close() error {
@@ -29,13 +30,11 @@ func (u *User) Close() error {
 func (u *User) StartIOPumps() {
 	u.lastPositionUpdateTimestamp = int64(0)
 
-	u.conn.SetReadLimit(inMessageSizeLimit)
-	u.conn.SetReadDeadline(time.Now().Add(pongWait))
-	u.conn.SetPongHandler(func(string) error { u.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
-	go u.PingTicker()
+	go u.writePump()
+	go u.writePump()
 }
 
-func (u *User) ReadPump() {
+func (u *User) readPump() {
 	u.conn.SetReadLimit(inMessageSizeLimit)
 	u.conn.SetReadDeadline(time.Now().Add(pongWait))
 	u.conn.SetPongHandler(func(string) error { u.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
@@ -55,7 +54,6 @@ func (u *User) ReadPump() {
 			}
 			if closedByClient {
 				u.log.Info(errors.WithMessagef(err, "Connection: read pump: websocket closed by client"))
-
 			} else {
 				u.log.Debug(errors.WithMessage(err, "Connection: read pump: failed to read message from connection"))
 			}
@@ -72,53 +70,83 @@ func (u *User) ReadPump() {
 	u.log.Info("Connection: end of read pump")
 }
 
-func (u *User) PingTicker() {
+func (u *User) initiateShutDown() {
+	ns := u.numSendsQueued.Swap(chanIsClosed)
+	for i := int64(0); i < ns; i++ {
+		<-u.send
+	}
+	close(u.send)
+	u.conn.Close()
+	u.world.RemoveUser(u, true)
+	return
+}
+
+func (u *User) writePump() {
+	defer func() {
+		go u.initiateShutDown()
+	}()
 	ticker := time.NewTicker(pingPeriod)
 	pingMessage, _ := websocket.NewPreparedMessage(websocket.PingMessage, nil)
+	buffer := list.New()
 	for {
 		select {
+		case message := <-u.send:
+			// we took message from queue
+			u.numSendsQueued.Add(-1)
+			// sending nil to send chan will stop this evil loop
+			if message == nil {
+				return
+			}
+			if u.bufferSends.Load() == true {
+				//  if we should buffer messages instead of sending
+				buffer.PushBack(message)
+			} else {
+				//  drain buffer and send current message
+				if buffer.Len() > 0 {
+					var next *list.Element
+					for e := buffer.Front(); e != nil; e = next {
+						next = e.Next()
+						m := buffer.Remove(e).(*websocket.PreparedMessage)
+						if u.SendDirectly(m) != nil {
+							return
+						}
+					}
+				}
+				if u.SendDirectly(message) != nil {
+					return
+				}
+			}
+
 		case <-ticker.C:
-			//if u.quit.Load() {
-			//	return
-			//}
-			if err := u.SendDirectly(pingMessage); err != nil {
+			if u.SendDirectly(pingMessage) != nil {
 				return
 			}
 		}
 	}
 }
 
-func (u *User) CloseHandler() {
-
+func (u *User) Shutdown() {
+	ns := u.numSendsQueued.Add(1)
+	if ns >= 0 {
+		u.send <- nil
+	}
 }
 
 func (u *User) SendDirectly(message *websocket.PreparedMessage) error {
-	u.sendMutex.Lock()
-	defer u.sendMutex.Unlock()
+	// not concurrent, to be used in single particular location
 	u.conn.SetWriteDeadline(time.Now().Add(writeWait))
-	err := u.conn.WritePreparedMessage(message)
-	if err != nil {
-		return errors.New("error pushing message")
-		u.CloseHandler()
-	}
-	return err
+	return u.conn.WritePreparedMessage(message)
 }
 
 func (u *User) Send(m *websocket.PreparedMessage) {
 	if m == nil {
 		return
 	}
-	if u.readyToSend.Load() {
-		if false {
-			// TODO: push content of ring buffer
-
-		}
-		err := u.SendDirectly(m)
-		if err != nil {
-			// TODO: shutdown sequence
-		}
-	} else {
-		// TODO: put to ring buffer
+	// ns acts simultaneously as number of clients in send process and as blocker if negative
+	// we increment, and we decrement when leave this method
+	ns := u.numSendsQueued.Add(1)
+	if ns >= 0 {
+		u.send <- m
 	}
 }
 
@@ -126,8 +154,7 @@ func (u *User) SetConnection(id uuid.UUID, socketConnection *websocket.Conn) err
 	u.sessionID = id
 	u.conn = socketConnection
 	u.send = make(chan *websocket.PreparedMessage, 10)
-	u.quit.Store(false)
-	u.readyToSend.Store(false)
+	u.bufferSends.Store(true)
 	return nil
 }
 

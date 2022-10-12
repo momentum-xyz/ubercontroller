@@ -28,6 +28,7 @@ type World struct {
 	//corePluginInstance  mplugin.PluginInstance
 	corePluginInterface mplugin.PluginInterface
 	broadcast           chan *websocket.PreparedMessage
+	metaMsg             *websocket.PreparedMessage
 }
 
 func NewWorld(id uuid.UUID, db database.DB) *World {

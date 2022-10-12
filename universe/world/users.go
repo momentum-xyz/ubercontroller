@@ -28,7 +28,10 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 	if ok {
 		if exUser != user {
 			if exUser.GetSessionID() == user.GetSessionID() {
-				w.log.Info("World: same session, must be teleport or network failure: world %s, user %s", w.GetID(), user.GetID())
+				w.log.Info(
+					"World: same session, must be teleport or network failure: world %s, user %s", w.GetID(),
+					user.GetID(),
+				)
 			} else {
 				w.log.Info("World: double-login detected for world %s, user %s", w.GetID(), exUser.GetID())
 
@@ -53,6 +56,7 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 
 	// TODO: rest of startup logic
 
+	w.Space.AddUser(user, updateDB)
 	return nil
 }
 

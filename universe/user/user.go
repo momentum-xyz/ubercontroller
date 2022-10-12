@@ -39,9 +39,8 @@ type User struct {
 	world                       *world.World
 	profile                     *entry.UserProfile
 	options                     *entry.UserOptions
-	sendMutex                   sync.Mutex
-	readyToSend                 atomic.Bool
-	quit                        atomic.Bool
+	bufferSends                 atomic.Bool
+	numSendsQueued              atomic.Int64
 }
 
 func (u *User) Run() error {
@@ -137,8 +136,8 @@ func (u *User) Initialize(ctx context.Context) error {
 	}
 	u.ctx = ctx
 	u.log = log
-	u.quit.Store(false)
-	u.readyToSend.Store(false)
+	u.bufferSends.Store(true)
+	u.numSendsQueued.Store(0)
 	u.lastPositionUpdateTimestamp = int64(0)
 	u.posMsgBuffer = message.NewSendPosBuffer(u.id)
 	u.pos = (*cmath.Vec3)(unsafe.Add(unsafe.Pointer(&u.posMsgBuffer[0]), 16))
@@ -169,6 +168,11 @@ func (u *User) GetID() uuid.UUID {
 
 func (u *User) GetName() string {
 	return *u.profile.Name
+}
+
+func (u *User) SetPosition(p cmath.Vec3) {
+	*u.pos = p
+
 }
 
 //SetUserType(userType UserType, updateDB bool) error
