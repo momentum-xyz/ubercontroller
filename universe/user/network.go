@@ -71,12 +71,15 @@ func (u *User) readPump() {
 }
 
 func (u *User) initiateShutDown(needToRemoveFromWorld bool) {
+	//drain send channel
 	ns := u.numSendsQueued.Swap(chanIsClosed)
 	for i := int64(0); i < ns; i++ {
 		<-u.send
 	}
 	close(u.send)
 	u.conn.Close()
+
+	// then remove from world is necessary
 	if needToRemoveFromWorld {
 		u.world.RemoveUser(u, true)
 	}
@@ -86,7 +89,7 @@ func (u *User) initiateShutDown(needToRemoveFromWorld bool) {
 func (u *User) writePump() {
 	needToRemoveFromWorld := true
 	defer func() {
-		go u.initiateShutDown(needToRemoveFromWorld)
+		u.initiateShutDown(needToRemoveFromWorld)
 	}()
 	ticker := time.NewTicker(pingPeriod)
 	pingMessage, _ := websocket.NewPreparedMessage(websocket.PingMessage, nil)
@@ -96,11 +99,14 @@ func (u *User) writePump() {
 		case message := <-u.send:
 			// we took message from queue
 			u.numSendsQueued.Add(-1)
+
 			// sending nil to send chan will stop this evil loop
 			if message == nil {
+				// if this break was initiated via user.Shutdown() we don't remove from world, assuming something else is taking care of that
 				needToRemoveFromWorld = false
 				return
 			}
+
 			if u.bufferSends.Load() == true {
 				//  if we should buffer messages instead of sending
 				buffer.PushBack(message)
