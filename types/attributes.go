@@ -9,6 +9,10 @@ const (
 	UserWalletAttributeName   = "wallet"
 )
 
+const (
+	UserWalletAddressAttributeValueKey = "address"
+)
+
 type BaseAttributeIndex struct {
 	PluginID uuid.UUID
 	Name     string

@@ -27,8 +27,8 @@ type UserProfile struct {
 
 type UserAttribute struct {
 	PluginID uuid.UUID         `db:"plugin_id"`
-	UserID   uuid.UUID         `db:"user_id"`
 	Name     string            `db:"attribute_name"`
+	UserID   uuid.UUID         `db:"user_id"`
 	Value    *AttributeValue   `db:"value"`
 	Options  *AttributeOptions `db:"options"`
 }

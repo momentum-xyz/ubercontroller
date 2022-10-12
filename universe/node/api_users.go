@@ -12,6 +12,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/api"
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
 func (n *Node) apiUsersCheck(c *gin.Context) {
@@ -91,7 +92,8 @@ func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken
 	}
 
 	userEntry = &entry.User{
-		UserID: &userID,
+		UserID:  &userID,
+		Profile: &entry.UserProfile{},
 	}
 
 	// TODO: check issuer
@@ -104,15 +106,20 @@ func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken
 	}
 
 	if idToken.Guest.IsGuest {
-		guestUserTypeID := utils.GetFromAnyMap(*nodeSettings, "guest_user_type", uuid.Nil)
-		if guestUserTypeID == uuid.Nil {
-			return nil, http.StatusInternalServerError, errors.Errorf("failed to get guest user type id")
+		guestUserType := utils.GetFromAnyMap(*nodeSettings, "guest_user_type", "")
+		guestUserTypeID, err := uuid.Parse(guestUserType)
+		if err != nil {
+			return nil, http.StatusInternalServerError, errors.Errorf("failed to parse guest user type id")
 		}
 		userEntry.UserTypeID = &guestUserTypeID
 
 		if err := n.db.UsersUpsertUser(c, userEntry); err != nil {
-			return nil, http.StatusInternalServerError, errors.WithMessagef(err, "failed to upsert guest: %s", userEntry.UserID)
+			return nil, http.StatusInternalServerError, errors.WithMessagef(
+				err, "failed to upsert guest: %s", userEntry.UserID,
+			)
 		}
+
+		n.log.Infof("Node: apiGetOrCreateUserFromTokens: guest created: %s", userEntry.UserID)
 	} else {
 		// TODO: check idToken web3 type
 
@@ -122,9 +129,10 @@ func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken
 
 		// TODO: validate idToken
 
-		normUserTypeID := utils.GetFromAnyMap(*nodeSettings, "normal_user_type", uuid.Nil)
-		if normUserTypeID == uuid.Nil {
-			return nil, http.StatusInternalServerError, errors.Errorf("failed to get normal user type id")
+		normUserType := utils.GetFromAnyMap(*nodeSettings, "normal_user_type", "")
+		normUserTypeID, err := uuid.Parse(normUserType)
+		if err != nil {
+			return nil, http.StatusInternalServerError, errors.Errorf("failed to parse normal user type id")
 		}
 		userEntry.UserTypeID = &normUserTypeID
 
@@ -132,7 +140,49 @@ func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken
 			return nil, http.StatusInternalServerError, errors.WithMessagef(err, "failed to upsert user: %s", userEntry.UserID)
 		}
 
-		// TODO: add wallet
+		n.log.Infof("Node: apiGetOrCreateUserFromTokens: user created: %s", userEntry.UserID)
+
+		// adding wallet to user attributes
+		userAttribute := &entry.UserAttribute{
+			PluginID: universe.GetKusamaPluginID(),
+			Name:     types.UserWalletAttributeName,
+			UserID:   *userEntry.UserID,
+		}
+
+		valueModifyFn := func(current *entry.AttributeValue) *entry.AttributeValue {
+			if current == nil {
+				value := entry.NewAttributeValue()
+				(*value)[types.UserWalletAddressAttributeValueKey] = []string{idToken.Web3Address}
+				return value
+			}
+
+			address := utils.GetFromAnyMap(
+				*current, types.UserWalletAddressAttributeValueKey, []any{idToken.Web3Address},
+			)
+
+			for i := range address {
+				if address[i] == idToken.Web3Address {
+					// we don't know where address slice was coming from
+					(*current)[types.UserWalletAddressAttributeValueKey] = address
+					return current
+				}
+			}
+
+			(*current)[types.UserWalletAddressAttributeValueKey] = append(address, idToken.Web3Address)
+
+			return current
+		}
+
+		if err := n.db.UserAttributesUpsertUserAttribute(
+			c, userAttribute, valueModifyFn, modify.Nop[entry.AttributeOptions](),
+		); err != nil {
+			// TODO: think about rollback
+			return nil, http.StatusInternalServerError, errors.WithMessagef(
+				err, "failed to upsert user attribute for user: %s", userEntry.UserID,
+			)
+		}
+
+		n.log.Infof("Node: apiGetOrCreateUserFromTokens: wallet %q added to user: %s", idToken.Web3Address, userEntry.UserID)
 	}
 
 	return userEntry, 0, nil

@@ -1,6 +1,10 @@
 package entry
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+
+	"github.com/momentum-xyz/ubercontroller/utils"
+)
 
 type Attribute struct {
 	*AttributeID
@@ -18,11 +22,9 @@ type AttributeOptions map[string]any
 type AttributeValue map[string]any
 
 func NewAttributeOptions() *AttributeOptions {
-	o := AttributeOptions(make(map[string]any))
-	return &o
+	return utils.GetPTR(AttributeOptions(make(map[string]any)))
 }
 
-func NewAttributeValue() AttributeValue {
-	v := AttributeValue(make(map[string]any))
-	return v
+func NewAttributeValue() *AttributeValue {
+	return utils.GetPTR(AttributeValue(make(map[string]any)))
 }

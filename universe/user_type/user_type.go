@@ -35,7 +35,7 @@ func NewUserType(id uuid.UUID, db database.DB) *UserType {
 		id: id,
 		db: db,
 		options: &entry.UserOptions{
-			IsGuest: utils.GetPtr(true),
+			IsGuest: utils.GetPTR(true),
 		},
 	}
 }
@@ -147,7 +147,7 @@ func (u *UserType) GetEntry() *entry.UserType {
 
 	if u.entry == nil {
 		u.entry = &entry.UserType{
-			UserTypeID:   utils.GetPtr(u.id),
+			UserTypeID:   utils.GetPTR(u.id),
 			UserTypeName: &u.name,
 			Description:  u.description,
 			Options:      u.options,

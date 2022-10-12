@@ -31,7 +31,7 @@ func TestMergePTRs(t *testing.T) {
 	}
 
 	def := T2{
-		I: GetPtr(32),
+		I: GetPTR(32),
 		M: map[string]map[string]string{
 			"d1": {
 				"d2": "def2",
@@ -46,7 +46,7 @@ func TestMergePTRs(t *testing.T) {
 	}
 
 	exp := &T2{
-		I: GetPtr(32),
+		I: GetPTR(32),
 		M: map[string]map[string]string{
 			"d1": {
 				"d2": "def2",

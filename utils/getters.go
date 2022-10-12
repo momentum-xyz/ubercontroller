@@ -10,7 +10,7 @@ import (
 
 var log = logger.L()
 
-func GetPtr[T any](v T) *T {
+func GetPTR[T any](v T) *T {
 	return &v
 }
 

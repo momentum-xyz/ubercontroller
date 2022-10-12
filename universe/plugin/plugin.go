@@ -124,7 +124,7 @@ func (p *Plugin) GetEntry() *entry.Plugin {
 	if p.entry == nil {
 		p.entry = &entry.Plugin{
 
-			PluginID:    utils.GetPtr(p.id),
+			PluginID:    utils.GetPTR(p.id),
 			Description: p.description,
 			Options:     p.options,
 		}

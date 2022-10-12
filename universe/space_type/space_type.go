@@ -39,9 +39,9 @@ func NewSpaceType(id uuid.UUID, db database.DB) *SpaceType {
 		db: db,
 		options: &entry.SpaceOptions{
 			AllowedSubspaces: []uuid.UUID{},
-			Minimap:          utils.GetPtr(true),
-			Visible:          utils.GetPtr(entry.ReactUnitySpaceVisibleType),
-			Private:          utils.GetPtr(false),
+			Minimap:          utils.GetPTR(true),
+			Visible:          utils.GetPTR(entry.ReactUnitySpaceVisibleType),
+			Private:          utils.GetPTR(false),
 		},
 	}
 }
@@ -222,17 +222,17 @@ func (s *SpaceType) GetEntry() *entry.SpaceType {
 
 	if s.entry == nil {
 		s.entry = &entry.SpaceType{
-			SpaceTypeID:   utils.GetPtr(s.id),
+			SpaceTypeID:   utils.GetPTR(s.id),
 			SpaceTypeName: &s.name,
 			CategoryName:  &s.categoryName,
 			Description:   s.description,
 			Options:       s.options,
 		}
 		if s.asset2d != nil {
-			s.entry.Asset2dID = utils.GetPtr(s.asset2d.GetID())
+			s.entry.Asset2dID = utils.GetPTR(s.asset2d.GetID())
 		}
 		if s.asset3d != nil {
-			s.entry.Asset3dID = utils.GetPtr(s.asset3d.GetID())
+			s.entry.Asset3dID = utils.GetPTR(s.asset3d.GetID())
 		}
 	}
 

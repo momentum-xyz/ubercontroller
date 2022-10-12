@@ -114,7 +114,7 @@ func (a *Attribute) GetEntry() *entry.Attribute {
 	if a.entry == nil {
 		a.entry = &entry.Attribute{
 
-			AttributeID: utils.GetPtr(a.id),
+			AttributeID: utils.GetPTR(a.id),
 			Description: a.description,
 			Options:     a.options,
 		}

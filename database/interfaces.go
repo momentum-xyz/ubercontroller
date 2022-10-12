@@ -188,9 +188,23 @@ type UserAttributesDB interface {
 	UserAttributesGetUserAttributeByPluginIDAndNameAndUserID(
 		ctx context.Context, pluginID uuid.UUID, attributeName string, userID uuid.UUID,
 	) (*entry.UserAttribute, error)
+	UserAttributesGetUserAttributeValueByPluginIDAndNameAndUserID(
+		ctx context.Context, pluginID uuid.UUID, attributeName string, userID uuid.UUID,
+	) (*entry.AttributeValue, error)
+	UserAttributesGetUserAttributeOptionsByPluginIDAndNameAndUserID(
+		ctx context.Context, pluginID uuid.UUID, attributeName string, userID uuid.UUID,
+	) (*entry.AttributeOptions, error)
 	UserAttributesUpsertUserAttribute( // TODO: we really need to think about it
 		ctx context.Context, userAttribute *entry.UserAttribute,
-		modifyValue modify.Fn[entry.AttributeValue], modifyOptions modify.Fn[entry.AttributeOptions],
+		modifyValueFn modify.Fn[entry.AttributeValue], modifyOptionsFn modify.Fn[entry.AttributeOptions],
+	) error
+	UserAttributesUpdateUserAttributeValue(
+		ctx context.Context, pluginID uuid.UUID, attributeName string, userID uuid.UUID,
+		modifyFn modify.Fn[entry.AttributeValue],
+	) error
+	UserAttributesUpdateUserAttributeOptions(
+		ctx context.Context, pluginID uuid.UUID, attributeName string, userID uuid.UUID,
+		modifyFn modify.Fn[entry.AttributeOptions],
 	) error
 	UserAttributesRemoveUserAttributeByName(ctx context.Context, attributeName string) error
 	UserAttributesRemoveUserAttributesByNames(ctx context.Context, attributeNames []string) error
@@ -210,14 +224,6 @@ type UserAttributesDB interface {
 	) error
 	UserAttributesRemoveUserAttributeByPluginIDAndNameAndUserID(
 		ctx context.Context, pluginID uuid.UUID, attributeName string, userID uuid.UUID,
-	) error
-	UserAttributesUpdateUserAttributeOptions(
-		ctx context.Context, pluginID uuid.UUID, attributeName string, userID uuid.UUID,
-		modifyFn modify.Fn[entry.AttributeOptions],
-	) error
-	UserAttributesUpdateUserAttributeValue(
-		ctx context.Context, pluginID uuid.UUID, attributeName string, userID uuid.UUID,
-		modifyFn modify.Fn[entry.AttributeValue],
 	) error
 }
 

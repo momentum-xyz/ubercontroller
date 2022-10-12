@@ -193,7 +193,7 @@ func (s *Space) SetAsset2D(asset2d universe.Asset2d, updateDB bool) error {
 	if updateDB {
 		var asset2dID *uuid.UUID
 		if asset2d != nil {
-			asset2dID = utils.GetPtr(asset2d.GetID())
+			asset2dID = utils.GetPTR(asset2d.GetID())
 		}
 		if err := s.db.SpacesUpdateSpaceAsset2dID(s.ctx, s.id, asset2dID); err != nil {
 			return errors.WithMessage(err, "failed to update db")
@@ -220,7 +220,7 @@ func (s *Space) SetAsset3D(asset3d universe.Asset3d, updateDB bool) error {
 	if updateDB {
 		var asset3dID *uuid.UUID
 		if asset3d != nil {
-			asset3dID = utils.GetPtr(asset3d.GetID())
+			asset3dID = utils.GetPTR(asset3d.GetID())
 		}
 		if err := s.db.SpacesUpdateSpaceAsset3dID(s.ctx, s.id, asset3dID); err != nil {
 			return errors.WithMessage(err, "failed to update db")
@@ -307,16 +307,16 @@ func (s *Space) GetEntry() *entry.Space {
 			Position: s.position,
 		}
 		if s.spaceType != nil {
-			s.entry.SpaceTypeID = utils.GetPtr(s.spaceType.GetID())
+			s.entry.SpaceTypeID = utils.GetPTR(s.spaceType.GetID())
 		}
 		if s.parent != nil {
-			s.entry.ParentID = utils.GetPtr(s.parent.GetID())
+			s.entry.ParentID = utils.GetPTR(s.parent.GetID())
 		}
 		if s.asset2d != nil {
-			s.entry.Asset2dID = utils.GetPtr(s.asset2d.GetID())
+			s.entry.Asset2dID = utils.GetPTR(s.asset2d.GetID())
 		}
 		if s.asset3d != nil {
-			s.entry.Asset3dID = utils.GetPtr(s.asset3d.GetID())
+			s.entry.Asset3dID = utils.GetPTR(s.asset3d.GetID())
 		}
 	}
 
@@ -463,8 +463,8 @@ func (s *Space) UpdateSpawnMessage() {
 		asset3d = s.asset3d.GetID()
 	}
 
-	uuidNilPtr := utils.GetPtr(uuid.Nil)
-	falsePtr := utils.GetPtr(false)
+	uuidNilPtr := utils.GetPTR(uuid.Nil)
+	falsePtr := utils.GetPTR(false)
 	s.spawnMsg.Store(
 		message.GetBuilder().MsgObjectDefinition(
 			message.ObjectDefinition{

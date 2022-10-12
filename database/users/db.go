@@ -14,19 +14,19 @@ import (
 )
 
 const (
-	getUserByIDQuery          = `SELECT * FROM user WHERE user_id = $1;`
-	removeUserByIDQuery       = `DELETE FROM user WHERE user_id = $1;`
-	removeUsersByIDsQuery     = `DELETE FROM user WHERE user_id IN ($1);`
-	updateUserUserTypeIDQuery = `UPDATE user SET user_type_id = $2 WHERE user_id = $1;`
-	updateUserOptionsQuery    = `UPDATE user SET options = $2 WHERE user_id = $1;`
-	updateUserProfileQuery    = `UPDATE user SET profile = $2 WHERE user_id = $1;`
-	upsertUserQuery           = `INSERT INTO user
-    									(user_id, user_type_id, asset_3d_id, options, profile, created_at, updated_at)     									 
+	getUserByIDQuery          = `SELECT * FROM "user" WHERE user_id = $1;`
+	removeUserByIDQuery       = `DELETE FROM "user" WHERE user_id = $1;`
+	removeUsersByIDsQuery     = `DELETE FROM "user" WHERE user_id IN ($1);`
+	updateUserUserTypeIDQuery = `UPDATE "user" SET user_type_id = $2 WHERE user_id = $1;`
+	updateUserOptionsQuery    = `UPDATE "user" SET options = $2 WHERE user_id = $1;`
+	updateUserProfileQuery    = `UPDATE "user" SET profile = $2 WHERE user_id = $1;`
+	upsertUserQuery           = `INSERT INTO "user"
+    									(user_id, user_type_id, profile, options, created_at, updated_at)     									 
 									VALUES
 									    ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 									ON CONFLICT (user_id)
 									DO UPDATE SET
-										user_type_id = $2, options = $3, profile = $4, updated_at = CURRENT_TIMESTAMP;`
+										user_type_id = $2, profile = $3, options = $4, updated_at = CURRENT_TIMESTAMP;`
 )
 
 var _ database.UsersDB = (*DB)(nil)
@@ -54,7 +54,7 @@ func (db *DB) UsersGetUserByID(ctx context.Context, userID uuid.UUID) (*entry.Us
 func (db *DB) UsersUpsertUser(ctx context.Context, user *entry.User) error {
 	if _, err := db.conn.Exec(
 		ctx, upsertUserQuery,
-		user.UserID, user.UserTypeID, user.Options, user.Profile,
+		user.UserID, user.UserTypeID, user.Profile, user.Options,
 	); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
@@ -66,7 +66,7 @@ func (db *DB) UsersUpsertUsers(ctx context.Context, users []*entry.User) error {
 	batch := &pgx.Batch{}
 	for _, user := range users {
 		batch.Queue(
-			upsertUserQuery, user.UserID, user.UserTypeID, user.Options, user.Profile,
+			upsertUserQuery, user.UserID, user.UserTypeID, user.Profile, user.Options,
 		)
 	}
 

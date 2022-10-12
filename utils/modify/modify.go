@@ -6,6 +6,12 @@ import (
 
 type Fn[T any] func(current *T) *T
 
+func Nop[T any]() Fn[T] {
+	return func(current *T) *T {
+		return current
+	}
+}
+
 func SetNil[T any]() Fn[T] {
 	return func(current *T) *T {
 		return nil
