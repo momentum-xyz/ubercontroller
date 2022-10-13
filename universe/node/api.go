@@ -8,20 +8,27 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller"
 	"github.com/momentum-xyz/ubercontroller/config"
+	"github.com/momentum-xyz/ubercontroller/universe/api/middleware"
 )
 
 func (n *Node) RegisterAPI(r *gin.Engine) {
 	n.log.Infof("Registering api for node: %s...", n.GetID())
 
 	r.GET("/version", n.apiGetVersion)
+	r.GET("/health", n.apiHealthCheck)
 	r.GET("/posbus", n.apiPosBusHandler)
-	r.GET("/health", n.apiPosBusHandler)
 
 	vx := r.Group(fmt.Sprintf("/api/v%d", ubercontroller.APIMajorVersion))
 	{
 		users := vx.Group("/users")
 		{
 			users.GET("/check", n.apiUsersCheck)
+		}
+
+		auth := vx.Group("", middleware.VerifyUser(n.log))
+		authProfile := auth.Group("/profile")
+		{
+			authProfile.PUT("/edit", n.apiProfileEdit)
 		}
 	}
 }
@@ -39,6 +46,12 @@ func (n *Node) apiGetVersion(c *gin.Context) {
 			"patch": ubercontroller.ControllerPathVersion,
 			"git":   ubercontroller.ControllerGitVersion,
 		},
+	})
+}
+
+func (n *Node) apiHealthCheck(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"status": "ok",
 	})
 }
 

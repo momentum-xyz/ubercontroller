@@ -14,13 +14,14 @@ import (
 )
 
 const (
-	getUserByIDQuery          = `SELECT * FROM "user" WHERE user_id = $1;`
-	removeUserByIDQuery       = `DELETE FROM "user" WHERE user_id = $1;`
-	removeUsersByIDsQuery     = `DELETE FROM "user" WHERE user_id IN ($1);`
-	updateUserUserTypeIDQuery = `UPDATE "user" SET user_type_id = $2 WHERE user_id = $1;`
-	updateUserOptionsQuery    = `UPDATE "user" SET options = $2 WHERE user_id = $1;`
-	updateUserProfileQuery    = `UPDATE "user" SET profile = $2 WHERE user_id = $1;`
-	upsertUserQuery           = `INSERT INTO "user"
+	getUserByIDQuery            = `SELECT * FROM "user" WHERE user_id = $1;`
+	getUserProfileByUserIDQuery = `SELECT profile FROM "user" WHERE user_id = $1;`
+	removeUserByIDQuery         = `DELETE FROM "user" WHERE user_id = $1;`
+	removeUsersByIDsQuery       = `DELETE FROM "user" WHERE user_id IN ($1);`
+	updateUserUserTypeIDQuery   = `UPDATE "user" SET user_type_id = $2 WHERE user_id = $1;`
+	updateUserOptionsQuery      = `UPDATE "user" SET options = $2 WHERE user_id = $1;`
+	updateUserProfileQuery      = `UPDATE "user" SET profile = $2 WHERE user_id = $1;`
+	upsertUserQuery             = `INSERT INTO "user"
     									(user_id, user_type_id, profile, options, created_at, updated_at)     									 
 									VALUES
 									    ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
@@ -49,6 +50,17 @@ func (db *DB) UsersGetUserByID(ctx context.Context, userID uuid.UUID) (*entry.Us
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return &user, nil
+}
+
+func (db *DB) UsersGetUserProfileByUserID(ctx context.Context, userID uuid.UUID) (*entry.UserProfile, error) {
+	// TODO: figure out why we need this
+	profile := struct {
+		Profile *entry.UserProfile `db:"profile"`
+	}{}
+	if err := pgxscan.Get(ctx, db.conn, &profile, getUserProfileByUserIDQuery, userID); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return profile.Profile, nil
 }
 
 func (db *DB) UsersUpsertUser(ctx context.Context, user *entry.User) error {
@@ -90,6 +102,7 @@ func (db *DB) UsersRemoveUsersByIDs(ctx context.Context, userIDs []uuid.UUID) er
 	}
 	return nil
 }
+
 func (db *DB) UsersRemoveUserByID(ctx context.Context, userID uuid.UUID) error {
 	if _, err := db.conn.Exec(ctx, removeUserByIDQuery, userID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
@@ -110,6 +123,7 @@ func (db *DB) UsersUpdateUserOptions(ctx context.Context, userID uuid.UUID, opti
 	}
 	return nil
 }
+
 func (db *DB) UsersUpdateUserProfile(ctx context.Context, userID uuid.UUID, profile *entry.UserProfile) error {
 	if _, err := db.conn.Exec(ctx, updateUserProfileQuery, userID, profile); err != nil {
 		return errors.WithMessage(err, "failed to exec db")

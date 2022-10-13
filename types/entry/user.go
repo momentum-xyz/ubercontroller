@@ -20,9 +20,12 @@ type UserOptions struct {
 }
 
 type UserProfile struct {
-	Name      *string `db:"name" json:"name"`
-	OnBoarded *bool   `db:"onboarded" json:"onboarded"`
-	Email     *string `db:"email" json:"email"`
+	Name        *string `db:"name" json:"name"`
+	Bio         *string `db:"bio" json:"bio"`
+	Location    *string `db:"location" json:"location"`
+	AvatarHash  *string `db:"avatar_hash" json:"avatar_hash"`
+	ProfileLink *string `db:"profile_link" json:"profile_link"`
+	OnBoarded   *bool   `db:"onboarded" json:"onboarded"`
 }
 
 type UserAttributeID struct {

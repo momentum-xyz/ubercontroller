@@ -3,7 +3,6 @@ package node
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"os"
 	"sync"
 
@@ -140,12 +139,6 @@ func (n *Node) GetUserTypes() universe.UserTypes {
 
 func (n *Node) AddAPIRegister(register universe.APIRegister) {
 	register.RegisterAPI(n.router)
-}
-
-func (n *Node) HealthCheck(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"status": "ok",
-	})
 }
 
 func (n *Node) Run() error {

@@ -20,24 +20,27 @@ func (n *Node) apiUsersCheck(c *gin.Context) {
 	}{}
 
 	if err := c.ShouldBindJSON(&inBody); err != nil {
+		n.log.Warn(errors.WithMessage(err, "Node: apiUsersCheck: failed to bind json"))
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"message": errors.WithMessage(err, "failed to bind json").Error(),
+			"message": "invalid request body",
 		})
 		return
 	}
 
 	accessToken, idToken, code, err := n.apiCheckTokens(c, api.GetTokenFromRequest(c), inBody.IDToken)
 	if err != nil {
+		n.log.Warn(errors.WithMessage(err, "Node: apiUsersCheck: failed to check tokens"))
 		c.AbortWithStatusJSON(code, gin.H{
-			"message": errors.WithMessage(err, "failed to check tokens").Error(),
+			"message": "invalid tokens",
 		})
 		return
 	}
 
 	userEntry, httpCode, err := n.apiGetOrCreateUserFromTokens(c, accessToken, idToken)
 	if err != nil {
+		n.log.Warn(errors.WithMessage(err, "Node: apiUsersCheck: failed get or create user from tokens"))
 		c.AbortWithStatusJSON(httpCode, gin.H{
-			"message": errors.WithMessage(err, "failed get or create user from tokens").Error(),
+			"message": "failed to get or create user",
 		})
 		return
 	}
@@ -175,7 +178,7 @@ func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken
 		}
 
 		if err := n.db.UserAttributesUpsertUserAttribute(
-			c, userAttribute, valueModifyFn, modify.Nop[entry.AttributeOptions](),
+			n.ctx, userAttribute, valueModifyFn, modify.Nop[entry.AttributeOptions](),
 		); err != nil {
 			// TODO: think about rollback
 			return nil, http.StatusInternalServerError, errors.WithMessagef(

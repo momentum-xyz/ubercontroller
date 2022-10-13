@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/zitadel/oidc/pkg/client"
 	"github.com/zitadel/oidc/pkg/client/rs"
@@ -35,10 +36,7 @@ func VerifyToken(ctx context.Context, token string) (Token, error) {
 
 	// TODO: change this!
 	for _, provider := range api.cfg.Auth.OIDCProviders {
-		err := verifyTokenByProvider(ctx, provider, parsedToken)
-		if err != nil {
-			api.log.Warn(errors.WithMessagef(err, "Api: failed to verify token: %s", provider))
-		} else {
+		if err := verifyTokenByProvider(ctx, provider, parsedToken); err == nil {
 			return parsedToken, nil
 		}
 	}
@@ -74,12 +72,26 @@ func GetTokenFromRequest(c *gin.Context) string {
 	return strings.TrimPrefix(authHeader, "Bearer ")
 }
 
+func GetUserIDFromRequest(c *gin.Context) (uuid.UUID, error) {
+	token, err := ParseToken(GetTokenFromRequest(c))
+	if err != nil {
+		return uuid.Nil, errors.WithMessage(err, "failed to parse token")
+	}
+
+	userID, err := uuid.Parse(token.Subject)
+	if err != nil {
+		return uuid.Nil, errors.WithMessage(err, "failed to parse user id")
+	}
+
+	return userID, nil
+}
+
 func ParseToken(token string) (Token, error) {
 	var parsedToken Token
 
 	parts := strings.Split(token, ".")
 	if len(parts) < 2 {
-		return parsedToken, errors.Errorf("invalid token, expected 2 parts got %d", len(parts))
+		return parsedToken, errors.Errorf("invalid token, expected 3 parts got %d", len(parts))
 	}
 	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
 	if err != nil {
