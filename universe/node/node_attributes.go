@@ -9,7 +9,7 @@ import (
 )
 
 func (n *Node) GetNodeAttributeValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool) {
-	payload, ok := n.nodeAttributes.Load(entry.NewNodeAttributeID(attributeID))
+	payload, ok := n.nodeAttributes.Load(attributeID)
 	if !ok {
 		return nil, false
 	}
@@ -17,7 +17,7 @@ func (n *Node) GetNodeAttributeValue(attributeID entry.AttributeID) (*entry.Attr
 }
 
 func (n *Node) GetNodeAttributeOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool) {
-	payload, ok := n.nodeAttributes.Load(entry.NewNodeAttributeID(attributeID))
+	payload, ok := n.nodeAttributes.Load(attributeID)
 	if !ok {
 		return nil, false
 	}
@@ -29,7 +29,7 @@ func (n *Node) GetNodeAttributeEffectiveOptions(attributeID entry.AttributeID) (
 	if !ok {
 		return nil, false
 	}
-	payload, ok := n.nodeAttributes.Load(entry.NewNodeAttributeID(attributeID))
+	payload, ok := n.nodeAttributes.Load(attributeID)
 	if !ok {
 		return nil, false
 	}
@@ -42,7 +42,7 @@ func (n *Node) SetNodeAttributeValue(
 	n.nodeAttributes.Mu.Lock()
 	defer n.nodeAttributes.Mu.Unlock()
 
-	payload, ok := n.nodeAttributes.Data[entry.NewNodeAttributeID(attributeID)]
+	payload, ok := n.nodeAttributes.Data[attributeID]
 	if !ok {
 		return errors.Errorf("node attribute not found")
 	}
@@ -66,7 +66,7 @@ func (n *Node) SetNodeAttributeOptions(
 	n.nodeAttributes.Mu.Lock()
 	defer n.nodeAttributes.Mu.Unlock()
 
-	payload, ok := n.nodeAttributes.Data[entry.NewNodeAttributeID(attributeID)]
+	payload, ok := n.nodeAttributes.Data[attributeID]
 	if !ok {
 		return errors.Errorf("node attribute not found")
 	}
@@ -93,7 +93,7 @@ func (n *Node) loadNodeAttributes() error {
 	for _, instance := range entries {
 		if _, ok := n.GetAttributes().GetAttribute(instance.AttributeID); ok {
 			n.nodeAttributes.Store(
-				instance.NodeAttributeID,
+				instance.AttributeID,
 				entry.NewAttributePayload(instance.Value, instance.Options),
 			)
 		}

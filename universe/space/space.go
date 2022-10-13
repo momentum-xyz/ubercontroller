@@ -41,8 +41,8 @@ type Space struct {
 	spaceType        universe.SpaceType
 	effectiveOptions *entry.SpaceOptions
 
-	spaceAttributes     *generic.SyncMap[entry.SpaceAttributeID, *entry.AttributePayload]
-	spaceUserAttributes *generic.SyncMap[entry.SpaceUserAttributeID, *entry.AttributePayload]
+	spaceAttributes     *generic.SyncMap[entry.AttributeID, *entry.AttributePayload]
+	spaceUserAttributes *generic.SyncMap[entry.UserAttributeID, *entry.AttributePayload]
 
 	spawnMsg          atomic.Pointer[websocket.PreparedMessage]
 	attributesMsg     *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
@@ -57,8 +57,8 @@ func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
 		db:                  db,
 		Users:               generic.NewSyncMap[uuid.UUID, universe.User](),
 		Children:            generic.NewSyncMap[uuid.UUID, universe.Space](),
-		spaceAttributes:     generic.NewSyncMap[entry.SpaceAttributeID, *entry.AttributePayload](),
-		spaceUserAttributes: generic.NewSyncMap[entry.SpaceUserAttributeID, *entry.AttributePayload](),
+		spaceAttributes:     generic.NewSyncMap[entry.AttributeID, *entry.AttributePayload](),
+		spaceUserAttributes: generic.NewSyncMap[entry.UserAttributeID, *entry.AttributePayload](),
 		attributesMsg:       generic.NewSyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]](),
 		broadcastPipeline:   make(chan *websocket.PreparedMessage), // todo: to switch to non-blocking once tested
 		world:               world,
@@ -525,4 +525,13 @@ func (s *Space) Runner() {
 
 func (s *Space) doBroadcast() {
 
+}
+
+func (s *Space) SetAttributesMsg(kind, name string, msg *websocket.PreparedMessage) {
+	m, ok := s.attributesMsg.Load(kind)
+	if !ok {
+		m = generic.NewSyncMap[string, *websocket.PreparedMessage]()
+		s.attributesMsg.Store(kind, m)
+	}
+	m.Store(name, msg)
 }

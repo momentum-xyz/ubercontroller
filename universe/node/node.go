@@ -43,7 +43,7 @@ type Node struct {
 	userTypes           universe.UserTypes
 	attributes          universe.Attributes
 	plugins             universe.Plugins
-	nodeAttributes      *generic.SyncMap[entry.NodeAttributeID, *entry.AttributePayload]
+	nodeAttributes      *generic.SyncMap[entry.AttributeID, *entry.AttributePayload]
 	influx              influx_api.WriteAPIBlocking
 	pluginController    *mplugin.PluginController
 	corePluginInterface *mplugin.PluginInterface
@@ -72,7 +72,7 @@ func NewNode(
 		userTypes:      userTypes,
 		attributes:     attributes,
 		plugins:        plugins,
-		nodeAttributes: generic.NewSyncMap[entry.NodeAttributeID, *entry.AttributePayload](),
+		nodeAttributes: generic.NewSyncMap[entry.AttributeID, *entry.AttributePayload](),
 	}
 }
 
