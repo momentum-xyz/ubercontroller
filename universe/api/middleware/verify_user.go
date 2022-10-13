@@ -11,11 +11,26 @@ import (
 
 func VerifyUser(log *zap.SugaredLogger) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if _, err := api.VerifyToken(c, api.GetTokenFromRequest(c)); err != nil {
-			log.Debug(errors.WithMessage(err, "Middleware: VerifyUser: failed to verify user"))
+		token, err := api.VerifyToken(c, api.GetTokenFromRequest(c))
+		if err != nil {
+			log.Debug(errors.WithMessage(err, "Middleware: VerifyUser: failed to verify token"))
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
 				"message": "failed to verify access token",
 			})
+			return
+		}
+
+		userID := c.Param("userID")
+		if userID != "" && userID != token.Subject {
+			log.Debug(
+				errors.WithMessage(
+					errors.Errorf("%s != %s", userID, token.Subject), "Middleware: VerifyUser: user id mismatch",
+				),
+			)
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+				"message": "failed to verify access token",
+			})
+			return
 		}
 	}
 }

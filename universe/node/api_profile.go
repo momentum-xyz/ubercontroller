@@ -14,41 +14,39 @@ func (n *Node) apiProfileEdit(c *gin.Context) {
 	inBody := struct {
 		Name    *string `json:"name"`
 		Profile *struct {
+			Name        *string `json:"name"`
 			Bio         *string `json:"bio"`
+			ProfileLink *string `json:"profileLink"`
 			Location    *string `json:"location"`
 			AvatarHash  *string `json:"avatarHash"`
-			ProfileLink *string `json:"profileLink"`
-			OnBoarded   *bool   `json:"onBoarded"`
 		} `json:"profile"`
 	}{}
 
 	if err := c.ShouldBindJSON(&inBody); err != nil {
-		n.log.Warn(errors.WithMessage(err, "Node: apiProfileEdit: failed to bind json"))
+		n.log.Debug(errors.WithMessage(err, "Node: apiProfileEdit: failed to bind json"))
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 			"message": "invalid request body",
 		})
 		return
 	}
 
-	userID, err := api.GetUserIDFromRequest(c)
+	userID, err := api.GetUserIDFromRequestParam(c)
 	if err != nil {
-		n.log.Warn(errors.WithMessage(err, "Node: apiProfileEdit: failed to get user id from request"))
+		n.log.Debug(errors.WithMessage(err, "Node: apiProfileEdit: failed to get user id from request param"))
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"message": "invalid access token",
+			"message": "invalid user id",
 		})
 		return
 	}
 
 	userProfile, err := n.db.UsersGetUserProfileByUserID(c, userID)
 	if err != nil {
-		n.log.Warn(errors.WithMessage(err, "Node: apiProfileEdit: failed to get user profile by user id"))
+		n.log.Debug(errors.WithMessage(err, "Node: apiProfileEdit: failed to get user profile by user id"))
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
 			"message": "not found",
 		})
 		return
 	}
-
-	userProfile.OnBoarded = utils.GetPTR(true)
 
 	if inBody.Name != nil {
 		// TODO: check name unique
@@ -71,15 +69,15 @@ func (n *Node) apiProfileEdit(c *gin.Context) {
 		}
 	}
 
+	userProfile.OnBoarded = utils.GetPTR(true)
+
 	if err := n.db.UsersUpdateUserProfile(c, userID, userProfile); err != nil {
-		n.log.Warn(errors.WithMessage(err, "failed to update user profile"))
+		n.log.Error(errors.WithMessage(err, "failed to update user profile"))
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 			"message": "failed to update user profile",
 		})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"userOnboarded": userProfile.OnBoarded,
-	})
+	c.JSON(http.StatusOK, nil)
 }

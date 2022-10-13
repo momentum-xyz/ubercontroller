@@ -72,17 +72,11 @@ func GetTokenFromRequest(c *gin.Context) string {
 	return strings.TrimPrefix(authHeader, "Bearer ")
 }
 
-func GetUserIDFromRequest(c *gin.Context) (uuid.UUID, error) {
-	token, err := ParseToken(GetTokenFromRequest(c))
-	if err != nil {
-		return uuid.Nil, errors.WithMessage(err, "failed to parse token")
-	}
-
-	userID, err := uuid.Parse(token.Subject)
+func GetUserIDFromRequestParam(c *gin.Context) (uuid.UUID, error) {
+	userID, err := uuid.Parse(c.Param("userID"))
 	if err != nil {
 		return uuid.Nil, errors.WithMessage(err, "failed to parse user id")
 	}
-
 	return userID, nil
 }
 
@@ -113,7 +107,7 @@ func createProvider(provider string) (rs.ResourceServer, error) {
 	secret := cfg.GetSecretByProvider(provider)
 	introspectURL := cfg.GetIntrospectURLByProvider(provider)
 
-	api.log.Infof("Api: creating oidc provider: %s, url: %s, client id: %s, secret: %s, introspect url: %s",
+	api.log.Infof("API: creating oidc provider: %s, url: %s, client id: %s, secret: %s, introspect url: %s",
 		provider, oidcURL, clientID, secret, introspectURL)
 
 	opts := make([]rs.Option, 0, 1)

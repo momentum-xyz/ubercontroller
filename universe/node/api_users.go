@@ -10,6 +10,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/api"
+	"github.com/momentum-xyz/ubercontroller/universe/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
@@ -20,7 +21,7 @@ func (n *Node) apiUsersCheck(c *gin.Context) {
 	}{}
 
 	if err := c.ShouldBindJSON(&inBody); err != nil {
-		n.log.Warn(errors.WithMessage(err, "Node: apiUsersCheck: failed to bind json"))
+		n.log.Debug(errors.WithMessage(err, "Node: apiUsersCheck: failed to bind json"))
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 			"message": "invalid request body",
 		})
@@ -29,7 +30,7 @@ func (n *Node) apiUsersCheck(c *gin.Context) {
 
 	accessToken, idToken, code, err := n.apiCheckTokens(c, api.GetTokenFromRequest(c), inBody.IDToken)
 	if err != nil {
-		n.log.Warn(errors.WithMessage(err, "Node: apiUsersCheck: failed to check tokens"))
+		n.log.Debug(errors.WithMessage(err, "Node: apiUsersCheck: failed to check tokens"))
 		c.AbortWithStatusJSON(code, gin.H{
 			"message": "invalid tokens",
 		})
@@ -38,7 +39,7 @@ func (n *Node) apiUsersCheck(c *gin.Context) {
 
 	userEntry, httpCode, err := n.apiGetOrCreateUserFromTokens(c, accessToken, idToken)
 	if err != nil {
-		n.log.Warn(errors.WithMessage(err, "Node: apiUsersCheck: failed get or create user from tokens"))
+		n.log.Error(errors.WithMessage(err, "Node: apiUsersCheck: failed get or create user from tokens"))
 		c.AbortWithStatusJSON(httpCode, gin.H{
 			"message": "failed to get or create user",
 		})
@@ -47,14 +48,35 @@ func (n *Node) apiUsersCheck(c *gin.Context) {
 
 	// TODO: add invitation
 
-	var onBoarder bool
-	if userEntry.Profile != nil && userEntry.Profile.OnBoarded != nil && *userEntry.Profile.OnBoarded {
-		onBoarder = true
+	userProfileEntry := userEntry.Profile
+
+	outProfile := dto.Profile{
+		Bio:         userProfileEntry.Bio,
+		Location:    userProfileEntry.Location,
+		AvatarHash:  userProfileEntry.AvatarHash,
+		ProfileLink: userProfileEntry.ProfileLink,
+		OnBoarded:   userProfileEntry.OnBoarded,
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"userOnboarded": onBoarder,
-	})
+	outBody := dto.User{
+		ID:         userEntry.UserID.String(),
+		UserTypeID: userEntry.UserTypeID.String(),
+		Profile:    outProfile,
+	}
+	if len(idToken.Web3Address) > 0 {
+		outBody.Wallet = &idToken.Web3Address
+	}
+	if userProfileEntry.Name != nil {
+		outBody.Name = *userProfileEntry.Name
+	}
+	if userEntry.CreatedAt != nil {
+		outBody.CreatedAt = userEntry.CreatedAt.String()
+	}
+	if userEntry.UpdatedAt != nil {
+		outBody.UpdatedAt = utils.GetPTR(userEntry.UpdatedAt.String())
+	}
+
+	c.JSON(http.StatusOK, outBody)
 }
 
 func (n *Node) apiCheckTokens(c *gin.Context, accessToken, idToken string) (api.Token, api.Token, int, error) {

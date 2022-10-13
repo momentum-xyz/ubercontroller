@@ -26,9 +26,10 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		}
 
 		auth := vx.Group("", middleware.VerifyUser(n.log))
-		authProfile := auth.Group("/profile")
+
+		profile := auth.Group("/profile")
 		{
-			authProfile.PUT("/edit", n.apiProfileEdit)
+			profile.PUT("/:userID", n.apiProfileEdit)
 		}
 	}
 }
