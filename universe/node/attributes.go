@@ -1,11 +1,11 @@
 package node
 
 import (
-	"github.com/momentum-xyz/ubercontroller/utils"
-	"github.com/momentum-xyz/ubercontroller/utils/modify"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
 func (n *Node) GetNodeAttributeValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool) {
@@ -50,7 +50,11 @@ func (n *Node) SetNodeAttributeValue(
 	payload.Value = modifyFn(payload.Value)
 
 	if updateDB {
-		panic("implement")
+		if err := n.db.NodeAttributesUpdateNodeAttributeValue(
+			n.ctx, attributeID.PluginID, attributeID.Name, payload.Value,
+		); err != nil {
+			return errors.WithMessage(err, "failed to update db")
+		}
 	}
 
 	return nil
@@ -70,7 +74,11 @@ func (n *Node) SetNodeAttributeOptions(
 	payload.Options = modifyFn(payload.Options)
 
 	if updateDB {
-		panic("implement")
+		if err := n.db.NodeAttributesUpdateNodeAttributeOptions(
+			n.ctx, attributeID.PluginID, attributeID.Name, payload.Options,
+		); err != nil {
+			return errors.WithMessage(err, "failed to update db")
+		}
 	}
 
 	return nil
@@ -83,10 +91,9 @@ func (n *Node) loadNodeAttributes() error {
 	}
 
 	for _, instance := range entries {
-		attributeID := entry.NewAttributeID(instance.PluginID, instance.Name)
-		if _, ok := n.GetAttributes().GetAttribute(attributeID); ok {
+		if _, ok := n.GetAttributes().GetAttribute(instance.AttributeID); ok {
 			n.nodeAttributes.Store(
-				entry.NewNodeAttributeID(attributeID),
+				instance.NodeAttributeID,
 				entry.NewAttributePayload(instance.Value, instance.Options),
 			)
 		}

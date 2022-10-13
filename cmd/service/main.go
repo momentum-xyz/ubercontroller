@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"github.com/google/uuid"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 
@@ -194,12 +194,12 @@ func createDB(conn *pgxpool.Pool) (database.DB, error) {
 		assets3dDB.NewDB(conn, common),
 		spaceTypesDB.NewDB(conn, common),
 		userTypesDB.NewDB(conn, common),
-		pluginsDB.NewDB(conn, common),
 		attributesDB.NewDB(conn, common),
 		nodeAttributesDB.NewDB(conn, common),
 		spaceAttributesDB.NewDB(conn, common),
 		spaceUserAttributesDB.NewDB(conn, common),
 		userAttributesDB.NewDB(conn, common),
 		userUserAttributesDB.NewDB(conn, common),
+		pluginsDB.NewDB(conn, common),
 	), nil
 }

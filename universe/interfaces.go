@@ -326,36 +326,19 @@ type Asset3d interface {
 	LoadFromEntry(entry *entry.Asset3d) error
 }
 
-type Plugin interface {
-	IDer
-	Initializer
-
-	GetName() string
-	SetName(name string, updateDB bool) error
-
-	GetOptions() *entry.PluginOptions
-	SetOptions(modifyFn modify.Fn[entry.PluginOptions], updateDB bool) error
-
-	GetDescription() *string
-	SetDescription(description *string, updateDB bool) error
-
-	GetEntry() *entry.Plugin
-	LoadFromEntry(entry *entry.Plugin) error
-}
-
-type Plugins interface {
+type Attributes interface {
 	Initializer
 	LoadSaver
 	APIRegister
 
-	CreatePlugin(pluginID uuid.UUID) (Plugin, error)
+	CreateAttribute(attributeId entry.AttributeID) (Attribute, error)
 
-	GetPlugin(pluginID uuid.UUID) (Plugin, bool)
-	GetPlugins() map[uuid.UUID]Plugin
-	AddPlugin(plugin Plugin, updateDB bool) error
-	AddPlugins(plugins []Plugin, updateDB bool) error
-	RemovePlugin(plugin Plugin, updateDB bool) error
-	RemovePlugins(plugins []Plugin, updateDB bool) error
+	GetAttribute(attributeID entry.AttributeID) (Attribute, bool)
+	GetAttributes() map[entry.AttributeID]Attribute
+	AddAttribute(attribute Attribute, updateDB bool) error
+	AddAttributes(attributes []Attribute, updateDB bool) error
+	RemoveAttribute(attribute Attribute, updateDB bool) error
+	RemoveAttributes(attributes []Attribute, updateDB bool) error
 }
 
 type Attribute interface {
@@ -375,17 +358,34 @@ type Attribute interface {
 	LoadFromEntry(entry *entry.Attribute) error
 }
 
-type Attributes interface {
+type Plugins interface {
 	Initializer
 	LoadSaver
 	APIRegister
 
-	CreateAttribute(attributeId entry.AttributeID) (Attribute, error)
+	CreatePlugin(pluginID uuid.UUID) (Plugin, error)
 
-	GetAttribute(attributeID entry.AttributeID) (Attribute, bool)
-	GetAttributes() map[entry.AttributeID]Attribute
-	AddAttribute(attribute Attribute, updateDB bool) error
-	AddAttributes(attributes []Attribute, updateDB bool) error
-	RemoveAttribute(attribute Attribute, updateDB bool) error
-	RemoveAttributes(attributes []Attribute, updateDB bool) error
+	GetPlugin(pluginID uuid.UUID) (Plugin, bool)
+	GetPlugins() map[uuid.UUID]Plugin
+	AddPlugin(plugin Plugin, updateDB bool) error
+	AddPlugins(plugins []Plugin, updateDB bool) error
+	RemovePlugin(plugin Plugin, updateDB bool) error
+	RemovePlugins(plugins []Plugin, updateDB bool) error
+}
+
+type Plugin interface {
+	IDer
+	Initializer
+
+	GetName() string
+	SetName(name string, updateDB bool) error
+
+	GetOptions() *entry.PluginOptions
+	SetOptions(modifyFn modify.Fn[entry.PluginOptions], updateDB bool) error
+
+	GetDescription() *string
+	SetDescription(description *string, updateDB bool) error
+
+	GetEntry() *entry.Plugin
+	LoadFromEntry(entry *entry.Plugin) error
 }

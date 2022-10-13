@@ -2,13 +2,13 @@ package space
 
 import (
 	"github.com/gorilla/websocket"
-	"github.com/momentum-xyz/ubercontroller/utils"
-	"github.com/momentum-xyz/ubercontroller/utils/modify"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
 func (s *Space) GetSpaceAttributeValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool) {
@@ -53,7 +53,11 @@ func (s *Space) SetSpaceAttributeValue(
 	payload.Value = modifyFn(payload.Value)
 
 	if updateDB {
-		panic("implement")
+		if err := s.db.SpaceAttributesUpdateSpaceAttributeValue(
+			s.ctx, attributeID.PluginID, attributeID.Name, s.id, payload.Value,
+		); err != nil {
+			return errors.WithMessage(err, "failed to udpate db")
+		}
 	}
 
 	return nil
@@ -73,7 +77,11 @@ func (s *Space) SetSpaceAttributeOptions(
 	payload.Options = modifyFn(payload.Options)
 
 	if updateDB {
-		panic("implement")
+		if err := s.db.SpaceAttributesUpdateSpaceAttributeOptions(
+			s.ctx, attributeID.PluginID, attributeID.Name, s.id, payload.Options,
+		); err != nil {
+			return errors.WithMessage(err, "failed to update db")
+		}
 	}
 
 	return nil
@@ -87,10 +95,9 @@ func (s *Space) loadSpaceAttributes() error {
 
 	node := universe.GetNode()
 	for _, instance := range entries {
-		attributeID := entry.NewAttributeID(instance.PluginID, instance.Name)
-		if _, ok := node.GetAttributes().GetAttribute(attributeID); ok {
+		if _, ok := node.GetAttributes().GetAttribute(instance.AttributeID); ok {
 			s.spaceAttributes.Store(
-				entry.NewSpaceAttributeID(attributeID, instance.SpaceID),
+				instance.SpaceAttributeID,
 				entry.NewAttributePayload(instance.Value, instance.Options),
 			)
 		}
@@ -107,10 +114,9 @@ func (s *Space) loadSpaceUserAttributes() error {
 
 	node := universe.GetNode()
 	for _, instance := range entries {
-		attributeID := entry.NewAttributeID(instance.PluginID, instance.Name)
-		if _, ok := node.GetAttributes().GetAttribute(attributeID); ok {
+		if _, ok := node.GetAttributes().GetAttribute(instance.AttributeID); ok {
 			s.spaceUserAttributes.Store(
-				entry.NewSpaceUserAttributeID(attributeID, instance.SpaceID, instance.UserID),
+				entry.NewSpaceUserAttributeID(instance.AttributeID, instance.SpaceID, instance.UserID),
 				entry.NewAttributePayload(instance.Value, instance.Options),
 			)
 		}
