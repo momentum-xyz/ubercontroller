@@ -62,7 +62,7 @@ func (n *Node) apiUsersCheck(c *gin.Context) {
 		UserTypeID: userEntry.UserTypeID.String(),
 		Profile:    outProfile,
 	}
-	if len(idToken.Web3Address) > 0 {
+	if idToken.Web3Address != "" {
 		outBody.Wallet = &idToken.Web3Address
 	}
 	if userProfileEntry.Name != nil {
@@ -115,7 +115,7 @@ func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken
 	}
 
 	userEntry = &entry.User{
-		UserID:  &userID,
+		UserID:  userID,
 		Profile: &entry.UserProfile{},
 	}
 
@@ -172,7 +172,7 @@ func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken
 					universe.GetKusamaPluginID(),
 					"wallet",
 				),
-				*userEntry.UserID,
+				userEntry.UserID,
 			),
 		}
 

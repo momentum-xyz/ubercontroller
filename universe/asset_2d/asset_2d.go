@@ -30,13 +30,13 @@ func NewAsset2d(id uuid.UUID, db database.DB) *Asset2d {
 	return &Asset2d{
 		db: db,
 		entry: &entry.Asset2d{
-			Asset2dID: &id,
+			Asset2dID: id,
 		},
 	}
 }
 
 func (a *Asset2d) GetID() uuid.UUID {
-	return *a.entry.Asset2dID
+	return a.entry.Asset2dID
 }
 
 func (a *Asset2d) Initialize(ctx context.Context) error {
@@ -55,7 +55,7 @@ func (a *Asset2d) GetName() string {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
-	return *a.entry.Name
+	return a.entry.Name
 }
 
 func (a *Asset2d) SetName(name string, updateDB bool) error {
@@ -63,12 +63,12 @@ func (a *Asset2d) SetName(name string, updateDB bool) error {
 	defer a.mu.Unlock()
 
 	if updateDB {
-		if err := a.db.Assets2dUpdateAssetName(a.ctx, *a.entry.Asset2dID, name); err != nil {
+		if err := a.db.Assets2dUpdateAssetName(a.ctx, a.entry.Asset2dID, name); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
 
-	*a.entry.Name = name
+	a.entry.Name = name
 
 	return nil
 }
@@ -87,7 +87,7 @@ func (a *Asset2d) SetOptions(modifyFn modify.Fn[entry.Asset2dOptions], updateDB 
 	options := modifyFn(a.entry.Options)
 
 	if updateDB {
-		if err := a.db.Assets2dUpdateAssetOptions(a.ctx, *a.entry.Asset2dID, options); err != nil {
+		if err := a.db.Assets2dUpdateAssetOptions(a.ctx, a.entry.Asset2dID, options); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}

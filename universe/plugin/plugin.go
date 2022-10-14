@@ -120,27 +120,28 @@ func (p *Plugin) SetDescription(description *string, updateDB bool) error {
 }
 
 func (p *Plugin) GetEntry() *entry.Plugin {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	p.mu.RLock()
+	defer p.mu.RUnlock()
 
 	return &entry.Plugin{
-		PluginID:    utils.GetPTR(p.id),
+		PluginID:    p.id,
+		PluginName:  p.name,
 		Description: p.description,
 		Options:     p.options,
 	}
 }
 
 func (p *Plugin) LoadFromEntry(entry *entry.Plugin) error {
-	p.id = *entry.PluginID
+	p.id = entry.PluginID
 
 	var err error
 	if entry.Options != nil {
 		if p.object, p.definedAttributes, p.newInstance, err = p.resolveSharedLibrary(entry.Options.File); err != nil {
-			return err
+			return errors.WithMessage(err, "failed to resolve shared library")
 		}
 	}
 
-	if err = p.SetName(*entry.PluginName, false); err != nil {
+	if err = p.SetName(entry.PluginName, false); err != nil {
 		return errors.WithMessage(err, "failed to set name")
 	}
 	if err = p.SetDescription(entry.Description, false); err != nil {

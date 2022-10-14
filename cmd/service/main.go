@@ -10,7 +10,7 @@ import (
 
 	assets2dDB "github.com/momentum-xyz/ubercontroller/database/assets_2d"
 	assets3dDB "github.com/momentum-xyz/ubercontroller/database/assets_3d"
-	attributesDB "github.com/momentum-xyz/ubercontroller/database/attribute_types"
+	attributesTypeDB "github.com/momentum-xyz/ubercontroller/database/attribute_types"
 	commonDB "github.com/momentum-xyz/ubercontroller/database/common"
 	nodeAttributesDB "github.com/momentum-xyz/ubercontroller/database/node_attributes"
 	nodesDB "github.com/momentum-xyz/ubercontroller/database/nodes"
@@ -122,7 +122,7 @@ func createNode(ctx context.Context, cfg *config.Config, db database.DB) (univer
 	}
 
 	node := node.NewNode(
-		*nodeEntry.SpaceID,
+		nodeEntry.SpaceID,
 		cfg,
 		db,
 		worlds,
@@ -194,7 +194,7 @@ func createDB(conn *pgxpool.Pool) (database.DB, error) {
 		assets3dDB.NewDB(conn, common),
 		spaceTypesDB.NewDB(conn, common),
 		userTypesDB.NewDB(conn, common),
-		attributesDB.NewDB(conn, common),
+		attributesTypeDB.NewDB(conn, common),
 		nodeAttributesDB.NewDB(conn, common),
 		spaceAttributesDB.NewDB(conn, common),
 		spaceUserAttributesDB.NewDB(conn, common),

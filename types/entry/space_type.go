@@ -7,11 +7,11 @@ import (
 )
 
 type SpaceType struct {
-	SpaceTypeID   *uuid.UUID    `db:"space_type_id"`
+	SpaceTypeID   uuid.UUID     `db:"space_type_id"`
 	Asset2dID     *uuid.UUID    `db:"asset_2d_id"`
 	Asset3dID     *uuid.UUID    `db:"asset_3d_id"`
-	SpaceTypeName *string       `db:"space_type_name"`
-	CategoryName  *string       `db:"category_name"`
+	SpaceTypeName string        `db:"space_type_name"`
+	CategoryName  string        `db:"category_name"`
 	Description   *string       `db:"description"`
 	Options       *SpaceOptions `db:"options"`
 	CreatedAt     *time.Time    `db:"created_at"`

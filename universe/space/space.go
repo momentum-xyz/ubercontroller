@@ -287,11 +287,11 @@ func (s *Space) GetEffectiveOptions() *entry.SpaceOptions {
 }
 
 func (s *Space) GetEntry() *entry.Space {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
 	entry := &entry.Space{
-		SpaceID:  &s.id,
+		SpaceID:  s.id,
 		OwnerID:  &s.ownerID,
 		Options:  s.options,
 		Position: s.position,
@@ -334,10 +334,10 @@ func (s *Space) Update(recursive bool) error {
 }
 
 func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
-	s.log.Debugf("Loading space %s...", *entry.SpaceID)
+	s.log.Debugf("Loading space %s...", entry.SpaceID)
 
-	if *entry.SpaceID != s.GetID() {
-		return errors.Errorf("space ids mismatch: %s != %s", entry.SpaceID, s.GetID())
+	if entry.SpaceID != s.id {
+		return errors.Errorf("space ids mismatch: %s != %s", entry.SpaceID, s.id)
 	}
 
 	if err := s.loadSelfData(entry); err != nil {
@@ -353,20 +353,20 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 		return nil
 	}
 
-	entries, err := s.db.SpacesGetSpacesByParentID(s.ctx, s.GetID())
+	entries, err := s.db.SpacesGetSpacesByParentID(s.ctx, s.id)
 	if err != nil {
-		return errors.WithMessagef(err, "failed to get spaces by parent id: %s", s.GetID())
+		return errors.WithMessagef(err, "failed to get spaces by parent id: %s", s.id)
 	}
 
 	for i := range entries {
-		space, err := s.CreateSpace(*entries[i].SpaceID)
+		space, err := s.CreateSpace(entries[i].SpaceID)
 		if err != nil {
 			return errors.WithMessagef(err, "failed to create new space: %s", entries[i].SpaceID)
 		}
 		if err := space.LoadFromEntry(entries[i], recursive); err != nil {
 			return errors.WithMessagef(err, "failed to load space from entry: %s", entries[i].SpaceID)
 		}
-		s.Children.Store(*entries[i].SpaceID, space)
+		s.Children.Store(entries[i].SpaceID, space)
 	}
 
 	return nil
@@ -379,7 +379,6 @@ func (s *Space) loadSelfData(spaceEntry *entry.Space) error {
 	if err := s.SetPosition(spaceEntry.Position, false); err != nil {
 		return errors.WithMessage(err, "failed to set position")
 	}
-
 	if err := s.SetOptions(modify.ReplaceWith(spaceEntry.Options), false); err != nil {
 		return errors.WithMessage(err, "failed to set options")
 	}

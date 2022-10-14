@@ -114,14 +114,14 @@ func (p *Plugins) Load() error {
 	}
 
 	for i := range entries {
-		plugin, err := p.CreatePlugin(*entries[i].PluginID)
+		plugin, err := p.CreatePlugin(entries[i].PluginID)
 		if err != nil {
 			return errors.WithMessagef(err, "failed to create new plugin: %s", entries[i].PluginID)
 		}
 		if err := plugin.LoadFromEntry(entries[i]); err != nil {
 			return errors.WithMessagef(err, "failed to load plugin from entry: %s", entries[i].PluginID)
 		}
-		p.plugins.Store(*entries[i].PluginID, plugin)
+		p.plugins.Store(entries[i].PluginID, plugin)
 	}
 
 	universe.GetNode().AddAPIRegister(p)

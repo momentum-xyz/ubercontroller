@@ -166,14 +166,14 @@ func (a *Assets3d) Load() error {
 	}
 
 	for i := range entries {
-		asset3d, err := a.CreateAsset3d(*entries[i].Asset3dID)
+		asset3d, err := a.CreateAsset3d(entries[i].Asset3dID)
 		if err != nil {
 			return errors.WithMessagef(err, "failed to create new asset 3d: %s", entries[i].Asset3dID)
 		}
 		if err := asset3d.LoadFromEntry(entries[i]); err != nil {
 			return errors.WithMessagef(err, "failed to load asset 3d from entry: %s", entries[i].Asset3dID)
 		}
-		a.assets.Store(*entries[i].Asset3dID, asset3d)
+		a.assets.Store(entries[i].Asset3dID, asset3d)
 	}
 
 	universe.GetNode().AddAPIRegister(a)

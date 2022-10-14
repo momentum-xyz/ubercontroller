@@ -30,13 +30,13 @@ func NewAsset3d(id uuid.UUID, db database.DB) *Asset3d {
 	return &Asset3d{
 		db: db,
 		entry: &entry.Asset3d{
-			Asset3dID: &id,
+			Asset3dID: id,
 		},
 	}
 }
 
 func (a *Asset3d) GetID() uuid.UUID {
-	return *a.entry.Asset3dID
+	return a.entry.Asset3dID
 }
 
 func (a *Asset3d) Initialize(ctx context.Context) error {
@@ -55,7 +55,7 @@ func (a *Asset3d) GetName() string {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
-	return *a.entry.Name
+	return a.entry.Name
 }
 
 func (a *Asset3d) SetName(name string, updateDB bool) error {
@@ -63,12 +63,12 @@ func (a *Asset3d) SetName(name string, updateDB bool) error {
 	defer a.mu.Unlock()
 
 	if updateDB {
-		if err := a.db.Assets3dUpdateAssetName(a.ctx, *a.entry.Asset3dID, name); err != nil {
+		if err := a.db.Assets3dUpdateAssetName(a.ctx, a.entry.Asset3dID, name); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
 
-	*a.entry.Name = name
+	a.entry.Name = name
 
 	return nil
 }
@@ -87,7 +87,7 @@ func (a *Asset3d) SetOptions(modifyFn modify.Fn[entry.Asset3dOptions], updateDB 
 	options := modifyFn(a.entry.Options)
 
 	if updateDB {
-		if err := a.db.Assets3dUpdateAssetOptions(a.ctx, *a.entry.Asset3dID, options); err != nil {
+		if err := a.db.Assets3dUpdateAssetOptions(a.ctx, a.entry.Asset3dID, options); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}

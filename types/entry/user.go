@@ -7,7 +7,7 @@ import (
 )
 
 type User struct {
-	UserID     *uuid.UUID   `db:"user_id"`
+	UserID     uuid.UUID    `db:"user_id"`
 	UserTypeID *uuid.UUID   `db:"user_type_id"`
 	Profile    *UserProfile `db:"profile"`
 	Options    *UserOptions `db:"options"`

@@ -166,14 +166,14 @@ func (ut *UserTypes) Load() error {
 	}
 
 	for i := range entries {
-		userType, err := ut.CreateUserType(*entries[i].UserTypeID)
+		userType, err := ut.CreateUserType(entries[i].UserTypeID)
 		if err != nil {
 			return errors.WithMessagef(err, "failed to create new user type: %s", entries[i].UserTypeID)
 		}
 		if err := userType.LoadFromEntry(entries[i]); err != nil {
-			return errors.WithMessagef(err, "failed to load user type from entry: %s", *entries[i].UserTypeID)
+			return errors.WithMessagef(err, "failed to load user type from entry: %s", entries[i].UserTypeID)
 		}
-		ut.userTypes.Store(*entries[i].UserTypeID, userType)
+		ut.userTypes.Store(entries[i].UserTypeID, userType)
 	}
 
 	universe.GetNode().AddAPIRegister(ut)

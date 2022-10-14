@@ -2,12 +2,12 @@ package database
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/utils/modify"
 
 	"github.com/google/uuid"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
 type DB interface {

@@ -129,7 +129,7 @@ func (u *UserType) SetOptions(modifyFn modify.Fn[entry.UserOptions], updateDB bo
 				continue
 			}
 			if err := user.Update(); err != nil {
-				return errors.WithMessagef(err, "failed to update user: %v", user.GetID().String())
+				return errors.WithMessagef(err, "failed to update user: %s", user.GetID())
 			}
 		}
 	}
@@ -138,21 +138,21 @@ func (u *UserType) SetOptions(modifyFn modify.Fn[entry.UserOptions], updateDB bo
 }
 
 func (u *UserType) GetEntry() *entry.UserType {
-	u.mu.Lock()
-	defer u.mu.Unlock()
+	u.mu.RLock()
+	defer u.mu.RUnlock()
 
 	return &entry.UserType{
-		UserTypeID:   utils.GetPTR(u.id),
-		UserTypeName: &u.name,
+		UserTypeID:   u.id,
+		UserTypeName: u.name,
 		Description:  u.description,
 		Options:      u.options,
 	}
 }
 
 func (u *UserType) LoadFromEntry(entry *entry.UserType) error {
-	u.id = *entry.UserTypeID
+	u.id = entry.UserTypeID
 
-	if err := u.SetName(*entry.UserTypeName, false); err != nil {
+	if err := u.SetName(entry.UserTypeName, false); err != nil {
 		return errors.WithMessage(err, "failed to set name")
 	}
 	if err := u.SetDescription(entry.Description, false); err != nil {

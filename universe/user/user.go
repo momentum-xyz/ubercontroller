@@ -2,8 +2,16 @@ package user
 
 import (
 	"context"
+	"sync"
+	"sync/atomic"
+	"time"
+	"unsafe"
+
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
+
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/pkg/message"
@@ -12,12 +20,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/world"
 	"github.com/momentum-xyz/ubercontroller/utils"
-	"github.com/pkg/errors"
-	"go.uber.org/zap"
-	"sync"
-	"sync/atomic"
-	"time"
-	"unsafe"
 )
 
 type User struct {
@@ -110,7 +112,7 @@ func (u *User) Load() error {
 }
 
 func (u *User) LoadFromEntry(entry *entry.User) error {
-	if *entry.UserID != u.GetID() {
+	if entry.UserID != u.GetID() {
 		return errors.Errorf("user ids mismatch: %s != %s", entry.UserID, u.GetID())
 	}
 

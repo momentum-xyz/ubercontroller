@@ -116,8 +116,8 @@ func (a *AttributeType) SetDescription(description *string, updateDB bool) error
 }
 
 func (a *AttributeType) GetEntry() *entry.AttributeType {
-	a.mu.Lock()
-	defer a.mu.Unlock()
+	a.mu.RLock()
+	defer a.mu.RLock()
 
 	return &entry.AttributeType{
 		AttributeTypeID: a.id,

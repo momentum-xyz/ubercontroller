@@ -165,14 +165,14 @@ func (s *SpaceTypes) Load() error {
 	}
 
 	for i := range entries {
-		spaceType, err := s.CreateSpaceType(*entries[i].SpaceTypeID)
+		spaceType, err := s.CreateSpaceType(entries[i].SpaceTypeID)
 		if err != nil {
 			return errors.WithMessagef(err, "failed to create new space type: %s", entries[i].SpaceTypeID)
 		}
 		if err := spaceType.LoadFromEntry(entries[i]); err != nil {
-			return errors.WithMessagef(err, "failed to load space type from entry: %s", *entries[i].SpaceTypeID)
+			return errors.WithMessagef(err, "failed to load space type from entry: %s", entries[i].SpaceTypeID)
 		}
-		s.spaceTypes.Store(*entries[i].SpaceTypeID, spaceType)
+		s.spaceTypes.Store(entries[i].SpaceTypeID, spaceType)
 	}
 
 	universe.GetNode().AddAPIRegister(s)

@@ -140,7 +140,7 @@ func (s *SpaceType) SetAsset2d(asset2d universe.Asset2d, updateDB bool) error {
 
 	if updateDB {
 		if err := s.db.Assets2dUpsertAsset(s.ctx, asset2d.GetEntry()); err != nil {
-			return errors.WithMessage(err, "failed to upsert asset 2d")
+			return errors.WithMessage(err, "failed to update db")
 		}
 	}
 
@@ -162,7 +162,7 @@ func (s *SpaceType) SetAsset3d(asset3d universe.Asset3d, updateDB bool) error {
 
 	if updateDB {
 		if err := s.db.Assets3dUpsertAsset(s.ctx, asset3d.GetEntry()); err != nil {
-			return errors.WithMessage(err, "failed to upsert asset 3d")
+			return errors.WithMessage(err, "failed to update db")
 		}
 	}
 
@@ -214,9 +214,9 @@ func (s *SpaceType) GetEntry() *entry.SpaceType {
 	defer s.mu.Unlock()
 
 	entry := &entry.SpaceType{
-		SpaceTypeID:   utils.GetPTR(s.id),
-		SpaceTypeName: &s.name,
-		CategoryName:  &s.categoryName,
+		SpaceTypeID:   s.id,
+		SpaceTypeName: s.name,
+		CategoryName:  s.categoryName,
 		Description:   s.description,
 		Options:       s.options,
 	}
@@ -231,23 +231,22 @@ func (s *SpaceType) GetEntry() *entry.SpaceType {
 }
 
 func (s *SpaceType) LoadFromEntry(entry *entry.SpaceType) error {
-	node := universe.GetNode()
+	s.id = entry.SpaceTypeID
 
-	s.id = *entry.SpaceTypeID
-	if err := s.SetName(*entry.SpaceTypeName, false); err != nil {
+	if err := s.SetName(entry.SpaceTypeName, false); err != nil {
 		return errors.WithMessage(err, "failed to set name")
 	}
-	if err := s.SetCategoryName(*entry.CategoryName, false); err != nil {
+	if err := s.SetCategoryName(entry.CategoryName, false); err != nil {
 		return errors.WithMessage(err, "failed to set category name")
 	}
 	if err := s.SetDescription(entry.Description, false); err != nil {
 		return errors.WithMessage(err, "failed to set description")
 	}
-
 	if err := s.SetOptions(modify.MergeWith(entry.Options), false); err != nil {
 		return errors.WithMessage(err, "failed to set options")
 	}
 
+	node := universe.GetNode()
 	if entry.Asset2dID != nil {
 		asset2d, ok := node.GetAssets2d().GetAsset2d(*entry.Asset2dID)
 		if !ok {

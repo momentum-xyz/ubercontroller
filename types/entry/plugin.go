@@ -7,8 +7,8 @@ import (
 )
 
 type Plugin struct {
-	PluginID    *uuid.UUID     `db:"plugin_id"`
-	PluginName  *string        `db:"plugin_name"`
+	PluginID    uuid.UUID      `db:"plugin_id"`
+	PluginName  string         `db:"plugin_name"`
 	Description *string        `db:"description"`
 	Options     *PluginOptions `db:"options"`
 	CreatedAt   *time.Time     `db:"created_at"`

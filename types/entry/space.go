@@ -17,7 +17,7 @@ const (
 )
 
 type Space struct {
-	SpaceID     *uuid.UUID    `db:"space_id"`
+	SpaceID     uuid.UUID     `db:"space_id"`
 	SpaceTypeID *uuid.UUID    `db:"space_type_id"`
 	OwnerID     *uuid.UUID    `db:"owner_id"`
 	ParentID    *uuid.UUID    `db:"parent_id"`
