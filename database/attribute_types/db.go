@@ -14,22 +14,20 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 )
 
-// TODO: rename "attribute" table to "attribute_type"
-
 const (
-	getAttributeTypesQuery = `SELECT * FROM attribute;`
+	getAttributeTypesQuery = `SELECT * FROM attribute_type;`
 
-	removeAttributeTypeByNameQuery                  = `DELETE FROM attribute WHERE attribute_name = $1;`
-	removeAttributeTypesByNamesQuery                = `DELETE FROM attribute WHERE attribute_name IN ($1);`
-	removeAttributeTypesByPluginIDQuery             = `DELETE FROM attribute WHERE plugin_id = $1;`
-	removeAttributeTypeByPluginIDAndNameQuery       = `DELETE FROM attribute WHERE plugin_id = $1 AND attribute_name = $2;`
-	removeAttributeTypesByPluginIdQueryAndNameQuery = `DELETE FROM attribute WHERE plugin_id = $1 AND attribute_name IN ($2);`
+	removeAttributeTypeByNameQuery                  = `DELETE FROM attribute_type WHERE attribute_name = $1;`
+	removeAttributeTypesByNamesQuery                = `DELETE FROM attribute_type WHERE attribute_name IN ($1);`
+	removeAttributeTypesByPluginIDQuery             = `DELETE FROM attribute_type WHERE plugin_id = $1;`
+	removeAttributeTypeByPluginIDAndNameQuery       = `DELETE FROM attribute_type WHERE plugin_id = $1 AND attribute_name = $2;`
+	removeAttributeTypesByPluginIdQueryAndNameQuery = `DELETE FROM attribute_type WHERE plugin_id = $1 AND attribute_name IN ($2);`
 
-	updateAttributeTypeNameQuery        = `UPDATE attribute SET attribute_name = $3 WHERE plugin_id = $1 AND attribute_name = $2;`
-	updateAttributeTypeDescriptionQuery = `UPDATE attribute SET description = $3 WHERE plugin_id = $1 AND attribute_name = $2;`
-	updateAttributeTypeOptionsQuery     = `UPDATE attribute SET options = $3 WHERE plugin_id = $1 AND attribute_name = $2;`
+	updateAttributeTypeNameQuery        = `UPDATE attribute_type SET attribute_name = $3 WHERE plugin_id = $1 AND attribute_name = $2;`
+	updateAttributeTypeDescriptionQuery = `UPDATE attribute_type SET description = $3 WHERE plugin_id = $1 AND attribute_name = $2;`
+	updateAttributeTypeOptionsQuery     = `UPDATE attribute_type SET options = $3 WHERE plugin_id = $1 AND attribute_name = $2;`
 
-	upsertAttributeTypeQuery = `INSERT INTO attribute
+	upsertAttributeTypeQuery = `INSERT INTO attribute_type
 									(plugin_id, attribute_name, description, options)
 								VALUES
 									($1, $2, $3, $4)

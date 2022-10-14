@@ -14,22 +14,20 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 )
 
-// TODO: rename "node_attributes" table to "node_attribute"
-
 const (
-	getNodeAttributesQuery                   = `SELECT * FROM node_attributes;`
-	getNodeAttributeByPluginIDAndName        = `SELECT * FROM node_attributes WHERE plugin_id = $1 AND attribute_name = $2;`
-	getNodeAttributeValueByPluginIDAndName   = `SELECT value FROM node_attributes WHERE plugin_id = $1 AND attribute_name = $2;`
-	getNodeAttributeOptionsByPluginIDAndName = `SELECT options FROM node_attributes WHERE plugin_id = $1 AND attribute_name = $2;`
+	getNodeAttributesQuery                   = `SELECT * FROM node_attribute;`
+	getNodeAttributeByPluginIDAndName        = `SELECT * FROM node_attribute WHERE plugin_id = $1 AND attribute_name = $2;`
+	getNodeAttributeValueByPluginIDAndName   = `SELECT value FROM node_attribute WHERE plugin_id = $1 AND attribute_name = $2;`
+	getNodeAttributeOptionsByPluginIDAndName = `SELECT options FROM node_attribute WHERE plugin_id = $1 AND attribute_name = $2;`
 
-	updateNodeAttributeValueQuery             = `UPDATE node_attributes SET value = $3 WHERE plugin_id = $1 AND attribute_name = $2;`
-	updateNodeAttributeOptionsQuery           = `UPDATE node_attributes SET options = $3 WHERE plugin_id = $1 AND attribute_name = $2;`
-	removeNodeAttributeByNameQuery            = `DELETE FROM node_attributes WHERE attribute_name = $1;`
-	removeNodeAttributesByNamesQuery          = `DELETE FROM node_attributes WHERE attribute_name IN ($1);`
-	removeNodeAttributesByPluginIdQuery       = `DELETE FROM node_attributes WHERE plugin_id = $1;`
-	removeNodeAttributeByPluginIdAndNameQuery = `DELETE FROM node_attributes WHERE plugin_id = $1 AND attribute_name = $2;`
+	updateNodeAttributeValueQuery             = `UPDATE node_attribute SET value = $3 WHERE plugin_id = $1 AND attribute_name = $2;`
+	updateNodeAttributeOptionsQuery           = `UPDATE node_attribute SET options = $3 WHERE plugin_id = $1 AND attribute_name = $2;`
+	removeNodeAttributeByNameQuery            = `DELETE FROM node_attribute WHERE attribute_name = $1;`
+	removeNodeAttributesByNamesQuery          = `DELETE FROM node_attribute WHERE attribute_name IN ($1);`
+	removeNodeAttributesByPluginIdQuery       = `DELETE FROM node_attribute WHERE plugin_id = $1;`
+	removeNodeAttributeByPluginIdAndNameQuery = `DELETE FROM node_attribute WHERE plugin_id = $1 AND attribute_name = $2;`
 
-	upsertNodeAttributeQuery = `INSERT INTO node_attributes
+	upsertNodeAttributeQuery = `INSERT INTO node_attribute
 									(plugin_id, attribute_name, value, options)
 								VALUES
 									($1, $2, $3, $4)
