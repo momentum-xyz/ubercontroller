@@ -10,11 +10,11 @@ import (
 
 	assets2dDB "github.com/momentum-xyz/ubercontroller/database/assets_2d"
 	assets3dDB "github.com/momentum-xyz/ubercontroller/database/assets_3d"
-	attributesDB "github.com/momentum-xyz/ubercontroller/database/attribute"
+	attributesDB "github.com/momentum-xyz/ubercontroller/database/attribute_types"
 	commonDB "github.com/momentum-xyz/ubercontroller/database/common"
 	nodeAttributesDB "github.com/momentum-xyz/ubercontroller/database/node_attributes"
 	nodesDB "github.com/momentum-xyz/ubercontroller/database/nodes"
-	pluginsDB "github.com/momentum-xyz/ubercontroller/database/plugin"
+	pluginsDB "github.com/momentum-xyz/ubercontroller/database/plugins"
 	spaceAttributesDB "github.com/momentum-xyz/ubercontroller/database/space_attributes"
 	spaceTypesDB "github.com/momentum-xyz/ubercontroller/database/space_types"
 	spaceUserAttributesDB "github.com/momentum-xyz/ubercontroller/database/space_user_attributes"
@@ -36,7 +36,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/api"
 	"github.com/momentum-xyz/ubercontroller/universe/assets_2d"
 	"github.com/momentum-xyz/ubercontroller/universe/assets_3d"
-	"github.com/momentum-xyz/ubercontroller/universe/attributes"
+	"github.com/momentum-xyz/ubercontroller/universe/attribute_types"
 	"github.com/momentum-xyz/ubercontroller/universe/node"
 	"github.com/momentum-xyz/ubercontroller/universe/plugins"
 	"github.com/momentum-xyz/ubercontroller/universe/space_types"
@@ -113,7 +113,7 @@ func createNode(ctx context.Context, cfg *config.Config, db database.DB) (univer
 	assets3d := assets_3d.NewAssets3d(db)
 	spaceTypes := space_types.NewSpaceTypes(db)
 	userTypes := user_types.NewUserTypes(db)
-	attributes := attributes.NewAttributes(db)
+	attributes := attribute_types.NewAttributeTypes(db)
 	plugins := plugins.NewPlugins(db)
 
 	nodeEntry, err := db.NodesGetNode(ctx)

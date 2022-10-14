@@ -25,7 +25,7 @@ func (n *Node) GetNodeAttributeOptions(attributeID entry.AttributeID) (*entry.At
 }
 
 func (n *Node) GetNodeAttributeEffectiveOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool) {
-	attr, ok := n.GetAttributes().GetAttribute(attributeID)
+	attr, ok := n.GetAttributeTypes().GetAttributeType(entry.AttributeTypeID(attributeID))
 	if !ok {
 		return nil, false
 	}
@@ -50,9 +50,7 @@ func (n *Node) SetNodeAttributeValue(
 	payload.Value = modifyFn(payload.Value)
 
 	if updateDB {
-		if err := n.db.NodeAttributesUpdateNodeAttributeValue(
-			n.ctx, attributeID.PluginID, attributeID.Name, payload.Value,
-		); err != nil {
+		if err := n.db.NodeAttributesUpdateNodeAttributeValue(n.ctx, attributeID, payload.Value); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -74,9 +72,7 @@ func (n *Node) SetNodeAttributeOptions(
 	payload.Options = modifyFn(payload.Options)
 
 	if updateDB {
-		if err := n.db.NodeAttributesUpdateNodeAttributeOptions(
-			n.ctx, attributeID.PluginID, attributeID.Name, payload.Options,
-		); err != nil {
+		if err := n.db.NodeAttributesUpdateNodeAttributeOptions(n.ctx, attributeID, payload.Options); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -91,7 +87,7 @@ func (n *Node) loadNodeAttributes() error {
 	}
 
 	for _, instance := range entries {
-		if _, ok := n.GetAttributes().GetAttribute(instance.AttributeID); ok {
+		if _, ok := n.GetAttributeTypes().GetAttributeType(entry.AttributeTypeID(instance.AttributeID)); ok {
 			n.nodeAttributes.Store(
 				instance.AttributeID,
 				entry.NewAttributePayload(instance.Value, instance.Options),

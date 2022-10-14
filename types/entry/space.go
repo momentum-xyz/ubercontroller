@@ -53,20 +53,27 @@ type SpaceAttributeID struct {
 	SpaceID uuid.UUID `db:"space_id"`
 }
 
-type SpaceAttribute struct {
-	SpaceAttributeID
-	AttributePayload
-}
-
 type SpaceUserAttributeID struct {
 	AttributeID
 	SpaceID uuid.UUID `db:"space_id"`
 	UserID  uuid.UUID `db:"user_id"`
 }
 
+type SpaceAttribute struct {
+	SpaceAttributeID
+	*AttributePayload
+}
+
 type SpaceUserAttribute struct {
 	SpaceUserAttributeID
-	AttributePayload
+	*AttributePayload
+}
+
+func NewSpaceUserAttribute(spaceUserAttributeID SpaceUserAttributeID, payload *AttributePayload) *SpaceUserAttribute {
+	return &SpaceUserAttribute{
+		SpaceUserAttributeID: spaceUserAttributeID,
+		AttributePayload:     payload,
+	}
 }
 
 func NewSpaceAttributeID(attributeID AttributeID, spaceID uuid.UUID) SpaceAttributeID {

@@ -26,7 +26,7 @@ func (s *Space) GetSpaceAttributeOptions(attributeID entry.AttributeID) (*entry.
 }
 
 func (s *Space) GetSpaceAttributeEffectiveOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool) {
-	attr, ok := universe.GetNode().GetAttributes().GetAttribute(attributeID)
+	attr, ok := universe.GetNode().GetAttributeTypes().GetAttributeType(entry.AttributeTypeID(attributeID))
 	if !ok {
 		return nil, false
 	}
@@ -52,7 +52,7 @@ func (s *Space) SetSpaceAttributeValue(
 
 	if updateDB {
 		if err := s.db.SpaceAttributesUpdateSpaceAttributeValue(
-			s.ctx, attributeID.PluginID, attributeID.Name, s.id, payload.Value,
+			s.ctx, entry.NewSpaceAttributeID(attributeID, s.id), payload.Value,
 		); err != nil {
 			return errors.WithMessage(err, "failed to udpate db")
 		}
@@ -76,7 +76,7 @@ func (s *Space) SetSpaceAttributeOptions(
 
 	if updateDB {
 		if err := s.db.SpaceAttributesUpdateSpaceAttributeOptions(
-			s.ctx, attributeID.PluginID, attributeID.Name, s.id, payload.Options,
+			s.ctx, entry.NewSpaceAttributeID(attributeID, s.id), payload.Options,
 		); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
@@ -93,7 +93,7 @@ func (s *Space) loadSpaceAttributes() error {
 
 	node := universe.GetNode()
 	for _, instance := range entries {
-		if _, ok := node.GetAttributes().GetAttribute(instance.AttributeID); ok {
+		if _, ok := node.GetAttributeTypes().GetAttributeType(entry.AttributeTypeID(instance.AttributeID)); ok {
 			s.spaceAttributes.Store(
 				instance.AttributeID,
 				entry.NewAttributePayload(instance.Value, instance.Options),

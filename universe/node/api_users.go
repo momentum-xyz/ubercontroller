@@ -12,7 +12,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/api"
 	"github.com/momentum-xyz/ubercontroller/universe/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils"
-	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
 func (n *Node) apiUsersCheck(c *gin.Context) {
@@ -178,30 +177,37 @@ func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken
 		}
 
 		walletAddressKey := "address"
-		valueModifyFn := func(current *entry.AttributeValue) *entry.AttributeValue {
-			if current == nil {
+		modifyFn := func(current *entry.AttributePayload) *entry.AttributePayload {
+			newValue := func() *entry.AttributeValue {
 				value := entry.NewAttributeValue()
 				(*value)[walletAddressKey] = []string{idToken.Web3Address}
 				return value
 			}
 
-			address := utils.GetFromAnyMap(*current, walletAddressKey, []any{idToken.Web3Address})
+			if current == nil {
+				return entry.NewAttributePayload(newValue(), nil)
+			}
+
+			if current.Value == nil {
+				current.Value = newValue()
+				return current
+			}
+
+			address := utils.GetFromAnyMap(*current.Value, walletAddressKey, []any{idToken.Web3Address})
 			for i := range address {
 				if address[i] == idToken.Web3Address {
 					// we don't know where address slice was coming from
-					(*current)[walletAddressKey] = address
+					(*current.Value)[walletAddressKey] = address
 					return current
 				}
 			}
 
-			(*current)[walletAddressKey] = append(address, idToken.Web3Address)
+			(*current.Value)[walletAddressKey] = append(address, idToken.Web3Address)
 
 			return current
 		}
 
-		if err := n.db.UserAttributesUpsertUserAttribute(
-			n.ctx, userAttribute, valueModifyFn, modify.Nop[entry.AttributeOptions](),
-		); err != nil {
+		if err := n.db.UserAttributesUpsertUserAttribute(n.ctx, userAttribute, modifyFn); err != nil {
 			// TODO: think about rollback
 			return nil, http.StatusInternalServerError, errors.WithMessagef(
 				err, "failed to upsert user attribute for user: %s", userEntry.UserID,

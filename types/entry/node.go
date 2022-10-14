@@ -10,7 +10,7 @@ type NodeAttributeID struct {
 
 type NodeAttribute struct {
 	NodeAttributeID
-	AttributePayload
+	*AttributePayload
 }
 
 func NewNodeAttributeID(attributeID AttributeID) NodeAttributeID {

@@ -63,7 +63,7 @@ type Node interface {
 	GetAssets3d() Assets3d
 	GetSpaceTypes() SpaceTypes
 	GetUserTypes() UserTypes
-	GetAttributes() Attributes
+	GetAttributeTypes() AttributeTypes
 	GetPlugins() Plugins
 
 	GetNodeAttributeValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool)
@@ -326,25 +326,25 @@ type Asset3d interface {
 	LoadFromEntry(entry *entry.Asset3d) error
 }
 
-type Attributes interface {
+type AttributeTypes interface {
 	Initializer
 	LoadSaver
 	APIRegister
 
-	CreateAttribute(attributeId entry.AttributeID) (Attribute, error)
+	CreateAttributeType(attributeTypeID entry.AttributeTypeID) (AttributeType, error)
 
-	GetAttribute(attributeID entry.AttributeID) (Attribute, bool)
-	GetAttributes() map[entry.AttributeID]Attribute
-	AddAttribute(attribute Attribute, updateDB bool) error
-	AddAttributes(attributes []Attribute, updateDB bool) error
-	RemoveAttribute(attribute Attribute, updateDB bool) error
-	RemoveAttributes(attributes []Attribute, updateDB bool) error
+	GetAttributeType(attributeTypeID entry.AttributeTypeID) (AttributeType, bool)
+	GetAttributeTypes() map[entry.AttributeTypeID]AttributeType
+	AddAttributeType(attributeType AttributeType, updateDB bool) error
+	AddAttributeTypes(attributeTypes []AttributeType, updateDB bool) error
+	RemoveAttributeType(attributeType AttributeType, updateDB bool) error
+	RemoveAttributeTypes(attributeTypes []AttributeType, updateDB bool) error
 }
 
-type Attribute interface {
+type AttributeType interface {
 	Initializer
 
-	GetID() entry.AttributeID
+	GetID() entry.AttributeTypeID
 	GetName() string
 	GetPluginID() uuid.UUID
 
@@ -354,8 +354,8 @@ type Attribute interface {
 	GetDescription() *string
 	SetDescription(description *string, updateDB bool) error
 
-	GetEntry() *entry.Attribute
-	LoadFromEntry(entry *entry.Attribute) error
+	GetEntry() *entry.AttributeType
+	LoadFromEntry(entry *entry.AttributeType) error
 }
 
 type Plugins interface {

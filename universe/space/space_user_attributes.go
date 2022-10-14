@@ -15,7 +15,7 @@ func (s *Space) loadSpaceUserAttributes() error {
 
 	node := universe.GetNode()
 	for _, instance := range entries {
-		if _, ok := node.GetAttributes().GetAttribute(instance.AttributeID); ok {
+		if _, ok := node.GetAttributeTypes().GetAttributeType(entry.AttributeTypeID(instance.AttributeID)); ok {
 			s.spaceUserAttributes.Store(
 				entry.NewUserAttributeID(instance.AttributeID, instance.UserID),
 				entry.NewAttributePayload(instance.Value, instance.Options),

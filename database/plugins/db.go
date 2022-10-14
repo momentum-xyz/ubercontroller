@@ -118,9 +118,9 @@ func (db *DB) PluginsUpdatePluginDescription(
 }
 
 func (db *DB) PluginsUpdatePluginOptions(
-	ctx context.Context, PluginID uuid.UUID, options *entry.PluginOptions,
+	ctx context.Context, pluginID uuid.UUID, options *entry.PluginOptions,
 ) error {
-	if _, err := db.conn.Exec(ctx, updatePluginOptionsQuery, PluginID, options); err != nil {
+	if _, err := db.conn.Exec(ctx, updatePluginOptionsQuery, pluginID, options); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil

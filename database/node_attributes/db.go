@@ -14,7 +14,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 )
 
-// TODO: change "node_attributes" table to "node_attribute"
+// TODO: rename "node_attributes" table to "node_attribute"
 
 const (
 	getNodeAttributesQuery                   = `SELECT * FROM node_attributes;`
@@ -60,39 +60,39 @@ func (db *DB) NodeAttributesGetNodeAttributes(ctx context.Context) ([]*entry.Nod
 	return assets, nil
 }
 
-func (db *DB) NodeAttributesGetNodeAttributeByPluginIDAndName(
-	ctx context.Context, pluginID uuid.UUID, attributeName string,
+func (db *DB) NodeAttributesGetNodeAttributeByAttributeID(
+	ctx context.Context, attributeID entry.AttributeID,
 ) (*entry.NodeAttribute, error) {
 	var attr entry.NodeAttribute
 	if err := pgxscan.Get(
 		ctx, db.conn, &attr, getNodeAttributeByPluginIDAndName,
-		pluginID, attributeName,
+		attributeID.PluginID, attributeID.Name,
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return &attr, nil
 }
 
-func (db *DB) NodeAttributesGetNodeAttributeValueByPluginIDAndName(
-	ctx context.Context, pluginID uuid.UUID, attributeName string,
+func (db *DB) NodeAttributesGetNodeAttributeValueByAttributeID(
+	ctx context.Context, attributeID entry.AttributeID,
 ) (*entry.AttributeValue, error) {
 	var value entry.AttributeValue
 	if err := pgxscan.Get(
 		ctx, db.conn, &value, getNodeAttributeValueByPluginIDAndName,
-		pluginID, attributeName,
+		attributeID.PluginID, attributeID.Name,
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return &value, nil
 }
 
-func (db *DB) NodeAttributesGetNodeAttributeOptionsByPluginIDAndName(
-	ctx context.Context, pluginID uuid.UUID, attributeName string,
+func (db *DB) NodeAttributesGetNodeAttributeOptionsByAttributeID(
+	ctx context.Context, attributeID entry.AttributeID,
 ) (*entry.AttributeOptions, error) {
 	var options entry.AttributeOptions
 	if err := pgxscan.Get(
 		ctx, db.conn, &options, getNodeAttributeOptionsByPluginIDAndName,
-		pluginID, attributeName,
+		attributeID.PluginID, attributeID.Name,
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
@@ -133,39 +133,15 @@ func (db *DB) NodeAttributesUpsertNodeAttributes(ctx context.Context, nodeAttrib
 	return errs.ErrorOrNil()
 }
 
-func (db *DB) NodeAttributesUpdateNodeAttributeValue(
-	ctx context.Context, pluginID uuid.UUID, attributeName string, value *entry.AttributeValue,
-) error {
-	if _, err := db.conn.Exec(
-		ctx, updateNodeAttributeValueQuery,
-		pluginID, attributeName, value,
-	); err != nil {
+func (db *DB) NodeAttributesRemoveNodeAttributeByName(ctx context.Context, name string) error {
+	if _, err := db.conn.Exec(ctx, removeNodeAttributeByNameQuery, name); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) NodeAttributesUpdateNodeAttributeOptions(
-	ctx context.Context, pluginID uuid.UUID, attributeName string, options *entry.AttributeOptions,
-) error {
-	if _, err := db.conn.Exec(
-		ctx, updateNodeAttributeOptionsQuery,
-		pluginID, attributeName, options,
-	); err != nil {
-		return errors.WithMessage(err, "failed to exec db")
-	}
-	return nil
-}
-
-func (db *DB) NodeAttributesRemoveNodeAttributeByName(ctx context.Context, attributeName string) error {
-	if _, err := db.conn.Exec(ctx, removeNodeAttributeByNameQuery, attributeName); err != nil {
-		return errors.WithMessage(err, "failed to exec db")
-	}
-	return nil
-}
-
-func (db *DB) NodeAttributesRemoveNodeAttributesByNames(ctx context.Context, attributeNames []string) error {
-	if _, err := db.conn.Exec(ctx, removeNodeAttributesByNamesQuery, attributeNames); err != nil {
+func (db *DB) NodeAttributesRemoveNodeAttributesByNames(ctx context.Context, names []string) error {
+	if _, err := db.conn.Exec(ctx, removeNodeAttributesByNamesQuery, names); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
@@ -178,11 +154,33 @@ func (db *DB) NodeAttributesRemoveNodeAttributesByPluginID(ctx context.Context, 
 	return nil
 }
 
-func (db *DB) NodeAttributesRemoveNodeAttributeByPluginIDAndName(
-	ctx context.Context, pluginID uuid.UUID, attributeName string,
+func (db *DB) NodeAttributesRemoveNodeAttributeByAttributeID(ctx context.Context, attributeID entry.AttributeID) error {
+	if _, err := db.conn.Exec(
+		ctx, removeNodeAttributeByPluginIdAndNameQuery, attributeID.PluginID, attributeID.Name,
+	); err != nil {
+		return errors.WithMessage(err, "failed to exec db")
+	}
+	return nil
+}
+
+func (db *DB) NodeAttributesUpdateNodeAttributeValue(
+	ctx context.Context, attributeID entry.AttributeID, value *entry.AttributeValue,
 ) error {
 	if _, err := db.conn.Exec(
-		ctx, removeNodeAttributeByPluginIdAndNameQuery, pluginID, attributeName,
+		ctx, updateNodeAttributeValueQuery,
+		attributeID.PluginID, attributeID.Name, value,
+	); err != nil {
+		return errors.WithMessage(err, "failed to exec db")
+	}
+	return nil
+}
+
+func (db *DB) NodeAttributesUpdateNodeAttributeOptions(
+	ctx context.Context, attributeID entry.AttributeID, options *entry.AttributeOptions,
+) error {
+	if _, err := db.conn.Exec(
+		ctx, updateNodeAttributeOptionsQuery,
+		attributeID.PluginID, attributeID.Name, options,
 	); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}

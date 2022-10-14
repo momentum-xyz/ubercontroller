@@ -41,7 +41,7 @@ type Node struct {
 	assets3d            universe.Assets3d
 	spaceTypes          universe.SpaceTypes
 	userTypes           universe.UserTypes
-	attributes          universe.Attributes
+	attributeTypes      universe.AttributeTypes
 	plugins             universe.Plugins
 	nodeAttributes      *generic.SyncMap[entry.AttributeID, *entry.AttributePayload]
 	influx              influx_api.WriteAPIBlocking
@@ -58,7 +58,7 @@ func NewNode(
 	assets3D universe.Assets3d,
 	spaceTypes universe.SpaceTypes,
 	userTypes universe.UserTypes,
-	attributes universe.Attributes,
+	attributeTypes universe.AttributeTypes,
 	plugins universe.Plugins,
 ) *Node {
 	return &Node{
@@ -70,7 +70,7 @@ func NewNode(
 		assets3d:       assets3D,
 		spaceTypes:     spaceTypes,
 		userTypes:      userTypes,
-		attributes:     attributes,
+		attributeTypes: attributeTypes,
 		plugins:        plugins,
 		nodeAttributes: generic.NewSyncMap[entry.AttributeID, *entry.AttributePayload](),
 	}
@@ -125,8 +125,8 @@ func (n *Node) GetPlugins() universe.Plugins {
 	return n.plugins
 }
 
-func (n *Node) GetAttributes() universe.Attributes {
-	return n.attributes
+func (n *Node) GetAttributeTypes() universe.AttributeTypes {
+	return n.attributeTypes
 }
 
 func (n *Node) GetSpaceTypes() universe.SpaceTypes {
@@ -178,7 +178,7 @@ func (n *Node) Load() error {
 	group, _ = errgroup.WithContext(n.ctx)
 	group.Go(
 		func() error {
-			return n.attributes.Load()
+			return n.attributeTypes.Load()
 		},
 	)
 	group.Go(

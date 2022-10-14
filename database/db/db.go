@@ -20,7 +20,7 @@ type DB struct {
 	database.SpaceTypesDB
 	database.UserTypesDB
 	database.PluginsDB
-	database.AttributesDB
+	database.AttributeTypesDB
 	database.NodeAttributesDB
 	database.SpaceAttributesDB
 	database.SpaceUserAttributesDB
@@ -39,7 +39,7 @@ func NewDB(
 	assets3d database.Assets3dDB,
 	spaceTypes database.SpaceTypesDB,
 	userTypes database.UserTypesDB,
-	attributes database.AttributesDB,
+	attributes database.AttributeTypesDB,
 	nodeAttributes database.NodeAttributesDB,
 	spaceAttributes database.SpaceAttributesDB,
 	spaceUserAttributes database.SpaceUserAttributesDB,
@@ -58,7 +58,7 @@ func NewDB(
 		Assets3dDB:            assets3d,
 		SpaceTypesDB:          spaceTypes,
 		UserTypesDB:           userTypes,
-		AttributesDB:          attributes,
+		AttributeTypesDB:      attributes,
 		NodeAttributesDB:      nodeAttributes,
 		SpaceAttributesDB:     spaceAttributes,
 		SpaceUserAttributesDB: spaceUserAttributes,

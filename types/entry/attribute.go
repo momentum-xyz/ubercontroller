@@ -6,15 +6,11 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
-type AttributeID struct {
-	PluginID uuid.UUID `db:"plugin_id"`
-	Name     string    `db:"attribute_name"`
-}
+type AttributeID AttributeTypeID
 
 type Attribute struct {
-	*AttributeID
-	Description *string           `db:"description"`
-	Options     *AttributeOptions `db:"options"`
+	AttributeID
+	*AttributePayload
 }
 
 type AttributePayload struct {
@@ -23,8 +19,6 @@ type AttributePayload struct {
 }
 
 type AttributeValue map[string]any
-
-type AttributeOptions map[string]any
 
 func NewAttributeID(pluginID uuid.UUID, name string) AttributeID {
 	return AttributeID{
@@ -42,8 +36,4 @@ func NewAttributePayload(value *AttributeValue, options *AttributeOptions) *Attr
 
 func NewAttributeValue() *AttributeValue {
 	return utils.GetPTR(AttributeValue(make(map[string]any)))
-}
-
-func NewAttributeOptions() *AttributeOptions {
-	return utils.GetPTR(AttributeOptions(make(map[string]any)))
 }

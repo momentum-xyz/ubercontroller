@@ -1,4 +1,4 @@
-package attribute
+package attribute_type
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	
+
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -15,31 +15,37 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
-type Attribute struct {
+type AttributeType struct {
 	ctx context.Context
 	log *zap.SugaredLogger
 	db  database.DB
 	mu  sync.RWMutex
 
-	id          entry.AttributeID
+	id          entry.AttributeTypeID
 	description *string
 	options     *entry.AttributeOptions
-	entry       *entry.Attribute
+	entry       *entry.AttributeType
 }
 
-func NewAttribute(id entry.AttributeID, db database.DB) *Attribute {
-	return &Attribute{
+func NewAttributeType(id entry.AttributeTypeID, db database.DB) *AttributeType {
+	return &AttributeType{
 		db:      db,
 		id:      id,
 		options: entry.NewAttributeOptions(),
 	}
 }
 
-func NewAttributeWithNameAndPluginID(pluginID uuid.UUID, name string, db database.DB) *Attribute {
-	return NewAttribute(entry.AttributeID{PluginID: pluginID, Name: name}, db)
+func NewAttributeWithNameAndPluginID(pluginID uuid.UUID, name string, db database.DB) *AttributeType {
+	return NewAttributeType(
+		entry.AttributeTypeID{
+			PluginID: pluginID,
+			Name:     name,
+		},
+		db,
+	)
 }
 
-func (a *Attribute) Initialize(ctx context.Context) error {
+func (a *AttributeType) Initialize(ctx context.Context) error {
 	log := utils.GetFromAny(ctx.Value(types.ContextLoggerKey), (*zap.SugaredLogger)(nil))
 	if log == nil {
 		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.ContextLoggerKey))
@@ -51,40 +57,40 @@ func (a *Attribute) Initialize(ctx context.Context) error {
 	return nil
 }
 
-func (a *Attribute) GetID() entry.AttributeID {
+func (a *AttributeType) GetID() entry.AttributeTypeID {
 	return a.id
 }
 
-func (a *Attribute) GetName() string {
+func (a *AttributeType) GetName() string {
 	return a.id.Name
 }
 
-func (a *Attribute) GetPluginID() uuid.UUID {
+func (a *AttributeType) GetPluginID() uuid.UUID {
 	return a.id.PluginID
 }
 
-func (a *Attribute) GetOptions() *entry.AttributeOptions {
+func (a *AttributeType) GetOptions() *entry.AttributeOptions {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
 	return a.options
 }
 
-func (a *Attribute) GetDescription() *string {
+func (a *AttributeType) GetDescription() *string {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
 	return a.description
 }
 
-func (a *Attribute) SetOptions(modifyFn modify.Fn[entry.AttributeOptions], updateDB bool) error {
+func (a *AttributeType) SetOptions(modifyFn modify.Fn[entry.AttributeOptions], updateDB bool) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
 	options := modifyFn(a.options)
 
 	if updateDB {
-		if err := a.db.AttributesUpdateAttributeOptions(a.ctx, a.id, options); err != nil {
+		if err := a.db.AttributeTypesUpdateAttributeTypeOptions(a.ctx, a.id, options); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -94,12 +100,12 @@ func (a *Attribute) SetOptions(modifyFn modify.Fn[entry.AttributeOptions], updat
 	return nil
 }
 
-func (a *Attribute) SetDescription(description *string, updateDB bool) error {
+func (a *AttributeType) SetDescription(description *string, updateDB bool) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
 	if updateDB {
-		if err := a.db.AttributesUpdateAttributeDescription(a.ctx, a.id, description); err != nil {
+		if err := a.db.AttributeTypesUpdateAttributeTypeDescription(a.ctx, a.id, description); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -109,19 +115,19 @@ func (a *Attribute) SetDescription(description *string, updateDB bool) error {
 	return nil
 }
 
-func (a *Attribute) GetEntry() *entry.Attribute {
+func (a *AttributeType) GetEntry() *entry.AttributeType {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	return &entry.Attribute{
-		AttributeID: utils.GetPTR(a.id),
-		Description: a.description,
-		Options:     a.options,
+	return &entry.AttributeType{
+		AttributeTypeID: a.id,
+		Description:     a.description,
+		Options:         a.options,
 	}
 }
 
-func (a *Attribute) LoadFromEntry(entry *entry.Attribute) error {
-	a.id = *entry.AttributeID
+func (a *AttributeType) LoadFromEntry(entry *entry.AttributeType) error {
+	a.id = entry.AttributeTypeID
 
 	if err := a.SetDescription(entry.Description, false); err != nil {
 		return errors.WithMessage(err, "failed to set description")

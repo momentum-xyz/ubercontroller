@@ -33,20 +33,34 @@ type UserAttributeID struct {
 	UserID uuid.UUID `db:"user_id"`
 }
 
-type UserAttribute struct {
-	UserAttributeID
-	AttributePayload
-}
-
 type UserUserAttributeID struct {
 	AttributeID
 	SourceUserID uuid.UUID `db:"source_user_id"`
 	TargetUserID uuid.UUID `db:"target_user_id"`
 }
 
+type UserAttribute struct {
+	UserAttributeID
+	*AttributePayload
+}
+
 type UserUserAttribute struct {
 	UserUserAttributeID
-	AttributePayload
+	*AttributePayload
+}
+
+func NewUserAttribute(userAttributeID UserAttributeID, payload *AttributePayload) *UserAttribute {
+	return &UserAttribute{
+		UserAttributeID:  userAttributeID,
+		AttributePayload: payload,
+	}
+}
+
+func NewUserUserAttribute(userUserAttributeID UserUserAttributeID, payload *AttributePayload) *UserUserAttribute {
+	return &UserUserAttribute{
+		UserUserAttributeID: userUserAttributeID,
+		AttributePayload:    payload,
+	}
 }
 
 func NewUserAttributeID(attributeID AttributeID, userID uuid.UUID) UserAttributeID {
