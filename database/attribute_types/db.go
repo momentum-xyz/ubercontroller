@@ -17,11 +17,11 @@ import (
 const (
 	getAttributeTypesQuery = `SELECT * FROM attribute_type;`
 
-	removeAttributeTypeByNameQuery                  = `DELETE FROM attribute_type WHERE attribute_name = $1;`
-	removeAttributeTypesByNamesQuery                = `DELETE FROM attribute_type WHERE attribute_name IN ($1);`
-	removeAttributeTypesByPluginIDQuery             = `DELETE FROM attribute_type WHERE plugin_id = $1;`
-	removeAttributeTypeByPluginIDAndNameQuery       = `DELETE FROM attribute_type WHERE plugin_id = $1 AND attribute_name = $2;`
-	removeAttributeTypesByPluginIdQueryAndNameQuery = `DELETE FROM attribute_type WHERE plugin_id = $1 AND attribute_name IN ($2);`
+	removeAttributeTypeByNameQuery             = `DELETE FROM attribute_type WHERE attribute_name = $1;`
+	removeAttributeTypesByNamesQuery           = `DELETE FROM attribute_type WHERE attribute_name IN ($1);`
+	removeAttributeTypesByPluginIDQuery        = `DELETE FROM attribute_type WHERE plugin_id = $1;`
+	removeAttributeTypeByPluginIDAndNameQuery  = `DELETE FROM attribute_type WHERE plugin_id = $1 AND attribute_name = $2;`
+	removeAttributeTypesByPluginIDAndNameQuery = `DELETE FROM attribute_type WHERE plugin_id = $1 AND attribute_name IN ($2);`
 
 	updateAttributeTypeNameQuery        = `UPDATE attribute_type SET attribute_name = $3 WHERE plugin_id = $1 AND attribute_name = $2;`
 	updateAttributeTypeDescriptionQuery = `UPDATE attribute_type SET description = $3 WHERE plugin_id = $1 AND attribute_name = $2;`
@@ -122,15 +122,28 @@ func (db *DB) AttributeTypesRemoveAttributeTypeByID(ctx context.Context, attribu
 	return nil
 }
 
-func (db *DB) AttributeTypesRemoveAttributeTypesByIDs(
-	ctx context.Context, attributeTypeIDs []entry.AttributeTypeID,
-) error {
-	// TODO: implement this!
-	panic("implement me")
-	//if _, err := db.conn.Exec(ctx, removeAttributeTypesByPluginIdQueryAndNameQuery, attributeNames, pluginID); err != nil {
-	//	return errors.WithMessage(err, "failed to exec db")
-	//}
-	return nil
+func (db *DB) AttributeTypesRemoveAttributeTypesByIDs(ctx context.Context, attributeTypeIDs []entry.AttributeTypeID) error {
+	batch := &pgx.Batch{}
+	for _, attributeTypeID := range attributeTypeIDs {
+		batch.Queue(
+			removeAttributeTypesByPluginIDAndNameQuery,
+			attributeTypeID.PluginID, attributeTypeID.Name,
+		)
+	}
+
+	batchRes := db.conn.SendBatch(ctx, batch)
+	defer batchRes.Close()
+
+	var errs *multierror.Error
+	for i := 0; i < batch.Len(); i++ {
+		if _, err := batchRes.Exec(); err != nil {
+			errs = multierror.Append(
+				errs, errors.WithMessagef(err, "failed to exec db for: %v", attributeTypeIDs[i].Name),
+			)
+		}
+	}
+
+	return errs.ErrorOrNil()
 }
 
 func (db *DB) AttributeTypesUpdateAttributeTypeName(
