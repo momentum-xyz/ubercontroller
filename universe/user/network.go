@@ -28,8 +28,10 @@ func (u *User) Close() error {
 }
 
 func (u *User) StartIOPumps() {
+	u.send = make(chan *websocket.PreparedMessage, 10)
+	u.bufferSends.Store(true)
 	u.lastPositionUpdateTimestamp = int64(0)
-
+	u.numSendsQueued.Store(0)
 	go u.writePump()
 	go u.writePump()
 }
@@ -164,8 +166,7 @@ func (u *User) Send(m *websocket.PreparedMessage) {
 func (u *User) SetConnection(id uuid.UUID, socketConnection *websocket.Conn) error {
 	u.sessionID = id
 	u.conn = socketConnection
-	u.send = make(chan *websocket.PreparedMessage, 10)
-	u.bufferSends.Store(true)
+	u.StartIOPumps()
 	return nil
 }
 

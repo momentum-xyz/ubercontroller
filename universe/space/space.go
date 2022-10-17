@@ -2,7 +2,8 @@ package space
 
 import (
 	"context"
-	"sync"
+	"fmt"
+	"github.com/sasha-s/go-deadlock"
 	"sync/atomic"
 
 	"github.com/google/uuid"
@@ -24,14 +25,15 @@ import (
 var _ universe.Space = (*Space)(nil)
 
 type Space struct {
-	id               uuid.UUID
-	world            universe.World
-	ctx              context.Context
-	log              *zap.SugaredLogger
-	db               database.DB
-	Users            *generic.SyncMap[uuid.UUID, universe.User]
-	Children         *generic.SyncMap[uuid.UUID, universe.Space]
-	mu               sync.RWMutex
+	id       uuid.UUID
+	world    universe.World
+	ctx      context.Context
+	log      *zap.SugaredLogger
+	db       database.DB
+	Users    *generic.SyncMap[uuid.UUID, universe.User]
+	Children *generic.SyncMap[uuid.UUID, universe.Space]
+	//mu               sync.RWMutex
+	mu               deadlock.RWMutex
 	ownerID          uuid.UUID
 	position         *cmath.Vec3
 	options          *entry.SpaceOptions
@@ -46,9 +48,13 @@ type Space struct {
 
 	spawnMsg          atomic.Pointer[websocket.PreparedMessage]
 	attributesMsg     *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
-	actualPosition    cmath.Vec3
+	actualPosition    atomic.Pointer[cmath.Vec3]
 	broadcastPipeline chan *websocket.PreparedMessage
 	messageAccept     atomic.Bool
+	numSendsQueued    atomic.Int64
+
+	// TODO: replace theta with full calculation of orientation, once Unity is read
+	theta float64
 }
 
 func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
@@ -60,7 +66,6 @@ func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
 		spaceAttributes:     generic.NewSyncMap[entry.AttributeID, *entry.AttributePayload](),
 		spaceUserAttributes: generic.NewSyncMap[entry.UserAttributeID, *entry.AttributePayload](),
 		attributesMsg:       generic.NewSyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]](),
-		broadcastPipeline:   make(chan *websocket.PreparedMessage), // todo: to switch to non-blocking once tested
 		world:               world,
 	}
 }
@@ -82,6 +87,9 @@ func (s *Space) Initialize(ctx context.Context) error {
 
 	s.ctx = ctx
 	s.log = log
+	s.numSendsQueued.Store(chanIsClosed)
+	s.actualPosition.Store(new(cmath.Vec3))
+	go s.Run()
 
 	return nil
 }
@@ -115,38 +123,6 @@ func (s *Space) SetParent(parent universe.Space, updateDB bool) error {
 	}
 
 	s.parent = parent
-
-	return nil
-}
-
-func (s *Space) GetPosition() *cmath.Vec3 {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	return s.position
-}
-
-func (s *Space) GetActualPosition() cmath.Vec3 {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	return s.actualPosition
-}
-
-func (s *Space) SetPosition(position *cmath.Vec3, updateDB bool) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if updateDB {
-		if err := s.db.SpacesUpdateSpacePosition(s.ctx, s.id, position); err != nil {
-			return errors.WithMessage(err, "failed to update db")
-		}
-	}
-
-	s.position = position
-	if s.position != nil {
-		s.actualPosition = *s.position
-	}
 
 	return nil
 }
@@ -347,6 +323,10 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 		return errors.WithMessage(err, "failed to load dependencies")
 	}
 
+	if err := s.SetPosition(entry.Position, false); err != nil {
+		return errors.WithMessage(err, "failed to set position")
+	}
+
 	s.UpdateSpawnMessage()
 
 	if !recursive {
@@ -376,9 +356,7 @@ func (s *Space) loadSelfData(spaceEntry *entry.Space) error {
 	if err := s.SetOwnerID(*spaceEntry.OwnerID, false); err != nil {
 		return errors.WithMessagef(err, "failed to set owner id: %s", spaceEntry.OwnerID)
 	}
-	if err := s.SetPosition(spaceEntry.Position, false); err != nil {
-		return errors.WithMessage(err, "failed to set position")
-	}
+
 	if err := s.SetOptions(modify.ReplaceWith(spaceEntry.Options), false); err != nil {
 		return errors.WithMessage(err, "failed to set options")
 	}
@@ -435,15 +413,16 @@ func (s *Space) loadDependencies(entry *entry.Space) error {
 }
 
 func (s *Space) UpdateSpawnMessage() {
+	name := " "
 	v, ok := s.GetSpaceAttributeValue(entry.NewAttributeID(universe.GetSystemPluginID(), "name"))
-	if !ok {
+	if ok {
 		// QUESTION: what to do here? maybe return an error?
+		name = utils.GetFromAnyMap(*v, "name", "")
+	} else {
+		fmt.Println("smsg2", s.GetID())
 	}
 
-	name := utils.GetFromAnyMap(*v, "name", "")
-
 	opts := s.GetEffectiveOptions()
-
 	parent := uuid.Nil
 	if s.GetParent() != nil {
 		parent = s.GetParent().GetID()
@@ -452,23 +431,26 @@ func (s *Space) UpdateSpawnMessage() {
 	if s.asset3d != nil {
 		asset3d = s.asset3d.GetID()
 	}
-
 	uuidNilPtr := utils.GetPTR(uuid.Nil)
 	falsePtr := utils.GetPTR(false)
-	s.spawnMsg.Store(
-		message.GetBuilder().MsgObjectDefinition(
-			message.ObjectDefinition{
-				ObjectID:         s.id,
-				ParentID:         parent,
-				AssetType:        asset3d,
-				Name:             name,
-				Position:         s.GetActualPosition(),
-				TetheredToParent: true,
-				Minimap:          *utils.GetFromAny(opts.Minimap, falsePtr),
-				InfoUI:           *utils.GetFromAny(opts.InfoUIID, uuidNilPtr),
-			},
-		),
+	msg := message.GetBuilder().MsgObjectDefinition(
+		message.ObjectDefinition{
+			ObjectID:         s.id,
+			ParentID:         parent,
+			AssetType:        asset3d,
+			Name:             name,
+			Position:         s.GetActualPosition(),
+			TetheredToParent: true,
+			Minimap:          *utils.GetFromAny(opts.Minimap, falsePtr),
+			InfoUI:           *utils.GetFromAny(opts.InfoUIID, uuidNilPtr),
+		},
 	)
+	s.spawnMsg.Store(msg)
+	s.world.Broadcast(s.spawnMsg.Load(), false)
+}
+
+func (s *Space) GetSpawnMessage() *websocket.PreparedMessage {
+	return s.spawnMsg.Load()
 }
 
 func (s *Space) SendSpawnMessage(f func(*websocket.PreparedMessage), recursive bool) {
@@ -504,26 +486,6 @@ func (s *Space) SendAttributes(f func(*websocket.PreparedMessage), recursive boo
 		}
 		s.Children.Mu.RUnlock()
 	}
-}
-
-func (s *Space) StopRunner() {
-	s.broadcastPipeline <- nil
-}
-
-func (s *Space) Runner() {
-	for {
-		select {
-		case message := <-s.broadcastPipeline:
-			if message == nil {
-				return
-			}
-
-		}
-	}
-}
-
-func (s *Space) doBroadcast() {
-
 }
 
 func (s *Space) SetAttributesMsg(kind, name string, msg *websocket.PreparedMessage) {

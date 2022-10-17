@@ -2,7 +2,7 @@ package user
 
 import (
 	"context"
-	"sync"
+	"github.com/sasha-s/go-deadlock"
 	"sync/atomic"
 	"time"
 	"unsafe"
@@ -18,9 +18,10 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/world"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
+
+var _ universe.User = (*User)(nil)
 
 type User struct {
 	id        uuid.UUID
@@ -37,8 +38,8 @@ type User struct {
 	log                         *zap.SugaredLogger
 	ctx                         context.Context
 	send                        chan *websocket.PreparedMessage
-	mu                          sync.RWMutex
-	world                       *world.World
+	mu                          deadlock.RWMutex
+	world                       universe.World
 	profile                     *entry.UserProfile
 	options                     *entry.UserOptions
 	bufferSends                 atomic.Bool
@@ -56,13 +57,18 @@ func (u *User) Stop() error {
 }
 
 func (u *User) GetWorld() universe.World {
-	//TODO implement me
-	panic("implement me")
+	u.mu.RLock()
+	defer u.mu.RUnlock()
+	return u.world
 }
 
 func (u *User) SetWorld(world universe.World, updateDB bool) error {
 	//TODO implement me
-	panic("implement me")
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	u.world = world
+
+	return nil
 }
 
 func (u *User) GetSpace() universe.Space {
@@ -72,7 +78,8 @@ func (u *User) GetSpace() universe.Space {
 
 func (u *User) SetSpace(space universe.Space, updateDB bool) error {
 	//TODO implement me
-	panic("implement me")
+	//panic("implement me")
+	return nil
 }
 
 func (u *User) Update() error {
@@ -81,8 +88,22 @@ func (u *User) Update() error {
 }
 
 func (u *User) SetUserType(userType universe.UserType, updateDB bool) error {
-	//TODO implement me
-	panic("implement me")
+	if userType == nil {
+		return errors.Errorf("user type is nil")
+	}
+
+	u.mu.Lock()
+	defer u.mu.Unlock()
+
+	if updateDB {
+		if err := u.db.UsersUpdateUserUserTypeID(u.ctx, u.id, userType.GetID()); err != nil {
+			return errors.WithMessage(err, "failed to update db")
+		}
+	}
+
+	u.userType = userType
+
+	return nil
 }
 
 func NewUser(id uuid.UUID, db database.DB) *User {
@@ -139,8 +160,7 @@ func (u *User) Initialize(ctx context.Context) error {
 	u.ctx = ctx
 	u.log = log
 	u.bufferSends.Store(true)
-	u.numSendsQueued.Store(0)
-	u.lastPositionUpdateTimestamp = int64(0)
+	u.numSendsQueued.Store(chanIsClosed)
 	u.posMsgBuffer = message.NewSendPosBuffer(u.id)
 	u.pos = (*cmath.Vec3)(unsafe.Add(unsafe.Pointer(&u.posMsgBuffer[0]), 16))
 	return nil
@@ -175,6 +195,10 @@ func (u *User) GetName() string {
 func (u *User) SetPosition(p cmath.Vec3) {
 	*u.pos = p
 
+}
+
+func (u *User) GetPosition() cmath.Vec3 {
+	return *u.pos
 }
 
 //SetUserType(userType UserType, updateDB bool) error

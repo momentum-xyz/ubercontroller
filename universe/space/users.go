@@ -69,6 +69,7 @@ func (s *Space) AddUser(user universe.User, updateDB bool) error {
 	}
 	s.Users.Data[user.GetID()] = user
 	s.sendSpaceEnterLeaveStats(user, 1)
+
 	return nil
 }
 
@@ -96,6 +97,9 @@ func (s *Space) Broadcast(msg *websocket.PreparedMessage, recursive bool) error 
 	if msg == nil {
 		return nil
 	}
+	if s.numSendsQueued.Add(1) < 0 {
+		return nil
+	}
 	s.broadcastPipeline <- msg
 
 	if recursive {
@@ -107,4 +111,42 @@ func (s *Space) Broadcast(msg *websocket.PreparedMessage, recursive bool) error 
 		s.Children.Mu.RUnlock()
 	}
 	return nil
+}
+
+func (s *Space) Shutdown() {
+	ns := s.numSendsQueued.Add(1)
+	if ns >= 0 {
+		s.broadcastPipeline <- nil
+	}
+}
+
+func (s *Space) Run() {
+	s.numSendsQueued.Store(0)
+	s.broadcastPipeline = make(chan *websocket.PreparedMessage, 0)
+	defer func() {
+		ns := s.numSendsQueued.Swap(chanIsClosed)
+		for i := int64(0); i < ns; i++ {
+			<-s.broadcastPipeline
+		}
+		close(s.broadcastPipeline)
+	}()
+	for {
+		select {
+		case message := <-s.broadcastPipeline:
+			s.numSendsQueued.Add(-1)
+			//fmt.Println("Got a message from")
+			if message == nil {
+				return
+			}
+			s.performBroadcast(message)
+		}
+	}
+}
+
+func (s *Space) performBroadcast(message *websocket.PreparedMessage) {
+	s.Users.Mu.RLock()
+	for _, user := range s.Users.Data {
+		user.Send(message)
+	}
+	s.Users.Mu.RUnlock()
 }

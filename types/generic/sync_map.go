@@ -1,17 +1,19 @@
 package generic
 
 import (
-	"sync"
+	"github.com/sasha-s/go-deadlock"
 )
 
 type SyncMap[K comparable, V any] struct {
-	Mu   sync.RWMutex
+	Mu deadlock.RWMutex
+	//Mu   sync.RWMutex
 	Data map[K]V
 }
 
 func NewSyncMap[K comparable, V any]() *SyncMap[K, V] {
 	return &SyncMap[K, V]{
-		Mu:   sync.RWMutex{},
+		//Mu:   sync.RWMutex{},
+		Mu:   deadlock.RWMutex{},
 		Data: make(map[K]V),
 	}
 }

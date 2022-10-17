@@ -1,6 +1,8 @@
 package world
 
 import (
+	"fmt"
+	cmath2 "github.com/momentum-xyz/controller/pkg/cmath"
 	"time"
 
 	"github.com/google/uuid"
@@ -21,10 +23,18 @@ func (w *World) GetUsers(recursive bool) map[uuid.UUID]universe.User {
 }
 
 func (w *World) AddUser(user universe.User, updateDB bool) error {
-	w.Users.Mu.Lock()
-	defer w.Users.Mu.Unlock()
+	//w.Users.Mu.Lock()
+	//defer w.Users.Mu.Unlock()
+	var err error
+	defer func() {
+		if err != nil {
+			user.Shutdown()
+		}
+	}()
+	fmt.Println("ee")
 
-	exUser, ok := w.GetUsers(false)[user.GetID()]
+	exUser, ok := w.Users.Load(user.GetID())
+
 	if ok {
 		if exUser != user {
 			if exUser.GetSessionID() == user.GetSessionID() {
@@ -39,30 +49,50 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 
 				time.Sleep(time.Millisecond * 100)
 			}
-			w.RemoveUser(exUser, true)
+			exUser.Shutdown()
+			//w.RemoveUser(exUser, true)
 		} else {
 			//TODO: handle this (if this ever can happen)
 			panic("implement me")
 		}
 	}
 
-	if user.GetSpace() != nil && user.GetSpace().GetWorld().GetID() != w.GetID() {
-		return errors.Errorf("worlds mismatch: %s != %s", user.GetSpace().GetWorld().GetID(), w.GetID())
-	}
-	if err := user.SetWorld(w, updateDB); err != nil {
+	if err = user.SetWorld(w, updateDB); err != nil {
 		return errors.WithMessagef(err, "failed to set world %s to user: %s", w.GetID(), user.GetID())
 	}
-	w.Users.Data[user.GetID()] = user
 
+	// effectively replace user if exists
+	if err = w.Space.AddUser(user, updateDB); err != nil {
+		return errors.WithMessagef(err, "failed to add user %s to world: %s", user.GetID(), w.GetID())
+	}
+
+	err = w.initializeUnity(user)
+	return err
+}
+
+func (w *World) initializeUnity(user universe.User) error {
 	// TODO: rest of startup logic
+	fmt.Println(w.metaMsg)
+	if err := user.SendDirectly(w.metaMsg); err != nil {
+		return errors.WithMessage(err, "failed to send meta msg")
+	}
 
-	w.Space.AddUser(user, updateDB)
+	// TODO: fix circular dependency
+	if err := user.SendDirectly(posbus.NewSendPositionMsg(cmath2.Vec3(user.GetPosition())).WebsocketMessage()); err != nil {
+		return errors.WithMessage(err, "failed to send position")
+	}
+	fmt.Println("ee10")
 	return nil
 }
 
 func (w *World) RemoveUser(user universe.User, updateDB bool) error {
 	w.Users.Mu.Lock()
 	defer w.Users.Mu.Unlock()
+
+	return w.noLockRemoveUser(user, updateDB)
+}
+
+func (w *World) noLockRemoveUser(user universe.User, updateDB bool) error {
 
 	if user.GetWorld().GetID() != w.GetID() {
 		return errors.Errorf("worlds mismatch: %s != %s", user.GetWorld().GetID(), w.GetID())
@@ -71,6 +101,7 @@ func (w *World) RemoveUser(user universe.User, updateDB bool) error {
 		return errors.WithMessagef(err, "failed to set world nil to user: %s", user.GetID())
 	}
 	delete(w.Users.Data, user.GetID())
+	user.Shutdown()
 
 	return nil
 }

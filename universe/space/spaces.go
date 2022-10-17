@@ -9,6 +9,10 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
+const (
+	chanIsClosed = -0x3FFFFFFFFFFFFFFF
+)
+
 func (s *Space) CreateSpace(spaceID uuid.UUID) (universe.Space, error) {
 	space := NewSpace(spaceID, s.db, s.GetWorld())
 
@@ -100,7 +104,10 @@ func (s *Space) AddSpaces(spaces []universe.Space, updateDB bool) error {
 
 	for i := range spaces {
 		if spaces[i].GetWorld().GetID() != s.GetWorld().GetID() {
-			return errors.Errorf("space %s: worlds mismatch: %s != %s", spaces[i].GetID(), spaces[i].GetWorld().GetID(), s.GetWorld().GetID())
+			return errors.Errorf(
+				"space %s: worlds mismatch: %s != %s", spaces[i].GetID(), spaces[i].GetWorld().GetID(),
+				s.GetWorld().GetID(),
+			)
 		}
 		if err := spaces[i].SetParent(s, false); err != nil {
 			return errors.WithMessagef(err, "failed to set parent %s to space: %s", s.GetID(), spaces[i].GetID())

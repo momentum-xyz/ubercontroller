@@ -170,7 +170,8 @@ func (n *Node) Load() error {
 	group.Go(
 		func() error {
 			return n.userTypes.Load()
-		})
+		},
+	)
 	if err := group.Wait(); err != nil {
 		return errors.WithMessage(err, "failed to load assets")
 	}

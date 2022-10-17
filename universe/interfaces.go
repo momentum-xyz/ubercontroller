@@ -168,6 +168,8 @@ type Space interface {
 	SetSpaceAttributeOptions(
 		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool,
 	) error
+	UpdateChildrenPosition(recursive bool, force bool) error
+	SetActualPosition(pos cmath.Vec3, theta float64, force bool) error
 }
 
 type User interface {
@@ -192,7 +194,11 @@ type User interface {
 	Send(message *websocket.PreparedMessage)
 	SendDirectly(message *websocket.PreparedMessage) error
 
+	SetPosition(p cmath.Vec3)
+	GetPosition() cmath.Vec3
+
 	AddInfluxTags(prefix string, point *influxWrite.Point) *influxWrite.Point
+	Shutdown()
 }
 
 type SpaceTypes interface {
