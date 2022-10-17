@@ -95,7 +95,7 @@ func (w *World) initializeUnity(user universe.User) error {
 		).WebsocketMessage(),
 	)
 
-	w.Space.SendTextures(user.Send, true)
+	w.Space.SendTextures(user.SendDirectly, true)
 	user.ReleaseSendBuffer()
 	fmt.Println("ee10")
 	return nil

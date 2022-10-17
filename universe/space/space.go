@@ -2,13 +2,12 @@ package space
 
 import (
 	"context"
-	"github.com/sasha-s/go-deadlock"
-	"sync/atomic"
-
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
+	"github.com/sasha-s/go-deadlock"
 	"go.uber.org/zap"
+	"sync/atomic"
 
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
@@ -460,6 +459,7 @@ func (s *Space) GetSpawnMessage() *websocket.PreparedMessage {
 
 func (s *Space) SendSpawnMessage(f func(*websocket.PreparedMessage) error, recursive bool) {
 	f(s.spawnMsg.Load())
+	//time.Sleep(time.Millisecond * 100)
 	if recursive {
 		s.Children.Mu.RLock()
 		for _, space := range s.Children.Data {

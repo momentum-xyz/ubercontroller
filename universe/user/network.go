@@ -90,7 +90,9 @@ func (u *User) initiateShutDown(needToRemoveFromWorld bool) {
 
 	// then remove from world is necessary
 	if needToRemoveFromWorld {
-		u.world.RemoveUser(u, true)
+		if u.world != nil {
+			u.world.RemoveUser(u, true)
+		}
 	}
 	return
 }
