@@ -2,7 +2,6 @@ package space
 
 import (
 	"context"
-	"fmt"
 	"github.com/sasha-s/go-deadlock"
 	"sync/atomic"
 
@@ -48,6 +47,8 @@ type Space struct {
 
 	spawnMsg          atomic.Pointer[websocket.PreparedMessage]
 	attributesMsg     *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
+	renderTextureAttr map[string]string
+	textMsg           atomic.Pointer[websocket.PreparedMessage]
 	actualPosition    atomic.Pointer[cmath.Vec3]
 	broadcastPipeline chan *websocket.PreparedMessage
 	messageAccept     atomic.Bool
@@ -66,6 +67,7 @@ func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
 		spaceAttributes:     generic.NewSyncMap[entry.AttributeID, *entry.AttributePayload](),
 		spaceUserAttributes: generic.NewSyncMap[entry.UserAttributeID, *entry.AttributePayload](),
 		attributesMsg:       generic.NewSyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]](),
+		renderTextureAttr:   make(map[string]string),
 		world:               world,
 	}
 }
@@ -419,7 +421,7 @@ func (s *Space) UpdateSpawnMessage() {
 		// QUESTION: what to do here? maybe return an error?
 		name = utils.GetFromAnyMap(*v, "name", "")
 	} else {
-		fmt.Println("smsg2", s.GetID())
+		//fmt.Println("smsg2", s.GetID())
 	}
 
 	opts := s.GetEffectiveOptions()
@@ -433,7 +435,7 @@ func (s *Space) UpdateSpawnMessage() {
 	} else if s.GetSpaceType().GetAsset3d() != nil {
 		asset3d = s.GetSpaceType().GetAsset3d().GetID()
 	}
-	fmt.Printf("assets3d: %v\n", asset3d)
+	//fmt.Printf("assets3d: %v\n", asset3d)
 	uuidNilPtr := utils.GetPTR(uuid.Nil)
 	falsePtr := utils.GetPTR(false)
 	msg := message.GetBuilder().MsgObjectDefinition(

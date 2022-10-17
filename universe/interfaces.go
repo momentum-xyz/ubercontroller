@@ -170,6 +170,8 @@ type Space interface {
 	) error
 	UpdateChildrenPosition(recursive bool, force bool) error
 	SetActualPosition(pos cmath.Vec3, theta float64, force bool) error
+
+	SendTextures(sendFn func(msg *websocket.PreparedMessage) error, recursive bool)
 }
 
 type User interface {

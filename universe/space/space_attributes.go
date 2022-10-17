@@ -1,6 +1,8 @@
 package space
 
 import (
+	"github.com/gorilla/websocket"
+	"github.com/momentum-xyz/ubercontroller/pkg/message"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -85,6 +87,52 @@ func (s *Space) SetSpaceAttributeOptions(
 	return nil
 }
 
+func (s *Space) CheckIfRendered(instance *entry.SpaceAttribute) {
+
+	attr, ok := universe.GetNode().GetAttributeTypes().GetAttributeType(entry.AttributeTypeID(instance.AttributeID))
+	//fmt.Println("q1")
+	if !ok {
+		return
+	}
+	var opts entry.AttributeOptions
+	//if instance.Options != nil {
+	//	opts = *instance.Options
+	//} else {
+	//	opts = entry.AttributeOptions{}
+	//}
+	if attr.GetOptions() != nil {
+		opts = *attr.GetOptions()
+	} else {
+		return
+	}
+	//utils.MergePTRs(&opts, attr.GetOptions())
+	//if opts == nil {
+	//	return
+	//}
+	//fmt.Printf("q2 %+v\n", opts, attr.GetOptions())
+	if v, ok := opts["render_type"]; ok && v.(string) == "texture" {
+		//fmt.Println("q3")
+		if c, ok := (map[string]any)(*instance.Value)["render_hash"]; ok {
+			//fmt.Println("add hash")
+			s.renderTextureAttr[attr.GetName()] = c.(string)
+		}
+	}
+	s.textMsg.Store(message.GetBuilder().SetObjectTextures(s.id, s.renderTextureAttr))
+}
+
+func (s *Space) SendTextures(f func(*websocket.PreparedMessage) error, recursive bool) {
+
+	f(s.textMsg.Load())
+	if recursive {
+		s.Children.Mu.RLock()
+		for _, space := range s.Children.Data {
+			space.SendTextures(f, true)
+		}
+		s.Children.Mu.RUnlock()
+	}
+
+}
+
 func (s *Space) loadSpaceAttributes() error {
 	entries, err := s.db.SpaceAttributesGetSpaceAttributesBySpaceID(s.ctx, s.id)
 	if err != nil {
@@ -94,6 +142,7 @@ func (s *Space) loadSpaceAttributes() error {
 	node := universe.GetNode()
 	for _, instance := range entries {
 		if _, ok := node.GetAttributeTypes().GetAttributeType(entry.AttributeTypeID(instance.AttributeID)); ok {
+			s.CheckIfRendered(instance)
 			s.spaceAttributes.Store(
 				instance.AttributeID,
 				entry.NewAttributePayload(instance.Value, instance.Options),
