@@ -3,6 +3,7 @@ package node
 import (
 	"context"
 	"fmt"
+	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"os"
 	"sync"
 
@@ -278,8 +279,9 @@ func (n *Node) loadSelfData() error {
 
 func (n *Node) detectSpawnWorld(userId uuid.UUID) universe.World {
 	// TODO: implement. Temporary, just first world from the list
-	for _, v := range n.worlds.GetWorlds() {
-		return v
+	wid := uuid.MustParse("d83670c7-a120-47a4-892d-f9ec75604f74")
+	if world, ok := n.worlds.GetWorld(wid); ok != false {
+		return world
 
 	}
 	return nil
@@ -295,5 +297,8 @@ func (n *Node) LoadUser(userID uuid.UUID) (universe.User, error) {
 		return nil, errors.WithMessagef(err, "failed to load user: %s", userID)
 	}
 
+	fmt.Println("%+v\n", user.GetPosition())
+	user.SetPosition(cmath.Vec3{X: 50, Y: 50, Z: 50})
+	fmt.Println("%+v\n", user.GetPosition())
 	return user, nil
 }

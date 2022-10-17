@@ -156,7 +156,7 @@ type Space interface {
 	SendToUser(userID uuid.UUID, msg *websocket.PreparedMessage, recursive bool) error
 	Broadcast(msg *websocket.PreparedMessage, recursive bool) error
 
-	SendSpawnMessage(sendFn func(msg *websocket.PreparedMessage), recursive bool)
+	SendSpawnMessage(sendFn func(msg *websocket.PreparedMessage) error, recursive bool)
 	SendAttributes(sendFn func(*websocket.PreparedMessage), recursive bool)
 
 	GetSpaceAttributeValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool)
@@ -191,7 +191,7 @@ type User interface {
 	GetSessionID() uuid.UUID
 	SetConnection(sessionID uuid.UUID, socketConnection *websocket.Conn) error
 
-	Send(message *websocket.PreparedMessage)
+	Send(message *websocket.PreparedMessage) error
 	SendDirectly(message *websocket.PreparedMessage) error
 
 	SetPosition(p cmath.Vec3)
@@ -199,6 +199,10 @@ type User interface {
 
 	AddInfluxTags(prefix string, point *influxWrite.Point) *influxWrite.Point
 	Shutdown()
+
+	GetPosBuffer() []byte
+
+	ReleaseSendBuffer()
 }
 
 type SpaceTypes interface {

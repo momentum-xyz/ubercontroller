@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/mplugin"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
+	"github.com/momentum-xyz/ubercontroller/pkg/message"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -15,21 +17,23 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"sync/atomic"
+	"time"
 )
 
 var _ universe.World = (*World)(nil)
 
 type DecorationMetadataNew struct {
-	AssetID  uuid.UUID  `json:"asset_id" db:"asset_id"`
-	Position cmath.Vec3 `json:"position" db:"position"`
+	AssetID  uuid.UUID  `json:"asset_id" db:"asset_id" mapstructure:"asset_id"`
+	Position cmath.Vec3 `json:"position" db:"position" mapstructure:"position"`
 	rotation cmath.Vec3
 }
 
 type WorldMeta struct {
-	LOD              []uint32                `json:"lod" db:"lod"`
-	Decorations      []DecorationMetadataNew `json:"decorations,omitempty" db:"decorations,omitempty"`
-	AvatarController uuid.UUID               `json:"avatar_controller" db:"avatar_controller"`
-	SkyboxController uuid.UUID               `json:"skybox_controller" db:"skybox_controller"`
+	LOD              []uint32                `json:"lod" db:"lod" mapstructure:"lod"`
+	Decorations      []DecorationMetadataNew `json:"decorations,omitempty" db:"decorations,omitempty" mapstructure:"decorations"`
+	AvatarController uuid.UUID               `json:"avatar_controller" db:"avatar_controller" mapstructure:"avatar_controller"`
+	SkyboxController uuid.UUID               `json:"skybox_controller" db:"skybox_controller" mapstructure:"skybox_controller"`
 }
 
 type World struct {
@@ -41,7 +45,7 @@ type World struct {
 	//corePluginInstance  mplugin.PluginInstance
 	corePluginInterface mplugin.PluginInterface
 	broadcast           chan *websocket.PreparedMessage
-	metaMsg             *websocket.PreparedMessage
+	metaMsg             atomic.Pointer[websocket.PreparedMessage]
 	metaData            WorldMeta
 }
 
@@ -76,7 +80,41 @@ func (w *World) Initialize(ctx context.Context) error {
 
 // TODO: implement
 func (w *World) Run() error {
+	ticker := time.NewTicker(500 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		select {
+		//case message := <-cu.broadcast:
+		// v := reflect.ValueOf(cu.broadcast)
+		// fmt.Println(color.Red, "Bcast", wc.users.Num(), v.Len(), color.Reset)
+		//go cu.PerformBroadcast(message)
+		// logger.Logln(4, "BcastE")
+		case <-ticker.C:
+			// fmt.Println(color.Red, "Ticker", color.Reset)
+			go w.broadcastPositions()
+		}
+	}
 	return nil
+}
+
+func (w *World) broadcastPositions() {
+	flag := false
+	w.Users.Mu.RLock()
+	numClients := len(w.Users.Data)
+	msg := posbus.NewUserPositionsMsg(numClients)
+	if numClients > 0 {
+		flag = true
+		i := 0
+		for _, u := range w.Users.Data {
+			msg.SetPosition(i, u.GetPosBuffer())
+			i++
+		}
+	}
+	w.Users.Mu.RUnlock()
+	if flag {
+		w.Space.Broadcast(msg.WebsocketMessage(), false)
+	}
 }
 
 // TODO: implement
@@ -98,6 +136,9 @@ func (w *World) Load() error {
 	w.UpdateWorldMetadata()
 	universe.GetNode().AddAPIRegister(w)
 
+	go w.Run()
+	//cu.BroadcastPositions()
+
 	w.log.Infof("World loaded: %s", w.GetID())
 
 	return nil
@@ -112,37 +153,27 @@ func (w *World) UpdateWorldMetadata() error {
 		),
 	)
 	if !ok {
-		w.metaMsg = nil
+		w.metaMsg.Store(nil)
 		return nil
 	}
 	metaMap := (map[string]any)(*meta)
 
-	if v, ok := metaMap["skybox_controller"]; ok {
-		w.metaData.SkyboxController = uuid.MustParse(v.(string))
+	utils.MapDecode(metaMap, &w.metaData)
+
+	fmt.Printf("Meta: %+v\n", w.metaData)
+	//TODO: Ut is all ugly with circular deps
+	dec := make([]message.DecorationMetadata, len(w.metaData.Decorations))
+	for i, decoration := range w.metaData.Decorations {
+		dec[i].AssetID = decoration.AssetID
+		dec[i].Position = decoration.Position
 	}
 
-	if v, ok := metaMap["avatar_controller"]; ok {
-		w.metaData.AvatarController = uuid.MustParse(v.(string))
-	}
-
-	lods := utils.GetFromAnyMap(metaMap, "lod", make([]any, 0))
-	w.metaData.LOD = make([]uint32, len(lods))
-	for i := 0; i < len(lods); i++ {
-		w.metaData.LOD[i] = uint32(lods[i].(float64))
-	}
-
-	//q := WorldMeta{}
-	//
-	//mapstructure.Decode(metaMap, &q)
-
-	//decs := utils.GetFromAnyMap(metaMap, "decorations", make([]any, 0))
-	//
-	//fmt.Printf("%+v\n", decs)
-	//if len(decs) > 0 {
-	//	fmt.Printf("%+v\n", reflect.ValueOf(decs[0]).Type())
-	//}
-	//
-	//fmt.Printf("Meta: %+v\n", w.metaData)
+	w.metaMsg.Store(
+		message.GetBuilder().MsgSetWorld(
+			w.GetID(), w.GetName(), w.metaData.AvatarController, w.metaData.SkyboxController, w.metaData.LOD,
+			dec,
+		),
+	)
 
 	return nil
 }

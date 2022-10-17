@@ -1,11 +1,30 @@
 package utils
 
 import (
+	"github.com/mitchellh/mapstructure"
 	"reflect"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 )
+
+var MapDecoder *mapstructure.Decoder
+
+func MapDecode(input, output interface{}) error {
+	config := &mapstructure.DecoderConfig{
+		DecodeHook: mapstructure.ComposeDecodeHookFunc(
+			stringToUUIDHookFunc(),
+		),
+		Result: &output,
+	}
+
+	decoder, err := mapstructure.NewDecoder(config)
+	if err != nil {
+		return err
+	}
+
+	return decoder.Decode(input)
+}
 
 func BinID(id uuid.UUID) []byte {
 	binID, err := id.MarshalBinary()
@@ -122,5 +141,18 @@ func mergeStruct(resVal, optVal, defVal reflect.Value) {
 		defField := defElem.Field(i)
 
 		merge(resField, optField, defField)
+	}
+}
+
+func stringToUUIDHookFunc() mapstructure.DecodeHookFunc {
+	return func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+		if f.Kind() != reflect.String {
+			return data, nil
+		}
+		if t != reflect.TypeOf(uuid.UUID{}) {
+			return data, nil
+		}
+
+		return uuid.Parse(data.(string))
 	}
 }

@@ -122,7 +122,7 @@ func (s *Space) Shutdown() {
 
 func (s *Space) Run() {
 	s.numSendsQueued.Store(0)
-	s.broadcastPipeline = make(chan *websocket.PreparedMessage, 0)
+	s.broadcastPipeline = make(chan *websocket.PreparedMessage, 100)
 	defer func() {
 		ns := s.numSendsQueued.Swap(chanIsClosed)
 		for i := int64(0); i < ns; i++ {

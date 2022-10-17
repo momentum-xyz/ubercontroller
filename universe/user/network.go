@@ -2,6 +2,7 @@ package user
 
 import (
 	"container/list"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/momentum-xyz/posbus-protocol/posbus"
@@ -36,6 +37,10 @@ func (u *User) StartIOPumps() {
 	go u.writePump()
 }
 
+func (u *User) ReleaseSendBuffer() {
+	u.bufferSends.Store(false)
+}
+
 func (u *User) readPump() {
 	u.conn.SetReadLimit(inMessageSizeLimit)
 	u.conn.SetReadDeadline(time.Now().Add(pongWait))
@@ -43,6 +48,7 @@ func (u *User) readPump() {
 
 	for {
 		messageType, message, err := u.conn.ReadMessage()
+		fmt.Println("Got a  message")
 		if err != nil {
 			closedByClient := false
 			if ce, ok := err.(*websocket.CloseError); ok {
@@ -78,7 +84,8 @@ func (u *User) initiateShutDown(needToRemoveFromWorld bool) {
 	for i := int64(0); i < ns; i++ {
 		<-u.send
 	}
-	close(u.send)
+
+	//close(u.send)
 	u.conn.Close()
 
 	// then remove from world is necessary
@@ -100,6 +107,7 @@ func (u *User) writePump() {
 	for {
 		select {
 		case message := <-u.send:
+			//fmt.Println("Send message")
 			// we took message from queue
 			u.numSendsQueued.Add(-1)
 
@@ -131,8 +139,10 @@ func (u *User) writePump() {
 			}
 
 		case <-ticker.C:
-			if u.SendDirectly(pingMessage) != nil {
-				return
+			if u.bufferSends.Load() == false {
+				if u.SendDirectly(pingMessage) != nil {
+					return
+				}
 			}
 		}
 	}
@@ -151,9 +161,9 @@ func (u *User) SendDirectly(message *websocket.PreparedMessage) error {
 	return u.conn.WritePreparedMessage(message)
 }
 
-func (u *User) Send(m *websocket.PreparedMessage) {
+func (u *User) Send(m *websocket.PreparedMessage) error {
 	if m == nil {
-		return
+		return nil
 	}
 	// ns acts simultaneously as number of clients in send process and as blocker if negative
 	// we increment, and we decrement when leave this method
@@ -161,6 +171,7 @@ func (u *User) Send(m *websocket.PreparedMessage) {
 	if ns >= 0 {
 		u.send <- m
 	}
+	return nil
 }
 
 func (u *User) SetConnection(id uuid.UUID, socketConnection *websocket.Conn) error {

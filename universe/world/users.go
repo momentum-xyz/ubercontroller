@@ -72,8 +72,8 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 
 func (w *World) initializeUnity(user universe.User) error {
 	// TODO: rest of startup logic
-	fmt.Println(w.metaMsg)
-	if err := user.SendDirectly(w.metaMsg); err != nil {
+	fmt.Println(w.metaMsg.Load())
+	if err := user.SendDirectly(w.metaMsg.Load()); err != nil {
 		return errors.WithMessage(err, "failed to send meta msg")
 	}
 
@@ -81,6 +81,20 @@ func (w *World) initializeUnity(user universe.User) error {
 	if err := user.SendDirectly(posbus.NewSendPositionMsg(cmath2.Vec3(user.GetPosition())).WebsocketMessage()); err != nil {
 		return errors.WithMessage(err, "failed to send position")
 	}
+
+	//go func() {
+	//	time.Sleep(30 * time.Second)
+	//	user.ReleaseSendBuffer()
+	//}()
+
+	w.Space.SendSpawnMessage(user.SendDirectly, true)
+	time.Sleep(1 * time.Second)
+	user.SendDirectly(
+		posbus.NewSignalMsg(
+			posbus.SignalSpawn,
+		).WebsocketMessage(),
+	)
+
 	fmt.Println("ee10")
 	return nil
 }

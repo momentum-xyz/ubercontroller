@@ -1,10 +1,12 @@
 package user
 
 import (
+	"fmt"
 	"github.com/momentum-xyz/posbus-protocol/posbus"
 )
 
 func (u *User) OnMessage(msg *posbus.Message) {
+	fmt.Printf("%+v\n", msg.Type())
 	switch msg.Type() {
 	case posbus.MsgTypeSendPosition:
 		u.UpdatePosition(msg.AsSendPos())
@@ -44,7 +46,8 @@ func (u *User) RelayToControllerHandler(m *posbus.RelayToController) {
 func (u *User) SignalsHandler(s posbus.Signal) {
 	switch s {
 	case posbus.SignalReady:
-		u.log.Debugf("Got signalReady from %s", u.id.String())
+		u.ReleaseSendBuffer()
+		//u.log.Debugf("Got signalReady from %s", u.id.String())
 		//TODO: Do we need it?
 		//if err := u.world.SendWorldData(u); err != nil {
 		//	log.Error(

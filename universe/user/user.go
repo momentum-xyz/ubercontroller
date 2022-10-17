@@ -46,6 +46,10 @@ type User struct {
 	numSendsQueued              atomic.Int64
 }
 
+func (u *User) GetPosBuffer() []byte {
+	return u.posMsgBuffer
+}
+
 func (u *User) Run() error {
 	//TODO implement me
 	panic("implement me")
@@ -193,7 +197,9 @@ func (u *User) GetName() string {
 }
 
 func (u *User) SetPosition(p cmath.Vec3) {
-	*u.pos = p
+	(*u.pos).X = p.X
+	(*u.pos).Y = p.Y
+	(*u.pos).Z = p.Z
 
 }
 

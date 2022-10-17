@@ -453,12 +453,10 @@ func (s *Space) GetSpawnMessage() *websocket.PreparedMessage {
 	return s.spawnMsg.Load()
 }
 
-func (s *Space) SendSpawnMessage(f func(*websocket.PreparedMessage), recursive bool) {
+func (s *Space) SendSpawnMessage(f func(*websocket.PreparedMessage) error, recursive bool) {
 	f(s.spawnMsg.Load())
 	if recursive {
 		s.Children.Mu.RLock()
-		defer s.Children.Mu.RUnlock()
-
 		for _, space := range s.Children.Data {
 			space.SendSpawnMessage(f, true)
 		}
