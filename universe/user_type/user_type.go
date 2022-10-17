@@ -150,6 +150,10 @@ func (u *UserType) GetEntry() *entry.UserType {
 }
 
 func (u *UserType) LoadFromEntry(entry *entry.UserType) error {
+	if entry.UserTypeID != u.id {
+		return errors.Errorf("user type ids mismatch: %s != %s", entry.UserTypeID, u.id)
+	}
+
 	u.id = entry.UserTypeID
 
 	if err := u.SetName(entry.UserTypeName, false); err != nil {

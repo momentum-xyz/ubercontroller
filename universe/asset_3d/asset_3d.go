@@ -105,6 +105,10 @@ func (a *Asset3d) GetEntry() *entry.Asset3d {
 }
 
 func (a *Asset3d) LoadFromEntry(entry *entry.Asset3d) error {
+	if entry.Asset3dID != a.entry.Asset3dID {
+		return errors.Errorf("asset 3d ids mismatch: %s != %s", entry.Asset3dID, a.entry.Asset3dID)
+	}
+
 	a.entry = entry
 
 	return nil

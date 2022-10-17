@@ -21,12 +21,12 @@ type DB interface {
 	SpaceTypesDB
 	UserTypesDB
 	AttributeTypesDB
-	PluginsDB
 	SpaceAttributesDB
 	UserAttributesDB
 	NodeAttributesDB
 	UserUserAttributesDB
 	SpaceUserAttributesDB
+	PluginsDB
 }
 
 type CommonDB interface {
@@ -275,12 +275,10 @@ type SpaceUserAttributesDB interface {
 	) error
 
 	SpaceUserAttributesUpdateSpaceUserAttributeOptions(
-		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
-		options *entry.AttributeOptions,
+		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID, options *entry.AttributeOptions,
 	) error
 	SpaceUserAttributesUpdateSpaceUserAttributeValue(
-		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
-		value *entry.AttributeValue,
+		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID, value *entry.AttributeValue,
 	) error
 }
 
@@ -297,7 +295,7 @@ type UserAttributesDB interface {
 		ctx context.Context, userAttributeID entry.UserAttributeID,
 	) (*entry.AttributeOptions, error)
 
-	UserAttributesUpsertUserAttribute( // TODO: we really need to think about it
+	UserAttributesUpsertUserAttribute(
 		ctx context.Context, userAttribute *entry.UserAttribute, modifyFn modify.Fn[entry.AttributePayload],
 	) error
 

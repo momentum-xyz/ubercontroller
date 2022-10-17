@@ -35,16 +35,6 @@ func NewAttributeType(id entry.AttributeTypeID, db database.DB) *AttributeType {
 	}
 }
 
-func NewAttributeWithNameAndPluginID(pluginID uuid.UUID, name string, db database.DB) *AttributeType {
-	return NewAttributeType(
-		entry.AttributeTypeID{
-			PluginID: pluginID,
-			Name:     name,
-		},
-		db,
-	)
-}
-
 func (a *AttributeType) Initialize(ctx context.Context) error {
 	log := utils.GetFromAny(ctx.Value(types.ContextLoggerKey), (*zap.SugaredLogger)(nil))
 	if log == nil {
@@ -127,6 +117,10 @@ func (a *AttributeType) GetEntry() *entry.AttributeType {
 }
 
 func (a *AttributeType) LoadFromEntry(entry *entry.AttributeType) error {
+	if entry.AttributeTypeID != a.id {
+		return errors.Errorf("attribute type ids mismatch: %s != %s", entry.AttributeTypeID, a.id)
+	}
+
 	a.id = entry.AttributeTypeID
 
 	if err := a.SetDescription(entry.Description, false); err != nil {
