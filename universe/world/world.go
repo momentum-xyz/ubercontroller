@@ -139,7 +139,9 @@ func (w *World) UpdateWorldMetadata() error {
 	decs := utils.GetFromAnyMap(metaMap, "decorations", make([]any, 0))
 
 	fmt.Printf("%+v\n", decs)
-	fmt.Printf("%+v\n", reflect.ValueOf(decs[0]).Type())
+	if len(decs) > 0 {
+		fmt.Printf("%+v\n", reflect.ValueOf(decs[0]).Type())
+	}
 
 	fmt.Printf("Meta: %+v\n", w.metaData)
 
