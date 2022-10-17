@@ -1,5 +1,5 @@
 package types
 
 const (
-	ContextLoggerKey = "logger"
+	LoggerContextKey = "logger"
 )

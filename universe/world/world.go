@@ -3,8 +3,12 @@ package world
 import (
 	"context"
 	"fmt"
+
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
+
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/mplugin"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
@@ -13,8 +17,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/space"
 	"github.com/momentum-xyz/ubercontroller/utils"
-	"github.com/pkg/errors"
-	"go.uber.org/zap"
 )
 
 var _ universe.World = (*World)(nil)
@@ -63,9 +65,9 @@ func (w *World) corePluginInitFunc(pi mplugin.PluginInterface) (mplugin.PluginIn
 }
 
 func (w *World) Initialize(ctx context.Context) error {
-	log := utils.GetFromAny(ctx.Value(types.ContextLoggerKey), (*zap.SugaredLogger)(nil))
+	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
 	if log == nil {
-		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.ContextLoggerKey))
+		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
 	}
 
 	w.ctx = ctx

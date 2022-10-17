@@ -29,11 +29,17 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 			users.GET("/check", n.apiUsersCheck)
 		}
 
+		// with auth
 		auth := vx.Group("", middleware.VerifyUser(n.log))
 
-		profile := auth.Group("/profile")
+		authUsers := auth.Group("/users")
 		{
-			profile.PUT("/:userID", n.apiProfileEdit)
+			authUsers.GET("/me", n.apiUsersGetMe)
+		}
+
+		authProfile := auth.Group("/profile")
+		{
+			authProfile.PUT("", n.apiProfileEdit)
 		}
 	}
 }
