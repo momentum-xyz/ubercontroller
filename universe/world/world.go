@@ -15,7 +15,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	"reflect"
 )
 
 var _ universe.World = (*World)(nil)
@@ -136,14 +135,14 @@ func (w *World) UpdateWorldMetadata() error {
 	//
 	//mapstructure.Decode(metaMap, &q)
 
-	decs := utils.GetFromAnyMap(metaMap, "decorations", make([]any, 0))
-
-	fmt.Printf("%+v\n", decs)
-	if len(decs) > 0 {
-		fmt.Printf("%+v\n", reflect.ValueOf(decs[0]).Type())
-	}
-
-	fmt.Printf("Meta: %+v\n", w.metaData)
+	//decs := utils.GetFromAnyMap(metaMap, "decorations", make([]any, 0))
+	//
+	//fmt.Printf("%+v\n", decs)
+	//if len(decs) > 0 {
+	//	fmt.Printf("%+v\n", reflect.ValueOf(decs[0]).Type())
+	//}
+	//
+	//fmt.Printf("Meta: %+v\n", w.metaData)
 
 	return nil
 }
