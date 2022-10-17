@@ -2,8 +2,6 @@ package world
 
 import (
 	"context"
-	"fmt"
-
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/momentum-xyz/posbus-protocol/posbus"
@@ -148,7 +146,6 @@ func (w *World) Load() error {
 }
 
 func (w *World) UpdateWorldMetadata() error {
-	fmt.Printf("%+v\n", uuid.UUID(w.corePluginInterface.GetId()).String())
 
 	meta, ok := w.GetSpaceAttributeValue(
 		entry.NewAttributeID(
@@ -163,7 +160,6 @@ func (w *World) UpdateWorldMetadata() error {
 
 	utils.MapDecode(metaMap, &w.metaData)
 
-	fmt.Printf("Meta: %+v\n", w.metaData)
 	//TODO: Ut is all ugly with circular deps
 	dec := make([]message.DecorationMetadata, len(w.metaData.Decorations))
 	for i, decoration := range w.metaData.Decorations {

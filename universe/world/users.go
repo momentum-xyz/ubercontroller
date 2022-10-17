@@ -3,6 +3,7 @@ package world
 import (
 	"fmt"
 	cmath2 "github.com/momentum-xyz/controller/pkg/cmath"
+	"github.com/momentum-xyz/ubercontroller/utils"
 	"time"
 
 	"github.com/google/uuid"
@@ -31,7 +32,6 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 			user.Shutdown()
 		}
 	}()
-	fmt.Println("ee")
 
 	exUser, ok := w.Users.Load(user.GetID())
 
@@ -72,7 +72,6 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 
 func (w *World) initializeUnity(user universe.User) error {
 	// TODO: rest of startup logic
-	fmt.Println(w.metaMsg.Load())
 	if err := user.SendDirectly(w.metaMsg.Load()); err != nil {
 		return errors.WithMessage(err, "failed to send meta msg")
 	}
@@ -87,6 +86,7 @@ func (w *World) initializeUnity(user universe.User) error {
 	//	user.ReleaseSendBuffer()
 	//}()
 
+	fmt.Println("Start it!", utils.GoroutineID())
 	w.Space.SendSpawnMessage(user.SendDirectly, true)
 	time.Sleep(1 * time.Second)
 	user.SendDirectly(

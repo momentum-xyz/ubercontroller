@@ -90,7 +90,6 @@ func (s *Space) SetSpaceAttributeOptions(
 func (s *Space) CheckIfRendered(instance *entry.SpaceAttribute) {
 
 	attr, ok := universe.GetNode().GetAttributeTypes().GetAttributeType(entry.AttributeTypeID(instance.AttributeID))
-	//fmt.Println("q1")
 	if !ok {
 		return
 	}
@@ -109,11 +108,8 @@ func (s *Space) CheckIfRendered(instance *entry.SpaceAttribute) {
 	//if opts == nil {
 	//	return
 	//}
-	//fmt.Printf("q2 %+v\n", opts, attr.GetOptions())
 	if v, ok := opts["render_type"]; ok && v.(string) == "texture" {
-		//fmt.Println("q3")
 		if c, ok := (map[string]any)(*instance.Value)["render_hash"]; ok {
-			//fmt.Println("add hash")
 			s.renderTextureAttr[attr.GetName()] = c.(string)
 		}
 	}

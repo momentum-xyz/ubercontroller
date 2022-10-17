@@ -2,6 +2,7 @@ package space
 
 import (
 	"context"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
@@ -434,7 +435,7 @@ func (s *Space) UpdateSpawnMessage() {
 	} else if s.GetSpaceType().GetAsset3d() != nil {
 		asset3d = s.GetSpaceType().GetAsset3d().GetID()
 	}
-	//fmt.Printf("assets3d: %v\n", asset3d)
+
 	uuidNilPtr := utils.GetPTR(uuid.Nil)
 	falsePtr := utils.GetPTR(false)
 	msg := message.GetBuilder().MsgObjectDefinition(
@@ -458,6 +459,16 @@ func (s *Space) GetSpawnMessage() *websocket.PreparedMessage {
 }
 
 func (s *Space) SendSpawnMessage(f func(*websocket.PreparedMessage) error, recursive bool) {
+	if s.id == uuid.MustParse("04b09c1c-8ff3-43d5-80e8-ed68212bc90d") {
+		fmt.Printf("%+v %+v %+v\n", s.id, s.GetParent().GetID(), utils.GoroutineID())
+		//for k, space := range s.Children.Data {
+		//	fmt.Printf("%+v %+v\n", k, space.GetID())
+		//}
+	}
+	if s.id == uuid.MustParse("3e4a23ae-0a50-4d96-835b-2ac49995bb3c") {
+		//fmt.Printf("%+v %+v\n", s.id, s.GetParent().GetID())
+		fmt.Printf("********************* %v %p\n", utils.GoroutineID(), s)
+	}
 	f(s.spawnMsg.Load())
 	//time.Sleep(time.Millisecond * 100)
 	if recursive {

@@ -34,7 +34,7 @@ func (u *User) StartIOPumps() {
 	u.lastPositionUpdateTimestamp = int64(0)
 	u.numSendsQueued.Store(0)
 	go u.writePump()
-	go u.writePump()
+	go u.readPump()
 }
 
 func (u *User) ReleaseSendBuffer() {
@@ -99,6 +99,7 @@ func (u *User) initiateShutDown(needToRemoveFromWorld bool) {
 
 func (u *User) writePump() {
 	needToRemoveFromWorld := true
+	fmt.Println("started write pump")
 	defer func() {
 		u.log.Info("Connection: end of write pump")
 		u.initiateShutDown(needToRemoveFromWorld)
@@ -159,8 +160,8 @@ func (u *User) Shutdown() {
 
 func (u *User) SendDirectly(message *websocket.PreparedMessage) error {
 	// not concurrent, to be used in single particular location
-	u.directLock.Lock()
-	defer u.directLock.Unlock()
+	//u.directLock.Lock()
+	//defer u.directLock.Unlock()
 
 	u.conn.SetWriteDeadline(time.Now().Add(writeWait))
 	return u.conn.WritePreparedMessage(message)

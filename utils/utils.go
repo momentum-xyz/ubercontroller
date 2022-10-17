@@ -1,8 +1,12 @@
 package utils
 
 import (
+	"fmt"
 	"github.com/mitchellh/mapstructure"
 	"reflect"
+	"runtime"
+	"strconv"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -155,4 +159,15 @@ func stringToUUIDHookFunc() mapstructure.DecodeHookFunc {
 
 		return uuid.Parse(data.(string))
 	}
+}
+
+func GoroutineID() int {
+	var buf [64]byte
+	n := runtime.Stack(buf[:], false)
+	idField := strings.Fields(strings.TrimPrefix(string(buf[:n]), "goroutine "))[0]
+	id, err := strconv.Atoi(idField)
+	if err != nil {
+		panic(fmt.Sprintf("cannot get goroutine id: %v", err))
+	}
+	return id
 }
