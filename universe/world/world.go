@@ -7,8 +7,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/momentum-xyz/posbus-protocol/posbus"
-	"github.com/pkg/errors"
-	"go.uber.org/zap"
 
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/mplugin"
@@ -140,6 +138,7 @@ func (w *World) Load() error {
 	w.UpdateWorldMetadata()
 	universe.GetNode().AddAPIRegister(w)
 
+	w.Space.UpdateChildrenPosition(true, true)
 	go w.Run()
 	//cu.BroadcastPositions()
 

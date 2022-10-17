@@ -298,7 +298,7 @@ func (n *Node) LoadUser(userID uuid.UUID) (universe.User, error) {
 	}
 
 	fmt.Println("%+v\n", user.GetPosition())
-	user.SetPosition(cmath.Vec3{X: 50, Y: 50, Z: 50})
+	user.SetPosition(cmath.Vec3{X: 50, Y: 50, Z: 150})
 	fmt.Println("%+v\n", user.GetPosition())
 	return user, nil
 }

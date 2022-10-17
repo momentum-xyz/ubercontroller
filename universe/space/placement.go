@@ -1,56 +1,55 @@
 package space
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/pkg/position_algo"
-	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/pkg/errors"
 	"sort"
 )
 
 // TODO: Rewrite
 
-func (s *Space) FillPlacement(placementMap map[string]interface{}) (position_algo.Algo, error) {
+func (s *Space) GetPlacement(placementMap *entry.SpaceChildPlacement) (position_algo.Algo, error) {
 
-	s.log.Debug("PLSMAP", placementMap)
+	fmt.Printf("PLSMAP %+v\n", placementMap)
 
 	var par position_algo.Algo
 	algo := "circular"
-	if v, ok := placementMap["algo"]; ok {
-		algo = v.(string)
+	if placementMap.Algo != nil {
+		algo = *placementMap.Algo
 	}
 
+	fmt.Printf("%s | %+v\n", algo, placementMap.Options)
 	switch algo {
 	case "circular":
-		par = position_algo.NewCircular(placementMap)
+		par = position_algo.NewCircular(placementMap.Options)
 	case "helix":
-		par = position_algo.NewHelix(placementMap)
+		par = position_algo.NewHelix(placementMap.Options)
 	case "sector":
-		par = position_algo.NewSector(placementMap)
+		par = position_algo.NewSector(placementMap.Options)
 	case "spiral":
-		par = position_algo.NewSpiral(placementMap)
+		par = position_algo.NewSpiral(placementMap.Options)
 	case "hexaspiral":
-		par = position_algo.NewHexaSpiral(placementMap)
+		par = position_algo.NewHexaSpiral(placementMap.Options)
 	}
-
+	fmt.Printf("%+v\n", par)
 	return par, nil
 }
 
 func (s *Space) GetPlacements() map[uuid.UUID]position_algo.Algo {
-	childPlacements := s.GetEffectiveOptions().ChildPlacements
-	jsonData := []byte(utils.GetFromAny(childPlacements, ""))
-	var placements map[uuid.UUID]interface{}
-	if err := json.Unmarshal(jsonData, &placements); err != nil {
-		s.log.Debug(errors.WithMessage(err, "Space: UpdateMetaFromMap: failed to unmarshal child place"))
-	}
+	fmt.Printf("eopts %+v\n:", s.GetEffectiveOptions().ChildPlacements)
+	placements := s.GetEffectiveOptions().ChildPlacements
+	fmt.Println(len(placements))
 	pls := make(map[uuid.UUID]position_algo.Algo)
 	for sId, placement := range placements {
-		if p, err := s.FillPlacement(placement.(map[string]interface{})); err != nil {
-			pls[sId] = p
+		if p, err := s.GetPlacement(placement); err != nil {
 			s.log.Error(errors.WithMessage(err, "Space: UpdateMetaFromMap: failed to fill placement"))
+		} else {
+			fmt.Printf("%+v | %+v\n", sId, p)
+			pls[sId] = p
 		}
 	}
 	return pls
@@ -98,7 +97,7 @@ func (s *Space) SetPosition(position *cmath.Vec3, updateDB bool) error {
 func (s *Space) UpdateChildrenPosition(recursive bool, force bool) error {
 	fmt.Println("pls1", s.GetID())
 	pls := s.GetPlacements()
-
+	fmt.Printf("pls1a:%+v : %+v\n", s.GetID(), pls)
 	ChildMap := make(map[uuid.UUID][]uuid.UUID)
 	for u := range pls {
 		ChildMap[u] = make([]uuid.UUID, 0)
@@ -116,16 +115,19 @@ func (s *Space) UpdateChildrenPosition(recursive bool, force bool) error {
 			ChildMap[spaceTypeId] = append(ChildMap[spaceTypeId], child.GetID())
 		}
 	}
-	fmt.Println("pls3", s.GetID())
+	fmt.Println("pls3", s.GetID(), ChildMap)
 	for u := range pls {
+		fmt.Println("pls4", s.GetID(), u)
 		lpm := ChildMap[u]
-
+		fmt.Println("pls4a", s.GetID(), lpm)
 		sort.Slice(lpm, func(i, j int) bool { return lpm[i].ClockSequence() < lpm[j].ClockSequence() })
-
+		fmt.Println("pls4b", s.GetID(), lpm)
 		for i, k := range lpm {
 			pos, theta := pls[u].CalcPos(s.theta, s.GetActualPosition(), i, len(lpm))
+			fmt.Printf(" Position: %s |  %+v\n", s.GetID(), pos)
 
-			child, ok := s.Children.Load(k)
+			child, ok := s.Children.Data[k]
+			fmt.Println(ok)
 			if !ok {
 				s.log.Errorf("Space: UpdatePosition: failed to get space: %s", k)
 				continue

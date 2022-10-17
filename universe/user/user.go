@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"github.com/sasha-s/go-deadlock"
+	"sync"
 	"sync/atomic"
 	"time"
 	"unsafe"
@@ -44,6 +45,7 @@ type User struct {
 	options                     *entry.UserOptions
 	bufferSends                 atomic.Bool
 	numSendsQueued              atomic.Int64
+	directLock                  sync.Mutex
 }
 
 func (u *User) GetPosBuffer() []byte {

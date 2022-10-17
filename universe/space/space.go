@@ -430,7 +430,10 @@ func (s *Space) UpdateSpawnMessage() {
 	asset3d := uuid.Nil
 	if s.asset3d != nil {
 		asset3d = s.asset3d.GetID()
+	} else if s.GetSpaceType().GetAsset3d() != nil {
+		asset3d = s.GetSpaceType().GetAsset3d().GetID()
 	}
+	fmt.Printf("assets3d: %v\n", asset3d)
 	uuidNilPtr := utils.GetPTR(uuid.Nil)
 	falsePtr := utils.GetPTR(false)
 	msg := message.GetBuilder().MsgObjectDefinition(
