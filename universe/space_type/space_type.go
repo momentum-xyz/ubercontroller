@@ -231,6 +231,10 @@ func (s *SpaceType) GetEntry() *entry.SpaceType {
 }
 
 func (s *SpaceType) LoadFromEntry(entry *entry.SpaceType) error {
+	if entry.SpaceTypeID != s.id {
+		return errors.Errorf("space type ids mismatch: %s != %s", entry.SpaceTypeID, s.id)
+	}
+
 	s.id = entry.SpaceTypeID
 
 	if err := s.SetName(entry.SpaceTypeName, false); err != nil {

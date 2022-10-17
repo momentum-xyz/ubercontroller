@@ -132,6 +132,10 @@ func (p *Plugin) GetEntry() *entry.Plugin {
 }
 
 func (p *Plugin) LoadFromEntry(entry *entry.Plugin) error {
+	if entry.PluginID != p.id {
+		return errors.Errorf("plugin ids mismatch: %s != %s", entry.PluginID, p.id)
+	}
+
 	p.id = entry.PluginID
 
 	var err error
