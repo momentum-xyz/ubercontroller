@@ -78,6 +78,65 @@ func (n *Node) apiUsersCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, outBody)
 }
 
+func (n *Node) apiUsersGetMe(c *gin.Context) {
+	token, err := api.GetTokenFromContext(c)
+	if err != nil {
+		n.log.Error(errors.WithMessage(err, "Node: apiUsersGetMe: failed to get token from context"))
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": "failed to get token",
+		})
+		return
+	}
+
+	userID, err := api.GetUserIDFromToken(token)
+	if err != nil {
+		n.log.Error(errors.WithMessage(err, "Node: apiUsersGetMe: failed to get user id from token"))
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": "failed to get user id",
+		})
+		return
+	}
+
+	userEntry, err := n.db.UsersGetUserByID(c, userID)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
+			"message": "user not found",
+		})
+		return
+	}
+	userProfileEntry := userEntry.Profile
+
+	outUser := dto.User{
+		ID: userEntry.UserID.String(),
+		Profile: dto.Profile{
+			Bio:         userProfileEntry.Bio,
+			Location:    userProfileEntry.Location,
+			AvatarHash:  userProfileEntry.AvatarHash,
+			ProfileLink: userProfileEntry.ProfileLink,
+			OnBoarded:   userProfileEntry.OnBoarded,
+		},
+	}
+	if userEntry.UserTypeID != nil {
+		outUser.UserTypeID = userEntry.UserTypeID.String()
+	}
+	if token.Web3Address != "" {
+		outUser.Wallet = &token.Web3Address
+	}
+	if userEntry.CreatedAt != nil {
+		outUser.CreatedAt = userEntry.CreatedAt.String()
+	}
+	if userEntry.UpdatedAt != nil {
+		outUser.UpdatedAt = utils.GetPTR(userEntry.UpdatedAt.String())
+	}
+	if userProfileEntry != nil {
+		if userProfileEntry.Name != nil {
+			outUser.Name = *userProfileEntry.Name
+		}
+	}
+
+	c.JSON(http.StatusOK, outUser)
+}
+
 func (n *Node) apiCheckTokens(c *gin.Context, accessToken, idToken string) (api.Token, api.Token, int, error) {
 	parsedAccessToken, err := api.VerifyToken(c, accessToken)
 	if err != nil {
@@ -104,9 +163,9 @@ func (n *Node) apiCheckTokens(c *gin.Context, accessToken, idToken string) (api.
 }
 
 func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken api.Token) (*entry.User, int, error) {
-	userID, err := uuid.Parse(idToken.Subject)
+	userID, err := api.GetUserIDFromToken(idToken)
 	if err != nil {
-		return nil, http.StatusBadRequest, errors.WithMessage(err, "failed to parse user id")
+		return nil, http.StatusBadRequest, errors.WithMessage(err, "failed to get user id from token")
 	}
 
 	userEntry, err := n.db.UsersGetUserByID(c, userID)

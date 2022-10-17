@@ -1,10 +1,11 @@
 package middleware
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	"net/http"
 
 	"github.com/momentum-xyz/ubercontroller/universe/api"
 )
@@ -19,18 +20,6 @@ func VerifyUser(log *zap.SugaredLogger) gin.HandlerFunc {
 			})
 			return
 		}
-
-		userID := c.Param("userID")
-		if userID != "" && userID != token.Subject {
-			log.Debug(
-				errors.WithMessage(
-					errors.Errorf("%s != %s", userID, token.Subject), "Middleware: VerifyUser: user id mismatch",
-				),
-			)
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-				"message": "failed to verify access token",
-			})
-			return
-		}
+		c.Set(api.TokenContextKey, token)
 	}
 }

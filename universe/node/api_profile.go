@@ -30,9 +30,9 @@ func (n *Node) apiProfileEdit(c *gin.Context) {
 		return
 	}
 
-	userID, err := api.GetUserIDFromRequestParam(c)
+	userID, err := api.GetUserIDFromContext(c)
 	if err != nil {
-		n.log.Debug(errors.WithMessage(err, "Node: apiProfileEdit: failed to get user id from request param"))
+		n.log.Debug(errors.WithMessage(err, "Node: apiProfileEdit: failed to get user id from context"))
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 			"message": "invalid user id",
 		})

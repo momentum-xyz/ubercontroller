@@ -12,6 +12,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/zitadel/oidc/pkg/client"
 	"github.com/zitadel/oidc/pkg/client/rs"
+
+	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 type Token struct {
@@ -72,8 +74,31 @@ func GetTokenFromRequest(c *gin.Context) string {
 	return strings.TrimPrefix(authHeader, "Bearer ")
 }
 
-func GetUserIDFromRequestParam(c *gin.Context) (uuid.UUID, error) {
-	userID, err := uuid.Parse(c.Param("userID"))
+func GetTokenFromContext(c *gin.Context) (Token, error) {
+	value, ok := c.Get(TokenContextKey)
+	if !ok {
+		return Token{}, errors.Errorf("failed to get token value from context")
+	}
+
+	token := utils.GetFromAny(value, Token{})
+
+	return token, nil
+}
+
+func GetUserIDFromContext(c *gin.Context) (uuid.UUID, error) {
+	token, err := GetTokenFromContext(c)
+	if err != nil {
+		return uuid.Nil, errors.WithMessage(err, "failed to get token from context")
+	}
+	userID, err := GetUserIDFromToken(token)
+	if err != nil {
+		return uuid.Nil, errors.WithMessage(err, "failed to get user id from token")
+	}
+	return userID, nil
+}
+
+func GetUserIDFromToken(token Token) (uuid.UUID, error) {
+	userID, err := uuid.Parse(token.Subject)
 	if err != nil {
 		return uuid.Nil, errors.WithMessage(err, "failed to parse user id")
 	}

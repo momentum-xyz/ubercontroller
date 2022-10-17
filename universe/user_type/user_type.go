@@ -44,9 +44,9 @@ func (u *UserType) GetID() uuid.UUID {
 }
 
 func (u *UserType) Initialize(ctx context.Context) error {
-	log := utils.GetFromAny(ctx.Value(types.ContextLoggerKey), (*zap.SugaredLogger)(nil))
+	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
 	if log == nil {
-		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.ContextLoggerKey))
+		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
 	}
 
 	u.ctx = ctx

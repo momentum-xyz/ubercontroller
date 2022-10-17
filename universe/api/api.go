@@ -21,9 +21,9 @@ var api = struct {
 }{}
 
 func Initialize(ctx context.Context, cfg *config.Config) error {
-	log := utils.GetFromAny(ctx.Value(types.ContextLoggerKey), (*zap.SugaredLogger)(nil))
+	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
 	if log == nil {
-		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.ContextLoggerKey))
+		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
 	}
 
 	api.ctx = ctx
