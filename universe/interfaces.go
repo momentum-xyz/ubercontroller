@@ -104,6 +104,9 @@ type World interface {
 	APIRegister
 
 	WriteInfluxPoint(point *influxWrite.Point) error
+	AddToCounter() int64
+	AddToAllSpaces(space Space) error
+	RemoveFromAllSpaces(space Space) error
 }
 
 type Space interface {

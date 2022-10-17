@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/momentum-xyz/posbus-protocol/posbus"
+	"github.com/momentum-xyz/ubercontroller/types/generic"
 
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/mplugin"
@@ -47,6 +48,18 @@ type World struct {
 	broadcast           chan *websocket.PreparedMessage
 	metaMsg             atomic.Pointer[websocket.PreparedMessage]
 	metaData            WorldMeta
+	counter             atomic.Int64
+	AllSpaces           *generic.SyncMap[uuid.UUID, universe.Space]
+}
+
+func (w *World) AddToAllSpaces(space universe.Space) error {
+	w.AllSpaces.Store(space.GetID(), space)
+	return nil
+}
+
+func (w *World) RemoveFromAllSpaces(space universe.Space) error {
+	w.AllSpaces.Remove(space.GetID())
+	return nil
 }
 
 func NewWorld(id uuid.UUID, db database.DB) *World {
@@ -57,6 +70,7 @@ func NewWorld(id uuid.UUID, db database.DB) *World {
 	world.pluginController = mplugin.NewPluginController(id)
 	//world.corePluginInstance, _ = world.pluginController.AddPlugin(world.GetID(), world.corePluginInitFunc)
 	world.pluginController.AddPlugin(universe.GetSystemPluginID(), world.corePluginInitFunc)
+	world.AllSpaces = generic.NewSyncMap[uuid.UUID, universe.Space]()
 	return world
 }
 
@@ -71,11 +85,15 @@ func (w *World) Initialize(ctx context.Context) error {
 	if log == nil {
 		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
 	}
-
+	w.counter.Store(0)
 	w.ctx = ctx
 	w.log = log
 
 	return w.Space.Initialize(ctx)
+}
+
+func (w *World) AddToCounter() int64 {
+	return w.counter.Add(1)
 }
 
 // TODO: implement

@@ -19,7 +19,7 @@ func (s *Space) CreateSpace(spaceID uuid.UUID) (universe.Space, error) {
 	if err := space.Initialize(s.ctx); err != nil {
 		return nil, errors.WithMessagef(err, "failed to initialize space: %s", spaceID)
 	}
-	if err := s.GetWorld().AddSpace(space, false); err != nil {
+	if err := s.GetWorld().AddToAllSpaces(space); err != nil {
 		return nil, errors.WithMessagef(err, "failed to add space %s to world: %s", spaceID, s.GetWorld().GetID())
 	}
 	if err := s.AddSpace(space, false); err != nil {
@@ -157,6 +157,7 @@ func (s *Space) RemoveSpace(space universe.Space, recursive, updateDB bool) (boo
 		return true, nil
 	}
 	s.Children.Mu.Unlock()
+	s.world.RemoveFromAllSpaces(space)
 
 	if !recursive {
 		return false, nil
