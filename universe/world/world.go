@@ -152,7 +152,6 @@ func (w *World) Load() error {
 		return errors.WithMessage(err, "failed to load from entry")
 	}
 	w.UpdateWorldMetadata()
-	universe.GetNode().AddAPIRegister(w)
 
 	w.Space.UpdateChildrenPosition(true, true)
 	go w.Run()

@@ -101,7 +101,6 @@ type World interface {
 	Space
 	RunStopper
 	LoadSaver
-	APIRegister
 
 	WriteInfluxPoint(point *influxWrite.Point) error
 	AddToCounter() int64

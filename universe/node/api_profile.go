@@ -10,7 +10,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
-func (n *Node) apiProfileEdit(c *gin.Context) {
+func (n *Node) apiProfileUpdate(c *gin.Context) {
 	inBody := struct {
 		Name    *string `json:"name"`
 		Profile *struct {
@@ -23,7 +23,7 @@ func (n *Node) apiProfileEdit(c *gin.Context) {
 	}{}
 
 	if err := c.ShouldBindJSON(&inBody); err != nil {
-		n.log.Debug(errors.WithMessage(err, "Node: apiProfileEdit: failed to bind json"))
+		n.log.Debug(errors.WithMessage(err, "Node: apiProfileUpdate: failed to bind json"))
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 			"message": "invalid request body",
 		})
@@ -32,7 +32,7 @@ func (n *Node) apiProfileEdit(c *gin.Context) {
 
 	userID, err := api.GetUserIDFromContext(c)
 	if err != nil {
-		n.log.Debug(errors.WithMessage(err, "Node: apiProfileEdit: failed to get user id from context"))
+		n.log.Debug(errors.WithMessage(err, "Node: apiProfileUpdate: failed to get user id from context"))
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 			"message": "invalid user id",
 		})
@@ -41,7 +41,7 @@ func (n *Node) apiProfileEdit(c *gin.Context) {
 
 	userProfile, err := n.db.UsersGetUserProfileByUserID(c, userID)
 	if err != nil {
-		n.log.Debug(errors.WithMessage(err, "Node: apiProfileEdit: failed to get user profile by user id"))
+		n.log.Debug(errors.WithMessage(err, "Node: apiProfileUpdate: failed to get user profile by user id"))
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
 			"message": "not found",
 		})
