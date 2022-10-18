@@ -39,7 +39,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 		authProfile := auth.Group("/profile")
 		{
-			authProfile.PUT("", n.apiProfileUpdate)
+			authProfile.PATCH("", n.apiProfileUpdate)
 		}
 	}
 }

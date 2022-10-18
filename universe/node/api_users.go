@@ -163,7 +163,7 @@ func (n *Node) apiCheckTokens(c *gin.Context, accessToken, idToken string) (api.
 }
 
 func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken api.Token) (*entry.User, int, error) {
-	userID, err := api.GetUserIDFromToken(idToken)
+	userID, err := api.GetUserIDFromToken(accessToken)
 	if err != nil {
 		return nil, http.StatusBadRequest, errors.WithMessage(err, "failed to get user id from token")
 	}
