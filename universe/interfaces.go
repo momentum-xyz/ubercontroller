@@ -102,10 +102,17 @@ type World interface {
 	RunStopper
 	LoadSaver
 
+	GetSpaceFromAllSpaces(spaceID uuid.UUID) (Space, bool)
+	GetAllSpaces() map[uuid.UUID]Space
+	AddSpaceToAllSpaces(space Space) error
+	AddSpacesToAllSpaces(spaces []Space) error
+	RemoveSpaceFromAllSpaces(space Space) (bool, error)
+	RemoveSpacesFromAllSpaces(spaces []Space) (bool, error)
+
 	WriteInfluxPoint(point *influxWrite.Point) error
+
+	// QUESTION: do we still need this?
 	AddToCounter() int64
-	AddToAllSpaces(space Space) error
-	RemoveFromAllSpaces(space Space) error
 }
 
 type Space interface {

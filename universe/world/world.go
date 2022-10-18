@@ -2,24 +2,26 @@ package world
 
 import (
 	"context"
+	"sync/atomic"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"github.com/momentum-xyz/posbus-protocol/posbus"
-	"github.com/momentum-xyz/ubercontroller/types/generic"
+	"github.com/hashicorp/go-multierror"
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
+	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/mplugin"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/pkg/message"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/space"
 	"github.com/momentum-xyz/ubercontroller/utils"
-	"github.com/pkg/errors"
-	"go.uber.org/zap"
-	"sync/atomic"
-	"time"
 )
 
 var _ universe.World = (*World)(nil)
@@ -49,17 +51,7 @@ type World struct {
 	metaMsg             atomic.Pointer[websocket.PreparedMessage]
 	metaData            WorldMeta
 	counter             atomic.Int64
-	AllSpaces           *generic.SyncMap[uuid.UUID, universe.Space]
-}
-
-func (w *World) AddToAllSpaces(space universe.Space) error {
-	w.AllSpaces.Store(space.GetID(), space)
-	return nil
-}
-
-func (w *World) RemoveFromAllSpaces(space universe.Space) error {
-	w.AllSpaces.Remove(space.GetID())
-	return nil
+	allSpaces           *generic.SyncMap[uuid.UUID, universe.Space]
 }
 
 func NewWorld(id uuid.UUID, db database.DB) *World {
@@ -70,7 +62,7 @@ func NewWorld(id uuid.UUID, db database.DB) *World {
 	world.pluginController = mplugin.NewPluginController(id)
 	//world.corePluginInstance, _ = world.pluginController.AddPlugin(world.GetID(), world.corePluginInitFunc)
 	world.pluginController.AddPlugin(universe.GetSystemPluginID(), world.corePluginInitFunc)
-	world.AllSpaces = generic.NewSyncMap[uuid.UUID, universe.Space]()
+	world.allSpaces = generic.NewSyncMap[uuid.UUID, universe.Space]()
 	return world
 }
 
@@ -211,4 +203,62 @@ func (w *World) Save() error {
 	w.log.Infof("World saved: %s", w.GetID())
 
 	return nil
+}
+
+func (w *World) GetSpaceFromAllSpaces(spaceID uuid.UUID) (universe.Space, bool) {
+	space, ok := w.allSpaces.Load(spaceID)
+	return space, ok
+}
+
+func (w *World) GetAllSpaces() map[uuid.UUID]universe.Space {
+	w.allSpaces.Mu.RLock()
+	defer w.allSpaces.Mu.RUnlock()
+
+	spaces := make(map[uuid.UUID]universe.Space, len(w.allSpaces.Data))
+
+	for id, space := range w.allSpaces.Data {
+		spaces[id] = space
+	}
+
+	return spaces
+}
+
+func (w *World) AddSpaceToAllSpaces(space universe.Space) error {
+	w.allSpaces.Store(space.GetID(), space)
+	return nil
+}
+
+func (w *World) AddSpacesToAllSpaces(spaces []universe.Space) error {
+	for i := range spaces {
+		w.allSpaces.Store(spaces[i].GetID(), spaces[i])
+	}
+	return nil
+}
+
+func (w *World) RemoveSpaceFromAllSpaces(space universe.Space) (bool, error) {
+	w.allSpaces.Mu.Lock()
+	defer w.allSpaces.Mu.Unlock()
+
+	space, ok := w.allSpaces.Data[space.GetID()]
+	if ok {
+		delete(w.allSpaces.Data, space.GetID())
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func (w *World) RemoveSpacesFromAllSpaces(spaces []universe.Space) (bool, error) {
+	res := true
+	var errs *multierror.Error
+	for i := range spaces {
+		removed, err := w.RemoveSpaceFromAllSpaces(spaces[i])
+		if err != nil {
+			errs = multierror.Append(errs, errors.WithMessagef(err, "failed to remove space: %s", spaces[i].GetID()))
+		}
+		if !removed {
+			res = false
+		}
+	}
+	return res, errs.ErrorOrNil()
 }

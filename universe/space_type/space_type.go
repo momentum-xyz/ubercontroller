@@ -193,7 +193,7 @@ func (s *SpaceType) SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB 
 	s.mu.Unlock()
 
 	for _, world := range universe.GetNode().GetWorlds().GetWorlds() {
-		for _, space := range world.GetSpaces(true) {
+		for _, space := range world.GetAllSpaces() {
 			if space.GetSpaceType() == nil {
 				continue
 			}
