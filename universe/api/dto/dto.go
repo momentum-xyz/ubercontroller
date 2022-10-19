@@ -10,17 +10,17 @@ type Profile struct {
 }
 
 type User struct {
-	ID          string         `json:"id"`
-	UserTypeID  string         `json:"userTypeId"`
-	Wallet      *string        `json:"wallet"`
-	Name        string         `json:"name"`
-	Email       *string        `json:"email,omitempty"`
-	Description *string        `json:"description"`
-	CreatedAt   string         `json:"createdAt"`
-	UpdatedAt   *string        `json:"updatedAt"`
-	IsNodeAdmin bool           `json:"isNodeAdmin"`
-	Status      UserStatusType `json:"status"`
-	Profile     Profile        `json:"profile"`
+	ID          string          `json:"id"`
+	UserTypeID  string          `json:"userTypeId"`
+	Wallet      *string         `json:"wallet"`
+	Name        string          `json:"name"`
+	Email       *string         `json:"email,omitempty"`
+	Description *string         `json:"description"`
+	CreatedAt   string          `json:"createdAt"`
+	UpdatedAt   *string         `json:"updatedAt"`
+	IsNodeAdmin bool            `json:"isNodeAdmin"`
+	Status      *UserStatusType `json:"status,omitempty"`
+	Profile     Profile         `json:"profile"`
 }
 
 type Tile struct {
