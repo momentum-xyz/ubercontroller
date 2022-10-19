@@ -79,5 +79,5 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, nil)
+	n.apiUsersGetMe(c)
 }
