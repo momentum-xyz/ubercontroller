@@ -23,9 +23,7 @@ func (n *Node) apiUsersCheck(c *gin.Context) {
 	if err := c.ShouldBindJSON(&inBody); err != nil {
 		err = errors.WithMessage(err, "Node: apiUsersCheck: failed to bind json")
 		n.log.Debug(err)
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"error": map[string]string{"reason": "invalid_request_body", "message": err.Error()},
-		})
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err)
 		return
 	}
 
@@ -33,9 +31,7 @@ func (n *Node) apiUsersCheck(c *gin.Context) {
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiUsersCheck: failed to check tokens")
 		n.log.Debug(err)
-		c.AbortWithStatusJSON(code, gin.H{
-			"error": map[string]string{"reason": "invalid_tokens", "message": err.Error()},
-		})
+		api.AbortRequest(c, code, "invalid_tokens", err)
 		return
 	}
 
@@ -43,9 +39,7 @@ func (n *Node) apiUsersCheck(c *gin.Context) {
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiUsersCheck: failed get or create user from tokens")
 		n.log.Error(err)
-		c.AbortWithStatusJSON(httpCode, gin.H{
-			"error": map[string]string{"reason": "failed_to_get_or_create_user", "message": err.Error()},
-		})
+		api.AbortRequest(c, httpCode, "failed_to_get_or_create_user", err)
 		return
 	}
 
@@ -87,9 +81,7 @@ func (n *Node) apiUsersGetMe(c *gin.Context) {
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiUsersGetMe: failed to get token from context")
 		n.log.Error(err)
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"error": map[string]string{"reason": "failed_to_get_token", "message": err.Error()},
-		})
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_token", err)
 		return
 	}
 
@@ -97,17 +89,13 @@ func (n *Node) apiUsersGetMe(c *gin.Context) {
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiUsersGetMe: failed to get user id from token")
 		n.log.Error(err)
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"error": map[string]string{"reason": "failed_to_get_user_id", "message": err.Error()},
-		})
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_user_id", err)
 		return
 	}
 
 	userEntry, err := n.db.UsersGetUserByID(c, userID)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
-			"error": map[string]string{"reason": "user_not_found", "message": err.Error()},
-		})
+		api.AbortRequest(c, http.StatusNotFound, "user_not_found", err)
 		return
 	}
 	userProfileEntry := userEntry.Profile

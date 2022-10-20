@@ -16,9 +16,7 @@ func VerifyUser(log *zap.SugaredLogger) gin.HandlerFunc {
 		if err != nil {
 			err = errors.WithMessage(err, "Middleware: VerifyUser: failed to verify token")
 			log.Debug(err)
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-				"error": map[string]string{"reason": "failed_to_verify_access_token", "message": err.Error()},
-			})
+			api.AbortRequest(c, http.StatusForbidden, "failed_to_verify_access_token", err)
 			return
 		}
 		c.Set(api.TokenContextKey, token)

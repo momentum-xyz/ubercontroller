@@ -33,9 +33,7 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiProfileUpdate: failed to get user id from context")
 		n.log.Debug(err)
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"error": map[string]string{"reason": "invalid_user_id", "message": err.Error()},
-		})
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err)
 		return
 	}
 
@@ -43,9 +41,7 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiProfileUpdate: failed to get user profile by user id")
 		n.log.Debug(err)
-		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
-			"error": map[string]string{"reason": "not_found", "message": err.Error()},
-		})
+		api.AbortRequest(c, http.StatusNotFound, "not_found", err)
 		return
 	}
 
@@ -75,9 +71,7 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 	if err := n.db.UsersUpdateUserProfile(c, userID, userProfile); err != nil {
 		err = errors.WithMessage(err, "failed to update user profile")
 		n.log.Error(err)
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"error": map[string]string{"reason": "failed_to_update_user_profile", "message": err.Error()},
-		})
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_update_user_profile", err)
 		return
 	}
 
