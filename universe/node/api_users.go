@@ -15,32 +15,36 @@ import (
 )
 
 func (n *Node) apiUsersCheck(c *gin.Context) {
+	n.log.Debug("apiUsersCheck ***")
 	inBody := struct {
-		IDToken string `json:"idToken"`
+		IDToken string `json:"idToken" binding:"required"`
 	}{}
 
 	if err := c.ShouldBindJSON(&inBody); err != nil {
-		n.log.Debug(errors.WithMessage(err, "Node: apiUsersCheck: failed to bind json"))
+		err = errors.WithMessage(err, "Node: apiUsersCheck: failed to bind json")
+		n.log.Debug(err)
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"message": "invalid request body",
+			"error": map[string]string{"reason": "invalid_request_body", "message": err.Error()},
 		})
 		return
 	}
 
 	accessToken, idToken, code, err := n.apiCheckTokens(c, api.GetTokenFromRequest(c), inBody.IDToken)
 	if err != nil {
-		n.log.Debug(errors.WithMessage(err, "Node: apiUsersCheck: failed to check tokens"))
+		err = errors.WithMessage(err, "Node: apiUsersCheck: failed to check tokens")
+		n.log.Debug(err)
 		c.AbortWithStatusJSON(code, gin.H{
-			"message": "invalid tokens",
+			"error": map[string]string{"reason": "invalid_tokens", "message": err.Error()},
 		})
 		return
 	}
 
 	userEntry, httpCode, err := n.apiGetOrCreateUserFromTokens(c, accessToken, idToken)
 	if err != nil {
-		n.log.Error(errors.WithMessage(err, "Node: apiUsersCheck: failed get or create user from tokens"))
+		err = errors.WithMessage(err, "Node: apiUsersCheck: failed get or create user from tokens")
+		n.log.Error(err)
 		c.AbortWithStatusJSON(httpCode, gin.H{
-			"message": "failed to get or create user",
+			"error": map[string]string{"reason": "failed_to_get_or_create_user", "message": err.Error()},
 		})
 		return
 	}
@@ -81,18 +85,20 @@ func (n *Node) apiUsersCheck(c *gin.Context) {
 func (n *Node) apiUsersGetMe(c *gin.Context) {
 	token, err := api.GetTokenFromContext(c)
 	if err != nil {
-		n.log.Error(errors.WithMessage(err, "Node: apiUsersGetMe: failed to get token from context"))
+		err = errors.WithMessage(err, "Node: apiUsersGetMe: failed to get token from context")
+		n.log.Error(err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"message": "failed to get token",
+			"error": map[string]string{"reason": "failed_to_get_token", "message": err.Error()},
 		})
 		return
 	}
 
 	userID, err := api.GetUserIDFromToken(token)
 	if err != nil {
-		n.log.Error(errors.WithMessage(err, "Node: apiUsersGetMe: failed to get user id from token"))
+		err = errors.WithMessage(err, "Node: apiUsersGetMe: failed to get user id from token")
+		n.log.Error(err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"message": "failed to get user id",
+			"error": map[string]string{"reason": "failed_to_get_user_id", "message": err.Error()},
 		})
 		return
 	}
@@ -100,7 +106,7 @@ func (n *Node) apiUsersGetMe(c *gin.Context) {
 	userEntry, err := n.db.UsersGetUserByID(c, userID)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
-			"message": "user not found",
+			"error": map[string]string{"reason": "user_not_found", "message": err.Error()},
 		})
 		return
 	}

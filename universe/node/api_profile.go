@@ -23,27 +23,28 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 	}{}
 
 	if err := c.ShouldBindJSON(&inBody); err != nil {
-		n.log.Debug(errors.WithMessage(err, "Node: apiProfileUpdate: failed to bind json"))
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"message": "invalid request body",
-		})
+		err = errors.WithMessage(err, "Node: apiProfileUpdate: failed to bind json")
+		n.log.Debug(err)
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err)
 		return
 	}
 
 	userID, err := api.GetUserIDFromContext(c)
 	if err != nil {
-		n.log.Debug(errors.WithMessage(err, "Node: apiProfileUpdate: failed to get user id from context"))
+		err = errors.WithMessage(err, "Node: apiProfileUpdate: failed to get user id from context")
+		n.log.Debug(err)
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"message": "invalid user id",
+			"error": map[string]string{"reason": "invalid_user_id", "message": err.Error()},
 		})
 		return
 	}
 
 	userProfile, err := n.db.UsersGetUserProfileByUserID(c, userID)
 	if err != nil {
-		n.log.Debug(errors.WithMessage(err, "Node: apiProfileUpdate: failed to get user profile by user id"))
+		err = errors.WithMessage(err, "Node: apiProfileUpdate: failed to get user profile by user id")
+		n.log.Debug(err)
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
-			"message": "not found",
+			"error": map[string]string{"reason": "not_found", "message": err.Error()},
 		})
 		return
 	}
@@ -72,9 +73,10 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 	userProfile.OnBoarded = utils.GetPTR(true)
 
 	if err := n.db.UsersUpdateUserProfile(c, userID, userProfile); err != nil {
-		n.log.Error(errors.WithMessage(err, "failed to update user profile"))
+		err = errors.WithMessage(err, "failed to update user profile")
+		n.log.Error(err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"message": "failed to update user profile",
+			"error": map[string]string{"reason": "failed_to_update_user_profile", "message": err.Error()},
 		})
 		return
 	}

@@ -2,7 +2,7 @@ package api
 
 import (
 	"context"
-
+	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"github.com/zitadel/oidc/pkg/client/rs"
 	"go.uber.org/zap"
@@ -32,4 +32,10 @@ func Initialize(ctx context.Context, cfg *config.Config) error {
 	api.oidcProviders = generic.NewSyncMap[string, rs.ResourceServer]()
 
 	return nil
+}
+
+func AbortRequest(c *gin.Context, code int, reason string, err error) {
+	c.AbortWithStatusJSON(code, gin.H{
+		"error": map[string]string{"reason": reason, "message": err.Error()},
+	})
 }
