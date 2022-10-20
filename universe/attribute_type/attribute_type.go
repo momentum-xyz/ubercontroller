@@ -77,7 +77,10 @@ func (a *AttributeType) SetOptions(modifyFn modify.Fn[entry.AttributeOptions], u
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	options := modifyFn(a.options)
+	options, err := modifyFn(a.options)
+	if err != nil {
+		return errors.WithMessage(err, "failed to modify options")
+	}
 
 	if updateDB {
 		if err := a.db.AttributeTypesUpdateAttributeTypeOptions(a.ctx, a.id, options); err != nil {

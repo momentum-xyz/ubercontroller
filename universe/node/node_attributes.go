@@ -1,10 +1,10 @@
 package node
 
 import (
+	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
-	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
@@ -33,7 +33,16 @@ func (n *Node) GetNodeAttributeEffectiveOptions(attributeID entry.AttributeID) (
 	if !ok {
 		return nil, false
 	}
-	return utils.MergePTRs(payload.Options, attr.GetOptions()), true
+
+	effectiveOptions, err := merge.Auto(payload.Options, attr.GetOptions())
+	if err != nil {
+		n.log.Error(
+			err, "Node: GetNodeAttributeEffectiveOptions: failed to merge effective options: %+v", attributeID,
+		)
+		return nil, false
+	}
+
+	return effectiveOptions, true
 }
 
 func (n *Node) SetNodeAttributeValue(
@@ -47,7 +56,11 @@ func (n *Node) SetNodeAttributeValue(
 		return errors.Errorf("node attribute not found")
 	}
 
-	payload.Value = modifyFn(payload.Value)
+	value, err := modifyFn(payload.Value)
+	if err != nil {
+		return errors.WithMessage(err, "failed to modify value")
+	}
+	payload.Value = value
 
 	if updateDB {
 		if err := n.db.NodeAttributesUpdateNodeAttributeValue(n.ctx, attributeID, payload.Value); err != nil {
@@ -69,7 +82,11 @@ func (n *Node) SetNodeAttributeOptions(
 		return errors.Errorf("node attribute not found")
 	}
 
-	payload.Options = modifyFn(payload.Options)
+	options, err := modifyFn(payload.Options)
+	if err != nil {
+		return errors.WithMessage(err, "failed to modify options")
+	}
+	payload.Options = options
 
 	if updateDB {
 		if err := n.db.NodeAttributesUpdateNodeAttributeOptions(n.ctx, attributeID, payload.Options); err != nil {

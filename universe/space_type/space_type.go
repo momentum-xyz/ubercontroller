@@ -180,7 +180,10 @@ func (s *SpaceType) GetOptions() *entry.SpaceOptions {
 
 func (s *SpaceType) SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool) error {
 	s.mu.Lock()
-	options := modifyFn(s.options)
+	options, err := modifyFn(s.options)
+	if err != nil {
+		return errors.WithMessage(err, "failed to modify options")
+	}
 
 	if updateDB {
 		if err := s.db.SpaceTypesUpdateSpaceTypeOptions(s.ctx, s.id, options); err != nil {

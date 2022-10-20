@@ -177,6 +177,7 @@ type Space interface {
 	SetSpaceAttributeOptions(
 		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool,
 	) error
+
 	UpdateChildrenPosition(recursive bool, force bool) error
 	SetActualPosition(pos cmath.Vec3, theta float64, force bool) error
 

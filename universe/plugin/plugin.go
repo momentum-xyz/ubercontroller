@@ -91,7 +91,10 @@ func (p *Plugin) SetOptions(modifyFn modify.Fn[entry.PluginOptions], updateDB bo
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	options := modifyFn(p.options)
+	options, err := modifyFn(p.options)
+	if err != nil {
+		return errors.WithMessage(err, "failed to modify options")
+	}
 
 	if updateDB {
 		if err := p.db.PluginsUpdatePluginOptions(p.ctx, p.id, options); err != nil {

@@ -3,11 +3,11 @@ package space
 import (
 	"github.com/gorilla/websocket"
 	"github.com/momentum-xyz/ubercontroller/pkg/message"
+	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
@@ -36,7 +36,19 @@ func (s *Space) GetSpaceAttributeEffectiveOptions(attributeID entry.AttributeID)
 	if !ok {
 		return nil, false
 	}
-	return utils.MergePTRs(payload.Options, attr.GetOptions()), true
+
+	effectiveOptions, err := merge.Auto(payload.Options, attr.GetOptions())
+	if err != nil {
+		s.log.Error(
+			errors.WithMessagef(
+				err, "Space: GetSpaceAttributeEffectiveOptions: failed to merge space attribute effective options: %s: %+v",
+				s.id, attributeID,
+			),
+		)
+		return nil, false
+	}
+
+	return effectiveOptions, true
 }
 
 func (s *Space) SetSpaceAttributeValue(
@@ -50,7 +62,11 @@ func (s *Space) SetSpaceAttributeValue(
 		return errors.Errorf("space attribute not found")
 	}
 
-	payload.Value = modifyFn(payload.Value)
+	value, err := modifyFn(payload.Value)
+	if err != nil {
+		return errors.WithMessage(err, "failed to modify value")
+	}
+	payload.Value = value
 
 	if updateDB {
 		if err := s.db.SpaceAttributesUpdateSpaceAttributeValue(
@@ -74,7 +90,11 @@ func (s *Space) SetSpaceAttributeOptions(
 		return errors.Errorf("space attribute not found")
 	}
 
-	payload.Options = modifyFn(payload.Options)
+	options, err := modifyFn(payload.Options)
+	if err != nil {
+		return errors.WithMessage(err, "failed to modify options")
+	}
+	payload.Options = options
 
 	if updateDB {
 		if err := s.db.SpaceAttributesUpdateSpaceAttributeOptions(

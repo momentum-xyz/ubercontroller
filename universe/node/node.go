@@ -297,8 +297,8 @@ func (n *Node) LoadUser(userID uuid.UUID) (universe.User, error) {
 		return nil, errors.WithMessagef(err, "failed to load user: %s", userID)
 	}
 
-	fmt.Println("%+v\n", user.GetPosition())
+	fmt.Printf("%+v\n", user.GetPosition())
 	user.SetPosition(cmath.Vec3{X: 50, Y: 50, Z: 150})
-	fmt.Println("%+v\n", user.GetPosition())
+	fmt.Printf("%+v\n", user.GetPosition())
 	return user, nil
 }

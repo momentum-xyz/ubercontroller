@@ -137,9 +137,15 @@ func (db *DB) UserAttributesUpsertUserAttribute(
 	}
 
 	if err != nil {
-		userAttribute.AttributePayload = modifyFn((*entry.AttributePayload)(nil))
+		userAttribute.AttributePayload, err = modifyFn((*entry.AttributePayload)(nil))
+		if err != nil {
+			return errors.WithMessage(err, "failed to modify attribute payload")
+		}
 	} else {
-		userAttribute.AttributePayload = modifyFn(attribute.AttributePayload)
+		userAttribute.AttributePayload, err = modifyFn(attribute.AttributePayload)
+		if err != nil {
+			return errors.WithMessage(err, "failed to modify attribute payload")
+		}
 	}
 
 	if _, err := db.conn.Exec(
@@ -248,7 +254,10 @@ func (db *DB) UserAttributesUpdateUserAttributeValue(
 		return errors.WithMessage(err, "failed to query db")
 	}
 
-	value = modifyFn(value)
+	value, err = modifyFn(value)
+	if err != nil {
+		return errors.WithMessage(err, "failed to modify value")
+	}
 
 	if _, err := db.conn.Exec(
 		ctx, updateUserAttributeValueQuery, userAttributeID.PluginID, userAttributeID.Name, userAttributeID.UserID, value,
@@ -270,7 +279,10 @@ func (db *DB) UserAttributesUpdateUserAttributeOptions(
 		return errors.WithMessage(err, "failed to query db")
 	}
 
-	options = modifyFn(options)
+	options, err = modifyFn(options)
+	if err != nil {
+		return errors.WithMessage(err, "failed to modify options")
+	}
 
 	if _, err := db.conn.Exec(
 		ctx, updateUserAttributeOptionsQuery, userAttributeID.PluginID, userAttributeID.Name, userAttributeID.UserID, options,

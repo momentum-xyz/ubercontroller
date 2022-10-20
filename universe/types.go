@@ -2,9 +2,9 @@ package universe
 
 const (
 	// node
-	NodeSettingsNodeAttributeName = "node_settings"
+	NodeAttributeNodeSettingsName = "node_settings"
 
 	// kusama
-	WalletKusamaUserAttributeName      = "wallet"
-	WalletWalletKusamaUserAttributeKey = "wallet"
+	KusamaUserAttributeWalletName      = "wallet"
+	KusamaUserAttributeWalletWalletKey = "wallet"
 )

@@ -178,9 +178,15 @@ func (db *DB) UserUserAttributesUpsertUserUserAttribute(
 	}
 
 	if err != nil {
-		userUserAttribute.AttributePayload = modifyFn((*entry.AttributePayload)(nil))
+		userUserAttribute.AttributePayload, err = modifyFn((*entry.AttributePayload)(nil))
+		if err != nil {
+			return errors.WithMessage(err, "failed to modify attribute payload")
+		}
 	} else {
-		userUserAttribute.AttributePayload = modifyFn(attribute.AttributePayload)
+		userUserAttribute.AttributePayload, err = modifyFn(attribute.AttributePayload)
+		if err != nil {
+			return errors.WithMessage(err, "failed to modify attribute payload")
+		}
 	}
 
 	if _, err := db.conn.Exec(
@@ -405,7 +411,10 @@ func (db *DB) UserUserAttributesUpdateUserUserAttributeValue(
 		return errors.WithMessage(err, "failed to query db")
 	}
 
-	value = modifyFn(value)
+	value, err = modifyFn(value)
+	if err != nil {
+		return errors.WithMessage(err, "failed to modify value")
+	}
 
 	if _, err := db.conn.Exec(
 		ctx, updateUserUserAttributeValueQuery,
@@ -430,7 +439,10 @@ func (db *DB) UserUserAttributesUpdateUserUserAttributeOptions(
 		return errors.WithMessage(err, "failed to query db")
 	}
 
-	options = modifyFn(options)
+	options, err = modifyFn(options)
+	if err != nil {
+		return errors.WithMessage(err, "failed to modify options")
+	}
 
 	if _, err := db.conn.Exec(
 		ctx, updateUserUserAttributeOptionsQuery,

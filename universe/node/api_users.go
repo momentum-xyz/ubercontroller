@@ -181,7 +181,7 @@ func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken
 	// TODO: check issuer
 
 	nodeSettings, ok := n.GetNodeAttributeValue(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.NodeSettingsNodeAttributeName),
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.NodeAttributeNodeSettingsName),
 	)
 	if !ok {
 		return nil, http.StatusInternalServerError, errors.Errorf("failed to get node settings")
@@ -229,14 +229,14 @@ func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken
 			UserAttributeID: entry.NewUserAttributeID(
 				entry.NewAttributeID(
 					universe.GetKusamaPluginID(),
-					universe.WalletKusamaUserAttributeName,
+					universe.KusamaUserAttributeWalletName,
 				),
 				userEntry.UserID,
 			),
 		}
 
-		walletAddressKey := universe.WalletWalletKusamaUserAttributeKey
-		modifyFn := func(current *entry.AttributePayload) *entry.AttributePayload {
+		walletAddressKey := universe.KusamaUserAttributeWalletWalletKey
+		modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
 			newValue := func() *entry.AttributeValue {
 				value := entry.NewAttributeValue()
 				(*value)[walletAddressKey] = []string{idToken.Web3Address}
@@ -244,12 +244,12 @@ func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken
 			}
 
 			if current == nil {
-				return entry.NewAttributePayload(newValue(), nil)
+				return entry.NewAttributePayload(newValue(), nil), nil
 			}
 
 			if current.Value == nil {
 				current.Value = newValue()
-				return current
+				return current, nil
 			}
 
 			address := utils.GetFromAnyMap(*current.Value, walletAddressKey, []any{idToken.Web3Address})
@@ -257,13 +257,13 @@ func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken
 				if address[i] == idToken.Web3Address {
 					// we don't know where address slice was coming from
 					(*current.Value)[walletAddressKey] = address
-					return current
+					return current, nil
 				}
 			}
 
 			(*current.Value)[walletAddressKey] = append(address, idToken.Web3Address)
 
-			return current
+			return current, nil
 		}
 
 		if err := n.db.UserAttributesUpsertUserAttribute(n.ctx, userAttribute, modifyFn); err != nil {

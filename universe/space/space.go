@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/pkg/errors"
 	"github.com/sasha-s/go-deadlock"
 	"go.uber.org/zap"
@@ -239,7 +240,10 @@ func (s *Space) SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	options := modifyFn(s.options)
+	options, err := modifyFn(s.options)
+	if err != nil {
+		return errors.WithMessage(err, "failed to modify options")
+	}
 
 	if updateDB {
 		if err := s.db.SpacesUpdateSpaceOptions(s.ctx, s.id, options); err != nil {
@@ -258,8 +262,19 @@ func (s *Space) GetEffectiveOptions() *entry.SpaceOptions {
 	defer s.mu.Unlock()
 
 	if s.effectiveOptions == nil {
-		s.effectiveOptions = utils.MergePTRs(s.options, s.spaceType.GetOptions())
+		effectiveOptions, err := merge.Auto(s.options, s.spaceType.GetOptions())
+		if err != nil {
+			s.log.Error(
+				errors.WithMessagef(
+					err, "Space: GetEffectiveOptions: failed to merge space effective options: %s", s.id,
+				),
+			)
+			return nil
+		}
+
+		s.effectiveOptions = effectiveOptions
 	}
+
 	return s.effectiveOptions
 }
 

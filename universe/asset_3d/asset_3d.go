@@ -84,7 +84,10 @@ func (a *Asset3d) SetOptions(modifyFn modify.Fn[entry.Asset3dOptions], updateDB 
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	options := modifyFn(a.entry.Options)
+	options, err := modifyFn(a.entry.Options)
+	if err != nil {
+		return errors.WithMessage(err, "failed to modify options")
+	}
 
 	if updateDB {
 		if err := a.db.Assets3dUpdateAssetOptions(a.ctx, a.entry.Asset3dID, options); err != nil {

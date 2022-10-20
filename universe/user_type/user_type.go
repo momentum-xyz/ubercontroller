@@ -108,7 +108,10 @@ func (u *UserType) GetOptions() *entry.UserOptions {
 
 func (u *UserType) SetOptions(modifyFn modify.Fn[entry.UserOptions], updateDB bool) error {
 	u.mu.Lock()
-	options := modifyFn(u.options)
+	options, err := modifyFn(u.options)
+	if err != nil {
+		return errors.WithMessage(err, "failed to modify options")
+	}
 
 	if updateDB {
 		if err := u.db.UserTypesUpdateUserTypeOptions(u.ctx, u.id, options); err != nil {
