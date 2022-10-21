@@ -15,18 +15,20 @@ import (
 )
 
 const (
-	getAssetsQuery          = `SELECT * FROM asset_3d;`
-	updateAssetNameQuery    = `UPDATE asset_3d SET asset_3d_name = $2 WHERE asset_3d_id = $1;`
+	getAssetsQuery = `SELECT * FROM asset_3d;`
+
+	removeAssetByIDQuery   = `DELETE FROM asset_3d WHERE asset_3d_id = $1;`
+	removeAssetsByIDsQuery = `DELETE FROM asset_3d WHERE asset_3d_id IN ($1);`
+
 	updateAssetOptionsQuery = `UPDATE asset_3d SET options = $2 WHERE asset_3d_id = $1;`
-	removeAssetByIDQuery    = `DELETE FROM asset_3d WHERE asset_3d_id = $1;`
-	removeAssetsByIDsQuery  = `DELETE FROM asset_3d WHERE asset_3d_id IN ($1);`
-	upsertAssetQuery        = `INSERT INTO asset_3d
-									(asset_3d_id, asset_3d_name, options)
-								VALUES
-									($1, $2, $3)
-								ON CONFLICT (asset_3d_id)
-								DO UPDATE SET
-									asset_3d_name = $2, options = $3;`
+
+	upsertAssetQuery = `INSERT INTO asset_3d
+							(asset_3d_id, meta, options, created_at, updated_at)
+						VALUES
+							($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+						ON CONFLICT (asset_3d_id)
+						DO UPDATE SET
+							meta = $2, options = $3, updated_at = CURRENT_TIMESTAMP;`
 )
 
 var _ database.Assets3dDB = (*DB)(nil)
@@ -52,7 +54,7 @@ func (db *DB) Assets3dGetAssets(ctx context.Context) ([]*entry.Asset3d, error) {
 }
 
 func (db *DB) Assets3dUpsertAsset(ctx context.Context, asset3d *entry.Asset3d) error {
-	if _, err := db.conn.Exec(ctx, upsertAssetQuery, asset3d.Asset3dID, asset3d.Name, asset3d.Options); err != nil {
+	if _, err := db.conn.Exec(ctx, upsertAssetQuery, asset3d.Asset3dID, asset3d.Meta, asset3d.Options); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
@@ -61,7 +63,7 @@ func (db *DB) Assets3dUpsertAsset(ctx context.Context, asset3d *entry.Asset3d) e
 func (db *DB) Assets3dUpsertAssets(ctx context.Context, assets3d []*entry.Asset3d) error {
 	batch := &pgx.Batch{}
 	for _, asset := range assets3d {
-		batch.Queue(upsertAssetQuery, asset.Asset3dID, asset.Name, asset.Options)
+		batch.Queue(upsertAssetQuery, asset.Asset3dID, asset.Meta, asset.Options)
 	}
 
 	batchRes := db.conn.SendBatch(ctx, batch)
@@ -70,7 +72,9 @@ func (db *DB) Assets3dUpsertAssets(ctx context.Context, assets3d []*entry.Asset3
 	var errs *multierror.Error
 	for i := 0; i < batch.Len(); i++ {
 		if _, err := batchRes.Exec(); err != nil {
-			errs = multierror.Append(errs, errors.WithMessagef(err, "failed to exec db for: %s", assets3d[i].Asset3dID))
+			errs = multierror.Append(
+				errs, errors.WithMessagef(err, "failed to exec db for: %s", assets3d[i].Asset3dID),
+			)
 		}
 	}
 
@@ -86,13 +90,6 @@ func (db *DB) Assets3dRemoveAssetByID(ctx context.Context, asset3dID uuid.UUID) 
 
 func (db *DB) Assets3dRemoveAssetsByIDs(ctx context.Context, asset3dIDs []uuid.UUID) error {
 	if _, err := db.conn.Exec(ctx, removeAssetsByIDsQuery, asset3dIDs); err != nil {
-		return errors.WithMessage(err, "failed to exec db")
-	}
-	return nil
-}
-
-func (db *DB) Assets3dUpdateAssetName(ctx context.Context, asset3dID uuid.UUID, name string) error {
-	if _, err := db.conn.Exec(ctx, updateAssetNameQuery, asset3dID, name); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil

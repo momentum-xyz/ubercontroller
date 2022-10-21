@@ -16,18 +16,21 @@ import (
 const (
 	getUserByIDQuery            = `SELECT * FROM "user" WHERE user_id = $1;`
 	getUserProfileByUserIDQuery = `SELECT profile FROM "user" WHERE user_id = $1;`
-	removeUserByIDQuery         = `DELETE FROM "user" WHERE user_id = $1;`
-	removeUsersByIDsQuery       = `DELETE FROM "user" WHERE user_id IN ($1);`
-	updateUserUserTypeIDQuery   = `UPDATE "user" SET user_type_id = $2 WHERE user_id = $1;`
-	updateUserOptionsQuery      = `UPDATE "user" SET options = $2 WHERE user_id = $1;`
-	updateUserProfileQuery      = `UPDATE "user" SET profile = $2 WHERE user_id = $1;`
-	upsertUserQuery             = `INSERT INTO "user"
-    									(user_id, user_type_id, profile, options, created_at, updated_at)     									 
-									VALUES
-									    ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-									ON CONFLICT (user_id)
-									DO UPDATE SET
-										user_type_id = $2, profile = $3, options = $4, updated_at = CURRENT_TIMESTAMP;`
+
+	removeUserByIDQuery   = `DELETE FROM "user" WHERE user_id = $1;`
+	removeUsersByIDsQuery = `DELETE FROM "user" WHERE user_id IN ($1);`
+
+	updateUserUserTypeIDQuery = `UPDATE "user" SET user_type_id = $2 WHERE user_id = $1;`
+	updateUserOptionsQuery    = `UPDATE "user" SET options = $2 WHERE user_id = $1;`
+	updateUserProfileQuery    = `UPDATE "user" SET profile = $2 WHERE user_id = $1;`
+
+	upsertUserQuery = `INSERT INTO "user"
+    						(user_id, user_type_id, profile, options, created_at, updated_at)     									 
+						VALUES
+						    ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+						ON CONFLICT (user_id)
+						DO UPDATE SET
+							user_type_id = $2, profile = $3, options = $4, updated_at = CURRENT_TIMESTAMP;`
 )
 
 var _ database.UsersDB = (*DB)(nil)

@@ -17,6 +17,11 @@ type IDer interface {
 	GetID() uuid.UUID
 }
 
+type Metaer interface {
+	GetMeta() entry.Meta
+	SetMeta(meta entry.Meta)
+}
+
 type Initializer interface {
 	Initialize(ctx context.Context) error
 }
@@ -307,10 +312,8 @@ type Assets2d interface {
 
 type Asset2d interface {
 	IDer
+	Metaer
 	Initializer
-
-	GetName() string
-	SetName(name string, updateDB bool) error
 
 	GetOptions() *entry.Asset2dOptions
 	SetOptions(modifyFn modify.Fn[entry.Asset2dOptions], updateDB bool) error
@@ -336,10 +339,8 @@ type Assets3d interface {
 
 type Asset3d interface {
 	IDer
+	Metaer
 	Initializer
-
-	GetName() string
-	SetName(name string, updateDB bool) error
 
 	GetOptions() *entry.Asset3dOptions
 	SetOptions(modifyFn modify.Fn[entry.Asset3dOptions], updateDB bool) error
@@ -397,16 +398,11 @@ type Plugins interface {
 
 type Plugin interface {
 	IDer
+	Metaer
 	Initializer
-
-	GetName() string
-	SetName(name string, updateDB bool) error
 
 	GetOptions() *entry.PluginOptions
 	SetOptions(modifyFn modify.Fn[entry.PluginOptions], updateDB bool) error
-
-	GetDescription() *string
-	SetDescription(description *string, updateDB bool) error
 
 	GetEntry() *entry.Plugin
 	LoadFromEntry(entry *entry.Plugin) error

@@ -15,22 +15,25 @@ import (
 )
 
 const (
-	getSpaceTypesQuery               = `SELECT * FROM space_type;`
+	getSpaceTypesQuery = `SELECT * FROM space_type;`
+
 	updateSpaceTypeNameQuery         = `UPDATE space_type SET space_type_name = $2 WHERE space_type_id = $1;`
 	updateSpaceTypeCategoryNameQuery = `UPDATE space_type SET category_name = $2 WHERE space_type_id = $1;`
 	updateSpaceTypeDescriptionQuery  = `UPDATE space_type SET description = $2 WHERE space_type_id = $1;`
 	updateSpaceTypeOptionsQuery      = `UPDATE space_type SET options = $2 WHERE space_type_id = $1;`
-	removeSpaceTypeByIDQuery         = `DELETE FROM space_type WHERE space_type_id = $1;`
-	removeSpaceTypesByIDsQuery       = `DELETE FROM space_type WHERE space_type_id IN ($1);`
-	upsertSpaceTypeQuery             = `INSERT INTO space_type
-											(space_type_id, asset_2d_id, asset_3d_id, space_type_name,
-											 category_name, description, options, created_at, updated_at)
-										VALUES
-											($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-										ON CONFLICT (space_type_id)
-										DO UPDATE SET
-											asset_2d_id = $2, asset_3d_id = $3, space_type_name = $4, category_name = $5,
-											description = $6, options = $7;`
+
+	removeSpaceTypeByIDQuery   = `DELETE FROM space_type WHERE space_type_id = $1;`
+	removeSpaceTypesByIDsQuery = `DELETE FROM space_type WHERE space_type_id IN ($1);`
+
+	upsertSpaceTypeQuery = `INSERT INTO space_type
+								(space_type_id, asset_2d_id, asset_3d_id, space_type_name,
+								category_name, description, options, created_at, updated_at)
+							VALUES
+								($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+							ON CONFLICT (space_type_id)
+							DO UPDATE SET
+								asset_2d_id = $2, asset_3d_id = $3, space_type_name = $4, category_name = $5,
+								description = $6, options = $7, updated_at = CURRENT_TIMESTAMP;`
 )
 
 var _ database.SpaceTypesDB = (*DB)(nil)

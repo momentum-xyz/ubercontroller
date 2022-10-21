@@ -61,18 +61,16 @@ func (n *Node) apiUsersCheck(c *gin.Context) {
 		ID:         userEntry.UserID.String(),
 		UserTypeID: userEntry.UserTypeID.String(),
 		Profile:    outProfile,
+		CreatedAt:  userEntry.CreatedAt.String(),
+	}
+	if userEntry.UpdatedAt != nil {
+		outBody.UpdatedAt = utils.GetPTR(userEntry.UpdatedAt.String())
 	}
 	if idToken.Web3Address != "" {
 		outBody.Wallet = &idToken.Web3Address
 	}
 	if userProfileEntry.Name != nil {
 		outBody.Name = *userProfileEntry.Name
-	}
-	if userEntry.CreatedAt != nil {
-		outBody.CreatedAt = userEntry.CreatedAt.String()
-	}
-	if userEntry.UpdatedAt != nil {
-		outBody.UpdatedAt = utils.GetPTR(userEntry.UpdatedAt.String())
 	}
 
 	c.JSON(http.StatusOK, outBody)
@@ -115,18 +113,16 @@ func (n *Node) apiUsersGetMe(c *gin.Context) {
 			ProfileLink: userProfileEntry.ProfileLink,
 			OnBoarded:   userProfileEntry.OnBoarded,
 		},
+		CreatedAt: userEntry.CreatedAt.String(),
 	}
 	if userEntry.UserTypeID != nil {
 		outUser.UserTypeID = userEntry.UserTypeID.String()
 	}
-	if token.Web3Address != "" {
-		outUser.Wallet = &token.Web3Address
-	}
-	if userEntry.CreatedAt != nil {
-		outUser.CreatedAt = userEntry.CreatedAt.String()
-	}
 	if userEntry.UpdatedAt != nil {
 		outUser.UpdatedAt = utils.GetPTR(userEntry.UpdatedAt.String())
+	}
+	if token.Web3Address != "" {
+		outUser.Wallet = &token.Web3Address
 	}
 	if userProfileEntry != nil {
 		if userProfileEntry.Name != nil {

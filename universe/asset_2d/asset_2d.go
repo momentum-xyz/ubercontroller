@@ -31,6 +31,7 @@ func NewAsset2d(id uuid.UUID, db database.DB) *Asset2d {
 		db: db,
 		entry: &entry.Asset2d{
 			Asset2dID: id,
+			Meta:      new(entry.Meta),
 		},
 	}
 }
@@ -51,26 +52,18 @@ func (a *Asset2d) Initialize(ctx context.Context) error {
 	return nil
 }
 
-func (a *Asset2d) GetName() string {
+func (a *Asset2d) GetMeta() entry.Meta {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
-	return a.entry.Name
+	return *a.entry.Meta
 }
 
-func (a *Asset2d) SetName(name string, updateDB bool) error {
+func (a *Asset2d) SetMeta(meta entry.Meta) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	if updateDB {
-		if err := a.db.Assets2dUpdateAssetName(a.ctx, a.entry.Asset2dID, name); err != nil {
-			return errors.WithMessage(err, "failed to update db")
-		}
-	}
-
-	a.entry.Name = name
-
-	return nil
+	a.entry.Meta = &meta
 }
 
 func (a *Asset2d) GetOptions() *entry.Asset2dOptions {

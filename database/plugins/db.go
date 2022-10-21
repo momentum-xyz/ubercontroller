@@ -15,20 +15,20 @@ import (
 )
 
 const (
-	getPluginsQuery              = `SELECT * FROM plugin;`
-	updatePluginNameQuery        = `UPDATE plugin SET plugin_name = $2 WHERE plugin_id = $1;`
-	updatePluginDescriptionQuery = `UPDATE plugin SET description = $2 WHERE plugin_id = $1;`
-	updatePluginOptionsQuery     = `UPDATE plugin SET options = $2 WHERE plugin_id = $1;`
-	removePluginByIDQuery        = `DELETE FROM plugin WHERE plugin_id = $1;`
-	removePluginsByIDsQuery      = `DELETE FROM plugin WHERE plugin_id IN ($1);`
-	upsertPluginQuery            = `INSERT INTO plugin
-											(plugin_id, plugin_name,description, options, created_at, updated_at)
-										VALUES
-											($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-										ON CONFLICT (plugin_id)
-										DO UPDATE SET
-											plugin_name = $2,
-											description = $3, options = $4;`
+	getPluginsQuery = `SELECT * FROM plugin;`
+
+	removePluginByIDQuery   = `DELETE FROM plugin WHERE plugin_id = $1;`
+	removePluginsByIDsQuery = `DELETE FROM plugin WHERE plugin_id IN ($1);`
+
+	updatePluginOptionsQuery = `UPDATE plugin SET options = $2 WHERE plugin_id = $1;`
+
+	upsertPluginQuery = `INSERT INTO plugin
+								(plugin_id, meta, options, created_at, updated_at)
+							VALUES
+								($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+							ON CONFLICT (plugin_id)
+							DO UPDATE SET
+								meta = $2, options = $3, updated_at = CURRENT_TIMESTAMP;`
 )
 
 var _ database.PluginsDB = (*DB)(nil)
@@ -55,8 +55,7 @@ func (db *DB) PluginsGetPlugins(ctx context.Context) ([]*entry.Plugin, error) {
 
 func (db *DB) PluginsUpsertPlugin(ctx context.Context, plugin *entry.Plugin) error {
 	if _, err := db.conn.Exec(
-		ctx, upsertPluginQuery, plugin.PluginID, plugin.PluginName,
-		plugin.Description, plugin.Options,
+		ctx, upsertPluginQuery, plugin.PluginID, plugin.Meta, plugin.Options,
 	); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
@@ -67,8 +66,7 @@ func (db *DB) PluginsUpsertPlugins(ctx context.Context, plugins []*entry.Plugin)
 	batch := &pgx.Batch{}
 	for _, plugin := range plugins {
 		batch.Queue(
-			upsertPluginQuery, plugin.PluginID, plugin.PluginName,
-			plugin.Description, plugin.Options,
+			upsertPluginQuery, plugin.PluginID, plugin.Meta, plugin.Options,
 		)
 	}
 
@@ -96,22 +94,6 @@ func (db *DB) PluginsRemovePluginByID(ctx context.Context, PluginID uuid.UUID) e
 
 func (db *DB) PluginsRemovePluginsByIDs(ctx context.Context, PluginIDs []uuid.UUID) error {
 	if _, err := db.conn.Exec(ctx, removePluginsByIDsQuery, PluginIDs); err != nil {
-		return errors.WithMessage(err, "failed to exec db")
-	}
-	return nil
-}
-
-func (db *DB) PluginsUpdatePluginName(ctx context.Context, PluginID uuid.UUID, name string) error {
-	if _, err := db.conn.Exec(ctx, updatePluginNameQuery, PluginID, name); err != nil {
-		return errors.WithMessage(err, "failed to exec db")
-	}
-	return nil
-}
-
-func (db *DB) PluginsUpdatePluginDescription(
-	ctx context.Context, PluginID uuid.UUID, description *string,
-) error {
-	if _, err := db.conn.Exec(ctx, updatePluginDescriptionQuery, PluginID, description); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil

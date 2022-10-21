@@ -16,11 +16,13 @@ import (
 )
 
 const (
-	getSpaceByIDQuery           = `SELECT * FROM space WHERE space_id = $1;`
-	getSpaceIDsByParentIDQuery  = `SELECT space_id FROM space WHERE parent_id = $1;`
-	getSpacesByParentIDQuery    = `SELECT * FROM space WHERE parent_id = $1;`
-	removeSpaceByIDQuery        = `DELETE FROM space WHERE space_id = $1;`
-	removeSpacesByIDsQuery      = `DELETE FROM space WHERE space_id IN ($1);`
+	getSpaceByIDQuery          = `SELECT * FROM space WHERE space_id = $1;`
+	getSpaceIDsByParentIDQuery = `SELECT space_id FROM space WHERE parent_id = $1;`
+	getSpacesByParentIDQuery   = `SELECT * FROM space WHERE parent_id = $1;`
+
+	removeSpaceByIDQuery   = `DELETE FROM space WHERE space_id = $1;`
+	removeSpacesByIDsQuery = `DELETE FROM space WHERE space_id IN ($1);`
+
 	updateSpaceParentIDQuery    = `UPDATE space SET parent_id = $2 WHERE space_id = $1;`
 	updateSpacePositionQuery    = `UPDATE space SET position = $2 WHERE space_id = $1;`
 	updateSpaceOwnerIDQuery     = `UPDATE space SET owner_id = $2 WHERE space_id = $1;`
@@ -28,15 +30,16 @@ const (
 	updateSpaceAsset3dIDQuery   = `UPDATE space SET asset_3d_id = $2 WHERE space_id = $1;`
 	updateSpaceSpaceTypeIDQuery = `UPDATE space SET space_type_id = $2 WHERE space_id = $1;`
 	updateSpaceOptionsQuery     = `UPDATE space SET options = $2 WHERE space_id = $1;`
-	upsertSpaceQuery            = `INSERT INTO space
-    									(space_id, space_type_id, owner_id, parent_id, asset_2d_id,
-    									 asset_3d_id, options, position, created_at, updated_at)
-									VALUES
-									    ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-									ON CONFLICT (space_id)
-									DO UPDATE SET
-										space_type_id = $2, owner_id = $3, parent_id = $4, asset_2d_id = $5,
-									    asset_3d_id = $6, options = $7, position = $8, updated_at = CURRENT_TIMESTAMP;`
+
+	upsertSpaceQuery = `INSERT INTO space
+    						(space_id, space_type_id, owner_id, parent_id, asset_2d_id,
+    						asset_3d_id, options, position, created_at, updated_at)
+						VALUES
+							($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+						ON CONFLICT (space_id)
+						DO UPDATE SET
+							space_type_id = $2, owner_id = $3, parent_id = $4, asset_2d_id = $5,
+							asset_3d_id = $6, options = $7, position = $8, updated_at = CURRENT_TIMESTAMP;`
 )
 
 var _ database.SpacesDB = (*DB)(nil)

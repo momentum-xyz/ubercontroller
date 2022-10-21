@@ -22,8 +22,7 @@ type Plugin struct {
 	mu  sync.RWMutex
 
 	id                uuid.UUID
-	name              string
-	description       *string
+	meta              *entry.Meta
 	options           *entry.PluginOptions
 	object            *plugin.Plugin
 	newInstance       mplugin.NewInstanceFunction
@@ -34,6 +33,7 @@ func NewPlugin(id uuid.UUID, db database.DB) *Plugin {
 	return &Plugin{
 		db:      db,
 		id:      id,
+		meta:    new(entry.Meta),
 		options: new(entry.PluginOptions),
 	}
 }
@@ -54,8 +54,18 @@ func (p *Plugin) GetID() uuid.UUID {
 	return p.id
 }
 
-func (p *Plugin) GetName() string {
-	return p.name
+func (p *Plugin) GetMeta() entry.Meta {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	return *p.meta
+}
+
+func (p *Plugin) SetMeta(meta entry.Meta) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	p.meta = &meta
 }
 
 func (p *Plugin) GetOptions() *entry.PluginOptions {
@@ -63,28 +73,6 @@ func (p *Plugin) GetOptions() *entry.PluginOptions {
 	defer p.mu.RUnlock()
 
 	return p.options
-}
-
-func (p *Plugin) GetDescription() *string {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-
-	return p.description
-}
-
-func (p *Plugin) SetName(name string, updateDB bool) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	if updateDB {
-		if err := p.db.PluginsUpdatePluginName(p.ctx, p.id, name); err != nil {
-			return errors.WithMessage(err, "failed to update db")
-		}
-	}
-
-	p.name = name
-
-	return nil
 }
 
 func (p *Plugin) SetOptions(modifyFn modify.Fn[entry.PluginOptions], updateDB bool) error {
@@ -107,30 +95,14 @@ func (p *Plugin) SetOptions(modifyFn modify.Fn[entry.PluginOptions], updateDB bo
 	return nil
 }
 
-func (p *Plugin) SetDescription(description *string, updateDB bool) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	if updateDB {
-		if err := p.db.PluginsUpdatePluginDescription(p.ctx, p.id, description); err != nil {
-			return errors.WithMessage(err, "failed to update db")
-		}
-	}
-
-	p.description = description
-
-	return nil
-}
-
 func (p *Plugin) GetEntry() *entry.Plugin {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
 	return &entry.Plugin{
-		PluginID:    p.id,
-		PluginName:  p.name,
-		Description: p.description,
-		Options:     p.options,
+		PluginID: p.id,
+		Meta:     p.meta,
+		Options:  p.options,
 	}
 }
 
@@ -140,19 +112,13 @@ func (p *Plugin) LoadFromEntry(entry *entry.Plugin) error {
 	}
 
 	p.id = entry.PluginID
+	p.SetMeta(*entry.Meta)
 
 	var err error
 	if entry.Options != nil {
 		if p.object, p.definedAttributes, p.newInstance, err = p.resolveSharedLibrary(entry.Options.File); err != nil {
 			return errors.WithMessage(err, "failed to resolve shared library")
 		}
-	}
-
-	if err = p.SetName(entry.PluginName, false); err != nil {
-		return errors.WithMessage(err, "failed to set name")
-	}
-	if err = p.SetDescription(entry.Description, false); err != nil {
-		return errors.WithMessage(err, "failed to set description")
 	}
 	if err = p.SetOptions(modify.MergeWith(entry.Options), false); err != nil {
 		return errors.WithMessage(err, "failed to set options")

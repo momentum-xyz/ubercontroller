@@ -25,7 +25,7 @@ type Space struct {
 	Asset3dID   *uuid.UUID    `db:"asset_3d_id"`
 	Options     *SpaceOptions `db:"options"`
 	Position    *cmath.Vec3   `db:"position"`
-	CreatedAt   *time.Time    `db:"created_at"`
+	CreatedAt   time.Time     `db:"created_at"`
 	UpdatedAt   *time.Time    `db:"updated_at"`
 }
 

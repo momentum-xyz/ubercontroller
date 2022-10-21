@@ -8,10 +8,10 @@ import (
 
 type Plugin struct {
 	PluginID    uuid.UUID      `db:"plugin_id"`
-	PluginName  string         `db:"plugin_name"`
+	Meta        *Meta          `db:"meta"`
 	Description *string        `db:"description"`
 	Options     *PluginOptions `db:"options"`
-	CreatedAt   *time.Time     `db:"created_at"`
+	CreatedAt   time.Time      `db:"created_at"`
 	UpdatedAt   *time.Time     `db:"updated_at"`
 }
 
