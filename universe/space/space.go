@@ -2,7 +2,6 @@ package space
 
 import (
 	"context"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
@@ -458,29 +457,14 @@ func (s *Space) GetSpawnMessage() *websocket.PreparedMessage {
 	return s.spawnMsg.Load()
 }
 
-var level int
-var levelMap map[int]uuid.UUID
-
-func init() {
-	levelMap = make(map[int]uuid.UUID)
-}
-
 func (s *Space) SendSpawnMessage(f func(*websocket.PreparedMessage) error, recursive bool) {
-	levelMap[level] = s.id
-	if s.id == uuid.MustParse("04b09c1c-8ff3-43d5-80e8-ed68212bc90d") || s.id == uuid.MustParse("3e4a23ae-0a50-4d96-835b-2ac49995bb3c") {
-		fmt.Printf(
-			"%+v %+v %+v %+v %+v\n", s.id, s.GetParent().GetID(), utils.GoroutineID(), level, levelMap[level-1],
-		)
-	}
 	f(s.spawnMsg.Load())
 	//time.Sleep(time.Millisecond * 100)
 	if recursive {
 		s.Children.Mu.RLock()
-		level++
 		for _, space := range s.Children.Data {
 			space.SendSpawnMessage(f, true)
 		}
-		level--
 		s.Children.Mu.RUnlock()
 	}
 

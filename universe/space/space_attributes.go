@@ -99,6 +99,7 @@ func (s *Space) CheckIfRendered(instance *entry.SpaceAttribute) {
 	//} else {
 	//	opts = entry.AttributeOptions{}
 	//}
+
 	if attr.GetOptions() != nil {
 		opts = *attr.GetOptions()
 	} else {

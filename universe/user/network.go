@@ -48,7 +48,6 @@ func (u *User) readPump() {
 
 	for {
 		messageType, message, err := u.conn.ReadMessage()
-		fmt.Println("Got a  message")
 		if err != nil {
 			closedByClient := false
 			if ce, ok := err.(*websocket.CloseError); ok {

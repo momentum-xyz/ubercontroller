@@ -1,9 +1,7 @@
 package world
 
 import (
-	"fmt"
 	cmath2 "github.com/momentum-xyz/controller/pkg/cmath"
-	"github.com/momentum-xyz/ubercontroller/utils"
 	"time"
 
 	"github.com/google/uuid"
@@ -86,7 +84,6 @@ func (w *World) initializeUnity(user universe.User) error {
 	//	user.ReleaseSendBuffer()
 	//}()
 
-	fmt.Println("Start it!", utils.GoroutineID())
 	w.Space.SendSpawnMessage(user.SendDirectly, true)
 	time.Sleep(1 * time.Second)
 	user.SendDirectly(
@@ -97,7 +94,6 @@ func (w *World) initializeUnity(user universe.User) error {
 
 	w.Space.SendTextures(user.SendDirectly, true)
 	user.ReleaseSendBuffer()
-	fmt.Println("ee10")
 	return nil
 }
 
