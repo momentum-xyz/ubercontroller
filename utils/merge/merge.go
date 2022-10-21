@@ -10,7 +10,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/logger"
 )
 
-type Fn func(path string, old, new, result any) (any, bool)
+type Fn func(path string, new, current, result any) (any, bool)
 
 var log = logger.L()
 
@@ -217,7 +217,7 @@ func mergeHandle(path string, optVal, defVal, resVal reflect.Value, triggers ...
 	}
 
 	for i := range triggers {
-		if val, ok := triggers[i](path, def, opt, res); ok {
+		if val, ok := triggers[i](path, opt, def, res); ok {
 			return reflect.ValueOf(val), nil
 		}
 	}

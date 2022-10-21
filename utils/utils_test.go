@@ -62,8 +62,8 @@ func TestMergePTRs(t *testing.T) {
 		},
 	}
 
-	logFn := func(path string, def, opt, res any) (any, bool) {
-		t.Logf("Handle: path: %q, res: %+v\n", path, res)
+	logFn := func(path string, new, current, result any) (any, bool) {
+		t.Logf("Handle: path: %q, res: %+v\n", path, result)
 		return nil, false
 	}
 
@@ -116,7 +116,7 @@ func TestMergePTRs(t *testing.T) {
 			def:  newT2(def),
 			triggers: []merge.Fn{
 				logFn,
-				func(path string, def, opt, res any) (any, bool) {
+				func(path string, new, current, result any) (any, bool) {
 					if path == ".M.o1" {
 						return map[string]any{
 							"MY_MAP": map[string]any{
