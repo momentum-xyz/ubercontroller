@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"github.com/zitadel/oidc/pkg/client/rs"
