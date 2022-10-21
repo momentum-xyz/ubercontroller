@@ -21,6 +21,14 @@ var api = struct {
 	oidcProviders *generic.SyncMap[string, rs.ResourceServer]
 }{}
 
+type HTTPErrorPayload struct {
+	Reason  string `json:"reason"`
+	Message string `json:"message"`
+}
+type HTTPError struct {
+	Error HTTPErrorPayload `json:"error"`
+}
+
 func Initialize(ctx context.Context, cfg *config.Config) error {
 	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
 	if log == nil {
@@ -36,7 +44,8 @@ func Initialize(ctx context.Context, cfg *config.Config) error {
 }
 
 func AbortRequest(c *gin.Context, code int, reason string, err error) {
-	c.AbortWithStatusJSON(code, gin.H{
-		"error": map[string]string{"reason": reason, "message": err.Error()},
-	})
+	c.AbortWithStatusJSON(code, &HTTPError{Error: HTTPErrorPayload{
+		Reason:  reason,
+		Message: err.Error(),
+	}})
 }
