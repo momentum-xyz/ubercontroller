@@ -20,6 +20,7 @@ const (
 	removePluginByIDQuery   = `DELETE FROM plugin WHERE plugin_id = $1;`
 	removePluginsByIDsQuery = `DELETE FROM plugin WHERE plugin_id IN ($1);`
 
+	updatePluginMetaQuery    = `UPDATE plugin SET meta = $2 WHERE plugin_id = $1;`
 	updatePluginOptionsQuery = `UPDATE plugin SET options = $2 WHERE plugin_id = $1;`
 
 	upsertPluginQuery = `INSERT INTO plugin
@@ -94,6 +95,13 @@ func (db *DB) PluginsRemovePluginByID(ctx context.Context, PluginID uuid.UUID) e
 
 func (db *DB) PluginsRemovePluginsByIDs(ctx context.Context, PluginIDs []uuid.UUID) error {
 	if _, err := db.conn.Exec(ctx, removePluginsByIDsQuery, PluginIDs); err != nil {
+		return errors.WithMessage(err, "failed to exec db")
+	}
+	return nil
+}
+
+func (db *DB) PluginsUpdatePluginMeta(ctx context.Context, pluginID uuid.UUID, meta entry.Meta) error {
+	if _, err := db.conn.Exec(ctx, updatePluginMetaQuery, pluginID, meta); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil

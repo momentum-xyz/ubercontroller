@@ -22,7 +22,7 @@ type Plugin struct {
 	mu  sync.RWMutex
 
 	id                uuid.UUID
-	meta              *entry.Meta
+	meta              entry.Meta
 	options           *entry.PluginOptions
 	object            *plugin.Plugin
 	newInstance       mplugin.NewInstanceFunction
@@ -33,7 +33,6 @@ func NewPlugin(id uuid.UUID, db database.DB) *Plugin {
 	return &Plugin{
 		db:      db,
 		id:      id,
-		meta:    new(entry.Meta),
 		options: new(entry.PluginOptions),
 	}
 }
@@ -58,14 +57,22 @@ func (p *Plugin) GetMeta() entry.Meta {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	return *p.meta
+	return p.meta
 }
 
-func (p *Plugin) SetMeta(meta entry.Meta) {
+func (p *Plugin) SetMeta(meta entry.Meta, updateDB bool) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	p.meta = &meta
+	if updateDB {
+		if err := p.db.PluginsUpdatePluginMeta(p.ctx, p.id, meta); err != nil {
+			return errors.WithMessage(err, "failed to update db")
+		}
+	}
+
+	p.meta = meta
+
+	return nil
 }
 
 func (p *Plugin) GetOptions() *entry.PluginOptions {
@@ -112,7 +119,6 @@ func (p *Plugin) LoadFromEntry(entry *entry.Plugin) error {
 	}
 
 	p.id = entry.PluginID
-	p.SetMeta(*entry.Meta)
 
 	var err error
 	if entry.Options != nil {
@@ -122,6 +128,9 @@ func (p *Plugin) LoadFromEntry(entry *entry.Plugin) error {
 	}
 	if err = p.SetOptions(modify.MergeWith(entry.Options), false); err != nil {
 		return errors.WithMessage(err, "failed to set options")
+	}
+	if err := p.SetMeta(entry.Meta, false); err != nil {
+		return errors.WithMessage(err, "failed to set meta")
 	}
 
 	if err := p.RegisterAttributes(); err != nil {

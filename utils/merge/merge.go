@@ -198,22 +198,21 @@ func mergeStruct(optVal, defVal reflect.Value, path string, triggers ...Fn) (ref
 }
 
 func mergeHandle(path string, optVal, defVal, resVal reflect.Value, triggers ...Fn) (reflect.Value, error) {
-	var res any
-	if resVal.IsValid() {
-		res = resVal.Interface()
-	}
-
 	if len(triggers) == 0 {
-		return reflect.ValueOf(res), nil
+		return resVal, nil
 	}
 
 	var opt any
 	var def any
+	var res any
 	if optVal.IsValid() {
 		opt = optVal.Interface()
 	}
 	if defVal.IsValid() {
 		def = defVal.Interface()
+	}
+	if resVal.IsValid() {
+		res = resVal.Interface()
 	}
 
 	for i := range triggers {

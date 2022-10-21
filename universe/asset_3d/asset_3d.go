@@ -31,7 +31,6 @@ func NewAsset3d(id uuid.UUID, db database.DB) *Asset3d {
 		db: db,
 		entry: &entry.Asset3d{
 			Asset3dID: id,
-			Meta:      new(entry.Meta),
 		},
 	}
 }
@@ -56,14 +55,22 @@ func (a *Asset3d) GetMeta() entry.Meta {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
-	return *a.entry.Meta
+	return a.entry.Meta
 }
 
-func (a *Asset3d) SetMeta(meta entry.Meta) {
+func (a *Asset3d) SetMeta(meta entry.Meta, updateDB bool) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	a.entry.Meta = &meta
+	if updateDB {
+		if err := a.db.Assets3dUpdateAssetMeta(a.ctx, a.entry.Asset3dID, meta); err != nil {
+			return errors.WithMessage(err, "failed to update db")
+		}
+	}
+
+	a.entry.Meta = meta
+
+	return nil
 }
 
 func (a *Asset3d) GetOptions() *entry.Asset3dOptions {

@@ -20,6 +20,7 @@ const (
 	removeAssetByIDQuery   = `DELETE FROM asset_3d WHERE asset_3d_id = $1;`
 	removeAssetsByIDsQuery = `DELETE FROM asset_3d WHERE asset_3d_id IN ($1);`
 
+	updateAssetMetaQuery    = `UPDATE asset_3d SET meta = $2 WHERE asset_3d_id = $1;`
 	updateAssetOptionsQuery = `UPDATE asset_3d SET options = $2 WHERE asset_3d_id = $1;`
 
 	upsertAssetQuery = `INSERT INTO asset_3d
@@ -90,6 +91,13 @@ func (db *DB) Assets3dRemoveAssetByID(ctx context.Context, asset3dID uuid.UUID) 
 
 func (db *DB) Assets3dRemoveAssetsByIDs(ctx context.Context, asset3dIDs []uuid.UUID) error {
 	if _, err := db.conn.Exec(ctx, removeAssetsByIDsQuery, asset3dIDs); err != nil {
+		return errors.WithMessage(err, "failed to exec db")
+	}
+	return nil
+}
+
+func (db *DB) Assets3dUpdateAssetMeta(ctx context.Context, asset3dID uuid.UUID, meta entry.Meta) error {
+	if _, err := db.conn.Exec(ctx, updateAssetMetaQuery, asset3dID, meta); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
