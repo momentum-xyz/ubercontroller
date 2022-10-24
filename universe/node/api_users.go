@@ -22,24 +22,21 @@ func (n *Node) apiUsersCheck(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&inBody); err != nil {
 		err = errors.WithMessage(err, "Node: apiUsersCheck: failed to bind json")
-		n.log.Debug(err)
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err)
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
 		return
 	}
 
 	accessToken, idToken, code, err := n.apiCheckTokens(c, api.GetTokenFromRequest(c), inBody.IDToken)
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiUsersCheck: failed to check tokens")
-		n.log.Debug(err)
-		api.AbortRequest(c, code, "invalid_tokens", err)
+		api.AbortRequest(c, code, "invalid_tokens", err, n.log)
 		return
 	}
 
 	userEntry, httpCode, err := n.apiGetOrCreateUserFromTokens(c, accessToken, idToken)
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiUsersCheck: failed get or create user from tokens")
-		n.log.Error(err)
-		api.AbortRequest(c, httpCode, "failed_to_get_or_create_user", err)
+		api.AbortRequest(c, httpCode, "failed_to_get_or_create_user", err, n.log)
 		return
 	}
 
@@ -80,22 +77,20 @@ func (n *Node) apiUsersGetMe(c *gin.Context) {
 	token, err := api.GetTokenFromContext(c)
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiUsersGetMe: failed to get token from context")
-		n.log.Error(err)
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_token", err)
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_token", err, n.log)
 		return
 	}
 
 	userID, err := api.GetUserIDFromToken(token)
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiUsersGetMe: failed to get user id from token")
-		n.log.Error(err)
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_user_id", err)
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_user_id", err, n.log)
 		return
 	}
 
 	userEntry, err := n.db.UsersGetUserByID(c, userID)
 	if err != nil {
-		api.AbortRequest(c, http.StatusNotFound, "user_not_found", err)
+		api.AbortRequest(c, http.StatusNotFound, "user_not_found", err, n.log)
 		return
 	}
 	userProfileEntry := userEntry.Profile

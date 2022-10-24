@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -43,7 +44,12 @@ func Initialize(ctx context.Context, cfg *config.Config) error {
 	return nil
 }
 
-func AbortRequest(c *gin.Context, code int, reason string, err error) {
+func AbortRequest(c *gin.Context, code int, reason string, err error, log *zap.SugaredLogger) {
+	if code == http.StatusInternalServerError {
+		log.Error(err)
+	} else {
+		log.Debug(err)
+	}
 	c.AbortWithStatusJSON(code, &HTTPError{Error: HTTPErrorPayload{
 		Reason:  reason,
 		Message: err.Error(),
