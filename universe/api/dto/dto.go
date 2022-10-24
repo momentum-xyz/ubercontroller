@@ -1,5 +1,11 @@
 package dto
 
+import "github.com/google/uuid"
+
+type Plugins map[uuid.UUID]string
+
+type PluginMeta map[string]any
+
 type Profile struct {
 	Bio         *string `json:"bio,omitempty"`
 	Location    *string `json:"location,omitempty"`
