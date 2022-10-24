@@ -195,17 +195,15 @@ func (s *SpaceType) SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB 
 	s.options = options
 	s.mu.Unlock()
 
-	for _, world := range universe.GetNode().GetWorlds().GetWorlds() {
-		for _, space := range world.GetAllSpaces() {
-			if space.GetSpaceType() == nil {
-				continue
-			}
-			if space.GetSpaceType().GetID() != s.GetID() {
-				continue
-			}
-			if err := space.Update(true); err != nil {
-				return errors.WithMessagef(err, "failed to update space: %s", space.GetID())
-			}
+	for _, space := range universe.GetNode().GetAllSpaces() {
+		if space.GetSpaceType() == nil {
+			continue
+		}
+		if space.GetSpaceType().GetID() != s.GetID() {
+			continue
+		}
+		if err := space.Update(true); err != nil {
+			return errors.WithMessagef(err, "failed to update space: %s", space.GetID())
 		}
 	}
 

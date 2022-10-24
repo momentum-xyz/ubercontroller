@@ -56,12 +56,20 @@ type APIRegister interface {
 	RegisterAPI(r *gin.Engine)
 }
 
+type SpaceCacher interface {
+	GetAllSpaces() map[uuid.UUID]Space
+	GetSpaceFromAllSpaces(spaceID uuid.UUID) (Space, bool)
+	AddSpaceToAllSpaces(space Space) error
+	RemoveSpaceFromAllSpaces(space Space) (bool, error)
+}
+
 type Node interface {
 	IDer
 	Initializer
 	RunStopper
 	LoadSaver
 	APIRegister
+	SpaceCacher
 
 	GetWorlds() Worlds
 	GetAssets2d() Assets2d
@@ -106,13 +114,7 @@ type World interface {
 	Space
 	RunStopper
 	LoadSaver
-
-	GetSpaceFromAllSpaces(spaceID uuid.UUID) (Space, bool)
-	GetAllSpaces() map[uuid.UUID]Space
-	AddSpaceToAllSpaces(space Space) error
-	AddSpacesToAllSpaces(spaces []Space) error
-	RemoveSpaceFromAllSpaces(space Space) (bool, error)
-	RemoveSpacesFromAllSpaces(spaces []Space) (bool, error)
+	SpaceCacher
 
 	WriteInfluxPoint(point *influxWrite.Point) error
 

@@ -105,7 +105,6 @@ func (w *World) RemoveUser(user universe.User, updateDB bool) error {
 }
 
 func (w *World) noLockRemoveUser(user universe.User, updateDB bool) error {
-
 	if user.GetWorld().GetID() != w.GetID() {
 		return errors.Errorf("worlds mismatch: %s != %s", user.GetWorld().GetID(), w.GetID())
 	}

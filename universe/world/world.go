@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -228,13 +227,6 @@ func (w *World) AddSpaceToAllSpaces(space universe.Space) error {
 	return nil
 }
 
-func (w *World) AddSpacesToAllSpaces(spaces []universe.Space) error {
-	for i := range spaces {
-		w.allSpaces.Store(spaces[i].GetID(), spaces[i])
-	}
-	return nil
-}
-
 func (w *World) RemoveSpaceFromAllSpaces(space universe.Space) (bool, error) {
 	w.allSpaces.Mu.Lock()
 	defer w.allSpaces.Mu.Unlock()
@@ -246,19 +238,4 @@ func (w *World) RemoveSpaceFromAllSpaces(space universe.Space) (bool, error) {
 	}
 
 	return false, nil
-}
-
-func (w *World) RemoveSpacesFromAllSpaces(spaces []universe.Space) (bool, error) {
-	res := true
-	var errs *multierror.Error
-	for i := range spaces {
-		removed, err := w.RemoveSpaceFromAllSpaces(spaces[i])
-		if err != nil {
-			errs = multierror.Append(errs, errors.WithMessagef(err, "failed to remove space: %s", spaces[i].GetID()))
-		}
-		if !removed {
-			res = false
-		}
-	}
-	return res, errs.ErrorOrNil()
 }

@@ -131,7 +131,7 @@ func (w *Worlds) RemoveWorld(world universe.World, updateDB bool) error {
 	}
 
 	if updateDB {
-		spaces := world.GetSpaces(true)
+		spaces := world.GetAllSpaces()
 		ids := make([]uuid.UUID, 0, len(spaces))
 		for _, space := range spaces {
 			ids = append(ids, space.GetID())
@@ -163,7 +163,7 @@ func (w *Worlds) RemoveWorlds(worlds []universe.World, updateDB bool) error {
 			world := worlds[i]
 
 			group.Go(func() error {
-				spaces := world.GetSpaces(true)
+				spaces := world.GetAllSpaces()
 				ids := make([]uuid.UUID, 0, len(spaces))
 				for i := range spaces {
 					ids = append(ids, spaces[i].GetID())

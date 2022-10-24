@@ -45,6 +45,7 @@ type Node struct {
 	attributeTypes      universe.AttributeTypes
 	plugins             universe.Plugins
 	nodeAttributes      *generic.SyncMap[entry.AttributeID, *entry.AttributePayload]
+	spaceIDToWorldID    *generic.SyncMap[uuid.UUID, uuid.UUID]
 	influx              influx_api.WriteAPIBlocking
 	pluginController    *mplugin.PluginController
 	corePluginInterface *mplugin.PluginInterface
@@ -63,17 +64,18 @@ func NewNode(
 	plugins universe.Plugins,
 ) *Node {
 	return &Node{
-		id:             id,
-		cfg:            cfg,
-		db:             db,
-		worlds:         worlds,
-		assets2d:       assets2D,
-		assets3d:       assets3D,
-		spaceTypes:     spaceTypes,
-		userTypes:      userTypes,
-		attributeTypes: attributeTypes,
-		plugins:        plugins,
-		nodeAttributes: generic.NewSyncMap[entry.AttributeID, *entry.AttributePayload](),
+		id:               id,
+		cfg:              cfg,
+		db:               db,
+		worlds:           worlds,
+		assets2d:         assets2D,
+		assets3d:         assets3D,
+		spaceTypes:       spaceTypes,
+		userTypes:        userTypes,
+		attributeTypes:   attributeTypes,
+		plugins:          plugins,
+		nodeAttributes:   generic.NewSyncMap[entry.AttributeID, *entry.AttributePayload](),
+		spaceIDToWorldID: generic.NewSyncMap[uuid.UUID, uuid.UUID](),
 	}
 }
 
@@ -136,6 +138,64 @@ func (n *Node) GetSpaceTypes() universe.SpaceTypes {
 
 func (n *Node) GetUserTypes() universe.UserTypes {
 	return n.userTypes
+}
+
+func (n *Node) GetSpaceFromAllSpaces(spaceID uuid.UUID) (universe.Space, bool) {
+	worldID, ok := n.spaceIDToWorldID.Load(spaceID)
+	if !ok {
+		return nil, false
+	}
+	world, ok := n.GetWorlds().GetWorld(worldID)
+	if !ok {
+		return nil, false
+	}
+	return world.GetSpaceFromAllSpaces(spaceID)
+}
+
+func (n *Node) GetAllSpaces() map[uuid.UUID]universe.Space {
+	spaces := make(map[uuid.UUID]universe.Space)
+
+	for _, world := range n.GetWorlds().GetWorlds() {
+		for spaceID, space := range world.GetAllSpaces() {
+			spaces[spaceID] = space
+		}
+	}
+
+	return spaces
+}
+
+func (n *Node) AddSpaceToAllSpaces(space universe.Space) error {
+	worldID := space.GetWorld().GetID()
+	world, ok := n.GetWorlds().GetWorld(worldID)
+	if !ok {
+		return errors.Errorf("failed to get world by world id: %s", worldID)
+	}
+	if err := world.AddSpaceToAllSpaces(space); err != nil {
+		return errors.WithMessagef(
+			err, "failed to add space %s to world %s all spaces", space.GetID(), worldID,
+		)
+	}
+	n.spaceIDToWorldID.Store(space.GetID(), worldID)
+	return nil
+}
+
+func (n *Node) RemoveSpaceFromAllSpaces(space universe.Space) (bool, error) {
+	worldID, ok := n.spaceIDToWorldID.Load(space.GetID())
+	if !ok {
+		return false, errors.Errorf("failed to get world id by space id: %s", space.GetID())
+	}
+	world, ok := n.GetWorlds().GetWorld(worldID)
+	if !ok {
+		return false, errors.Errorf("failed to get world by world id: %s", worldID)
+	}
+	ok, err := world.RemoveSpaceFromAllSpaces(space)
+	if err != nil {
+		return false, errors.WithMessagef(
+			err, "failed to remove space %s from world %s all spaces", space.GetID(), worldID,
+		)
+	}
+	n.spaceIDToWorldID.Remove(space.GetID())
+	return ok, nil
 }
 
 func (n *Node) AddAPIRegister(register universe.APIRegister) {
