@@ -224,17 +224,17 @@ func (w *World) GetAllSpaces() map[uuid.UUID]universe.Space {
 
 func (w *World) AddSpaceToAllSpaces(space universe.Space) error {
 	w.allSpaces.Store(space.GetID(), space)
-	return nil
+	return universe.GetNode().AddSpaceToAllSpaces(space)
 }
 
 func (w *World) RemoveSpaceFromAllSpaces(space universe.Space) (bool, error) {
 	w.allSpaces.Mu.Lock()
 	defer w.allSpaces.Mu.Unlock()
 
-	space, ok := w.allSpaces.Data[space.GetID()]
-	if ok {
+	if _, ok := w.allSpaces.Data[space.GetID()]; ok {
 		delete(w.allSpaces.Data, space.GetID())
-		return true, nil
+
+		return universe.GetNode().RemoveSpaceFromAllSpaces(space)
 	}
 
 	return false, nil

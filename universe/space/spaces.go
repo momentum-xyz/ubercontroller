@@ -19,8 +19,10 @@ func (s *Space) CreateSpace(spaceID uuid.UUID) (universe.Space, error) {
 	if err := space.Initialize(s.ctx); err != nil {
 		return nil, errors.WithMessagef(err, "failed to initialize space: %s", spaceID)
 	}
-	if err := universe.GetNode().AddSpaceToAllSpaces(space); err != nil {
-		return nil, errors.WithMessagef(err, "failed to add space to node all spaces: %s", spaceID)
+	if err := space.GetWorld().AddSpaceToAllSpaces(space); err != nil {
+		return nil, errors.WithMessagef(
+			err, "failed to add space %s to world %s all spaces", spaceID, space.GetWorld().GetID(),
+		)
 	}
 	if err := s.AddSpace(space, false); err != nil {
 		return nil, errors.WithMessagef(err, "failed to add space %s to space: %s", spaceID, s.GetID())
@@ -154,12 +156,7 @@ func (s *Space) RemoveSpace(space universe.Space, recursive, updateDB bool) (boo
 
 		delete(s.Children.Data, space.GetID())
 
-		ok, err := universe.GetNode().RemoveSpaceFromAllSpaces(space)
-		if err != nil {
-			return false, errors.WithMessagef(err, "failed to remove space from node all spaces: %s", space.GetID())
-		}
-
-		return ok, nil
+		return space.GetWorld().RemoveSpaceFromAllSpaces(space)
 	}
 	s.Children.Mu.Unlock()
 
