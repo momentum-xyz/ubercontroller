@@ -1,10 +1,20 @@
 package dto
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+
+	"github.com/momentum-xyz/ubercontroller/types/entry"
+)
 
 type Plugins map[uuid.UUID]string
 
-type PluginMeta map[string]any
+type PluginsMeta map[uuid.UUID]*PluginMeta
+
+type PluginMeta entry.PluginMeta
+
+type PluginsOptions map[uuid.UUID]*PluginOptions
+
+type PluginOptions entry.PluginOptions
 
 type Profile struct {
 	Bio         *string `json:"bio,omitempty"`

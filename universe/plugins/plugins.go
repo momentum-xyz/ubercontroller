@@ -2,18 +2,18 @@ package plugins
 
 import (
 	"context"
-	"github.com/google/uuid"
-	"github.com/momentum-xyz/ubercontroller/types"
-	"github.com/momentum-xyz/ubercontroller/types/entry"
-	"github.com/momentum-xyz/ubercontroller/universe/plugin"
-	"github.com/momentum-xyz/ubercontroller/utils"
-	"github.com/pkg/errors"
 
+	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"github.com/momentum-xyz/ubercontroller/database"
+	"github.com/momentum-xyz/ubercontroller/types"
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/universe/plugin"
+	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 var _ universe.Plugins = (*Plugins)(nil)

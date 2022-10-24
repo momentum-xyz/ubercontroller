@@ -2,7 +2,7 @@ package plugins
 
 import (
 	"fmt"
-	
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/momentum-xyz/ubercontroller"

@@ -96,7 +96,7 @@ func (db *DB) Assets3dRemoveAssetsByIDs(ctx context.Context, asset3dIDs []uuid.U
 	return nil
 }
 
-func (db *DB) Assets3dUpdateAssetMeta(ctx context.Context, asset3dID uuid.UUID, meta *entry.Meta) error {
+func (db *DB) Assets3dUpdateAssetMeta(ctx context.Context, asset3dID uuid.UUID, meta *entry.Asset3dMeta) error {
 	if _, err := db.conn.Exec(ctx, updateAssetMetaQuery, asset3dID, meta); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}

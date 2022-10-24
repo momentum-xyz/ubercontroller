@@ -19,13 +19,13 @@ func (s *Space) CreateSpace(spaceID uuid.UUID) (universe.Space, error) {
 	if err := space.Initialize(s.ctx); err != nil {
 		return nil, errors.WithMessagef(err, "failed to initialize space: %s", spaceID)
 	}
+	if err := s.AddSpace(space, false); err != nil {
+		return nil, errors.WithMessagef(err, "failed to add space %s to space: %s", spaceID, s.GetID())
+	}
 	if err := space.GetWorld().AddSpaceToAllSpaces(space); err != nil {
 		return nil, errors.WithMessagef(
 			err, "failed to add space %s to world %s all spaces", spaceID, space.GetWorld().GetID(),
 		)
-	}
-	if err := s.AddSpace(space, false); err != nil {
-		return nil, errors.WithMessagef(err, "failed to add space %s to space: %s", spaceID, s.GetID())
 	}
 
 	return space, nil
