@@ -85,7 +85,7 @@ type Assets2dDB interface {
 	Assets2dRemoveAssetByID(ctx context.Context, asset2dID uuid.UUID) error
 	Assets2dRemoveAssetsByIDs(ctx context.Context, asset2dIDs []uuid.UUID) error
 
-	Assets2dUpdateAssetMeta(ctx context.Context, asset2dID uuid.UUID, meta entry.Meta) error
+	Assets2dUpdateAssetMeta(ctx context.Context, asset2dID uuid.UUID, meta *entry.Meta) error
 	Assets2dUpdateAssetOptions(ctx context.Context, asset2dID uuid.UUID, options *entry.Asset2dOptions) error
 }
 
@@ -98,7 +98,7 @@ type Assets3dDB interface {
 	Assets3dRemoveAssetByID(ctx context.Context, asset3dID uuid.UUID) error
 	Assets3dRemoveAssetsByIDs(ctx context.Context, asset3dIDs []uuid.UUID) error
 
-	Assets3dUpdateAssetMeta(ctx context.Context, asset3dID uuid.UUID, meta entry.Meta) error
+	Assets3dUpdateAssetMeta(ctx context.Context, asset3dID uuid.UUID, meta *entry.Meta) error
 	Assets3dUpdateAssetOptions(ctx context.Context, asset3dID uuid.UUID, options *entry.Asset3dOptions) error
 }
 
@@ -419,7 +419,7 @@ type PluginsDB interface {
 	PluginsRemovePluginByID(ctx context.Context, pluginID uuid.UUID) error
 	PluginsRemovePluginsByIDs(ctx context.Context, pluginIDs []uuid.UUID) error
 
-	PluginsUpdatePluginMeta(ctx context.Context, pluginID uuid.UUID, meta entry.Meta) error
+	PluginsUpdatePluginMeta(ctx context.Context, pluginID uuid.UUID, meta *entry.Meta) error
 	PluginsUpdatePluginOptions(
 		ctx context.Context, pluginID uuid.UUID, options *entry.PluginOptions,
 	) error

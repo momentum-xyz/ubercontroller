@@ -7,7 +7,7 @@ import (
 
 type Asset3d struct {
 	Asset3dID uuid.UUID       `db:"asset_3d_id"`
-	Meta      Meta            `db:"meta"`
+	Meta      *Meta           `db:"meta"`
 	Options   *Asset3dOptions `db:"options"`
 	CreatedAt time.Time       `db:"created_at"`
 	UpdateAt  *time.Time      `db:"updated_at"`

@@ -51,14 +51,14 @@ func (a *Asset2d) Initialize(ctx context.Context) error {
 	return nil
 }
 
-func (a *Asset2d) GetMeta() entry.Meta {
+func (a *Asset2d) GetMeta() *entry.Meta {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
 	return a.entry.Meta
 }
 
-func (a *Asset2d) SetMeta(meta entry.Meta, updateDB bool) error {
+func (a *Asset2d) SetMeta(meta *entry.Meta, updateDB bool) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 

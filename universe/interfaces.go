@@ -18,8 +18,8 @@ type IDer interface {
 }
 
 type Metaer interface {
-	GetMeta() entry.Meta
-	SetMeta(meta entry.Meta, updateDB bool) error
+	GetMeta() *entry.Meta
+	SetMeta(meta *entry.Meta, updateDB bool) error
 }
 
 type Initializer interface {
