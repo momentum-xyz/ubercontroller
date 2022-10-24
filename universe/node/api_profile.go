@@ -23,28 +23,22 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 	}{}
 
 	if err := c.ShouldBindJSON(&inBody); err != nil {
-		n.log.Debug(errors.WithMessage(err, "Node: apiProfileUpdate: failed to bind json"))
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"message": "invalid request body",
-		})
+		err = errors.WithMessage(err, "Node: apiProfileUpdate: failed to bind json")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
 		return
 	}
 
 	userID, err := api.GetUserIDFromContext(c)
 	if err != nil {
-		n.log.Debug(errors.WithMessage(err, "Node: apiProfileUpdate: failed to get user id from context"))
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"message": "invalid user id",
-		})
+		err = errors.WithMessage(err, "Node: apiProfileUpdate: failed to get user id from context")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
 		return
 	}
 
 	userProfile, err := n.db.UsersGetUserProfileByUserID(c, userID)
 	if err != nil {
-		n.log.Debug(errors.WithMessage(err, "Node: apiProfileUpdate: failed to get user profile by user id"))
-		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
-			"message": "not found",
-		})
+		err = errors.WithMessage(err, "Node: apiProfileUpdate: failed to get user profile by user id")
+		api.AbortRequest(c, http.StatusNotFound, "not_found", err, n.log)
 		return
 	}
 
@@ -72,10 +66,8 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 	userProfile.OnBoarded = utils.GetPTR(true)
 
 	if err := n.db.UsersUpdateUserProfile(c, userID, userProfile); err != nil {
-		n.log.Error(errors.WithMessage(err, "failed to update user profile"))
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"message": "failed to update user profile",
-		})
+		err = errors.WithMessage(err, "failed to update user profile")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_update_user_profile", err, n.log)
 		return
 	}
 
