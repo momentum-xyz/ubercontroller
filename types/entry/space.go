@@ -30,22 +30,22 @@ type Space struct {
 }
 
 type SpaceOptions struct {
-	Asset2dOptions   any                                `db:"asset_2d_options" json:"asset_2d_options"`
-	Asset3dOptions   any                                `db:"asset_3d_options" json:"asset_3d_options"`
-	FrameTemplates   map[string]any                     `db:"frame_templates" json:"frame_templates"`
-	ChildPlacements  map[uuid.UUID]*SpaceChildPlacement `db:"child_placement" json:"child_placement"`
-	AllowedSubspaces []uuid.UUID                        `db:"allowed_subspaces" json:"allowed_subspaces"`
-	DefaultTiles     []any                              `db:"default_tiles" json:"default_tiles"`
-	InfoUIID         *uuid.UUID                         `db:"infoui_id" json:"infoui_id"`
-	Minimap          *bool                              `db:"minimap" json:"minimap"`
-	Visible          *SpaceVisibleType                  `db:"visible" json:"visible"`
-	Private          *bool                              `db:"private" json:"private"`
-	DashboardPlugins []string                           `db:"dashboard_plugins" json:"dashboard_plugins"`
+	Asset2dOptions   any                                `db:"asset_2d_options" json:"asset_2d_options,omitempty"`
+	Asset3dOptions   any                                `db:"asset_3d_options" json:"asset_3d_options,omitempty"`
+	FrameTemplates   map[string]any                     `db:"frame_templates" json:"frame_templates,omitempty"`
+	ChildPlacements  map[uuid.UUID]*SpaceChildPlacement `db:"child_placement" json:"child_placement,omitempty"`
+	AllowedSubspaces []uuid.UUID                        `db:"allowed_subspaces" json:"allowed_subspaces,omitempty"`
+	DefaultTiles     []any                              `db:"default_tiles" json:"default_tiles,omitempty"`
+	InfoUIID         *uuid.UUID                         `db:"infoui_id" json:"infoui_id,omitempty"`
+	Minimap          *bool                              `db:"minimap" json:"minimap,omitempty"`
+	Visible          *SpaceVisibleType                  `db:"visible" json:"visible,omitempty"`
+	Private          *bool                              `db:"private" json:"private,omitempty"`
+	DashboardPlugins []string                           `db:"dashboard_plugins" json:"dashboard_plugins,omitempty"`
 }
 
 type SpaceChildPlacement struct {
-	Algo    *string        `db:"algo" json:"algo"`
-	Options map[string]any `db:"options" json:"options"`
+	Algo    *string        `db:"algo" json:"algo,omitempty"`
+	Options map[string]any `db:"options" json:"options,omitempty"`
 }
 
 type SpaceAttributeID struct {

@@ -41,6 +41,15 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		{
 			authProfile.PATCH("", n.apiProfileUpdate)
 		}
+
+		authSpaces := auth.Group("/spaces")
+		{
+			authSpace := authSpaces.Group("/:spaceID")
+			{
+				authSpace.GET("/effective-options", n.apiSpacesGetSpaceEffectiveOptions)
+				authSpace.GET("/effective-options/sub", n.apiSpacesGetSpaceEffectiveSubOptions)
+			}
+		}
 	}
 }
 
