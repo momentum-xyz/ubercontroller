@@ -5,13 +5,18 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 
 	"github.com/momentum-xyz/ubercontroller"
+	_ "github.com/momentum-xyz/ubercontroller/docs"
 	"github.com/momentum-xyz/ubercontroller/universe/api/middleware"
 )
 
 func (n *Node) RegisterAPI(r *gin.Engine) {
 	n.log.Infof("Registering api for node: %s...", n.GetID())
+
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	r.GET("/version", n.apiGetVersion)
 	r.GET("/health", n.apiHealthCheck)
