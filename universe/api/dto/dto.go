@@ -20,6 +20,10 @@ type SpaceOptions map[uuid.UUID]*entry.SpaceOptions
 
 type SpaceSubOptions map[uuid.UUID]any
 
+type SpaceAttributes map[uuid.UUID]*entry.SpaceAttribute
+
+type SpaceSubAttributes map[uuid.UUID]any
+
 type SpaceEffectiveOptions SpaceOptions
 
 type SpaceEffectiveSubOptions map[uuid.UUID]any
@@ -168,6 +172,13 @@ type Space struct {
 			OperatorID *string `json:"operator_id,omitempty"`
 		}
 	} `json:"metadata,omitempty"`
+}
+
+type SpaceAttribute struct {
+	PluginID      string `json:"pluginId"`
+	AttributeName string `json:"attribute_name"`
+	SpaceID       string `json:"stringId"`
+	Value         any
 }
 
 type SubSpace struct {
