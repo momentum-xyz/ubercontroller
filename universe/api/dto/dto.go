@@ -16,6 +16,14 @@ type PluginsOptions map[uuid.UUID]*PluginOptions
 
 type PluginOptions entry.PluginOptions
 
+type SpaceOptions map[uuid.UUID]*entry.SpaceOptions
+
+type SpaceSubOptions map[uuid.UUID]any
+
+type SpaceEffectiveOptions SpaceOptions
+
+type SpaceEffectiveSubOptions map[uuid.UUID]any
+
 type Profile struct {
 	Bio         *string `json:"bio,omitempty"`
 	Location    *string `json:"location,omitempty"`
