@@ -4,6 +4,7 @@ DOCKER_TAG="develop"
 all: build
 
 build:
+	swag init -g universe/node/api.go
 	go build -o ./bin/ubercontroller ./cmd/service
 	cd plugins && make
 
