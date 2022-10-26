@@ -16,6 +16,7 @@ import (
 
 const (
 	getSpaceAttributesQuery               = `SELECT * FROM space_attribute;`
+	getSpaceAttributeByIDQuery            = `SELECT * FROM space_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3;`
 	getSpaceAttributesQueryBySpaceIDQuery = `SELECT * FROM space_attribute WHERE space_id = $1;`
 
 	removeSpaceAttributeByNameQuery                       = `DELETE FROM space_attribute WHERE attribute_name = $1;`
@@ -60,6 +61,19 @@ func (db *DB) SpaceAttributesGetSpaceAttributes(ctx context.Context) ([]*entry.S
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return spaceAttribute, nil
+}
+
+func (db *DB) SpaceAttributesGetSpaceAttributeByID(
+	ctx context.Context, spaceAttributeID entry.SpaceAttributeID,
+) (*entry.SpaceAttribute, error) {
+	var spaceAttribute entry.SpaceAttribute
+	if err := pgxscan.Get(
+		ctx, db.conn, &spaceAttribute, getSpaceAttributeByIDQuery,
+		spaceAttributeID.PluginID, spaceAttributeID.Name, spaceAttributeID.SpaceID,
+	); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return &spaceAttribute, nil
 }
 
 func (db *DB) SpaceAttributesGetSpaceAttributesBySpaceID(

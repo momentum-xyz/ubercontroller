@@ -154,7 +154,6 @@ func (w *World) Load() error {
 }
 
 func (w *World) UpdateWorldMetadata() error {
-
 	meta, ok := w.GetSpaceAttributeValue(
 		entry.NewAttributeID(
 			uuid.UUID(w.corePluginInterface.GetId()), "world_meta",

@@ -69,6 +69,13 @@ type SpaceUserAttribute struct {
 	*AttributePayload
 }
 
+func NewSpaceAttribute(spaceAttributeID SpaceAttributeID, payload *AttributePayload) *SpaceAttribute {
+	return &SpaceAttribute{
+		SpaceAttributeID: spaceAttributeID,
+		AttributePayload: payload,
+	}
+}
+
 func NewSpaceUserAttribute(spaceUserAttributeID SpaceUserAttributeID, payload *AttributePayload) *SpaceUserAttribute {
 	return &SpaceUserAttribute{
 		SpaceUserAttributeID: spaceUserAttributeID,
