@@ -46,7 +46,7 @@ func (n *Node) apiGetSpaceAttributes(c *gin.Context) {
 	out, ok := space.GetSpaceAttributeValue(attributeID)
 	if !ok {
 		err := errors.Errorf("Node: apiGetSpaceSubAttribute: space_attribute_value not found: %s", attributeID)
-		api.AbortRequest(c, http.StatusNotFound, "sub_attribute_not_found", err, n.log)
+		api.AbortRequest(c, http.StatusNotFound, "attribute_not_found", err, n.log)
 		return
 	}
 
@@ -91,20 +91,20 @@ func (n *Node) apiGetSpaceSubAttribute(c *gin.Context) {
 	attributeValue, ok := space.GetSpaceAttributeValue(attributeID)
 	if !ok {
 		err := errors.Errorf("Node: apiGetSpaceSubAttribute: attribute_value not found: %s", attributeID)
-		api.AbortRequest(c, http.StatusNotFound, "sub_attribute_value_not_found", err, n.log)
+		api.AbortRequest(c, http.StatusNotFound, "attribute_value_not_found", err, n.log)
 		return
 	}
 
 	if attributeValue == nil {
 		err := errors.Errorf("Node: apiGetSpaceSubAttribute: attribute_value is nil")
-		api.AbortRequest(c, http.StatusNotFound, "sub_attribute_value_nil", err, n.log)
+		api.AbortRequest(c, http.StatusNotFound, "attribute_value_nil", err, n.log)
 		return
 	}
 
 	value, ok := (*attributeValue)[inQuery.SubAttributeKey]
 	if !ok {
-		err := errors.Errorf("Node: apiGetSpaceSubAttribute: SubAttributeKey not found: %s", inQuery.SubAttributeKey)
-		api.AbortRequest(c, http.StatusNotFound, "sub_attribute_key_not_found", err, n.log)
+		err := errors.Errorf("Node: apiGetSpaceSubAttribute: attribute_key not found: %s", inQuery.SubAttributeKey)
+		api.AbortRequest(c, http.StatusNotFound, "attribute_key_not_found", err, n.log)
 		return
 	}
 
