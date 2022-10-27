@@ -42,8 +42,7 @@ type Space struct {
 	spaceType        universe.SpaceType
 	effectiveOptions *entry.SpaceOptions
 
-	spaceAttributes     *generic.SyncMap[entry.AttributeID, *entry.AttributePayload]
-	spaceUserAttributes *generic.SyncMap[entry.UserAttributeID, *entry.AttributePayload]
+	attributes *generic.SyncMap[entry.AttributeID, *entry.AttributePayload]
 
 	spawnMsg          atomic.Pointer[websocket.PreparedMessage]
 	attributesMsg     *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
@@ -60,15 +59,14 @@ type Space struct {
 
 func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
 	return &Space{
-		id:                  id,
-		db:                  db,
-		Users:               generic.NewSyncMap[uuid.UUID, universe.User](),
-		Children:            generic.NewSyncMap[uuid.UUID, universe.Space](),
-		spaceAttributes:     generic.NewSyncMap[entry.AttributeID, *entry.AttributePayload](),
-		spaceUserAttributes: generic.NewSyncMap[entry.UserAttributeID, *entry.AttributePayload](),
-		attributesMsg:       generic.NewSyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]](),
-		renderTextureAttr:   make(map[string]string),
-		world:               world,
+		id:                id,
+		db:                db,
+		Users:             generic.NewSyncMap[uuid.UUID, universe.User](),
+		Children:          generic.NewSyncMap[uuid.UUID, universe.Space](),
+		attributes:        generic.NewSyncMap[entry.AttributeID, *entry.AttributePayload](),
+		attributesMsg:     generic.NewSyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]](),
+		renderTextureAttr: make(map[string]string),
+		world:             world,
 	}
 }
 
@@ -76,7 +74,7 @@ func (s *Space) GetID() uuid.UUID {
 	return s.id
 }
 
-// todo: implement this via spaceAttributes
+// todo: implement this via attributes
 func (s *Space) GetName() string {
 	return "unknown"
 }
@@ -380,9 +378,6 @@ func (s *Space) loadSelfData(spaceEntry *entry.Space) error {
 	if err := s.loadSpaceAttributes(); err != nil {
 		return errors.WithMessage(err, "failed to load space attributes")
 	}
-	if err := s.loadSpaceUserAttributes(); err != nil {
-		return errors.WithMessage(err, "failed to load space_user attributes")
-	}
 
 	return nil
 }
@@ -400,9 +395,6 @@ func (s *Space) loadDependencies(entry *entry.Space) error {
 
 	if err := s.loadSpaceAttributes(); err != nil {
 		return errors.WithMessage(err, "failed to load space attributes")
-	}
-	if err := s.loadSpaceUserAttributes(); err != nil {
-		return errors.WithMessage(err, "failed to load space user attributes")
 	}
 
 	if entry.Asset2dID != nil {
@@ -482,7 +474,17 @@ func (s *Space) SendSpawnMessage(f func(*websocket.PreparedMessage) error, recur
 		}
 		s.Children.Mu.RUnlock()
 	}
+}
 
+func (s *Space) SendTextures(f func(*websocket.PreparedMessage) error, recursive bool) {
+	f(s.textMsg.Load())
+	if recursive {
+		s.Children.Mu.RLock()
+		for _, space := range s.Children.Data {
+			space.SendTextures(f, true)
+		}
+		s.Children.Mu.RUnlock()
+	}
 }
 
 func (s *Space) SendAttributes(f func(*websocket.PreparedMessage), recursive bool) {

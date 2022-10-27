@@ -129,31 +129,29 @@ func (db *DB) UserAttributesUpsertUserAttribute(
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
+	var payload *entry.AttributePayload
 	attribute, err := db.UserAttributesGetUserAttributeByID(ctx, userAttribute.UserAttributeID)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
 			return errors.WithMessage(err, "failed to query db")
 		}
+	} else {
+		payload = attribute.AttributePayload
 	}
 
+	payload, err = modifyFn(payload)
 	if err != nil {
-		userAttribute.AttributePayload, err = modifyFn((*entry.AttributePayload)(nil))
-		if err != nil {
-			return errors.WithMessage(err, "failed to modify attribute payload")
-		}
-	} else {
-		userAttribute.AttributePayload, err = modifyFn(attribute.AttributePayload)
-		if err != nil {
-			return errors.WithMessage(err, "failed to modify attribute payload")
-		}
+		return errors.WithMessage(err, "failed to modify attribute payload")
 	}
 
 	if _, err := db.conn.Exec(
 		ctx, upsertUserAttributeQuery,
-		userAttribute.PluginID, userAttribute.Name, userAttribute.UserID, userAttribute.Value, userAttribute.Options,
+		userAttribute.PluginID, userAttribute.Name, userAttribute.UserID, payload.Value, payload.Options,
 	); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
+
+	userAttribute.AttributePayload = payload
 
 	return nil
 }
@@ -243,8 +241,7 @@ func (db *DB) UserAttributesRemoveUserAttributeByID(
 }
 
 func (db *DB) UserAttributesUpdateUserAttributeValue(
-	ctx context.Context, userAttributeID entry.UserAttributeID,
-	modifyFn modify.Fn[entry.AttributeValue],
+	ctx context.Context, userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributeValue],
 ) error {
 	db.mu.Lock()
 	defer db.mu.Unlock()

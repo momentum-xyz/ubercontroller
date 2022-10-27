@@ -182,6 +182,9 @@ type NodeAttributesDB interface {
 
 type SpaceAttributesDB interface {
 	SpaceAttributesGetSpaceAttributes(ctx context.Context) ([]*entry.SpaceAttribute, error)
+	SpaceAttributesGetSpaceAttributeByID(
+		ctx context.Context, spaceAttributeID entry.SpaceAttributeID,
+	) (*entry.SpaceAttribute, error)
 	SpaceAttributesGetSpaceAttributesBySpaceID(ctx context.Context, spaceID uuid.UUID) ([]*entry.SpaceAttribute, error)
 
 	SpaceAttributesUpsertSpaceAttribute(ctx context.Context, spaceAttribute *entry.SpaceAttribute) error

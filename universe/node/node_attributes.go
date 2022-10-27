@@ -60,13 +60,14 @@ func (n *Node) SetNodeAttributeValue(
 	if err != nil {
 		return errors.WithMessage(err, "failed to modify value")
 	}
-	payload.Value = value
 
 	if updateDB {
-		if err := n.db.NodeAttributesUpdateNodeAttributeValue(n.ctx, attributeID, payload.Value); err != nil {
+		if err := n.db.NodeAttributesUpdateNodeAttributeValue(n.ctx, attributeID, value); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
+
+	payload.Value = value
 
 	return nil
 }
@@ -86,13 +87,14 @@ func (n *Node) SetNodeAttributeOptions(
 	if err != nil {
 		return errors.WithMessage(err, "failed to modify options")
 	}
-	payload.Options = options
 
 	if updateDB {
-		if err := n.db.NodeAttributesUpdateNodeAttributeOptions(n.ctx, attributeID, payload.Options); err != nil {
+		if err := n.db.NodeAttributesUpdateNodeAttributeOptions(n.ctx, attributeID, options); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
+
+	payload.Options = options
 
 	return nil
 }

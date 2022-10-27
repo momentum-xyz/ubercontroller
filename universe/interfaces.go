@@ -172,13 +172,25 @@ type Space interface {
 
 	GetSpaceAttributeValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool)
 	GetSpaceAttributeOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool)
-	GetSpaceAttributeEffectiveOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool)
-	SetSpaceAttributeValue(
+	GetSpaceAttributePayload(attributeID entry.AttributeID) (*entry.AttributePayload, bool)
+
+	GetSpaceAttributesValue(recursive bool) map[entry.SpaceAttributeID]*entry.AttributeValue
+	GetSpaceAttributesOptions(recursive bool) map[entry.SpaceAttributeID]*entry.AttributeOptions
+	GetSpaceAttributesPayload(recursive bool) map[entry.SpaceAttributeID]*entry.AttributePayload
+
+	UpsertSpaceAttribute(
+		spaceAttribute *entry.SpaceAttribute, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
+	) error
+
+	UpdateSpaceAttributeValue(
 		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool,
 	) error
-	SetSpaceAttributeOptions(
+	UpdateSpaceAttributeOptions(
 		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool,
 	) error
+
+	RemoveSpaceAttribute(attributeID entry.AttributeID, updateDB bool) (bool, error)
+	RemoveSpaceAttributes(attributeIDs []entry.AttributeID, updateDB bool) (bool, error)
 
 	UpdateChildrenPosition(recursive bool, force bool) error
 	SetActualPosition(pos cmath.Vec3, theta float64, force bool) error
