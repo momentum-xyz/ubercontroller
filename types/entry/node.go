@@ -13,6 +13,13 @@ type NodeAttribute struct {
 	*AttributePayload
 }
 
+func NewNodeAttribute(nodeAttributeID NodeAttributeID, payload *AttributePayload) *NodeAttribute {
+	return &NodeAttribute{
+		NodeAttributeID:  nodeAttributeID,
+		AttributePayload: payload,
+	}
+}
+
 func NewNodeAttributeID(attributeID AttributeID) NodeAttributeID {
 	return NodeAttributeID{
 		AttributeID: attributeID,

@@ -15,6 +15,9 @@ func (s *Space) GetSpaceAttributeValue(attributeID entry.AttributeID) (*entry.At
 	if !ok {
 		return nil, false
 	}
+	if payload == nil {
+		return nil, false
+	}
 	return payload.Value, true
 }
 
@@ -23,20 +26,23 @@ func (s *Space) GetSpaceAttributeOptions(attributeID entry.AttributeID) (*entry.
 	if !ok {
 		return nil, false
 	}
+	if payload == nil {
+		return nil, false
+	}
 	return payload.Options, true
 }
 
 func (s *Space) GetSpaceAttributePayload(attributeID entry.AttributeID) (*entry.AttributePayload, bool) {
-	return s.attributes.Load(attributeID)
+	return s.spaceAttributes.Load(attributeID)
 }
 
 func (s *Space) GetSpaceAttributesValue(recursive bool) map[entry.SpaceAttributeID]*entry.AttributeValue {
-	s.attributes.Mu.RLock()
-	values := make(map[entry.SpaceAttributeID]*entry.AttributeValue, len(s.attributes.Data))
-	for attributeID, payload := range s.attributes.Data {
+	s.spaceAttributes.Mu.RLock()
+	values := make(map[entry.SpaceAttributeID]*entry.AttributeValue, len(s.spaceAttributes.Data))
+	for attributeID, payload := range s.spaceAttributes.Data {
 		values[entry.NewSpaceAttributeID(attributeID, s.GetID())] = payload.Value
 	}
-	s.attributes.Mu.RUnlock()
+	s.spaceAttributes.Mu.RUnlock()
 
 	if !recursive {
 		return values
@@ -55,12 +61,12 @@ func (s *Space) GetSpaceAttributesValue(recursive bool) map[entry.SpaceAttribute
 }
 
 func (s *Space) GetSpaceAttributesOptions(recursive bool) map[entry.SpaceAttributeID]*entry.AttributeOptions {
-	s.attributes.Mu.RLock()
-	options := make(map[entry.SpaceAttributeID]*entry.AttributeOptions, len(s.attributes.Data))
-	for attributeID, payload := range s.attributes.Data {
+	s.spaceAttributes.Mu.RLock()
+	options := make(map[entry.SpaceAttributeID]*entry.AttributeOptions, len(s.spaceAttributes.Data))
+	for attributeID, payload := range s.spaceAttributes.Data {
 		options[entry.NewSpaceAttributeID(attributeID, s.GetID())] = payload.Options
 	}
-	s.attributes.Mu.RUnlock()
+	s.spaceAttributes.Mu.RUnlock()
 
 	if !recursive {
 		return options
@@ -79,12 +85,12 @@ func (s *Space) GetSpaceAttributesOptions(recursive bool) map[entry.SpaceAttribu
 }
 
 func (s *Space) GetSpaceAttributesPayload(recursive bool) map[entry.SpaceAttributeID]*entry.AttributePayload {
-	s.attributes.Mu.RLock()
-	payloads := make(map[entry.SpaceAttributeID]*entry.AttributePayload, len(s.attributes.Data))
-	for attributeID, payload := range s.attributes.Data {
+	s.spaceAttributes.Mu.RLock()
+	payloads := make(map[entry.SpaceAttributeID]*entry.AttributePayload, len(s.spaceAttributes.Data))
+	for attributeID, payload := range s.spaceAttributes.Data {
 		payloads[entry.NewSpaceAttributeID(attributeID, s.GetID())] = payload
 	}
-	s.attributes.Mu.RUnlock()
+	s.spaceAttributes.Mu.RUnlock()
 
 	if !recursive {
 		return payloads
@@ -109,15 +115,15 @@ func (s *Space) UpsertSpaceAttribute(
 		return errors.Errorf("space id mismatch: %s != %s", spaceAttribute.SpaceID, s.GetID())
 	}
 
-	s.attributes.Mu.Lock()
-	defer s.attributes.Mu.Unlock()
+	s.spaceAttributes.Mu.Lock()
+	defer s.spaceAttributes.Mu.Unlock()
 
-	curPayload, ok := s.attributes.Data[spaceAttribute.AttributeID]
+	payload, ok := s.spaceAttributes.Data[spaceAttribute.AttributeID]
 	if !ok {
-		curPayload = (*entry.AttributePayload)(nil)
+		payload = (*entry.AttributePayload)(nil)
 	}
 
-	payload, err := modifyFn(curPayload)
+	payload, err := modifyFn(payload)
 	if err != nil {
 		return errors.WithMessage(err, "failed to modify attribute payload")
 	}
@@ -131,7 +137,7 @@ func (s *Space) UpsertSpaceAttribute(
 	}
 
 	spaceAttribute.AttributePayload = payload
-	s.attributes.Data[spaceAttribute.AttributeID] = spaceAttribute.AttributePayload
+	s.spaceAttributes.Data[spaceAttribute.AttributeID] = spaceAttribute.AttributePayload
 
 	return nil
 }
@@ -139,12 +145,15 @@ func (s *Space) UpsertSpaceAttribute(
 func (s *Space) UpdateSpaceAttributeValue(
 	attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool,
 ) error {
-	s.attributes.Mu.Lock()
-	defer s.attributes.Mu.Unlock()
+	s.spaceAttributes.Mu.Lock()
+	defer s.spaceAttributes.Mu.Unlock()
 
-	payload, ok := s.attributes.Data[attributeID]
+	payload, ok := s.spaceAttributes.Data[attributeID]
 	if !ok {
-		return errors.Errorf("space attribute not found: %+v", attributeID)
+		return errors.Errorf("space attribute not found")
+	}
+	if payload == nil {
+		payload = entry.NewAttributePayload(nil, nil)
 	}
 
 	value, err := modifyFn(payload.Value)
@@ -161,6 +170,7 @@ func (s *Space) UpdateSpaceAttributeValue(
 	}
 
 	payload.Value = value
+	s.spaceAttributes.Data[attributeID] = payload
 
 	return nil
 }
@@ -168,12 +178,15 @@ func (s *Space) UpdateSpaceAttributeValue(
 func (s *Space) UpdateSpaceAttributeOptions(
 	attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool,
 ) error {
-	s.attributes.Mu.Lock()
-	defer s.attributes.Mu.Unlock()
+	s.spaceAttributes.Mu.Lock()
+	defer s.spaceAttributes.Mu.Unlock()
 
-	payload, ok := s.attributes.Data[attributeID]
+	payload, ok := s.spaceAttributes.Data[attributeID]
 	if !ok {
-		return errors.Errorf("space attribute not found: %+v", attributeID)
+		return errors.Errorf("space attribute not found")
+	}
+	if payload == nil {
+		payload = entry.NewAttributePayload(nil, nil)
 	}
 
 	options, err := modifyFn(payload.Options)
@@ -190,15 +203,16 @@ func (s *Space) UpdateSpaceAttributeOptions(
 	}
 
 	payload.Options = options
+	s.spaceAttributes.Data[attributeID] = payload
 
 	return nil
 }
 
 func (s *Space) RemoveSpaceAttribute(attributeID entry.AttributeID, updateDB bool) (bool, error) {
-	s.attributes.Mu.Lock()
-	defer s.attributes.Mu.Unlock()
+	s.spaceAttributes.Mu.Lock()
+	defer s.spaceAttributes.Mu.Unlock()
 
-	if _, ok := s.attributes.Data[attributeID]; !ok {
+	if _, ok := s.spaceAttributes.Data[attributeID]; !ok {
 		return false, nil
 	}
 
@@ -210,7 +224,7 @@ func (s *Space) RemoveSpaceAttribute(attributeID entry.AttributeID, updateDB boo
 		}
 	}
 
-	delete(s.attributes.Data, attributeID)
+	delete(s.spaceAttributes.Data, attributeID)
 
 	return true, nil
 }
@@ -265,18 +279,15 @@ func (s *Space) CheckIfRendered(instance *entry.SpaceAttribute) {
 func (s *Space) loadSpaceAttributes() error {
 	entries, err := s.db.SpaceAttributesGetSpaceAttributesBySpaceID(s.ctx, s.id)
 	if err != nil {
-		return errors.WithMessage(err, "failed to get space attributes")
+		return errors.WithMessage(err, "failed to get space spaceAttributes")
 	}
 
-	attributeTypes := universe.GetNode().GetAttributeTypes()
 	for _, instance := range entries {
-		if _, ok := attributeTypes.GetAttributeType(entry.AttributeTypeID(instance.AttributeID)); ok {
-			s.CheckIfRendered(instance)
-			if err := s.UpsertSpaceAttribute(
-				instance, modify.MergeWith(instance.AttributePayload), false,
-			); err != nil {
-				return errors.WithMessagef(err, "failed to upsert space attribute: %+v", instance.AttributeID)
-			}
+		s.CheckIfRendered(instance)
+		if err := s.UpsertSpaceAttribute(
+			instance, modify.MergeWith(instance.AttributePayload), false,
+		); err != nil {
+			return errors.WithMessagef(err, "failed to upsert space attribute: %+v", instance.AttributeID)
 		}
 	}
 
