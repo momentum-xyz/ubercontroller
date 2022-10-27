@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe/api"
+	"github.com/momentum-xyz/ubercontroller/utils/modify"
 	"github.com/pkg/errors"
 	"net/http"
 )
@@ -109,4 +110,63 @@ func (n *Node) apiGetSpaceSubAttribute(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, value)
+}
+
+func (n *Node) apiSetSpaceSubAttribute(c *gin.Context) {
+	inBody := struct {
+		PluginID          string `json:"plugin_id" binding:"required"`
+		AttributeName     string `json:"attribute_name" binding:"required"`
+		SubAttributeKey   string `json:"sub_attribute_key" binding:"required"`
+		SubAttributeValue string `json:"sub_attribute_value" binding:"required"`
+	}{}
+
+	if err := c.ShouldBindJSON(&inBody); err != nil {
+		err = errors.WithMessage(err, "Node: apiSetSpaceSubAttribute: failed to bind json")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
+	spaceID, err := uuid.Parse(c.Param("spaceID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSetSpaceSubAttribute: failed to parse space id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, n.log)
+		return
+	}
+
+	pluginID, err := uuid.Parse(inBody.PluginID)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSetSpaceSubAttribute: failed to parse plugin id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
+		return
+	}
+
+	space, ok := n.GetSpaceFromAllSpaces(spaceID)
+	if !ok {
+		err := errors.Errorf("Node: apiGetSpaceSubAttribute: space not found: %s", spaceID)
+		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		return
+	}
+
+	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
+	spaceAttributeID := entry.NewSpaceAttributeID(attributeID, spaceID)
+
+	spaceAttribute, err := n.db.SpaceAttributesGetSpaceAttributeByID(c, spaceAttributeID)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiSetSpaceSubAttribute: failed to get space attribute by space id")
+		api.AbortRequest(c, http.StatusNotFound, "not_found", err, n.log)
+		return
+	}
+
+	newValue := entry.NewAttributeValue()
+	(*newValue)[inBody.SubAttributeKey] = inBody.SubAttributeValue
+
+	newPayload := entry.NewAttributePayload(newValue, spaceAttribute.Options)
+
+	if err := space.UpsertSpaceAttribute(spaceAttribute, modify.MergeWith(newPayload), true); err != nil {
+		err = errors.WithMessage(err, "Node: apiSetSpaceSubAttribute: failed to upsert space attribute")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert", err, n.log)
+		return
+	}
+
+	c.JSON(http.StatusCreated, newPayload.Value)
 }
