@@ -42,7 +42,7 @@ type Space struct {
 	spaceType        universe.SpaceType
 	effectiveOptions *entry.SpaceOptions
 
-	attributes *generic.SyncMap[entry.AttributeID, *entry.AttributePayload]
+	spaceAttributes *generic.SyncMap[entry.AttributeID, *entry.AttributePayload]
 
 	spawnMsg          atomic.Pointer[websocket.PreparedMessage]
 	attributesMsg     *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
@@ -63,7 +63,7 @@ func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
 		db:                db,
 		Users:             generic.NewSyncMap[uuid.UUID, universe.User](),
 		Children:          generic.NewSyncMap[uuid.UUID, universe.Space](),
-		attributes:        generic.NewSyncMap[entry.AttributeID, *entry.AttributePayload](),
+		spaceAttributes:   generic.NewSyncMap[entry.AttributeID, *entry.AttributePayload](),
 		attributesMsg:     generic.NewSyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]](),
 		renderTextureAttr: make(map[string]string),
 		world:             world,
@@ -74,7 +74,7 @@ func (s *Space) GetID() uuid.UUID {
 	return s.id
 }
 
-// todo: implement this via attributes
+// todo: implement this via spaceAttributes
 func (s *Space) GetName() string {
 	return "unknown"
 }
@@ -376,7 +376,7 @@ func (s *Space) loadSelfData(spaceEntry *entry.Space) error {
 	}
 
 	if err := s.loadSpaceAttributes(); err != nil {
-		return errors.WithMessage(err, "failed to load space attributes")
+		return errors.WithMessage(err, "failed to load space spaceAttributes")
 	}
 
 	return nil
@@ -394,7 +394,7 @@ func (s *Space) loadDependencies(entry *entry.Space) error {
 	}
 
 	if err := s.loadSpaceAttributes(); err != nil {
-		return errors.WithMessage(err, "failed to load space attributes")
+		return errors.WithMessage(err, "failed to load space spaceAttributes")
 	}
 
 	if entry.Asset2dID != nil {
