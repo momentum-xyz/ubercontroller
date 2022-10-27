@@ -142,27 +142,25 @@ func (n *Node) apiSetSpaceSubAttribute(c *gin.Context) {
 
 	space, ok := n.GetSpaceFromAllSpaces(spaceID)
 	if !ok {
-		err := errors.Errorf("Node: apiGetSpaceSubAttribute: space not found: %s", spaceID)
+		err := errors.Errorf("Node: apiSetSpaceSubAttribute: space not found: %s", spaceID)
 		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
 		return
 	}
 
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
-	spaceAttributeID := entry.NewSpaceAttributeID(attributeID, spaceID)
-
-	spaceAttribute, err := n.db.SpaceAttributesGetSpaceAttributeByID(c, spaceAttributeID)
-	if err != nil {
-		err = errors.WithMessage(err, "Node: apiSetSpaceSubAttribute: failed to get space attribute by space id")
-		api.AbortRequest(c, http.StatusNotFound, "not_found", err, n.log)
+	spaceAttributePayload, ok := space.GetSpaceAttributePayload(attributeID)
+	if !ok {
+		err := errors.Errorf("Node: apiSetSpaceSubAttribute: space attribute payload not found: %s", attributeID)
+		api.AbortRequest(c, http.StatusNotFound, "space_attribute_payload_not_found", err, n.log)
 		return
 	}
 
 	newValue := entry.NewAttributeValue()
 	(*newValue)[inBody.SubAttributeKey] = inBody.SubAttributeValue
 
-	newPayload := entry.NewAttributePayload(newValue, spaceAttribute.Options)
+	newPayload := entry.NewAttributePayload(newValue, spaceAttributePayload.Options)
 
-	if err := space.UpsertSpaceAttribute(spaceAttribute, modify.MergeWith(newPayload), true); err != nil {
+	if err := space.UpsertSpaceAttribute(attributeID, modify.MergeWith(newPayload), true); err != nil {
 		err = errors.WithMessage(err, "Node: apiSetSpaceSubAttribute: failed to upsert space attribute")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert", err, n.log)
 		return
