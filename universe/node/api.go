@@ -58,6 +58,15 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 	}
 }
 
+// @Summary Version of running controller app
+// @Schemes
+// @Description Version of running controller app
+// @Tags config
+// @Accept json
+// @Produce json
+// @Success 200 {object} any
+// @Success 500 {object} api.HTTPError
+// @Router /version [get]
 func (n *Node) apiGetVersion(c *gin.Context) {
 	c.JSON(
 		http.StatusOK, gin.H{
