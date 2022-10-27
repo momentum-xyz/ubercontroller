@@ -20,6 +20,10 @@ type SpaceOptions map[uuid.UUID]*entry.SpaceOptions
 
 type SpaceSubOptions map[uuid.UUID]any
 
+type SpaceAttributes map[uuid.UUID]*entry.SpaceAttribute
+
+type SpaceSubAttributes map[uuid.UUID]any
+
 type SpaceEffectiveOptions SpaceOptions
 
 type SpaceEffectiveSubOptions map[uuid.UUID]any
