@@ -10,6 +10,11 @@ import (
 )
 
 func (n *Node) apiGetSpaceAttributes(c *gin.Context) {
+	inQuery := struct {
+		PluginID string `form:"plugin_id" binding:"required"`
+		Name     string `form:"attribute_name" binding:"required"`
+	}{}
+
 	spaceID, err := uuid.Parse(c.Param("spaceID"))
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetSpaceAttributes: failed to parse space id")
@@ -17,13 +22,8 @@ func (n *Node) apiGetSpaceAttributes(c *gin.Context) {
 		return
 	}
 
-	inQuery := struct {
-		PluginID string `form:"plugin_id" binding:"required"`
-		Name     string `form:"attribute_name" binding:"required"`
-	}{}
-
 	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		err := errors.WithMessage(err, "Plugins: apiGetSpaceAttributes: failed to bind query")
+		err := errors.WithMessage(err, "Node: apiGetSpaceAttributes: failed to bind query")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
 		return
 	}
@@ -45,7 +45,7 @@ func (n *Node) apiGetSpaceAttributes(c *gin.Context) {
 	attributeID := entry.NewAttributeID(pluginID, inQuery.Name)
 	out, ok := space.GetSpaceAttributeValue(attributeID)
 	if !ok {
-		err := errors.Errorf("Node: apiGetSpaceSubAttribute: SubAttributeKey not found: %s", attributeID)
+		err := errors.Errorf("Node: apiGetSpaceSubAttribute: space_attribute_value not found: %s", attributeID)
 		api.AbortRequest(c, http.StatusNotFound, "sub_attribute_not_found", err, n.log)
 		return
 	}
@@ -54,6 +54,12 @@ func (n *Node) apiGetSpaceAttributes(c *gin.Context) {
 }
 
 func (n *Node) apiGetSpaceSubAttribute(c *gin.Context) {
+	inQuery := struct {
+		PluginID        string `form:"plugin_id" binding:"required"`
+		Name            string `form:"attribute_name" binding:"required"`
+		SubAttributeKey string `form:"sub_attribute_key" binding:"required"`
+	}{}
+
 	spaceID, err := uuid.Parse(c.Param("spaceID"))
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetSpaceSubAttributes: failed to parse space id")
@@ -61,14 +67,8 @@ func (n *Node) apiGetSpaceSubAttribute(c *gin.Context) {
 		return
 	}
 
-	inQuery := struct {
-		PluginID        string `form:"plugin_id" binding:"required"`
-		Name            string `form:"attribute_name" binding:"required"`
-		SubAttributeKey string `form:"sub_attribute_key" binding:"required"`
-	}{}
-
 	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		err := errors.WithMessage(err, "Plugins: apiGetSpaceSubAttribute: failed to bind query")
+		err := errors.WithMessage(err, "Node: apiGetSpaceSubAttribute: failed to bind query")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
 		return
 	}
@@ -90,13 +90,13 @@ func (n *Node) apiGetSpaceSubAttribute(c *gin.Context) {
 	attributeID := entry.NewAttributeID(pluginID, inQuery.Name)
 	attributeValue, ok := space.GetSpaceAttributeValue(attributeID)
 	if !ok {
-		err := errors.Errorf("Node: apiGetSpaceSubAttribute: AttributeValue not found: %s", attributeID)
+		err := errors.Errorf("Node: apiGetSpaceSubAttribute: attribute_value not found: %s", attributeID)
 		api.AbortRequest(c, http.StatusNotFound, "sub_attribute_value_not_found", err, n.log)
 		return
 	}
 
 	if attributeValue == nil {
-		err := errors.Errorf("Node: apiGetSpaceSubAttribute: AttributeValue is nil")
+		err := errors.Errorf("Node: apiGetSpaceSubAttribute: attribute_value is nil")
 		api.AbortRequest(c, http.StatusNotFound, "sub_attribute_value_nil", err, n.log)
 		return
 	}

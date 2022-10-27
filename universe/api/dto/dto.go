@@ -174,13 +174,6 @@ type Space struct {
 	} `json:"metadata,omitempty"`
 }
 
-type SpaceAttribute struct {
-	PluginID      string `json:"pluginId"`
-	AttributeName string `json:"attribute_name"`
-	SpaceID       string `json:"stringId"`
-	Value         any
-}
-
 type SubSpace struct {
 	ID          string    `json:"id"`
 	Name        string    `json:"name"`
