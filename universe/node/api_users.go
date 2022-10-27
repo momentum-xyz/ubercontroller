@@ -14,11 +14,23 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
+// @Summary Check if user exists
+// @Schemes
+// @Description Checks if a logged in user exists in the database and is onboarded
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param request body node.apiUsersCheck.Body true "body params"
+// @Success 200 {object} dto.User
+// @Success 500 {object} api.HTTPError
+// @Success 400 {object} api.HTTPError
+// @Success 404 {object} api.HTTPError
+// @Router /api/v4/users/check [get]
 func (n *Node) apiUsersCheck(c *gin.Context) {
-	n.log.Debug("apiUsersCheck ***")
-	inBody := struct {
+	type Body struct {
 		IDToken string `json:"idToken" binding:"required"`
-	}{}
+	}
+	inBody := Body{}
 
 	if err := c.ShouldBindJSON(&inBody); err != nil {
 		err = errors.WithMessage(err, "Node: apiUsersCheck: failed to bind json")
