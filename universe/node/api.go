@@ -9,7 +9,6 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 
 	"github.com/momentum-xyz/ubercontroller"
-	_ "github.com/momentum-xyz/ubercontroller/docs"
 	"github.com/momentum-xyz/ubercontroller/universe/api/middleware"
 )
 

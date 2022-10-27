@@ -4,7 +4,6 @@ DOCKER_TAG="develop"
 all: build
 
 build:
-	swag init -g universe/node/api.go
 	go build -o ./bin/ubercontroller ./cmd/service
 	cd plugins && make
 
@@ -13,6 +12,9 @@ run: build
 
 test:
 	go test -v -race ./...
+
+build-docs:
+	swag init -g universe/node/api.go
 
 docker-build: DOCKER_BUILDKIT=1
 docker-build:
