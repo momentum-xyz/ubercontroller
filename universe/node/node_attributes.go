@@ -173,7 +173,15 @@ func (n *Node) loadNodeAttributes() error {
 		return errors.WithMessage(err, "failed to get node attributes")
 	}
 
+	attributeTypes := n.GetAttributeTypes()
 	for _, instance := range entries {
+		if _, ok := attributeTypes.GetAttributeType(entry.AttributeTypeID(instance.AttributeID)); !ok {
+			n.log.Warnf(
+				"Node: loadNodeAttributes: attribute type not found for attribute: %+v", instance.NodeAttributeID,
+			)
+			continue
+		}
+
 		if err := n.UpsertNodeAttribute(
 			instance.AttributeID, modify.MergeWith(instance.AttributePayload), false,
 		); err != nil {

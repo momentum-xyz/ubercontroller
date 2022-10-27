@@ -279,7 +279,15 @@ func (s *Space) loadSpaceAttributes() error {
 		return errors.WithMessage(err, "failed to get space spaceAttributes")
 	}
 
+	attributeTypes := universe.GetNode().GetAttributeTypes()
 	for _, instance := range entries {
+		if _, ok := attributeTypes.GetAttributeType(entry.AttributeTypeID(instance.AttributeID)); !ok {
+			s.log.Warnf(
+				"Space: loadSpaceAttributes: attribute type not found for attribute: %+v", instance.SpaceAttributeID,
+			)
+			continue
+		}
+
 		s.CheckIfRendered(instance)
 		if err := s.UpsertSpaceAttribute(
 			instance.AttributeID, modify.MergeWith(instance.AttributePayload), false,
