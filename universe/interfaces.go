@@ -75,7 +75,7 @@ type Node interface {
 	GetPlugins() Plugins
 
 	UpsertNodeAttribute(
-		nodeAttribute *entry.NodeAttribute, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
+		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
 	) error
 
 	GetNodeAttributeValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool)
@@ -179,7 +179,7 @@ type Space interface {
 	SendAttributes(sendFn func(*websocket.PreparedMessage), recursive bool)
 
 	UpsertSpaceAttribute(
-		spaceAttribute *entry.SpaceAttribute, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
+		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
 	) error
 
 	GetSpaceAttributeValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool)

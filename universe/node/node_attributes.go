@@ -9,12 +9,12 @@ import (
 )
 
 func (n *Node) UpsertNodeAttribute(
-	nodeAttribute *entry.NodeAttribute, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
+	attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
 ) error {
 	n.nodeAttributes.Mu.Lock()
 	defer n.nodeAttributes.Mu.Unlock()
 
-	payload, ok := n.nodeAttributes.Data[nodeAttribute.AttributeID]
+	payload, ok := n.nodeAttributes.Data[attributeID]
 	if !ok {
 		payload = (*entry.AttributePayload)(nil)
 	}
@@ -26,14 +26,14 @@ func (n *Node) UpsertNodeAttribute(
 
 	if updateDB {
 		if err := n.db.NodeAttributesUpsertNodeAttribute(
-			n.ctx, entry.NewNodeAttribute(nodeAttribute.NodeAttributeID, payload),
+			n.ctx, entry.NewNodeAttribute(
+				entry.NewNodeAttributeID(attributeID), payload),
 		); err != nil {
 			return errors.WithMessage(err, "failed to upsert node attribute")
 		}
 	}
 
-	nodeAttribute.AttributePayload = payload
-	n.nodeAttributes.Data[nodeAttribute.AttributeID] = nodeAttribute.AttributePayload
+	n.nodeAttributes.Data[attributeID] = payload
 
 	return nil
 
@@ -175,7 +175,7 @@ func (n *Node) loadNodeAttributes() error {
 
 	for _, instance := range entries {
 		if err := n.UpsertNodeAttribute(
-			instance, modify.MergeWith(instance.AttributePayload), false,
+			instance.AttributeID, modify.MergeWith(instance.AttributePayload), false,
 		); err != nil {
 			return errors.WithMessagef(err, "failed to upsert node attribute: %+v", instance.NodeAttributeID)
 		}
