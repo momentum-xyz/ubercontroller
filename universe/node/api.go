@@ -10,6 +10,9 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/api/middleware"
 )
 
+// @title        Momentum API
+// @version      4.0
+// @description  Momentum REST API
 func (n *Node) RegisterAPI(r *gin.Engine) {
 	n.log.Infof("Registering api for node: %s...", n.GetID())
 
