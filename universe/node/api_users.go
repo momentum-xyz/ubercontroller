@@ -71,6 +71,17 @@ func (n *Node) apiUsersCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, outBody)
 }
 
+// @Summary Returns user-information based on token.
+// @Schemes
+// @Description Returns user-information based on token.
+// @Tags users
+// @Accept json
+// @Produce json
+// @Success 200 {object} dto.User
+// @Success 500 {object} api.HTTPError
+// @Success 400 {object} api.HTTPError
+// @Success 404 {object} api.HTTPError
+// @Router /api/v4/users/me [get]
 func (n *Node) apiUsersGetMe(c *gin.Context) {
 	token, err := api.GetTokenFromContext(c)
 	if err != nil {

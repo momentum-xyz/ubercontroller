@@ -13,6 +13,9 @@ run: build
 test:
 	go test -v -race ./...
 
+build-docs:
+	swag init -g universe/node/api.go
+
 docker-build: DOCKER_BUILDKIT=1
 docker-build:
 	docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
