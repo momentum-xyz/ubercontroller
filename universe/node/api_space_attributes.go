@@ -147,6 +147,14 @@ func (n *Node) apiSetSpaceSubAttribute(c *gin.Context) {
 		return
 	}
 
+	attributeTypeID := entry.NewAttributeTypeID(pluginID, inBody.AttributeName)
+	_, ok = n.attributeTypes.GetAttributeType(attributeTypeID)
+	if !ok {
+		err := errors.Errorf("Node: apiSetSpaceSubAttribute: attribute type not found: %s", inBody.AttributeName)
+		api.AbortRequest(c, http.StatusNotFound, "attribute_type_not_found", err, n.log)
+		return
+	}
+
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
 	spaceAttributePayload, ok := space.GetSpaceAttributePayload(attributeID)
 	if !ok {
@@ -155,16 +163,15 @@ func (n *Node) apiSetSpaceSubAttribute(c *gin.Context) {
 		return
 	}
 
-	newValue := entry.NewAttributeValue()
-	(*newValue)[inBody.SubAttributeKey] = inBody.SubAttributeValue
+	(*spaceAttributePayload.Value)[inBody.SubAttributeKey] = inBody.SubAttributeValue
 
-	newPayload := entry.NewAttributePayload(newValue, spaceAttributePayload.Options)
-
-	if err := space.UpsertSpaceAttribute(attributeID, modify.MergeWith(newPayload), true); err != nil {
+	if err := space.UpsertSpaceAttribute(attributeID, modify.ReplaceWith(spaceAttributePayload), true); err != nil {
 		err = errors.WithMessage(err, "Node: apiSetSpaceSubAttribute: failed to upsert space attribute")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert", err, n.log)
 		return
 	}
 
-	c.JSON(http.StatusCreated, newPayload.Value)
+	c.JSON(http.StatusCreated, gin.H{
+		inBody.SubAttributeKey: (*spaceAttributePayload.Value)[inBody.SubAttributeKey],
+	})
 }
