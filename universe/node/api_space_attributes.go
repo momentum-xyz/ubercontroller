@@ -155,12 +155,6 @@ func (n *Node) apiSetSpaceSubAttribute(c *gin.Context) {
 	}
 
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
-	spaceAttributePayload, ok := space.GetSpaceAttributePayload(attributeID)
-	if !ok {
-		err := errors.Errorf("Node: apiSetSpaceSubAttribute: space attribute payload not found: %s", attributeID)
-		api.AbortRequest(c, http.StatusNotFound, "space_attribute_payload_not_found", err, n.log)
-		return
-	}
 
 	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
 		newValue := func() *entry.AttributeValue {
@@ -189,7 +183,5 @@ func (n *Node) apiSetSpaceSubAttribute(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		inBody.SubAttributeKey: (*spaceAttributePayload.Value)[inBody.SubAttributeKey],
-	})
+	c.JSON(http.StatusCreated, gin.H{inBody.SubAttributeKey: inBody.SubAttributeValue})
 }
