@@ -1,6 +1,7 @@
 package node
 
 import (
+	"github.com/momentum-xyz/ubercontroller/universe/api/dto"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -183,11 +184,16 @@ func (n *Node) apiSetSpaceSubAttribute(c *gin.Context) {
 		return current, nil
 	}
 
-	if err := space.UpsertSpaceAttribute(attributeID, modifyFn, true); err != nil {
+	spaceAttribute, err := space.UpsertSpaceAttribute(attributeID, modifyFn, true)
+	if err != nil {
 		err = errors.WithMessage(err, "Node: apiSetSpaceSubAttribute: failed to upsert space attribute")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert", err, n.log)
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{inBody.SubAttributeKey: inBody.SubAttributeValue})
+	out := dto.SpaceSubAttributes{
+		inBody.SubAttributeKey: (*spaceAttribute.Value)[inBody.SubAttributeKey],
+	}
+
+	c.JSON(http.StatusCreated, out)
 }
