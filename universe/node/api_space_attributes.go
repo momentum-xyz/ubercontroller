@@ -1,7 +1,6 @@
 package node
 
 import (
-	"github.com/momentum-xyz/ubercontroller/universe/api/dto"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe/api"
+	"github.com/momentum-xyz/ubercontroller/universe/api/dto"
 )
 
 // @Summary Returns space attributes
