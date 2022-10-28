@@ -76,7 +76,7 @@ type Node interface {
 
 	UpsertNodeAttribute(
 		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
-	) error
+	) (*entry.NodeAttribute, error)
 
 	GetNodeAttributeValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool)
 	GetNodeAttributeOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool)
@@ -180,7 +180,7 @@ type Space interface {
 
 	UpsertSpaceAttribute(
 		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
-	) error
+	) (*entry.SpaceAttribute, error)
 
 	GetSpaceAttributeValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool)
 	GetSpaceAttributeOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool)

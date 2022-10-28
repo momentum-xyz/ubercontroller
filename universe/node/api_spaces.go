@@ -11,6 +11,18 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/api/dto"
 )
 
+// @Summary Returns space effective options
+// @Schemes
+// @Description Returns space effective options
+// @Tags spaces
+// @Accept json
+// @Produce json
+// @Param space_id path string true "Space ID"
+// @Success 200 {object} dto.SpaceEffectiveOptions
+// @Success 500 {object} api.HTTPError
+// @Success 400 {object} api.HTTPError
+// @Success 404 {object} api.HTTPError
+// @Router /api/v4/spaces/{space_id}/effective-options [get]
 func (n *Node) apiSpacesGetSpaceEffectiveOptions(c *gin.Context) {
 	spaceID, err := uuid.Parse(c.Param("spaceID"))
 	if err != nil {
