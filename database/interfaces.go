@@ -212,6 +212,9 @@ type SpaceAttributesDB interface {
 
 type SpaceUserAttributesDB interface {
 	SpaceUserAttributesGetSpaceUserAttributes(ctx context.Context) ([]*entry.SpaceUserAttribute, error)
+	SpaceUserAttributesGetSpaceUserAttributeByID(
+		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
+	) (*entry.SpaceUserAttribute, error)
 	SpaceUserAttributesGetSpaceUserAttributesBySpaceID(
 		ctx context.Context, spaceID uuid.UUID,
 	) ([]*entry.SpaceUserAttribute, error)
@@ -223,11 +226,8 @@ type SpaceUserAttributesDB interface {
 	) ([]*entry.SpaceUserAttribute, error)
 
 	SpaceUserAttributesUpsertSpaceUserAttribute(
-		ctx context.Context, spaceUserAttribute *entry.SpaceUserAttribute,
-	) error
-	SpaceUserAttributesUpsertSpaceUserAttributes(
-		ctx context.Context, spaceUserAttributes []*entry.SpaceUserAttribute,
-	) error
+		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
+	) (*entry.SpaceUserAttribute, error)
 
 	SpaceUserAttributesRemoveSpaceUserAttributeByName(ctx context.Context, name string) error
 	SpaceUserAttributesRemoveSpaceUserAttributesByNames(ctx context.Context, names []string) error
@@ -299,8 +299,8 @@ type UserAttributesDB interface {
 	) (*entry.AttributeOptions, error)
 
 	UserAttributesUpsertUserAttribute(
-		ctx context.Context, userAttribute *entry.UserAttribute, modifyFn modify.Fn[entry.AttributePayload],
-	) error
+		ctx context.Context, userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
+	) (*entry.UserAttribute, error)
 
 	UserAttributesRemoveUserAttributeByName(ctx context.Context, name string) error
 	UserAttributesRemoveUserAttributesByNames(ctx context.Context, names []string) error
@@ -352,8 +352,8 @@ type UserUserAttributesDB interface {
 	) ([]*entry.UserUserAttribute, error)
 
 	UserUserAttributesUpsertUserUserAttribute(
-		ctx context.Context, userUserAttribute *entry.UserUserAttribute, modifyFn modify.Fn[entry.AttributePayload],
-	) error
+		ctx context.Context, userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
+	) (*entry.UserUserAttribute, error)
 
 	UserUserAttributesRemoveUserUserAttributeByName(ctx context.Context, name string) error
 	UserUserAttributesRemoveUserUserAttributesByNames(ctx context.Context, names []string) error

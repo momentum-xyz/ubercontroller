@@ -110,7 +110,7 @@ func (s *Space) GetSpaceAttributesPayload(recursive bool) map[entry.SpaceAttribu
 
 func (s *Space) UpsertSpaceAttribute(
 	attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
-) error {
+) (*entry.SpaceAttribute, error) {
 	s.spaceAttributes.Mu.Lock()
 	defer s.spaceAttributes.Mu.Unlock()
 
@@ -121,22 +121,19 @@ func (s *Space) UpsertSpaceAttribute(
 
 	payload, err := modifyFn(payload)
 	if err != nil {
-		return errors.WithMessage(err, "failed to modify attribute payload")
+		return nil, errors.WithMessage(err, "failed to modify attribute payload")
 	}
 
+	spaceAttribute := entry.NewSpaceAttribute(entry.NewSpaceAttributeID(attributeID, s.GetID()), payload)
 	if updateDB {
-		if err := s.db.SpaceAttributesUpsertSpaceAttribute(
-			s.ctx, entry.NewSpaceAttribute(
-				entry.NewSpaceAttributeID(attributeID, s.GetID()), payload,
-			),
-		); err != nil {
-			return errors.WithMessage(err, "failed to upsert space attribute")
+		if err := s.db.SpaceAttributesUpsertSpaceAttribute(s.ctx, spaceAttribute); err != nil {
+			return nil, errors.WithMessage(err, "failed to upsert space attribute")
 		}
 	}
 
 	s.spaceAttributes.Data[attributeID] = payload
 
-	return nil
+	return spaceAttribute, nil
 }
 
 func (s *Space) UpdateSpaceAttributeValue(
@@ -279,17 +276,9 @@ func (s *Space) loadSpaceAttributes() error {
 		return errors.WithMessage(err, "failed to get space spaceAttributes")
 	}
 
-	attributeTypes := universe.GetNode().GetAttributeTypes()
 	for _, instance := range entries {
-		if _, ok := attributeTypes.GetAttributeType(entry.AttributeTypeID(instance.AttributeID)); !ok {
-			s.log.Warnf(
-				"Space: loadSpaceAttributes: attribute type not found for attribute: %+v", instance.SpaceAttributeID,
-			)
-			continue
-		}
-
 		s.CheckIfRendered(instance)
-		if err := s.UpsertSpaceAttribute(
+		if _, err := s.UpsertSpaceAttribute(
 			instance.AttributeID, modify.MergeWith(instance.AttributePayload), false,
 		); err != nil {
 			return errors.WithMessagef(err, "failed to upsert space attribute: %+v", instance.AttributeID)

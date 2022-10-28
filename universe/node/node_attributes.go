@@ -10,7 +10,7 @@ import (
 
 func (n *Node) UpsertNodeAttribute(
 	attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
-) error {
+) (*entry.NodeAttribute, error) {
 	n.nodeAttributes.Mu.Lock()
 	defer n.nodeAttributes.Mu.Unlock()
 
@@ -21,21 +21,19 @@ func (n *Node) UpsertNodeAttribute(
 
 	payload, err := modifyFn(payload)
 	if err != nil {
-		return errors.WithMessage(err, "failed to modify attribute payload")
+		return nil, errors.WithMessage(err, "failed to modify attribute payload")
 	}
 
+	nodeAttribute := entry.NewNodeAttribute(entry.NewNodeAttributeID(attributeID), payload)
 	if updateDB {
-		if err := n.db.NodeAttributesUpsertNodeAttribute(
-			n.ctx, entry.NewNodeAttribute(
-				entry.NewNodeAttributeID(attributeID), payload),
-		); err != nil {
-			return errors.WithMessage(err, "failed to upsert node attribute")
+		if err := n.db.NodeAttributesUpsertNodeAttribute(n.ctx, nodeAttribute); err != nil {
+			return nil, errors.WithMessage(err, "failed to upsert node attribute")
 		}
 	}
 
 	n.nodeAttributes.Data[attributeID] = payload
 
-	return nil
+	return nodeAttribute, nil
 
 }
 
@@ -173,16 +171,8 @@ func (n *Node) loadNodeAttributes() error {
 		return errors.WithMessage(err, "failed to get node attributes")
 	}
 
-	attributeTypes := n.GetAttributeTypes()
 	for _, instance := range entries {
-		if _, ok := attributeTypes.GetAttributeType(entry.AttributeTypeID(instance.AttributeID)); !ok {
-			n.log.Warnf(
-				"Node: loadNodeAttributes: attribute type not found for attribute: %+v", instance.NodeAttributeID,
-			)
-			continue
-		}
-
-		if err := n.UpsertNodeAttribute(
+		if _, err := n.UpsertNodeAttribute(
 			instance.AttributeID, modify.MergeWith(instance.AttributePayload), false,
 		); err != nil {
 			return errors.WithMessagef(err, "failed to upsert node attribute: %+v", instance.NodeAttributeID)

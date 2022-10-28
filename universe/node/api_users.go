@@ -233,16 +233,6 @@ func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken
 		n.log.Infof("Node: apiGetOrCreateUserFromTokens: user created: %s", userEntry.UserID)
 
 		// adding wallet to user attributes
-		userAttribute := &entry.UserAttribute{
-			UserAttributeID: entry.NewUserAttributeID(
-				entry.NewAttributeID(
-					universe.GetKusamaPluginID(),
-					universe.KusamaUserAttributeWalletName,
-				),
-				userEntry.UserID,
-			),
-		}
-
 		walletAddressKey := universe.KusamaUserAttributeWalletWalletKey
 		modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
 			newValue := func() *entry.AttributeValue {
@@ -274,7 +264,13 @@ func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken
 			return current, nil
 		}
 
-		if err := n.db.UserAttributesUpsertUserAttribute(n.ctx, userAttribute, modifyFn); err != nil {
+		userAttributeID := entry.NewUserAttributeID(
+			entry.NewAttributeID(
+				universe.GetKusamaPluginID(), universe.KusamaUserAttributeWalletName,
+			),
+			userEntry.UserID,
+		)
+		if _, err := n.db.UserAttributesUpsertUserAttribute(n.ctx, userAttributeID, modifyFn); err != nil {
 			// TODO: think about rollback
 			return nil, http.StatusInternalServerError, errors.WithMessagef(
 				err, "failed to upsert user attribute for user: %s", userEntry.UserID,
