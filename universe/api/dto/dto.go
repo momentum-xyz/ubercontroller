@@ -28,6 +28,8 @@ type SpaceEffectiveOptions SpaceOptions
 
 type SpaceEffectiveSubOptions map[uuid.UUID]any
 
+type Assets3d map[uuid.UUID]*entry.Asset3d
+
 type Profile struct {
 	Bio         *string `json:"bio,omitempty"`
 	Location    *string `json:"location,omitempty"`
