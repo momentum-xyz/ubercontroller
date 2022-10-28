@@ -5,7 +5,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe/api"
-	"github.com/momentum-xyz/ubercontroller/utils/modify"
 	"github.com/pkg/errors"
 	"net/http"
 )
@@ -163,9 +162,28 @@ func (n *Node) apiSetSpaceSubAttribute(c *gin.Context) {
 		return
 	}
 
-	(*spaceAttributePayload.Value)[inBody.SubAttributeKey] = inBody.SubAttributeValue
+	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
+		newValue := func() *entry.AttributeValue {
+			value := entry.NewAttributeValue()
+			(*value)[inBody.SubAttributeKey] = inBody.SubAttributeValue
+			return value
+		}
 
-	if err := space.UpsertSpaceAttribute(attributeID, modify.ReplaceWith(spaceAttributePayload), true); err != nil {
+		if current == nil {
+			return entry.NewAttributePayload(newValue(), nil), nil
+		}
+
+		if current.Value == nil {
+			current.Value = newValue()
+			return current, nil
+		}
+
+		(*current.Value)[inBody.SubAttributeKey] = inBody.SubAttributeValue
+
+		return current, nil
+	}
+
+	if err := space.UpsertSpaceAttribute(attributeID, modifyFn, true); err != nil {
 		err = errors.WithMessage(err, "Node: apiSetSpaceSubAttribute: failed to upsert space attribute")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert", err, n.log)
 		return
