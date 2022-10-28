@@ -146,14 +146,6 @@ func (n *Node) apiSetSpaceSubAttribute(c *gin.Context) {
 		return
 	}
 
-	attributeTypeID := entry.NewAttributeTypeID(pluginID, inBody.AttributeName)
-	_, ok = n.attributeTypes.GetAttributeType(attributeTypeID)
-	if !ok {
-		err := errors.Errorf("Node: apiSetSpaceSubAttribute: attribute type not found: %s", inBody.AttributeName)
-		api.AbortRequest(c, http.StatusNotFound, "attribute_type_not_found", err, n.log)
-		return
-	}
-
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
 
 	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
