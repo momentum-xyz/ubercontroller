@@ -1,14 +1,28 @@
 package node
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
+
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe/api"
-	"github.com/pkg/errors"
-	"net/http"
 )
 
+// @Summary Returns space attributes
+// @Schemes
+// @Description Returns space attributes
+// @Tags spaces
+// @Accept json
+// @Produce json
+// @Param space_id path string true "Space ID"
+// @Success 200 {object} entry.AttributeValue
+// @Success 500 {object} api.HTTPError
+// @Success 400 {object} api.HTTPError
+// @Success 404 {object} api.HTTPError
+// @Router /api/v4/spaces/{space_id}/attributes [get]
 func (n *Node) apiGetSpaceAttributes(c *gin.Context) {
 	inQuery := struct {
 		PluginID string `form:"plugin_id" binding:"required"`

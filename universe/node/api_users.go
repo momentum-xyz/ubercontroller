@@ -25,7 +25,7 @@ import (
 // @Success 500 {object} api.HTTPError
 // @Success 400 {object} api.HTTPError
 // @Success 404 {object} api.HTTPError
-// @Router /api/v4/users/check [get]
+// @Router /api/v4/users/check [post]
 func (n *Node) apiUsersCheck(c *gin.Context) {
 	type Body struct {
 		IDToken string `json:"idToken" binding:"required"`
