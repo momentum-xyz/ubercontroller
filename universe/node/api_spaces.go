@@ -167,14 +167,21 @@ func (n *Node) apiSpacesGetSpaceEffectiveSubOption(c *gin.Context) {
 		return
 	}
 
-	var effectiveSubValue any
 	effectiveOptions := space.GetEffectiveOptions()
-	if effectiveOptions != nil && effectiveOptions.Subs != nil {
-		effectiveSubValue = effectiveOptions.Subs[inQuery.SubOptionKey]
+	if effectiveOptions == nil {
+		err := errors.Errorf("Node: apiSpacesGetSpaceEffectiveSubOption: empty effective options")
+		api.AbortRequest(c, http.StatusNotFound, "empty_effective_options", err, n.log)
+		return
+	}
+
+	if effectiveOptions.Subs == nil {
+		err := errors.Errorf("Node: apiSpacesGetSpaceEffectiveSubOption: empty effective sub options")
+		api.AbortRequest(c, http.StatusNotFound, "empty_effective_sub_options", err, n.log)
+		return
 	}
 
 	out := dto.SpaceEffectiveSubOptions{
-		inQuery.SubOptionKey: effectiveSubValue,
+		inQuery.SubOptionKey: effectiveOptions.Subs[inQuery.SubOptionKey],
 	}
 
 	c.JSON(http.StatusOK, out)
