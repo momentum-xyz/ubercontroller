@@ -58,10 +58,10 @@ func NewNode(
 	worlds universe.Worlds,
 	assets2D universe.Assets2d,
 	assets3D universe.Assets3d,
+	plugins universe.Plugins,
 	spaceTypes universe.SpaceTypes,
 	userTypes universe.UserTypes,
 	attributeTypes universe.AttributeTypes,
-	plugins universe.Plugins,
 ) *Node {
 	return &Node{
 		id:               id,
@@ -70,10 +70,10 @@ func NewNode(
 		worlds:           worlds,
 		assets2d:         assets2D,
 		assets3d:         assets3D,
+		plugins:          plugins,
 		spaceTypes:       spaceTypes,
 		userTypes:        userTypes,
 		attributeTypes:   attributeTypes,
-		plugins:          plugins,
 		nodeAttributes:   generic.NewSyncMap[entry.AttributeID, *entry.AttributePayload](),
 		spaceIDToWorldID: generic.NewSyncMap[uuid.UUID, uuid.UUID](),
 	}

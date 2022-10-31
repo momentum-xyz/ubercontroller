@@ -18,15 +18,15 @@ type DB interface {
 	UsersDB
 	Assets2dDB
 	Assets3dDB
+	PluginsDB
 	SpaceTypesDB
 	UserTypesDB
 	AttributeTypesDB
-	SpaceAttributesDB
-	UserAttributesDB
 	NodeAttributesDB
-	UserUserAttributesDB
+	SpaceAttributesDB
 	SpaceUserAttributesDB
-	PluginsDB
+	UserAttributesDB
+	UserUserAttributesDB
 }
 
 type CommonDB interface {
@@ -100,6 +100,21 @@ type Assets3dDB interface {
 
 	Assets3dUpdateAssetMeta(ctx context.Context, asset3dID uuid.UUID, meta *entry.Asset3dMeta) error
 	Assets3dUpdateAssetOptions(ctx context.Context, asset3dID uuid.UUID, options *entry.Asset3dOptions) error
+}
+
+type PluginsDB interface {
+	PluginsGetPlugins(ctx context.Context) ([]*entry.Plugin, error)
+
+	PluginsUpsertPlugin(ctx context.Context, plugin *entry.Plugin) error
+	PluginsUpsertPlugins(ctx context.Context, plugins []*entry.Plugin) error
+
+	PluginsRemovePluginByID(ctx context.Context, pluginID uuid.UUID) error
+	PluginsRemovePluginsByIDs(ctx context.Context, pluginIDs []uuid.UUID) error
+
+	PluginsUpdatePluginMeta(ctx context.Context, pluginID uuid.UUID, meta *entry.PluginMeta) error
+	PluginsUpdatePluginOptions(
+		ctx context.Context, pluginID uuid.UUID, options *entry.PluginOptions,
+	) error
 }
 
 type SpaceTypesDB interface {
@@ -410,20 +425,5 @@ type UserUserAttributesDB interface {
 	) error
 	UserUserAttributesUpdateUserUserAttributeOptions(
 		ctx context.Context, userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributeOptions],
-	) error
-}
-
-type PluginsDB interface {
-	PluginsGetPlugins(ctx context.Context) ([]*entry.Plugin, error)
-
-	PluginsUpsertPlugin(ctx context.Context, plugin *entry.Plugin) error
-	PluginsUpsertPlugins(ctx context.Context, plugins []*entry.Plugin) error
-
-	PluginsRemovePluginByID(ctx context.Context, pluginID uuid.UUID) error
-	PluginsRemovePluginsByIDs(ctx context.Context, pluginIDs []uuid.UUID) error
-
-	PluginsUpdatePluginMeta(ctx context.Context, pluginID uuid.UUID, meta *entry.PluginMeta) error
-	PluginsUpdatePluginOptions(
-		ctx context.Context, pluginID uuid.UUID, options *entry.PluginOptions,
 	) error
 }
