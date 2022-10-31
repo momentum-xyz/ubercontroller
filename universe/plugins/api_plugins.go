@@ -58,7 +58,7 @@ func (p *Plugins) apiGetPluginsMeta(c *gin.Context) {
 			return
 		}
 
-		out[pluginID] = (*dto.PluginMeta)(plugin.GetMeta())
+		out[pluginID] = plugin.GetMeta()
 	}
 
 	c.JSON(http.StatusOK, out)
@@ -92,7 +92,7 @@ func (p *Plugins) apiGetPluginsOptions(c *gin.Context) {
 			return
 		}
 
-		out[pluginID] = (*dto.PluginOptions)(plugin.GetOptions())
+		out[pluginID] = plugin.GetOptions()
 	}
 
 	c.JSON(http.StatusOK, out)

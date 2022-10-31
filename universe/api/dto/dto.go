@@ -8,15 +8,15 @@ import (
 
 type Plugins map[uuid.UUID]string
 
-type PluginsMeta map[uuid.UUID]*PluginMeta
+type PluginsMeta map[uuid.UUID]PluginMeta
 
-type PluginMeta entry.PluginMeta
+type PluginMeta *entry.PluginMeta
 
-type PluginsOptions map[uuid.UUID]*PluginOptions
+type PluginsOptions map[uuid.UUID]PluginOptions
 
-type PluginOptions entry.PluginOptions
+type PluginOptions *entry.PluginOptions
 
-type SpaceOptions map[uuid.UUID]*entry.SpaceOptions
+type SpaceOptions *entry.SpaceOptions
 
 type SpaceSubOptions map[string]any
 

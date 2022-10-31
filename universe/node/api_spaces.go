@@ -135,9 +135,7 @@ func (n *Node) apiSpacesGetSpaceEffectiveOptions(c *gin.Context) {
 		return
 	}
 
-	out := dto.SpaceEffectiveOptions{
-		spaceID: space.GetEffectiveOptions(),
-	}
+	out := dto.SpaceEffectiveOptions(space.GetEffectiveOptions())
 
 	c.JSON(http.StatusOK, out)
 }
