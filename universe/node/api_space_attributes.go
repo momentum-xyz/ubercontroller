@@ -116,14 +116,11 @@ func (n *Node) apiGetSpaceAttributeSubValue(c *gin.Context) {
 		return
 	}
 
-	value, ok := (*attributeValue)[inQuery.SubAttributeKey]
-	if !ok {
-		err := errors.Errorf("Node: apiGetSpaceAttributeSubValue: attribute key not found: %s", inQuery.SubAttributeKey)
-		api.AbortRequest(c, http.StatusNotFound, "attribute_key_not_found", err, n.log)
-		return
+	out := dto.SpaceSubAttributes{
+		inQuery.SubAttributeKey: (*attributeValue)[inQuery.SubAttributeKey],
 	}
 
-	c.JSON(http.StatusOK, value)
+	c.JSON(http.StatusOK, out)
 }
 
 func (n *Node) apiSetSpaceAttributeSubValue(c *gin.Context) {
