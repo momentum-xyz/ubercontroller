@@ -43,7 +43,7 @@ func (n *Node) GetNodeAttributeValue(attributeID entry.AttributeID) (*entry.Attr
 		return nil, false
 	}
 	if payload == nil {
-		return nil, false
+		return nil, true
 	}
 	return payload.Value, true
 }
@@ -54,13 +54,62 @@ func (n *Node) GetNodeAttributeOptions(attributeID entry.AttributeID) (*entry.At
 		return nil, false
 	}
 	if payload == nil {
-		return nil, false
+		return nil, true
 	}
 	return payload.Options, true
 }
 
 func (n *Node) GetNodeAttributePayload(attributeID entry.AttributeID) (*entry.AttributePayload, bool) {
 	return n.nodeAttributes.Load(attributeID)
+}
+
+func (n *Node) GetNodeAttributesValue() map[entry.NodeAttributeID]*entry.AttributeValue {
+	n.nodeAttributes.Mu.RLock()
+	defer n.nodeAttributes.Mu.RUnlock()
+
+	values := make(map[entry.NodeAttributeID]*entry.AttributeValue, len(n.nodeAttributes.Data))
+
+	for attributeID, payload := range n.nodeAttributes.Data {
+		nodeAttributeID := entry.NewNodeAttributeID(attributeID)
+		if payload == nil {
+			values[nodeAttributeID] = nil
+			continue
+		}
+		values[nodeAttributeID] = payload.Value
+	}
+
+	return values
+}
+
+func (n *Node) GetNodeAttributesOptions() map[entry.NodeAttributeID]*entry.AttributeOptions {
+	n.nodeAttributes.Mu.RLock()
+	defer n.nodeAttributes.Mu.RUnlock()
+
+	options := make(map[entry.NodeAttributeID]*entry.AttributeOptions, len(n.nodeAttributes.Data))
+
+	for attributeID, payload := range n.nodeAttributes.Data {
+		nodeAttributeID := entry.NewNodeAttributeID(attributeID)
+		if payload == nil {
+			options[nodeAttributeID] = nil
+			continue
+		}
+		options[nodeAttributeID] = payload.Options
+	}
+
+	return options
+}
+
+func (n *Node) GetNodeAttributesPayload() map[entry.NodeAttributeID]*entry.AttributePayload {
+	n.nodeAttributes.Mu.RLock()
+	defer n.nodeAttributes.Mu.RUnlock()
+
+	attributes := make(map[entry.NodeAttributeID]*entry.AttributePayload, len(n.nodeAttributes.Data))
+
+	for attributeID, payload := range n.nodeAttributes.Data {
+		attributes[entry.NewNodeAttributeID(attributeID)] = payload
+	}
+
+	return attributes
 }
 
 func (n *Node) UpdateNodeAttributeValue(
