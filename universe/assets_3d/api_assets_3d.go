@@ -165,7 +165,7 @@ func (a *Assets3d) apiAddAsset3d(c *gin.Context) {
 
 	err = newAsset.SetOptions(modFn, false)
 	if err != nil {
-		err = errors.WithMessage(err, "Assets3d: apiCreateAsset3d: failed to set asset3d options")
+		err = errors.WithMessage(err, "Assets3d: apiAddAsset3d: failed to set asset3d options")
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 			"message": "",
 		})
@@ -215,6 +215,23 @@ func (a *Assets3d) apiAddAssets3d(c *gin.Context) {
 			return
 
 		}
+
+		modFn := func(ops *entry.Asset3dOptions) (*entry.Asset3dOptions, error) {
+			if ops == nil {
+				return nil, errors.New("Assets3d: apiAddAsset3d: modify func - got nil options")
+			}
+			return ops, nil
+		}
+
+		err = newAsset.SetOptions(modFn, false)
+		if err != nil {
+			err = errors.WithMessage(err, "Assets3d: apiAddAssets3d: failed to set asset3d options")
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+				"message": "",
+			})
+			return
+		}
+
 		addAssets3d = append(addAssets3d, newAsset)
 	}
 
