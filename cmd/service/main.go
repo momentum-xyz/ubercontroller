@@ -111,10 +111,10 @@ func createNode(ctx context.Context, cfg *config.Config, db database.DB) (univer
 	worlds := worlds.NewWorlds(db)
 	assets2d := assets_2d.NewAssets2d(db)
 	assets3d := assets_3d.NewAssets3d(db)
+	plugins := plugins.NewPlugins(db)
 	spaceTypes := space_types.NewSpaceTypes(db)
 	userTypes := user_types.NewUserTypes(db)
-	attributes := attribute_types.NewAttributeTypes(db)
-	plugins := plugins.NewPlugins(db)
+	attributeTypes := attribute_types.NewAttributeTypes(db)
 
 	nodeEntry, err := db.NodesGetNode(ctx)
 	if err != nil {
@@ -128,10 +128,10 @@ func createNode(ctx context.Context, cfg *config.Config, db database.DB) (univer
 		worlds,
 		assets2d,
 		assets3d,
+		plugins,
 		spaceTypes,
 		userTypes,
-		attributes,
-		plugins,
+		attributeTypes,
 	)
 	universe.InitializeNode(node)
 
@@ -150,8 +150,8 @@ func createNode(ctx context.Context, cfg *config.Config, db database.DB) (univer
 	if err := userTypes.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize user types")
 	}
-	if err := attributes.Initialize(ctx); err != nil {
-		return nil, errors.WithMessage(err, "failed to initialize attributes")
+	if err := attributeTypes.Initialize(ctx); err != nil {
+		return nil, errors.WithMessage(err, "failed to initialize attribute types")
 	}
 	if err := plugins.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize plugins")
@@ -192,6 +192,7 @@ func createDB(conn *pgxpool.Pool) (database.DB, error) {
 		usersDB.NewDB(conn, common),
 		assets2dDB.NewDB(conn, common),
 		assets3dDB.NewDB(conn, common),
+		pluginsDB.NewDB(conn, common),
 		spaceTypesDB.NewDB(conn, common),
 		userTypesDB.NewDB(conn, common),
 		attributesTypeDB.NewDB(conn, common),
@@ -200,6 +201,5 @@ func createDB(conn *pgxpool.Pool) (database.DB, error) {
 		spaceUserAttributesDB.NewDB(conn, common),
 		userAttributesDB.NewDB(conn, common),
 		userUserAttributesDB.NewDB(conn, common),
-		pluginsDB.NewDB(conn, common),
 	), nil
 }

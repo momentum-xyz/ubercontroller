@@ -146,6 +146,10 @@ func (p *Plugin) RegisterAttributes() error {
 }
 
 func (p *Plugin) resolveSharedLibrary(filename string) (*plugin.Plugin, *[]string, mplugin.NewInstanceFunction, error) {
+	if filename == "" {
+		return nil, nil, nil, nil
+	}
+
 	obj, err := plugin.Open(filename)
 	if err != nil {
 		return nil, nil, nil, errors.WithMessage(err, "failed to load plugin binary")

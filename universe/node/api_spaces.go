@@ -7,9 +7,64 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe/api"
 	"github.com/momentum-xyz/ubercontroller/universe/api/dto"
 )
+
+func (n *Node) apiSpacesSetSpaceSubOption(c *gin.Context) {
+	inQuery := struct {
+		SubOptionKey   string `form:"sub_option_key" binding:"required"`
+		SubOptionValue any    `form:"sub_option_value" binding:"required"`
+	}{}
+
+	spaceID, err := uuid.Parse(c.Param("spaceID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSpacesSetSpaceSubOption: failed to parse space id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, n.log)
+		return
+	}
+
+	space, ok := n.GetSpaceFromAllSpaces(spaceID)
+	if !ok {
+		err := errors.Errorf("Node: apiSpacesSetSpaceSubOption: space not found: %s", spaceID)
+		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		return
+	}
+
+	modifyFn := func(current *entry.SpaceOptions) (*entry.SpaceOptions, error) {
+		if current == nil {
+			return &entry.SpaceOptions{
+				Subs: map[string]any{
+					inQuery.SubOptionKey: inQuery.SubOptionValue,
+				},
+			}, nil
+		}
+
+		if current.Subs == nil {
+			current.Subs = map[string]any{
+				inQuery.SubOptionKey: inQuery.SubOptionValue,
+			}
+			return current, nil
+		}
+
+		current.Subs[inQuery.SubOptionKey] = inQuery.SubOptionValue
+
+		return current, nil
+	}
+
+	if err := space.SetOptions(modifyFn, true); err != nil {
+		err := errors.WithMessagef(err, "Node: apiSpacesSetSpaceSubOption: failed to set options")
+		api.AbortRequest(c, http.StatusInternalServerError, "set_options_failed", err, n.log)
+		return
+	}
+
+	out := dto.SpaceSubOptions{
+		inQuery.SubOptionKey: inQuery.SubOptionValue,
+	}
+
+	c.JSON(http.StatusOK, out)
+}
 
 // @Summary Returns space effective options
 // @Schemes
@@ -45,30 +100,40 @@ func (n *Node) apiSpacesGetSpaceEffectiveOptions(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-func (n *Node) apiSpacesGetSpaceEffectiveSubOptions(c *gin.Context) {
-	panic("how we can get any subfield if our SpaceOptions is a struct?")
+func (n *Node) apiSpacesGetSpaceEffectiveSubOption(c *gin.Context) {
+	inQuery := struct {
+		SubOptionKey string `form:"sub_option_key" binding:"required"`
+	}{}
 
-	//inQuery := struct {
-	//	SubOptionKey string `form:"sub_option_key" binding:"required"`
-	//}{}
-	//
-	//if err := c.ShouldBindQuery(&inQuery); err != nil {
-	//	err := errors.WithMessage(err, "Node: apiSpacesGetSpaceEffectiveSubOptions: failed to bind query")
-	//	api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
-	//	return
-	//}
-	//
-	//spaceID, err := uuid.Parse(c.Param("spaceID"))
-	//if err != nil {
-	//	err := errors.WithMessage(err, "Node: apiSpacesGetSpaceEffectiveSubOptions: failed to parse space id")
-	//	api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, n.log)
-	//	return
-	//}
-	//
-	//space, ok := n.GetSpaceFromAllSpaces(spaceID)
-	//if !ok {
-	//	err := errors.Errorf("Node: apiSpacesGetSpaceEffectiveSubOptions: space not found: %s", spaceID)
-	//	api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
-	//	return
-	//}
+	if err := c.ShouldBindQuery(&inQuery); err != nil {
+		err := errors.WithMessage(err, "Node: apiSpacesGetSpaceEffectiveSubOption: failed to bind query")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
+		return
+	}
+
+	spaceID, err := uuid.Parse(c.Param("spaceID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSpacesGetSpaceEffectiveSubOption: failed to parse space id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, n.log)
+		return
+	}
+
+	space, ok := n.GetSpaceFromAllSpaces(spaceID)
+	if !ok {
+		err := errors.Errorf("Node: apiSpacesGetSpaceEffectiveSubOption: space not found: %s", spaceID)
+		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		return
+	}
+
+	var effectiveSubValue any
+	effectiveOptions := space.GetEffectiveOptions()
+	if effectiveOptions != nil && effectiveOptions.Subs != nil {
+		effectiveSubValue = effectiveOptions.Subs[inQuery.SubOptionKey]
+	}
+
+	out := dto.SpaceEffectiveSubOptions{
+		inQuery.SubOptionKey: effectiveSubValue,
+	}
+
+	c.JSON(http.StatusOK, out)
 }

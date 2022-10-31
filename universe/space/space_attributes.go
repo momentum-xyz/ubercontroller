@@ -16,7 +16,7 @@ func (s *Space) GetSpaceAttributeValue(attributeID entry.AttributeID) (*entry.At
 		return nil, false
 	}
 	if payload == nil {
-		return nil, false
+		return nil, true
 	}
 	return payload.Value, true
 }
@@ -27,7 +27,7 @@ func (s *Space) GetSpaceAttributeOptions(attributeID entry.AttributeID) (*entry.
 		return nil, false
 	}
 	if payload == nil {
-		return nil, false
+		return nil, true
 	}
 	return payload.Options, true
 }
@@ -40,7 +40,12 @@ func (s *Space) GetSpaceAttributesValue(recursive bool) map[entry.SpaceAttribute
 	s.spaceAttributes.Mu.RLock()
 	values := make(map[entry.SpaceAttributeID]*entry.AttributeValue, len(s.spaceAttributes.Data))
 	for attributeID, payload := range s.spaceAttributes.Data {
-		values[entry.NewSpaceAttributeID(attributeID, s.GetID())] = payload.Value
+		spaceAttributeID := entry.NewSpaceAttributeID(attributeID, s.GetID())
+		if payload == nil {
+			values[spaceAttributeID] = nil
+			continue
+		}
+		values[spaceAttributeID] = payload.Value
 	}
 	s.spaceAttributes.Mu.RUnlock()
 
@@ -64,7 +69,12 @@ func (s *Space) GetSpaceAttributesOptions(recursive bool) map[entry.SpaceAttribu
 	s.spaceAttributes.Mu.RLock()
 	options := make(map[entry.SpaceAttributeID]*entry.AttributeOptions, len(s.spaceAttributes.Data))
 	for attributeID, payload := range s.spaceAttributes.Data {
-		options[entry.NewSpaceAttributeID(attributeID, s.GetID())] = payload.Options
+		spaceAttributeID := entry.NewSpaceAttributeID(attributeID, s.GetID())
+		if payload == nil {
+			options[spaceAttributeID] = payload.Options
+			continue
+		}
+		options[spaceAttributeID] = payload.Options
 	}
 	s.spaceAttributes.Mu.RUnlock()
 

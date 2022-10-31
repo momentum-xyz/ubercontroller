@@ -82,6 +82,10 @@ type Node interface {
 	GetNodeAttributeOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool)
 	GetNodeAttributePayload(attributeID entry.AttributeID) (*entry.AttributePayload, bool)
 
+	GetNodeAttributesValue() map[entry.NodeAttributeID]*entry.AttributeValue
+	GetNodeAttributesOptions() map[entry.NodeAttributeID]*entry.AttributeOptions
+	GetNodeAttributesPayload() map[entry.NodeAttributeID]*entry.AttributePayload
+
 	UpdateNodeAttributeValue(
 		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool,
 	) error
