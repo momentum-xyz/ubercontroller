@@ -56,8 +56,8 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 				authSpace.GET("/effective-options/sub", n.apiSpacesGetSpaceEffectiveSubOption)
 
 				authSpace.GET("/attributes", n.apiGetSpaceAttributesValue)
-				authSpace.GET("/attributes/sub", n.apiGetSpaceSubAttributeValue)
-				authSpace.POST("/attributes/sub", n.apiSetSpaceSubAttributeValue)
+				authSpace.GET("/attributes/sub", n.apiGetSpaceAttributeSubValue)
+				authSpace.POST("/attributes/sub", n.apiSetSpaceAttributeSubValue)
 			}
 		}
 	}
