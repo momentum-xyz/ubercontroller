@@ -26,8 +26,8 @@ import (
 // @Router /api/v4/spaces/{space_id}/attributes [get]
 func (n *Node) apiGetSpaceAttributes(c *gin.Context) {
 	inQuery := struct {
-		PluginID string `form:"plugin_id" binding:"required"`
-		Name     string `form:"attribute_name" binding:"required"`
+		PluginID      string `form:"plugin_id" binding:"required"`
+		AttributeName string `form:"attribute_name" binding:"required"`
 	}{}
 
 	spaceID, err := uuid.Parse(c.Param("spaceID"))
@@ -57,7 +57,7 @@ func (n *Node) apiGetSpaceAttributes(c *gin.Context) {
 		return
 	}
 
-	attributeID := entry.NewAttributeID(pluginID, inQuery.Name)
+	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
 	out, ok := space.GetSpaceAttributeValue(attributeID)
 	if !ok {
 		err := errors.Errorf("Node: apiGetSpaceSubAttribute: space attribute value not found: %s", attributeID)
@@ -71,7 +71,7 @@ func (n *Node) apiGetSpaceAttributes(c *gin.Context) {
 func (n *Node) apiGetSpaceSubAttribute(c *gin.Context) {
 	inQuery := struct {
 		PluginID        string `form:"plugin_id" binding:"required"`
-		Name            string `form:"attribute_name" binding:"required"`
+		AttributeName   string `form:"attribute_name" binding:"required"`
 		SubAttributeKey string `form:"sub_attribute_key" binding:"required"`
 	}{}
 
@@ -102,7 +102,7 @@ func (n *Node) apiGetSpaceSubAttribute(c *gin.Context) {
 		return
 	}
 
-	attributeID := entry.NewAttributeID(pluginID, inQuery.Name)
+	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
 	attributeValue, ok := space.GetSpaceAttributeValue(attributeID)
 	if !ok {
 		err := errors.Errorf("Node: apiGetSpaceSubAttribute: attribute value not found: %s", attributeID)
@@ -196,4 +196,56 @@ func (n *Node) apiSetSpaceSubAttribute(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, out)
+}
+
+func (n *Node) apiDeleteSpaceSubAttribute(c *gin.Context) {
+	inQuery := struct {
+		PluginID        string `form:"plugin_id" binding:"required"`
+		AttributeName   string `form:"attribute_name" binding:"required"`
+		SubAttributeKey string `form:"sub_attribute_key" binding:"required"`
+	}{}
+
+	spaceID, err := uuid.Parse(c.Param("spaceID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiDeleteSpaceSubAttribute: failed to parse space id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, n.log)
+		return
+	}
+
+	if err := c.ShouldBindQuery(&inQuery); err != nil {
+		err := errors.WithMessage(err, "Node: apiDeleteSpaceSubAttribute: failed to bind query")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
+		return
+	}
+
+	pluginID, err := uuid.Parse(inQuery.PluginID)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiDeleteSpaceSubAttribute: failed to parse plugin id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
+		return
+	}
+
+	space, ok := n.GetSpaceFromAllSpaces(spaceID)
+	if !ok {
+		err := errors.Errorf("Node: apiDeleteSpaceSubAttribute: space not found: %s", spaceID)
+		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		return
+	}
+
+	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
+
+	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
+		(*current.Value)[inQuery.SubAttributeKey] = nil
+
+		return current, nil
+	}
+
+	_, err = space.UpsertSpaceAttribute(attributeID, modifyFn, true)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiDeleteSpaceSubAttribute: failed to upsert space attribute")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert", err, n.log)
+		return
+	}
+
+	c.Writer.WriteHeader(http.StatusOK)
 }
