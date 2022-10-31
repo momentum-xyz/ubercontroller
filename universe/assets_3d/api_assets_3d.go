@@ -54,7 +54,7 @@ func (a *Assets3d) apiCreateAsset3d(c *gin.Context) {
 
 	modFn := func(ops *entry.Asset3dOptions) (*entry.Asset3dOptions, error) {
 		if ops == nil {
-			return nil, errors.New("Assets3d: apiCreateAsset3d: modify func failed")
+			return nil, errors.New("Assets3d: apiCreateAsset3d: modify func - got nil options")
 		}
 		return ops, nil
 	}
@@ -103,7 +103,8 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 	// or in a more generic way
 	//
 	// This is currently used as a poor man's filter
-	// for assets like `Meta = {"kind":"skybox"}`
+	// for assets with `Meta = {"kind":"skybox"}`
+	//
 	// example "?kind=skybox` should return "skybox"
 	getKind := c.Request.URL.Query().Get("kind")
 
@@ -157,7 +158,7 @@ func (a *Assets3d) apiAddAsset3d(c *gin.Context) {
 
 	modFn := func(ops *entry.Asset3dOptions) (*entry.Asset3dOptions, error) {
 		if ops == nil {
-			return nil, errors.New("Assets3d: apiAddAsset3d: modify func failed")
+			return nil, errors.New("Assets3d: apiAddAsset3d: modify func - got nil options")
 		}
 		return ops, nil
 	}
