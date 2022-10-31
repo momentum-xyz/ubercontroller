@@ -161,6 +161,23 @@ func (a *Assets3d) RemoveAssets3d(assets3d []universe.Asset3d, updateDB bool) er
 	return nil
 }
 
+func (a *Assets3d) RemoveAssets3dByIDs(ids []uuid.UUID, updateDB bool) error {
+	a.assets.Mu.Lock()
+	defer a.assets.Mu.Unlock()
+
+	if updateDB {
+		if err := a.db.Assets3dRemoveAssetsByIDs(a.ctx, ids); err != nil {
+			return errors.WithMessage(err, "failed to update db")
+		}
+	}
+
+	for _, id := range ids {
+		delete(a.assets.Data, id)
+	}
+
+	return nil
+}
+
 func (a *Assets3d) Load() error {
 	a.log.Info("Loading assets 3d...")
 

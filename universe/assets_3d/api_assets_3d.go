@@ -205,7 +205,7 @@ func (a *Assets3d) apiRemoveAsset3d(c *gin.Context) {
 		return
 	}
 
-	gAsset3d, ok := a.GetAsset3d(asset3dID)
+	getAsset3d, ok := a.GetAsset3d(asset3dID)
 	if !ok {
 		err = errors.WithMessage(err, "Assets3d: apiRemoveAsset3d: failed to get asset3d")
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
@@ -214,7 +214,7 @@ func (a *Assets3d) apiRemoveAsset3d(c *gin.Context) {
 		return
 	}
 
-	if err := a.RemoveAsset3d(gAsset3d, false); err != nil {
+	if err := a.RemoveAsset3d(getAsset3d, false); err != nil {
 		err = errors.WithMessage(err, "Assets3d: apiRemoveAsset3d: failed to remove asset3d")
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 			"message": "",
@@ -222,7 +222,44 @@ func (a *Assets3d) apiRemoveAsset3d(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gAsset3d.GetEntry())
+	c.Writer.WriteHeader(http.StatusOK)
+}
+
+func (a *Assets3d) apiRemoveAssets3dByIDs(c *gin.Context) {
+	in := struct {
+		ids []string `form:"ids" binding:"required"`
+	}{}
+
+	if err := c.ShouldBindJSON(&in); err != nil {
+		err = errors.WithMessage(err, "Assets3d: apiRemoveAssets3dByIDs: failed to bind json")
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"message": "",
+		})
+		return
+	}
+
+	uids := make([]uuid.UUID, len(in.ids))
+	for _, id := range in.ids {
+		uid, err := uuid.Parse(id)
+		if err != nil {
+			err = errors.WithMessage(err, "Assets3d: apiRemoveAssets3dByIDs: failed to parse uuid")
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+				"message": "",
+			})
+			return
+		}
+		uids = append(uids, uid)
+	}
+
+	if err := a.RemoveAssets3dByIDs(uids, false); err != nil {
+		err = errors.WithMessage(err, "Assets3d: apiRemoveAssets3dByIDs: failed to remove assets3d")
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": "",
+		})
+		return
+	}
+
+	c.Writer.WriteHeader(http.StatusOK)
 }
 
 func (a *Assets3d) apiRemoveAssets3d(c *gin.Context) {
