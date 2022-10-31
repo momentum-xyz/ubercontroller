@@ -27,6 +27,8 @@ func (a *Assets3d) RegisterAPI(r *gin.Engine) {
 
 			assets3d.DELETE("/remove-assets-3d", a.apiRemoveAssets3d)
 
+			assets3d.DELETE("/remove-assets-3d-ids", a.apiRemoveAssets3dByIDs)
+
 			assets3d.POST("/add-assets-3d", a.apiAddAssets3d)
 		}
 	}

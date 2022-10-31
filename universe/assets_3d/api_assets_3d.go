@@ -95,13 +95,30 @@ func (a *Assets3d) apiGetAsset3d(c *gin.Context) {
 }
 
 func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
-	// TODO: add filter; example "?kind=skybox"` for assets with `Meta = {"kind":"skybox"}`
 	a3dMap := a.GetAssets3d()
-
 	assets := make([]*entry.Asset3d, len(a3dMap))
-	for _, el := range a3dMap {
-		asset := el.GetEntry()
-		assets = append(assets, asset)
+
+	// TODO: rework this in a different method
+	// or in a more generic way
+	//
+	// This is currently used as a poor man's filter
+	// for assets like `Meta = {"kind":"skybox"}`
+	kind := "kind"
+	// example "?kind=skybox` should return "skybox"
+	getKind := c.Request.URL.Query().Get("kind")
+
+	if kind == "" {
+		for _, el := range a3dMap {
+			asset := el.GetEntry()
+			assets = append(assets, asset)
+		}
+	} else {
+		for _, el := range a3dMap {
+			asset := el.GetEntry()
+			if asset.Meta[kind] == getKind {
+				assets = append(assets, asset)
+			}
+		}
 	}
 
 	c.JSON(http.StatusOK, assets)
@@ -222,7 +239,7 @@ func (a *Assets3d) apiRemoveAsset3d(c *gin.Context) {
 		return
 	}
 
-	c.Writer.WriteHeader(http.StatusOK)
+	c.JSON(http.StatusOK, nil)
 }
 
 func (a *Assets3d) apiRemoveAssets3dByIDs(c *gin.Context) {
@@ -259,7 +276,7 @@ func (a *Assets3d) apiRemoveAssets3dByIDs(c *gin.Context) {
 		return
 	}
 
-	c.Writer.WriteHeader(http.StatusOK)
+	c.JSON(http.StatusOK, nil)
 }
 
 func (a *Assets3d) apiRemoveAssets3d(c *gin.Context) {
