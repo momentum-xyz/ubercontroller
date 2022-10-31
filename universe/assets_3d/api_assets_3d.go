@@ -52,20 +52,21 @@ func (a *Assets3d) apiCreateAsset3d(c *gin.Context) {
 		return
 	}
 
-	// TODO: set the asset options with a proper modify func - is it currently needed
-	// as there are no such options so far?
-	// modFn := func(ops *entry.Asset3dOptions) (*entry.Asset3dOptions, error) {
+	modFn := func(ops *entry.Asset3dOptions) (*entry.Asset3dOptions, error) {
+		if ops == nil {
+			return nil, errors.New("Assets3d: apiCreateAsset3d: modify func failed")
+		}
+		return ops, nil
+	}
 
-	// }
-
-	// err := crAsset3d.SetOptions(modFn(in.Options), false)
-	// if err != nil {
-	// 	err = errors.WithMessage(err, "Assets3d: apiCreateAsset3d: failed to set asset3d options")
-	// 	c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-	// 		"message": "",
-	// 	})
-	// 	return
-	// }
+	err = crAsset3d.SetOptions(modFn, false)
+	if err != nil {
+		err = errors.WithMessage(err, "Assets3d: apiCreateAsset3d: failed to set asset3d options")
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": "",
+		})
+		return
+	}
 
 	out := crAsset3d.GetEntry()
 	c.JSON(http.StatusOK, out)
@@ -103,11 +104,10 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 	//
 	// This is currently used as a poor man's filter
 	// for assets like `Meta = {"kind":"skybox"}`
-	kind := "kind"
 	// example "?kind=skybox` should return "skybox"
 	getKind := c.Request.URL.Query().Get("kind")
 
-	if kind == "" {
+	if getKind == "" {
 		for _, el := range a3dMap {
 			asset := el.GetEntry()
 			assets = append(assets, asset)
@@ -115,7 +115,7 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 	} else {
 		for _, el := range a3dMap {
 			asset := el.GetEntry()
-			if asset.Meta[kind] == getKind {
+			if (*asset.Meta)["kind"] == getKind {
 				assets = append(assets, asset)
 			}
 		}
@@ -153,6 +153,22 @@ func (a *Assets3d) apiAddAsset3d(c *gin.Context) {
 		})
 		return
 
+	}
+
+	modFn := func(ops *entry.Asset3dOptions) (*entry.Asset3dOptions, error) {
+		if ops == nil {
+			return nil, errors.New("Assets3d: apiAddAsset3d: modify func failed")
+		}
+		return ops, nil
+	}
+
+	err = newAsset.SetOptions(modFn, false)
+	if err != nil {
+		err = errors.WithMessage(err, "Assets3d: apiCreateAsset3d: failed to set asset3d options")
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": "",
+		})
+		return
 	}
 
 	if err := a.AddAsset3d(newAsset, false); err != nil {
