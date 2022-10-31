@@ -202,16 +202,16 @@ func (n *Node) apiDeleteSpaceAttributeSubValue(c *gin.Context) {
 		SubAttributeKey string `form:"sub_attribute_key" binding:"required"`
 	}{}
 
+	if err := c.ShouldBindQuery(&inQuery); err != nil {
+		err := errors.WithMessage(err, "Node: apiDeleteSpaceAttributeSubValue: failed to bind query")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
+		return
+	}
+
 	spaceID, err := uuid.Parse(c.Param("spaceID"))
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiDeleteSpaceAttributeSubValue: failed to parse space id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, n.log)
-		return
-	}
-
-	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		err := errors.WithMessage(err, "Node: apiDeleteSpaceAttributeSubValue: failed to bind query")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
 		return
 	}
 
@@ -231,18 +231,22 @@ func (n *Node) apiDeleteSpaceAttributeSubValue(c *gin.Context) {
 
 	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
 
-	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
-		(*current.Value)[inQuery.SubAttributeKey] = nil
+	modifyFn := func(current *entry.AttributeValue) (*entry.AttributeValue, error) {
+		if current == nil {
+			return current, nil
+		}
+
+		delete(*current, inQuery.SubAttributeKey)
 
 		return current, nil
 	}
 
-	_, err = space.UpsertSpaceAttribute(attributeID, modifyFn, true)
+	err = space.UpdateSpaceAttributeValue(attributeID, modifyFn, true)
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiDeleteSpaceAttributeSubValue: failed to upsert space attribute")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert", err, n.log)
 		return
 	}
 
-	c.Writer.WriteHeader(http.StatusOK)
+	c.JSON(http.StatusOK, nil)
 }
