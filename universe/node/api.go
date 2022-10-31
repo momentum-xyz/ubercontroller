@@ -10,6 +10,9 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/api/middleware"
 )
 
+// @title        Momentum API
+// @version      4.0
+// @description  Momentum REST API
 func (n *Node) RegisterAPI(r *gin.Engine) {
 	n.log.Infof("Registering api for node: %s...", n.GetID())
 
@@ -47,13 +50,29 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		{
 			authSpace := authSpaces.Group("/:spaceID")
 			{
+				authSpace.POST("/options/sub", n.apiSpacesSetSpaceSubOption)
+				authSpace.DELETE("/options/sub", n.apiSpacesRemoveSpaceSubOption)
+
 				authSpace.GET("/effective-options", n.apiSpacesGetSpaceEffectiveOptions)
-				authSpace.GET("/effective-options/sub", n.apiSpacesGetSpaceEffectiveSubOptions)
+				authSpace.GET("/effective-options/sub", n.apiSpacesGetSpaceEffectiveSubOption)
+
+				authSpace.GET("/attributes", n.apiGetSpaceAttributesValue)
+				authSpace.GET("/attributes/sub", n.apiGetSpaceAttributeSubValue)
+				authSpace.POST("/attributes/sub", n.apiSetSpaceAttributeSubValue)
 			}
 		}
 	}
 }
 
+// @Summary Version of running controller app
+// @Schemes
+// @Description Version of running controller app
+// @Tags config
+// @Accept json
+// @Produce json
+// @Success 200 {object} any
+// @Success 500 {object} api.HTTPError
+// @Router /version [get]
 func (n *Node) apiGetVersion(c *gin.Context) {
 	c.JSON(
 		http.StatusOK, gin.H{

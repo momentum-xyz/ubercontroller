@@ -41,6 +41,7 @@ type SpaceOptions struct {
 	Visible          *SpaceVisibleType                  `db:"visible" json:"visible,omitempty"`
 	Private          *bool                              `db:"private" json:"private,omitempty"`
 	DashboardPlugins []string                           `db:"dashboard_plugins" json:"dashboard_plugins,omitempty"`
+	Subs             map[string]any                     `db:"subs" json:"subs"`
 }
 
 type SpaceChildPlacement struct {
@@ -67,6 +68,13 @@ type SpaceAttribute struct {
 type SpaceUserAttribute struct {
 	SpaceUserAttributeID
 	*AttributePayload
+}
+
+func NewSpaceAttribute(spaceAttributeID SpaceAttributeID, payload *AttributePayload) *SpaceAttribute {
+	return &SpaceAttribute{
+		SpaceAttributeID: spaceAttributeID,
+		AttributePayload: payload,
+	}
 }
 
 func NewSpaceUserAttribute(spaceUserAttributeID SpaceUserAttributeID, payload *AttributePayload) *SpaceUserAttribute {

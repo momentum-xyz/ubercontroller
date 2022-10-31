@@ -74,15 +74,27 @@ type Node interface {
 	GetAttributeTypes() AttributeTypes
 	GetPlugins() Plugins
 
+	UpsertNodeAttribute(
+		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
+	) (*entry.NodeAttribute, error)
+
 	GetNodeAttributeValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool)
 	GetNodeAttributeOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool)
-	GetNodeAttributeEffectiveOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool)
-	SetNodeAttributeValue(
+	GetNodeAttributePayload(attributeID entry.AttributeID) (*entry.AttributePayload, bool)
+
+	GetNodeAttributesValue() map[entry.NodeAttributeID]*entry.AttributeValue
+	GetNodeAttributesOptions() map[entry.NodeAttributeID]*entry.AttributeOptions
+	GetNodeAttributesPayload() map[entry.NodeAttributeID]*entry.AttributePayload
+
+	UpdateNodeAttributeValue(
 		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool,
 	) error
-	SetNodeAttributeOptions(
+	UpdateNodeAttributeOptions(
 		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool,
 	) error
+
+	RemoveNodeAttribute(attributeID entry.AttributeID, updateDB bool) (bool, error)
+	RemoveNodeAttributes(attributeIDs []entry.AttributeID, updateDB bool) (bool, error)
 
 	AddAPIRegister(register APIRegister)
 
@@ -170,15 +182,27 @@ type Space interface {
 	SendSpawnMessage(sendFn func(msg *websocket.PreparedMessage) error, recursive bool)
 	SendAttributes(sendFn func(*websocket.PreparedMessage), recursive bool)
 
+	UpsertSpaceAttribute(
+		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
+	) (*entry.SpaceAttribute, error)
+
 	GetSpaceAttributeValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool)
 	GetSpaceAttributeOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool)
-	GetSpaceAttributeEffectiveOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool)
-	SetSpaceAttributeValue(
+	GetSpaceAttributePayload(attributeID entry.AttributeID) (*entry.AttributePayload, bool)
+
+	GetSpaceAttributesValue(recursive bool) map[entry.SpaceAttributeID]*entry.AttributeValue
+	GetSpaceAttributesOptions(recursive bool) map[entry.SpaceAttributeID]*entry.AttributeOptions
+	GetSpaceAttributesPayload(recursive bool) map[entry.SpaceAttributeID]*entry.AttributePayload
+
+	UpdateSpaceAttributeValue(
 		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool,
 	) error
-	SetSpaceAttributeOptions(
+	UpdateSpaceAttributeOptions(
 		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool,
 	) error
+
+	RemoveSpaceAttribute(attributeID entry.AttributeID, updateDB bool) (bool, error)
+	RemoveSpaceAttributes(attributeIDs []entry.AttributeID, updateDB bool) (bool, error)
 
 	UpdateChildrenPosition(recursive bool, force bool) error
 	SetActualPosition(pos cmath.Vec3, theta float64, force bool) error

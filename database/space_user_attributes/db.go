@@ -2,20 +2,22 @@ package space_user_attributes
 
 import (
 	"context"
+	"sync"
 
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/google/uuid"
-	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
 const (
 	getSpaceUserAttributesQuery                   = `SELECT * FROM space_user_attribute;`
+	getSpaceUserAttributeByIDQuery                = `SELECT * FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3 AND user_id = $4;`
 	getSpaceUserAttributesBySpaceIDQuery          = `SELECT * FROM space_user_attribute WHERE space_id = $1;`
 	getSpaceUserAttributesByUserIDQuery           = `SELECT * FROM space_user_attribute WHERE user_id = $1;`
 	getSpaceUserAttributesBySpaceIDAndUserIDQuery = `SELECT * FROM space_user_attribute WHERE space_id = $1 AND user_id = $2;`
@@ -49,12 +51,12 @@ const (
 	updateSpaceUserAttributeOptionsQuery = `UPDATE space_user_attribute SET options = $5 WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3 AND user_id = $4;`
 
 	upsertSpaceUserAttributeQuery = `INSERT INTO space_user_attribute
-									(plugin_id, attribute_name, space_id, user_id, value, options)
-								VALUES
-									($1, $2, $3, $4, $5, $6)
-								ON CONFLICT (plugin_id, attribute_name, space_id, user_id)
-								DO UPDATE SET
-									value = $5,options = $6;`
+											(plugin_id, attribute_name, space_id, user_id, value, options)
+										VALUES
+											($1, $2, $3, $4, $5, $6)
+										ON CONFLICT (plugin_id, attribute_name, space_id, user_id)
+										DO UPDATE SET
+											value = $5,options = $6;`
 )
 
 var _ database.SpaceUserAttributesDB = (*DB)(nil)
@@ -62,6 +64,7 @@ var _ database.SpaceUserAttributesDB = (*DB)(nil)
 type DB struct {
 	conn   *pgxpool.Pool
 	common database.CommonDB
+	mu     sync.Mutex
 }
 
 func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
@@ -77,6 +80,19 @@ func (db *DB) SpaceUserAttributesGetSpaceUserAttributes(ctx context.Context) ([]
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return attributes, nil
+}
+
+func (db *DB) SpaceUserAttributesGetSpaceUserAttributeByID(
+	ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
+) (*entry.SpaceUserAttribute, error) {
+	var attribute entry.SpaceUserAttribute
+	if err := pgxscan.Get(
+		ctx, db.conn, &attribute, getSpaceUserAttributeByIDQuery,
+		spaceUserAttributeID.PluginID, spaceUserAttributeID.Name, spaceUserAttributeID.SpaceID, spaceUserAttributeID.UserID,
+	); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return &attribute, nil
 }
 
 func (db *DB) SpaceUserAttributesGetSpaceUserAttributesBySpaceID(
@@ -112,43 +128,35 @@ func (db *DB) SpaceUserAttributesGetSpaceUserAttributesBySpaceIDAndUserID(
 }
 
 func (db *DB) SpaceUserAttributesUpsertSpaceUserAttribute(
-	ctx context.Context, spaceUserAttribute *entry.SpaceUserAttribute,
-) error {
-	if _, err := db.conn.Exec(
-		ctx, upsertSpaceUserAttributeQuery, spaceUserAttribute.PluginID, spaceUserAttribute.Name,
-		spaceUserAttribute.SpaceID, spaceUserAttribute.UserID,
-		spaceUserAttribute.Value, spaceUserAttribute.Options,
-	); err != nil {
-		return errors.WithMessage(err, "failed to exec db")
-	}
-	return nil
-}
+	ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
+) (*entry.SpaceUserAttribute, error) {
+	db.mu.Lock()
+	defer db.mu.Unlock()
 
-func (db *DB) SpaceUserAttributesUpsertSpaceUserAttributes(
-	ctx context.Context, spaceUserAttributes []*entry.SpaceUserAttribute,
-) error {
-	batch := &pgx.Batch{}
-	for _, spaceUserAttribute := range spaceUserAttributes {
-		batch.Queue(
-			upsertSpaceUserAttributeQuery, spaceUserAttribute.PluginID, spaceUserAttribute.Name,
-			spaceUserAttribute.SpaceID, spaceUserAttribute.UserID,
-			spaceUserAttribute.Value, spaceUserAttribute.Options,
-		)
-	}
-
-	batchRes := db.conn.SendBatch(ctx, batch)
-	defer batchRes.Close()
-
-	var errs *multierror.Error
-	for i := 0; i < batch.Len(); i++ {
-		if _, err := batchRes.Exec(); err != nil {
-			errs = multierror.Append(
-				errs, errors.WithMessagef(err, "failed to exec db for: %s", spaceUserAttributes[i].Name),
-			)
+	var payload *entry.AttributePayload
+	attribute, err := db.SpaceUserAttributesGetSpaceUserAttributeByID(ctx, spaceUserAttributeID)
+	if err != nil {
+		if !errors.Is(err, pgx.ErrNoRows) {
+			return nil, errors.WithMessage(err, "failed to query db")
 		}
+	} else {
+		payload = attribute.AttributePayload
 	}
 
-	return errs.ErrorOrNil()
+	payload, err = modifyFn(payload)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to modify payload")
+	}
+
+	if _, err := db.conn.Exec(
+		ctx, upsertSpaceUserAttributeQuery, spaceUserAttributeID.PluginID, spaceUserAttributeID.Name,
+		spaceUserAttributeID.SpaceID, spaceUserAttributeID.UserID,
+		payload.Value, payload.Options,
+	); err != nil {
+		return nil, errors.WithMessage(err, "failed to exec db")
+	}
+
+	return entry.NewSpaceUserAttribute(spaceUserAttributeID, payload), nil
 }
 
 func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeByName(ctx context.Context, name string) error {
@@ -353,6 +361,9 @@ func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeByID(
 func (db *DB) SpaceUserAttributesUpdateSpaceUserAttributeValue(
 	ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID, value *entry.AttributeValue,
 ) error {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
 	if _, err := db.conn.Exec(
 		ctx, updateSpaceUserAttributeValueQuery,
 		spaceUserAttributeID.PluginID, spaceUserAttributeID.Name, spaceUserAttributeID.SpaceID, spaceUserAttributeID.UserID,
@@ -366,6 +377,9 @@ func (db *DB) SpaceUserAttributesUpdateSpaceUserAttributeValue(
 func (db *DB) SpaceUserAttributesUpdateSpaceUserAttributeOptions(
 	ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID, options *entry.AttributeOptions,
 ) error {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
 	if _, err := db.conn.Exec(
 		ctx, updateSpaceUserAttributeOptionsQuery,
 		spaceUserAttributeID.PluginID, spaceUserAttributeID.Name, spaceUserAttributeID.SpaceID, spaceUserAttributeID.UserID,

@@ -18,15 +18,15 @@ type DB interface {
 	UsersDB
 	Assets2dDB
 	Assets3dDB
+	PluginsDB
 	SpaceTypesDB
 	UserTypesDB
 	AttributeTypesDB
-	SpaceAttributesDB
-	UserAttributesDB
 	NodeAttributesDB
-	UserUserAttributesDB
+	SpaceAttributesDB
 	SpaceUserAttributesDB
-	PluginsDB
+	UserAttributesDB
+	UserUserAttributesDB
 }
 
 type CommonDB interface {
@@ -100,6 +100,21 @@ type Assets3dDB interface {
 
 	Assets3dUpdateAssetMeta(ctx context.Context, asset3dID uuid.UUID, meta *entry.Asset3dMeta) error
 	Assets3dUpdateAssetOptions(ctx context.Context, asset3dID uuid.UUID, options *entry.Asset3dOptions) error
+}
+
+type PluginsDB interface {
+	PluginsGetPlugins(ctx context.Context) ([]*entry.Plugin, error)
+
+	PluginsUpsertPlugin(ctx context.Context, plugin *entry.Plugin) error
+	PluginsUpsertPlugins(ctx context.Context, plugins []*entry.Plugin) error
+
+	PluginsRemovePluginByID(ctx context.Context, pluginID uuid.UUID) error
+	PluginsRemovePluginsByIDs(ctx context.Context, pluginIDs []uuid.UUID) error
+
+	PluginsUpdatePluginMeta(ctx context.Context, pluginID uuid.UUID, meta *entry.PluginMeta) error
+	PluginsUpdatePluginOptions(
+		ctx context.Context, pluginID uuid.UUID, options *entry.PluginOptions,
+	) error
 }
 
 type SpaceTypesDB interface {
@@ -182,6 +197,9 @@ type NodeAttributesDB interface {
 
 type SpaceAttributesDB interface {
 	SpaceAttributesGetSpaceAttributes(ctx context.Context) ([]*entry.SpaceAttribute, error)
+	SpaceAttributesGetSpaceAttributeByID(
+		ctx context.Context, spaceAttributeID entry.SpaceAttributeID,
+	) (*entry.SpaceAttribute, error)
 	SpaceAttributesGetSpaceAttributesBySpaceID(ctx context.Context, spaceID uuid.UUID) ([]*entry.SpaceAttribute, error)
 
 	SpaceAttributesUpsertSpaceAttribute(ctx context.Context, spaceAttribute *entry.SpaceAttribute) error
@@ -209,6 +227,9 @@ type SpaceAttributesDB interface {
 
 type SpaceUserAttributesDB interface {
 	SpaceUserAttributesGetSpaceUserAttributes(ctx context.Context) ([]*entry.SpaceUserAttribute, error)
+	SpaceUserAttributesGetSpaceUserAttributeByID(
+		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
+	) (*entry.SpaceUserAttribute, error)
 	SpaceUserAttributesGetSpaceUserAttributesBySpaceID(
 		ctx context.Context, spaceID uuid.UUID,
 	) ([]*entry.SpaceUserAttribute, error)
@@ -220,11 +241,8 @@ type SpaceUserAttributesDB interface {
 	) ([]*entry.SpaceUserAttribute, error)
 
 	SpaceUserAttributesUpsertSpaceUserAttribute(
-		ctx context.Context, spaceUserAttribute *entry.SpaceUserAttribute,
-	) error
-	SpaceUserAttributesUpsertSpaceUserAttributes(
-		ctx context.Context, spaceUserAttributes []*entry.SpaceUserAttribute,
-	) error
+		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
+	) (*entry.SpaceUserAttribute, error)
 
 	SpaceUserAttributesRemoveSpaceUserAttributeByName(ctx context.Context, name string) error
 	SpaceUserAttributesRemoveSpaceUserAttributesByNames(ctx context.Context, names []string) error
@@ -296,8 +314,8 @@ type UserAttributesDB interface {
 	) (*entry.AttributeOptions, error)
 
 	UserAttributesUpsertUserAttribute(
-		ctx context.Context, userAttribute *entry.UserAttribute, modifyFn modify.Fn[entry.AttributePayload],
-	) error
+		ctx context.Context, userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
+	) (*entry.UserAttribute, error)
 
 	UserAttributesRemoveUserAttributeByName(ctx context.Context, name string) error
 	UserAttributesRemoveUserAttributesByNames(ctx context.Context, names []string) error
@@ -349,8 +367,8 @@ type UserUserAttributesDB interface {
 	) ([]*entry.UserUserAttribute, error)
 
 	UserUserAttributesUpsertUserUserAttribute(
-		ctx context.Context, userUserAttribute *entry.UserUserAttribute, modifyFn modify.Fn[entry.AttributePayload],
-	) error
+		ctx context.Context, userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
+	) (*entry.UserUserAttribute, error)
 
 	UserUserAttributesRemoveUserUserAttributeByName(ctx context.Context, name string) error
 	UserUserAttributesRemoveUserUserAttributesByNames(ctx context.Context, names []string) error
@@ -407,20 +425,5 @@ type UserUserAttributesDB interface {
 	) error
 	UserUserAttributesUpdateUserUserAttributeOptions(
 		ctx context.Context, userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributeOptions],
-	) error
-}
-
-type PluginsDB interface {
-	PluginsGetPlugins(ctx context.Context) ([]*entry.Plugin, error)
-
-	PluginsUpsertPlugin(ctx context.Context, plugin *entry.Plugin) error
-	PluginsUpsertPlugins(ctx context.Context, plugins []*entry.Plugin) error
-
-	PluginsRemovePluginByID(ctx context.Context, pluginID uuid.UUID) error
-	PluginsRemovePluginsByIDs(ctx context.Context, pluginIDs []uuid.UUID) error
-
-	PluginsUpdatePluginMeta(ctx context.Context, pluginID uuid.UUID, meta *entry.PluginMeta) error
-	PluginsUpdatePluginOptions(
-		ctx context.Context, pluginID uuid.UUID, options *entry.PluginOptions,
 	) error
 }

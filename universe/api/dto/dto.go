@@ -8,21 +8,25 @@ import (
 
 type Plugins map[uuid.UUID]string
 
-type PluginsMeta map[uuid.UUID]*PluginMeta
+type PluginsMeta map[uuid.UUID]PluginMeta
 
-type PluginMeta entry.PluginMeta
+type PluginMeta *entry.PluginMeta
 
-type PluginsOptions map[uuid.UUID]*PluginOptions
+type PluginsOptions map[uuid.UUID]PluginOptions
 
-type PluginOptions entry.PluginOptions
+type PluginOptions *entry.PluginOptions
 
-type SpaceOptions map[uuid.UUID]*entry.SpaceOptions
+type SpaceOptions *entry.SpaceOptions
 
-type SpaceSubOptions map[uuid.UUID]any
+type SpaceSubOptions map[string]any
+
+type SpaceAttributes map[uuid.UUID]*entry.SpaceAttribute
+
+type SpaceSubAttributes map[string]any
 
 type SpaceEffectiveOptions SpaceOptions
 
-type SpaceEffectiveSubOptions map[uuid.UUID]any
+type SpaceEffectiveSubOptions map[string]any
 
 type Profile struct {
 	Bio         *string `json:"bio,omitempty"`

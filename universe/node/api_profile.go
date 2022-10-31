@@ -16,8 +16,21 @@ type Form struct {
 	File *multipart.FileHeader `form:"file" binding:"required"`
 }
 
+// @BasePath /api/v4
+
+// @Summary Edits a profile
+// @Schemes
+// @Description Edits a profile
+// @Tags profile
+// @Accept json
+// @Produce json
+// @Param request body node.apiProfileUpdate.Body true "body params"
+// @Success 200 {object} dto.User
+// @Success 500 {object} api.HTTPError
+// @Success 400 {object} api.HTTPError
+// @Router /api/v4/profile [patch]
 func (n *Node) apiProfileUpdate(c *gin.Context) {
-	inBody := struct {
+	type Body struct {
 		Name    *string `json:"name"`
 		Profile *struct {
 			Name        *string `json:"name"`
@@ -26,7 +39,9 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 			Location    *string `json:"location"`
 			AvatarHash  *string `json:"avatarHash"`
 		} `json:"profile"`
-	}{}
+	}
+
+	inBody := Body{}
 
 	if err := c.ShouldBindJSON(&inBody); err != nil {
 		err = errors.WithMessage(err, "Node: apiProfileUpdate: failed to bind json")
