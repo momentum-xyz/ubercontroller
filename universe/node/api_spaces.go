@@ -13,10 +13,16 @@ import (
 )
 
 func (n *Node) apiSpacesSetSpaceSubOption(c *gin.Context) {
-	inQuery := struct {
-		SubOptionKey   string `form:"sub_option_key" binding:"required"`
-		SubOptionValue any    `form:"sub_option_value" binding:"required"`
+	inBody := struct {
+		SubOptionKey   string `json:"sub_option_key" binding:"required"`
+		SubOptionValue any    `json:"sub_option_value" binding:"required"`
 	}{}
+
+	if err := c.ShouldBindJSON(&inBody); err != nil {
+		err = errors.WithMessage(err, "Node: apiSpacesSetSpaceSubOption: failed to bind json")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
 
 	spaceID, err := uuid.Parse(c.Param("spaceID"))
 	if err != nil {
@@ -34,36 +40,72 @@ func (n *Node) apiSpacesSetSpaceSubOption(c *gin.Context) {
 
 	modifyFn := func(current *entry.SpaceOptions) (*entry.SpaceOptions, error) {
 		if current == nil {
-			return &entry.SpaceOptions{
-				Subs: map[string]any{
-					inQuery.SubOptionKey: inQuery.SubOptionValue,
-				},
-			}, nil
+			current = &entry.SpaceOptions{}
 		}
-
 		if current.Subs == nil {
-			current.Subs = map[string]any{
-				inQuery.SubOptionKey: inQuery.SubOptionValue,
-			}
-			return current, nil
+			current.Subs = make(map[string]any)
 		}
 
-		current.Subs[inQuery.SubOptionKey] = inQuery.SubOptionValue
+		current.Subs[inBody.SubOptionKey] = inBody.SubOptionValue
 
 		return current, nil
 	}
 
 	if err := space.SetOptions(modifyFn, true); err != nil {
-		err := errors.WithMessagef(err, "Node: apiSpacesSetSpaceSubOption: failed to set options")
+		err := errors.WithMessage(err, "Node: apiSpacesSetSpaceSubOption: failed to set options")
 		api.AbortRequest(c, http.StatusInternalServerError, "set_options_failed", err, n.log)
 		return
 	}
 
 	out := dto.SpaceSubOptions{
-		inQuery.SubOptionKey: inQuery.SubOptionValue,
+		inBody.SubOptionKey: inBody.SubOptionValue,
 	}
 
 	c.JSON(http.StatusOK, out)
+}
+
+func (n *Node) apiSpacesRemoveSpaceSubOption(c *gin.Context) {
+	inBody := struct {
+		SubOptionKey string `json:"sub_option_key" binding:"required"`
+	}{}
+
+	if err := c.ShouldBindJSON(&inBody); err != nil {
+		err = errors.WithMessage(err, "Node: apiSpacesRemoveSpaceSubOption: failed to bind json")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
+	spaceID, err := uuid.Parse(c.Param("spaceID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSpacesRemoveSpaceSubOption: failed to parse space id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, n.log)
+		return
+	}
+
+	space, ok := n.GetSpaceFromAllSpaces(spaceID)
+	if !ok {
+		err := errors.Errorf("Node: apiSpacesRemoveSpaceSubOption: space not found: %s", spaceID)
+		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		return
+	}
+
+	modifyFn := func(current *entry.SpaceOptions) (*entry.SpaceOptions, error) {
+		if current == nil || current.Subs == nil {
+			return current, nil
+		}
+
+		delete(current.Subs, inBody.SubOptionKey)
+
+		return current, nil
+	}
+
+	if err := space.SetOptions(modifyFn, true); err != nil {
+		err := errors.WithMessage(err, "Node: apiSpacesRemoveSpaceSubOption: failed to set options")
+		api.AbortRequest(c, http.StatusInternalServerError, "set_options_failed", err, n.log)
+		return
+	}
+
+	c.JSON(http.StatusOK, nil)
 }
 
 // @Summary Returns space effective options
