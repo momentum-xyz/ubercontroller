@@ -61,7 +61,7 @@ func (n *Node) apiSpacesSetSpaceSubOption(c *gin.Context) {
 		inBody.SubOptionKey: inBody.SubOptionValue,
 	}
 
-	c.JSON(http.StatusOK, out)
+	c.JSON(http.StatusAccepted, out)
 }
 
 func (n *Node) apiSpacesRemoveSpaceSubOption(c *gin.Context) {
