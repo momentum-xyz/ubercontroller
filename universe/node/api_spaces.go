@@ -1,6 +1,7 @@
 package node
 
 import (
+	"github.com/momentum-xyz/ubercontroller/universe"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -41,17 +42,10 @@ func (n *Node) apiSpacesGetSpacesWithChildren(c *gin.Context) {
 
 	spaces := world.GetSpaces(false)
 
-	options := make([]dto.ExploreOption, len(spaces))
+	options := make([]dto.ExploreOption, 0, len(spaces))
 
 	for _, space := range spaces {
-		pluginID, err := uuid.Parse("f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0")
-		if err != nil {
-			err := errors.WithMessage(err, "Node: apiSpacesGetSpacesWithChildren: failed to parse plugin id")
-			api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
-			return
-		}
-
-		attributeID := entry.NewAttributeID(pluginID, "name")
+		attributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.SpaceAttributeNameName)
 		value, ok := space.GetSpaceAttributeValue(attributeID)
 		if !ok {
 			err := errors.Errorf("Node: apiSpacesGetSpacesWithChildren: attribute value not found: %s", attributeID)
@@ -59,24 +53,26 @@ func (n *Node) apiSpacesGetSpacesWithChildren(c *gin.Context) {
 			return
 		}
 
-		name := (*value)["name"]
-
-		// TODO: check if space has child
+		name := (*value)[universe.SpaceAttributeNameName]
 
 		subSpaces := space.GetSpaces(false)
-		subSpacesOptions := make([]dto.SubSpace, len(subSpaces))
+		subSpacesOptions := make([]dto.SubSpace, 0, len(subSpaces))
 
 		for _, subSpace := range subSpaces {
-			subSpaceAttributeID := entry.NewAttributeID(pluginID, "name")
-			subSpaceValue, ok := space.GetSpaceAttributeValue(subSpaceAttributeID)
-			if !ok {
+			subSpaceValue, subOk := subSpace.GetSpaceAttributeValue(attributeID)
+			if !subOk {
 				err := errors.Errorf("Node: apiSpacesGetSpacesWithChildren: attribute value not found: %s", attributeID)
 				api.AbortRequest(c, http.StatusNotFound, "attribute_value_not_found", err, n.log)
 				return
 			}
 
-			subSpaceName := (*subSpaceValue)["name"]
+			if subSpaceValue == nil {
+				err := errors.Errorf("Node: apiSpacesGetSpacesWithChildren: subSpaceValue value not found")
+				api.AbortRequest(c, http.StatusNotFound, "attribute_value_not_found", err, n.log)
+				return
+			}
 
+			subSpaceName := (*subSpaceValue)[universe.SpaceAttributeNameName]
 			subSpacesOption := dto.SubSpace{
 				ID:   subSpace.GetID(),
 				Name: subSpaceName,
@@ -93,8 +89,6 @@ func (n *Node) apiSpacesGetSpacesWithChildren(c *gin.Context) {
 
 		options = append(options, option)
 	}
-
-	// TODO: filter options for particular spaces
 
 	c.JSON(http.StatusOK, options)
 }
