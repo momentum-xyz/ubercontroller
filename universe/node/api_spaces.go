@@ -39,11 +39,41 @@ func (n *Node) apiSpacesGetSpacesWithChildren(c *gin.Context) {
 		return
 	}
 
-	spaces := world.GetAllSpaces()
+	spaces := world.GetSpaces(false)
 
-	// out := dto.SpaceEffectiveOptions(space.GetEffectiveOptions())
+	options := make(dto.ExploreOptions)
 
-	c.JSON(http.StatusOK, spaces)
+	for _, space := range spaces {
+		pluginID, err := uuid.Parse("f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0")
+		if err != nil {
+			err := errors.WithMessage(err, "Node: apiSpacesGetSpacesWithChildren: failed to parse plugin id")
+			api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
+			return
+		}
+
+		attributeID := entry.NewAttributeID(pluginID, "name")
+		value, ok := space.GetSpaceAttributeValue(attributeID)
+		if !ok {
+			err := errors.Errorf("Node: apiSpacesGetSpacesWithChildren: attribute value not found: %s", attributeID)
+			api.AbortRequest(c, http.StatusNotFound, "attribute_value_not_found", err, n.log)
+			return
+		}
+
+		name := (*value)["name"]
+
+		// TODO: check if space has child
+
+		option := dto.ExploreOption{
+			Name:     name,
+			HasChild: false,
+		}
+
+		options[space.GetID()] = option
+	}
+
+	// TODO: filter options for particular spaces
+
+	c.JSON(http.StatusOK, options)
 }
 
 func (n *Node) apiSpacesSetSpaceSubOption(c *gin.Context) {

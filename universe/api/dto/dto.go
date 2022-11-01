@@ -6,6 +6,8 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 )
 
+type ExploreOptions map[uuid.UUID]ExploreOption
+
 type Plugins map[uuid.UUID]string
 
 type PluginsMeta map[uuid.UUID]PluginMeta
@@ -27,6 +29,11 @@ type SpaceSubAttributes map[string]any
 type SpaceEffectiveOptions SpaceOptions
 
 type SpaceEffectiveSubOptions map[string]any
+
+type ExploreOption struct {
+	Name     any  `json:"name,omitempty"`
+	HasChild bool `json:"hasChild,omitempty"`
+}
 
 type Profile struct {
 	Bio         *string `json:"bio,omitempty"`
