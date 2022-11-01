@@ -194,3 +194,58 @@ func (n *Node) apiSetSpaceAttributeSubValue(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, out)
 }
+
+func (n *Node) apiRemoveSpaceAttributeSubValue(c *gin.Context) {
+	inBody := struct {
+		PluginID        string `json:"plugin_id" binding:"required"`
+		AttributeName   string `json:"attribute_name" binding:"required"`
+		SubAttributeKey string `json:"sub_attribute_key" binding:"required"`
+	}{}
+
+	if err := c.ShouldBindJSON(&inBody); err != nil {
+		err = errors.WithMessage(err, "Node: apiRemoveSpaceAttributeSubValue: failed to bind json")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
+	spaceID, err := uuid.Parse(c.Param("spaceID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiRemoveSpaceAttributeSubValue: failed to parse space id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, n.log)
+		return
+	}
+
+	pluginID, err := uuid.Parse(inBody.PluginID)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiRemoveSpaceAttributeSubValue: failed to parse plugin id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
+		return
+	}
+
+	space, ok := n.GetSpaceFromAllSpaces(spaceID)
+	if !ok {
+		err := errors.Errorf("Node: apiRemoveSpaceAttributeSubValue: space not found: %s", spaceID)
+		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		return
+	}
+
+	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
+
+	modifyFn := func(current *entry.AttributeValue) (*entry.AttributeValue, error) {
+		if current == nil {
+			return current, nil
+		}
+
+		delete(*current, inBody.SubAttributeKey)
+
+		return current, nil
+	}
+
+	if err := space.UpdateSpaceAttributeValue(attributeID, modifyFn, true); err != nil {
+		err = errors.WithMessage(err, "Node: apiRemoveSpaceAttributeSubValue: failed to update space attribute")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_update", err, n.log)
+		return
+	}
+
+	c.JSON(http.StatusOK, nil)
+}
