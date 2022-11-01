@@ -241,7 +241,7 @@ func (n *Node) apiRemoveSpaceAttributeSubValue(c *gin.Context) {
 		return current, nil
 	}
 
-	if err := space.UpdateSpaceAttributeValue(attributeID, modifyFn, true); err != nil {
+	if _, err := space.UpdateSpaceAttributeValue(attributeID, modifyFn, true); err != nil {
 		err = errors.WithMessage(err, "Node: apiRemoveSpaceAttributeSubValue: failed to update space attribute")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_update", err, n.log)
 		return
