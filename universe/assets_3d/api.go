@@ -15,17 +15,18 @@ func (a *Assets3d) RegisterAPI(r *gin.Engine) {
 	{
 		assets3d := vx.Group("/assets-3d")
 		{
-			assets3d.GET("/:asset3dID", a.apiGetAsset3d)
+			asset3d := assets3d.Group("/:asset3dID")
+			{
+				asset3d.GET("", a.apiGetAsset3d)
+
+				asset3d.DELETE("", a.ApiRemoveAsset3d)
+
+				asset3d.POST("", a.apiCreateAsset3d)
+			}
 
 			assets3d.GET("", a.apiGetAssets3d)
 
-			assets3d.POST("/create-asset-3d", a.apiCreateAsset3d)
-
-			assets3d.POST("/add-asset-3d", a.apiAddAssets3d)
-
-			assets3d.DELETE("/remove-asset-3d/:asset3dID", a.apiRemoveAsset3d)
-
-			assets3d.DELETE("/remove-assets-3d", a.apiRemoveAssets3d)
+			assets3d.POST("/add", a.apiAddAssets3d)
 
 			assets3d.DELETE("/remove-assets-3d-ids", a.apiRemoveAssets3dByIDs)
 
