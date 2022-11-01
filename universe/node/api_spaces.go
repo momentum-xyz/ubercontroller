@@ -12,6 +12,40 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/api/dto"
 )
 
+// @Summary Returns spaces and one level of children based on world_id
+// @Schemes
+// @Description Returns space information and one level of children (used in explore widget)
+// @Tags spaces
+// @Accept json
+// @Produce json
+// @Param world_id path string true "World ID"
+// @Success 200 {object} dto.SpaceEffectiveOptions
+// @Success 500 {object} api.HTTPError
+// @Success 400 {object} api.HTTPError
+// @Success 404 {object} api.HTTPError
+// @Router /api/v4/spaces/{world_id} [get]
+func (n *Node) apiSpacesGetSpacesWithChildren(c *gin.Context) {
+	spaceID, err := uuid.Parse(c.Param("spaceID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSpacesGetSpacesWithChildren: failed to parse space id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, n.log)
+		return
+	}
+
+	world, ok := n.GetWorlds().GetWorld(spaceID)
+	if !ok {
+		err := errors.Errorf("Node: apiSpacesGetSpacesWithChildren: space not found: %s", spaceID)
+		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, n.log)
+		return
+	}
+
+	spaces := world.GetAllSpaces()
+
+	// out := dto.SpaceEffectiveOptions(space.GetEffectiveOptions())
+
+	c.JSON(http.StatusOK, spaces)
+}
+
 func (n *Node) apiSpacesSetSpaceSubOption(c *gin.Context) {
 	inBody := struct {
 		SubOptionKey   string `json:"sub_option_key" binding:"required"`

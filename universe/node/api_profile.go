@@ -1,7 +1,6 @@
 package node
 
 import (
-	"io"
 	"mime/multipart"
 	"net/http"
 
@@ -95,21 +94,21 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 	n.apiUsersGetMe(c)
 }
 
-func (n *Node) apiProfileUploadAvatar(c *gin.Context) {
-	var form Form
-	_ := c.ShouldBind(&form)
-	openedFile, _ := form.File.Open()
-	file, _ := io.ReadAll(openedFile)
-
-	resp, err := http.PostForm("https://httpbin.org/post", file)
-	if err != nil {
-		err = errors.WithMessage(err, "failed to update user avatar")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_update_user_avatar", err, n.log)
-		return
-	}
-
-	var res map[string]interface{}
-
-	json.NewDecoder(resp.Body).Decode(&res)
-	// c.String(http.StatusOK, fmt.Sprintf("'%s' uploaded!", file.Filename))
-}
+//func (n *Node) apiProfileUploadAvatar(c *gin.Context) {
+//	var form Form
+//	_ := c.ShouldBind(&form)
+//	openedFile, _ := form.File.Open()
+//	file, _ := io.ReadAll(openedFile)
+//
+//	resp, err := http.PostForm("https://httpbin.org/post", file)
+//	if err != nil {
+//		err = errors.WithMessage(err, "failed to update user avatar")
+//		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_update_user_avatar", err, n.log)
+//		return
+//	}
+//
+//	var res map[string]interface{}
+//
+//	json.NewDecoder(resp.Body).Decode(&res)
+//	// c.String(http.StatusOK, fmt.Sprintf("'%s' uploaded!", file.Filename))
+//}

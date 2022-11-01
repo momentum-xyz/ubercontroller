@@ -43,13 +43,15 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		authProfile := auth.Group("/profile")
 		{
 			authProfile.PATCH("", n.apiProfileUpdate)
-			authProfile.POST("/:userID/avatar", n.apiProfileUploadAvatar)
+			// authProfile.POST("/:userID/avatar", n.apiProfileUploadAvatar)
 		}
 
 		authSpaces := auth.Group("/spaces")
 		{
 			authSpace := authSpaces.Group("/:spaceID")
 			{
+				authSpace.GET("", n.apiSpacesGetSpacesWithChildren)
+
 				authSpace.POST("/options/sub", n.apiSpacesSetSpaceSubOption)
 				authSpace.DELETE("/options/sub", n.apiSpacesRemoveSpaceSubOption)
 
