@@ -147,7 +147,7 @@ func (a *Assets3d) apiAddAsset3d(c *gin.Context) {
 		return
 	}
 
-	if err := a.AddAsset3d(newAsset, false); err != nil {
+	if err := a.AddAsset3d(newAsset, true); err != nil {
 		err = errors.WithMessage(err, "Assets3d: apiAddAsset3d: failed to add asset3d")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_add_asset3d", err, a.log)
 		return
@@ -200,7 +200,7 @@ func (a *Assets3d) apiAddAssets3d(c *gin.Context) {
 		addAssets3d = append(addAssets3d, newAsset)
 	}
 
-	if err := a.AddAssets3d(addAssets3d, false); err != nil {
+	if err := a.AddAssets3d(addAssets3d, true); err != nil {
 		err = errors.WithMessage(err, "Assets3d: apiAddAssets3d: failed to add assets3d")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_add_assets3d", err, a.log)
 		return
@@ -224,7 +224,7 @@ func (a *Assets3d) apiRemoveAsset3d(c *gin.Context) {
 		return
 	}
 
-	if err := a.RemoveAsset3d(getAsset3d, false); err != nil {
+	if err := a.RemoveAsset3d(getAsset3d, true); err != nil {
 		err = errors.WithMessage(err, "Assets3d: apiRemoveAsset3d: failed to remove asset3d")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_remove_asset3d", err, a.log)
 		return
@@ -244,7 +244,7 @@ func (a *Assets3d) apiRemoveAssets3dByIDs(c *gin.Context) {
 		return
 	}
 
-	uids := make([]uuid.UUID, len(in.ids))
+	uids := make([]uuid.UUID, 0, len(in.ids))
 	for _, id := range in.ids {
 		uid, err := uuid.Parse(id)
 		if err != nil {
@@ -255,7 +255,7 @@ func (a *Assets3d) apiRemoveAssets3dByIDs(c *gin.Context) {
 		uids = append(uids, uid)
 	}
 
-	if err := a.RemoveAssets3dByIDs(uids, false); err != nil {
+	if err := a.RemoveAssets3dByIDs(uids, true); err != nil {
 		err = errors.WithMessage(err, "Assets3d: apiRemoveAssets3dByIDs: failed to remove assets3d")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_remove_assets3d_by_ids", err, a.log)
 		return
