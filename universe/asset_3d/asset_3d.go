@@ -80,24 +80,24 @@ func (a *Asset3d) GetOptions() *entry.Asset3dOptions {
 	return a.entry.Options
 }
 
-func (a *Asset3d) SetOptions(modifyFn modify.Fn[entry.Asset3dOptions], updateDB bool) error {
+func (a *Asset3d) SetOptions(modifyFn modify.Fn[entry.Asset3dOptions], updateDB bool) (*entry.Asset3dOptions, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
 	options, err := modifyFn(a.entry.Options)
 	if err != nil {
-		return errors.WithMessage(err, "failed to modify options")
+		return nil, errors.WithMessage(err, "failed to modify options")
 	}
 
 	if updateDB {
 		if err := a.db.Assets3dUpdateAssetOptions(a.ctx, a.entry.Asset3dID, options); err != nil {
-			return errors.WithMessage(err, "failed to update db")
+			return nil, errors.WithMessage(err, "failed to update db")
 		}
 	}
 
 	a.entry.Options = options
 
-	return nil
+	return options, nil
 }
 
 func (a *Asset3d) GetEntry() *entry.Asset3d {

@@ -51,7 +51,7 @@ func (n *Node) apiSpacesSetSpaceSubOption(c *gin.Context) {
 		return current, nil
 	}
 
-	if err := space.SetOptions(modifyFn, true); err != nil {
+	if _, err := space.SetOptions(modifyFn, true); err != nil {
 		err := errors.WithMessage(err, "Node: apiSpacesSetSpaceSubOption: failed to set options")
 		api.AbortRequest(c, http.StatusInternalServerError, "set_options_failed", err, n.log)
 		return
@@ -99,7 +99,7 @@ func (n *Node) apiSpacesRemoveSpaceSubOption(c *gin.Context) {
 		return current, nil
 	}
 
-	if err := space.SetOptions(modifyFn, true); err != nil {
+	if _, err := space.SetOptions(modifyFn, true); err != nil {
 		err := errors.WithMessage(err, "Node: apiSpacesRemoveSpaceSubOption: failed to set options")
 		api.AbortRequest(c, http.StatusInternalServerError, "set_options_failed", err, n.log)
 		return

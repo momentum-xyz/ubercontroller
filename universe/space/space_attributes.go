@@ -148,13 +148,13 @@ func (s *Space) UpsertSpaceAttribute(
 
 func (s *Space) UpdateSpaceAttributeValue(
 	attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool,
-) error {
+) (*entry.AttributeValue, error) {
 	s.spaceAttributes.Mu.Lock()
 	defer s.spaceAttributes.Mu.Unlock()
 
 	payload, ok := s.spaceAttributes.Data[attributeID]
 	if !ok {
-		return errors.Errorf("space attribute not found")
+		return nil, errors.Errorf("space attribute not found")
 	}
 	if payload == nil {
 		payload = entry.NewAttributePayload(nil, nil)
@@ -162,32 +162,32 @@ func (s *Space) UpdateSpaceAttributeValue(
 
 	value, err := modifyFn(payload.Value)
 	if err != nil {
-		return errors.WithMessage(err, "failed to modify value")
+		return nil, errors.WithMessage(err, "failed to modify value")
 	}
 
 	if updateDB {
 		if err := s.db.SpaceAttributesUpdateSpaceAttributeValue(
 			s.ctx, entry.NewSpaceAttributeID(attributeID, s.GetID()), value,
 		); err != nil {
-			return errors.WithMessage(err, "failed to update db")
+			return nil, errors.WithMessage(err, "failed to update db")
 		}
 	}
 
 	payload.Value = value
 	s.spaceAttributes.Data[attributeID] = payload
 
-	return nil
+	return value, nil
 }
 
 func (s *Space) UpdateSpaceAttributeOptions(
 	attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool,
-) error {
+) (*entry.AttributeOptions, error) {
 	s.spaceAttributes.Mu.Lock()
 	defer s.spaceAttributes.Mu.Unlock()
 
 	payload, ok := s.spaceAttributes.Data[attributeID]
 	if !ok {
-		return errors.Errorf("space attribute not found")
+		return nil, errors.Errorf("space attribute not found")
 	}
 	if payload == nil {
 		payload = entry.NewAttributePayload(nil, nil)
@@ -195,21 +195,21 @@ func (s *Space) UpdateSpaceAttributeOptions(
 
 	options, err := modifyFn(payload.Options)
 	if err != nil {
-		return errors.WithMessage(err, "failed to modify options")
+		return nil, errors.WithMessage(err, "failed to modify options")
 	}
 
 	if updateDB {
 		if err := s.db.SpaceAttributesUpdateSpaceAttributeOptions(
 			s.ctx, entry.NewSpaceAttributeID(attributeID, s.GetID()), options,
 		); err != nil {
-			return errors.WithMessage(err, "failed to update db")
+			return nil, errors.WithMessage(err, "failed to update db")
 		}
 	}
 
 	payload.Options = options
 	s.spaceAttributes.Data[attributeID] = payload
 
-	return nil
+	return options, nil
 }
 
 func (s *Space) RemoveSpaceAttribute(attributeID entry.AttributeID, updateDB bool) (bool, error) {

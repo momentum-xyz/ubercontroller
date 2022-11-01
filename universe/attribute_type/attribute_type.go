@@ -73,24 +73,26 @@ func (a *AttributeType) GetDescription() *string {
 	return a.description
 }
 
-func (a *AttributeType) SetOptions(modifyFn modify.Fn[entry.AttributeOptions], updateDB bool) error {
+func (a *AttributeType) SetOptions(
+	modifyFn modify.Fn[entry.AttributeOptions], updateDB bool,
+) (*entry.AttributeOptions, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
 	options, err := modifyFn(a.options)
 	if err != nil {
-		return errors.WithMessage(err, "failed to modify options")
+		return nil, errors.WithMessage(err, "failed to modify options")
 	}
 
 	if updateDB {
 		if err := a.db.AttributeTypesUpdateAttributeTypeOptions(a.ctx, a.id, options); err != nil {
-			return errors.WithMessage(err, "failed to update db")
+			return nil, errors.WithMessage(err, "failed to update db")
 		}
 	}
 
 	a.options = options
 
-	return nil
+	return options, nil
 }
 
 func (a *AttributeType) SetDescription(description *string, updateDB bool) error {
@@ -129,7 +131,7 @@ func (a *AttributeType) LoadFromEntry(entry *entry.AttributeType) error {
 	if err := a.SetDescription(entry.Description, false); err != nil {
 		return errors.WithMessage(err, "failed to set description")
 	}
-	if err := a.SetOptions(modify.MergeWith(entry.Options), false); err != nil {
+	if _, err := a.SetOptions(modify.MergeWith(entry.Options), false); err != nil {
 		return errors.WithMessage(err, "failed to set options")
 	}
 

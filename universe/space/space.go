@@ -234,25 +234,25 @@ func (s *Space) GetOptions() *entry.SpaceOptions {
 	return s.options
 }
 
-func (s *Space) SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool) error {
+func (s *Space) SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool) (*entry.SpaceOptions, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	options, err := modifyFn(s.options)
 	if err != nil {
-		return errors.WithMessage(err, "failed to modify options")
+		return nil, errors.WithMessage(err, "failed to modify options")
 	}
 
 	if updateDB {
 		if err := s.db.SpacesUpdateSpaceOptions(s.ctx, s.id, options); err != nil {
-			return errors.WithMessage(err, "failed to update db")
+			return nil, errors.WithMessage(err, "failed to update db")
 		}
 	}
 
 	s.options = options
 	s.effectiveOptions = nil
 
-	return nil
+	return options, nil
 }
 
 func (s *Space) GetEffectiveOptions() *entry.SpaceOptions {
@@ -371,7 +371,7 @@ func (s *Space) loadSelfData(spaceEntry *entry.Space) error {
 		return errors.WithMessagef(err, "failed to set owner id: %s", spaceEntry.OwnerID)
 	}
 
-	if err := s.SetOptions(modify.ReplaceWith(spaceEntry.Options), false); err != nil {
+	if _, err := s.SetOptions(modify.MergeWith(spaceEntry.Options), false); err != nil {
 		return errors.WithMessage(err, "failed to set options")
 	}
 

@@ -106,17 +106,17 @@ func (u *UserType) GetOptions() *entry.UserOptions {
 	return u.options
 }
 
-func (u *UserType) SetOptions(modifyFn modify.Fn[entry.UserOptions], updateDB bool) error {
+func (u *UserType) SetOptions(modifyFn modify.Fn[entry.UserOptions], updateDB bool) (*entry.UserOptions, error) {
 	u.mu.Lock()
 	options, err := modifyFn(u.options)
 	if err != nil {
-		return errors.WithMessage(err, "failed to modify options")
+		return nil, errors.WithMessage(err, "failed to modify options")
 	}
 
 	if updateDB {
 		if err := u.db.UserTypesUpdateUserTypeOptions(u.ctx, u.id, options); err != nil {
 			u.mu.Unlock()
-			return errors.WithMessage(err, "failed to update db")
+			return nil, errors.WithMessage(err, "failed to update db")
 		}
 	}
 
@@ -132,12 +132,12 @@ func (u *UserType) SetOptions(modifyFn modify.Fn[entry.UserOptions], updateDB bo
 				continue
 			}
 			if err := user.Update(); err != nil {
-				return errors.WithMessagef(err, "failed to update user: %s", user.GetID())
+				return nil, errors.WithMessagef(err, "failed to update user: %s", user.GetID())
 			}
 		}
 	}
 
-	return nil
+	return options, nil
 }
 
 func (u *UserType) GetEntry() *entry.UserType {
@@ -165,7 +165,7 @@ func (u *UserType) LoadFromEntry(entry *entry.UserType) error {
 	if err := u.SetDescription(entry.Description, false); err != nil {
 		return errors.WithMessage(err, "failed to set description")
 	}
-	if err := u.SetOptions(modify.MergeWith(entry.Options), false); err != nil {
+	if _, err := u.SetOptions(modify.MergeWith(entry.Options), false); err != nil {
 		return errors.WithMessage(err, "failed to set options")
 	}
 

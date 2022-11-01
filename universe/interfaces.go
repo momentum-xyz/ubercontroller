@@ -88,10 +88,10 @@ type Node interface {
 
 	UpdateNodeAttributeValue(
 		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool,
-	) error
+	) (*entry.AttributeValue, error)
 	UpdateNodeAttributeOptions(
 		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool,
-	) error
+	) (*entry.AttributeOptions, error)
 
 	RemoveNodeAttribute(attributeID entry.AttributeID, updateDB bool) (bool, error)
 	RemoveNodeAttributes(attributeIDs []entry.AttributeID, updateDB bool) (bool, error)
@@ -148,7 +148,7 @@ type Space interface {
 
 	GetOptions() *entry.SpaceOptions
 	GetEffectiveOptions() *entry.SpaceOptions
-	SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool) error
+	SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool) (*entry.SpaceOptions, error)
 
 	GetAsset2D() Asset2d
 	SetAsset2D(asset2d Asset2d, updateDB bool) error
@@ -196,10 +196,10 @@ type Space interface {
 
 	UpdateSpaceAttributeValue(
 		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool,
-	) error
+	) (*entry.AttributeValue, error)
 	UpdateSpaceAttributeOptions(
 		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool,
-	) error
+	) (*entry.AttributeOptions, error)
 
 	RemoveSpaceAttribute(attributeID entry.AttributeID, updateDB bool) (bool, error)
 	RemoveSpaceAttributes(attributeIDs []entry.AttributeID, updateDB bool) (bool, error)
@@ -272,7 +272,7 @@ type SpaceType interface {
 	SetDescription(description *string, updateDB bool) error
 
 	GetOptions() *entry.SpaceOptions
-	SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool) error
+	SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool) (*entry.SpaceOptions, error)
 
 	GetAsset2d() Asset2d
 	SetAsset2d(asset2d Asset2d, updateDB bool) error
@@ -310,7 +310,7 @@ type UserType interface {
 	SetDescription(description *string, updateDB bool) error
 
 	GetOptions() *entry.UserOptions
-	SetOptions(modifyFn modify.Fn[entry.UserOptions], updateDB bool) error
+	SetOptions(modifyFn modify.Fn[entry.UserOptions], updateDB bool) (*entry.UserOptions, error)
 
 	GetEntry() *entry.UserType
 	LoadFromEntry(entry *entry.UserType) error
@@ -339,7 +339,7 @@ type Asset2d interface {
 	SetMeta(meta *entry.Asset2dMeta, updateDB bool) error
 
 	GetOptions() *entry.Asset2dOptions
-	SetOptions(modifyFn modify.Fn[entry.Asset2dOptions], updateDB bool) error
+	SetOptions(modifyFn modify.Fn[entry.Asset2dOptions], updateDB bool) (*entry.Asset2dOptions, error)
 
 	GetEntry() *entry.Asset2d
 	LoadFromEntry(entry *entry.Asset2d) error
@@ -368,7 +368,7 @@ type Asset3d interface {
 	SetMeta(meta *entry.Asset3dMeta, updateDB bool) error
 
 	GetOptions() *entry.Asset3dOptions
-	SetOptions(modifyFn modify.Fn[entry.Asset3dOptions], updateDB bool) error
+	SetOptions(modifyFn modify.Fn[entry.Asset3dOptions], updateDB bool) (*entry.Asset3dOptions, error)
 
 	GetEntry() *entry.Asset3d
 	LoadFromEntry(entry *entry.Asset3d) error
@@ -397,7 +397,7 @@ type AttributeType interface {
 	GetPluginID() uuid.UUID
 
 	GetOptions() *entry.AttributeOptions
-	SetOptions(modifyFn modify.Fn[entry.AttributeOptions], updateDB bool) error
+	SetOptions(modifyFn modify.Fn[entry.AttributeOptions], updateDB bool) (*entry.AttributeOptions, error)
 
 	GetDescription() *string
 	SetDescription(description *string, updateDB bool) error
@@ -429,7 +429,7 @@ type Plugin interface {
 	SetMeta(meta *entry.PluginMeta, updateDB bool) error
 
 	GetOptions() *entry.PluginOptions
-	SetOptions(modifyFn modify.Fn[entry.PluginOptions], updateDB bool) error
+	SetOptions(modifyFn modify.Fn[entry.PluginOptions], updateDB bool) (*entry.PluginOptions, error)
 
 	GetEntry() *entry.Plugin
 	LoadFromEntry(entry *entry.Plugin) error

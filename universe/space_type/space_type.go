@@ -178,17 +178,17 @@ func (s *SpaceType) GetOptions() *entry.SpaceOptions {
 	return s.options
 }
 
-func (s *SpaceType) SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool) error {
+func (s *SpaceType) SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool) (*entry.SpaceOptions, error) {
 	s.mu.Lock()
 	options, err := modifyFn(s.options)
 	if err != nil {
-		return errors.WithMessage(err, "failed to modify options")
+		return nil, errors.WithMessage(err, "failed to modify options")
 	}
 
 	if updateDB {
 		if err := s.db.SpaceTypesUpdateSpaceTypeOptions(s.ctx, s.id, options); err != nil {
 			s.mu.Unlock()
-			return errors.WithMessage(err, "failed to update db")
+			return nil, errors.WithMessage(err, "failed to update db")
 		}
 	}
 
@@ -203,11 +203,11 @@ func (s *SpaceType) SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB 
 			continue
 		}
 		if err := space.Update(true); err != nil {
-			return errors.WithMessagef(err, "failed to update space: %s", space.GetID())
+			return nil, errors.WithMessagef(err, "failed to update space: %s", space.GetID())
 		}
 	}
 
-	return nil
+	return options, nil
 }
 
 func (s *SpaceType) GetEntry() *entry.SpaceType {
@@ -247,7 +247,7 @@ func (s *SpaceType) LoadFromEntry(entry *entry.SpaceType) error {
 	if err := s.SetDescription(entry.Description, false); err != nil {
 		return errors.WithMessage(err, "failed to set description")
 	}
-	if err := s.SetOptions(modify.MergeWith(entry.Options), false); err != nil {
+	if _, err := s.SetOptions(modify.MergeWith(entry.Options), false); err != nil {
 		return errors.WithMessage(err, "failed to set options")
 	}
 

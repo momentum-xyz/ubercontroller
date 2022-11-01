@@ -128,7 +128,7 @@ func (n *Node) apiSetSpaceAttributeSubValue(c *gin.Context) {
 		PluginID          string `json:"plugin_id" binding:"required"`
 		AttributeName     string `json:"attribute_name" binding:"required"`
 		SubAttributeKey   string `json:"sub_attribute_key" binding:"required"`
-		SubAttributeValue string `json:"sub_attribute_value" binding:"required"`
+		SubAttributeValue any    `json:"sub_attribute_value" binding:"required"`
 	}{}
 
 	if err := c.ShouldBindJSON(&inBody); err != nil {
