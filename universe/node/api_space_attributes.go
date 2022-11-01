@@ -196,15 +196,15 @@ func (n *Node) apiSetSpaceAttributeSubValue(c *gin.Context) {
 }
 
 func (n *Node) apiRemoveSpaceAttributeSubValue(c *gin.Context) {
-	inQuery := struct {
-		PluginID        string `form:"plugin_id" binding:"required"`
-		AttributeName   string `form:"attribute_name" binding:"required"`
-		SubAttributeKey string `form:"sub_attribute_key" binding:"required"`
+	inBody := struct {
+		PluginID        string `json:"plugin_id" binding:"required"`
+		AttributeName   string `json:"attribute_name" binding:"required"`
+		SubAttributeKey string `json:"sub_attribute_key" binding:"required"`
 	}{}
 
-	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		err := errors.WithMessage(err, "Node: apiRemoveSpaceAttributeSubValue: failed to bind query")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
+	if err := c.ShouldBindJSON(&inBody); err != nil {
+		err = errors.WithMessage(err, "Node: apiRemoveSpaceAttributeSubValue: failed to bind json")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
 		return
 	}
 
@@ -215,7 +215,7 @@ func (n *Node) apiRemoveSpaceAttributeSubValue(c *gin.Context) {
 		return
 	}
 
-	pluginID, err := uuid.Parse(inQuery.PluginID)
+	pluginID, err := uuid.Parse(inBody.PluginID)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiRemoveSpaceAttributeSubValue: failed to parse plugin id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
@@ -229,21 +229,21 @@ func (n *Node) apiRemoveSpaceAttributeSubValue(c *gin.Context) {
 		return
 	}
 
-	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
+	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
 
 	modifyFn := func(current *entry.AttributeValue) (*entry.AttributeValue, error) {
 		if current == nil {
 			return current, nil
 		}
 
-		delete(*current, inQuery.SubAttributeKey)
+		delete(*current, inBody.SubAttributeKey)
 
 		return current, nil
 	}
 
 	if err := space.UpdateSpaceAttributeValue(attributeID, modifyFn, true); err != nil {
-		err = errors.WithMessage(err, "Node: apiRemoveSpaceAttributeSubValue: failed to remove space attribute")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert", err, n.log)
+		err = errors.WithMessage(err, "Node: apiRemoveSpaceAttributeSubValue: failed to update space attribute")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_update", err, n.log)
 		return
 	}
 
