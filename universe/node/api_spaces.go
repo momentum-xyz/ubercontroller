@@ -23,7 +23,7 @@ import (
 // @Success 500 {object} api.HTTPError
 // @Success 400 {object} api.HTTPError
 // @Success 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{world_id} [get]
+// @Router /api/v4/spaces/{space_id} [get]
 func (n *Node) apiSpacesGetSpacesWithChildren(c *gin.Context) {
 	spaceID, err := uuid.Parse(c.Param("spaceID"))
 	if err != nil {
@@ -41,7 +41,7 @@ func (n *Node) apiSpacesGetSpacesWithChildren(c *gin.Context) {
 
 	spaces := world.GetSpaces(false)
 
-	options := make(dto.ExploreOptions)
+	options := make([]dto.ExploreOption, len(spaces))
 
 	for _, space := range spaces {
 		pluginID, err := uuid.Parse("f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0")
@@ -63,17 +63,67 @@ func (n *Node) apiSpacesGetSpacesWithChildren(c *gin.Context) {
 
 		// TODO: check if space has child
 
-		option := dto.ExploreOption{
-			Name:     name,
-			HasChild: false,
+		subSpaces := space.GetSpaces(false)
+		subSpacesOptions := make([]dto.SubSpace, len(subSpaces))
+
+		for _, subSpace := range subSpaces {
+			subSpaceAttributeID := entry.NewAttributeID(pluginID, "name")
+			subSpaceValue, ok := space.GetSpaceAttributeValue(subSpaceAttributeID)
+			if !ok {
+				err := errors.Errorf("Node: apiSpacesGetSpacesWithChildren: attribute value not found: %s", attributeID)
+				api.AbortRequest(c, http.StatusNotFound, "attribute_value_not_found", err, n.log)
+				return
+			}
+
+			subSpaceName := (*subSpaceValue)["name"]
+
+			subSpacesOption := dto.SubSpace{
+				ID:   subSpace.GetID(),
+				Name: subSpaceName,
+			}
+
+			subSpacesOptions = append(subSpacesOptions, subSpacesOption)
 		}
 
-		options[space.GetID()] = option
+		option := dto.ExploreOption{
+			ID:        space.GetID(),
+			Name:      name,
+			SubSpaces: subSpacesOptions,
+		}
+
+		options = append(options, option)
 	}
 
 	// TODO: filter options for particular spaces
 
 	c.JSON(http.StatusOK, options)
+}
+
+// @Summary Returns categorized list of spaces based on a search query
+// @Schemes
+// @Description Returns categorized list of spaces based on a search query for use with the Explore widget
+// @Tags spaces
+// @Accept json
+// @Produce json
+// @Param world_id path string true "World ID"
+// @Success 200 {object} dto.SpaceEffectiveOptions
+// @Success 500 {object} api.HTTPError
+// @Success 400 {object} api.HTTPError
+// @Success 404 {object} api.HTTPError
+// @Router /api/v4/spaces/explore [get]
+func (n *Node) apiSpacesExplore(c *gin.Context) {
+	inQuery := struct {
+		Query   string `form:"query"`
+		WorldID string `form:"world_id" binding:"required"`
+		SpaceID string `form:"space_id" binding:"required"`
+	}{}
+
+	if err := c.ShouldBindQuery(&inQuery); err != nil {
+		err := errors.WithMessage(err, "Plugins: apiSpacesExplore: failed to bind query")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
+		return
+	}
+
 }
 
 func (n *Node) apiSpacesSetSpaceSubOption(c *gin.Context) {
