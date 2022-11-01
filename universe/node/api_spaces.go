@@ -45,23 +45,32 @@ func (n *Node) apiSpacesGetSpacesWithChildren(c *gin.Context) {
 	options := make([]dto.ExploreOption, 0, len(spaces))
 
 	for _, space := range spaces {
-		attributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.SpaceAttributeNameName)
-		value, ok := space.GetSpaceAttributeValue(attributeID)
-		if !ok {
-			err := errors.Errorf("Node: apiSpacesGetSpacesWithChildren: attribute value not found: %s", attributeID)
-			api.AbortRequest(c, http.StatusNotFound, "attribute_value_not_found", err, n.log)
+		nameAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.SpaceAttributeNameName)
+		nameValue, nameOk := space.GetSpaceAttributeValue(nameAttributeID)
+		if !nameOk {
+			err := errors.Errorf("Node: apiSpacesGetSpacesWithChildren: name attribute value not found: %s", nameAttributeID)
+			api.AbortRequest(c, http.StatusNotFound, "attribute_value_name_not_found", err, n.log)
 			return
 		}
 
-		name := (*value)[universe.SpaceAttributeNameName]
+		descriptionAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.SpaceAttributeNameDescription)
+		descriptionValue, descriptionOk := space.GetSpaceAttributeValue(nameAttributeID)
+		if !descriptionOk {
+			err := errors.Errorf("Node: apiSpacesGetSpacesWithChildren: attribute value not found: %s", descriptionAttributeID)
+			api.AbortRequest(c, http.StatusNotFound, "attribute_value_description_not_found", err, n.log)
+			return
+		}
+
+		name := (*nameValue)[universe.SpaceAttributeNameName]
+		description := (*descriptionValue)[universe.SpaceAttributeNameDescription]
 
 		subSpaces := space.GetSpaces(false)
 		subSpacesOptions := make([]dto.SubSpace, 0, len(subSpaces))
 
 		for _, subSpace := range subSpaces {
-			subSpaceValue, subOk := subSpace.GetSpaceAttributeValue(attributeID)
+			subSpaceValue, subOk := subSpace.GetSpaceAttributeValue(nameAttributeID)
 			if !subOk {
-				err := errors.Errorf("Node: apiSpacesGetSpacesWithChildren: attribute value not found: %s", attributeID)
+				err := errors.Errorf("Node: apiSpacesGetSpacesWithChildren: attribute value not found: %s", nameAttributeID)
 				api.AbortRequest(c, http.StatusNotFound, "attribute_value_not_found", err, n.log)
 				return
 			}
@@ -73,6 +82,7 @@ func (n *Node) apiSpacesGetSpacesWithChildren(c *gin.Context) {
 			}
 
 			subSpaceName := (*subSpaceValue)[universe.SpaceAttributeNameName]
+
 			subSpacesOption := dto.SubSpace{
 				ID:   subSpace.GetID(),
 				Name: subSpaceName,
@@ -82,9 +92,10 @@ func (n *Node) apiSpacesGetSpacesWithChildren(c *gin.Context) {
 		}
 
 		option := dto.ExploreOption{
-			ID:        space.GetID(),
-			Name:      name,
-			SubSpaces: subSpacesOptions,
+			ID:          space.GetID(),
+			Name:        name,
+			Description: description,
+			SubSpaces:   subSpacesOptions,
 		}
 
 		options = append(options, option)

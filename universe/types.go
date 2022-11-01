@@ -9,5 +9,6 @@ const (
 	KusamaUserAttributeWalletWalletKey = "wallet"
 
 	// space
-	SpaceAttributeNameName = "name"
+	SpaceAttributeNameName        = "name"
+	SpaceAttributeNameDescription = "description"
 )

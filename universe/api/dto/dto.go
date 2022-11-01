@@ -31,9 +31,10 @@ type SpaceEffectiveOptions SpaceOptions
 type SpaceEffectiveSubOptions map[string]any
 
 type ExploreOption struct {
-	ID        uuid.UUID  `json:"id,omitempty"`
-	Name      any        `json:"name,omitempty"`
-	SubSpaces []SubSpace `json:"subSpaces,omitempty"`
+	ID          uuid.UUID  `json:"id,omitempty"`
+	Name        any        `json:"name,omitempty"`
+	Description any        `json:"description"`
+	SubSpaces   []SubSpace `json:"subSpaces,omitempty"`
 }
 
 type Profile struct {
@@ -185,12 +186,12 @@ type Space struct {
 type SubSpace struct {
 	ID          uuid.UUID `json:"id,omitempty"`
 	Name        any       `json:"name,omitempty"`
-	Description string    `json:"description,omitempty"`
+	Description any       `json:"description,omitempty"`
 	Type        SpaceType `json:"type,omitempty"`
 	SubSpaces   []struct {
-		ID           string    `json:"id,omitempty"`
-		Name         string    `json:"name,omitempty"`
-		Description  string    `json:"description,omitempty"`
+		ID           uuid.UUID `json:"id,omitempty"`
+		Name         any       `json:"name,omitempty"`
+		Description  any       `json:"description,omitempty"`
 		Type         SpaceType `json:"type,omitempty"`
 		HasSubSpaces bool      `json:"hasSubSpaces,omitempty"`
 	} `json:"subSpaces,omitempty"`
