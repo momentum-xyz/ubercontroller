@@ -174,7 +174,7 @@ func (db *DB) UserUserAttributesUpsertUserUserAttribute(
 	attribute, err := db.UserUserAttributesGetUserUserAttributeByID(ctx, userUserAttributeID)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
-			return nil, errors.WithMessage(err, "failed to query db")
+			return nil, errors.WithMessage(err, "failed to get attribute by id")
 		}
 	} else {
 		payload = attribute.AttributePayload
@@ -398,18 +398,18 @@ func (db *DB) UserUserAttributesRemoveUserUserAttributeByID(
 
 func (db *DB) UserUserAttributesUpdateUserUserAttributeValue(
 	ctx context.Context, userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributeValue],
-) error {
+) (*entry.AttributeValue, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
 	value, err := db.UserUserAttributesGetUserUserAttributeValueByID(ctx, userUserAttributeID)
 	if err != nil {
-		return errors.WithMessage(err, "failed to query db")
+		return nil, errors.WithMessage(err, "failed to get value by id")
 	}
 
 	value, err = modifyFn(value)
 	if err != nil {
-		return errors.WithMessage(err, "failed to modify value")
+		return nil, errors.WithMessage(err, "failed to modify value")
 	}
 
 	if _, err := db.conn.Exec(
@@ -418,26 +418,26 @@ func (db *DB) UserUserAttributesUpdateUserUserAttributeValue(
 		userUserAttributeID.SourceUserID, userUserAttributeID.TargetUserID,
 		value,
 	); err != nil {
-		return errors.WithMessage(err, "failed to exec db")
+		return nil, errors.WithMessage(err, "failed to exec db")
 	}
 
-	return nil
+	return value, nil
 }
 
 func (db *DB) UserUserAttributesUpdateUserUserAttributeOptions(
 	ctx context.Context, userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributeOptions],
-) error {
+) (*entry.AttributeOptions, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
 	options, err := db.UserUserAttributesGetUserUserAttributeOptionsByID(ctx, userUserAttributeID)
 	if err != nil {
-		return errors.WithMessage(err, "failed to query db")
+		return nil, errors.WithMessage(err, "failed to get options by id")
 	}
 
 	options, err = modifyFn(options)
 	if err != nil {
-		return errors.WithMessage(err, "failed to modify options")
+		return nil, errors.WithMessage(err, "failed to modify options")
 	}
 
 	if _, err := db.conn.Exec(
@@ -446,8 +446,8 @@ func (db *DB) UserUserAttributesUpdateUserUserAttributeOptions(
 		userUserAttributeID.SourceUserID, userUserAttributeID.TargetUserID,
 		options,
 	); err != nil {
-		return errors.WithMessage(err, "failed to exec db")
+		return nil, errors.WithMessage(err, "failed to exec db")
 	}
 
-	return nil
+	return options, nil
 }

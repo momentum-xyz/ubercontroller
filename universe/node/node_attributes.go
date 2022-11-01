@@ -114,13 +114,13 @@ func (n *Node) GetNodeAttributesPayload() map[entry.NodeAttributeID]*entry.Attri
 
 func (n *Node) UpdateNodeAttributeValue(
 	attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool,
-) error {
+) (*entry.AttributeValue, error) {
 	n.nodeAttributes.Mu.Lock()
 	defer n.nodeAttributes.Mu.Unlock()
 
 	payload, ok := n.nodeAttributes.Data[attributeID]
 	if !ok {
-		return errors.Errorf("not attribute not found")
+		return nil, errors.Errorf("not attribute not found")
 	}
 	if payload == nil {
 		payload = entry.NewAttributePayload(nil, nil)
@@ -128,32 +128,32 @@ func (n *Node) UpdateNodeAttributeValue(
 
 	value, err := modifyFn(payload.Value)
 	if err != nil {
-		return errors.WithMessage(err, "failed to modify value")
+		return nil, errors.WithMessage(err, "failed to modify value")
 	}
 
 	if updateDB {
 		if err := n.db.NodeAttributesUpdateNodeAttributeValue(
 			n.ctx, attributeID, value,
 		); err != nil {
-			return errors.WithMessage(err, "failed to update db")
+			return nil, errors.WithMessage(err, "failed to update db")
 		}
 	}
 
 	payload.Value = value
 	n.nodeAttributes.Data[attributeID] = payload
 
-	return nil
+	return value, nil
 }
 
 func (n *Node) UpdateNodeAttributeOptions(
 	attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool,
-) error {
+) (*entry.AttributeOptions, error) {
 	n.nodeAttributes.Mu.Lock()
 	defer n.nodeAttributes.Mu.Unlock()
 
 	payload, ok := n.nodeAttributes.Data[attributeID]
 	if !ok {
-		return errors.Errorf("node attribute not found")
+		return nil, errors.Errorf("node attribute not found")
 	}
 	if payload == nil {
 		payload = entry.NewAttributePayload(nil, nil)
@@ -161,21 +161,21 @@ func (n *Node) UpdateNodeAttributeOptions(
 
 	options, err := modifyFn(payload.Options)
 	if err != nil {
-		return errors.WithMessage(err, "failed to modify options")
+		return nil, errors.WithMessage(err, "failed to modify options")
 	}
 
 	if updateDB {
 		if err := n.db.NodeAttributesUpdateNodeAttributeOptions(
 			n.ctx, attributeID, options,
 		); err != nil {
-			return errors.WithMessage(err, "failed to update db")
+			return nil, errors.WithMessage(err, "failed to update db")
 		}
 	}
 
 	payload.Options = options
 	n.nodeAttributes.Data[attributeID] = payload
 
-	return nil
+	return options, nil
 }
 
 func (n *Node) RemoveNodeAttribute(attributeID entry.AttributeID, updateDB bool) (bool, error) {

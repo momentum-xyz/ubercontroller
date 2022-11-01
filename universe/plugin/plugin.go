@@ -82,24 +82,24 @@ func (p *Plugin) GetOptions() *entry.PluginOptions {
 	return p.options
 }
 
-func (p *Plugin) SetOptions(modifyFn modify.Fn[entry.PluginOptions], updateDB bool) error {
+func (p *Plugin) SetOptions(modifyFn modify.Fn[entry.PluginOptions], updateDB bool) (*entry.PluginOptions, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	options, err := modifyFn(p.options)
 	if err != nil {
-		return errors.WithMessage(err, "failed to modify options")
+		return nil, errors.WithMessage(err, "failed to modify options")
 	}
 
 	if updateDB {
 		if err := p.db.PluginsUpdatePluginOptions(p.ctx, p.id, options); err != nil {
-			return errors.WithMessage(err, "failed to update db")
+			return nil, errors.WithMessage(err, "failed to update db")
 		}
 	}
 
 	p.options = options
 
-	return nil
+	return options, nil
 }
 
 func (p *Plugin) GetEntry() *entry.Plugin {
@@ -126,7 +126,7 @@ func (p *Plugin) LoadFromEntry(entry *entry.Plugin) error {
 			return errors.WithMessage(err, "failed to resolve shared library")
 		}
 	}
-	if err = p.SetOptions(modify.MergeWith(entry.Options), false); err != nil {
+	if _, err = p.SetOptions(modify.MergeWith(entry.Options), false); err != nil {
 		return errors.WithMessage(err, "failed to set options")
 	}
 	if err := p.SetMeta(entry.Meta, false); err != nil {

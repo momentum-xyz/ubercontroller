@@ -18,6 +18,8 @@ import (
 const (
 	getSpaceUserAttributesQuery                   = `SELECT * FROM space_user_attribute;`
 	getSpaceUserAttributeByIDQuery                = `SELECT * FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3 AND user_id = $4;`
+	getSpaceUserAttributeValueByIDQuery           = `SELECT value FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3 AND user_id = $4;`
+	getSpaceUserAttributeOptionsByIDQuery         = `SELECT options FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3 AND user_id = $4;`
 	getSpaceUserAttributesBySpaceIDQuery          = `SELECT * FROM space_user_attribute WHERE space_id = $1;`
 	getSpaceUserAttributesByUserIDQuery           = `SELECT * FROM space_user_attribute WHERE user_id = $1;`
 	getSpaceUserAttributesBySpaceIDAndUserIDQuery = `SELECT * FROM space_user_attribute WHERE space_id = $1 AND user_id = $2;`
@@ -95,6 +97,32 @@ func (db *DB) SpaceUserAttributesGetSpaceUserAttributeByID(
 	return &attribute, nil
 }
 
+func (db *DB) SpaceUserAttributesGetSpaceUserAttributeValueByID(
+	ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
+) (*entry.AttributeValue, error) {
+	var value entry.AttributeValue
+	if err := pgxscan.Get(ctx, db.conn, &value, getSpaceUserAttributeValueByIDQuery,
+		spaceUserAttributeID.PluginID, spaceUserAttributeID.Name,
+		spaceUserAttributeID.SpaceID, spaceUserAttributeID.UserID,
+	); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return &value, nil
+}
+
+func (db *DB) SpaceUserAttributesGetSpaceUserAttributeOptionsByID(
+	ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
+) (*entry.AttributeOptions, error) {
+	var options entry.AttributeOptions
+	if err := pgxscan.Get(ctx, db.conn, &options, getSpaceUserAttributeOptionsByIDQuery,
+		spaceUserAttributeID.PluginID, spaceUserAttributeID.Name,
+		spaceUserAttributeID.SpaceID, spaceUserAttributeID.UserID,
+	); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return &options, nil
+}
+
 func (db *DB) SpaceUserAttributesGetSpaceUserAttributesBySpaceID(
 	ctx context.Context, spaceID uuid.UUID,
 ) ([]*entry.SpaceUserAttribute, error) {
@@ -137,7 +165,7 @@ func (db *DB) SpaceUserAttributesUpsertSpaceUserAttribute(
 	attribute, err := db.SpaceUserAttributesGetSpaceUserAttributeByID(ctx, spaceUserAttributeID)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
-			return nil, errors.WithMessage(err, "failed to query db")
+			return nil, errors.WithMessage(err, "failed to get attribute by id")
 		}
 	} else {
 		payload = attribute.AttributePayload
@@ -359,33 +387,55 @@ func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeByID(
 }
 
 func (db *DB) SpaceUserAttributesUpdateSpaceUserAttributeValue(
-	ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID, value *entry.AttributeValue,
-) error {
+	ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributeValue],
+) (*entry.AttributeValue, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
+
+	value, err := db.SpaceUserAttributesGetSpaceUserAttributeValueByID(ctx, spaceUserAttributeID)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to get value by id")
+	}
+
+	value, err = modifyFn(value)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to modify value")
+	}
 
 	if _, err := db.conn.Exec(
 		ctx, updateSpaceUserAttributeValueQuery,
 		spaceUserAttributeID.PluginID, spaceUserAttributeID.Name, spaceUserAttributeID.SpaceID, spaceUserAttributeID.UserID,
 		value,
 	); err != nil {
-		return errors.WithMessage(err, "failed to exec db")
+		return nil, errors.WithMessage(err, "failed to exec db")
 	}
-	return nil
+
+	return value, nil
 }
 
 func (db *DB) SpaceUserAttributesUpdateSpaceUserAttributeOptions(
-	ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID, options *entry.AttributeOptions,
-) error {
+	ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributeOptions],
+) (*entry.AttributeOptions, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
+
+	options, err := db.SpaceUserAttributesGetSpaceUserAttributeOptionsByID(ctx, spaceUserAttributeID)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to get options by id")
+	}
+
+	options, err = modifyFn(options)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to modify options")
+	}
 
 	if _, err := db.conn.Exec(
 		ctx, updateSpaceUserAttributeOptionsQuery,
 		spaceUserAttributeID.PluginID, spaceUserAttributeID.Name, spaceUserAttributeID.SpaceID, spaceUserAttributeID.UserID,
 		options,
 	); err != nil {
-		return errors.WithMessage(err, "failed to exec db")
+		return nil, errors.WithMessage(err, "failed to exec db")
 	}
-	return nil
+
+	return options, nil
 }
