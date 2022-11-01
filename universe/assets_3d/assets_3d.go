@@ -171,8 +171,8 @@ func (a *Assets3d) RemoveAssets3dByIDs(ids []uuid.UUID, updateDB bool) error {
 		}
 	}
 
-	for _, id := range ids {
-		delete(a.assets.Data, id)
+	for i := range ids {
+		delete(a.assets.Data, ids[i])
 	}
 
 	return nil

@@ -19,7 +19,7 @@ func (a *Assets3d) apiCreateAsset3d(c *gin.Context) {
 		Options *entry.Asset3dOptions `json:"options"`
 	}{}
 
-	if err := c.ShouldBindJSON(&in); err != nil {
+	if err := c.ShouldBindJSON(&inBody); err != nil {
 		err = errors.WithMessage(err, "Assets3d: apiCreateAsset3d: failed to bind json")
 		api.AbortRequest(c, http.StatusInternalServerError, "invalid_request_query", err, a.log)
 		return
@@ -39,18 +39,13 @@ func (a *Assets3d) apiCreateAsset3d(c *gin.Context) {
 		return
 	}
 
-	if err := crAsset3d.SetMeta(in.Meta, false); err != nil {
+	if err := crAsset3d.SetMeta(inBody.Meta, false); err != nil {
 		err = errors.WithMessage(err, "Assets3d: apiCreateAsset3d: failed to set asset3d meta")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_asset3d_meta", err, a.log)
 		return
 	}
 
-	modFn := func(ops *entry.Asset3dOptions) (*entry.Asset3dOptions, error) {
-		if ops == nil {
-			return nil, nil
-		}
-		modify.ReplaceWith(ops)
-	}
+	modFn := modify.ReplaceWith(inBody.Options)
 
 	if err = crAsset3d.SetOptions(modFn, false); err != nil {
 		err = errors.WithMessage(err, "Assets3d: apiCreateAsset3d: failed to set asset3d options")
@@ -84,7 +79,7 @@ func (a *Assets3d) apiGetAsset3d(c *gin.Context) {
 
 func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 	a3dMap := a.GetAssets3d()
-	assets := make([]*entry.Asset3d, len(a3dMap))
+	assets := make([]*entry.Asset3d, 0, len(a3dMap))
 
 	// TODO: rework this in a different method
 	// or in a more generic way
@@ -113,35 +108,30 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 }
 
 func (a *Assets3d) apiAddAsset3d(c *gin.Context) {
-	in := struct {
+	inBody := struct {
 		asset3d entry.Asset3d `json:"asset3d"`
 	}{}
 
-	if err := c.ShouldBindJSON(&in); err != nil {
+	if err := c.ShouldBindJSON(&inBody); err != nil {
 		err = errors.WithMessage(err, "Assets3d: apiAddAsset3d: failed to bind json")
 		api.AbortRequest(c, http.StatusInternalServerError, "invalid_request_query", err, a.log)
 		return
 	}
 
-	newAsset, err := a.CreateAsset3d(in.asset3d.Asset3dID)
+	newAsset, err := a.CreateAsset3d(inBody.asset3d.Asset3dID)
 	if err != nil {
 		err = errors.WithMessage(err, "Assets3d: apiAddAsset3d: failed to create asset3d from input")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_create_asset3d", err, a.log)
 		return
 	}
 
-	if err := newAsset.SetMeta(in.asset3d.Meta, false); err != nil {
+	if err := newAsset.SetMeta(inBody.asset3d.Meta, false); err != nil {
 		err = errors.WithMessage(err, "Assets3d: apiAddAsset3d: failed to set asset3d meta")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_asset3d_meta", err, a.log)
 		return
 	}
 
-	modFn := func(ops *entry.Asset3dOptions) (*entry.Asset3dOptions, error) {
-		if ops == nil {
-			return nil, nil
-		}
-		modify.ReplaceWith(ops)
-	}
+	modFn := modify.ReplaceWith(inBody.asset3d.Options)
 
 	err = newAsset.SetOptions(modFn, false)
 	if err != nil {
@@ -164,14 +154,14 @@ func (a *Assets3d) apiAddAssets3d(c *gin.Context) {
 		assets3d []entry.Asset3d `json:"assets3d"`
 	}{}
 
-	if err := c.ShouldBindJSON(&in); err != nil {
+	if err := c.ShouldBindJSON(&inBody); err != nil {
 		err = errors.WithMessage(err, "Assets3d: apiAddAssets3d: failed to bind json")
 		api.AbortRequest(c, http.StatusInternalServerError, "invalid_request_query", err, a.log)
 		return
 	}
 
-	addAssets3d := make([]universe.Asset3d, len(in.assets3d))
-	for _, asset3d := range in.assets3d {
+	addAssets3d := make([]universe.Asset3d, len(inBody.assets3d))
+	for _, asset3d := range inBody.assets3d {
 		newAsset, err := a.CreateAsset3d(asset3d.Asset3dID)
 		if err != nil {
 			err = errors.WithMessage(err, "Assets3d: apiAddAssets3d: failed to create asset3d from input")
@@ -209,7 +199,7 @@ func (a *Assets3d) apiAddAssets3d(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, in)
+	c.JSON(http.StatusOK, nil)
 }
 
 func (a *Assets3d) apiRemoveAsset3d(c *gin.Context) {
