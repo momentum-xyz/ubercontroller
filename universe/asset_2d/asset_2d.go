@@ -80,24 +80,24 @@ func (a *Asset2d) GetOptions() *entry.Asset2dOptions {
 	return a.entry.Options
 }
 
-func (a *Asset2d) SetOptions(modifyFn modify.Fn[entry.Asset2dOptions], updateDB bool) error {
+func (a *Asset2d) SetOptions(modifyFn modify.Fn[entry.Asset2dOptions], updateDB bool) (*entry.Asset2dOptions, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
 	options, err := modifyFn(a.entry.Options)
 	if err != nil {
-		return errors.WithMessage(err, "failed to modify options")
+		return nil, errors.WithMessage(err, "failed to modify options")
 	}
 
 	if updateDB {
 		if err := a.db.Assets2dUpdateAssetOptions(a.ctx, a.entry.Asset2dID, options); err != nil {
-			return errors.WithMessage(err, "failed to update db")
+			return nil, errors.WithMessage(err, "failed to update db")
 		}
 	}
 
 	a.entry.Options = options
 
-	return nil
+	return options, nil
 }
 
 func (a *Asset2d) GetEntry() *entry.Asset2d {

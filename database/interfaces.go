@@ -230,6 +230,12 @@ type SpaceUserAttributesDB interface {
 	SpaceUserAttributesGetSpaceUserAttributeByID(
 		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
 	) (*entry.SpaceUserAttribute, error)
+	SpaceUserAttributesGetSpaceUserAttributeValueByID(
+		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
+	) (*entry.AttributeValue, error)
+	SpaceUserAttributesGetSpaceUserAttributeOptionsByID(
+		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
+	) (*entry.AttributeOptions, error)
 	SpaceUserAttributesGetSpaceUserAttributesBySpaceID(
 		ctx context.Context, spaceID uuid.UUID,
 	) ([]*entry.SpaceUserAttribute, error)
@@ -293,11 +299,11 @@ type SpaceUserAttributesDB interface {
 	) error
 
 	SpaceUserAttributesUpdateSpaceUserAttributeOptions(
-		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID, options *entry.AttributeOptions,
-	) error
+		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributeOptions],
+	) (*entry.AttributeOptions, error)
 	SpaceUserAttributesUpdateSpaceUserAttributeValue(
-		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID, value *entry.AttributeValue,
-	) error
+		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributeValue],
+	) (*entry.AttributeValue, error)
 }
 
 type UserAttributesDB interface {
@@ -339,10 +345,10 @@ type UserAttributesDB interface {
 
 	UserAttributesUpdateUserAttributeValue(
 		ctx context.Context, userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributeValue],
-	) error
+	) (*entry.AttributeValue, error)
 	UserAttributesUpdateUserAttributeOptions(
 		ctx context.Context, userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributeOptions],
-	) error
+	) (*entry.AttributeOptions, error)
 }
 
 type UserUserAttributesDB interface {
@@ -422,8 +428,8 @@ type UserUserAttributesDB interface {
 
 	UserUserAttributesUpdateUserUserAttributeValue(
 		ctx context.Context, userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributeValue],
-	) error
+	) (*entry.AttributeValue, error)
 	UserUserAttributesUpdateUserUserAttributeOptions(
 		ctx context.Context, userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributeOptions],
-	) error
+	) (*entry.AttributeOptions, error)
 }

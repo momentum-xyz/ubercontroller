@@ -133,7 +133,7 @@ func (db *DB) UserAttributesUpsertUserAttribute(
 	attribute, err := db.UserAttributesGetUserAttributeByID(ctx, userAttributeID)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
-			return nil, errors.WithMessage(err, "failed to query db")
+			return nil, errors.WithMessage(err, "failed to get attribute by id")
 		}
 	} else {
 		payload = attribute.AttributePayload
@@ -240,50 +240,50 @@ func (db *DB) UserAttributesRemoveUserAttributeByID(
 
 func (db *DB) UserAttributesUpdateUserAttributeValue(
 	ctx context.Context, userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributeValue],
-) error {
+) (*entry.AttributeValue, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
 	value, err := db.UserAttributesGetUserAttributeValueByID(ctx, userAttributeID)
 	if err != nil {
-		return errors.WithMessage(err, "failed to query db")
+		return nil, errors.WithMessage(err, "failed to get value by id")
 	}
 
 	value, err = modifyFn(value)
 	if err != nil {
-		return errors.WithMessage(err, "failed to modify value")
+		return nil, errors.WithMessage(err, "failed to modify value")
 	}
 
 	if _, err := db.conn.Exec(
 		ctx, updateUserAttributeValueQuery, userAttributeID.PluginID, userAttributeID.Name, userAttributeID.UserID, value,
 	); err != nil {
-		return errors.WithMessage(err, "failed to exec db")
+		return nil, errors.WithMessage(err, "failed to exec db")
 	}
 
-	return nil
+	return value, nil
 }
 
 func (db *DB) UserAttributesUpdateUserAttributeOptions(
 	ctx context.Context, userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributeOptions],
-) error {
+) (*entry.AttributeOptions, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
 	options, err := db.UserAttributesGetUserAttributeOptionsByID(ctx, userAttributeID)
 	if err != nil {
-		return errors.WithMessage(err, "failed to query db")
+		return nil, errors.WithMessage(err, "failed to get options by id")
 	}
 
 	options, err = modifyFn(options)
 	if err != nil {
-		return errors.WithMessage(err, "failed to modify options")
+		return nil, errors.WithMessage(err, "failed to modify options")
 	}
 
 	if _, err := db.conn.Exec(
 		ctx, updateUserAttributeOptionsQuery, userAttributeID.PluginID, userAttributeID.Name, userAttributeID.UserID, options,
 	); err != nil {
-		return errors.WithMessage(err, "failed to exec db")
+		return nil, errors.WithMessage(err, "failed to exec db")
 	}
 
-	return nil
+	return options, nil
 }
