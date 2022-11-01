@@ -116,17 +116,31 @@ func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 // @Success 400 {object} api.HTTPError
 // @Success 404 {object} api.HTTPError
 // @Router /api/v4/worlds/{world_id}/search [get]
-func (w *Worlds) apiWorldsExplore(c *gin.Context) {
+func (w *Worlds) apiWorldsSearch(c *gin.Context) {
 	inQuery := struct {
 		Query   string `form:"query"`
-		WorldID string `form:"world_id" binding:"required"`
 		SpaceID string `form:"space_id" binding:"required"`
 	}{}
 
 	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		err := errors.WithMessage(err, "Plugins: apiSpacesExplore: failed to bind query")
+		err := errors.WithMessage(err, "Plugins: apiWorldsSearch: failed to bind query")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, w.log)
 		return
 	}
 
+	worldID, err := uuid.Parse(c.Param("worldID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiWorldsSearch: failed to parse world id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
+		return
+	}
+
+	world, ok := w.GetWorld(worldID)
+	if !ok {
+		err := errors.Errorf("Node: apiWorldsSearch: world not found: %s", worldID)
+		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
+		return
+	}
+
+	world.GetSpace()
 }
