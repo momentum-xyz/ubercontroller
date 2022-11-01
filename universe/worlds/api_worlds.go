@@ -24,18 +24,18 @@ import (
 // @Success 500 {object} api.HTTPError
 // @Success 400 {object} api.HTTPError
 // @Success 404 {object} api.HTTPError
-// @Router /api/v4/worlds/{space_id} [get]
+// @Router /api/v4/worlds/{world_id}/explore [get]
 func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
-	spaceID, err := uuid.Parse(c.Param("spaceID"))
+	worldID, err := uuid.Parse(c.Param("worldID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSpacesGetSpacesWithChildren: failed to parse space id")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, w.log)
+		err := errors.WithMessage(err, "Node: apiWorldsGetSpacesWithChildren: failed to parse world id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
 		return
 	}
 
-	world, ok := w.GetWorld(spaceID)
+	world, ok := w.GetWorld(worldID)
 	if !ok {
-		err := errors.Errorf("Node: apiSpacesGetSpacesWithChildren: space not found: %s", spaceID)
+		err := errors.Errorf("Node: apiWorldsGetSpacesWithChildren: space not found: %s", worldID)
 		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
 		return
 	}
@@ -48,7 +48,7 @@ func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 		nameAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.SpaceAttributeNameName)
 		nameValue, nameOk := space.GetSpaceAttributeValue(nameAttributeID)
 		if !nameOk {
-			err := errors.Errorf("Node: apiSpacesGetSpacesWithChildren: name attribute value not found: %s", nameAttributeID)
+			err := errors.Errorf("Node: apiWorldsGetSpacesWithChildren: name attribute value not found: %s", nameAttributeID)
 			api.AbortRequest(c, http.StatusNotFound, "attribute_value_name_not_found", err, w.log)
 			return
 		}
@@ -56,7 +56,7 @@ func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 		descriptionAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.SpaceAttributeNameDescription)
 		descriptionValue, descriptionOk := space.GetSpaceAttributeValue(nameAttributeID)
 		if !descriptionOk {
-			err := errors.Errorf("Node: apiSpacesGetSpacesWithChildren: attribute value not found: %s", descriptionAttributeID)
+			err := errors.Errorf("Node: apiWorldsGetSpacesWithChildren: attribute value not found: %s", descriptionAttributeID)
 			api.AbortRequest(c, http.StatusNotFound, "attribute_value_description_not_found", err, w.log)
 			return
 		}
@@ -70,13 +70,13 @@ func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 		for _, subSpace := range subSpaces {
 			subSpaceValue, subOk := subSpace.GetSpaceAttributeValue(nameAttributeID)
 			if !subOk {
-				err := errors.Errorf("Node: apiSpacesGetSpacesWithChildren: attribute value not found: %s", nameAttributeID)
+				err := errors.Errorf("Node: apiWorldsGetSpacesWithChildren: attribute value not found: %s", nameAttributeID)
 				api.AbortRequest(c, http.StatusNotFound, "attribute_value_not_found", err, w.log)
 				return
 			}
 
 			if subSpaceValue == nil {
-				err := errors.Errorf("Node: apiSpacesGetSpacesWithChildren: subSpaceValue value not found")
+				err := errors.Errorf("Node: apiWorldsGetSpacesWithChildren: subSpaceValue value not found")
 				api.AbortRequest(c, http.StatusNotFound, "attribute_value_not_found", err, w.log)
 				return
 			}
@@ -115,7 +115,7 @@ func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 // @Success 500 {object} api.HTTPError
 // @Success 400 {object} api.HTTPError
 // @Success 404 {object} api.HTTPError
-// @Router /api/v4/worlds/explore [get]
+// @Router /api/v4/worlds/{world_id}/search [get]
 func (w *Worlds) apiWorldsExplore(c *gin.Context) {
 	inQuery := struct {
 		Query   string `form:"query"`
