@@ -336,7 +336,6 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 	if err := s.loadDependencies(entry); err != nil {
 		return errors.WithMessage(err, "failed to load dependencies")
 	}
-
 	if err := s.SetPosition(entry.Position, false); err != nil {
 		return errors.WithMessage(err, "failed to set position")
 	}
@@ -367,16 +366,17 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 }
 
 func (s *Space) loadSelfData(spaceEntry *entry.Space) error {
+	go func() {
+		if err := s.loadSpaceAttributes(); err != nil {
+			s.log.Error(errors.WithMessage(err, "Space: loadSelfData: failed to load space spaceAttributes"))
+		}
+	}()
+
 	if err := s.SetOwnerID(*spaceEntry.OwnerID, false); err != nil {
 		return errors.WithMessagef(err, "failed to set owner id: %s", spaceEntry.OwnerID)
 	}
-
 	if _, err := s.SetOptions(modify.MergeWith(spaceEntry.Options), false); err != nil {
 		return errors.WithMessage(err, "failed to set options")
-	}
-
-	if err := s.loadSpaceAttributes(); err != nil {
-		return errors.WithMessage(err, "failed to load space spaceAttributes")
 	}
 
 	return nil
@@ -391,10 +391,6 @@ func (s *Space) loadDependencies(entry *entry.Space) error {
 	}
 	if err := s.SetSpaceType(spaceType, false); err != nil {
 		return errors.WithMessagef(err, "failed to set space type: %s", entry.SpaceTypeID)
-	}
-
-	if err := s.loadSpaceAttributes(); err != nil {
-		return errors.WithMessage(err, "failed to load space spaceAttributes")
 	}
 
 	if entry.Asset2dID != nil {

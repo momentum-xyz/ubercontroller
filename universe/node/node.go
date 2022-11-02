@@ -325,9 +325,11 @@ func (n *Node) Save() error {
 }
 
 func (n *Node) loadSelfData() error {
-	if err := n.loadNodeAttributes(); err != nil {
-		return errors.WithMessage(err, "failed to load node attributes")
-	}
+	go func() {
+		if err := n.loadNodeAttributes(); err != nil {
+			n.log.Error(errors.WithMessage(err, "Node: loadSelfData: failed to load node attributes"))
+		}
+	}()
 
 	return nil
 }
