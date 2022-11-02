@@ -1,15 +1,13 @@
 package worlds
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
-	"github.com/momentum-xyz/ubercontroller/types/entry"
-	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/api"
-	"github.com/momentum-xyz/ubercontroller/universe/api/dto"
 	"github.com/pkg/errors"
 )
 
@@ -41,64 +39,11 @@ func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 	}
 
 	spaces := world.GetSpaces(false)
-
-	options := make([]dto.ExploreOption, 0, len(spaces))
-
-	for _, space := range spaces {
-		nameAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.SpaceAttributeNameName)
-		nameValue, nameOk := space.GetSpaceAttributeValue(nameAttributeID)
-		if !nameOk {
-			err := errors.Errorf("Node: apiWorldsGetSpacesWithChildren: name attribute value not found: %s", nameAttributeID)
-			api.AbortRequest(c, http.StatusNotFound, "attribute_value_name_not_found", err, w.log)
-			return
-		}
-
-		descriptionAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.SpaceAttributeNameDescription)
-		descriptionValue, descriptionOk := space.GetSpaceAttributeValue(nameAttributeID)
-		if !descriptionOk {
-			err := errors.Errorf("Node: apiWorldsGetSpacesWithChildren: attribute value not found: %s", descriptionAttributeID)
-			api.AbortRequest(c, http.StatusNotFound, "attribute_value_description_not_found", err, w.log)
-			return
-		}
-
-		name := (*nameValue)[universe.SpaceAttributeNameName]
-		description := (*descriptionValue)[universe.SpaceAttributeNameDescription]
-
-		subSpaces := space.GetSpaces(false)
-		subSpacesOptions := make([]dto.SubSpace, 0, len(subSpaces))
-
-		for _, subSpace := range subSpaces {
-			subSpaceValue, subOk := subSpace.GetSpaceAttributeValue(nameAttributeID)
-			if !subOk {
-				err := errors.Errorf("Node: apiWorldsGetSpacesWithChildren: attribute value not found: %s", nameAttributeID)
-				api.AbortRequest(c, http.StatusNotFound, "attribute_value_not_found", err, w.log)
-				return
-			}
-
-			if subSpaceValue == nil {
-				err := errors.Errorf("Node: apiWorldsGetSpacesWithChildren: subSpaceValue value not found")
-				api.AbortRequest(c, http.StatusNotFound, "attribute_value_not_found", err, w.log)
-				return
-			}
-
-			subSpaceName := (*subSpaceValue)[universe.SpaceAttributeNameName]
-
-			subSpacesOption := dto.SubSpace{
-				ID:   subSpace.GetID(),
-				Name: subSpaceName,
-			}
-
-			subSpacesOptions = append(subSpacesOptions, subSpacesOption)
-		}
-
-		option := dto.ExploreOption{
-			ID:          space.GetID(),
-			Name:        name,
-			Description: description,
-			SubSpaces:   subSpacesOptions,
-		}
-
-		options = append(options, option)
+	options, err := w.GetOptions(spaces)
+	if err != nil {
+		err := errors.Errorf("Node: apiWorldsGetSpacesWithChildren: unable to get options for spaces and subspaces: %s", err)
+		api.AbortRequest(c, http.StatusNotFound, "options_not_found", err, w.log)
+		return
 	}
 
 	c.JSON(http.StatusOK, options)
@@ -142,5 +87,7 @@ func (w *Worlds) apiWorldsSearch(c *gin.Context) {
 		return
 	}
 
-	world.GetSpace()
+	fmt.Sprintln(world)
+
+	// world.GetSpace()
 }
