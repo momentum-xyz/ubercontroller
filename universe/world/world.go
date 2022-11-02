@@ -55,13 +55,13 @@ type World struct {
 
 func NewWorld(id uuid.UUID, db database.DB) *World {
 	world := &World{
-		db: db,
+		db:        db,
+		allSpaces: generic.NewSyncMap[uuid.UUID, universe.Space](),
 	}
 	world.Space = space.NewSpace(id, db, world)
 	world.pluginController = mplugin.NewPluginController(id)
 	//world.corePluginInstance, _ = world.pluginController.AddPlugin(world.GetID(), world.corePluginInitFunc)
 	world.pluginController.AddPlugin(universe.GetSystemPluginID(), world.corePluginInitFunc)
-	world.allSpaces = generic.NewSyncMap[uuid.UUID, universe.Space]()
 	return world
 }
 
@@ -76,11 +76,16 @@ func (w *World) Initialize(ctx context.Context) error {
 	if log == nil {
 		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
 	}
+
 	w.counter.Store(0)
 	w.ctx = ctx
 	w.log = log
 
-	return w.Space.Initialize(ctx)
+	if err := w.Space.Initialize(ctx); err != nil {
+		return errors.WithMessage(err, "failed to initialize space")
+	}
+
+	return w.AddSpaceToAllSpaces(w.Space)
 }
 
 func (w *World) AddToCounter() int64 {
