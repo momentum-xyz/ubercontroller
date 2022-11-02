@@ -1,7 +1,6 @@
 package node
 
 import (
-	"mime/multipart"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -10,10 +9,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/api"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
-
-type Form struct {
-	File *multipart.FileHeader `form:"file" binding:"required"`
-}
 
 // @BasePath /api/v4
 
@@ -93,22 +88,3 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 
 	n.apiUsersGetMe(c)
 }
-
-//func (n *Node) apiProfileUploadAvatar(c *gin.Context) {
-//	var form Form
-//	_ := c.ShouldBind(&form)
-//	openedFile, _ := form.File.Open()
-//	file, _ := io.ReadAll(openedFile)
-//
-//	resp, err := http.PostForm("https://httpbin.org/post", file)
-//	if err != nil {
-//		err = errors.WithMessage(err, "failed to update user avatar")
-//		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_update_user_avatar", err, n.log)
-//		return
-//	}
-//
-//	var res map[string]interface{}
-//
-//	json.NewDecoder(resp.Body).Decode(&res)
-//	// c.String(http.StatusOK, fmt.Sprintf("'%s' uploaded!", file.Filename))
-//}

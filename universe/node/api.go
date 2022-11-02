@@ -43,7 +43,6 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		authProfile := auth.Group("/profile")
 		{
 			authProfile.PATCH("", n.apiProfileUpdate)
-			// authProfile.POST("/:userID/avatar", n.apiProfileUploadAvatar)
 		}
 
 		authSpaces := auth.Group("/spaces")

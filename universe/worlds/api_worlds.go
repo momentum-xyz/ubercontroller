@@ -6,7 +6,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/api"
+	"github.com/momentum-xyz/ubercontroller/universe/api/dto"
 	"github.com/pkg/errors"
 )
 
@@ -38,7 +41,7 @@ func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 	}
 
 	spaces := world.GetSpaces(false)
-	options, err := w.GetOptions(spaces)
+	options := w.apiWorldsGetOptions(c, spaces)
 	if err != nil {
 		err := errors.Errorf("Node: apiWorldsGetSpacesWithChildren: unable to get options for spaces and subspaces: %s", err)
 		api.AbortRequest(c, http.StatusNotFound, "options_not_found", err, w.log)
@@ -46,4 +49,85 @@ func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, options)
+}
+
+func (w *Worlds) apiWorldsGetOptions(c *gin.Context, spaces map[uuid.UUID]universe.Space) []dto.ExploreOption {
+	options := make([]dto.ExploreOption, 0, len(spaces))
+
+	for _, space := range spaces {
+		var description any
+
+		nameAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.SpaceAttributeNameName)
+		nameValue, ok := space.GetSpaceAttributeValue(nameAttributeID)
+		if !ok {
+			err := errors.Errorf("Node: apiWorldsGetOptions: could not get name value: %s", nameAttributeID)
+			api.AbortRequest(c, http.StatusInternalServerError, "invalid_attribute_id", err, w.log)
+			return nil
+		}
+
+		name := (*nameValue)[universe.SpaceAttributeNameName]
+
+		if nameValue == nil {
+			err := errors.Errorf("Node: apiWorldsGetOptions: could not get nameValue: %s", nameValue)
+			api.AbortRequest(c, http.StatusNotFound, "nameValue_not_found", err, w.log)
+			return nil
+		}
+
+		descriptionAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.SpaceAttributeNameDescription)
+		descriptionValue, ok := space.GetSpaceAttributeValue(descriptionAttributeID)
+		if !ok {
+			err := errors.Errorf("Node: apiWorldsGetOptions: could not get description value: %s", descriptionAttributeID)
+			api.AbortRequest(c, http.StatusInternalServerError, "invalid_attribute_id", err, w.log)
+			return nil
+		}
+
+		if descriptionValue != nil {
+			description = (*descriptionValue)[universe.SpaceAttributeNameDescription]
+		}
+
+		subSpaces := space.GetSpaces(false)
+		subOptions := w.apiWorldsGetSubOptions(c, subSpaces)
+
+		option := dto.ExploreOption{
+			ID:          space.GetID(),
+			Name:        name,
+			Description: description,
+			SubSpaces:   subOptions,
+		}
+
+		options = append(options, option)
+	}
+
+	return options
+}
+
+func (w *Worlds) apiWorldsGetSubOptions(c *gin.Context, subSpaces map[uuid.UUID]universe.Space) []dto.SubSpace {
+	subSpacesOptions := make([]dto.SubSpace, 0, len(subSpaces))
+
+	for _, subSpace := range subSpaces {
+		nameAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.SpaceAttributeNameName)
+		subSpaceValue, subOk := subSpace.GetSpaceAttributeValue(nameAttributeID)
+		if !subOk {
+			err := errors.Errorf("Node: apiWorldsGetSubOptions: could not get name value: %s", nameAttributeID)
+			api.AbortRequest(c, http.StatusInternalServerError, "invalid_attribute_id", err, w.log)
+			return nil
+		}
+
+		subSpaceName := (*subSpaceValue)[universe.SpaceAttributeNameName]
+
+		if subSpaceValue == nil {
+			err := errors.Errorf("Node: apiWorldsGetSubOptions: subSpaceValue not found: %s", subSpaceValue)
+			api.AbortRequest(c, http.StatusNotFound, "nameValue_not_found", err, w.log)
+			return nil
+		}
+
+		subSpacesOption := dto.SubSpace{
+			ID:   subSpace.GetID(),
+			Name: subSpaceName,
+		}
+
+		subSpacesOptions = append(subSpacesOptions, subSpacesOption)
+	}
+
+	return subSpacesOptions
 }

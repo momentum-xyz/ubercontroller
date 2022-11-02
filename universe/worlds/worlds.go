@@ -2,8 +2,6 @@ package worlds
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/types/entry"
-	"github.com/momentum-xyz/ubercontroller/universe/api/dto"
 	"sync"
 
 	"github.com/google/uuid"
@@ -77,79 +75,6 @@ func (w *Worlds) GetWorlds() map[uuid.UUID]universe.World {
 	}
 
 	return worlds
-}
-
-func (w *Worlds) GetOptions(spaces map[uuid.UUID]universe.Space) ([]dto.ExploreOption, error) {
-	options := make([]dto.ExploreOption, 0, len(spaces))
-
-	for _, space := range spaces {
-		var description any
-
-		nameAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.SpaceAttributeNameName)
-		nameValue, nameOk := space.GetSpaceAttributeValue(nameAttributeID)
-		if !nameOk {
-			return nil, errors.Errorf("could not get name value %q", nameValue)
-		}
-
-		if nameValue == nil {
-			return nil, errors.Errorf("spaceValue not found %q", nameValue)
-		}
-
-		descriptionAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.SpaceAttributeNameDescription)
-		descriptionValue, _ := space.GetSpaceAttributeValue(descriptionAttributeID)
-
-		name := (*nameValue)[universe.SpaceAttributeNameName]
-
-		if descriptionValue != nil {
-			description = (*descriptionValue)[universe.SpaceAttributeNameDescription]
-		} else {
-			description = nil
-		}
-
-		subSpaces := space.GetSpaces(false)
-		subOptions, err := w.GetSubOptions(subSpaces)
-		if err != nil {
-			return nil, errors.Errorf("unable to get options for subspaces %q", err)
-		}
-
-		option := dto.ExploreOption{
-			ID:          space.GetID(),
-			Name:        name,
-			Description: description,
-			SubSpaces:   subOptions,
-		}
-
-		options = append(options, option)
-	}
-
-	return options, nil
-}
-
-func (w *Worlds) GetSubOptions(subSpaces map[uuid.UUID]universe.Space) ([]dto.SubSpace, error) {
-	subSpacesOptions := make([]dto.SubSpace, 0, len(subSpaces))
-
-	for _, subSpace := range subSpaces {
-		nameAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.SpaceAttributeNameName)
-		subSpaceValue, subOk := subSpace.GetSpaceAttributeValue(nameAttributeID)
-		if !subOk {
-			return nil, errors.Errorf("name attribute value not found for suboption %q", nameAttributeID)
-		}
-
-		if subSpaceValue == nil {
-			return nil, errors.Errorf("subSpaceValue not found %q", subSpaceValue)
-		}
-
-		subSpaceName := (*subSpaceValue)[universe.SpaceAttributeNameName]
-
-		subSpacesOption := dto.SubSpace{
-			ID:   subSpace.GetID(),
-			Name: subSpaceName,
-		}
-
-		subSpacesOptions = append(subSpacesOptions, subSpacesOption)
-	}
-
-	return subSpacesOptions, nil
 }
 
 func (w *Worlds) AddWorld(world universe.World, updateDB bool) error {
