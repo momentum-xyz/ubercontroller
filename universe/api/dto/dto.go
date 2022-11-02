@@ -28,6 +28,10 @@ type SpaceEffectiveOptions SpaceOptions
 
 type SpaceEffectiveSubOptions map[string]any
 
+type Assets3dOptions map[uuid.UUID]*Asset3dOptions
+
+type Asset3dOptions entry.Asset3dOptions
+
 type Profile struct {
 	Bio         *string `json:"bio,omitempty"`
 	Location    *string `json:"location,omitempty"`
@@ -281,4 +285,12 @@ type Plugin struct {
 	SubTitle  *string `json:"subTitle,omitempty"`
 	ScriptURL string  `json:"scriptUrl"`
 	IconName  *string `json:"iconName,omitempty"`
+}
+
+type Asset3d struct {
+	ID        string         `json:"id"`
+	Name      string         `json:"name"`
+	Meta      map[string]any `json:"meta"`
+	CreatedAt string         `json:"createdAt"`
+	UpdatedAt string         `json:"updatedAt"`
 }
