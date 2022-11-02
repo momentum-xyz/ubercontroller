@@ -208,11 +208,6 @@ func (w *World) Save() error {
 	return nil
 }
 
-func (w *World) GetSpaceFromAllSpaces(spaceID uuid.UUID) (universe.Space, bool) {
-	space, ok := w.allSpaces.Load(spaceID)
-	return space, ok
-}
-
 func (w *World) GetAllSpaces() map[uuid.UUID]universe.Space {
 	w.allSpaces.Mu.RLock()
 	defer w.allSpaces.Mu.RUnlock()
@@ -224,6 +219,15 @@ func (w *World) GetAllSpaces() map[uuid.UUID]universe.Space {
 	}
 
 	return spaces
+}
+
+func (w *World) FilterAllSpaces(predicateFn universe.SpaceFilterPredicateFn) map[uuid.UUID]universe.Space {
+	return w.allSpaces.Filter(predicateFn)
+}
+
+func (w *World) GetSpaceFromAllSpaces(spaceID uuid.UUID) (universe.Space, bool) {
+	space, ok := w.allSpaces.Load(spaceID)
+	return space, ok
 }
 
 func (w *World) AddSpaceToAllSpaces(space universe.Space) error {
