@@ -1,10 +1,10 @@
 package node
 
 import (
-	"net/http"
-
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+	"net/http"
 
 	"github.com/momentum-xyz/ubercontroller/universe/api"
 	"github.com/momentum-xyz/ubercontroller/utils"
@@ -87,4 +87,53 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 	}
 
 	n.apiUsersGetMe(c)
+}
+
+// @BasePath /api/v4
+
+// @Summary Uploads a user avatar to media-manager
+// @Schemes
+// @Description Sends an image file to the media manager and returns a hash
+// @Tags profile
+// @Accept json
+// @Produce string
+// @Param request body node.apiProfileUpdate.Body true "body params"
+// @Success 200 {object} dto.User
+// @Success 500 {object} api.HTTPError
+// @Success 400 {object} api.HTTPError
+// @Router /api/v4/profile [patch]
+func (n *Node) apiProfileUploadAvatar(c *gin.Context) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiProfileUploadAvatar: failed to read file")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_read", err, n.log)
+		return
+	}
+
+	openedFile, err := file.Open()
+	defer openedFile.Close()
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiProfileUploadAvatar: failed to open file")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_open", err, n.log)
+		return
+	}
+
+	req, err := http.NewRequest("POST", n.cfg.Common.RenderDefaultUrl, openedFile)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiProfileUploadAvatar: failed to post data to media-manager")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_post", err, n.log)
+		return
+	}
+
+	req.Header.Set("Content-Type", "image/png")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiProfileUploadAvatar: failed to post data to media-manager")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_post", err, n.log)
+		return
+	}
+
+	fmt.Sprintln(resp)
 }
