@@ -73,7 +73,7 @@ func (w *Worlds) apiWorldsGetOptions(c *gin.Context, spaces map[uuid.UUID]univer
 			return nil
 		}
 
-		descriptionAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.SpaceAttributeNameDescription)
+		descriptionAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.SpaceAttributeDescriptionName)
 		descriptionValue, ok := space.GetSpaceAttributeValue(descriptionAttributeID)
 		if !ok {
 			err := errors.Errorf("Node: apiWorldsGetOptions: could not get description value: %s", descriptionAttributeID)
@@ -82,7 +82,7 @@ func (w *Worlds) apiWorldsGetOptions(c *gin.Context, spaces map[uuid.UUID]univer
 		}
 
 		if descriptionValue != nil {
-			description = (*descriptionValue)[universe.SpaceAttributeNameDescription]
+			description = (*descriptionValue)[universe.SpaceAttributeDescriptionName]
 		}
 
 		subSpaces := space.GetSpaces(false)

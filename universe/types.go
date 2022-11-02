@@ -10,5 +10,5 @@ const (
 
 	// space
 	SpaceAttributeNameName        = "name"
-	SpaceAttributeNameDescription = "description"
+	SpaceAttributeDescriptionName = "description"
 )
