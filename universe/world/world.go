@@ -65,6 +65,13 @@ func NewWorld(id uuid.UUID, db database.DB) *World {
 	return world
 }
 
+func (w *World) GetID() uuid.UUID {
+	if w == nil {
+		return uuid.Nil
+	}
+	return w.Space.GetID()
+}
+
 func (w *World) corePluginInitFunc(pi mplugin.PluginInterface) (mplugin.PluginInstance, error) {
 	instance := CorePluginInstance{PluginInterface: pi}
 	w.corePluginInterface = pi

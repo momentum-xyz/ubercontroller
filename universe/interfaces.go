@@ -60,8 +60,7 @@ type SpaceCacher interface {
 }
 
 type Node interface {
-	IDer
-	Initializer
+	Space
 	RunStopper
 	LoadSaver
 	APIRegister
