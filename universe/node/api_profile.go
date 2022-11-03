@@ -1,13 +1,15 @@
 package node
 
 import (
-	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
+	"encoding/json"
+	"io"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/momentum-xyz/ubercontroller/universe/api"
+	"github.com/momentum-xyz/ubercontroller/universe/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/pkg/errors"
 )
 
 // @BasePath /api/v4
@@ -97,8 +99,7 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 // @Tags profile
 // @Accept json
 // @Produce string
-// @Param request body node.apiProfileUpdate.Body true "body params"
-// @Success 200 {object} dto.User
+// @Success 201 {object} dto.HashResponse
 // @Success 500 {object} api.HTTPError
 // @Success 400 {object} api.HTTPError
 // @Router /api/v4/profile [patch]
@@ -118,7 +119,7 @@ func (n *Node) apiProfileUploadAvatar(c *gin.Context) {
 		return
 	}
 
-	req, err := http.NewRequest("POST", n.cfg.Common.RenderDefaultUrl, openedFile)
+	req, err := http.NewRequest("POST", n.cfg.Common.RenderInternalUrl+"/render/addimage", openedFile)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiProfileUploadAvatar: failed to create post request")
 		api.AbortRequest(c, http.StatusBadRequest, "failed_to_create_request", err, n.log)
@@ -137,6 +138,20 @@ func (n *Node) apiProfileUploadAvatar(c *gin.Context) {
 
 	defer resp.Body.Close()
 
-	// body, err := io
-	fmt.Sprintln(resp)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiProfileUploadAvatar: failed to read data response")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_response", err, n.log)
+		return
+	}
+
+	response := dto.HashResponse{}
+
+	if err := json.Unmarshal(body, &response); err != nil {
+		err := errors.WithMessage(err, "Node: apiProfileUploadAvatar: failed to unmarshal json")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_unmarshal_response", err, n.log)
+		return
+	}
+
+	c.JSON(http.StatusCreated, response)
 }
