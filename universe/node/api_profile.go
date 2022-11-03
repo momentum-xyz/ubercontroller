@@ -112,12 +112,13 @@ func (n *Node) apiProfileUploadAvatar(c *gin.Context) {
 	}
 
 	openedFile, err := file.Open()
-	defer openedFile.Close()
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiProfileUploadAvatar: failed to open file")
 		api.AbortRequest(c, http.StatusBadRequest, "failed_to_open", err, n.log)
 		return
 	}
+
+	defer openedFile.Close()
 
 	req, err := http.NewRequest("POST", n.cfg.Common.RenderInternalUrl+"/render/addimage", openedFile)
 	if err != nil {
