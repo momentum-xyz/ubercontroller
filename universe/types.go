@@ -18,7 +18,8 @@ var (
 			Meta Attribute
 		}
 		Space struct {
-			Name Attribute
+			Name        Attribute
+			Description Attribute
 		}
 		Kusama struct {
 			User struct {
@@ -41,10 +42,14 @@ var (
 			},
 		},
 		Space: struct {
-			Name Attribute
+			Name        Attribute
+			Description Attribute
 		}{
 			Name: Attribute{
 				Name: "name",
+			},
+			Description: Attribute{
+				Name: "description",
 			},
 		},
 		Kusama: struct {

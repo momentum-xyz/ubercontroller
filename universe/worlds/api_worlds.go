@@ -77,15 +77,15 @@ func (w *Worlds) apiWorldsGetOptions(spaces map[uuid.UUID]universe.Space) []dto.
 	options := make([]dto.ExploreOption, 0, len(spaces))
 
 	for _, space := range spaces {
-		nameAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.World.Meta.Name.)
+		nameAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name)
 		nameValue, _ := space.GetSpaceAttributeValue(nameAttributeID)
 
-		name := utils.GetFromAnyMap(*nameValue, universe.SpaceAttributeNameName, "")
+		name := utils.GetFromAnyMap(*nameValue, universe.Attributes.Space.Name.Name, "")
 
-		descriptionAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.SpaceAttributeDescriptionName)
+		descriptionAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Description.Name)
 		descriptionValue, _ := space.GetSpaceAttributeValue(descriptionAttributeID)
 
-		description := utils.GetFromAnyMap(*descriptionValue, universe.SpaceAttributeDescriptionName, "")
+		description := utils.GetFromAnyMap(*descriptionValue, universe.Attributes.Space.Description.Name, "")
 
 		subSpaces := space.GetSpaces(false)
 		subOptions := w.apiWorldsGetSubOptions(subSpaces)
@@ -107,10 +107,10 @@ func (w *Worlds) apiWorldsGetSubOptions(subSpaces map[uuid.UUID]universe.Space) 
 	subSpacesOptions := make([]dto.SubSpace, 0, len(subSpaces))
 
 	for _, subSpace := range subSpaces {
-		nameAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.SpaceAttributeNameName)
+		nameAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name)
 		subSpaceValue, _ := subSpace.GetSpaceAttributeValue(nameAttributeID)
 
-		subSpaceName := utils.GetFromAnyMap(*subSpaceValue, universe.SpaceAttributeNameName, "")
+		subSpaceName := utils.GetFromAnyMap(*subSpaceValue, universe.Attributes.Space.Name.Name, "")
 
 		subSpacesOption := dto.SubSpace{
 			ID:   subSpace.GetID(),
