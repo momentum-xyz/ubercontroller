@@ -122,8 +122,11 @@ func (p *Plugin) LoadFromEntry(entry *entry.Plugin) error {
 
 	var err error
 	if entry.Options != nil {
-		if p.object, p.definedAttributes, p.newInstance, err = p.resolveSharedLibrary(entry.Options.File); err != nil {
-			return errors.WithMessage(err, "failed to resolve shared library")
+		filepath := utils.GetFromAnyMap(*entry.Options, "file", "")
+		if filepath != "" {
+			if p.object, p.definedAttributes, p.newInstance, err = p.resolveSharedLibrary(filepath); err != nil {
+				return errors.WithMessage(err, "failed to resolve shared library")
+			}
 		}
 	}
 	if _, err = p.SetOptions(modify.MergeWith(entry.Options), false); err != nil {
@@ -146,10 +149,6 @@ func (p *Plugin) RegisterAttributes() error {
 }
 
 func (p *Plugin) resolveSharedLibrary(filename string) (*plugin.Plugin, *[]string, mplugin.NewInstanceFunction, error) {
-	if filename == "" {
-		return nil, nil, nil, nil
-	}
-
 	obj, err := plugin.Open(filename)
 	if err != nil {
 		return nil, nil, nil, errors.WithMessage(err, "failed to load plugin binary")

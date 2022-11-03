@@ -27,9 +27,11 @@ import (
 // @Success 404 {object} api.HTTPError
 // @Router /api/v4/worlds/{world_id}/explore [get]
 func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
-	inQuery := struct {
+	type Query struct {
 		SpaceID string `form:"space_id" binding:"required"`
-	}{}
+	}
+
+	inQuery := Query{}
 
 	if err := c.ShouldBindQuery(&inQuery); err != nil {
 		err := errors.WithMessage(err, "Node: apiWorldsGetSpacesWithChildren: failed to bind query")
@@ -75,7 +77,7 @@ func (w *Worlds) apiWorldsGetOptions(spaces map[uuid.UUID]universe.Space) []dto.
 	options := make([]dto.ExploreOption, 0, len(spaces))
 
 	for _, space := range spaces {
-		nameAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.SpaceAttributeNameName)
+		nameAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.World.Meta.Name.)
 		nameValue, _ := space.GetSpaceAttributeValue(nameAttributeID)
 
 		name := utils.GetFromAnyMap(*nameValue, universe.SpaceAttributeNameName, "")

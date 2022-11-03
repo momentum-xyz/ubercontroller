@@ -192,7 +192,7 @@ func (n *Node) apiSetSpaceAttributeSubValue(c *gin.Context) {
 		inBody.SubAttributeKey: (*spaceAttribute.Value)[inBody.SubAttributeKey],
 	}
 
-	c.JSON(http.StatusCreated, out)
+	c.JSON(http.StatusAccepted, out)
 }
 
 func (n *Node) apiRemoveSpaceAttributeSubValue(c *gin.Context) {

@@ -2,13 +2,14 @@ package space
 
 import (
 	"context"
+	"sync/atomic"
+
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/pkg/errors"
 	"github.com/sasha-s/go-deadlock"
 	"go.uber.org/zap"
-	"sync/atomic"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
@@ -18,6 +19,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
@@ -330,55 +332,57 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 		return errors.Errorf("space ids mismatch: %s != %s", entry.SpaceID, s.id)
 	}
 
-	if err := s.loadSelfData(entry); err != nil {
-		return errors.WithMessage(err, "failed to load self data")
-	}
-	if err := s.loadDependencies(entry); err != nil {
-		return errors.WithMessage(err, "failed to load dependencies")
-	}
-
-	if err := s.SetPosition(entry.Position, false); err != nil {
-		return errors.WithMessage(err, "failed to set position")
-	}
-
-	s.UpdateSpawnMessage()
-
-	if !recursive {
+	group, _ := errgroup.WithContext(s.ctx)
+	group.Go(func() error {
+		if err := s.loadSpaceAttributes(); err != nil {
+			return errors.WithMessage(err, "failed to load space attributes")
+		}
 		return nil
-	}
+	})
+	group.Go(func() error {
+		if err := s.loadSelfData(entry); err != nil {
+			return errors.WithMessage(err, "failed to load self data")
+		}
+		if err := s.loadDependencies(entry); err != nil {
+			return errors.WithMessage(err, "failed to load dependencies")
+		}
+		if err := s.SetPosition(entry.Position, false); err != nil {
+			return errors.WithMessage(err, "failed to set position")
+		}
+		s.UpdateSpawnMessage()
 
-	entries, err := s.db.SpacesGetSpacesByParentID(s.ctx, s.id)
-	if err != nil {
-		return errors.WithMessagef(err, "failed to get spaces by parent id: %s", s.id)
-	}
+		if !recursive {
+			return nil
+		}
 
-	for i := range entries {
-		space, err := s.CreateSpace(entries[i].SpaceID)
+		entries, err := s.db.SpacesGetSpacesByParentID(s.ctx, s.id)
 		if err != nil {
-			return errors.WithMessagef(err, "failed to create new space: %s", entries[i].SpaceID)
+			return errors.WithMessagef(err, "failed to get spaces by parent id: %s", s.id)
 		}
-		if err := space.LoadFromEntry(entries[i], recursive); err != nil {
-			return errors.WithMessagef(err, "failed to load space from entry: %s", entries[i].SpaceID)
-		}
-		s.Children.Store(entries[i].SpaceID, space)
-	}
 
-	return nil
+		for i := range entries {
+			space, err := s.CreateSpace(entries[i].SpaceID)
+			if err != nil {
+				return errors.WithMessagef(err, "failed to create new space: %s", entries[i].SpaceID)
+			}
+			if err := space.LoadFromEntry(entries[i], recursive); err != nil {
+				return errors.WithMessagef(err, "failed to load space from entry: %s", entries[i].SpaceID)
+			}
+			s.Children.Store(entries[i].SpaceID, space)
+		}
+
+		return nil
+	})
+	return group.Wait()
 }
 
 func (s *Space) loadSelfData(spaceEntry *entry.Space) error {
 	if err := s.SetOwnerID(*spaceEntry.OwnerID, false); err != nil {
 		return errors.WithMessagef(err, "failed to set owner id: %s", spaceEntry.OwnerID)
 	}
-
 	if _, err := s.SetOptions(modify.MergeWith(spaceEntry.Options), false); err != nil {
 		return errors.WithMessage(err, "failed to set options")
 	}
-
-	if err := s.loadSpaceAttributes(); err != nil {
-		return errors.WithMessage(err, "failed to load space spaceAttributes")
-	}
-
 	return nil
 }
 
@@ -391,10 +395,6 @@ func (s *Space) loadDependencies(entry *entry.Space) error {
 	}
 	if err := s.SetSpaceType(spaceType, false); err != nil {
 		return errors.WithMessagef(err, "failed to set space type: %s", entry.SpaceTypeID)
-	}
-
-	if err := s.loadSpaceAttributes(); err != nil {
-		return errors.WithMessage(err, "failed to load space spaceAttributes")
 	}
 
 	if entry.Asset2dID != nil {
@@ -421,8 +421,14 @@ func (s *Space) loadDependencies(entry *entry.Space) error {
 }
 
 func (s *Space) UpdateSpawnMessage() {
+	if s.world == nil {
+		return
+	}
+
 	name := " "
-	v, ok := s.GetSpaceAttributeValue(entry.NewAttributeID(universe.GetSystemPluginID(), "name"))
+	v, ok := s.GetSpaceAttributeValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name),
+	)
 	if ok {
 		// QUESTION: what to do here? maybe return an error?
 		name = utils.GetFromAnyMap(*v, "name", "")

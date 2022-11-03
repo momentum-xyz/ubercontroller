@@ -18,10 +18,9 @@ import (
 // @Success 500 {object} api.HTTPError
 // @Router /api/v4/config/ui-client [get]
 func (n *Node) apiGetUIClientConfig(c *gin.Context) {
-	unityClientURL := n.cfg.UIClient.FrontendURL + "/unity"
-
 	type Response struct {
 		config.UIClient
+		NodeID                  string `json:"NODE_ID"`
 		UnityClientURL          string `json:"UNITY_CLIENT_URL"`
 		UnityClientLoaderURL    string `json:"UNITY_CLIENT_LOADER_URL"`
 		UnityClientDataURL      string `json:"UNITY_CLIENT_DATA_URL"`
@@ -31,17 +30,10 @@ func (n *Node) apiGetUIClientConfig(c *gin.Context) {
 		BackendEndpointURL      string `json:"BACKEND_ENDPOINT_URL"`
 	}
 
-	cfg := struct {
-		config.UIClient
-		UnityClientURL          string `json:"UNITY_CLIENT_URL"`
-		UnityClientLoaderURL    string `json:"UNITY_CLIENT_LOADER_URL"`
-		UnityClientDataURL      string `json:"UNITY_CLIENT_DATA_URL"`
-		UnityClientFrameworkURL string `json:"UNITY_CLIENT_FRAMEWORK_URL"`
-		UnityClientCodeURL      string `json:"UNITY_CLIENT_CODE_URL"`
-		RenderServiceURL        string `json:"RENDER_SERVICE_URL"`
-		BackendEndpointURL      string `json:"BACKEND_ENDPOINT_URL"`
-	}{
+	unityClientURL := n.cfg.UIClient.FrontendURL + "/unity"
+	out := Response{
 		UIClient:                n.cfg.UIClient,
+		NodeID:                  n.GetID().String(),
 		UnityClientURL:          unityClientURL,
 		UnityClientLoaderURL:    unityClientURL + "/WebGL.loader.js",
 		UnityClientDataURL:      unityClientURL + "/WebGL.data.gz",
@@ -51,5 +43,5 @@ func (n *Node) apiGetUIClientConfig(c *gin.Context) {
 		BackendEndpointURL:      n.cfg.UIClient.FrontendURL + "/api/v3/backend",
 	}
 
-	c.JSON(http.StatusOK, cfg)
+	c.JSON(http.StatusOK, out)
 }

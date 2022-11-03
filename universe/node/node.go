@@ -3,7 +3,6 @@ package node
 import (
 	"context"
 	"fmt"
-	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"os"
 	"sync"
 
@@ -19,10 +18,12 @@ import (
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/mplugin"
+	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/universe/space"
 	"github.com/momentum-xyz/ubercontroller/universe/user"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
@@ -30,7 +31,7 @@ import (
 var _ universe.Node = (*Node)(nil)
 
 type Node struct {
-	id                  uuid.UUID
+	*space.Space
 	name                string
 	cfg                 *config.Config
 	ctx                 context.Context
@@ -64,7 +65,7 @@ func NewNode(
 	attributeTypes universe.AttributeTypes,
 ) *Node {
 	return &Node{
-		id:               id,
+		Space:            space.NewSpace(id, db, nil),
 		cfg:              cfg,
 		db:               db,
 		worlds:           worlds,
@@ -77,10 +78,6 @@ func NewNode(
 		nodeAttributes:   generic.NewSyncMap[entry.AttributeID, *entry.AttributePayload](),
 		spaceIDToWorldID: generic.NewSyncMap[uuid.UUID, uuid.UUID](),
 	}
-}
-
-func (n *Node) GetID() uuid.UUID {
-	return n.id
 }
 
 func (n *Node) GetName() string {
@@ -100,16 +97,24 @@ func (n *Node) Initialize(ctx context.Context) error {
 	gin.DefaultWriter = consoleWriter
 
 	//TODO: hash salt once it is present in the DB
-	utils.SetAnonymizer(n.id, uuid.Nil)
+	utils.SetAnonymizer(n.GetID(), uuid.Nil)
 
 	r := gin.New()
 	r.Use(gin.LoggerWithWriter(consoleWriter))
 	r.Use(gin.RecoveryWithWriter(consoleWriter))
 
 	n.router = r
-	n.pluginController = mplugin.NewPluginController(n.id)
+	n.pluginController = mplugin.NewPluginController(n.GetID())
 
-	return nil
+	return n.Space.Initialize(ctx)
+}
+
+func (n *Node) CreateSpace(spaceID uuid.UUID) (universe.Space, error) {
+	return nil, errors.Errorf("not permitted for node")
+}
+
+func (n *Node) SetParent(parent universe.Space, updateDB bool) error {
+	return errors.Errorf("not permitted for node")
 }
 
 func (n *Node) GetWorlds() universe.Worlds {
@@ -141,7 +146,9 @@ func (n *Node) GetUserTypes() universe.UserTypes {
 }
 
 func (n *Node) GetAllSpaces() map[uuid.UUID]universe.Space {
-	spaces := make(map[uuid.UUID]universe.Space)
+	spaces := map[uuid.UUID]universe.Space{
+		n.GetID(): n,
+	}
 
 	for _, world := range n.GetWorlds().GetWorlds() {
 		for spaceID, space := range world.GetAllSpaces() {
@@ -152,7 +159,24 @@ func (n *Node) GetAllSpaces() map[uuid.UUID]universe.Space {
 	return spaces
 }
 
+func (n *Node) FilterAllSpaces(predicateFn universe.SpaceFilterPredicateFn) map[uuid.UUID]universe.Space {
+	spaces := make(map[uuid.UUID]universe.Space)
+	for _, world := range n.GetWorlds().GetWorlds() {
+		for spaceID, space := range world.FilterAllSpaces(predicateFn) {
+			spaces[spaceID] = space
+		}
+	}
+	if predicateFn(n.GetID(), n) {
+		spaces[n.GetID()] = n
+	}
+	return spaces
+}
+
 func (n *Node) GetSpaceFromAllSpaces(spaceID uuid.UUID) (universe.Space, bool) {
+	if spaceID == n.GetID() {
+		return n, true
+	}
+
 	worldID, ok := n.spaceIDToWorldID.Load(spaceID)
 	if !ok {
 		return nil, false
@@ -165,11 +189,19 @@ func (n *Node) GetSpaceFromAllSpaces(spaceID uuid.UUID) (universe.Space, bool) {
 }
 
 func (n *Node) AddSpaceToAllSpaces(space universe.Space) error {
+	if space.GetID() == n.GetID() {
+		return errors.Errorf("not permitted for node")
+	}
+
 	n.spaceIDToWorldID.Store(space.GetID(), space.GetWorld().GetID())
 	return nil
 }
 
 func (n *Node) RemoveSpaceFromAllSpaces(space universe.Space) (bool, error) {
+	if space.GetID() == n.GetID() {
+		return false, errors.Errorf("not permitted for node")
+	}
+
 	n.spaceIDToWorldID.Mu.RLock()
 	defer n.spaceIDToWorldID.Mu.RUnlock()
 
@@ -201,51 +233,40 @@ func (n *Node) Stop() error {
 func (n *Node) Load() error {
 	n.log.Infof("Loading node %s...", n.GetID())
 
+	// first stage
 	group, _ := errgroup.WithContext(n.ctx)
-	group.Go(
-		func() error {
-			return n.assets2d.Load()
-		},
-	)
-	group.Go(
-		func() error {
-			return n.assets3d.Load()
-		},
-	)
-	group.Go(
-		func() error {
-			return n.userTypes.Load()
-		},
-	)
+	group.Go(n.assets2d.Load)
+	group.Go(n.assets3d.Load)
+	group.Go(n.userTypes.Load)
+	group.Go(n.attributeTypes.Load)
 	if err := group.Wait(); err != nil {
-		return errors.WithMessage(err, "failed to load assets")
+		return errors.WithMessage(err, "failed to load basic data")
 	}
 
+	// second stage
 	group, _ = errgroup.WithContext(n.ctx)
-	group.Go(
-		func() error {
-			return n.attributeTypes.Load()
-		},
-	)
-	group.Go(
-		func() error {
-			return n.spaceTypes.Load()
-		},
-	)
+	group.Go(n.spaceTypes.Load)
+	group.Go(n.plugins.Load)
 	if err := group.Wait(); err != nil {
 		return errors.WithMessage(err, "failed to load additional data")
 	}
 
-	if err := n.plugins.Load(); err != nil {
-		return errors.WithMessage(err, "failed to load space types")
-	}
+	// third stage
+	group, _ = errgroup.WithContext(n.ctx)
+	group.Go(func() error {
+		nodeEntry, err := n.db.NodesGetNode(n.ctx)
+		if err != nil {
+			return errors.WithMessage(err, "failed to get node")
+		}
+		if err := n.LoadFromEntry(nodeEntry.Space, false); err != nil {
+			return errors.WithMessage(err, "failed to load node from entry")
+		}
 
-	if err := n.loadSelfData(); err != nil {
-		return errors.WithMessage(err, "failed to load self data")
-	}
-
-	if err := n.worlds.Load(); err != nil {
-		return errors.WithMessage(err, "failed to load worlds")
+		return n.loadNodeAttributes()
+	})
+	group.Go(n.worlds.Load)
+	if err := group.Wait(); err != nil {
+		return errors.WithMessage(err, "failed to load universe")
 	}
 
 	n.AddAPIRegister(n)
@@ -311,14 +332,6 @@ func (n *Node) Save() error {
 	n.log.Infof("Node saved: %s", n.GetID())
 
 	return errs.ErrorOrNil()
-}
-
-func (n *Node) loadSelfData() error {
-	if err := n.loadNodeAttributes(); err != nil {
-		return errors.WithMessage(err, "failed to load node attributes")
-	}
-
-	return nil
 }
 
 func (n *Node) detectSpawnWorld(userId uuid.UUID) universe.World {

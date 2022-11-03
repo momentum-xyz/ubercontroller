@@ -283,7 +283,7 @@ func (s *Space) CheckIfRendered(instance *entry.SpaceAttribute) {
 func (s *Space) loadSpaceAttributes() error {
 	entries, err := s.db.SpaceAttributesGetSpaceAttributesBySpaceID(s.ctx, s.id)
 	if err != nil {
-		return errors.WithMessage(err, "failed to get space spaceAttributes")
+		return errors.WithMessage(err, "failed to get space attributes")
 	}
 
 	for _, instance := range entries {

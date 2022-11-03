@@ -16,6 +16,4 @@ type Plugin struct {
 
 type PluginMeta map[string]any
 
-type PluginOptions struct {
-	File string `db:"file" json:"file"`
-}
+type PluginOptions map[string]any

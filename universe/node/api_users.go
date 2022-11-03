@@ -189,7 +189,7 @@ func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken
 	// TODO: check issuer
 
 	nodeSettings, ok := n.GetNodeAttributeValue(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.NodeAttributeNodeSettingsName),
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.Settings.Name),
 	)
 	if !ok {
 		return nil, http.StatusInternalServerError, errors.Errorf("failed to get node settings")
@@ -233,7 +233,7 @@ func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken
 		n.log.Infof("Node: apiGetOrCreateUserFromTokens: user created: %s", userEntry.UserID)
 
 		// adding wallet to user attributes
-		walletAddressKey := universe.KusamaUserAttributeWalletWalletKey
+		walletAddressKey := universe.Attributes.Kusama.User.Wallet.Key
 		modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
 			newValue := func() *entry.AttributeValue {
 				value := entry.NewAttributeValue()
@@ -266,7 +266,7 @@ func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken
 
 		userAttributeID := entry.NewUserAttributeID(
 			entry.NewAttributeID(
-				universe.GetKusamaPluginID(), universe.KusamaUserAttributeWalletName,
+				universe.GetKusamaPluginID(), universe.Attributes.Kusama.User.Wallet.Name,
 			),
 			userEntry.UserID,
 		)
