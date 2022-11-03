@@ -75,17 +75,15 @@ func (w *Worlds) apiWorldsGetOptions(spaces map[uuid.UUID]universe.Space) []dto.
 	options := make([]dto.ExploreOption, 0, len(spaces))
 
 	for _, space := range spaces {
-		var description string
-
 		nameAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.SpaceAttributeNameName)
 		nameValue, _ := space.GetSpaceAttributeValue(nameAttributeID)
 
-		name := utils.GetFromAny((*nameValue)[universe.SpaceAttributeNameName], "")
+		name := utils.GetFromAnyMap(*nameValue, universe.SpaceAttributeNameName, "")
 
 		descriptionAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.SpaceAttributeDescriptionName)
 		descriptionValue, _ := space.GetSpaceAttributeValue(descriptionAttributeID)
 
-		description = utils.GetFromAny((*descriptionValue)[universe.SpaceAttributeDescriptionName], "")
+		description := utils.GetFromAnyMap(*descriptionValue, universe.SpaceAttributeDescriptionName, "")
 
 		subSpaces := space.GetSpaces(false)
 		subOptions := w.apiWorldsGetSubOptions(subSpaces)
@@ -110,7 +108,7 @@ func (w *Worlds) apiWorldsGetSubOptions(subSpaces map[uuid.UUID]universe.Space) 
 		nameAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.SpaceAttributeNameName)
 		subSpaceValue, _ := subSpace.GetSpaceAttributeValue(nameAttributeID)
 
-		subSpaceName := utils.GetFromAny((*subSpaceValue)[universe.SpaceAttributeNameName], "")
+		subSpaceName := utils.GetFromAnyMap(*subSpaceValue, universe.SpaceAttributeNameName, "")
 
 		subSpacesOption := dto.SubSpace{
 			ID:   subSpace.GetID(),
