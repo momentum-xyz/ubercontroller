@@ -23,10 +23,10 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, a.log)
 	}
 
-	a3dMap := make(map[uuid.UUID]universe.Asset3d)
+	var a3dMap map[uuid.UUID]universe.Asset3d
 	predicateFn := func(asset3dID uuid.UUID, asset3d universe.Asset3d) bool {
-		entry := asset3d.GetEntry()
-		kind := utils.GetFromAnyMap(entry.Meta, "kind", "")
+		meta := asset3d.GetMeta()
+		kind := utils.GetFromAnyMap(*meta, "kind", "")
 		return kind == queryParams.kind
 	}
 
