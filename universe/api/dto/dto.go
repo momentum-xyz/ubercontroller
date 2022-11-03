@@ -31,9 +31,9 @@ type SpaceEffectiveOptions SpaceOptions
 type SpaceEffectiveSubOptions map[string]any
 
 type ExploreOption struct {
-	ID          uuid.UUID  `json:"id,omitempty"`
-	Name        any        `json:"name,omitempty"`
-	Description any        `json:"description"`
+	ID          uuid.UUID  `json:"id"`
+	Name        string     `json:"name,omitempty"`
+	Description string     `json:"description"`
 	SubSpaces   []SubSpace `json:"subSpaces,omitempty"`
 }
 
