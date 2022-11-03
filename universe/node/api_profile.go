@@ -98,8 +98,8 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 // @Description Sends an image file to the media manager and returns a hash
 // @Tags profile
 // @Accept json
-// @Produce string
-// @Success 201 {object} dto.HashResponse
+// @Produce json
+// @Success 200 {object} dto.HashResponse
 // @Success 500 {object} api.HTTPError
 // @Success 400 {object} api.HTTPError
 // @Router /api/v4/profile [patch]
@@ -154,5 +154,5 @@ func (n *Node) apiProfileUploadAvatar(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, response)
+	c.JSON(http.StatusOK, response)
 }
