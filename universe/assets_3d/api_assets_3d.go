@@ -12,32 +12,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/api/dto"
 )
 
-func (a *Assets3d) apiGetAsset3d(c *gin.Context) {
-	asset3dID, err := uuid.Parse(c.Param("asset3dID"))
-	if err != nil {
-		err = errors.WithMessage(err, "Assets3d: apiGetAsset3d: failed to parse asset3dID")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_asset3d_uuid", err, a.log)
-		return
-	}
-
-	gAsset3d, ok := a.GetAsset3d(asset3dID)
-	if !ok {
-		err = errors.WithMessage(err, "Assets3d: apiGetAsset3d: failed to get asset3d")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_asset3d", err, a.log)
-		return
-	}
-
-	out := gAsset3d.GetEntry()
-
-	outDTO := dto.Asset3d{
-		ID:        out.Asset3dID.String(),
-		CreatedAt: out.CreatedAt.String(),
-		UpdatedAt: out.UpdatedAt.String(),
-	}
-
-	c.JSON(http.StatusOK, outDTO)
-}
-
 func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 	// TODO: rework this in a different method
 	// or in a more generic way
@@ -157,10 +131,70 @@ func (a *Assets3d) apiRemoveAssets3dByIDs(c *gin.Context) {
 	c.JSON(http.StatusOK, nil)
 }
 
-func (a *Assets3d) apiGetAsset3dOptions(c *gin.Context) {
+func (a *Assets3d) apiGetAssets3dOptions(c *gin.Context) {
+	inBody := struct {
+		Assets3dIDs []string `form:"assets3d_ids[]" binding:"required"`
+	}{}
 
+	if err := c.ShouldBindQuery(&inBody); err != nil {
+		err := errors.WithMessage(err, "Assets3d: apiGetAssets3dOptions: failed to bind json")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, a.log)
+		return
+	}
+
+	out := make(dto.Assets3dOptions, len(inBody.Assets3dIDs))
+
+	for i := range inBody.Assets3dIDs {
+		asset3dID, err := uuid.Parse(inBody.Assets3dIDs[i])
+		if err != nil {
+			err := errors.WithMessagef(err, "Assets3d: apiGetAssets3dOptions: failed to parse uuid")
+			api.AbortRequest(c, http.StatusBadRequest, "invalid_asset3d_uuid", err, a.log)
+			return
+		}
+
+		gotAsset3d, ok := a.GetAsset3d(asset3dID)
+		if !ok {
+			err = errors.WithMessage(err, "Assets3d: apiGetAsset3dOptions: failed to get asset3d")
+			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_asset3d", err, a.log)
+			return
+		}
+
+		out[asset3dID] = (*dto.Asset3dOptions)(gotAsset3d.GetOptions())
+	}
+
+	c.JSON(http.StatusOK, out)
 }
 
-func (a *Assets3d) apiGetAsset3dMeta(c *gin.Context) {
+func (a *Assets3d) apiGetAssets3dMeta(c *gin.Context) {
+	inBody := struct {
+		Assets3dIDs []string `form:"assets3d_ids[]" binding:"required"`
+	}{}
 
+	if err := c.ShouldBindQuery(&inBody); err != nil {
+		err := errors.WithMessage(err, "Assets3d: apiGetAssets3dMeta: failed to bind json")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, a.log)
+		return
+	}
+
+	out := make(dto.Assets3dMeta, len(inBody.Assets3dIDs))
+
+	for i := range inBody.Assets3dIDs {
+		asset3dID, err := uuid.Parse(inBody.Assets3dIDs[i])
+		if err != nil {
+			err := errors.WithMessagef(err, "Assets3d: apiGetAssets3dMeta: failed to parse uuid")
+			api.AbortRequest(c, http.StatusBadRequest, "invalid_asset3d_uuid", err, a.log)
+			return
+		}
+
+		gotAsset3d, ok := a.GetAsset3d(asset3dID)
+		if !ok {
+			err = errors.WithMessage(err, "Assets3d: apiGetAsset3dMeta: failed to get asset3d")
+			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_asset3d", err, a.log)
+			return
+		}
+
+		out[asset3dID] = (*dto.Asset3dMeta)(gotAsset3d.GetMeta())
+	}
+
+	c.JSON(http.StatusOK, out)
 }

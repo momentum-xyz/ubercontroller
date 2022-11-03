@@ -15,14 +15,10 @@ func (a *Assets3d) RegisterAPI(r *gin.Engine) {
 	{
 		assets3d := vx.Group("/assets-3d")
 		{
-			asset3d := assets3d.Group("/:asset3dID")
-			{
-				asset3d.GET("", a.apiGetAsset3d)
 
-				asset3d.GET("/options", a.apiGetAsset3dOptions)
+			assets3d.GET("/options", a.apiGetAssets3dOptions)
 
-				asset3d.GET("/meta", a.apiGetAsset3dMeta)
-			}
+			assets3d.GET("/meta", a.apiGetAssets3dMeta)
 
 			assets3d.GET("", a.apiGetAssets3d)
 
