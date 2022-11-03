@@ -57,6 +57,10 @@ func (ut *UserTypes) CreateUserType(userTypeID uuid.UUID) (universe.UserType, er
 	return userType, nil
 }
 
+func (ut *UserTypes) FilterUserTypes(predicateFn universe.UserTypesFilterPredicateFn) map[uuid.UUID]universe.UserType {
+	return ut.userTypes.Filter(predicateFn)
+}
+
 func (ut *UserTypes) GetUserType(userTypeID uuid.UUID) (universe.UserType, bool) {
 	userType, ok := ut.userTypes.Load(userTypeID)
 	return userType, ok

@@ -31,6 +31,25 @@ func (s *Space) CreateSpace(spaceID uuid.UUID) (universe.Space, error) {
 	return space, nil
 }
 
+func (s *Space) FilterSpaces(predicateFn universe.SpacesFilterPredicateFn, recursive bool) map[uuid.UUID]universe.Space {
+	spaces := s.Children.Filter(predicateFn)
+
+	if !recursive {
+		return spaces
+	}
+
+	s.Children.Mu.RLock()
+	defer s.Children.Mu.RUnlock()
+
+	for _, child := range s.Children.Data {
+		for id, space := range child.FilterSpaces(predicateFn, recursive) {
+			spaces[id] = space
+		}
+	}
+
+	return spaces
+}
+
 func (s *Space) GetSpace(spaceID uuid.UUID, recursive bool) (universe.Space, bool) {
 	space, ok := s.Children.Load(spaceID)
 	if ok {

@@ -77,7 +77,6 @@ func (s *Space) GetActualPosition() cmath.Vec3 {
 }
 
 func (s *Space) SetPosition(position *cmath.Vec3, updateDB bool) error {
-
 	if updateDB {
 		if err := s.db.SpacesUpdateSpacePosition(s.ctx, s.id, position); err != nil {
 			return errors.WithMessage(err, "failed to update db")

@@ -53,14 +53,14 @@ type APIRegister interface {
 
 type SpaceCacher interface {
 	GetAllSpaces() map[uuid.UUID]Space
+	FilterAllSpaces(predicateFn SpacesFilterPredicateFn) map[uuid.UUID]Space
 	GetSpaceFromAllSpaces(spaceID uuid.UUID) (Space, bool)
 	AddSpaceToAllSpaces(space Space) error
 	RemoveSpaceFromAllSpaces(space Space) (bool, error)
 }
 
 type Node interface {
-	IDer
-	Initializer
+	Space
 	RunStopper
 	LoadSaver
 	APIRegister
@@ -109,6 +109,7 @@ type Worlds interface {
 
 	CreateWorld(worldID uuid.UUID) (World, error)
 
+	FilterWorlds(predicateFn WorldsFilterPredicateFn) map[uuid.UUID]World
 	GetWorld(worldID uuid.UUID) (World, bool)
 	GetWorlds() map[uuid.UUID]World
 	AddWorld(world World, updateDB bool) error
@@ -164,6 +165,7 @@ type Space interface {
 
 	Update(recursive bool) error
 
+	FilterSpaces(predicateFn SpacesFilterPredicateFn, recursive bool) map[uuid.UUID]Space
 	GetSpace(spaceID uuid.UUID, recursive bool) (Space, bool)
 	GetSpaces(recursive bool) map[uuid.UUID]Space
 	AddSpace(space Space, updateDB bool) error
@@ -243,6 +245,129 @@ type User interface {
 	ReleaseSendBuffer()
 }
 
+type Assets2d interface {
+	Initializer
+	LoadSaver
+	APIRegister
+
+	CreateAsset2d(asset2dID uuid.UUID) (Asset2d, error)
+
+	FilterAssets2d(predicateFn Assets2dFilterPredicateFn) map[uuid.UUID]Asset2d
+	GetAsset2d(asset2dID uuid.UUID) (Asset2d, bool)
+	GetAssets2d() map[uuid.UUID]Asset2d
+	AddAsset2d(asset2d Asset2d, updateDB bool) error
+	AddAssets2d(assets2d []Asset2d, updateDB bool) error
+	RemoveAsset2d(asset2d Asset2d, updateDB bool) error
+	RemoveAssets2d(assets2d []Asset2d, updateDB bool) error
+}
+
+type Asset2d interface {
+	IDer
+	Initializer
+
+	GetMeta() *entry.Asset2dMeta
+	SetMeta(meta *entry.Asset2dMeta, updateDB bool) error
+
+	GetOptions() *entry.Asset2dOptions
+	SetOptions(modifyFn modify.Fn[entry.Asset2dOptions], updateDB bool) (*entry.Asset2dOptions, error)
+
+	GetEntry() *entry.Asset2d
+	LoadFromEntry(entry *entry.Asset2d) error
+}
+
+type Assets3d interface {
+	Initializer
+	LoadSaver
+	APIRegister
+
+	CreateAsset3d(asset3dID uuid.UUID) (Asset3d, error)
+
+	FilterAssets3d(predicateFn Assets3dFilterPredicateFn) map[uuid.UUID]Asset3d
+	GetAsset3d(asset3dID uuid.UUID) (Asset3d, bool)
+	GetAssets3d() map[uuid.UUID]Asset3d
+	AddAsset3d(asset3d Asset3d, updateDB bool) error
+	AddAssets3d(assets3d []Asset3d, updateDB bool) error
+	RemoveAsset3d(asset3d Asset3d, updateDB bool) error
+	RemoveAssets3d(assets3d []Asset3d, updateDB bool) error
+}
+
+type Asset3d interface {
+	IDer
+	Initializer
+
+	GetMeta() *entry.Asset3dMeta
+	SetMeta(meta *entry.Asset3dMeta, updateDB bool) error
+
+	GetOptions() *entry.Asset3dOptions
+	SetOptions(modifyFn modify.Fn[entry.Asset3dOptions], updateDB bool) (*entry.Asset3dOptions, error)
+
+	GetEntry() *entry.Asset3d
+	LoadFromEntry(entry *entry.Asset3d) error
+}
+
+type Plugins interface {
+	Initializer
+	LoadSaver
+	APIRegister
+
+	CreatePlugin(pluginID uuid.UUID) (Plugin, error)
+
+	FilterPlugins(predicateFn PluginsFilterPredicateFn) map[uuid.UUID]Plugin
+	GetPlugin(pluginID uuid.UUID) (Plugin, bool)
+	GetPlugins() map[uuid.UUID]Plugin
+	AddPlugin(plugin Plugin, updateDB bool) error
+	AddPlugins(plugins []Plugin, updateDB bool) error
+	RemovePlugin(plugin Plugin, updateDB bool) error
+	RemovePlugins(plugins []Plugin, updateDB bool) error
+}
+
+type Plugin interface {
+	IDer
+	Initializer
+
+	GetMeta() *entry.PluginMeta
+	SetMeta(meta *entry.PluginMeta, updateDB bool) error
+
+	GetOptions() *entry.PluginOptions
+	SetOptions(modifyFn modify.Fn[entry.PluginOptions], updateDB bool) (*entry.PluginOptions, error)
+
+	GetEntry() *entry.Plugin
+	LoadFromEntry(entry *entry.Plugin) error
+}
+
+type AttributeTypes interface {
+	Initializer
+	LoadSaver
+	APIRegister
+
+	CreateAttributeType(attributeTypeID entry.AttributeTypeID) (AttributeType, error)
+
+	FilterAttributeTypes(predicateFn AttributeTypesFilterPredicateFn) map[entry.AttributeTypeID]AttributeType
+	GetAttributeType(attributeTypeID entry.AttributeTypeID) (AttributeType, bool)
+	GetAttributeTypes() map[entry.AttributeTypeID]AttributeType
+	AddAttributeType(attributeType AttributeType, updateDB bool) error
+	AddAttributeTypes(attributeTypes []AttributeType, updateDB bool) error
+	RemoveAttributeType(attributeType AttributeType, updateDB bool) error
+	RemoveAttributeTypes(attributeTypes []AttributeType, updateDB bool) error
+}
+
+type AttributeType interface {
+	Initializer
+
+	GetID() entry.AttributeTypeID
+	GetName() string
+	GetPluginID() uuid.UUID
+
+	GetOptions() *entry.AttributeOptions
+	SetOptions(modifyFn modify.Fn[entry.AttributeOptions], updateDB bool) (*entry.AttributeOptions, error)
+
+	GetDescription() *string
+	SetDescription(description *string, updateDB bool) error
+
+	GetEntry() *entry.AttributeType
+	LoadFromEntry(entry *entry.AttributeType) error
+}
+
 type SpaceTypes interface {
 	Initializer
 	LoadSaver
@@ -250,6 +375,7 @@ type SpaceTypes interface {
 
 	CreateSpaceType(spaceTypeID uuid.UUID) (SpaceType, error)
 
+	FilterSpaceTypes(predicateFn SpaceTypesFilterPredicateFn) map[uuid.UUID]SpaceType
 	GetSpaceType(spaceTypeID uuid.UUID) (SpaceType, bool)
 	GetSpaceTypes() map[uuid.UUID]SpaceType
 	AddSpaceType(spaceType SpaceType, updateDB bool) error
@@ -291,6 +417,7 @@ type UserTypes interface {
 
 	CreateUserType(userTypeID uuid.UUID) (UserType, error)
 
+	FilterUserTypes(predicateFn UserTypesFilterPredicateFn) map[uuid.UUID]UserType
 	GetUserType(userTypeID uuid.UUID) (UserType, bool)
 	GetUserTypes() map[uuid.UUID]UserType
 	AddUserType(spaceType UserType, updateDB bool) error
@@ -314,123 +441,4 @@ type UserType interface {
 
 	GetEntry() *entry.UserType
 	LoadFromEntry(entry *entry.UserType) error
-}
-
-type Assets2d interface {
-	Initializer
-	LoadSaver
-	APIRegister
-
-	CreateAsset2d(asset2dID uuid.UUID) (Asset2d, error)
-
-	GetAsset2d(asset2dID uuid.UUID) (Asset2d, bool)
-	GetAssets2d() map[uuid.UUID]Asset2d
-	AddAsset2d(asset2d Asset2d, updateDB bool) error
-	AddAssets2d(assets2d []Asset2d, updateDB bool) error
-	RemoveAsset2d(asset2d Asset2d, updateDB bool) error
-	RemoveAssets2d(assets2d []Asset2d, updateDB bool) error
-}
-
-type Asset2d interface {
-	IDer
-	Initializer
-
-	GetMeta() *entry.Asset2dMeta
-	SetMeta(meta *entry.Asset2dMeta, updateDB bool) error
-
-	GetOptions() *entry.Asset2dOptions
-	SetOptions(modifyFn modify.Fn[entry.Asset2dOptions], updateDB bool) (*entry.Asset2dOptions, error)
-
-	GetEntry() *entry.Asset2d
-	LoadFromEntry(entry *entry.Asset2d) error
-}
-
-type Assets3d interface {
-	Initializer
-	LoadSaver
-	APIRegister
-
-	CreateAsset3d(asset3dID uuid.UUID) (Asset3d, error)
-
-	GetAsset3d(asset3dID uuid.UUID) (Asset3d, bool)
-	GetAssets3d() map[uuid.UUID]Asset3d
-	AddAsset3d(asset3d Asset3d, updateDB bool) error
-	AddAssets3d(assets3d []Asset3d, updateDB bool) error
-	RemoveAsset3d(asset3d Asset3d, updateDB bool) error
-	RemoveAssets3d(assets3d []Asset3d, updateDB bool) error
-}
-
-type Asset3d interface {
-	IDer
-	Initializer
-
-	GetMeta() *entry.Asset3dMeta
-	SetMeta(meta *entry.Asset3dMeta, updateDB bool) error
-
-	GetOptions() *entry.Asset3dOptions
-	SetOptions(modifyFn modify.Fn[entry.Asset3dOptions], updateDB bool) (*entry.Asset3dOptions, error)
-
-	GetEntry() *entry.Asset3d
-	LoadFromEntry(entry *entry.Asset3d) error
-}
-
-type AttributeTypes interface {
-	Initializer
-	LoadSaver
-	APIRegister
-
-	CreateAttributeType(attributeTypeID entry.AttributeTypeID) (AttributeType, error)
-
-	GetAttributeType(attributeTypeID entry.AttributeTypeID) (AttributeType, bool)
-	GetAttributeTypes() map[entry.AttributeTypeID]AttributeType
-	AddAttributeType(attributeType AttributeType, updateDB bool) error
-	AddAttributeTypes(attributeTypes []AttributeType, updateDB bool) error
-	RemoveAttributeType(attributeType AttributeType, updateDB bool) error
-	RemoveAttributeTypes(attributeTypes []AttributeType, updateDB bool) error
-}
-
-type AttributeType interface {
-	Initializer
-
-	GetID() entry.AttributeTypeID
-	GetName() string
-	GetPluginID() uuid.UUID
-
-	GetOptions() *entry.AttributeOptions
-	SetOptions(modifyFn modify.Fn[entry.AttributeOptions], updateDB bool) (*entry.AttributeOptions, error)
-
-	GetDescription() *string
-	SetDescription(description *string, updateDB bool) error
-
-	GetEntry() *entry.AttributeType
-	LoadFromEntry(entry *entry.AttributeType) error
-}
-
-type Plugins interface {
-	Initializer
-	LoadSaver
-	APIRegister
-
-	CreatePlugin(pluginID uuid.UUID) (Plugin, error)
-
-	GetPlugin(pluginID uuid.UUID) (Plugin, bool)
-	GetPlugins() map[uuid.UUID]Plugin
-	AddPlugin(plugin Plugin, updateDB bool) error
-	AddPlugins(plugins []Plugin, updateDB bool) error
-	RemovePlugin(plugin Plugin, updateDB bool) error
-	RemovePlugins(plugins []Plugin, updateDB bool) error
-}
-
-type Plugin interface {
-	IDer
-	Initializer
-
-	GetMeta() *entry.PluginMeta
-	SetMeta(meta *entry.PluginMeta, updateDB bool) error
-
-	GetOptions() *entry.PluginOptions
-	SetOptions(modifyFn modify.Fn[entry.PluginOptions], updateDB bool) (*entry.PluginOptions, error)
-
-	GetEntry() *entry.Plugin
-	LoadFromEntry(entry *entry.Plugin) error
 }
