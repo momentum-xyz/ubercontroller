@@ -120,8 +120,8 @@ func (n *Node) apiProfileUploadAvatar(c *gin.Context) {
 
 	req, err := http.NewRequest("POST", n.cfg.Common.RenderDefaultUrl, openedFile)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiProfileUploadAvatar: failed to post data to media-manager")
-		api.AbortRequest(c, http.StatusBadRequest, "failed_to_post", err, n.log)
+		err := errors.WithMessage(err, "Node: apiProfileUploadAvatar: failed to create post request")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_create_request", err, n.log)
 		return
 	}
 
@@ -131,9 +131,12 @@ func (n *Node) apiProfileUploadAvatar(c *gin.Context) {
 	resp, err := client.Do(req)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiProfileUploadAvatar: failed to post data to media-manager")
-		api.AbortRequest(c, http.StatusBadRequest, "failed_to_post", err, n.log)
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_post_request", err, n.log)
 		return
 	}
 
+	defer resp.Body.Close()
+
+	// body, err := io
 	fmt.Sprintln(resp)
 }
