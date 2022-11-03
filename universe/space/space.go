@@ -335,7 +335,7 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 	group, _ := errgroup.WithContext(s.ctx)
 	group.Go(func() error {
 		if err := s.loadSpaceAttributes(); err != nil {
-			return errors.WithMessage(err, "failed to load space spaceAttributes")
+			return errors.WithMessage(err, "failed to load space attributes")
 		}
 		return nil
 	})
@@ -426,7 +426,9 @@ func (s *Space) UpdateSpawnMessage() {
 	}
 
 	name := " "
-	v, ok := s.GetSpaceAttributeValue(entry.NewAttributeID(universe.GetSystemPluginID(), "name"))
+	v, ok := s.GetSpaceAttributeValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name),
+	)
 	if ok {
 		// QUESTION: what to do here? maybe return an error?
 		name = utils.GetFromAnyMap(*v, "name", "")

@@ -13,7 +13,6 @@ import (
 	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/mplugin"
-	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/pkg/message"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -25,19 +24,6 @@ import (
 
 var _ universe.World = (*World)(nil)
 
-type DecorationMetadataNew struct {
-	AssetID  uuid.UUID  `json:"asset_id" db:"asset_id" mapstructure:"asset_id"`
-	Position cmath.Vec3 `json:"position" db:"position" mapstructure:"position"`
-	rotation cmath.Vec3
-}
-
-type WorldMeta struct {
-	LOD              []uint32                `json:"lod" db:"lod" mapstructure:"lod"`
-	Decorations      []DecorationMetadataNew `json:"decorations,omitempty" db:"decorations,omitempty" mapstructure:"decorations"`
-	AvatarController uuid.UUID               `json:"avatar_controller" db:"avatar_controller" mapstructure:"avatar_controller"`
-	SkyboxController uuid.UUID               `json:"skybox_controller" db:"skybox_controller" mapstructure:"skybox_controller"`
-}
-
 type World struct {
 	*space.Space
 	ctx              context.Context
@@ -48,7 +34,7 @@ type World struct {
 	corePluginInterface mplugin.PluginInterface
 	broadcast           chan *websocket.PreparedMessage
 	metaMsg             atomic.Pointer[websocket.PreparedMessage]
-	metaData            WorldMeta
+	metaData            Metadata
 	counter             atomic.Int64
 	allSpaces           *generic.SyncMap[uuid.UUID, universe.Space]
 }
@@ -168,7 +154,7 @@ func (w *World) Load() error {
 func (w *World) UpdateWorldMetadata() error {
 	meta, ok := w.GetSpaceAttributeValue(
 		entry.NewAttributeID(
-			uuid.UUID(w.corePluginInterface.GetId()), "world_meta",
+			uuid.UUID(w.corePluginInterface.GetId()), universe.Attributes.World.Meta.Name,
 		),
 	)
 	if !ok {
