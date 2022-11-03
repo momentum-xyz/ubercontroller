@@ -28,13 +28,13 @@ type SpaceEffectiveOptions SpaceOptions
 
 type SpaceEffectiveSubOptions map[string]any
 
-type Assets3dOptions map[uuid.UUID]*Asset3dOptions
+type Assets3dOptions map[uuid.UUID]Asset3dOptions
 
-type Asset3dOptions entry.Asset3dOptions
+type Asset3dOptions *entry.Asset3dOptions
 
-type Assets3dMeta map[uuid.UUID]*Asset3dMeta
+type Assets3dMeta map[uuid.UUID]Asset3dMeta
 
-type Asset3dMeta entry.Asset3dMeta
+type Asset3dMeta *entry.Asset3dMeta
 
 type Profile struct {
 	Bio         *string `json:"bio,omitempty"`

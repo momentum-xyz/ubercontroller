@@ -132,20 +132,20 @@ func (a *Assets3d) apiRemoveAssets3dByIDs(c *gin.Context) {
 }
 
 func (a *Assets3d) apiGetAssets3dOptions(c *gin.Context) {
-	inBody := struct {
+	inQuery := struct {
 		Assets3dIDs []string `form:"assets3d_ids[]" binding:"required"`
 	}{}
 
-	if err := c.ShouldBindQuery(&inBody); err != nil {
+	if err := c.ShouldBindQuery(&inQuery); err != nil {
 		err := errors.WithMessage(err, "Assets3d: apiGetAssets3dOptions: failed to bind json")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, a.log)
 		return
 	}
 
-	out := make(dto.Assets3dOptions, len(inBody.Assets3dIDs))
+	out := make(dto.Assets3dOptions, len(inQuery.Assets3dIDs))
 
-	for i := range inBody.Assets3dIDs {
-		asset3dID, err := uuid.Parse(inBody.Assets3dIDs[i])
+	for i := range inQuery.Assets3dIDs {
+		asset3dID, err := uuid.Parse(inQuery.Assets3dIDs[i])
 		if err != nil {
 			err := errors.WithMessagef(err, "Assets3d: apiGetAssets3dOptions: failed to parse uuid")
 			api.AbortRequest(c, http.StatusBadRequest, "invalid_asset3d_uuid", err, a.log)
@@ -159,27 +159,27 @@ func (a *Assets3d) apiGetAssets3dOptions(c *gin.Context) {
 			return
 		}
 
-		out[asset3dID] = (*dto.Asset3dOptions)(gotAsset3d.GetOptions())
+		out[asset3dID] = gotAsset3d.GetOptions()
 	}
 
 	c.JSON(http.StatusOK, out)
 }
 
 func (a *Assets3d) apiGetAssets3dMeta(c *gin.Context) {
-	inBody := struct {
+	inQuery := struct {
 		Assets3dIDs []string `form:"assets3d_ids[]" binding:"required"`
 	}{}
 
-	if err := c.ShouldBindQuery(&inBody); err != nil {
+	if err := c.ShouldBindQuery(&inQuery); err != nil {
 		err := errors.WithMessage(err, "Assets3d: apiGetAssets3dMeta: failed to bind json")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, a.log)
 		return
 	}
 
-	out := make(dto.Assets3dMeta, len(inBody.Assets3dIDs))
+	out := make(dto.Assets3dMeta, len(inQuery.Assets3dIDs))
 
-	for i := range inBody.Assets3dIDs {
-		asset3dID, err := uuid.Parse(inBody.Assets3dIDs[i])
+	for i := range inQuery.Assets3dIDs {
+		asset3dID, err := uuid.Parse(inQuery.Assets3dIDs[i])
 		if err != nil {
 			err := errors.WithMessagef(err, "Assets3d: apiGetAssets3dMeta: failed to parse uuid")
 			api.AbortRequest(c, http.StatusBadRequest, "invalid_asset3d_uuid", err, a.log)
@@ -193,7 +193,7 @@ func (a *Assets3d) apiGetAssets3dMeta(c *gin.Context) {
 			return
 		}
 
-		out[asset3dID] = (*dto.Asset3dMeta)(gotAsset3d.GetMeta())
+		out[asset3dID] = gotAsset3d.GetMeta()
 	}
 
 	c.JSON(http.StatusOK, out)
