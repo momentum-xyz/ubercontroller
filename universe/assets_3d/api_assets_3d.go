@@ -10,6 +10,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/api"
 	"github.com/momentum-xyz/ubercontroller/universe/api/dto"
+	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
@@ -25,10 +26,8 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 	a3dMap := make(map[uuid.UUID]universe.Asset3d)
 	predicateFn := func(asset3dID uuid.UUID, asset3d universe.Asset3d) bool {
 		entry := asset3d.GetEntry()
-		if entry.Meta != nil {
-			return (*entry.Meta)["kind"] == queryParams.kind
-		}
-		return false
+		kind := utils.GetFromAnyMap(entry.Meta, "kind", "")
+		return kind == queryParams.kind
 	}
 
 	if queryParams.kind == "" {
