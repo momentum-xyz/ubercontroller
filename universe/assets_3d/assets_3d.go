@@ -57,6 +57,10 @@ func (a *Assets3d) CreateAsset3d(asset3dID uuid.UUID) (universe.Asset3d, error) 
 	return asset3d, nil
 }
 
+func (a *Assets3d) FilterAssets3d(predicateFn universe.Assets3dFilterPredicateFn) map[uuid.UUID]universe.Asset3d {
+	return a.assets.Filter(predicateFn)
+}
+
 func (a *Assets3d) GetAsset3d(asset3dID uuid.UUID) (universe.Asset3d, bool) {
 	asset, ok := a.assets.Load(asset3dID)
 	return asset, ok

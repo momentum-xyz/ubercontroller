@@ -56,6 +56,10 @@ func (s *SpaceTypes) CreateSpaceType(spaceTypeID uuid.UUID) (universe.SpaceType,
 	return spaceType, nil
 }
 
+func (s *SpaceTypes) FilterSpaceTypes(predicateFn universe.SpaceTypesFilterPredicateFn) map[uuid.UUID]universe.SpaceType {
+	return s.spaceTypes.Filter(predicateFn)
+}
+
 func (s *SpaceTypes) GetSpaceType(spaceTypeID uuid.UUID) (universe.SpaceType, bool) {
 	spaceType, ok := s.spaceTypes.Load(spaceTypeID)
 	return spaceType, ok

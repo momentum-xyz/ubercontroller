@@ -57,6 +57,10 @@ func (p *Plugins) CreatePlugin(pluginId uuid.UUID) (universe.Plugin, error) {
 	return plugin, nil
 }
 
+func (p *Plugins) FilterPlugins(predicateFn universe.PluginsFilterPredicateFn) map[uuid.UUID]universe.Plugin {
+	return p.plugins.Filter(predicateFn)
+}
+
 func (p *Plugins) GetPlugin(pluginID uuid.UUID) (universe.Plugin, bool) {
 	plugin, ok := p.plugins.Load(pluginID)
 	return plugin, ok

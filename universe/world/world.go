@@ -214,7 +214,7 @@ func (w *World) GetAllSpaces() map[uuid.UUID]universe.Space {
 	return spaces
 }
 
-func (w *World) FilterAllSpaces(predicateFn universe.SpaceFilterPredicateFn) map[uuid.UUID]universe.Space {
+func (w *World) FilterAllSpaces(predicateFn universe.SpacesFilterPredicateFn) map[uuid.UUID]universe.Space {
 	return w.allSpaces.Filter(predicateFn)
 }
 
