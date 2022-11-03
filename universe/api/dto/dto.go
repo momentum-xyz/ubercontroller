@@ -32,6 +32,10 @@ type Assets3dOptions map[uuid.UUID]*Asset3dOptions
 
 type Asset3dOptions entry.Asset3dOptions
 
+type Assets3dMeta map[uuid.UUID]*Asset3dMeta
+
+type Asset3dMeta entry.Asset3dMeta
+
 type Profile struct {
 	Bio         *string `json:"bio,omitempty"`
 	Location    *string `json:"location,omitempty"`
@@ -288,9 +292,8 @@ type Plugin struct {
 }
 
 type Asset3d struct {
-	ID        string         `json:"id"`
-	Name      string         `json:"name"`
-	Meta      map[string]any `json:"meta"`
-	CreatedAt string         `json:"createdAt"`
-	UpdatedAt string         `json:"updatedAt"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	CreatedAt string `json:"createdAt"`
+	UpdatedAt string `json:"updatedAt"`
 }

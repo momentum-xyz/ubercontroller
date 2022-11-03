@@ -7,67 +7,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/api"
 	"github.com/momentum-xyz/ubercontroller/universe/api/dto"
 )
-
-func (a *Assets3d) apiCreateAsset3d(c *gin.Context) {
-	inBody := struct {
-		Meta    *map[string]any     `form:"meta" json:"meta"`
-		Options *dto.Asset3dOptions `form:"options" json:"options"`
-	}{}
-
-	if err := c.ShouldBindJSON(&inBody); err != nil {
-		err = errors.WithMessage(err, "Assets3d: apiCreateAsset3d: failed to bind json")
-		api.AbortRequest(c, http.StatusInternalServerError, "invalid_request_query", err, a.log)
-		return
-	}
-
-	asset3dID, err := uuid.Parse(c.Param("asset3dID"))
-	if err != nil {
-		err = errors.WithMessage(err, "Assets3d: apiCreateAsset3d: failed to parse asset3dID")
-		api.AbortRequest(c, http.StatusInternalServerError, "invalid_uuid_parse", err, a.log)
-		return
-	}
-
-	crAsset3d, err := a.CreateAsset3d(asset3dID)
-	if err != nil {
-		err = errors.WithMessage(err, "Assets3d: apiCreateAsset3d: failed to create asset3d")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_create_asset3d", err, a.log)
-		return
-	}
-
-	setMeta := &entry.Asset3dMeta{}
-	copyAsset3dMetaMap(*inBody.Meta, *setMeta, false)
-
-	if err := crAsset3d.SetMeta(setMeta, false); err != nil {
-		err = errors.WithMessage(err, "Assets3d: apiCreateAsset3d: failed to set asset3d meta")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_asset3d_meta", err, a.log)
-		return
-	}
-
-	// modFn := modify.ReplaceWith(inBody.Options)
-
-	// if err = crAsset3d.SetOptions(modFn, false); err != nil {
-	// 	err = errors.WithMessage(err, "Assets3d: apiCreateAsset3d: failed to set asset3d options")
-	// 	api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_asset3d_options", err, a.log)
-	// 	return
-	// }
-
-	out := crAsset3d.GetEntry()
-
-	outDTO := dto.Asset3d{
-		ID: out.Asset3dID.String(),
-		// Name: "",
-		// Meta:      out.Meta,
-		CreatedAt: out.CreatedAt.String(),
-		UpdatedAt: out.UpdatedAt.String(),
-	}
-
-	c.JSON(http.StatusOK, outDTO)
-}
 
 func (a *Assets3d) apiGetAsset3d(c *gin.Context) {
 	asset3dID, err := uuid.Parse(c.Param("asset3dID"))
@@ -85,13 +28,9 @@ func (a *Assets3d) apiGetAsset3d(c *gin.Context) {
 	}
 
 	out := gAsset3d.GetEntry()
-	dtoMeta := make(map[string]any)
-	copyAsset3dMetaMap(*out.Meta, dtoMeta, true)
 
 	outDTO := dto.Asset3d{
-		ID: out.Asset3dID.String(),
-		// Name: "",
-		Meta:      dtoMeta,
+		ID:        out.Asset3dID.String(),
 		CreatedAt: out.CreatedAt.String(),
 		UpdatedAt: out.UpdatedAt.String(),
 	}
@@ -100,9 +39,6 @@ func (a *Assets3d) apiGetAsset3d(c *gin.Context) {
 }
 
 func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
-	a3dMap := a.GetAssets3d()
-	assets := make([]*dto.Asset3d, 0, len(a3dMap))
-
 	// TODO: rework this in a different method
 	// or in a more generic way
 	//
@@ -119,15 +55,15 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, a.log)
 	}
 
+	a3dMap := a.GetAssets3d()
+	assets := make([]*dto.Asset3d, 0, len(a3dMap))
+
 	if queryParams.kind == "" {
 		for _, el := range a3dMap {
 			asset := el.GetEntry()
-			dtoMeta := make(map[string]any)
-			copyAsset3dMetaMap(*asset.Meta, dtoMeta, true)
 
 			assetDTO := &dto.Asset3d{
 				ID:        asset.Asset3dID.String(),
-				Meta:      dtoMeta,
 				CreatedAt: asset.CreatedAt.String(),
 				UpdatedAt: asset.UpdatedAt.String(),
 			}
@@ -136,17 +72,16 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 	} else {
 		for _, el := range a3dMap {
 			asset := el.GetEntry()
-			if (*asset.Meta)["kind"] == queryParams.kind {
-				dtoMeta := make(map[string]any)
-				copyAsset3dMetaMap(*asset.Meta, dtoMeta, true)
+			if asset.Meta != nil {
+				if (*asset.Meta)["kind"] == queryParams.kind {
 
-				assetDTO := &dto.Asset3d{
-					ID:        asset.Asset3dID.String(),
-					Meta:      dtoMeta,
-					CreatedAt: asset.CreatedAt.String(),
-					UpdatedAt: asset.UpdatedAt.String(),
+					assetDTO := &dto.Asset3d{
+						ID:        asset.Asset3dID.String(),
+						CreatedAt: asset.CreatedAt.String(),
+						UpdatedAt: asset.UpdatedAt.String(),
+					}
+					assets = append(assets, assetDTO)
 				}
-				assets = append(assets, assetDTO)
 			}
 		}
 	}
@@ -154,63 +89,9 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 	c.JSON(http.StatusOK, assets)
 }
 
-func (a *Assets3d) apiAddAsset3d(c *gin.Context) {
-	inBody := struct {
-		asset3dID string             `form:"asset3dID" json:"asset3dID"`
-		meta      map[string]any     `form:"meta" json:"meta"`
-		options   dto.Asset3dOptions `form:"options" json:"options"`
-	}{}
-
-	if err := c.ShouldBindJSON(&inBody); err != nil {
-		err = errors.WithMessage(err, "Assets3d: apiAddAsset3d: failed to bind json")
-		api.AbortRequest(c, http.StatusInternalServerError, "invalid_request_query", err, a.log)
-		return
-	}
-
-	asset3dID, err := uuid.Parse(inBody.asset3dID)
-	if err != nil {
-		err = errors.WithMessage(err, "Assets3d: apiAddAsset3d: failed to parse asset3dID")
-		api.AbortRequest(c, http.StatusInternalServerError, "invalid_uuid_parse", err, a.log)
-		return
-	}
-
-	newAsset, err := a.CreateAsset3d(asset3dID)
-	if err != nil {
-		err = errors.WithMessage(err, "Assets3d: apiAddAsset3d: failed to create asset3d from input")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_create_asset3d", err, a.log)
-		return
-	}
-
-	setMeta := &entry.Asset3dMeta{}
-	copyAsset3dMetaMap(inBody.meta, *setMeta, false)
-
-	if err := newAsset.SetMeta(setMeta, false); err != nil {
-		err = errors.WithMessage(err, "Assets3d: apiAddAsset3d: failed to set asset3d meta")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_asset3d_meta", err, a.log)
-		return
-	}
-
-	// modFn := modify.ReplaceWith(inBody.options)
-
-	// err = newAsset.SetOptions(modFn, false)
-	// if err != nil {
-	// 	err = errors.WithMessage(err, "Assets3d: apiAddAsset3d: failed to set asset3d options")
-	// 	api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_asset3d_options", err, a.log)
-	// 	return
-	// }
-
-	if err := a.AddAsset3d(newAsset, true); err != nil {
-		err = errors.WithMessage(err, "Assets3d: apiAddAsset3d: failed to add asset3d")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_add_asset3d", err, a.log)
-		return
-	}
-
-	c.JSON(http.StatusOK, newAsset.GetEntry())
-}
-
 func (a *Assets3d) apiAddAssets3d(c *gin.Context) {
 	inBody := struct {
-		assets3d []entry.Asset3d `json:"assets3d"`
+		assets3dIDs []string `json:"assets3d"`
 	}{}
 
 	if err := c.ShouldBindJSON(&inBody); err != nil {
@@ -219,33 +100,17 @@ func (a *Assets3d) apiAddAssets3d(c *gin.Context) {
 		return
 	}
 
-	addAssets3d := make([]universe.Asset3d, len(inBody.assets3d))
-	for _, asset3d := range inBody.assets3d {
-		newAsset, err := a.CreateAsset3d(asset3d.Asset3dID)
+	addAssets3d := make([]universe.Asset3d, 0, len(inBody.assets3dIDs))
+	for i := range inBody.assets3dIDs {
+		assetID, err := uuid.Parse(inBody.assets3dIDs[i])
+		if err != nil {
+			err = errors.WithMessage(err, "Assets3d: apiAddAssets3d: failed to parse uuid")
+			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_parse_uuid", err, a.log)
+		}
+		newAsset, err := a.CreateAsset3d(assetID)
 		if err != nil {
 			err = errors.WithMessage(err, "Assets3d: apiAddAssets3d: failed to create asset3d from input")
 			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_create_asset3d", err, a.log)
-			return
-		}
-
-		if err := newAsset.SetMeta(asset3d.Meta, false); err != nil {
-			err = errors.WithMessage(err, "Assets3d: apiAddAssets3d: failed to set asset3d meta")
-			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_asset3d_meta", err, a.log)
-			return
-
-		}
-
-		modFn := func(ops *entry.Asset3dOptions) (*entry.Asset3dOptions, error) {
-			if ops == nil {
-				return nil, errors.New("Assets3d: apiAddAsset3d: modify func - got nil options")
-			}
-			return ops, nil
-		}
-
-		err = newAsset.SetOptions(modFn, false)
-		if err != nil {
-			err = errors.WithMessage(err, "Assets3d: apiAddAssets3d: failed to set asset3d options")
-			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_asset3d_options", err, a.log)
 			return
 		}
 
@@ -255,30 +120,6 @@ func (a *Assets3d) apiAddAssets3d(c *gin.Context) {
 	if err := a.AddAssets3d(addAssets3d, true); err != nil {
 		err = errors.WithMessage(err, "Assets3d: apiAddAssets3d: failed to add assets3d")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_add_assets3d", err, a.log)
-		return
-	}
-
-	c.JSON(http.StatusOK, nil)
-}
-
-func (a *Assets3d) apiRemoveAsset3d(c *gin.Context) {
-	asset3dID, err := uuid.Parse(c.Param("asset3dID"))
-	if err != nil {
-		err = errors.WithMessage(err, "Assets3d: apiRemoveAsset3d: failed to parse asset3dID")
-		api.AbortRequest(c, http.StatusInternalServerError, "invalid_uuid_parse", err, a.log)
-		return
-	}
-
-	getAsset3d, ok := a.GetAsset3d(asset3dID)
-	if !ok {
-		err = errors.WithMessage(err, "Assets3d: apiRemoveAsset3d: failed to get asset3d")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_asset3d", err, a.log)
-		return
-	}
-
-	if err := a.RemoveAsset3d(getAsset3d, true); err != nil {
-		err = errors.WithMessage(err, "Assets3d: apiRemoveAsset3d: failed to remove asset3d")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_remove_asset3d", err, a.log)
 		return
 	}
 
@@ -316,18 +157,10 @@ func (a *Assets3d) apiRemoveAssets3dByIDs(c *gin.Context) {
 	c.JSON(http.StatusOK, nil)
 }
 
-func (a *Assets3d) apiRemoveAssets3d(c *gin.Context) {
-	//TODO
+func (a *Assets3d) apiGetAsset3dOptions(c *gin.Context) {
+
 }
 
-func copyAsset3dMetaMap(first map[string]any, second entry.Asset3dMeta, reverse bool) {
-	if reverse {
-		for k, v := range second {
-			first[k] = v
-		}
-	} else {
-		for k, v := range first {
-			second[k] = v
-		}
-	}
+func (a *Assets3d) apiGetAsset3dMeta(c *gin.Context) {
+
 }

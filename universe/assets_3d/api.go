@@ -19,18 +19,16 @@ func (a *Assets3d) RegisterAPI(r *gin.Engine) {
 			{
 				asset3d.GET("", a.apiGetAsset3d)
 
-				asset3d.DELETE("", a.apiRemoveAsset3d)
+				asset3d.GET("/options", a.apiGetAsset3dOptions)
 
-				asset3d.POST("", a.apiCreateAsset3d)
+				asset3d.GET("/meta", a.apiGetAsset3dMeta)
 			}
 
 			assets3d.GET("", a.apiGetAssets3d)
 
-			assets3d.POST("/add", a.apiAddAssets3d)
+			assets3d.DELETE("", a.apiRemoveAssets3dByIDs)
 
-			assets3d.DELETE("/remove-ids", a.apiRemoveAssets3dByIDs)
-
-			assets3d.POST("/add-many", a.apiAddAssets3d)
+			assets3d.POST("", a.apiAddAssets3d)
 		}
 	}
 }

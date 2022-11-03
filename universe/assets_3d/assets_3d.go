@@ -165,6 +165,12 @@ func (a *Assets3d) RemoveAssets3dByIDs(assets3dIDs []uuid.UUID, updateDB bool) e
 	a.assets.Mu.Lock()
 	defer a.assets.Mu.Unlock()
 
+	for i := range assets3dIDs {
+		if _, ok := a.assets.Data[assets3dIDs[i]]; !ok {
+			return errors.Errorf("asset 3d not found: %s", assets3dIDs[i])
+		}
+	}
+
 	if updateDB {
 		if err := a.db.Assets3dRemoveAssetsByIDs(a.ctx, assets3dIDs); err != nil {
 			return errors.WithMessage(err, "failed to update db")
