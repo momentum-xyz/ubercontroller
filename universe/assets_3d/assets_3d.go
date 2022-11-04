@@ -145,7 +145,7 @@ func (a *Assets3d) RemoveAssets3d(assets3d []universe.Asset3d, updateDB bool) er
 	}
 
 	if updateDB {
-		ids := make([]uuid.UUID, len(assets3d))
+		ids := make([]uuid.UUID, 0, len(assets3d))
 		for i := range assets3d {
 			ids[i] = assets3d[i].GetID()
 		}
@@ -161,18 +161,18 @@ func (a *Assets3d) RemoveAssets3d(assets3d []universe.Asset3d, updateDB bool) er
 	return nil
 }
 
-func (a *Assets3d) RemoveAssets3dByIDs(ids []uuid.UUID, updateDB bool) error {
+func (a *Assets3d) RemoveAssets3dByIDs(assets3dIDs []uuid.UUID, updateDB bool) error {
 	a.assets.Mu.Lock()
 	defer a.assets.Mu.Unlock()
 
 	if updateDB {
-		if err := a.db.Assets3dRemoveAssetsByIDs(a.ctx, ids); err != nil {
+		if err := a.db.Assets3dRemoveAssetsByIDs(a.ctx, assets3dIDs); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
 
-	for i := range ids {
-		delete(a.assets.Data, ids[i])
+	for i := range assets3dIDs {
+		delete(a.assets.Data, assets3dIDs[i])
 	}
 
 	return nil

@@ -88,9 +88,16 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 	// for assets with `Meta = {"kind":"skybox"}`
 	//
 	// example "?kind=skybox` should return "skybox"
-	getKind := c.Request.URL.Query().Get("kind")
+	queryParams := struct {
+		kind string `form:"kind" json:"kind"`
+	}{}
 
-	if getKind == "" {
+	if err := c.ShouldBind(&queryParams); err != nil {
+		err = errors.WithMessage(err, "Assets3d: apiGetAssets3d: failed to bind query parameters")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, a.log)
+	}
+
+	if queryParams.kind == "" {
 		for _, el := range a3dMap {
 			asset := el.GetEntry()
 			assets = append(assets, asset)
@@ -98,7 +105,7 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 	} else {
 		for _, el := range a3dMap {
 			asset := el.GetEntry()
-			if (*asset.Meta)["kind"] == getKind {
+			if (*asset.Meta)["kind"] == queryParams.kind {
 				assets = append(assets, asset)
 			}
 		}
