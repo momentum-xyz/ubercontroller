@@ -13,13 +13,6 @@ import (
 )
 
 func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
-	// TODO: rework this in a different method
-	// or in a more generic way
-	//
-	// This is currently used as a poor man's filter
-	// for assets with `Meta = {"kind":"skybox"}`
-	//
-	// example "?kind=skybox` should return "skybox"
 	queryParams := struct {
 		kind string `form:"kind" json:"kind"`
 	}{}
@@ -29,54 +22,51 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, a.log)
 	}
 
-	a3dMap := a.GetAssets3d()
-	assets := make([]*dto.Asset3d, 0, len(a3dMap))
+	a3dMap := make(map[uuid.UUID]universe.Asset3d)
+	predicateFn := func(asset3dID uuid.UUID, asset3d universe.Asset3d) bool {
+		entry := asset3d.GetEntry()
+		if entry.Meta != nil {
+			return (*entry.Meta)["kind"] == queryParams.kind
+		}
+		return false
+	}
 
 	if queryParams.kind == "" {
-		for _, el := range a3dMap {
-			asset := el.GetEntry()
-
-			assetDTO := &dto.Asset3d{
-				ID:        asset.Asset3dID.String(),
-				CreatedAt: asset.CreatedAt.String(),
-				UpdatedAt: asset.UpdatedAt.String(),
-			}
-			assets = append(assets, assetDTO)
-		}
+		a3dMap = a.GetAssets3d()
 	} else {
-		for _, el := range a3dMap {
-			asset := el.GetEntry()
-			if asset.Meta != nil {
-				if (*asset.Meta)["kind"] == queryParams.kind {
+		a3dMap = a.FilterAssets3d(predicateFn)
+	}
 
-					assetDTO := &dto.Asset3d{
-						ID:        asset.Asset3dID.String(),
-						CreatedAt: asset.CreatedAt.String(),
-						UpdatedAt: asset.UpdatedAt.String(),
-					}
-					assets = append(assets, assetDTO)
-				}
-			}
+	assets := make([]*dto.Asset3d, 0, len(a3dMap))
+
+	for i := range a3dMap {
+		asset := a3dMap[i].GetEntry()
+
+		assetDTO := &dto.Asset3d{
+			ID:        asset.Asset3dID.String(),
+			CreatedAt: asset.CreatedAt.String(),
+			UpdatedAt: asset.UpdatedAt.String(),
 		}
+		assets = append(assets, assetDTO)
 	}
 
 	c.JSON(http.StatusOK, assets)
 }
 
 func (a *Assets3d) apiAddAssets3d(c *gin.Context) {
-	inBody := struct {
-		assets3dIDs []string `json:"assets3d"`
+	inQuery := struct {
+		assets3dIDs []string `form:"assets3d_ids[]" binding:"required"`
 	}{}
 
-	if err := c.ShouldBindJSON(&inBody); err != nil {
+	if err := c.ShouldBindJSON(&inQuery); err != nil {
 		err = errors.WithMessage(err, "Assets3d: apiAddAssets3d: failed to bind json")
 		api.AbortRequest(c, http.StatusInternalServerError, "invalid_request_query", err, a.log)
 		return
 	}
 
-	addAssets3d := make([]universe.Asset3d, 0, len(inBody.assets3dIDs))
-	for i := range inBody.assets3dIDs {
-		assetID, err := uuid.Parse(inBody.assets3dIDs[i])
+	addAssets3d := make([]universe.Asset3d, 0, len(inQuery.assets3dIDs))
+	for i := range inQuery.assets3dIDs {
+		assetID, err := uuid.Parse(inQuery.assets3dIDs[i])
 		if err != nil {
 			err = errors.WithMessage(err, "Assets3d: apiAddAssets3d: failed to parse uuid")
 			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_parse_uuid", err, a.log)
@@ -101,25 +91,25 @@ func (a *Assets3d) apiAddAssets3d(c *gin.Context) {
 }
 
 func (a *Assets3d) apiRemoveAssets3dByIDs(c *gin.Context) {
-	in := struct {
-		ids []string `form:"ids" binding:"required"`
+	inQuery := struct {
+		assets3dIDs []string `form:"assets3d_ids[]" binding:"required"`
 	}{}
 
-	if err := c.ShouldBindJSON(&in); err != nil {
+	if err := c.ShouldBindJSON(&inQuery); err != nil {
 		err = errors.WithMessage(err, "Assets3d: apiRemoveAssets3dByIDs: failed to bind json")
 		api.AbortRequest(c, http.StatusInternalServerError, "invalid_request_query", err, a.log)
 		return
 	}
 
-	uids := make([]uuid.UUID, 0, len(in.ids))
-	for _, id := range in.ids {
-		uid, err := uuid.Parse(id)
+	uids := make([]uuid.UUID, 0, len(inQuery.assets3dIDs))
+	for i := range inQuery.assets3dIDs {
+		uid, err := uuid.Parse(inQuery.assets3dIDs[i])
 		if err != nil {
 			err = errors.WithMessage(err, "Assets3d: apiRemoveAssets3dByIDs: failed to parse uuid")
 			api.AbortRequest(c, http.StatusInternalServerError, "invalid_uuid_parse", err, a.log)
 			return
 		}
-		uids = append(uids, uid)
+		uids[i] = uid
 	}
 
 	if err := a.RemoveAssets3dByIDs(uids, true); err != nil {
