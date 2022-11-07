@@ -60,16 +60,14 @@ func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 		return
 	}
 
-	space, ok := world.GetSpaceFromAllSpaces(spaceID)
+	root, ok := world.GetSpaceFromAllSpaces(spaceID)
 	if !ok {
 		err := errors.Errorf("Node: apiWorldsGetSpacesWithChildren: failed to get space: %s", spaceID)
 		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, w.log)
 		return
 	}
 
-	spaces := space.GetSpaces(false)
-
-	options, err := w.apiWorldsGetOptions(spaces, 0)
+	options, err := w.apiWorldsGetRootOptions(root)
 	if err != nil {
 		err := errors.Errorf("Node: apiWorldsGetSpacesWithChildren: unable to get options for spaces and subspaces: %s", err)
 		api.AbortRequest(c, http.StatusNotFound, "options_not_found", err, w.log)
@@ -79,35 +77,48 @@ func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 	c.JSON(http.StatusOK, options)
 }
 
-func (w *Worlds) apiWorldsGetOptions(spaces map[uuid.UUID]universe.Space, level int) ([]dto.ExploreOption, error) {
+func (w *Worlds) apiWorldsGetRootOptions(root universe.Space) ([]dto.ExploreOption, error) {
+	spaces := root.GetSpaces(false)
+	options := make([]dto.ExploreOption, 0, len(spaces))
+
+	if len(options) == 0 {
+		name, description, err := w.apiWorldsResolveNameDescription(root)
+		if err != nil {
+			return nil, errors.WithMessage(err, "failed to resolve name or description")
+		}
+
+		foundSubSpaces, err := w.apiWorldsGetChildrenOptions(spaces, 0)
+		if err != nil {
+			return nil, errors.WithMessage(err, "failed to get children")
+		}
+
+		option := dto.ExploreOption{
+			ID:          root.GetID(),
+			Name:        name,
+			Description: description,
+			SubSpaces:   foundSubSpaces,
+		}
+
+		options = append(options, option)
+	}
+
+	return options, nil
+}
+
+func (w *Worlds) apiWorldsGetChildrenOptions(spaces map[uuid.UUID]universe.Space, level int) ([]dto.ExploreOption, error) {
 	options := make([]dto.ExploreOption, 0, len(spaces))
 	if level == 2 {
 		return options, nil
 	}
 
 	for _, space := range spaces {
-		var name string
-		var description string
-
-		nameAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name)
-		nameValue, ok := space.GetSpaceAttributeValue(nameAttributeID)
-		if !ok {
-			return nil, errors.Errorf("invalid nameValue: %T", nameAttributeID)
-		}
-
-		if nameValue != nil {
-			name = utils.GetFromAnyMap(*nameValue, universe.Attributes.Space.Name.Name, "")
-		}
-
-		descriptionAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Description.Name)
-		descriptionValue, _ := space.GetSpaceAttributeValue(descriptionAttributeID)
-
-		if descriptionValue != nil {
-			description = utils.GetFromAnyMap(*descriptionValue, universe.Attributes.Space.Description.Name, "")
+		name, description, err := w.apiWorldsResolveNameDescription(space)
+		if err != nil {
+			return nil, errors.WithMessage(err, "failed to resolve name or description")
 		}
 
 		subSpaces := space.GetSpaces(false)
-		foundSubSpaces, err := w.apiWorldsGetOptions(subSpaces, level+1)
+		foundSubSpaces, err := w.apiWorldsGetChildrenOptions(subSpaces, level+1)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to get options")
 		}
@@ -125,43 +136,26 @@ func (w *Worlds) apiWorldsGetOptions(spaces map[uuid.UUID]universe.Space, level 
 	return options, nil
 }
 
-// @Summary Returns spaces based on a searchQuery and categorizes the results
-// @Schemes
-// @Description Returns space information based on a searchquery
-// @Tags spaces
-// @Accept json
-// @Produce json
-// @Param world_id path string true "World ID"
-// @Success 200 {object} dto.SpaceEffectiveOptions
-// @Success 500 {object} api.HTTPError
-// @Success 400 {object} api.HTTPError
-// @Success 404 {object} api.HTTPError
-// @Router /api/v4/worlds/{world_id}/explore [get]
-func (w *Worlds) apiWorldsSearchSpaces(c *gin.Context) {
-	type Query struct {
-		SearchQuery string `form:"query" binding:"required"`
+func (w *Worlds) apiWorldsResolveNameDescription(space universe.Space) (spaceName string, spaceDescription string, err error) {
+	var name string
+	var description string
+
+	nameAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name)
+	nameValue, ok := space.GetSpaceAttributeValue(nameAttributeID)
+	if !ok {
+		return "", "", errors.Errorf("invalid nameValue: %T", nameAttributeID)
 	}
 
-	inQuery := Query{}
-
-	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		err := errors.WithMessage(err, "Node: apiWorldsSearchSpaces: failed to bind query")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, w.log)
-		return
+	if nameValue != nil {
+		name = utils.GetFromAnyMap(*nameValue, universe.Attributes.Space.Name.Name, "")
 	}
 
-	worldID, err := uuid.Parse(c.Param("worldID"))
-	if err != nil {
-		err := errors.WithMessage(err, "Node: apiWorldsSearchSpaces: failed to parse world id")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
-		return
+	descriptionAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Description.Name)
+	descriptionValue, _ := space.GetSpaceAttributeValue(descriptionAttributeID)
+
+	if descriptionValue != nil {
+		description = utils.GetFromAnyMap(*descriptionValue, universe.Attributes.Space.Description.Name, "")
 	}
 
-	predicateFn := func(asset3dID uuid.UUID, asset3d universe.Asset3d) bool {
-		meta := asset3d.GetMeta()
-		kind := utils.GetFromAnyMap(*meta, "kind", "")
-		return kind == queryParams.kind
-	}
-
-	c.JSON(http.StatusOK, options)
+	return name, description, nil
 }
