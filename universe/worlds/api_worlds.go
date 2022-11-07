@@ -65,7 +65,7 @@ func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 	if worldID == spaceID {
 		space = world
 	} else {
-		space, ok = world.GetSpace(spaceID, true)
+		space, ok = world.GetSpaceFromAllSpaces(spaceID)
 		if !ok {
 			err := errors.Errorf("Node: apiWorldsGetSpacesWithChildren: failed to get space: %s", spaceID)
 			api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, w.log)
@@ -75,7 +75,7 @@ func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 
 	spaces := space.GetSpaces(false)
 
-	options := w.apiWorldsGetOptions(spaces, 0)
+	options, err := w.apiWorldsGetOptions(spaces, 0)
 	if err != nil {
 		err := errors.Errorf("Node: apiWorldsGetSpacesWithChildren: unable to get options for spaces and subspaces: %s", err)
 		api.AbortRequest(c, http.StatusNotFound, "options_not_found", err, w.log)
@@ -85,18 +85,25 @@ func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 	c.JSON(http.StatusOK, options)
 }
 
-func (w *Worlds) apiWorldsGetOptions(spaces map[uuid.UUID]universe.Space, level int) []dto.ExploreOption {
+func (w *Worlds) apiWorldsGetOptions(spaces map[uuid.UUID]universe.Space, level int) ([]dto.ExploreOption, error) {
 	options := make([]dto.ExploreOption, 0, len(spaces))
 	if level == 2 {
-		return options
+		return options, nil
 	}
 
 	for _, space := range spaces {
+		var name string
 		var description string
-		nameAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name)
-		nameValue, _ := space.GetSpaceAttributeValue(nameAttributeID)
 
-		name := utils.GetFromAnyMap(*nameValue, universe.Attributes.Space.Name.Name, "")
+		nameAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name)
+		nameValue, ok := space.GetSpaceAttributeValue(nameAttributeID)
+		if !ok {
+			return nil, errors.Errorf("invalid nameValue: %T", nameAttributeID)
+		}
+
+		if nameValue != nil {
+			name = utils.GetFromAnyMap(*nameValue, universe.Attributes.Space.Name.Name, "")
+		}
 
 		descriptionAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Description.Name)
 		descriptionValue, _ := space.GetSpaceAttributeValue(descriptionAttributeID)
@@ -106,16 +113,20 @@ func (w *Worlds) apiWorldsGetOptions(spaces map[uuid.UUID]universe.Space, level 
 		}
 
 		subSpaces := space.GetSpaces(false)
+		foundSubSpaces, err := w.apiWorldsGetOptions(subSpaces, level+1)
+		if err != nil {
+			return nil, errors.WithMessage(err, "failed to get options")
+		}
 
 		option := dto.ExploreOption{
 			ID:          space.GetID(),
 			Name:        name,
 			Description: description,
-			SubSpaces:   w.apiWorldsGetOptions(subSpaces, level+1),
+			SubSpaces:   foundSubSpaces,
 		}
 
 		options = append(options, option)
 	}
 
-	return options
+	return options, nil
 }
