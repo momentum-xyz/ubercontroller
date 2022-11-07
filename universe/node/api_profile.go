@@ -2,7 +2,6 @@ package node
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -139,18 +138,12 @@ func (n *Node) apiProfileUploadAvatar(c *gin.Context) {
 
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		err := errors.WithMessage(err, "Node: apiProfileUploadAvatar: failed to read data response")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_response", err, n.log)
-		return
-	}
-
 	response := dto.HashResponse{}
 
-	if err := json.Unmarshal(body, &response); err != nil {
-		err := errors.WithMessage(err, "Node: apiProfileUploadAvatar: failed to unmarshal json")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_unmarshal_response", err, n.log)
+	errs := json.NewDecoder(resp.Body).Decode(&response)
+	if errs != nil {
+		err := errors.WithMessage(err, "Node: apiProfileUploadAvatar: failed to decode json into response")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_decode", err, n.log)
 		return
 	}
 
