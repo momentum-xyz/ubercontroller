@@ -27,6 +27,8 @@ import (
 // @Success 404 {object} api.HTTPError
 // @Router /api/v4/worlds/{world_id}/explore [get]
 func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
+	var space universe.Space
+
 	type Query struct {
 		SpaceID string `form:"space_id" binding:"required"`
 	}
@@ -60,7 +62,17 @@ func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 		return
 	}
 
-	space, ok := world.GetSpace(spaceID, false)
+	if worldID == spaceID {
+		space = world
+	} else {
+		space, ok = world.GetSpace(spaceID, true)
+		if !ok {
+			err := errors.Errorf("Node: apiWorldsGetSpacesWithChildren: failed to get space: %s", spaceID)
+			api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, w.log)
+			return
+		}
+	}
+
 	spaces := space.GetSpaces(false)
 
 	options := w.apiWorldsGetOptions(spaces)
@@ -77,6 +89,7 @@ func (w *Worlds) apiWorldsGetOptions(spaces map[uuid.UUID]universe.Space) []dto.
 	options := make([]dto.ExploreOption, 0, len(spaces))
 
 	for _, space := range spaces {
+		var description string
 		nameAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name)
 		nameValue, _ := space.GetSpaceAttributeValue(nameAttributeID)
 
@@ -85,7 +98,9 @@ func (w *Worlds) apiWorldsGetOptions(spaces map[uuid.UUID]universe.Space) []dto.
 		descriptionAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Description.Name)
 		descriptionValue, _ := space.GetSpaceAttributeValue(descriptionAttributeID)
 
-		description := utils.GetFromAnyMap(*descriptionValue, universe.Attributes.Space.Description.Name, "")
+		if descriptionValue != nil {
+			description = utils.GetFromAnyMap(*descriptionValue, universe.Attributes.Space.Description.Name, "")
+		}
 
 		subSpaces := space.GetSpaces(false)
 		subOptions := w.apiWorldsGetSubOptions(subSpaces)
