@@ -45,6 +45,10 @@ type Profile struct {
 	ImageHash   string  `json:"imageHash"`
 }
 
+type HashResponse struct {
+	Hash string `json:"hash"`
+}
+
 type User struct {
 	ID          string          `json:"id"`
 	UserTypeID  string          `json:"userTypeId"`
