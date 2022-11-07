@@ -62,15 +62,11 @@ func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 		return
 	}
 
-	if worldID == spaceID {
-		space = world
-	} else {
-		space, ok = world.GetSpaceFromAllSpaces(spaceID)
-		if !ok {
-			err := errors.Errorf("Node: apiWorldsGetSpacesWithChildren: failed to get space: %s", spaceID)
-			api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, w.log)
-			return
-		}
+	space, ok = world.GetSpaceFromAllSpaces(spaceID)
+	if !ok {
+		err := errors.Errorf("Node: apiWorldsGetSpacesWithChildren: failed to get space: %s", spaceID)
+		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, w.log)
+		return
 	}
 
 	spaces := space.GetSpaces(false)
