@@ -183,20 +183,6 @@ type Space struct {
 	} `json:"metadata,omitempty"`
 }
 
-type SubSpace struct {
-	ID          uuid.UUID `json:"id,omitempty"`
-	Name        any       `json:"name,omitempty"`
-	Description any       `json:"description,omitempty"`
-	Type        SpaceType `json:"type,omitempty"`
-	SubSpaces   []struct {
-		ID           uuid.UUID `json:"id,omitempty"`
-		Name         any       `json:"name,omitempty"`
-		Description  any       `json:"description,omitempty"`
-		Type         SpaceType `json:"type,omitempty"`
-		HasSubSpaces bool      `json:"hasSubSpaces,omitempty"`
-	} `json:"subSpaces,omitempty"`
-}
-
 type SpaceAncestor struct {
 	SpaceID   string `json:"spaceId"`
 	SpaceName string `json:"spaceName"`
