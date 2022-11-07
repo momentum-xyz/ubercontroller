@@ -75,7 +75,7 @@ func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 
 	spaces := space.GetSpaces(false)
 
-	options := w.apiWorldsGetOptions(spaces)
+	options := w.apiWorldsGetOptions(spaces, 0)
 	if err != nil {
 		err := errors.Errorf("Node: apiWorldsGetSpacesWithChildren: unable to get options for spaces and subspaces: %s", err)
 		api.AbortRequest(c, http.StatusNotFound, "options_not_found", err, w.log)
@@ -85,8 +85,11 @@ func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 	c.JSON(http.StatusOK, options)
 }
 
-func (w *Worlds) apiWorldsGetOptions(spaces map[uuid.UUID]universe.Space) []dto.ExploreOption {
+func (w *Worlds) apiWorldsGetOptions(spaces map[uuid.UUID]universe.Space, level int) []dto.ExploreOption {
 	options := make([]dto.ExploreOption, 0, len(spaces))
+	if level == 2 {
+		return options
+	}
 
 	for _, space := range spaces {
 		var description string
@@ -103,37 +106,16 @@ func (w *Worlds) apiWorldsGetOptions(spaces map[uuid.UUID]universe.Space) []dto.
 		}
 
 		subSpaces := space.GetSpaces(false)
-		subOptions := w.apiWorldsGetSubOptions(subSpaces)
 
 		option := dto.ExploreOption{
 			ID:          space.GetID(),
 			Name:        name,
 			Description: description,
-			SubSpaces:   subOptions,
+			SubSpaces:   w.apiWorldsGetOptions(subSpaces, level+1),
 		}
 
 		options = append(options, option)
 	}
 
 	return options
-}
-
-func (w *Worlds) apiWorldsGetSubOptions(subSpaces map[uuid.UUID]universe.Space) []dto.SubSpace {
-	subSpacesOptions := make([]dto.SubSpace, 0, len(subSpaces))
-
-	for _, subSpace := range subSpaces {
-		nameAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name)
-		subSpaceValue, _ := subSpace.GetSpaceAttributeValue(nameAttributeID)
-
-		subSpaceName := utils.GetFromAnyMap(*subSpaceValue, universe.Attributes.Space.Name.Name, "")
-
-		subSpacesOption := dto.SubSpace{
-			ID:   subSpace.GetID(),
-			Name: subSpaceName,
-		}
-
-		subSpacesOptions = append(subSpacesOptions, subSpacesOption)
-	}
-
-	return subSpacesOptions
 }
