@@ -67,7 +67,7 @@ func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 		return
 	}
 
-	options, err := w.apiWorldsGetOptions(root)
+	options, err := w.apiWorldsGetRootOptions(root)
 	if err != nil {
 		err := errors.Errorf("Node: apiWorldsGetSpacesWithChildren: unable to get options for spaces and subspaces: %s", err)
 		api.AbortRequest(c, http.StatusNotFound, "options_not_found", err, w.log)
@@ -77,14 +77,17 @@ func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 	c.JSON(http.StatusOK, options)
 }
 
-func (w *Worlds) apiWorldsGetOptions(root universe.Space) ([]dto.ExploreOption, error) {
+func (w *Worlds) apiWorldsGetRootOptions(root universe.Space) ([]dto.ExploreOption, error) {
 	spaces := root.GetSpaces(false)
 	options := make([]dto.ExploreOption, 0, len(spaces))
 
 	if len(options) == 0 {
-		name, description, _ := w.apiResolveNameDescription(root)
+		name, description, err := w.apiWorldsResolveNameDescription(root)
+		if err != nil {
+			return nil, errors.WithMessage(err, "failed to resolve name or description")
+		}
 
-		foundSubSpaces, err := w.apiResolveChildren(spaces, 0)
+		foundSubSpaces, err := w.apiWorldsGetChildrenOptions(spaces, 0)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to get children")
 		}
@@ -95,23 +98,27 @@ func (w *Worlds) apiWorldsGetOptions(root universe.Space) ([]dto.ExploreOption, 
 			Description: description,
 			SubSpaces:   foundSubSpaces,
 		}
+		
 		options = append(options, option)
 	}
 
 	return options, nil
 }
 
-func (w *Worlds) apiResolveChildren(spaces map[uuid.UUID]universe.Space, level int) ([]dto.ExploreOption, error) {
+func (w *Worlds) apiWorldsGetChildrenOptions(spaces map[uuid.UUID]universe.Space, level int) ([]dto.ExploreOption, error) {
 	options := make([]dto.ExploreOption, 0, len(spaces))
 	if level == 2 {
 		return options, nil
 	}
 
 	for _, space := range spaces {
-		name, description, err := w.apiResolveNameDescription(space)
+		name, description, err := w.apiWorldsResolveNameDescription(space)
+		if err != nil {
+			return nil, errors.WithMessage(err, "failed to resolve name or description")
+		}
 
 		subSpaces := space.GetSpaces(false)
-		foundSubSpaces, err := w.apiResolveChildren(subSpaces, level+1)
+		foundSubSpaces, err := w.apiWorldsGetChildrenOptions(subSpaces, level+1)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to get options")
 		}
@@ -129,7 +136,7 @@ func (w *Worlds) apiResolveChildren(spaces map[uuid.UUID]universe.Space, level i
 	return options, nil
 }
 
-func (w *Worlds) apiResolveNameDescription(space universe.Space) (spaceName string, spaceDescription string, err error) {
+func (w *Worlds) apiWorldsResolveNameDescription(space universe.Space) (spaceName string, spaceDescription string, err error) {
 	var name string
 	var description string
 
