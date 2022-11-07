@@ -98,7 +98,7 @@ func (w *Worlds) apiWorldsGetRootOptions(root universe.Space) ([]dto.ExploreOpti
 			Description: description,
 			SubSpaces:   foundSubSpaces,
 		}
-		
+
 		options = append(options, option)
 	}
 
