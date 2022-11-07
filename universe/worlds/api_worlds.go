@@ -21,7 +21,7 @@ import (
 // @Accept json
 // @Produce json
 // @Param world_id path string true "World ID"
-// @Success 200 {object} dto.SpaceEffectiveOptions
+// @Success 200 {object} dto.ExploreOption
 // @Success 500 {object} api.HTTPError
 // @Success 400 {object} api.HTTPError
 // @Success 404 {object} api.HTTPError
@@ -123,4 +123,45 @@ func (w *Worlds) apiWorldsGetOptions(spaces map[uuid.UUID]universe.Space, level 
 	}
 
 	return options, nil
+}
+
+// @Summary Returns spaces based on a searchQuery and categorizes the results
+// @Schemes
+// @Description Returns space information based on a searchquery
+// @Tags spaces
+// @Accept json
+// @Produce json
+// @Param world_id path string true "World ID"
+// @Success 200 {object} dto.SpaceEffectiveOptions
+// @Success 500 {object} api.HTTPError
+// @Success 400 {object} api.HTTPError
+// @Success 404 {object} api.HTTPError
+// @Router /api/v4/worlds/{world_id}/explore [get]
+func (w *Worlds) apiWorldsSearchSpaces(c *gin.Context) {
+	type Query struct {
+		SearchQuery string `form:"query" binding:"required"`
+	}
+
+	inQuery := Query{}
+
+	if err := c.ShouldBindQuery(&inQuery); err != nil {
+		err := errors.WithMessage(err, "Node: apiWorldsSearchSpaces: failed to bind query")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, w.log)
+		return
+	}
+
+	worldID, err := uuid.Parse(c.Param("worldID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiWorldsSearchSpaces: failed to parse world id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
+		return
+	}
+
+	predicateFn := func(asset3dID uuid.UUID, asset3d universe.Asset3d) bool {
+		meta := asset3d.GetMeta()
+		kind := utils.GetFromAnyMap(*meta, "kind", "")
+		return kind == queryParams.kind
+	}
+
+	c.JSON(http.StatusOK, options)
 }
