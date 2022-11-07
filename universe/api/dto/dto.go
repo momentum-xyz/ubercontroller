@@ -30,6 +30,14 @@ type SpaceEffectiveOptions SpaceOptions
 
 type SpaceEffectiveSubOptions map[string]any
 
+type Assets3dOptions map[uuid.UUID]Asset3dOptions
+
+type Asset3dOptions *entry.Asset3dOptions
+
+type Assets3dMeta map[uuid.UUID]Asset3dMeta
+
+type Asset3dMeta *entry.Asset3dMeta
+
 type ExploreOption struct {
 	ID          uuid.UUID       `json:"id"`
 	Name        string          `json:"name"`
@@ -44,6 +52,10 @@ type Profile struct {
 	ProfileLink *string `json:"profileLink,omitempty"`
 	OnBoarded   *bool   `json:"onBoarded,omitempty"`
 	ImageHash   string  `json:"imageHash"`
+}
+
+type HashResponse struct {
+	Hash string `json:"hash"`
 }
 
 type User struct {
@@ -276,4 +288,11 @@ type Plugin struct {
 	SubTitle  *string `json:"subTitle,omitempty"`
 	ScriptURL string  `json:"scriptUrl"`
 	IconName  *string `json:"iconName,omitempty"`
+}
+
+type Asset3d struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	CreatedAt string `json:"createdAt"`
+	UpdatedAt string `json:"updatedAt"`
 }

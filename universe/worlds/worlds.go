@@ -59,6 +59,10 @@ func (w *Worlds) CreateWorld(worldID uuid.UUID) (universe.World, error) {
 	return world, nil
 }
 
+func (w *Worlds) FilterWorlds(predicateFn universe.WorldsFilterPredicateFn) map[uuid.UUID]universe.World {
+	return w.worlds.Filter(predicateFn)
+}
+
 func (w *Worlds) GetWorld(worldID uuid.UUID) (universe.World, bool) {
 	world, ok := w.worlds.Load(worldID)
 	return world, ok

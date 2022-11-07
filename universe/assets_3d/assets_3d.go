@@ -57,6 +57,10 @@ func (a *Assets3d) CreateAsset3d(asset3dID uuid.UUID) (universe.Asset3d, error) 
 	return asset3d, nil
 }
 
+func (a *Assets3d) FilterAssets3d(predicateFn universe.Assets3dFilterPredicateFn) map[uuid.UUID]universe.Asset3d {
+	return a.assets.Filter(predicateFn)
+}
+
 func (a *Assets3d) GetAsset3d(asset3dID uuid.UUID) (universe.Asset3d, bool) {
 	asset, ok := a.assets.Load(asset3dID)
 	return asset, ok
@@ -141,7 +145,7 @@ func (a *Assets3d) RemoveAssets3d(assets3d []universe.Asset3d, updateDB bool) er
 	}
 
 	if updateDB {
-		ids := make([]uuid.UUID, len(assets3d))
+		ids := make([]uuid.UUID, 0, len(assets3d))
 		for i := range assets3d {
 			ids[i] = assets3d[i].GetID()
 		}
@@ -152,6 +156,29 @@ func (a *Assets3d) RemoveAssets3d(assets3d []universe.Asset3d, updateDB bool) er
 
 	for i := range assets3d {
 		delete(a.assets.Data, assets3d[i].GetID())
+	}
+
+	return nil
+}
+
+func (a *Assets3d) RemoveAssets3dByIDs(assets3dIDs []uuid.UUID, updateDB bool) error {
+	a.assets.Mu.Lock()
+	defer a.assets.Mu.Unlock()
+
+	for i := range assets3dIDs {
+		if _, ok := a.assets.Data[assets3dIDs[i]]; !ok {
+			return errors.Errorf("asset 3d not found: %s", assets3dIDs[i])
+		}
+	}
+
+	if updateDB {
+		if err := a.db.Assets3dRemoveAssetsByIDs(a.ctx, assets3dIDs); err != nil {
+			return errors.WithMessage(err, "failed to update db")
+		}
+	}
+
+	for i := range assets3dIDs {
+		delete(a.assets.Data, assets3dIDs[i])
 	}
 
 	return nil

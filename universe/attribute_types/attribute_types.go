@@ -2,7 +2,7 @@ package attribute_types
 
 import (
 	"context"
-
+	
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -41,6 +41,12 @@ func (a *AttributeTypes) Initialize(ctx context.Context) error {
 	a.log = log
 
 	return nil
+}
+
+func (a *AttributeTypes) FilterAttributeTypes(
+	predicateFn universe.AttributeTypesFilterPredicateFn,
+) map[entry.AttributeTypeID]universe.AttributeType {
+	return a.attributeTypes.Filter(predicateFn)
 }
 
 func (a *AttributeTypes) CreateAttributeType(attributeTypeID entry.AttributeTypeID) (universe.AttributeType, error) {

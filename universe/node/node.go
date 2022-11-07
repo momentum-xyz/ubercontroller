@@ -159,7 +159,7 @@ func (n *Node) GetAllSpaces() map[uuid.UUID]universe.Space {
 	return spaces
 }
 
-func (n *Node) FilterAllSpaces(predicateFn universe.SpaceFilterPredicateFn) map[uuid.UUID]universe.Space {
+func (n *Node) FilterAllSpaces(predicateFn universe.SpacesFilterPredicateFn) map[uuid.UUID]universe.Space {
 	spaces := make(map[uuid.UUID]universe.Space)
 	for _, world := range n.GetWorlds().GetWorlds() {
 		for spaceID, space := range world.FilterAllSpaces(predicateFn) {

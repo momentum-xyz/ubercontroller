@@ -31,7 +31,7 @@ func (s *Space) CreateSpace(spaceID uuid.UUID) (universe.Space, error) {
 	return space, nil
 }
 
-func (s *Space) FilterSpaces(predicateFn universe.SpaceFilterPredicateFn, recursive bool) map[uuid.UUID]universe.Space {
+func (s *Space) FilterSpaces(predicateFn universe.SpacesFilterPredicateFn, recursive bool) map[uuid.UUID]universe.Space {
 	spaces := s.Children.Filter(predicateFn)
 
 	if !recursive {
