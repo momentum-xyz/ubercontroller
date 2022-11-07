@@ -245,7 +245,7 @@ func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken
 		walletAddressKey := universe.Attributes.Kusama.User.Wallet.Key
 		newPayload := entry.NewAttributePayload(
 			&entry.AttributeValue{
-				walletAddressKey: []any{idToken.Web3Address},
+				walletAddressKey: []string{idToken.Web3Address},
 			},
 			nil,
 		)

@@ -68,18 +68,18 @@ func AppendTriggerFn(new, current, result any) (any, bool, error) {
 		rNew.IsZero() || rCurrent.IsZero() {
 		return nil, false, nil
 	}
-	if !rNew.Type().AssignableTo(rCurrent.Type()) {
-		return nil, false, errors.Errorf("new value %q is not assignable to current value %q", rNew.Type(), rCurrent.Type())
+	if !rNew.Type().Elem().AssignableTo(rCurrent.Type().Elem()) {
+		return nil, false, errors.Errorf("new value elem %q is not assignable to current value elem %q", rNew.Type(), rCurrent.Type())
 	}
 
 	newLen := rNew.Len()
 	curLen := rCurrent.Len()
-	rRes := reflect.MakeSlice(rNew.Type(), newLen+curLen, newLen+curLen)
+	rRes := reflect.MakeSlice(rCurrent.Type(), curLen+newLen, curLen+newLen)
 	for i := 0; i < curLen; i++ {
 		rRes.Index(i).Set(rCurrent.Index(i))
 	}
 	for i := 0; i < newLen; i++ {
-		rRes.Index(rCurrent.Len() + i).Set(rNew.Index(i))
+		rRes.Index(curLen + i).Set(rNew.Index(i))
 	}
 
 	return rRes.Interface(), true, nil
