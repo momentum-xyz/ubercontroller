@@ -27,8 +27,6 @@ import (
 // @Success 404 {object} api.HTTPError
 // @Router /api/v4/worlds/{world_id}/explore [get]
 func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
-	var space universe.Space
-
 	type Query struct {
 		SpaceID string `form:"space_id" binding:"required"`
 	}
@@ -62,7 +60,7 @@ func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 		return
 	}
 
-	space, ok = world.GetSpaceFromAllSpaces(spaceID)
+	space, ok := world.GetSpaceFromAllSpaces(spaceID)
 	if !ok {
 		err := errors.Errorf("Node: apiWorldsGetSpacesWithChildren: failed to get space: %s", spaceID)
 		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, w.log)
