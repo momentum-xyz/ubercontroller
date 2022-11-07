@@ -12,6 +12,8 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/api"
 	"github.com/momentum-xyz/ubercontroller/universe/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/merge"
+	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
 // @Summary Check if user exists
@@ -233,44 +235,29 @@ func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken
 		n.log.Infof("Node: apiGetOrCreateUserFromTokens: user created: %s", userEntry.UserID)
 
 		// adding wallet to user attributes
-		walletAddressKey := universe.Attributes.Kusama.User.Wallet.Key
-		modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
-			newValue := func() *entry.AttributeValue {
-				value := entry.NewAttributeValue()
-				(*value)[walletAddressKey] = []string{idToken.Web3Address}
-				return value
-			}
-
-			if current == nil {
-				return entry.NewAttributePayload(newValue(), nil), nil
-			}
-
-			if current.Value == nil {
-				current.Value = newValue()
-				return current, nil
-			}
-
-			address := utils.GetFromAnyMap(*current.Value, walletAddressKey, []any{idToken.Web3Address})
-			for i := range address {
-				if address[i] == idToken.Web3Address {
-					// we don't know where address slice was coming from
-					(*current.Value)[walletAddressKey] = address
-					return current, nil
-				}
-			}
-
-			(*current.Value)[walletAddressKey] = append(address, idToken.Web3Address)
-
-			return current, nil
-		}
-
 		userAttributeID := entry.NewUserAttributeID(
 			entry.NewAttributeID(
 				universe.GetKusamaPluginID(), universe.Attributes.Kusama.User.Wallet.Name,
 			),
 			userEntry.UserID,
 		)
-		if _, err := n.db.UserAttributesUpsertUserAttribute(n.ctx, userAttributeID, modifyFn); err != nil {
+
+		walletAddressKey := universe.Attributes.Kusama.User.Wallet.Key
+		newPayload := entry.NewAttributePayload(
+			&entry.AttributeValue{
+				walletAddressKey: []any{idToken.Web3Address},
+			},
+			nil,
+		)
+
+		walletAddressKeyPath := ".Value." + walletAddressKey
+		if _, err := n.db.UserAttributesUpsertUserAttribute(
+			n.ctx, userAttributeID,
+			modify.MergeWith(
+				newPayload,
+				merge.NewTrigger(walletAddressKeyPath, merge.AppendTriggerFn),
+				merge.NewTrigger(walletAddressKeyPath, merge.UniqueTriggerFn),
+			)); err != nil {
 			// TODO: think about rollback
 			return nil, http.StatusInternalServerError, errors.WithMessagef(
 				err, "failed to upsert user attribute for user: %s", userEntry.UserID,

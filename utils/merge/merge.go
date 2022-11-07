@@ -10,12 +10,88 @@ import (
 	"github.com/momentum-xyz/ubercontroller/logger"
 )
 
-type Fn func(path string, new, current, result any) (any, bool)
+type Trigger func(path string, new, current, result any) (any, bool, error)
+type TriggerFn func(new, current, result any) (any, bool, error)
 
 var log = logger.L()
 
+func NewTrigger(path string, triggerFn TriggerFn) Trigger {
+	return func(p string, n, c, r any) (any, bool, error) {
+		if path == p {
+			return triggerFn(n, c, r)
+		}
+		return nil, false, nil
+	}
+}
+
+func UniqueTriggerFn(new, current, result any) (any, bool, error) {
+	if result == nil {
+		return nil, false, nil
+	}
+
+	rResult := reflect.ValueOf(result)
+	if rResult.Kind() != reflect.Slice {
+		return nil, false, errors.Errorf("invalid result: %s is not slice", rResult.Kind())
+	}
+	if !rResult.IsValid() || rResult.IsZero() {
+		return nil, false, nil
+	}
+
+	rRes := reflect.MakeSlice(rResult.Type(), 0, rResult.Len())
+	for i := 0; i < rResult.Len(); i++ {
+		var found bool
+		for j := 0; j < rRes.Len(); j++ {
+			if reflect.DeepEqual(rResult.Index(i).Interface(), rRes.Index(j).Interface()) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			rRes = reflect.Append(rRes, rResult.Index(i))
+		}
+	}
+
+	return rRes.Interface(), true, nil
+}
+
+func AppendTriggerFn(new, current, result any) (any, bool, error) {
+	if new == nil || current == nil {
+		return nil, false, nil
+	}
+
+	rNew := reflect.ValueOf(new)
+	rCurrent := reflect.ValueOf(current)
+	if rNew.Kind() != reflect.Slice || rCurrent.Kind() != reflect.Slice {
+		return nil, false, errors.Errorf("invalid values: new %q and current %q are not slices", rNew.Kind(), rCurrent.Kind())
+	}
+	if !rNew.IsValid() || !rCurrent.IsValid() ||
+		rNew.IsZero() || rCurrent.IsZero() {
+		return nil, false, nil
+	}
+	if !rNew.Type().AssignableTo(rCurrent.Type()) {
+		return nil, false, errors.Errorf("new value %q is not assignable to current value %q", rNew.Type(), rCurrent.Type())
+	}
+
+	newLen := rNew.Len()
+	curLen := rCurrent.Len()
+	rRes := reflect.MakeSlice(rNew.Type(), newLen+curLen, newLen+curLen)
+	for i := 0; i < curLen; i++ {
+		rRes.Index(i).Set(rCurrent.Index(i))
+	}
+	for i := 0; i < newLen; i++ {
+		rRes.Index(rCurrent.Len() + i).Set(rNew.Index(i))
+	}
+
+	return rRes.Interface(), true, nil
+}
+
+func DebugTriggerFn(path string, new, current, result any) (any, bool, error) {
+	log.Debugf("Merge: debug trigger fn: path: %s, new: %+v, current: %+v, result: %+v", path, new, current, result)
+	return nil, false, nil
+}
+
 // Auto recursively merge optional pointer with default one.
-func Auto[T any](opt, def *T, triggers ...Fn) (*T, error) {
+func Auto[T any](opt, def *T, triggers ...Trigger) (*T, error) {
 	if opt == nil {
 		return def, nil
 	}
@@ -39,7 +115,7 @@ func Auto[T any](opt, def *T, triggers ...Fn) (*T, error) {
 	return res, nil
 }
 
-func merge(optVal, defVal reflect.Value, path string, triggers ...Fn) (reflect.Value, error) {
+func merge(optVal, defVal reflect.Value, path string, triggers ...Trigger) (reflect.Value, error) {
 	if !optVal.IsValid() {
 		resVal, err := mergeHandle(path, optVal, defVal, defVal, triggers...)
 		if err != nil {
@@ -116,7 +192,7 @@ func merge(optVal, defVal reflect.Value, path string, triggers ...Fn) (reflect.V
 	return resVal, nil
 }
 
-func mergeMap(optVal, defVal reflect.Value, path string, triggers ...Fn) (reflect.Value, error) {
+func mergeMap(optVal, defVal reflect.Value, path string, triggers ...Trigger) (reflect.Value, error) {
 	var keys []reflect.Value
 	for _, val := range append(optVal.MapKeys(), defVal.MapKeys()...) {
 		var found bool
@@ -163,7 +239,7 @@ func mergeMap(optVal, defVal reflect.Value, path string, triggers ...Fn) (reflec
 	return resVal, nil
 }
 
-func mergeStruct(optVal, defVal reflect.Value, path string, triggers ...Fn) (reflect.Value, error) {
+func mergeStruct(optVal, defVal reflect.Value, path string, triggers ...Trigger) (reflect.Value, error) {
 	resVal := reflect.New(optVal.Type()).Elem()
 	for i := 0; i < resVal.NumField(); i++ {
 		optField := optVal.Field(i)
@@ -197,7 +273,7 @@ func mergeStruct(optVal, defVal reflect.Value, path string, triggers ...Fn) (ref
 	return resVal, nil
 }
 
-func mergeHandle(path string, optVal, defVal, resVal reflect.Value, triggers ...Fn) (reflect.Value, error) {
+func mergeHandle(path string, optVal, defVal, resVal reflect.Value, triggers ...Trigger) (reflect.Value, error) {
 	if len(triggers) == 0 {
 		return resVal, nil
 	}
@@ -216,8 +292,12 @@ func mergeHandle(path string, optVal, defVal, resVal reflect.Value, triggers ...
 	}
 
 	for i := range triggers {
-		if val, ok := triggers[i](path, opt, def, res); ok {
-			return reflect.ValueOf(val), nil
+		val, ok, err := triggers[i](path, opt, def, res)
+		if err != nil {
+			return resVal, errors.WithMessagef(err, "failed to handle trigger: %s", path)
+		}
+		if ok {
+			res = val
 		}
 	}
 

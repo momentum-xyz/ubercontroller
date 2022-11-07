@@ -24,7 +24,7 @@ func ReplaceWith[T any](new *T) Fn[T] {
 	}
 }
 
-func MergeWith[T any](new *T, triggers ...merge.Fn) Fn[T] {
+func MergeWith[T any](new *T, triggers ...merge.Trigger) Fn[T] {
 	return func(current *T) (*T, error) {
 		return merge.Auto(new, current, triggers...)
 	}
