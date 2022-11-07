@@ -13,10 +13,21 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
+// @Summary Get list of assets 3d; can be filtered by query param "kind"
+// @Schemes
+// @Description Returns a filtered list of assets3d
+// @Tags assets3d
+// @Accept json
+// @Produce json
+// @Param queryParams assets_3d.apiGetAssets3d.QueryParams
+// @Success 200 {object} dto.Asset3d
+// @Success 400 {object} api.HTTPError
+// @Router /api/v4/assets-3d [get]
 func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
-	queryParams := struct {
+	type QueryParams struct {
 		kind string `form:"kind" json:"kind"`
-	}{}
+	}
+	queryParams := QueryParams{}
 
 	if err := c.ShouldBind(&queryParams); err != nil {
 		err = errors.WithMessage(err, "Assets3d: apiGetAssets3d: failed to bind query parameters")
@@ -52,14 +63,26 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 	c.JSON(http.StatusOK, assets)
 }
 
+// @Summary Add a list of assets3d
+// @Schemes
+// @Description Creates assets3d with the given input
+// @Tags assets3d
+// @Accept json
+// @Produce json
+// @Param request body assets_3d.apiAddAssets3d.InQuery
+// @Success 200 {object} nil
+// @Success 400	{object} api.HTTPError
+// @Success 500 {object} api.HTTPError
+// @Router /api/v4/assets3d [post]
 func (a *Assets3d) apiAddAssets3d(c *gin.Context) {
-	inQuery := struct {
+	type InQuery struct {
 		assets3dIDs []string `form:"assets3d_ids[]" binding:"required"`
-	}{}
+	}
+	inQuery := InQuery{}
 
 	if err := c.ShouldBindJSON(&inQuery); err != nil {
 		err = errors.WithMessage(err, "Assets3d: apiAddAssets3d: failed to bind json")
-		api.AbortRequest(c, http.StatusInternalServerError, "invalid_request_query", err, a.log)
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, a.log)
 		return
 	}
 
@@ -89,14 +112,26 @@ func (a *Assets3d) apiAddAssets3d(c *gin.Context) {
 	c.JSON(http.StatusOK, nil)
 }
 
+// @Summary Remove assets3d by ids
+// @Schemes
+// @Description Removes assets3d by list of ids
+// @Tags assets3d
+// @Accept json
+// @Produce json
+// @Param request body assets_3d.apiRemoveAssets3dByIDs.InQuery
+// @Success 200 {object} nil
+// @Success 400 {object} api.HTTPError
+// @Success 500 {object} api.HTTPError
+// @Router /api/v4/assets3d [delete]
 func (a *Assets3d) apiRemoveAssets3dByIDs(c *gin.Context) {
-	inQuery := struct {
+	type InQuery struct {
 		assets3dIDs []string `form:"assets3d_ids[]" binding:"required"`
-	}{}
+	}
+	inQuery := InQuery{}
 
 	if err := c.ShouldBindJSON(&inQuery); err != nil {
 		err = errors.WithMessage(err, "Assets3d: apiRemoveAssets3dByIDs: failed to bind json")
-		api.AbortRequest(c, http.StatusInternalServerError, "invalid_request_query", err, a.log)
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, a.log)
 		return
 	}
 
@@ -120,10 +155,22 @@ func (a *Assets3d) apiRemoveAssets3dByIDs(c *gin.Context) {
 	c.JSON(http.StatusOK, nil)
 }
 
+// @Summary Get assets3d options
+// @Schemes
+// @Description Returns list of options of assets3d
+// @Tags assets3d
+// @Accept json
+// @Produce json
+// @Param request body assets_3d.apiGetAssets3dOptions.InQuery
+// @Success 200 {object} dto.Assets3dOptions
+// @Success 400 {object} api.HTTPError
+// @Success 500 {object} api.HTTPError
+// @Router /api/v4/assets3d/options [get]
 func (a *Assets3d) apiGetAssets3dOptions(c *gin.Context) {
-	inQuery := struct {
+	type InQuery struct {
 		Assets3dIDs []string `form:"assets3d_ids[]" binding:"required"`
-	}{}
+	}
+	inQuery := InQuery{}
 
 	if err := c.ShouldBindQuery(&inQuery); err != nil {
 		err := errors.WithMessage(err, "Assets3d: apiGetAssets3dOptions: failed to bind json")
@@ -154,10 +201,22 @@ func (a *Assets3d) apiGetAssets3dOptions(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
+// @Summary Get assets3d meta
+// @Schemes
+// @Description Returns a list of meta of assets3d
+// @Tags assets3d
+// @Accept json
+// @Produce json
+// @Param request body assets_3d.apiGetAssets3dMeta.InQuery
+// @Success 200 {object} dto.Assets3dMeta
+// @Success 400 {object} api.HTTPError
+// @Success 500 {object} api.HTTPError
+// @Router /api/v4/assets3d/meta [get]
 func (a *Assets3d) apiGetAssets3dMeta(c *gin.Context) {
-	inQuery := struct {
+	type InQuery struct {
 		Assets3dIDs []string `form:"assets3d_ids[]" binding:"required"`
-	}{}
+	}
+	inQuery := InQuery{}
 
 	if err := c.ShouldBindQuery(&inQuery); err != nil {
 		err := errors.WithMessage(err, "Assets3d: apiGetAssets3dMeta: failed to bind json")
