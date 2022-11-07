@@ -6,6 +6,8 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 )
 
+type ExploreOptions []ExploreOption
+
 type Plugins map[uuid.UUID]string
 
 type PluginsMeta map[uuid.UUID]PluginMeta
@@ -35,6 +37,13 @@ type Asset3dOptions *entry.Asset3dOptions
 type Assets3dMeta map[uuid.UUID]Asset3dMeta
 
 type Asset3dMeta *entry.Asset3dMeta
+
+type ExploreOption struct {
+	ID          uuid.UUID       `json:"id"`
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	SubSpaces   []ExploreOption `json:"subSpaces"`
+}
 
 type Profile struct {
 	Bio         *string `json:"bio,omitempty"`
@@ -184,20 +193,6 @@ type Space struct {
 			OperatorID *string `json:"operator_id,omitempty"`
 		}
 	} `json:"metadata,omitempty"`
-}
-
-type SubSpace struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Type        SpaceType `json:"type"`
-	SubSpaces   []struct {
-		ID           string    `json:"id"`
-		Name         string    `json:"name"`
-		Description  string    `json:"description"`
-		Type         SpaceType `json:"type"`
-		HasSubSpaces bool      `json:"hasSubSpaces"`
-	} `json:"subSpaces"`
 }
 
 type SpaceAncestor struct {
