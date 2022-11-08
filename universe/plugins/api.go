@@ -19,6 +19,7 @@ func (p *Plugins) RegisterAPI(r *gin.Engine) {
 		authPlugins := auth.Group("/plugins")
 		{
 			authPlugins.GET("", p.apiGetPlugins)
+			authPlugins.GET("/search", p.apiSearchPlugins)
 			authPlugins.GET("/meta", p.apiGetPluginsMeta)
 			authPlugins.GET("/options", p.apiGetPluginsOptions)
 		}

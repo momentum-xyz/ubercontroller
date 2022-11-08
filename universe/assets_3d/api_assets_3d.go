@@ -19,7 +19,7 @@ import (
 // @Tags assets3d
 // @Accept json
 // @Produce json
-// @Param query param assets_3d.apiGetAssets3d.QueryParams true "Meta kind"
+// @Param query query assets_3d.apiGetAssets3d.QueryParams true "Meta kind"
 // @Success 200 {object} dto.Asset3d
 // @Success 400 {object} api.HTTPError
 // @Router /api/v4/assets-3d [get]
@@ -32,6 +32,7 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 	if err := c.ShouldBind(&queryParams); err != nil {
 		err = errors.WithMessage(err, "Assets3d: apiGetAssets3d: failed to bind query parameters")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, a.log)
+		return
 	}
 
 	var a3dMap map[uuid.UUID]universe.Asset3d
