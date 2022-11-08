@@ -206,7 +206,7 @@ func (w *Worlds) apiWorldsSearchSpaces(c *gin.Context) {
 	c.JSON(http.StatusOK, spaces)
 }
 
-func (w *Worlds) apiWorldsFilterSpaces(searchQuery string, world universe.World) ([]dto.ExploreOption, error) {
+func (w *Worlds) apiWorldsFilterSpaces(searchQuery string, world universe.World) (dto.SearchOptions, error) {
 	predicateFn := func(spaceID uuid.UUID, space universe.Space) bool {
 		name, _, err := w.apiWorldsResolveNameDescription(space)
 		if err != nil {
@@ -225,5 +225,21 @@ func (w *Worlds) apiWorldsFilterSpaces(searchQuery string, world universe.World)
 		return nil, errors.WithMessage(err, "failed to get options")
 	}
 
-	return options, nil
+	group := make(dto.SearchOptions)
+	for _, option := range options {
+		space, ok := world.GetSpaceFromAllSpaces(option.ID)
+		if !ok {
+			return nil, errors.Errorf("failed to get space: %T", option.ID)
+		}
+
+		spaceType := space.GetSpaceType()
+		categoryName := spaceType.GetCategoryName()
+
+		if v, exists := group[categoryName]; exists {
+			v = append(v, option)
+		}
+		group[categoryName] = append(group[categoryName], option)
+	}
+
+	return group, nil
 }

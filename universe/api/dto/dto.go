@@ -8,6 +8,8 @@ import (
 
 type ExploreOptions []ExploreOption
 
+type SearchOptions map[string][]ExploreOption
+
 type Plugins map[uuid.UUID]string
 
 type PluginsMeta map[uuid.UUID]PluginMeta
