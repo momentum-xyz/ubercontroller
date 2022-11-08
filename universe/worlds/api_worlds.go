@@ -22,6 +22,7 @@ import (
 // @Accept json
 // @Produce json
 // @Param world_id path string true "World ID"
+// @Param space_id query string true "Space ID" example(string)
 // @Success 200 {object} dto.ExploreOption
 // @Success 500 {object} api.HTTPError
 // @Success 400 {object} api.HTTPError
@@ -164,6 +165,7 @@ func (w *Worlds) apiWorldsResolveNameDescription(space universe.Space) (spaceNam
 // @Accept json
 // @Produce json
 // @Param world_id path string true "World ID"
+// @Param query query string true "Space name" example(string)
 // @Success 200 {object} dto.SearchOptions
 // @Success 500 {object} api.HTTPError
 // @Success 400 {object} api.HTTPError
