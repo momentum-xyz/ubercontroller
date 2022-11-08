@@ -87,7 +87,7 @@ func (w *Worlds) apiWorldsGetRootOptions(root universe.Space) (dto.ExploreOption
 		return dto.ExploreOption{}, errors.WithMessage(err, "failed to resolve name or description")
 	}
 
-	foundSubSpaces, err := w.apiWorldsGetChildrenOptions(spaces, 0)
+	foundSubSpaces, err := w.apiWorldsGetChildrenOptions(spaces, 0, 2)
 	if err != nil {
 		return dto.ExploreOption{}, errors.WithMessage(err, "failed to get children")
 	}
@@ -102,9 +102,9 @@ func (w *Worlds) apiWorldsGetRootOptions(root universe.Space) (dto.ExploreOption
 	return option, nil
 }
 
-func (w *Worlds) apiWorldsGetChildrenOptions(spaces map[uuid.UUID]universe.Space, level int) ([]dto.ExploreOption, error) {
+func (w *Worlds) apiWorldsGetChildrenOptions(spaces map[uuid.UUID]universe.Space, currentLevel int, maxLevel int) ([]dto.ExploreOption, error) {
 	options := make([]dto.ExploreOption, 0, len(spaces))
-	if level == 2 {
+	if currentLevel == maxLevel {
 		return options, nil
 	}
 
@@ -115,7 +115,7 @@ func (w *Worlds) apiWorldsGetChildrenOptions(spaces map[uuid.UUID]universe.Space
 		}
 
 		subSpaces := space.GetSpaces(false)
-		foundSubSpaces, err := w.apiWorldsGetChildrenOptions(subSpaces, level+1)
+		foundSubSpaces, err := w.apiWorldsGetChildrenOptions(subSpaces, currentLevel+1, maxLevel)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to get options")
 		}
@@ -220,7 +220,7 @@ func (w *Worlds) apiWorldsFilterSpaces(searchQuery string, world universe.World)
 
 	spaces := world.FilterAllSpaces(predicateFn)
 
-	options, err := w.apiWorldsGetChildrenOptions(spaces, 0)
+	options, err := w.apiWorldsGetChildrenOptions(spaces, 0, 1)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to get options")
 	}
