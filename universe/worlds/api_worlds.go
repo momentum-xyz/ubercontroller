@@ -1,11 +1,10 @@
 package worlds
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"net/http"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -77,32 +76,28 @@ func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 	c.JSON(http.StatusOK, options)
 }
 
-func (w *Worlds) apiWorldsGetRootOptions(root universe.Space) ([]dto.ExploreOption, error) {
+func (w *Worlds) apiWorldsGetRootOptions(root universe.Space) (dto.ExploreOption, error) {
 	spaces := root.GetSpaces(false)
-	options := make([]dto.ExploreOption, 0, len(spaces))
+	var option dto.ExploreOption
 
-	if len(options) == 0 {
-		name, description, err := w.apiWorldsResolveNameDescription(root)
-		if err != nil {
-			return nil, errors.WithMessage(err, "failed to resolve name or description")
-		}
-
-		foundSubSpaces, err := w.apiWorldsGetChildrenOptions(spaces, 0)
-		if err != nil {
-			return nil, errors.WithMessage(err, "failed to get children")
-		}
-
-		option := dto.ExploreOption{
-			ID:          root.GetID(),
-			Name:        name,
-			Description: description,
-			SubSpaces:   foundSubSpaces,
-		}
-
-		options = append(options, option)
+	name, description, err := w.apiWorldsResolveNameDescription(root)
+	if err != nil {
+		return dto.ExploreOption{}, errors.WithMessage(err, "failed to resolve name or description")
 	}
 
-	return options, nil
+	foundSubSpaces, err := w.apiWorldsGetChildrenOptions(spaces, 0)
+	if err != nil {
+		return dto.ExploreOption{}, errors.WithMessage(err, "failed to get children")
+	}
+
+	option = dto.ExploreOption{
+		ID:          root.GetID(),
+		Name:        name,
+		Description: description,
+		SubSpaces:   foundSubSpaces,
+	}
+
+	return option, nil
 }
 
 func (w *Worlds) apiWorldsGetChildrenOptions(spaces map[uuid.UUID]universe.Space, level int) ([]dto.ExploreOption, error) {
