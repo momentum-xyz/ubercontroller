@@ -164,7 +164,7 @@ func (w *Worlds) apiWorldsResolveNameDescription(space universe.Space) (spaceNam
 // @Accept json
 // @Produce json
 // @Param world_id path string true "World ID"
-// @Success 200 {object} dto.SpaceEffectiveOptions
+// @Success 200 {object} dto.SearchOptions
 // @Success 500 {object} api.HTTPError
 // @Success 400 {object} api.HTTPError
 // @Success 404 {object} api.HTTPError
