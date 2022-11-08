@@ -212,7 +212,7 @@ func (w *Worlds) apiWorldsFilterSpaces(searchQuery string, world universe.World)
 	predicateFn := func(spaceID uuid.UUID, space universe.Space) bool {
 		name, _, err := w.apiWorldsResolveNameDescription(space)
 		if err != nil {
-			w.log.Error(errors.WithMessagef(err, "failed to resolve name for space: %s", space.GetID()))
+			return false
 		}
 
 		name = strings.ToLower(name)
@@ -237,9 +237,6 @@ func (w *Worlds) apiWorldsFilterSpaces(searchQuery string, world universe.World)
 		spaceType := space.GetSpaceType()
 		categoryName := spaceType.GetCategoryName()
 
-		if v, exists := group[categoryName]; exists {
-			v = append(v, option)
-		}
 		group[categoryName] = append(group[categoryName], option)
 	}
 
