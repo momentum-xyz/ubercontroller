@@ -1,10 +1,12 @@
 package worlds
 
 import (
+	"net/http"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
-	"net/http"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -153,4 +155,75 @@ func (w *Worlds) apiWorldsResolveNameDescription(space universe.Space) (spaceNam
 	}
 
 	return name, description, nil
+}
+
+// @Summary Returns spaces based on a searchQuery and categorizes the results
+// @Schemes
+// @Description Returns space information based on a searchquery
+// @Tags spaces
+// @Accept json
+// @Produce json
+// @Param world_id path string true "World ID"
+// @Success 200 {object} dto.SpaceEffectiveOptions
+// @Success 500 {object} api.HTTPError
+// @Success 400 {object} api.HTTPError
+// @Success 404 {object} api.HTTPError
+// @Router /api/v4/worlds/{world_id}/explore/search [get]
+func (w *Worlds) apiWorldsSearchSpaces(c *gin.Context) {
+	type Query struct {
+		SearchQuery string `form:"query" binding:"required"`
+	}
+
+	inQuery := Query{}
+
+	if err := c.ShouldBindQuery(&inQuery); err != nil {
+		err := errors.WithMessage(err, "Node: apiWorldsSearchSpaces: failed to bind query")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, w.log)
+		return
+	}
+
+	worldID, err := uuid.Parse(c.Param("worldID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiWorldsSearchSpaces: failed to parse world id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
+		return
+	}
+
+	world, ok := w.GetWorld(worldID)
+	if !ok {
+		err := errors.Errorf("Node: apiWorldsSearchSpaces: space not found: %s", worldID)
+		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
+		return
+	}
+
+	spaces, err := w.apiWorldsFilterSpaces(inQuery.SearchQuery, world)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiWorldsSearchSpaces: failed to filter spaces")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_filter", err, w.log)
+		return
+	}
+
+	c.JSON(http.StatusOK, spaces)
+}
+
+func (w *Worlds) apiWorldsFilterSpaces(searchQuery string, world universe.World) ([]dto.ExploreOption, error) {
+	predicateFn := func(spaceID uuid.UUID, space universe.Space) bool {
+		name, _, err := w.apiWorldsResolveNameDescription(space)
+		if err != nil {
+			w.log.Error(errors.WithMessagef(err, "failed to resolve name for space: %s", space.GetID()))
+		}
+
+		name = strings.ToLower(name)
+		searchQuery = strings.ToLower(searchQuery)
+		return strings.Contains(name, searchQuery)
+	}
+
+	spaces := world.FilterAllSpaces(predicateFn)
+
+	options, err := w.apiWorldsGetChildrenOptions(spaces, 0)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to get options")
+	}
+
+	return options, nil
 }
