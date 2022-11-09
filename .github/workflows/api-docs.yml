@@ -36,12 +36,18 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: true
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '18'
       - id: build-docs
         name: Build docs
         run: |
           go run github.com/swaggo/swag/cmd/swag@v1.8.7 init \
           -g universe/node/api.go \
           -o build/docs/
+      - id: convert-openapi
+        name: Convert to OpenAPI v3
+        run: npx -- swagger2openapi@latest build/docs/swagger.json > build/docs/openapi.json
       - id: store-docs
         name: Store assets catalog
         uses: actions/upload-artifact@v3
