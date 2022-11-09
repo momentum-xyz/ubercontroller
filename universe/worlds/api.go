@@ -20,6 +20,8 @@ func (w *Worlds) RegisterAPI(r *gin.Engine) {
 		{
 			authWorld := authWorlds.Group("/:worldID")
 			{
+				authWorld.GET("/online", w.apiWorldsGetOnlineUsers)
+
 				authWorld.GET("/explore", w.apiWorldsGetSpacesWithChildren)
 				authWorld.GET("/explore/search", w.apiWorldsSearchSpaces)
 			}

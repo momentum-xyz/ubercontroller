@@ -40,6 +40,8 @@ type Assets3dMeta map[uuid.UUID]Asset3dMeta
 
 type Asset3dMeta *entry.Asset3dMeta
 
+type OnlineUsers map[uuid.UUID]User
+
 type ExploreOption struct {
 	ID          uuid.UUID       `json:"id"`
 	Name        string          `json:"name"`

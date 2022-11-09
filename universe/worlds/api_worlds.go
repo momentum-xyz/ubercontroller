@@ -242,3 +242,35 @@ func (w *Worlds) apiWorldsFilterSpaces(searchQuery string, world universe.World)
 
 	return group, nil
 }
+
+// @Summary Returns online users for a specific world
+// @Schemes
+// @Description Returns online users for a specific world based on world ID
+// @Tags spaces
+// @Accept json
+// @Produce json
+// @Param world_id path string true "World ID"
+// @Success 200 {object} dto.OnlineUsers
+// @Success 500 {object} api.HTTPError
+// @Success 400 {object} api.HTTPError
+// @Success 404 {object} api.HTTPError
+// @Router /api/v4/worlds/{world_id}/online [get]
+func (w *Worlds) apiWorldsGetOnlineUsers(c *gin.Context) {
+	worldID, err := uuid.Parse(c.Param("worldID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiWorldsGetOnlineUsers: failed to parse world id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
+		return
+	}
+
+	world, ok := w.GetWorld(worldID)
+	if !ok {
+		err := errors.Errorf("Node: apiWorldsGetOnlineUsers: space not found: %s", worldID)
+		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
+		return
+	}
+
+	users := world.GetUsers(true)
+
+	c.JSON(http.StatusOK, users)
+}
