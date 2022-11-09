@@ -5,6 +5,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
@@ -57,6 +58,31 @@ func (n *Node) GetNodeAttributeOptions(attributeID entry.AttributeID) (*entry.At
 		return nil, true
 	}
 	return payload.Options, true
+}
+
+func (n *Node) GetNodeAttributeEffectiveOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool) {
+	attributeType, ok := n.GetAttributeTypes().GetAttributeType(entry.AttributeTypeID(attributeID))
+	if !ok {
+		return nil, false
+	}
+	attributeTypeOptions := attributeType.GetOptions()
+
+	attributeOptions, ok := n.GetNodeAttributeOptions(attributeID)
+	if !ok {
+		attributeOptions = nil
+	}
+
+	effectiveOptions, err := merge.Auto(attributeOptions, attributeTypeOptions)
+	if err != nil {
+		n.log.Error(
+			errors.WithMessagef(
+				err, "Node: GetNodeAttributeEffectiveOptions: failed to merge options: %+v", attributeID,
+			),
+		)
+		return nil, false
+	}
+
+	return effectiveOptions, true
 }
 
 func (n *Node) GetNodeAttributePayload(attributeID entry.AttributeID) (*entry.AttributePayload, bool) {
