@@ -14,7 +14,7 @@ import (
 )
 
 func (n *Node) OnSpaceAttributeValueChanged(
-	changeType universe.AttributeValueChangeType, spaceAttributeID entry.SpaceAttributeID, subAttributeKey string, newValue any,
+	changeType universe.AttributeValueChangeType, spaceAttributeID entry.SpaceAttributeID, newValue any, subAttributeKey string,
 ) error {
 	space, ok := n.GetSpaceFromAllSpaces(spaceAttributeID.SpaceID)
 	if !ok {
@@ -30,7 +30,7 @@ func (n *Node) OnSpaceAttributeValueChanged(
 	if err != nil {
 		return errors.WithMessage(err, "failed to get option")
 	}
-	msg, err := n.getAttributeValueChangedMsg(autoOption, changeType, spaceAttributeID.AttributeID, subAttributeKey, newValue)
+	msg, err := n.getAttributeValueChangedMsg(autoOption, changeType, spaceAttributeID.AttributeID, newValue, subAttributeKey)
 	if err != nil {
 		return errors.WithMessage(err, "failed to get message")
 	}
@@ -80,7 +80,7 @@ func (n *Node) getPosBusAutoAttributeOption(options *entry.AttributeOptions) (*e
 
 func (n *Node) getAttributeValueChangedMsg(
 	option *entry.PosBusAutoAttributeOption, changeType universe.AttributeValueChangeType,
-	attributeID entry.AttributeID, subAttributeKey string, newValue any,
+	attributeID entry.AttributeID, newValue any, subAttributeKey string,
 ) (*websocket.PreparedMessage, error) {
 	if option == nil {
 		return nil, nil

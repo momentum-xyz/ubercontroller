@@ -98,7 +98,7 @@ type Node interface {
 	RemoveNodeAttributes(attributeIDs []entry.AttributeID, updateDB bool) (bool, error)
 
 	OnSpaceAttributeValueChanged(
-		changeType AttributeValueChangeType, spaceAttributeID entry.SpaceAttributeID, subAttributeKey string, newValue any,
+		changeType AttributeValueChangeType, spaceAttributeID entry.SpaceAttributeID, newValue any, subAttributeKey string,
 	) error
 
 	AddAPIRegister(register APIRegister)
