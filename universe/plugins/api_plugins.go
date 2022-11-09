@@ -85,10 +85,12 @@ func (p *Plugins) apiGetPlugins(c *gin.Context) {
 
 	out := make(dto.Plugins, len(plugins))
 	for i := range plugins {
-		var name string
-		if meta := plugins[i].GetMeta(); meta != nil {
-			name = utils.GetFromAnyMap(*meta, "name", "")
+		meta := plugins[i].GetMeta()
+		if meta == nil {
+			continue
 		}
+
+		name := utils.GetFromAnyMap(*meta, "name", "")
 		out[plugins[i].GetID()] = name
 	}
 
