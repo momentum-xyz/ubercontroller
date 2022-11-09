@@ -1,0 +1,59 @@
+name: Deploy openapi spec
+
+on:
+  push:
+    branches:
+      - develop
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "gh-pages"
+  cancel-in-progress: true
+
+jobs:
+  api-docs:
+    runs-on: self-hosted
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - id: go-fixup
+        # Workaround for setup-go on self-hosted runner, without a $HOME
+        name: Go fixup
+        run: |
+          echo "GOMODCACHE=/opt/go-cache/mod" >> $GITHUB_ENV
+          echo "GOCACHE=/opt/go-cache/build" >> $GITHUB_ENV
+          echo "GOPATH=/opt/go" >> $GITHUB_ENV
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+      - id: build-docs
+        name: Build docs
+        run: |
+          go run github.com/swaggo/swag/cmd/swag@v1.8.7 init \
+          -g universe/node/api.go \
+          -o build/docs/
+      - id: store-docs
+        name: Store assets catalog
+        uses: actions/upload-artifact@v3
+        with:
+          name: swagger.json
+          path: build/docs/swagger.json
+      - name: Setup Pages
+        uses: actions/configure-pages@v2
+      - name: Upload pages artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: build/docs/
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1
