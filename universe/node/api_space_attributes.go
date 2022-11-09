@@ -25,10 +25,12 @@ import (
 // @Success 404 {object} api.HTTPError
 // @Router /api/v4/spaces/{space_id}/attributes [get]
 func (n *Node) apiGetSpaceAttributesValue(c *gin.Context) {
-	inQuery := struct {
+	type Query struct {
 		PluginID      string `form:"plugin_id" binding:"required"`
 		AttributeName string `form:"attribute_name" binding:"required"`
-	}{}
+	}
+
+	inQuery := Query{}
 
 	if err := c.ShouldBindQuery(&inQuery); err != nil {
 		err := errors.WithMessage(err, "Node: apiGetSpaceAttributesValue: failed to bind query")
@@ -68,12 +70,28 @@ func (n *Node) apiGetSpaceAttributesValue(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
+// @Summary Returns space attributes sub value
+// @Schemes
+// @Description Returns space attributes sub value
+// @Tags spaces
+// @Accept json
+// @Produce json
+// @Param plugin_id path string true "Space ID"
+// @Param attribute_name path string true "Name"
+// @Param sub_attribute_key path string true "Sub Attribute Key"
+// @Success 200 {object} dto.SpaceSubAttributes
+// @Success 500 {object} api.HTTPError
+// @Success 400 {object} api.HTTPError
+// @Success 404 {object} api.HTTPError
+// @Router /api/v4/spaces/{space_id}/attributes/sub [get]
 func (n *Node) apiGetSpaceAttributeSubValue(c *gin.Context) {
-	inQuery := struct {
+	type Query struct {
 		PluginID        string `form:"plugin_id" binding:"required"`
 		AttributeName   string `form:"attribute_name" binding:"required"`
 		SubAttributeKey string `form:"sub_attribute_key" binding:"required"`
-	}{}
+	}
+
+	inQuery := Query{}
 
 	if err := c.ShouldBindQuery(&inQuery); err != nil {
 		err := errors.WithMessage(err, "Node: apiGetSpaceAttributeSubValue: failed to bind query")
@@ -123,13 +141,30 @@ func (n *Node) apiGetSpaceAttributeSubValue(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
+// @Summary Adds a space attribute sub value
+// @Schemes
+// @Description Adds a space attribute sub value
+// @Tags spaces
+// @Accept json
+// @Produce json
+// @Param plugin_id path string true "Space ID"
+// @Param attribute_name path string true "Name"
+// @Param sub_attribute_key path string true "Sub Attribute Key"
+// @Param sub_attribute_value path string true "Sub Attribute Value"
+// @Success 202 {object} dto.SpaceSubAttributes
+// @Success 500 {object} api.HTTPError
+// @Success 400 {object} api.HTTPError
+// @Success 404 {object} api.HTTPError
+// @Router /api/v4/spaces/{space_id}/attributes/sub [post]
 func (n *Node) apiSetSpaceAttributeSubValue(c *gin.Context) {
-	inBody := struct {
+	type Body struct {
 		PluginID          string `json:"plugin_id" binding:"required"`
 		AttributeName     string `json:"attribute_name" binding:"required"`
 		SubAttributeKey   string `json:"sub_attribute_key" binding:"required"`
 		SubAttributeValue any    `json:"sub_attribute_value" binding:"required"`
-	}{}
+	}
+
+	inBody := Body{}
 
 	if err := c.ShouldBindJSON(&inBody); err != nil {
 		err = errors.WithMessage(err, "Node: apiSetSpaceAttributeSubValue: failed to bind json")
@@ -195,12 +230,28 @@ func (n *Node) apiSetSpaceAttributeSubValue(c *gin.Context) {
 	c.JSON(http.StatusAccepted, out)
 }
 
+// @Summary Deletes a space attribute sub value
+// @Schemes
+// @Description Deletes a space attribute sub value
+// @Tags spaces
+// @Accept json
+// @Produce nil
+// @Param plugin_id path string true "Space ID"
+// @Param attribute_name path string true "Name"
+// @Param sub_attribute_key path string true "Sub Attribute Key"
+// @Success 200 {object} nil
+// @Success 500 {object} api.HTTPError
+// @Success 400 {object} api.HTTPError
+// @Success 404 {object} api.HTTPError
+// @Router /api/v4/spaces/{space_id}/attributes/sub [delete]
 func (n *Node) apiRemoveSpaceAttributeSubValue(c *gin.Context) {
-	inBody := struct {
+	type Body struct {
 		PluginID        string `json:"plugin_id" binding:"required"`
 		AttributeName   string `json:"attribute_name" binding:"required"`
 		SubAttributeKey string `json:"sub_attribute_key" binding:"required"`
-	}{}
+	}
+
+	inBody := Body{}
 
 	if err := c.ShouldBindJSON(&inBody); err != nil {
 		err = errors.WithMessage(err, "Node: apiRemoveSpaceAttributeSubValue: failed to bind json")
