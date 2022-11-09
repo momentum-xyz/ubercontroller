@@ -72,6 +72,75 @@ func (n *Node) apiGetSpaceAttributesValue(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
+// @Summary Returns space and all subspace attributes
+// @Schemes
+// @Description Returns space and all subspace attributes
+// @Tags spaces
+// @Accept json
+// @Produce json
+// @Param space_id path string true "Space ID"
+// @Param plugin_id query string true "Plugin ID"
+// @Param attribute_name query string true "Attribute Name"
+// @Success 200 {object} dto.SpaceAttributeValues
+// @Success 500 {object} api.HTTPError
+// @Success 400 {object} api.HTTPError
+// @Success 404 {object} api.HTTPError
+// @Router /api/v4/spaces/{space_id}/attributes-with-children [get]
+func (n *Node) apiGetSpaceWithChildrenAttributeValues(c *gin.Context) {
+	type Query struct {
+		PluginID      string `form:"plugin_id" binding:"required"`
+		AttributeName string `form:"attribute_name" binding:"required"`
+	}
+
+	inQuery := Query{}
+
+	if err := c.ShouldBindQuery(&inQuery); err != nil {
+		err := errors.WithMessage(err, "Node: apiGetSpaceWithChildrenAttributeValues: failed to bind query")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
+		return
+	}
+
+	spaceID, err := uuid.Parse(c.Param("spaceID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetSpaceWithChildrenAttributeValues: failed to parse space id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, n.log)
+		return
+	}
+
+	pluginID, err := uuid.Parse(inQuery.PluginID)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetSpaceWithChildrenAttributeValues: failed to parse plugin id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
+		return
+	}
+
+	rootSpace, ok := n.GetSpaceFromAllSpaces(spaceID)
+	if !ok {
+		err := errors.Errorf("Node: apiGetSpaceWithChildrenAttributeValues: space not found: %s", spaceID)
+		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		return
+	}
+
+	spaces := rootSpace.GetSpaces(true)
+	spaceAttributes := make(dto.SpaceAttributeValues, len(spaces))
+
+	spaces[rootSpace.GetID()] = rootSpace
+
+	for _, space := range spaces {
+		attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
+		attributeValue, ok := space.GetSpaceAttributeValue(attributeID)
+		if !ok {
+			err := errors.Errorf("Node: apiGetSpaceWithChildrenAttributeValues: space attribute value not found: %s", attributeID)
+			api.AbortRequest(c, http.StatusNotFound, "attribute_not_found", err, n.log)
+			return
+		}
+
+		spaceAttributes[space.GetID()] = attributeValue
+	}
+
+	c.JSON(http.StatusOK, spaceAttributes)
+}
+
 // @Summary Updates entire space attribute value
 // @Schemes
 // @Description Updates entire space attribute value
