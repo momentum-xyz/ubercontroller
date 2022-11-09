@@ -274,3 +274,90 @@ func (w *Worlds) apiWorldsGetOnlineUsers(c *gin.Context) {
 
 	c.JSON(http.StatusOK, users)
 }
+
+// @Summary Returns online users based on a searchQuery
+// @Schemes
+// @Description Returns online users for a specific world based on a searchQuery
+// @Tags spaces
+// @Accept json
+// @Produce json
+// @Param world_id path string true "World ID"
+// @Param query query string true "User name" example(string)
+// @Success 200 {object} dto.OnlineUsers
+// @Success 500 {object} api.HTTPError
+// @Success 400 {object} api.HTTPError
+// @Success 404 {object} api.HTTPError
+// @Router /api/v4/worlds/{world_id}/online [get]
+func (w *Worlds) apiWorldsSearchOnlineUsers(c *gin.Context) {
+	type Query struct {
+		SearchQuery string `form:"query" binding:"required"`
+	}
+
+	inQuery := Query{}
+
+	if err := c.ShouldBindQuery(&inQuery); err != nil {
+		err := errors.WithMessage(err, "Node: apiWorldsSearchOnlineUsers: failed to bind query")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, w.log)
+		return
+	}
+
+	worldID, err := uuid.Parse(c.Param("worldID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiWorldsSearchOnlineUsers: failed to parse world id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
+		return
+	}
+
+	world, ok := w.GetWorld(worldID)
+	if !ok {
+		err := errors.Errorf("Node: apiWorldsSearchOnlineUsers: space not found: %s", worldID)
+		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
+		return
+	}
+
+	users, err := w.apiWorldsFilterUsers(inQuery.SearchQuery, world)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiWorldsSearchOnlineUsers: failed to filter users")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_filter", err, w.log)
+		return
+	}
+
+	c.JSON(http.StatusOK, users)
+}
+
+func (w *Worlds) apiWorldsFilterUsers(searchQuery string, world universe.World) (dto.OnlineUsers, error) {
+	// TODO: implement user predicateFn
+	//predicateFn := func(spaceID uuid.UUID, space universe.Space) bool {
+	//	name, _, err := w.apiWorldsResolveNameDescription(space)
+	//	if err != nil {
+	//		return false
+	//	}
+	//
+	//	name = strings.ToLower(name)
+	//	searchQuery = strings.ToLower(searchQuery)
+	//	return strings.Contains(name, searchQuery)
+	//}
+	//
+	//spaces := world.(predicateFn)
+	//
+	//options, err := w.apiWorldsGetChildrenOptions(spaces, 0, 1)
+	//if err != nil {
+	//	return nil, errors.WithMessage(err, "failed to get options")
+	//}
+	//
+	//group := make(dto.SearchOptions)
+	//for _, option := range options {
+	//	space, ok := world.GetSpaceFromAllSpaces(option.ID)
+	//	if !ok {
+	//		return nil, errors.Errorf("failed to get space: %T", option.ID)
+	//	}
+	//
+	//	spaceType := space.GetSpaceType()
+	//	categoryName := spaceType.GetCategoryName()
+	//
+	//	group[categoryName] = append(group[categoryName], option)
+	//}
+	//
+	//return group, nil
+	return nil, nil
+}
