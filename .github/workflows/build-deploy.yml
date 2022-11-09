@@ -6,7 +6,6 @@ on:
       - develop
       - master
       - release/*
-      - feature/docgen
 
     tags:
       - v[0-9]+.[0-9]+.[0-9]+*
@@ -52,31 +51,3 @@ jobs:
           repository: momentum-xyz/Operations
           event-type: make-acc-pr
           client-payload: '{"name": "${{ env.PROJECT_NAME }}", "version": "${{ env.VERSION }}", "actor": "${{ github.event.actor.login }}"}'
-  docs:
-    runs-on: self-hosted
-    steps:
-      - uses: actions/checkout@v2
-      - id: go-fixup
-        # Workaround for setup-go on self-hosted runner, without a $HOME
-        name: Go fixup
-        run: |
-          echo "GOMODCACHE=/opt/go-cache/mod" >> $GITHUB_ENV
-          echo "GOCACHE=/opt/go-cache/build" >> $GITHUB_ENV
-          echo "GOPATH=/opt/go" >> $GITHUB_ENV
-      - uses: actions/setup-go@v3
-        with:
-          go-version-file: 'go.mod'
-          cache: true
-      - id: build-docs
-        name: Build docs
-        run: |
-          go run github.com/swaggo/swag/cmd/swag@v1.8.7 init \
-          -g universe/node/api.go \
-          -o build/docs/
-      - id: store-docs
-        name: Store assets catalog
-        uses: actions/upload-artifact@v3
-        with:
-          name: swagger.json
-          path: build/docs/swagger.json
-
