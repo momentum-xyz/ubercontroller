@@ -1,10 +1,12 @@
 package worlds
 
 import (
+	"net/http"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
-	"net/http"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -20,6 +22,7 @@ import (
 // @Accept json
 // @Produce json
 // @Param world_id path string true "World ID"
+// @Param space_id query string true "Space ID" example(string)
 // @Success 200 {object} dto.ExploreOption
 // @Success 500 {object} api.HTTPError
 // @Success 400 {object} api.HTTPError
@@ -85,7 +88,7 @@ func (w *Worlds) apiWorldsGetRootOptions(root universe.Space) (dto.ExploreOption
 		return dto.ExploreOption{}, errors.WithMessage(err, "failed to resolve name or description")
 	}
 
-	foundSubSpaces, err := w.apiWorldsGetChildrenOptions(spaces, 0)
+	foundSubSpaces, err := w.apiWorldsGetChildrenOptions(spaces, 0, 2)
 	if err != nil {
 		return dto.ExploreOption{}, errors.WithMessage(err, "failed to get children")
 	}
@@ -100,9 +103,9 @@ func (w *Worlds) apiWorldsGetRootOptions(root universe.Space) (dto.ExploreOption
 	return option, nil
 }
 
-func (w *Worlds) apiWorldsGetChildrenOptions(spaces map[uuid.UUID]universe.Space, level int) ([]dto.ExploreOption, error) {
+func (w *Worlds) apiWorldsGetChildrenOptions(spaces map[uuid.UUID]universe.Space, currentLevel int, maxLevel int) ([]dto.ExploreOption, error) {
 	options := make([]dto.ExploreOption, 0, len(spaces))
-	if level == 2 {
+	if currentLevel == maxLevel {
 		return options, nil
 	}
 
@@ -113,7 +116,7 @@ func (w *Worlds) apiWorldsGetChildrenOptions(spaces map[uuid.UUID]universe.Space
 		}
 
 		subSpaces := space.GetSpaces(false)
-		foundSubSpaces, err := w.apiWorldsGetChildrenOptions(subSpaces, level+1)
+		foundSubSpaces, err := w.apiWorldsGetChildrenOptions(subSpaces, currentLevel+1, maxLevel)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to get options")
 		}
@@ -153,4 +156,89 @@ func (w *Worlds) apiWorldsResolveNameDescription(space universe.Space) (spaceNam
 	}
 
 	return name, description, nil
+}
+
+// @Summary Returns spaces based on a searchQuery and categorizes the results
+// @Schemes
+// @Description Returns space information based on a searchquery
+// @Tags spaces
+// @Accept json
+// @Produce json
+// @Param world_id path string true "World ID"
+// @Param query query string true "Space name" example(string)
+// @Success 200 {object} dto.SearchOptions
+// @Success 500 {object} api.HTTPError
+// @Success 400 {object} api.HTTPError
+// @Success 404 {object} api.HTTPError
+// @Router /api/v4/worlds/{world_id}/explore/search [get]
+func (w *Worlds) apiWorldsSearchSpaces(c *gin.Context) {
+	type Query struct {
+		SearchQuery string `form:"query" binding:"required"`
+	}
+
+	inQuery := Query{}
+
+	if err := c.ShouldBindQuery(&inQuery); err != nil {
+		err := errors.WithMessage(err, "Node: apiWorldsSearchSpaces: failed to bind query")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, w.log)
+		return
+	}
+
+	worldID, err := uuid.Parse(c.Param("worldID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiWorldsSearchSpaces: failed to parse world id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
+		return
+	}
+
+	world, ok := w.GetWorld(worldID)
+	if !ok {
+		err := errors.Errorf("Node: apiWorldsSearchSpaces: space not found: %s", worldID)
+		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
+		return
+	}
+
+	spaces, err := w.apiWorldsFilterSpaces(inQuery.SearchQuery, world)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiWorldsSearchSpaces: failed to filter spaces")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_filter", err, w.log)
+		return
+	}
+
+	c.JSON(http.StatusOK, spaces)
+}
+
+func (w *Worlds) apiWorldsFilterSpaces(searchQuery string, world universe.World) (dto.SearchOptions, error) {
+	predicateFn := func(spaceID uuid.UUID, space universe.Space) bool {
+		name, _, err := w.apiWorldsResolveNameDescription(space)
+		if err != nil {
+			return false
+		}
+
+		name = strings.ToLower(name)
+		searchQuery = strings.ToLower(searchQuery)
+		return strings.Contains(name, searchQuery)
+	}
+
+	spaces := world.FilterAllSpaces(predicateFn)
+
+	options, err := w.apiWorldsGetChildrenOptions(spaces, 0, 1)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to get options")
+	}
+
+	group := make(dto.SearchOptions)
+	for _, option := range options {
+		space, ok := world.GetSpaceFromAllSpaces(option.ID)
+		if !ok {
+			return nil, errors.Errorf("failed to get space: %T", option.ID)
+		}
+
+		spaceType := space.GetSpaceType()
+		categoryName := spaceType.GetCategoryName()
+
+		group[categoryName] = append(group[categoryName], option)
+	}
+
+	return group, nil
 }

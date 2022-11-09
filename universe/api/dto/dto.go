@@ -8,6 +8,8 @@ import (
 
 type ExploreOptions []ExploreOption
 
+type SearchOptions map[string][]ExploreOption
+
 type Plugins map[uuid.UUID]string
 
 type PluginsMeta map[uuid.UUID]PluginMeta
@@ -42,7 +44,7 @@ type ExploreOption struct {
 	ID          uuid.UUID       `json:"id"`
 	Name        string          `json:"name"`
 	Description string          `json:"description"`
-	SubSpaces   []ExploreOption `json:"subSpaces"`
+	SubSpaces   []ExploreOption `json:"subSpaces,omitempty"`
 }
 
 type Profile struct {
