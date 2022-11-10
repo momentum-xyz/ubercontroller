@@ -195,21 +195,6 @@ func (n *Node) apiSetSpaceAttributesValue(c *gin.Context) {
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
 
 	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
-		newValue := func() *entry.AttributeValue {
-			value := entry.NewAttributeValue()
-			*value = inBody.AttributeValue
-			return value
-		}
-
-		if current == nil {
-			return entry.NewAttributePayload(newValue(), nil), nil
-		}
-
-		if current.Value == nil {
-			current.Value = newValue()
-			return current, nil
-		}
-
 		*current.Value = inBody.AttributeValue
 
 		return current, nil
