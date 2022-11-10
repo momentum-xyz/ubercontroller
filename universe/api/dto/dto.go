@@ -26,6 +26,8 @@ type SpaceSubOptions map[string]any
 
 type SpaceAttributes map[uuid.UUID]*entry.SpaceAttribute
 
+type SpaceAttributeValues map[uuid.UUID]*entry.AttributeValue
+
 type SpaceSubAttributes map[string]any
 
 type SpaceEffectiveOptions SpaceOptions
