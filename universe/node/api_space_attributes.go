@@ -128,14 +128,11 @@ func (n *Node) apiGetSpaceWithChildrenAttributeValues(c *gin.Context) {
 
 	for _, space := range spaces {
 		attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
-		attributeValue, ok := space.GetSpaceAttributeValue(attributeID)
-		if !ok {
-			err := errors.Errorf("Node: apiGetSpaceWithChildrenAttributeValues: space attribute value not found: %s", attributeID)
-			api.AbortRequest(c, http.StatusNotFound, "attribute_not_found", err, n.log)
-			return
-		}
+		attributeValue, _ := space.GetSpaceAttributeValue(attributeID)
 
-		spaceAttributes[space.GetID()] = attributeValue
+		if attributeValue != nil {
+			spaceAttributes[space.GetID()] = attributeValue
+		}
 	}
 
 	c.JSON(http.StatusOK, spaceAttributes)
