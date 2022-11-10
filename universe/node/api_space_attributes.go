@@ -377,7 +377,7 @@ func (n *Node) apiSetSpaceAttributeSubValue(c *gin.Context) {
 // @Description Deletes a space attribute sub value
 // @Tags spaces
 // @Accept json
-// @Produce nil
+// @Produce json
 // @Param space_id path string true "Space ID"
 // @Param plugin_id body string true "Plugin ID"
 // @Param attribute_name body string true "Name"
