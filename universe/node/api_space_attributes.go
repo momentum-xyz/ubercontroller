@@ -128,7 +128,10 @@ func (n *Node) apiGetSpaceWithChildrenAttributeValues(c *gin.Context) {
 
 	for _, space := range spaces {
 		attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
-		attributeValue, _ := space.GetSpaceAttributeValue(attributeID)
+		attributeValue, ok := space.GetSpaceAttributeValue(attributeID)
+		if !ok {
+			continue
+		}
 
 		if attributeValue != nil {
 			spaceAttributes[space.GetID()] = attributeValue
