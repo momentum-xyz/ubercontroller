@@ -2,7 +2,6 @@ package user
 
 import (
 	"context"
-	"github.com/sasha-s/go-deadlock"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -11,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
+	"github.com/sasha-s/go-deadlock"
 	"go.uber.org/zap"
 
 	"github.com/momentum-xyz/ubercontroller/database"
@@ -32,6 +32,7 @@ type User struct {
 	conn *websocket.Conn
 
 	pos          *cmath.Vec3 // going to data part to posMsgBuffer content for simple access
+	rotation     *cmath.Vec3 // going to data part to posMsgBuffer content for simple access
 	posMsgBuffer []byte
 
 	lastPositionUpdateTimestamp int64
@@ -169,6 +170,7 @@ func (u *User) Initialize(ctx context.Context) error {
 	u.numSendsQueued.Store(chanIsClosed)
 	u.posMsgBuffer = message.NewSendPosBuffer(u.id)
 	u.pos = (*cmath.Vec3)(unsafe.Add(unsafe.Pointer(&u.posMsgBuffer[0]), 16))
+	u.rotation = (*cmath.Vec3)(unsafe.Add(unsafe.Pointer(&u.posMsgBuffer[0]), 16+3*4))
 	return nil
 }
 

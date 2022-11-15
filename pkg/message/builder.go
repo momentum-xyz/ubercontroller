@@ -20,6 +20,7 @@ type ObjectDefinition struct {
 	AssetType        uuid.UUID
 	Name             string
 	Position         cmath.Vec3
+	Rotation         cmath.Vec3
 	TetheredToParent bool
 	Minimap          bool
 	InfoUI           uuid.UUID
@@ -173,6 +174,10 @@ func (mb *Builder) MsgObjectDefinition(obj ObjectDefinition) *websocket.Prepared
 	api.ObjectDefinitionAddPosition(
 		builder,
 		api.CreateVec3(builder, obj.Position.X, obj.Position.Y, obj.Position.Z),
+	)
+	api.ObjectDefinitionAddPosition(
+		builder,
+		api.CreateVec3(builder, obj.Rotation.X, obj.Rotation.Y, obj.Rotation.Z),
 	)
 	api.ObjectDefinitionAddParentId(builder, mb.SerializeGUID(builder, obj.ParentID))
 	api.ObjectDefinitionAddAssetType(builder, mb.SerializeGUID(builder, obj.AssetType))
