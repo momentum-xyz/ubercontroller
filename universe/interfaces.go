@@ -10,6 +10,7 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe/world/calendar"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
@@ -165,6 +166,8 @@ type World interface {
 
 	// QUESTION: do we still need this?
 	AddToCounter() int64
+
+	GetCalendar() *calendar.Calendar
 }
 
 type Space interface {
