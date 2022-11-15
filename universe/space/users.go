@@ -64,9 +64,12 @@ func (s *Space) AddUser(user universe.User, updateDB bool) error {
 	if user.GetWorld().GetID() != s.GetWorld().GetID() {
 		return errors.Errorf("worlds mismatch: %s != %s", user.GetWorld().GetID(), s.GetWorld().GetID())
 	}
-	if err := user.SetSpace(s, updateDB); err != nil {
-		return errors.WithMessagef(err, "failed to set space %s to user: %s", s.GetID(), user.GetID())
+
+	if updateDB {
+		s.log.Error("Space: AddUser: update database is not supported")
 	}
+
+	user.SetSpace(s)
 	s.Users.Data[user.GetID()] = user
 	s.sendSpaceEnterLeaveStats(user, 1)
 
@@ -80,9 +83,12 @@ func (s *Space) RemoveUser(user universe.User, updateDB bool) error {
 	if user.GetWorld().GetID() != s.GetWorld().GetID() {
 		return errors.Errorf("worlds mismatch: %s != %s", user.GetWorld().GetID(), s.GetWorld().GetID())
 	}
-	if err := user.SetSpace(nil, updateDB); err != nil {
-		return errors.WithMessagef(err, "failed to set space nil to user: %s", user.GetID())
+
+	if updateDB {
+		s.log.Error("Space: RemoveUser: update database is not supported")
 	}
+
+	user.SetSpace(nil)
 	delete(s.Users.Data, user.GetID())
 	s.sendSpaceEnterLeaveStats(user, 1)
 	return nil
@@ -95,11 +101,9 @@ func (s *Space) SendToUser(userID uuid.UUID, msg *websocket.PreparedMessage, rec
 func (s *Space) Broadcast(msg *websocket.PreparedMessage, recursive bool) error {
 	//return errors.Errorf("implement me")
 	if msg == nil {
-		s.log.Warnf("Space: Broadcast: empty msg: %s", s.GetID())
 		return nil
 	}
 	if s.numSendsQueued.Add(1) < 0 {
-		s.log.Warnf("Space: Broadcast: send num < 0: %s", s.GetID())
 		return nil
 	}
 	s.broadcastPipeline <- msg
@@ -149,8 +153,6 @@ func (s *Space) Run() {
 func (s *Space) performBroadcast(message *websocket.PreparedMessage) {
 	s.Users.Mu.RLock()
 	defer s.Users.Mu.RUnlock()
-
-	s.log.Warnf("Space: performBroadcast: space: %s, num users: %s", s.GetID(), len(s.Users.Data))
 
 	for _, user := range s.Users.Data {
 		user.Send(message)

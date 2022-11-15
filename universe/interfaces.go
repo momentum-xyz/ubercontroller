@@ -224,10 +224,10 @@ type User interface {
 	RunStopper
 
 	GetWorld() World
-	SetWorld(world World, updateDB bool) error
+	SetWorld(world World)
 
 	GetSpace() Space
-	SetSpace(space Space, updateDB bool) error
+	SetSpace(space Space)
 
 	Update() error
 

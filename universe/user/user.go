@@ -40,6 +40,7 @@ type User struct {
 	ctx                         context.Context
 	send                        chan *websocket.PreparedMessage
 	mu                          deadlock.RWMutex
+	space                       universe.Space
 	world                       universe.World
 	profile                     *entry.UserProfile
 	options                     *entry.UserOptions
@@ -65,27 +66,29 @@ func (u *User) Stop() error {
 func (u *User) GetWorld() universe.World {
 	u.mu.RLock()
 	defer u.mu.RUnlock()
+
 	return u.world
 }
 
-func (u *User) SetWorld(world universe.World, updateDB bool) error {
-	//TODO implement me
+func (u *User) SetWorld(world universe.World) {
 	u.mu.Lock()
 	defer u.mu.Unlock()
-	u.world = world
 
-	return nil
+	u.world = world
 }
 
 func (u *User) GetSpace() universe.Space {
-	//TODO implement me
-	panic("implement me")
+	u.mu.RLock()
+	defer u.mu.RUnlock()
+
+	return u.space
 }
 
-func (u *User) SetSpace(space universe.Space, updateDB bool) error {
-	//TODO implement me
-	//panic("implement me")
-	return nil
+func (u *User) SetSpace(space universe.Space) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+
+	u.space = space
 }
 
 func (u *User) Update() error {
