@@ -196,6 +196,10 @@ func (n *Node) apiSetSpaceAttributesValue(c *gin.Context) {
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
 
 	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
+		if current == nil {
+			current = entry.NewAttributePayload(nil, nil)
+		}
+
 		*current.Value = inBody.AttributeValue
 
 		return current, nil
@@ -207,6 +211,20 @@ func (n *Node) apiSetSpaceAttributesValue(c *gin.Context) {
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert", err, n.log)
 		return
 	}
+
+	go func() {
+		if err := n.OnSpaceAttributeValueChanged(
+			universe.ChangedAttributeValueChangeType, spaceAttribute.SpaceAttributeID, spaceAttribute.Value, "",
+		); err != nil {
+			n.log.Warn(
+				errors.WithMessagef(
+					err,
+					"Node: apiSetSpaceAttributesValue: failed to trigger space attribute value changed: %+v",
+					spaceAttribute.SpaceAttributeID,
+				),
+			)
+		}
+	}()
 
 	c.JSON(http.StatusAccepted, spaceAttribute.Value)
 }
@@ -372,7 +390,13 @@ func (n *Node) apiSetSpaceAttributeSubValue(c *gin.Context) {
 		if err := n.OnSpaceAttributeValueChanged(
 			universe.SubChangedAttributeValueChangeType, spaceAttribute.SpaceAttributeID, newSubValue, inBody.SubAttributeKey,
 		); err != nil {
-			n.log.Warn(errors.WithMessage(err, "Node: apiSetSpaceAttributeSubValue: failed to trigger space attribute value changed"))
+			n.log.Warn(
+				errors.WithMessagef(
+					err,
+					"Node: apiSetSpaceAttributeSubValue: failed to trigger space attribute value changed: %+v",
+					spaceAttribute.SpaceAttributeID,
+				),
+			)
 		}
 	}()
 
@@ -453,11 +477,17 @@ func (n *Node) apiRemoveSpaceAttributeSubValue(c *gin.Context) {
 	}
 
 	go func() {
+		spaceAttributeID := entry.NewSpaceAttributeID(attributeID, spaceID)
 		if err := n.OnSpaceAttributeValueChanged(
-			universe.SubRemovedAttributeValueChangeType, entry.NewSpaceAttributeID(attributeID, spaceID),
-			nil, inBody.SubAttributeKey,
+			universe.SubRemovedAttributeValueChangeType, spaceAttributeID, nil, inBody.SubAttributeKey,
 		); err != nil {
-			n.log.Warn(errors.WithMessage(err, "Node: apiRemoveSpaceAttributeSubValue: failed to trigger space attribute value changed"))
+			n.log.Warn(
+				errors.WithMessagef(
+					err,
+					"Node: apiRemoveSpaceAttributeSubValue: failed to trigger space attribute value changed: %+v",
+					spaceAttributeID,
+				),
+			)
 		}
 	}()
 
