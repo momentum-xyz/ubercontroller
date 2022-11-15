@@ -263,7 +263,7 @@ func (w *Worlds) Load() error {
 
 	universe.GetNode().AddAPIRegister(w)
 
-	w.log.Info("Worlds loaded")
+	w.log.Infof("Worlds loaded: %d", len(worldIDs))
 
 	return nil
 }

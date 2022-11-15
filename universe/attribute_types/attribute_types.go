@@ -2,7 +2,7 @@ package attribute_types
 
 import (
 	"context"
-	
+
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -116,6 +116,7 @@ func (a *AttributeTypes) AddAttributeTypes(attributeTypes []universe.AttributeTy
 	return nil
 }
 
+// TODO: update node/space attributes
 func (a *AttributeTypes) RemoveAttributeType(attributeType universe.AttributeType, updateDB bool) error {
 	a.attributeTypes.Mu.Lock()
 	defer a.attributeTypes.Mu.Unlock()
@@ -135,6 +136,7 @@ func (a *AttributeTypes) RemoveAttributeType(attributeType universe.AttributeTyp
 	return nil
 }
 
+// TODO: update node/space attributes
 func (a *AttributeTypes) RemoveAttributeTypes(attributeTypes []universe.AttributeType, updateDB bool) error {
 	a.attributeTypes.Mu.Lock()
 	defer a.attributeTypes.Mu.Unlock()

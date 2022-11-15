@@ -7,6 +7,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/pkg/message"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
@@ -30,6 +31,29 @@ func (s *Space) GetSpaceAttributeOptions(attributeID entry.AttributeID) (*entry.
 		return nil, true
 	}
 	return payload.Options, true
+}
+
+func (s *Space) GetSpaceAttributeEffectiveOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool) {
+	attributeType, ok := universe.GetNode().GetAttributeTypes().GetAttributeType(entry.AttributeTypeID(attributeID))
+	if !ok {
+		return nil, false
+	}
+	attributeTypeOptions := attributeType.GetOptions()
+
+	attributeOptions, ok := s.GetSpaceAttributeOptions(attributeID)
+	if !ok {
+		attributeOptions = nil
+	}
+
+	effectiveOptions, err := merge.Auto(attributeOptions, attributeTypeOptions)
+	if err != nil {
+		s.log.Error(
+			errors.WithMessagef(err, "Space: GetSpaceAttributeEffectiveOptions: failed to merge options: %+v", attributeID),
+		)
+		return nil, false
+	}
+
+	return effectiveOptions, true
 }
 
 func (s *Space) GetSpaceAttributePayload(attributeID entry.AttributeID) (*entry.AttributePayload, bool) {

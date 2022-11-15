@@ -78,13 +78,14 @@ type Node interface {
 		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
 	) (*entry.NodeAttribute, error)
 
+	GetNodeAttributePayload(attributeID entry.AttributeID) (*entry.AttributePayload, bool)
 	GetNodeAttributeValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool)
 	GetNodeAttributeOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool)
-	GetNodeAttributePayload(attributeID entry.AttributeID) (*entry.AttributePayload, bool)
+	GetNodeAttributeEffectiveOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool)
 
+	GetNodeAttributesPayload() map[entry.NodeAttributeID]*entry.AttributePayload
 	GetNodeAttributesValue() map[entry.NodeAttributeID]*entry.AttributeValue
 	GetNodeAttributesOptions() map[entry.NodeAttributeID]*entry.AttributeOptions
-	GetNodeAttributesPayload() map[entry.NodeAttributeID]*entry.AttributePayload
 
 	UpdateNodeAttributeValue(
 		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool,
@@ -95,6 +96,10 @@ type Node interface {
 
 	RemoveNodeAttribute(attributeID entry.AttributeID, updateDB bool) (bool, error)
 	RemoveNodeAttributes(attributeIDs []entry.AttributeID, updateDB bool) (bool, error)
+
+	OnSpaceAttributeValueChanged(
+		changeType AttributeValueChangeType, spaceAttributeID entry.SpaceAttributeID, newValue any, subAttributeKey string,
+	) error
 
 	AddAPIRegister(register APIRegister)
 
@@ -188,13 +193,14 @@ type Space interface {
 		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
 	) (*entry.SpaceAttribute, error)
 
+	GetSpaceAttributePayload(attributeID entry.AttributeID) (*entry.AttributePayload, bool)
 	GetSpaceAttributeValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool)
 	GetSpaceAttributeOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool)
-	GetSpaceAttributePayload(attributeID entry.AttributeID) (*entry.AttributePayload, bool)
+	GetSpaceAttributeEffectiveOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool)
 
+	GetSpaceAttributesPayload(recursive bool) map[entry.SpaceAttributeID]*entry.AttributePayload
 	GetSpaceAttributesValue(recursive bool) map[entry.SpaceAttributeID]*entry.AttributeValue
 	GetSpaceAttributesOptions(recursive bool) map[entry.SpaceAttributeID]*entry.AttributeOptions
-	GetSpaceAttributesPayload(recursive bool) map[entry.SpaceAttributeID]*entry.AttributePayload
 
 	UpdateSpaceAttributeValue(
 		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool,

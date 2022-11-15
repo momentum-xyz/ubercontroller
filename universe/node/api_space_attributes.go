@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/api"
 	"github.com/momentum-xyz/ubercontroller/universe/api/dto"
 )
@@ -195,6 +196,10 @@ func (n *Node) apiSetSpaceAttributesValue(c *gin.Context) {
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
 
 	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
+		if current == nil {
+			current = entry.NewAttributePayload(nil, nil)
+		}
+
 		*current.Value = inBody.AttributeValue
 
 		return current, nil
@@ -206,6 +211,20 @@ func (n *Node) apiSetSpaceAttributesValue(c *gin.Context) {
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert", err, n.log)
 		return
 	}
+
+	go func() {
+		if err := n.OnSpaceAttributeValueChanged(
+			universe.ChangedAttributeValueChangeType, spaceAttribute.SpaceAttributeID, spaceAttribute.Value, "",
+		); err != nil {
+			n.log.Warn(
+				errors.WithMessagef(
+					err,
+					"Node: apiSetSpaceAttributesValue: failed to trigger space attribute value changed: %+v",
+					spaceAttribute.SpaceAttributeID,
+				),
+			)
+		}
+	}()
 
 	c.JSON(http.StatusAccepted, spaceAttribute.Value)
 }
@@ -365,8 +384,24 @@ func (n *Node) apiSetSpaceAttributeSubValue(c *gin.Context) {
 		return
 	}
 
+	newSubValue := (*spaceAttribute.Value)[inBody.SubAttributeKey]
+
+	go func() {
+		if err := n.OnSpaceAttributeValueChanged(
+			universe.SubChangedAttributeValueChangeType, spaceAttribute.SpaceAttributeID, newSubValue, inBody.SubAttributeKey,
+		); err != nil {
+			n.log.Warn(
+				errors.WithMessagef(
+					err,
+					"Node: apiSetSpaceAttributeSubValue: failed to trigger space attribute value changed: %+v",
+					spaceAttribute.SpaceAttributeID,
+				),
+			)
+		}
+	}()
+
 	out := dto.SpaceSubAttributes{
-		inBody.SubAttributeKey: (*spaceAttribute.Value)[inBody.SubAttributeKey],
+		inBody.SubAttributeKey: newSubValue,
 	}
 
 	c.JSON(http.StatusAccepted, out)
@@ -440,6 +475,21 @@ func (n *Node) apiRemoveSpaceAttributeSubValue(c *gin.Context) {
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_update", err, n.log)
 		return
 	}
+
+	go func() {
+		spaceAttributeID := entry.NewSpaceAttributeID(attributeID, spaceID)
+		if err := n.OnSpaceAttributeValueChanged(
+			universe.SubRemovedAttributeValueChangeType, spaceAttributeID, nil, inBody.SubAttributeKey,
+		); err != nil {
+			n.log.Warn(
+				errors.WithMessagef(
+					err,
+					"Node: apiRemoveSpaceAttributeSubValue: failed to trigger space attribute value changed: %+v",
+					spaceAttributeID,
+				),
+			)
+		}
+	}()
 
 	c.JSON(http.StatusOK, nil)
 }
