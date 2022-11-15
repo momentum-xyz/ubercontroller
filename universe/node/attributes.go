@@ -35,6 +35,7 @@ func (n *Node) OnSpaceAttributeValueChanged(
 		return errors.WithMessage(err, "failed to get message")
 	}
 	if msg == nil {
+		n.log.Warnf("Node: OnSpaceAttributeValueChanged: empty msg: %+v", spaceAttributeID)
 		return nil
 	}
 
@@ -42,6 +43,7 @@ func (n *Node) OnSpaceAttributeValueChanged(
 	for i := range autoOption.Scope {
 		switch autoOption.Scope[i] {
 		case entry.SpacePosBusAutoScopeAttributeOption:
+			n.log.Warnf("Node: OnSpaceAttributeValueChanged: space broadcast: %+v", spaceAttributeID)
 			if err := space.Broadcast(msg, false); err != nil {
 				errs = multierror.Append(
 					errs, errors.WithMessagef(
@@ -63,10 +65,12 @@ func (n *Node) OnSpaceAttributeValueChanged(
 
 func (n *Node) getPosBusAutoAttributeOption(options *entry.AttributeOptions) (*entry.PosBusAutoAttributeOption, error) {
 	if options == nil {
+		n.log.Warn("Node: getPosBusAutoAttributeOption: empty options")
 		return nil, nil
 	}
 	autoOptionsValue, ok := (*options)["posbus_auto"]
 	if !ok {
+		n.log.Warn("Node: getPosBusAutoAttributeOption: empty posbus auto")
 		return nil, nil
 	}
 
@@ -83,6 +87,7 @@ func (n *Node) getAttributeValueChangedMsg(
 	attributeID entry.AttributeID, newValue any, subAttributeKey string,
 ) (*websocket.PreparedMessage, error) {
 	if option == nil {
+		n.log.Warn("Node: getAttributeValueChangedMsg: empty options")
 		return nil, nil
 	}
 
