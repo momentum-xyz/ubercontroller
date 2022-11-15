@@ -95,9 +95,11 @@ func (s *Space) SendToUser(userID uuid.UUID, msg *websocket.PreparedMessage, rec
 func (s *Space) Broadcast(msg *websocket.PreparedMessage, recursive bool) error {
 	//return errors.Errorf("implement me")
 	if msg == nil {
+		s.log.Warnf("Space: Broadcast: empty msg: %s", s.GetID())
 		return nil
 	}
 	if s.numSendsQueued.Add(1) < 0 {
+		s.log.Warnf("Space: Broadcast: send num < 0: %s", s.GetID())
 		return nil
 	}
 	s.broadcastPipeline <- msg
@@ -105,11 +107,12 @@ func (s *Space) Broadcast(msg *websocket.PreparedMessage, recursive bool) error 
 	if recursive {
 		s.Children.Mu.RLock()
 		defer s.Children.Mu.RUnlock()
+
 		for _, space := range s.Children.Data {
-			space.Broadcast(msg, true)
+			space.Broadcast(msg, recursive)
 		}
-		s.Children.Mu.RUnlock()
 	}
+
 	return nil
 }
 
@@ -145,8 +148,11 @@ func (s *Space) Run() {
 
 func (s *Space) performBroadcast(message *websocket.PreparedMessage) {
 	s.Users.Mu.RLock()
+	defer s.Users.Mu.RUnlock()
+
+	s.log.Warnf("Space: performBroadcast: space: %s, num users: %s", s.GetID(), len(s.Users.Data))
+
 	for _, user := range s.Users.Data {
 		user.Send(message)
 	}
-	s.Users.Mu.RUnlock()
 }
