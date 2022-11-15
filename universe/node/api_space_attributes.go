@@ -190,13 +190,14 @@ func (n *Node) apiSetSpaceAttributeSubValue(c *gin.Context) {
 	}
 
 	newSubValue := (*spaceAttribute.Value)[inBody.SubAttributeKey]
-	if err := n.OnSpaceAttributeValueChanged(
-		universe.SubChangedAttributeValueChangeType, spaceAttribute.SpaceAttributeID, newSubValue, inBody.SubAttributeKey,
-	); err != nil {
-		err = errors.WithMessage(err, "Node: apiSetSpaceAttributeSubValue: failed to trigger space attribute value changed")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_trigger_attribute_changed", err, n.log)
-		return
-	}
+
+	go func() {
+		if err := n.OnSpaceAttributeValueChanged(
+			universe.SubChangedAttributeValueChangeType, spaceAttribute.SpaceAttributeID, newSubValue, inBody.SubAttributeKey,
+		); err != nil {
+			n.log.Warn(errors.WithMessage(err, "Node: apiSetSpaceAttributeSubValue: failed to trigger space attribute value changed"))
+		}
+	}()
 
 	out := dto.SpaceSubAttributes{
 		inBody.SubAttributeKey: newSubValue,
@@ -257,14 +258,14 @@ func (n *Node) apiRemoveSpaceAttributeSubValue(c *gin.Context) {
 		return
 	}
 
-	if err := n.OnSpaceAttributeValueChanged(
-		universe.SubRemovedAttributeValueChangeType, entry.NewSpaceAttributeID(attributeID, spaceID),
-		nil, inBody.SubAttributeKey,
-	); err != nil {
-		err = errors.WithMessage(err, "Node: apiRemoveSpaceAttributeSubValue: failed to trigger space attribute value changed")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_trigger_attribute_changed", err, n.log)
-		return
-	}
+	go func() {
+		if err := n.OnSpaceAttributeValueChanged(
+			universe.SubRemovedAttributeValueChangeType, entry.NewSpaceAttributeID(attributeID, spaceID),
+			nil, inBody.SubAttributeKey,
+		); err != nil {
+			n.log.Warn(errors.WithMessage(err, "Node: apiRemoveSpaceAttributeSubValue: failed to trigger space attribute value changed"))
+		}
+	}()
 
 	c.JSON(http.StatusOK, nil)
 }
