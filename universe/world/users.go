@@ -55,11 +55,12 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 		}
 	}
 
+	user.SetWorld(w)
+
 	// effectively replace user if exists
 	if err = w.Space.AddUser(user, updateDB); err != nil {
 		return errors.WithMessagef(err, "failed to add user %s to world: %s", user.GetID(), w.GetID())
 	}
-	user.SetWorld(w)
 
 	err = w.initializeUnity(user)
 	return err
