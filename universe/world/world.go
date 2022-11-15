@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/momentum-xyz/posbus-protocol/posbus"
+
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/mplugin"
 	"github.com/momentum-xyz/ubercontroller/pkg/message"
@@ -19,6 +20,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/space"
+	"github.com/momentum-xyz/ubercontroller/universe/world/calendar"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
@@ -37,18 +39,24 @@ type World struct {
 	metaData            Metadata
 	counter             atomic.Int64
 	allSpaces           *generic.SyncMap[uuid.UUID, universe.Space]
+	calendar            *calendar.Calendar
 }
 
 func NewWorld(id uuid.UUID, db database.DB) *World {
 	world := &World{
 		db:        db,
 		allSpaces: generic.NewSyncMap[uuid.UUID, universe.Space](),
+		calendar:  calendar.NewCalendar(),
 	}
 	world.Space = space.NewSpace(id, db, world)
 	world.pluginController = mplugin.NewPluginController(id)
 	//world.corePluginInstance, _ = world.pluginController.AddPlugin(world.GetID(), world.corePluginInitFunc)
 	world.pluginController.AddPlugin(universe.GetSystemPluginID(), world.corePluginInitFunc)
 	return world
+}
+
+func (w *World) GetCalendar() *calendar.Calendar {
+	return w.calendar
 }
 
 func (w *World) GetID() uuid.UUID {
@@ -78,6 +86,10 @@ func (w *World) Initialize(ctx context.Context) error {
 		return errors.WithMessage(err, "failed to initialize space")
 	}
 
+	if err := w.calendar.Initialize(ctx); err != nil {
+		return errors.WithMessage(err, "failed to initialize calendar")
+	}
+
 	return w.AddSpaceToAllSpaces(w.Space)
 }
 
@@ -89,6 +101,9 @@ func (w *World) AddToCounter() int64 {
 func (w *World) Run() error {
 	ticker := time.NewTicker(500 * time.Millisecond)
 	defer ticker.Stop()
+
+	go w.calendar.Run()
+	defer w.calendar.Stop()
 
 	for {
 		select {

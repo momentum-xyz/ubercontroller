@@ -167,6 +167,10 @@ func (s *Space) UpsertSpaceAttribute(
 
 	s.spaceAttributes.Data[attributeID] = payload
 
+	if s.world != nil {
+		s.world.GetCalendar().OnAttributeUpsert(attributeID, payload.Value)
+	}
+
 	return spaceAttribute, nil
 }
 
@@ -199,6 +203,10 @@ func (s *Space) UpdateSpaceAttributeValue(
 
 	payload.Value = value
 	s.spaceAttributes.Data[attributeID] = payload
+
+	if s.world != nil {
+		s.world.GetCalendar().OnAttributeUpsert(attributeID, payload.Value)
+	}
 
 	return value, nil
 }
@@ -253,6 +261,10 @@ func (s *Space) RemoveSpaceAttribute(attributeID entry.AttributeID, updateDB boo
 	}
 
 	delete(s.spaceAttributes.Data, attributeID)
+
+	if s.world != nil {
+		s.world.GetCalendar().OnAttributeRemove(attributeID)
+	}
 
 	return true, nil
 }
