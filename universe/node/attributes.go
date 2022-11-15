@@ -23,7 +23,7 @@ func (n *Node) OnSpaceAttributeValueChanged(
 
 	effectiveOptions, ok := space.GetSpaceAttributeEffectiveOptions(spaceAttributeID.AttributeID)
 	if !ok {
-		return nil
+		return errors.Errorf("failed to get space attribute effective options: %+v", spaceAttributeID)
 	}
 
 	autoOption, err := n.getPosBusAutoAttributeOption(effectiveOptions)
