@@ -43,13 +43,15 @@ func (s *Space) GetSpaceAttributeEffectiveOptions(attributeID entry.AttributeID)
 
 	attributeOptions, ok := s.GetSpaceAttributeOptions(attributeID)
 	if !ok {
-		attributeOptions = nil
+		return nil, false
 	}
 
 	effectiveOptions, err := merge.Auto(attributeOptions, attributeTypeOptions)
 	if err != nil {
 		s.log.Error(
-			errors.WithMessagef(err, "Space: GetSpaceAttributeEffectiveOptions: failed to merge options: %+v", attributeID),
+			errors.WithMessagef(
+				err, "Space: GetSpaceAttributeEffectiveOptions: failed to merge options: %+v", attributeID,
+			),
 		)
 		return nil, false
 	}
@@ -173,7 +175,7 @@ func (s *Space) UpsertSpaceAttribute(
 		if payload != nil {
 			value = payload.Value
 		}
-		if err := s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value); err != nil {
+		if err := s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil); err != nil {
 			s.log.Error(
 				errors.WithMessagef(
 					err, "Space: UpsertSpaceAttribute: failed to call onSpaceAttributeChanged: %+v", attributeID,
@@ -220,7 +222,7 @@ func (s *Space) UpdateSpaceAttributeValue(
 		if value == nil {
 			changeType = universe.RemovedAttributeChangeType
 		}
-		if err := s.onSpaceAttributeChanged(changeType, attributeID, value); err != nil {
+		if err := s.onSpaceAttributeChanged(changeType, attributeID, value, nil); err != nil {
 			s.log.Error(
 				errors.WithMessagef(
 					err, "Space: UpdateSpaceAttributeValue: failed to call onSpaceAttributeChanged: %+v", attributeID,
@@ -267,7 +269,7 @@ func (s *Space) UpdateSpaceAttributeOptions(
 		if payload != nil {
 			value = payload.Value
 		}
-		if err := s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value); err != nil {
+		if err := s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil); err != nil {
 			s.log.Error(
 				errors.WithMessagef(
 					err, "Space: UpdateSpaceAttributeOptions: failed to call onSpaceAttributeChanged: %+v", attributeID,
@@ -287,6 +289,8 @@ func (s *Space) RemoveSpaceAttribute(attributeID entry.AttributeID, updateDB boo
 		return false, nil
 	}
 
+	attributeEffectiveOptions, attributeEffectiveOptionsOK := s.GetSpaceAttributeEffectiveOptions(attributeID)
+
 	if updateDB {
 		if err := s.db.SpaceAttributesRemoveSpaceAttributeByID(
 			s.ctx, entry.NewSpaceAttributeID(attributeID, s.GetID()),
@@ -298,7 +302,17 @@ func (s *Space) RemoveSpaceAttribute(attributeID entry.AttributeID, updateDB boo
 	delete(s.spaceAttributes.Data, attributeID)
 
 	go func() {
-		if err := s.onSpaceAttributeChanged(universe.RemovedAttributeChangeType, attributeID, nil); err != nil {
+		if !attributeEffectiveOptionsOK {
+			s.log.Error(
+				errors.Errorf(
+					"Space: RemoveSpaceAttribute: failed to get space attribute effective options",
+				),
+			)
+			return
+		}
+		if err := s.onSpaceAttributeChanged(
+			universe.RemovedAttributeChangeType, attributeID, nil, attributeEffectiveOptions,
+		); err != nil {
 			s.log.Error(
 				errors.WithMessagef(
 					err, "Space: RemoveSpaceAttribute: failed to call onSpaceAttributeChanged: %+v", attributeID,
@@ -377,10 +391,14 @@ func (s *Space) loadSpaceAttributes() error {
 
 func (s *Space) onSpaceAttributeChanged(
 	changeType universe.AttributeChangeType, attributeID entry.AttributeID, value any,
+	effectiveOptions *entry.AttributeOptions,
 ) error {
-	effectiveOptions, ok := s.GetSpaceAttributeEffectiveOptions(attributeID)
-	if !ok {
-		return errors.Errorf("failed to get attribute effective options: %+v", attributeID)
+	if effectiveOptions == nil {
+		options, ok := s.GetSpaceAttributeEffectiveOptions(attributeID)
+		if !ok {
+			return errors.Errorf("failed to get attribute effective options: %+v", attributeID)
+		}
+		effectiveOptions = options
 	}
 
 	autoOption, err := posbus.GetOptionAutoOption(effectiveOptions)
@@ -398,6 +416,20 @@ func (s *Space) onSpaceAttributeChanged(
 	var errs *multierror.Error
 	for i := range autoOption.Scope {
 		switch autoOption.Scope[i] {
+		case entry.WorldPosBusAutoScopeAttributeOption:
+			if s.GetWorld() == nil {
+				errs = multierror.Append(
+					err, errors.Errorf("failed to get space world: %s", autoOption.Scope[i]),
+				)
+				continue
+			}
+			if err := s.GetWorld().Broadcast(autoMessage, true); err != nil {
+				errs = multierror.Append(
+					errs, errors.WithMessagef(
+						err, "failed to broadcast message: %s", autoOption.Scope[i],
+					),
+				)
+			}
 		case entry.SpacePosBusAutoScopeAttributeOption:
 			if err := s.Broadcast(autoMessage, false); err != nil {
 				errs = multierror.Append(

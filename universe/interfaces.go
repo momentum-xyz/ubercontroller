@@ -97,6 +97,24 @@ type Node interface {
 	RemoveNodeAttribute(attributeID entry.AttributeID, updateDB bool) (bool, error)
 	RemoveNodeAttributes(attributeIDs []entry.AttributeID, updateDB bool) (bool, error)
 
+	GetUserAttributePayload(userAttributeID entry.UserAttributeID) (*entry.AttributePayload, bool)
+	GetUserAttributeValue(userAttributeID entry.UserAttributeID) (*entry.AttributeValue, bool)
+	GetUserAttributeOptions(userAttributeID entry.UserAttributeID) (*entry.AttributeOptions, bool)
+	GetUserAttributeEffectiveOptions(userAttributeID entry.UserAttributeID) (*entry.AttributeOptions, bool)
+
+	UpsertUserAttribute(
+		userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
+	) (*entry.UserAttribute, error)
+
+	UpdateUserAttributeValue(
+		userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributeValue],
+	) (*entry.AttributeValue, error)
+	UpdateUserAttributeOptions(
+		userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributeOptions],
+	) (*entry.AttributeOptions, error)
+
+	RemoveUserAttribute(userAttributeID entry.UserAttributeID) (bool, error)
+
 	AddAPIRegister(register APIRegister)
 
 	WriteInfluxPoint(point *influxWrite.Point) error
