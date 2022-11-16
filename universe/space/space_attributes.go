@@ -216,7 +216,11 @@ func (s *Space) UpdateSpaceAttributeValue(
 	s.spaceAttributes.Data[attributeID] = payload
 
 	go func() {
-		if err := s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value); err != nil {
+		changeType := universe.ChangedAttributeChangeType
+		if value == nil {
+			changeType = universe.RemovedAttributeChangeType
+		}
+		if err := s.onSpaceAttributeChanged(changeType, attributeID, value); err != nil {
 			s.log.Error(
 				errors.WithMessagef(
 					err, "Space: UpdateSpaceAttributeValue: failed to call onSpaceAttributeChanged: %+v", attributeID,
