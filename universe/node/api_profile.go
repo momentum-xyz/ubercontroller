@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/momentum-xyz/ubercontroller/universe/api"
-	"github.com/momentum-xyz/ubercontroller/universe/api/dto"
+	"github.com/momentum-xyz/ubercontroller/universe/common/api"
+	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/pkg/errors"
 )

@@ -8,8 +8,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
-	"github.com/momentum-xyz/ubercontroller/universe/api"
-	"github.com/momentum-xyz/ubercontroller/universe/api/dto"
+	"github.com/momentum-xyz/ubercontroller/universe/common/api"
+	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
 )
 
 func (n *Node) apiSpacesSetSpaceSubOption(c *gin.Context) {

@@ -6,14 +6,12 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 )
 
-type AttributeValueChangeType string
+type AttributeChangeType string
 
 const (
-	InvalidAttributeValueChangeType    AttributeValueChangeType = ""
-	ChangedAttributeValueChangeType    AttributeValueChangeType = "attribute_changed"
-	SubChangedAttributeValueChangeType AttributeValueChangeType = "sub_attribute_changed"
-	RemovedAttributeValueChangeType    AttributeValueChangeType = "attribute_removed"
-	SubRemovedAttributeValueChangeType AttributeValueChangeType = "sub_attribute_removed"
+	InvalidAttributeChangeType AttributeChangeType = ""
+	ChangedAttributeChangeType AttributeChangeType = "attribute_changed"
+	RemovedAttributeChangeType AttributeChangeType = "attribute_removed"
 )
 
 type SpaceFilterPredicateFn func(spaceID uuid.UUID, space Space) bool
