@@ -32,7 +32,6 @@ type World struct {
 	pluginController *mplugin.PluginController
 	//corePluginInstance  mplugin.PluginInstance
 	corePluginInterface mplugin.PluginInterface
-	broadcast           chan *websocket.PreparedMessage
 	metaMsg             atomic.Pointer[websocket.PreparedMessage]
 	metaData            Metadata
 	counter             atomic.Int64
@@ -120,7 +119,7 @@ func (w *World) broadcastPositions() {
 	}
 	w.Users.Mu.RUnlock()
 	if flag {
-		w.Space.Broadcast(msg.WebsocketMessage(), false)
+		w.Send(msg.WebsocketMessage(), true)
 	}
 }
 
@@ -219,8 +218,7 @@ func (w *World) FilterAllSpaces(predicateFn universe.SpacesFilterPredicateFn) ma
 }
 
 func (w *World) GetSpaceFromAllSpaces(spaceID uuid.UUID) (universe.Space, bool) {
-	space, ok := w.allSpaces.Load(spaceID)
-	return space, ok
+	return w.allSpaces.Load(spaceID)
 }
 
 func (w *World) AddSpaceToAllSpaces(space universe.Space) error {

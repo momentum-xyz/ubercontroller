@@ -161,14 +161,16 @@ func (n *Node) GetAllSpaces() map[uuid.UUID]universe.Space {
 
 func (n *Node) FilterAllSpaces(predicateFn universe.SpacesFilterPredicateFn) map[uuid.UUID]universe.Space {
 	spaces := make(map[uuid.UUID]universe.Space)
+	if predicateFn(n.GetID(), n) {
+		spaces[n.GetID()] = n
+	}
+
 	for _, world := range n.GetWorlds().GetWorlds() {
 		for spaceID, space := range world.FilterAllSpaces(predicateFn) {
 			spaces[spaceID] = space
 		}
 	}
-	if predicateFn(n.GetID(), n) {
-		spaces[n.GetID()] = n
-	}
+
 	return spaces
 }
 
@@ -202,8 +204,8 @@ func (n *Node) RemoveSpaceFromAllSpaces(space universe.Space) (bool, error) {
 		return false, errors.Errorf("not permitted for node")
 	}
 
-	n.spaceIDToWorldID.Mu.RLock()
-	defer n.spaceIDToWorldID.Mu.RUnlock()
+	n.spaceIDToWorldID.Mu.Lock()
+	defer n.spaceIDToWorldID.Mu.Unlock()
 
 	if _, ok := n.spaceIDToWorldID.Data[space.GetID()]; ok {
 		delete(n.spaceIDToWorldID.Data, space.GetID())

@@ -1,11 +1,11 @@
 package world
 
 import (
+	"github.com/gorilla/websocket"
 	cmath2 "github.com/momentum-xyz/controller/pkg/cmath"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/posbus-protocol/posbus"
@@ -66,6 +66,32 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 	return err
 }
 
+func (w *World) RemoveUser(user universe.User, updateDB bool) error {
+	w.Users.Mu.Lock()
+	defer w.Users.Mu.Unlock()
+
+	return w.noLockRemoveUser(user, updateDB)
+}
+
+func (w *World) Send(msg *websocket.PreparedMessage, recursive bool) error {
+	return w.Space.Send(msg, false)
+}
+
+func (w *World) GetUserSpawnPosition(userID uuid.UUID) cmath.Vec3 {
+	return cmath.Vec3{X: 40, Y: 40, Z: 40}
+}
+
+func (w *World) noLockRemoveUser(user universe.User, updateDB bool) error {
+	if user.GetWorld().GetID() != w.GetID() {
+		return errors.Errorf("worlds mismatch: %s != %s", user.GetWorld().GetID(), w.GetID())
+	}
+	user.SetWorld(nil)
+	delete(w.Users.Data, user.GetID())
+	user.Shutdown()
+
+	return nil
+}
+
 func (w *World) initializeUnity(user universe.User) error {
 	// TODO: rest of startup logic
 	if err := user.SendDirectly(w.metaMsg.Load()); err != nil {
@@ -93,36 +119,6 @@ func (w *World) initializeUnity(user universe.User) error {
 	w.Space.SendTextures(user.SendDirectly, true)
 	user.ReleaseSendBuffer()
 	return nil
-}
-
-func (w *World) RemoveUser(user universe.User, updateDB bool) error {
-	w.Users.Mu.Lock()
-	defer w.Users.Mu.Unlock()
-
-	return w.noLockRemoveUser(user, updateDB)
-}
-
-func (w *World) noLockRemoveUser(user universe.User, updateDB bool) error {
-	if user.GetWorld().GetID() != w.GetID() {
-		return errors.Errorf("worlds mismatch: %s != %s", user.GetWorld().GetID(), w.GetID())
-	}
-	user.SetWorld(nil)
-	delete(w.Users.Data, user.GetID())
-	user.Shutdown()
-
-	return nil
-}
-
-func (w *World) SendToUser(userID uuid.UUID, msg *websocket.PreparedMessage, recursive bool) error {
-	return errors.Errorf("implement me")
-}
-
-func (w *World) SendToUsers(msg *websocket.PreparedMessage, recursive bool) error {
-	return errors.Errorf("implement me")
-}
-
-func (w *World) GetUserSpawnPosition(userID uuid.UUID) cmath.Vec3 {
-	return cmath.Vec3{X: 40, Y: 40, Z: 40}
 }
 
 //func (w *World) SpawnUser(userID uuid.UUID, sessionID uuid.UUID, socketConnection *websocket.Conn) {
@@ -174,7 +170,3 @@ func (w *World) GetUserSpawnPosition(userID uuid.UUID) cmath.Vec3 {
 //	Logln(1, "Registration done: "+x.ID.String())
 //
 //}
-
-func (w *World) DisconnectUser(userID uuid.UUID) {
-
-}

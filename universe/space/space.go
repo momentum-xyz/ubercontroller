@@ -463,7 +463,7 @@ func (s *Space) UpdateSpawnMessage() {
 		},
 	)
 	s.spawnMsg.Store(msg)
-	s.world.Broadcast(s.spawnMsg.Load(), false)
+	s.world.Send(s.spawnMsg.Load(), true)
 }
 
 func (s *Space) GetSpawnMessage() *websocket.PreparedMessage {
@@ -486,10 +486,11 @@ func (s *Space) SendTextures(f func(*websocket.PreparedMessage) error, recursive
 	f(s.textMsg.Load())
 	if recursive {
 		s.Children.Mu.RLock()
+		defer s.Children.Mu.RUnlock()
+
 		for _, space := range s.Children.Data {
-			space.SendTextures(f, true)
+			space.SendTextures(f, recursive)
 		}
-		s.Children.Mu.RUnlock()
 	}
 }
 
@@ -508,7 +509,7 @@ func (s *Space) SendAttributes(f func(*websocket.PreparedMessage), recursive boo
 		defer s.Children.Mu.RUnlock()
 
 		for _, space := range s.Children.Data {
-			space.SendAttributes(f, true)
+			space.SendAttributes(f, recursive)
 		}
 		s.Children.Mu.RUnlock()
 	}

@@ -98,7 +98,7 @@ func (s *Space) SendToUser(userID uuid.UUID, msg *websocket.PreparedMessage, rec
 	return errors.Errorf("implement me")
 }
 
-func (s *Space) Broadcast(msg *websocket.PreparedMessage, recursive bool) error {
+func (s *Space) Send(msg *websocket.PreparedMessage, recursive bool) error {
 	//return errors.Errorf("implement me")
 	if msg == nil {
 		return nil
@@ -113,7 +113,7 @@ func (s *Space) Broadcast(msg *websocket.PreparedMessage, recursive bool) error 
 		defer s.Children.Mu.RUnlock()
 
 		for _, space := range s.Children.Data {
-			space.Broadcast(msg, recursive)
+			space.Send(msg, recursive)
 		}
 	}
 
