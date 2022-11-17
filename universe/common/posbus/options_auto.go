@@ -57,9 +57,13 @@ func GetOptionAutoMessage(
 		return nil, errors.WithMessagef(err, "failed to marshal message payload")
 	}
 
+	topic := option.Topic
+	if topic == "" {
+		topic = attributeID.PluginID.String()
+	}
 	switch option.SendTo {
 	case entry.ReactPosBusDestinationType:
-		return posbus.NewRelayToReactMsg(option.Topic, data).WebsocketMessage(), nil
+		return posbus.NewRelayToReactMsg(topic, data).WebsocketMessage(), nil
 	}
 
 	return nil, errors.Errorf("send to type is not supported yet: %d", option.SendTo)
