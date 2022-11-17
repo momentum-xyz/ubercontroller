@@ -943,8 +943,8 @@ github.com/modern-go/reflect2 v1.0.2 h1:xBagoLtFs94CBntxluKeaWgTMpvLxC4ur3nMaC9G
 github.com/modern-go/reflect2 v1.0.2/go.mod h1:yWuevngMOJpCy52FWWMvUC8ws7m/LJsjYzDa0/r8luk=
 github.com/momentum-xyz/controller v0.1.14 h1:garsHJqPoZGOuEUJPbWkU87kavJUCSxoORvjOj24BUk=
 github.com/momentum-xyz/controller v0.1.14/go.mod h1:zUAtgUrbxDREkcfKjCK9tueI0C1C0wY6mY3+vG1dDxE=
-github.com/momentum-xyz/posbus-protocol v0.1.5-0.20221116121011-080e7a452515 h1:YQsIdFgl2VD+5Wi4X5yNSoqf1PwrtjJwuBujfqtbzjI=
-github.com/momentum-xyz/posbus-protocol v0.1.5-0.20221116121011-080e7a452515/go.mod h1:jEDhJo9Zsk0hHbpWLp33O4kvnPctL7BXBvIq2WE2Hyc=
+github.com/momentum-xyz/posbus-protocol v0.1.6-0.20221117152353-91194b518fe5 h1:wWBnSMrZUjXIAtPU5Bi7MaRWZisl22Tb3ZnYAUqUZ88=
+github.com/momentum-xyz/posbus-protocol v0.1.6-0.20221117152353-91194b518fe5/go.mod h1:jEDhJo9Zsk0hHbpWLp33O4kvnPctL7BXBvIq2WE2Hyc=
 github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe/go.mod h1:wL8QJuTMNUDYhXwkmfOly8iTdp5TEcJFWZD2D7SIkUc=
 github.com/morikuni/aec v1.0.0 h1:nP9CBfwrvYnBRgY6qfDQkygYDmYwOilePFkwzv4dU8A=
 github.com/morikuni/aec v1.0.0/go.mod h1:BbKIizmSmc5MMPqRYbxO4ZU0S0+P200+tUnFx7PXmsc=

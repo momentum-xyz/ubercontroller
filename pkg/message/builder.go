@@ -179,6 +179,7 @@ func (mb *Builder) MsgObjectDefinition(obj ObjectDefinition) *websocket.Prepared
 		builder,
 		api.CreateVec3(builder, obj.Position.Rotation.X, obj.Position.Rotation.Y, obj.Position.Rotation.Z),
 	)
+	api.ObjectDefinitionAddScale(builder, obj.Position.Scale)
 	api.ObjectDefinitionAddParentId(builder, mb.SerializeGUID(builder, obj.ParentID))
 	api.ObjectDefinitionAddAssetType(builder, mb.SerializeGUID(builder, obj.AssetType))
 	api.ObjectDefinitionAddTetheredToParent(builder, obj.TetheredToParent)
@@ -212,6 +213,7 @@ func (mb *Builder) MsgAddStaticObjects(objects []ObjectDefinition) *websocket.Pr
 			builder,
 			api.CreateVec3(builder, obj.Position.Rotation.X, obj.Position.Rotation.Y, obj.Position.Rotation.Z),
 		)
+		api.ObjectDefinitionAddScale(builder, obj.Position.Scale)
 		api.ObjectDefinitionAddParentId(builder, mb.SerializeGUID(builder, obj.ParentID))
 		api.ObjectDefinitionAddAssetType(builder, mb.SerializeGUID(builder, obj.AssetType))
 		api.ObjectDefinitionAddTetheredToParent(builder, obj.TetheredToParent)
