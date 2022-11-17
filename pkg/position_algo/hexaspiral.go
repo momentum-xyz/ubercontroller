@@ -6,6 +6,7 @@ import (
 
 	"github.com/momentum-xyz/controller/utils"
 	cm "github.com/momentum-xyz/ubercontroller/pkg/cmath"
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 )
 
 const (
@@ -39,8 +40,8 @@ func NewHexaSpiral(parameterMap map[string]interface{}) Algo {
 	}
 }
 
-func (h *hexaSpiral) CalcPos(parentTheta float64, parentVector cm.Vec3, i, n int) (cm.Vec3, float64) {
-	parent := parentVector.ToVec3f64()
+func (h *hexaSpiral) CalcPos(parentTheta float64, parentPosition entry.SpacePosition, i, n int) (entry.SpacePosition, float64) {
+	parent := parentPosition.Location.ToVec3f64()
 
 	x, y := getHexPosition(i, h.DrawCenter, h.Scatter)
 
@@ -59,7 +60,8 @@ func (h *hexaSpiral) CalcPos(parentTheta float64, parentVector cm.Vec3, i, n int
 		Z: math.Round((parent.Z+y*h.Rspace)*10.0) / 10.0,
 	}
 
-	return p.ToVec3(), math.Atan2(p.Z-parent.Z, p.X-parent.X) /* theta */
+	np := entry.SpacePosition{Location: p.ToVec3()}
+	return np, math.Atan2(p.Z-parent.Z, p.X-parent.X) /* theta */
 }
 
 func (*hexaSpiral) Name() string {

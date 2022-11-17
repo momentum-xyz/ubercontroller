@@ -2,7 +2,6 @@ package space
 
 import (
 	"github.com/google/uuid"
-	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/pkg/position_algo"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/pkg/errors"
@@ -54,7 +53,7 @@ func (s *Space) GetPlacements() map[uuid.UUID]position_algo.Algo {
 	return pls
 }
 
-func (s *Space) SetActualPosition(pos cmath.Vec3, theta float64, force bool) error {
+func (s *Space) SetActualPosition(pos entry.SpacePosition, theta float64, force bool) error {
 	//s.mu.Lock()
 	//defer s.mu.Unlock()
 	if (s.theta != theta) || (*s.actualPosition.Load() != pos) || (force) {
@@ -72,7 +71,7 @@ func (s *Space) GetPosition() *entry.SpacePosition {
 	return s.position
 }
 
-func (s *Space) GetActualPosition() cmath.Vec3 {
+func (s *Space) GetActualPosition() entry.SpacePosition {
 	return *s.actualPosition.Load()
 }
 
@@ -84,18 +83,9 @@ func (s *Space) SetPosition(position *entry.SpacePosition, updateDB bool) error 
 	}
 
 	if s.position != nil {
-		s.position.Location = position.Location
-		if s.position.Location != nil {
-			s.actualPosition.Store(s.position.Location)
-			s.UpdateSpawnMessage()
-		}
-
-		// Todo: implement?
-		//s.position.Rotation = position.Rotation
-		//if s.position.Rotation != nil {
-		//	s.actualRotation.Store(s.position.Rotation)
-		//	s.UpdateSpawnMessage()
-		//}
+		s.position = position
+		s.actualPosition.Store(s.position)
+		s.UpdateSpawnMessage()
 	}
 
 	return nil

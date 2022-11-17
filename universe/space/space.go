@@ -50,7 +50,7 @@ type Space struct {
 	attributesMsg     *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
 	renderTextureAttr map[string]string
 	textMsg           atomic.Pointer[websocket.PreparedMessage]
-	actualPosition    atomic.Pointer[cmath.Vec3]
+	actualPosition    atomic.Pointer[entry.SpacePosition]
 	broadcastPipeline chan *websocket.PreparedMessage
 	messageAccept     atomic.Bool
 	numSendsQueued    atomic.Int64
@@ -90,8 +90,9 @@ func (s *Space) Initialize(ctx context.Context) error {
 	s.ctx = ctx
 	s.log = log
 	s.numSendsQueued.Store(chanIsClosed)
-	s.actualPosition.Store(new(cmath.Vec3))
-	//s.actualRotation.Store(new(cmath.Vec3))
+
+	newPos := entry.SpacePosition{Location: *new(cmath.Vec3), Rotation: *new(cmath.Vec3)}
+	s.actualPosition.Store(&newPos)
 	go s.Run()
 
 	return nil

@@ -45,8 +45,8 @@ type SpaceOptions struct {
 }
 
 type SpacePosition struct {
-	Location *cmath.Vec3 `db:"location" json:"location"`
-	Rotation *cmath.Vec3 `db:"rotation" json:"rotation"`
+	Location cmath.Vec3 `db:"location" json:"location"`
+	Rotation cmath.Vec3 `db:"rotation" json:"rotation"`
 }
 
 type SpaceChildPlacement struct {

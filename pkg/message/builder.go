@@ -11,6 +11,7 @@ import (
 	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/momentum-xyz/ubercontroller/logger"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
@@ -19,8 +20,7 @@ type ObjectDefinition struct {
 	ParentID         uuid.UUID
 	AssetType        uuid.UUID
 	Name             string
-	Position         cmath.Vec3
-	Rotation         cmath.Vec3
+	Position         entry.SpacePosition
 	TetheredToParent bool
 	Minimap          bool
 	InfoUI           uuid.UUID
@@ -173,7 +173,11 @@ func (mb *Builder) MsgObjectDefinition(obj ObjectDefinition) *websocket.Prepared
 	api.ObjectDefinitionAddName(builder, objName)
 	api.ObjectDefinitionAddPosition(
 		builder,
-		api.CreateVec3(builder, obj.Position.X, obj.Position.Y, obj.Position.Z),
+		api.CreateVec3(builder, obj.Position.Location.X, obj.Position.Location.Y, obj.Position.Location.Z),
+	)
+	api.ObjectDefinitionAddRotation(
+		builder,
+		api.CreateVec3(builder, obj.Position.Rotation.X, obj.Position.Rotation.Y, obj.Position.Rotation.Z),
 	)
 	api.ObjectDefinitionAddParentId(builder, mb.SerializeGUID(builder, obj.ParentID))
 	api.ObjectDefinitionAddAssetType(builder, mb.SerializeGUID(builder, obj.AssetType))
@@ -201,10 +205,12 @@ func (mb *Builder) MsgAddStaticObjects(objects []ObjectDefinition) *websocket.Pr
 		api.ObjectDefinitionAddObjectId(builder, mb.SerializeGUID(builder, obj.ObjectID))
 		api.ObjectDefinitionAddName(builder, nameObj)
 		api.ObjectDefinitionAddPosition(
-			builder, api.CreateVec3(builder, obj.Position.X, obj.Position.Y, obj.Position.Z),
+			builder,
+			api.CreateVec3(builder, obj.Position.Location.X, obj.Position.Location.Y, obj.Position.Location.Z),
 		)
 		api.ObjectDefinitionAddRotation(
-			builder, api.CreateVec3(builder, obj.Rotation.X, obj.Rotation.Y, obj.Rotation.Z),
+			builder,
+			api.CreateVec3(builder, obj.Position.Rotation.X, obj.Position.Rotation.Y, obj.Position.Rotation.Z),
 		)
 		api.ObjectDefinitionAddParentId(builder, mb.SerializeGUID(builder, obj.ParentID))
 		api.ObjectDefinitionAddAssetType(builder, mb.SerializeGUID(builder, obj.AssetType))

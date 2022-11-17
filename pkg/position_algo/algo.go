@@ -1,6 +1,8 @@
 package position_algo
 
-import "github.com/momentum-xyz/ubercontroller/pkg/cmath"
+import (
+	"github.com/momentum-xyz/ubercontroller/types/entry"
+)
 
 const (
 	defaultVShiftValue = 10.0
@@ -12,5 +14,5 @@ const (
 
 type Algo interface {
 	Name() string
-	CalcPos(parentTheta float64, parentVector cmath.Vec3, i, n int) (cmath.Vec3, float64)
+	CalcPos(parentTheta float64, parentPosition entry.SpacePosition, i, n int) (entry.SpacePosition, float64)
 }

@@ -230,7 +230,7 @@ type Space interface {
 	RemoveSpaceAttributes(attributeIDs []entry.AttributeID, updateDB bool) (bool, error)
 
 	UpdateChildrenPosition(recursive bool, force bool) error
-	SetActualPosition(pos cmath.Vec3, theta float64, force bool) error
+	SetActualPosition(pos entry.SpacePosition, theta float64, force bool) error
 
 	SendTextures(sendFn func(msg *websocket.PreparedMessage) error, recursive bool)
 }
