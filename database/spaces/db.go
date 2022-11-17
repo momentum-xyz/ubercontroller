@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/database"
-	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 )
 
@@ -101,7 +100,7 @@ func (db *DB) SpacesUpdateSpaceParentID(ctx context.Context, spaceID uuid.UUID, 
 	return nil
 }
 
-func (db *DB) SpacesUpdateSpacePosition(ctx context.Context, spaceID uuid.UUID, position *cmath.Vec3) error {
+func (db *DB) SpacesUpdateSpacePosition(ctx context.Context, spaceID uuid.UUID, position *entry.SpacePosition) error {
 	if _, err := db.conn.Exec(ctx, updateSpacePositionQuery, spaceID, position); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}

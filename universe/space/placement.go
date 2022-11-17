@@ -65,7 +65,7 @@ func (s *Space) SetActualPosition(pos cmath.Vec3, theta float64, force bool) err
 	return nil
 }
 
-func (s *Space) GetPosition() *cmath.Vec3 {
+func (s *Space) GetPosition() *entry.SpacePosition {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -76,17 +76,26 @@ func (s *Space) GetActualPosition() cmath.Vec3 {
 	return *s.actualPosition.Load()
 }
 
-func (s *Space) SetPosition(position *cmath.Vec3, updateDB bool) error {
+func (s *Space) SetPosition(position *entry.SpacePosition, updateDB bool) error {
 	if updateDB {
 		if err := s.db.SpacesUpdateSpacePosition(s.ctx, s.id, position); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
 
-	s.position = position
 	if s.position != nil {
-		s.actualPosition.Store(s.position)
-		s.UpdateSpawnMessage()
+		s.position.Location = position.Location
+		if s.position.Location != nil {
+			s.actualPosition.Store(s.position.Location)
+			s.UpdateSpawnMessage()
+		}
+
+		// Todo: implement?
+		//s.position.Rotation = position.Rotation
+		//if s.position.Rotation != nil {
+		//	s.actualRotation.Store(s.position.Rotation)
+		//	s.UpdateSpawnMessage()
+		//}
 	}
 
 	return nil

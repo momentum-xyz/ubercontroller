@@ -20,7 +20,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/momentum-xyz/controller v0.1.14
-	github.com/momentum-xyz/posbus-protocol v0.1.3-0.20220823125430-eae4f9f48e55
+	github.com/momentum-xyz/posbus-protocol v0.1.5-0.20221116121011-080e7a452515
 	github.com/pborman/getopt/v2 v2.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/sasha-s/go-deadlock v0.3.1

@@ -36,7 +36,7 @@ type Space struct {
 	//mu               sync.RWMutex
 	mu               deadlock.RWMutex
 	ownerID          uuid.UUID
-	position         *cmath.Vec3
+	position         *entry.SpacePosition
 	options          *entry.SpaceOptions
 	parent           universe.Space
 	asset2d          universe.Asset2d
@@ -91,6 +91,7 @@ func (s *Space) Initialize(ctx context.Context) error {
 	s.log = log
 	s.numSendsQueued.Store(chanIsClosed)
 	s.actualPosition.Store(new(cmath.Vec3))
+	//s.actualRotation.Store(new(cmath.Vec3))
 	go s.Run()
 
 	return nil
