@@ -203,9 +203,9 @@ func (mb *Builder) MsgAddStaticObjects(objects []ObjectDefinition) *websocket.Pr
 		api.ObjectDefinitionAddPosition(
 			builder, api.CreateVec3(builder, obj.Position.X, obj.Position.Y, obj.Position.Z),
 		)
-		//api.ObjectDefinitionAddRotation(
-		//	builder, api.CreateVec3(builder, obj.Rotation.X, obj.Rotation.Y, obj.Rotation.Z),
-		//)
+		api.ObjectDefinitionAddRotation(
+			builder, api.CreateVec3(builder, obj.Rotation.X, obj.Rotation.Y, obj.Rotation.Z),
+		)
 		api.ObjectDefinitionAddParentId(builder, mb.SerializeGUID(builder, obj.ParentID))
 		api.ObjectDefinitionAddAssetType(builder, mb.SerializeGUID(builder, obj.AssetType))
 		api.ObjectDefinitionAddTetheredToParent(builder, obj.TetheredToParent)
