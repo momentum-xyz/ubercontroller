@@ -170,6 +170,11 @@ func (s *Space) UpsertSpaceAttribute(
 
 	s.spaceAttributes.Data[attributeID] = payload
 
+	// TODO: find better way how to skip "onSpaceAttributeChanged" on node loading
+	if !updateDB {
+		return spaceAttribute, nil
+	}
+
 	go func() {
 		var value any
 		if payload != nil {

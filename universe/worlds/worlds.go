@@ -2,6 +2,7 @@ package worlds
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/config"
 	"sync"
 
 	"github.com/google/uuid"
@@ -23,6 +24,7 @@ var _ universe.Worlds = (*Worlds)(nil)
 type Worlds struct {
 	ctx    context.Context
 	log    *zap.SugaredLogger
+	cfg    *config.Config
 	db     database.DB
 	worlds *generic.SyncMap[uuid.UUID, universe.World]
 }
@@ -39,9 +41,14 @@ func (w *Worlds) Initialize(ctx context.Context) error {
 	if log == nil {
 		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
 	}
+	cfg := utils.GetFromAny(ctx.Value(types.ConfigContextKey), (*config.Config)(nil))
+	if cfg == nil {
+		return errors.Errorf("failed to get config from context: %T", ctx.Value(types.ConfigContextKey))
+	}
 
 	w.ctx = ctx
 	w.log = log
+	w.cfg = cfg
 
 	return nil
 }
@@ -237,6 +244,33 @@ func (w *Worlds) Load() error {
 	if err != nil {
 		return errors.WithMessage(err, "failed to get world ids from db")
 	}
+	worldsCount := len(worldIDs)
+
+	// modify batchSize when database consumption per world loading will be changed
+	batchSize := int(w.cfg.Postgres.MAXCONNS / 4)
+	for len(worldIDs) > 0 {
+		batch := worldIDs
+		if len(worldIDs) > batchSize {
+			batch = worldIDs[:batchSize]
+			worldIDs = worldIDs[batchSize:]
+		} else {
+			worldIDs = nil
+		}
+
+		if err := w.loadBatch(batch); err != nil {
+			return errors.WithMessage(err, "failed to load worlds batch")
+		}
+	}
+
+	universe.GetNode().AddAPIRegister(w)
+
+	w.log.Infof("Worlds loaded: %d", worldsCount)
+
+	return nil
+}
+
+func (w *Worlds) loadBatch(worldIDs []uuid.UUID) error {
+	w.log.Info("Loading worlds batch...")
 
 	group, _ := errgroup.WithContext(w.ctx)
 
@@ -261,9 +295,7 @@ func (w *Worlds) Load() error {
 		return err
 	}
 
-	universe.GetNode().AddAPIRegister(w)
-
-	w.log.Infof("Worlds loaded: %d", len(worldIDs))
+	w.log.Infof("Worlds batch loaded: %d", len(worldIDs))
 
 	return nil
 }
