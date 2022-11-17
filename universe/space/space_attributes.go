@@ -2,6 +2,7 @@ package space
 
 import (
 	"github.com/hashicorp/go-multierror"
+	"github.com/momentum-xyz/ubercontroller/universe/common/posbus"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/message"
@@ -167,6 +168,20 @@ func (s *Space) UpsertSpaceAttribute(
 
 	s.spaceAttributes.Data[attributeID] = payload
 
+	go func() {
+		var value any
+		if payload != nil {
+			value = payload.Value
+		}
+		if err := s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value); err != nil {
+			s.log.Error(
+				errors.WithMessagef(
+					err, "Space: UpsertSpaceAttribute: failed to call onSpaceAttributeChanged: %+v", attributeID,
+				),
+			)
+		}
+	}()
+
 	return spaceAttribute, nil
 }
 
@@ -199,6 +214,16 @@ func (s *Space) UpdateSpaceAttributeValue(
 
 	payload.Value = value
 	s.spaceAttributes.Data[attributeID] = payload
+
+	go func() {
+		if err := s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value); err != nil {
+			s.log.Error(
+				errors.WithMessagef(
+					err, "Space: UpdateSpaceAttributeValue: failed to call onSpaceAttributeChanged: %+v", attributeID,
+				),
+			)
+		}
+	}()
 
 	return value, nil
 }
@@ -233,6 +258,20 @@ func (s *Space) UpdateSpaceAttributeOptions(
 	payload.Options = options
 	s.spaceAttributes.Data[attributeID] = payload
 
+	go func() {
+		var value any
+		if payload != nil {
+			value = payload.Value
+		}
+		if err := s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value); err != nil {
+			s.log.Error(
+				errors.WithMessagef(
+					err, "Space: UpdateSpaceAttributeOptions: failed to call onSpaceAttributeChanged: %+v", attributeID,
+				),
+			)
+		}
+	}()
+
 	return options, nil
 }
 
@@ -253,6 +292,16 @@ func (s *Space) RemoveSpaceAttribute(attributeID entry.AttributeID, updateDB boo
 	}
 
 	delete(s.spaceAttributes.Data, attributeID)
+
+	go func() {
+		if err := s.onSpaceAttributeChanged(universe.RemovedAttributeChangeType, attributeID, nil); err != nil {
+			s.log.Error(
+				errors.WithMessagef(
+					err, "Space: RemoveSpaceAttribute: failed to call onSpaceAttributeChanged: %+v", attributeID,
+				),
+			)
+		}
+	}()
 
 	return true, nil
 }
@@ -320,4 +369,47 @@ func (s *Space) loadSpaceAttributes() error {
 	}
 
 	return nil
+}
+
+func (s *Space) onSpaceAttributeChanged(
+	changeType universe.AttributeChangeType, attributeID entry.AttributeID, value any,
+) error {
+	effectiveOptions, ok := s.GetSpaceAttributeEffectiveOptions(attributeID)
+	if !ok {
+		return errors.Errorf("failed to get attribute effective options: %+v", attributeID)
+	}
+
+	autoOption, err := posbus.GetOptionAutoOption(effectiveOptions)
+	if err != nil {
+		return errors.WithMessagef(err, "failed to get auto option: %+v", attributeID)
+	}
+	autoMessage, err := posbus.GetOptionAutoMessage(autoOption, changeType, attributeID, value)
+	if err != nil {
+		return errors.WithMessagef(err, "failed to get auto message: %+v", err)
+	}
+	if autoMessage == nil {
+		return nil
+	}
+
+	var errs *multierror.Error
+	for i := range autoOption.Scope {
+		switch autoOption.Scope[i] {
+		case entry.SpacePosBusAutoScopeAttributeOption:
+			if err := s.Broadcast(autoMessage, false); err != nil {
+				errs = multierror.Append(
+					errs, errors.WithMessagef(
+						err, "failed to broadcast message: %s", autoOption.Scope[i],
+					),
+				)
+			}
+		default:
+			errs = multierror.Append(
+				errs, errors.Errorf(
+					"scope type in not supported yet: %s", autoOption.Scope[i],
+				),
+			)
+		}
+	}
+
+	return errs.ErrorOrNil()
 }

@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/momentum-xyz/ubercontroller"
-	"github.com/momentum-xyz/ubercontroller/universe/api/middleware"
+	"github.com/momentum-xyz/ubercontroller/universe/common/api/middleware"
 )
 
 func (w *Worlds) RegisterAPI(r *gin.Engine) {

@@ -2,7 +2,11 @@ package user
 
 import (
 	"fmt"
+
 	"github.com/momentum-xyz/posbus-protocol/posbus"
+	"github.com/pkg/errors"
+
+	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
 func (u *User) OnMessage(msg *posbus.Message) {
@@ -73,67 +77,36 @@ func (u *User) InteractionHandler(m *posbus.TriggerInteraction) {
 		"Incoming interaction for user", u.id, "kind:", kind, "target:", targetUUID, "flag:", flag, "label:", label,
 	)
 	switch kind {
-	//case posbus.TriggerEnteredSpace:
-	//	targetUUID := m.Target()
-	//	u.currentSpace.Store(targetUUID)
-	//	if err := u.world.hub.DB.InsertOnline(u.ID, targetUUID); err != nil {
-	//		u.log.Warn(errors.WithMessage(err, "InteractionHandler: trigger entered space: failed to insert one"))
-	//	}
-	//	if _, err := u.world.UpdateOnlineBySpaceId(targetUUID); err != nil {
-	//		u.log.Warn(
-	//			errors.WithMessage(
-	//				err, "InteractionHandler: trigger entered space: failed to update online by space id",
-	//			),
-	//		)
-	//	}
-	//	u.world.hub.CancelCleanupSpace(targetUUID)
-	//	go func() {
-	//		if err := u.sendSpaceEnterLeaveStats(targetUUID, 1); err != nil {
-	//			u.log.Warn(
-	//				errors.WithMessagef(
-	//					err, "InteractionHandler: trigger entered space: failed to update users on space: %s",
-	//					targetUUID,
-	//				),
-	//			)
-	//		}
-	//	}()
-	//case posbus.TriggerLeftSpace:
-	//	targetUUID := m.Target()
-	//	u.currentSpace.Store(uuid.Nil)
-	//	if err := u.world.hub.DB.RemoveOnline(u.id, targetUUID); err != nil {
-	//		u.log.Warn(
-	//			errors.WithMessage(
-	//				err, "InteractionHandler: trigger left space: failed to remove online from db",
-	//			),
-	//		)
-	//	}
-	//	if _, err := u.world.UpdateOnlineBySpaceId(targetUUID); err != nil {
-	//		u.log.Warn(
-	//			errors.WithMessagef(
-	//				err, "InteractionHandler: trigger left space: failed to update online by space id",
-	//			),
-	//		)
-	//	}
-	//	if ok, err := u.world.hub.SpaceStorage.CheckOnlineSpaceByID(targetUUID); err != nil {
-	//		u.log.Warn(
-	//			errors.WithMessagef(
-	//				err, "InteractionHandler: trigger left space: failed to check online space by id",
-	//			),
-	//		)
-	//	} else if !ok {
-	//		if err := u.world.hub.CleanupSpace(targetUUID); err != nil {
-	//			u.log.Warn(errors.WithMessage(err, "InteractionHandler: trigger left space: failed to cleanup space"))
-	//		}
-	//	}
-	//	go func() {
-	//		if err := u.sendSpaceEnterLeaveStats(targetUUID, 0); err != nil {
-	//			u.log.Warn(
-	//				errors.WithMessagef(
-	//					err, "InteractionHandler: trigger left space: failed to update users on space: %s", targetUUID,
-	//				),
-	//			)
-	//		}
-	//	}()
+	case posbus.TriggerEnteredSpace:
+		spaceID := m.Target()
+		space, ok := universe.GetNode().GetSpaceFromAllSpaces(spaceID)
+		if !ok {
+			u.log.Errorf("User: InteractionHandler: TriggerEnteredSpace: space not found: %s", spaceID)
+			return
+		}
+		if err := space.AddUser(u, true); err != nil {
+			u.log.Error(
+				errors.WithMessagef(
+					err, "User: InteractionHandler: TriggerEnteredSpace: failed to add user to space: %s", spaceID,
+				),
+			)
+			return
+		}
+	case posbus.TriggerLeftSpace:
+		spaceID := m.Target()
+		space, ok := universe.GetNode().GetSpaceFromAllSpaces(spaceID)
+		if !ok {
+			u.log.Errorf("User: InteractionHandler: TriggerLeftSpace: space not found: %s", spaceID)
+			return
+		}
+		if err := space.RemoveUser(u, true); err != nil {
+			u.log.Error(
+				errors.WithMessagef(
+					err, "User: InteractionHandler: TriggerEnteredSpace: failed to remove user from space: %s", spaceID,
+				),
+			)
+			return
+		}
 	//case posbus.TriggerHighFive:
 	//	if err := u.HandleHighFive(m); err != nil {
 	//		u.log.Warn(errors.WithMessage(err, "InteractionHandler: trigger high fives: failed to handle high five"))

@@ -74,10 +74,6 @@ type Node interface {
 	GetAttributeTypes() AttributeTypes
 	GetPlugins() Plugins
 
-	UpsertNodeAttribute(
-		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
-	) (*entry.NodeAttribute, error)
-
 	GetNodeAttributePayload(attributeID entry.AttributeID) (*entry.AttributePayload, bool)
 	GetNodeAttributeValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool)
 	GetNodeAttributeOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool)
@@ -86,6 +82,10 @@ type Node interface {
 	GetNodeAttributesPayload() map[entry.NodeAttributeID]*entry.AttributePayload
 	GetNodeAttributesValue() map[entry.NodeAttributeID]*entry.AttributeValue
 	GetNodeAttributesOptions() map[entry.NodeAttributeID]*entry.AttributeOptions
+
+	UpsertNodeAttribute(
+		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
+	) (*entry.NodeAttribute, error)
 
 	UpdateNodeAttributeValue(
 		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool,
@@ -96,10 +96,6 @@ type Node interface {
 
 	RemoveNodeAttribute(attributeID entry.AttributeID, updateDB bool) (bool, error)
 	RemoveNodeAttributes(attributeIDs []entry.AttributeID, updateDB bool) (bool, error)
-
-	OnSpaceAttributeValueChanged(
-		changeType AttributeValueChangeType, spaceAttributeID entry.SpaceAttributeID, newValue any, subAttributeKey string,
-	) error
 
 	AddAPIRegister(register APIRegister)
 
@@ -189,10 +185,6 @@ type Space interface {
 	SendSpawnMessage(sendFn func(msg *websocket.PreparedMessage) error, recursive bool)
 	SendAttributes(sendFn func(*websocket.PreparedMessage), recursive bool)
 
-	UpsertSpaceAttribute(
-		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
-	) (*entry.SpaceAttribute, error)
-
 	GetSpaceAttributePayload(attributeID entry.AttributeID) (*entry.AttributePayload, bool)
 	GetSpaceAttributeValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool)
 	GetSpaceAttributeOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool)
@@ -201,6 +193,10 @@ type Space interface {
 	GetSpaceAttributesPayload(recursive bool) map[entry.SpaceAttributeID]*entry.AttributePayload
 	GetSpaceAttributesValue(recursive bool) map[entry.SpaceAttributeID]*entry.AttributeValue
 	GetSpaceAttributesOptions(recursive bool) map[entry.SpaceAttributeID]*entry.AttributeOptions
+
+	UpsertSpaceAttribute(
+		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
+	) (*entry.SpaceAttribute, error)
 
 	UpdateSpaceAttributeValue(
 		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool,
@@ -224,10 +220,10 @@ type User interface {
 	RunStopper
 
 	GetWorld() World
-	SetWorld(world World, updateDB bool) error
+	SetWorld(world World)
 
 	GetSpace() Space
-	SetSpace(space Space, updateDB bool) error
+	SetSpace(space Space)
 
 	Update() error
 

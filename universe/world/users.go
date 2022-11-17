@@ -55,9 +55,7 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 		}
 	}
 
-	if err = user.SetWorld(w, updateDB); err != nil {
-		return errors.WithMessagef(err, "failed to set world %s to user: %s", w.GetID(), user.GetID())
-	}
+	user.SetWorld(w)
 
 	// effectively replace user if exists
 	if err = w.Space.AddUser(user, updateDB); err != nil {
@@ -108,9 +106,7 @@ func (w *World) noLockRemoveUser(user universe.User, updateDB bool) error {
 	if user.GetWorld().GetID() != w.GetID() {
 		return errors.Errorf("worlds mismatch: %s != %s", user.GetWorld().GetID(), w.GetID())
 	}
-	if err := user.SetWorld(nil, updateDB); err != nil {
-		return errors.WithMessagef(err, "failed to set world nil to user: %s", user.GetID())
-	}
+	user.SetWorld(nil)
 	delete(w.Users.Data, user.GetID())
 	user.Shutdown()
 
