@@ -252,7 +252,7 @@ type Space interface {
 type User interface {
 	IDer
 	Initializer
-	RunStopper
+	Stopper
 
 	GetWorld() World
 	SetWorld(world World)
@@ -271,11 +271,10 @@ type User interface {
 	Send(message *websocket.PreparedMessage) error
 	SendDirectly(message *websocket.PreparedMessage) error
 
-	SetPosition(p cmath.Vec3)
+	SetPosition(position cmath.Vec3)
 	GetPosition() cmath.Vec3
 
 	AddInfluxTags(prefix string, point *influxWrite.Point) *influxWrite.Point
-	Shutdown()
 
 	GetPosBuffer() []byte
 

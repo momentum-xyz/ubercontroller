@@ -49,18 +49,48 @@ type User struct {
 	directLock                  sync.Mutex
 }
 
+func NewUser(id uuid.UUID, db database.DB) *User {
+	return &User{
+		id: id,
+		db: db,
+	}
+}
+
+func (u *User) Initialize(ctx context.Context) error {
+	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
+	if log == nil {
+		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
+	}
+
+	u.ctx = ctx
+	u.log = log
+	u.bufferSends.Store(true)
+	u.numSendsQueued.Store(chanIsClosed)
+	u.posMsgBuffer = message.NewSendPosBuffer(u.id)
+	u.pos = (*cmath.Vec3)(unsafe.Add(unsafe.Pointer(&u.posMsgBuffer[0]), 16))
+
+	return nil
+}
+
+func (u *User) GetID() uuid.UUID {
+	u.mu.RLock()
+	defer u.mu.RUnlock()
+
+	return u.id
+}
+
+func (u *User) SetPosition(p cmath.Vec3) {
+	(*u.pos).X = p.X
+	(*u.pos).Y = p.Y
+	(*u.pos).Z = p.Z
+}
+
+func (u *User) GetPosition() cmath.Vec3 {
+	return *u.pos
+}
+
 func (u *User) GetPosBuffer() []byte {
 	return u.posMsgBuffer
-}
-
-func (u *User) Run() error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (u *User) Stop() error {
-	//TODO implement me
-	panic("implement me")
 }
 
 func (u *User) GetWorld() universe.World {
@@ -91,9 +121,11 @@ func (u *User) SetSpace(space universe.Space) {
 	u.space = space
 }
 
-func (u *User) Update() error {
-	//TODO implement me
-	panic("implement me")
+func (u *User) GetUserType() universe.UserType {
+	u.mu.RLock()
+	defer u.mu.RUnlock()
+
+	return u.userType
 }
 
 func (u *User) SetUserType(userType universe.UserType, updateDB bool) error {
@@ -115,11 +147,18 @@ func (u *User) SetUserType(userType universe.UserType, updateDB bool) error {
 	return nil
 }
 
-func NewUser(id uuid.UUID, db database.DB) *User {
-	return &User{
-		id: id,
-		db: db,
+func (u *User) Stop() error {
+	ns := u.numSendsQueued.Add(1)
+	if ns >= 0 {
+		u.send <- nil
 	}
+
+	return nil
+}
+
+func (u *User) Update() error {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (u *User) Load() error {
@@ -133,8 +172,6 @@ func (u *User) Load() error {
 	if err := u.LoadFromEntry(entry); err != nil {
 		return errors.WithMessage(err, "failed to load from entry")
 	}
-
-	//universe.GetNode().AddAPIRegister(u)
 
 	u.log.Infof("User loaded: %s", u.GetID())
 
@@ -161,22 +198,7 @@ func (u *User) LoadFromEntry(entry *entry.User) error {
 	return nil
 }
 
-func (u *User) Initialize(ctx context.Context) error {
-	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
-	if log == nil {
-		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
-	}
-	u.ctx = ctx
-	u.log = log
-	u.bufferSends.Store(true)
-	u.numSendsQueued.Store(chanIsClosed)
-	u.posMsgBuffer = message.NewSendPosBuffer(u.id)
-	u.pos = (*cmath.Vec3)(unsafe.Add(unsafe.Pointer(&u.posMsgBuffer[0]), 16))
-	return nil
-}
-
-func (u *User) UpdatePosition(data []byte) {
-
+func (u *User) UpdatePosition(data []byte) error {
 	// not locking will speed up but introduce minor data race with zero impact
 	//u.world.users.positionLock.RLock()
 	copy(u.posMsgBuffer[16:28], data)
@@ -184,32 +206,8 @@ func (u *User) UpdatePosition(data []byte) {
 
 	currentTime := time.Now().Unix()
 	u.lastPositionUpdateTimestamp = currentTime
-}
 
-func (u *User) GetUserType() universe.UserType {
-	u.mu.RLock()
-	defer u.mu.RUnlock()
-
-	return u.userType
-}
-
-func (u *User) GetID() uuid.UUID {
-	return u.id
-}
-
-func (u *User) GetName() string {
-	return *u.profile.Name
-}
-
-func (u *User) SetPosition(p cmath.Vec3) {
-	(*u.pos).X = p.X
-	(*u.pos).Y = p.Y
-	(*u.pos).Z = p.Z
-
-}
-
-func (u *User) GetPosition() cmath.Vec3 {
-	return *u.pos
+	return nil
 }
 
 //SetUserType(userType UserType, updateDB bool) error

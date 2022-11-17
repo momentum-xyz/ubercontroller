@@ -27,7 +27,7 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 	var err error
 	defer func() {
 		if err != nil {
-			user.Shutdown()
+			user.Stop()
 		}
 	}()
 
@@ -47,7 +47,7 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 
 				time.Sleep(time.Millisecond * 100)
 			}
-			exUser.Shutdown()
+			exUser.Stop()
 			//w.RemoveUser(exUser, true)
 		} else {
 			//TODO: handle this (if this ever can happen)
@@ -87,7 +87,7 @@ func (w *World) noLockRemoveUser(user universe.User, updateDB bool) error {
 	}
 	user.SetWorld(nil)
 	delete(w.Users.Data, user.GetID())
-	user.Shutdown()
+	user.Stop()
 
 	return nil
 }

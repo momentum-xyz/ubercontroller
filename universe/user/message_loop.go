@@ -9,49 +9,65 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
-func (u *User) OnMessage(msg *posbus.Message) {
-	fmt.Printf("%+v\n", msg.Type())
+func (u *User) OnMessage(msg *posbus.Message) error {
 	switch msg.Type() {
 	case posbus.MsgTypeSendPosition:
-		u.UpdatePosition(msg.AsSendPos())
+		if err := u.UpdatePosition(msg.AsSendPos()); err != nil {
+			return errors.WithMessage(err, "failed to handle: send position")
+		}
+		return nil
 	case posbus.MsgTypeFlatBufferMessage:
 		switch msg.AsFlatBufferMessage().MsgType() {
 		default:
-			u.log.Warn("Got unknown Flatbuffer message for user:", u.id, "msg:", msg.AsFlatBufferMessage().MsgType())
-			return
+			return errors.Errorf(
+				"unknown flatbuffer message: %d", msg.AsFlatBufferMessage().MsgType(),
+			)
 		}
 	case posbus.MsgTriggerInteraction:
-		u.InteractionHandler(msg.AsTriggerInteraction())
+		if err := u.InteractionHandler(msg.AsTriggerInteraction()); err != nil {
+			return errors.WithMessage(err, "failed to handle: interaction")
+		}
+		return nil
 	case posbus.MsgTypeRelayToController:
-		u.RelayToControllerHandler(msg.AsRelayToController())
+		if err := u.RelayToControllerHandler(msg.AsRelayToController()); err != nil {
+			return errors.WithMessage(err, "failed to handle: relay to controller")
+		}
+		return nil
 	case posbus.MsgTypeSwitchWorld:
-		u.Teleport(msg.AsSwitchWorld())
+		if err := u.Teleport(msg.AsSwitchWorld()); err != nil {
+			return errors.WithMessage(err, "failed to handle: teleport")
+		}
+		return nil
 	case posbus.MsgTypeSignal:
-		u.SignalsHandler(msg.AsSignal().Signal())
-	default:
-		u.log.Warn("Got unknown message for user:", u.id, "msg:", msg)
+		if err := u.SignalsHandler(msg.AsSignal().Signal()); err != nil {
+			return errors.WithMessage(err, "failed to handle: signal")
+		}
+		return nil
 	}
+
+	return errors.Errorf("unknown message: %d", msg.Type())
 }
 
-func (u *User) Teleport(msg *posbus.SwitchWorld) {
+func (u *User) Teleport(msg *posbus.SwitchWorld) error {
 	// TODO: teleport function
 	//if err := u.SwitchWorld(msg.AsSwitchWorld().World()); err != nil {
 	//	u.log.Error(errors.WithMessage(err, "User: OnMessage: failed to switch world"))
 	//}
+	return nil
 }
 
-func (u *User) RelayToControllerHandler(m *posbus.RelayToController) {
+func (u *User) RelayToControllerHandler(m *posbus.RelayToController) error {
 	if m.Topic() == "emoji" {
 		// TODO: comes as plugin?
 		//u.HandleEmoji(msg.AsRelayToController())
 	}
+	return nil
 }
 
-func (u *User) SignalsHandler(s posbus.Signal) {
+func (u *User) SignalsHandler(s posbus.Signal) error {
 	fmt.Printf("Got Signal %+v\n", s)
 	switch s {
 	case posbus.SignalReady:
-
 		u.ReleaseSendBuffer()
 		//u.log.Debugf("Got signalReady from %s", u.id.String())
 		//TODO: Do we need it?
@@ -66,9 +82,11 @@ func (u *User) SignalsHandler(s posbus.Signal) {
 		//}
 		//u.connection.EnableWriting()
 	}
+
+	return nil
 }
 
-func (u *User) InteractionHandler(m *posbus.TriggerInteraction) {
+func (u *User) InteractionHandler(m *posbus.TriggerInteraction) error {
 	kind := m.Kind()
 	targetUUID := m.Target()
 	flag := m.Flag()
@@ -78,42 +96,36 @@ func (u *User) InteractionHandler(m *posbus.TriggerInteraction) {
 	)
 	switch kind {
 	case posbus.TriggerEnteredSpace:
-		spaceID := m.Target()
-		space, ok := universe.GetNode().GetSpaceFromAllSpaces(spaceID)
+		space, ok := universe.GetNode().GetSpaceFromAllSpaces(targetUUID)
 		if !ok {
-			u.log.Errorf("User: InteractionHandler: TriggerEnteredSpace: space not found: %s", spaceID)
-			return
+			return errors.WithMessage(
+				errors.Errorf("space not found: %s", targetUUID), "failed to handle: enter space",
+			)
 		}
 		if err := space.AddUser(u, true); err != nil {
-			u.log.Error(
-				errors.WithMessagef(
-					err, "User: InteractionHandler: TriggerEnteredSpace: failed to add user to space: %s", spaceID,
-				),
+			return errors.WithMessage(
+				errors.Errorf("failed to add user to space: %s", targetUUID), "failed to handle: enter space",
 			)
-			return
 		}
 	case posbus.TriggerLeftSpace:
-		spaceID := m.Target()
-		space, ok := universe.GetNode().GetSpaceFromAllSpaces(spaceID)
+		space, ok := universe.GetNode().GetSpaceFromAllSpaces(targetUUID)
 		if !ok {
-			u.log.Errorf("User: InteractionHandler: TriggerLeftSpace: space not found: %s", spaceID)
-			return
+			return errors.WithMessage(
+				errors.Errorf("space not found: %s", targetUUID), "failed to handle: left space",
+			)
 		}
 		if err := space.RemoveUser(u, true); err != nil {
-			u.log.Error(
-				errors.WithMessagef(
-					err, "User: InteractionHandler: TriggerEnteredSpace: failed to remove user from space: %s", spaceID,
-				),
+			return errors.WithMessage(
+				errors.Errorf("failed to remove user from space: %s", targetUUID), "failed to handle: left space",
 			)
-			return
 		}
+	}
 	//case posbus.TriggerHighFive:
 	//	if err := u.HandleHighFive(m); err != nil {
 	//		u.log.Warn(errors.WithMessage(err, "InteractionHandler: trigger high fives: failed to handle high five"))
 	//	}
 	//case posbus.TriggerStake:
 	//	u.HandleStake(m)
-	default:
-		u.log.Warn("InteractionHandler: got unknown interaction for user:", u.id, "kind:", kind)
-	}
+
+	return errors.Errorf("unknown message: %d", kind)
 }

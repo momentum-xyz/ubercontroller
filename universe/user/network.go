@@ -2,7 +2,6 @@ package user
 
 import (
 	"container/list"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/momentum-xyz/posbus-protocol/posbus"
@@ -24,10 +23,6 @@ const (
 	chanIsClosed = -0x3FFFFFFFFFFFFFFF
 )
 
-func (u *User) Close() error {
-	return nil
-}
-
 func (u *User) StartIOPumps() {
 	u.send = make(chan *websocket.PreparedMessage, 10)
 	u.bufferSends.Store(true)
@@ -42,6 +37,8 @@ func (u *User) ReleaseSendBuffer() {
 }
 
 func (u *User) readPump() {
+	u.log.Infof("User: start of read pump: %s", u.GetID())
+
 	u.conn.SetReadLimit(inMessageSizeLimit)
 	u.conn.SetReadDeadline(time.Now().Add(pongWait))
 	u.conn.SetPongHandler(func(string) error { u.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
@@ -60,49 +57,40 @@ func (u *User) readPump() {
 				}
 			}
 			if closedByClient {
-				u.log.Info(errors.WithMessagef(err, "Connection: read pump: websocket closed by client"))
+				u.log.Info(
+					errors.WithMessagef(err, "User: read pump: websocket closed by client: %s", u.GetID()),
+				)
 			} else {
-				u.log.Debug(errors.WithMessage(err, "Connection: read pump: failed to read message from connection"))
+				u.log.Debug(
+					errors.WithMessagef(err, "User: read pump: failed to read message from connection: %s", u.GetID()),
+				)
 			}
 			break
 		}
 		if messageType != websocket.BinaryMessage {
-			u.log.Errorf("Connection: read pump: wrong incoming message type: %d", messageType)
+			u.log.Errorf("User: read pump: wrong incoming message type: %d: %s", messageType, u.GetID())
 		} else {
-			u.OnMessage(posbus.MsgFromBytes(message))
+			if err := u.OnMessage(posbus.MsgFromBytes(message)); err != nil {
+				u.log.Warn(errors.WithMessagef(err, "User: read pump: failed to handle message: %s", u.GetID()))
+			}
 		}
 	}
 	// this close will cascade writePump defer function anyway on next send
 	u.conn.Close()
-	u.log.Info("Connection: end of read pump")
-}
-
-func (u *User) initiateShutDown(needToRemoveFromWorld bool) {
-	//drain send channel
-	ns := u.numSendsQueued.Swap(chanIsClosed)
-	for i := int64(0); i < ns; i++ {
-		<-u.send
-	}
-
-	//close(u.send)
-	u.conn.Close()
-
-	// then remove from world is necessary
-	if needToRemoveFromWorld {
-		if u.world != nil {
-			u.world.RemoveUser(u, true)
-		}
-	}
-	return
+	u.log.Infof("User: end of read pump: %s", u.GetID())
 }
 
 func (u *User) writePump() {
+	u.log.Infof("User: start of write pump: %s", u.GetID())
+
 	needToRemoveFromWorld := true
-	fmt.Println("started write pump")
 	defer func() {
-		u.log.Info("Connection: end of write pump")
-		u.initiateShutDown(needToRemoveFromWorld)
+		u.log.Infof("User: end of write pump: %s", u.GetID())
+		if err := u.close(needToRemoveFromWorld); err != nil {
+			u.log.Warnf("User: writePump: failed to close user: %s", u.GetID())
+		}
 	}()
+
 	ticker := time.NewTicker(pingPeriod)
 	pingMessage, _ := websocket.NewPreparedMessage(websocket.PingMessage, nil)
 	buffer := list.New()
@@ -150,13 +138,6 @@ func (u *User) writePump() {
 	}
 }
 
-func (u *User) Shutdown() {
-	ns := u.numSendsQueued.Add(1)
-	if ns >= 0 {
-		u.send <- nil
-	}
-}
-
 func (u *User) SendDirectly(message *websocket.PreparedMessage) error {
 	// not concurrent, to be used in single particular location
 	//u.directLock.Lock()
@@ -188,4 +169,27 @@ func (u *User) SetConnection(id uuid.UUID, socketConnection *websocket.Conn) err
 
 func (u *User) GetSessionID() uuid.UUID {
 	return u.sessionID
+}
+
+func (u *User) close(needToRemoveFromWorld bool) error {
+	//drain send channel
+	ns := u.numSendsQueued.Swap(chanIsClosed)
+	for i := int64(0); i < ns; i++ {
+		<-u.send
+	}
+
+	//close(u.send)
+	u.conn.Close()
+
+	// then remove from world is necessary
+	if needToRemoveFromWorld {
+		world := u.GetWorld()
+		if world != nil {
+			if err := world.RemoveUser(u, true); err != nil {
+				return errors.WithMessagef(err, "failed to remove user from world: %s", world.GetID())
+			}
+		}
+	}
+
+	return nil
 }

@@ -94,10 +94,6 @@ func (s *Space) RemoveUser(user universe.User, updateDB bool) error {
 	return nil
 }
 
-func (s *Space) SendToUser(userID uuid.UUID, msg *websocket.PreparedMessage, recursive bool) error {
-	return errors.Errorf("implement me")
-}
-
 func (s *Space) Send(msg *websocket.PreparedMessage, recursive bool) error {
 	//return errors.Errorf("implement me")
 	if msg == nil {
