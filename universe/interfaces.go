@@ -115,6 +115,24 @@ type Node interface {
 
 	RemoveUserAttribute(userAttributeID entry.UserAttributeID) (bool, error)
 
+	GetSpaceUserAttributePayload(spaceUserAttributeID entry.SpaceUserAttributeID) (*entry.AttributePayload, bool)
+	GetSpaceUserAttributeValue(spaceUserAttributeID entry.SpaceUserAttributeID) (*entry.AttributeValue, bool)
+	GetSpaceUserAttributeOptions(spaceUserAttributeID entry.SpaceUserAttributeID) (*entry.AttributeOptions, bool)
+	GetSpaceUserAttributeEffectiveOptions(spaceUserAttributeID entry.SpaceUserAttributeID) (*entry.AttributeOptions, bool)
+
+	UpsertSpaceUserAttribute(
+		spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
+	) (*entry.SpaceUserAttribute, error)
+
+	UpdateSpaceUserAttributeValue(
+		spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributeValue],
+	) (*entry.AttributeValue, error)
+	UpdateSpaceUserAttributeOptions(
+		spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributeOptions],
+	) (*entry.AttributeOptions, error)
+
+	RemoveSpaceUserAttribute(spaceUserAttributeID entry.SpaceUserAttributeID) (bool, error)
+
 	AddAPIRegister(register APIRegister)
 
 	WriteInfluxPoint(point *influxWrite.Point) error
@@ -200,8 +218,7 @@ type Space interface {
 	AddUser(user User, updateDB bool) error
 	RemoveUser(user User, updateDB bool) error
 
-	SendToUser(userID uuid.UUID, msg *websocket.PreparedMessage, recursive bool) error
-	Broadcast(msg *websocket.PreparedMessage, recursive bool) error
+	Send(msg *websocket.PreparedMessage, recursive bool) error
 
 	SendSpawnMessage(sendFn func(msg *websocket.PreparedMessage) error, recursive bool)
 	SendAttributes(sendFn func(*websocket.PreparedMessage), recursive bool)

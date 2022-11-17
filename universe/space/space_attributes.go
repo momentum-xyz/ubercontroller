@@ -170,6 +170,11 @@ func (s *Space) UpsertSpaceAttribute(
 
 	s.spaceAttributes.Data[attributeID] = payload
 
+	// TODO: find better way how to skip "onSpaceAttributeChanged" on node loading
+	if !updateDB {
+		return spaceAttribute, nil
+	}
+
 	go func() {
 		var value any
 		if payload != nil {
@@ -407,7 +412,7 @@ func (s *Space) onSpaceAttributeChanged(
 	}
 	autoMessage, err := posbus.GetOptionAutoMessage(autoOption, changeType, attributeID, value)
 	if err != nil {
-		return errors.WithMessagef(err, "failed to get auto message: %+v", err)
+		return errors.WithMessagef(err, "failed to get auto message: %+v", attributeID)
 	}
 	if autoMessage == nil {
 		return nil
@@ -417,31 +422,32 @@ func (s *Space) onSpaceAttributeChanged(
 	for i := range autoOption.Scope {
 		switch autoOption.Scope[i] {
 		case entry.WorldPosBusAutoScopeAttributeOption:
-			if s.GetWorld() == nil {
+			world := s.GetWorld()
+			if world == nil {
 				errs = multierror.Append(
-					err, errors.Errorf("failed to get space world: %s", autoOption.Scope[i]),
+					err, errors.Errorf("failed to get world: %s", autoOption.Scope[i]),
 				)
 				continue
 			}
-			if err := s.GetWorld().Broadcast(autoMessage, true); err != nil {
+			if err := world.Send(autoMessage, true); err != nil {
 				errs = multierror.Append(
 					errs, errors.WithMessagef(
-						err, "failed to broadcast message: %s", autoOption.Scope[i],
+						err, "failed to send message: %s", autoOption.Scope[i],
 					),
 				)
 			}
 		case entry.SpacePosBusAutoScopeAttributeOption:
-			if err := s.Broadcast(autoMessage, false); err != nil {
+			if err := s.Send(autoMessage, false); err != nil {
 				errs = multierror.Append(
 					errs, errors.WithMessagef(
-						err, "failed to broadcast message: %s", autoOption.Scope[i],
+						err, "failed to send message: %s", autoOption.Scope[i],
 					),
 				)
 			}
 		default:
 			errs = multierror.Append(
 				errs, errors.Errorf(
-					"scope type in not supported yet: %s", autoOption.Scope[i],
+					"scope type in not supported: %s", autoOption.Scope[i],
 				),
 			)
 		}

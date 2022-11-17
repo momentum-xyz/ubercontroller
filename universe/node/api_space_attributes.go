@@ -1,8 +1,9 @@
 package node
 
 import (
-	"github.com/momentum-xyz/ubercontroller/utils/modify"
 	"net/http"
+
+	"github.com/momentum-xyz/ubercontroller/utils/modify"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -149,9 +150,7 @@ func (n *Node) apiGetSpaceWithChildrenAttributeValues(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param space_id path string true "Space ID"
-// @Param plugin_id body string true "Plugin ID"
-// @Param attribute_name body string true "Attribute Name"
-// @Param attribute_value body []string true "[Attribute Value]"
+// @Param request body node.apiSetSpaceAttributesValue.Body true "Space attributes value"
 // @Success 202 {object} entry.AttributeValue
 // @Success 500 {object} api.HTTPError
 // @Success 400 {object} api.HTTPError
@@ -305,10 +304,7 @@ func (n *Node) apiGetSpaceAttributeSubValue(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param space_id path string true "Space ID"
-// @Param plugin_id body string true "Plugin ID"
-// @Param attribute_name body string true "Name"
-// @Param sub_attribute_key body string true "Sub Attribute Key"
-// @Param sub_attribute_value body string true "Sub Attribute Value"
+// @Param request body node.apiSetSpaceAttributeSubValue.Body true "Space attribute sub value"
 // @Success 202 {object} dto.SpaceSubAttributes
 // @Success 500 {object} api.HTTPError
 // @Success 400 {object} api.HTTPError
@@ -395,9 +391,7 @@ func (n *Node) apiSetSpaceAttributeSubValue(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param space_id path string true "Space ID"
-// @Param plugin_id body string true "Plugin ID"
-// @Param attribute_name body string true "Name"
-// @Param sub_attribute_key body string true "Sub Attribute Key"
+// @Param request body node.apiRemoveSpaceAttributeSubValue.Body true "Space attribute sub value"
 // @Success 200 {object} nil
 // @Success 500 {object} api.HTTPError
 // @Success 400 {object} api.HTTPError

@@ -123,13 +123,11 @@ func (n *Node) UpdateUserAttributeOptions(
 	}
 
 	go func() {
-		value, err := n.db.UserAttributesGetUserAttributeValueByID(n.ctx, userAttributeID)
-		if err != nil {
+		value, ok := n.GetUserAttributeValue(userAttributeID)
+		if !ok {
 			n.log.Error(
-				errors.WithMessagef(
-					err,
-					"Node: UpdateUserAttributeOptions: failed to get user attribute value: %+v",
-					userAttributeID,
+				errors.Errorf(
+					"Node: UpdateUserAttributeOptions: failed to get user attribute value: %+v", userAttributeID,
 				),
 			)
 			return
@@ -203,7 +201,7 @@ func (n *Node) onUserAttributeChanged(
 	}
 	autoMessage, err := posbus.GetOptionAutoMessage(autoOption, changeType, userAttributeID.AttributeID, value)
 	if err != nil {
-		return errors.WithMessagef(err, "failed to get auto message: %+v", err)
+		return errors.WithMessagef(err, "failed to get auto message: %+v", userAttributeID)
 	}
 	if autoMessage == nil {
 		return nil
@@ -224,14 +222,14 @@ func (n *Node) onUserAttributeChanged(
 				world := users[i].GetWorld()
 				if world == nil {
 					errs = multierror.Append(
-						errs, errors.Errorf("failed to get user world: %s: %s", users[i].GetID(), autoOption.Scope[i]),
+						errs, errors.Errorf("failed to get world: %s", autoOption.Scope[i]),
 					)
 					continue
 				}
-				if err := world.Broadcast(autoMessage, true); err != nil {
+				if err := world.Send(autoMessage, true); err != nil {
 					errs = multierror.Append(
 						errs, errors.WithMessagef(
-							err, "failed to broadcast message to world: %s: %s", world.GetID(), autoOption.Scope[i],
+							err, "failed to send message: %s", autoOption.Scope[i],
 						),
 					)
 				}
@@ -241,7 +239,7 @@ func (n *Node) onUserAttributeChanged(
 				if err := users[i].Send(autoMessage); err != nil {
 					errs = multierror.Append(
 						errs, errors.WithMessagef(
-							err, "failed to send message to user: %s: %s", users[i].GetID(), autoOption.Scope[i],
+							err, "failed to send message: %s", autoOption.Scope[i],
 						),
 					)
 				}
@@ -249,7 +247,7 @@ func (n *Node) onUserAttributeChanged(
 		default:
 			errs = multierror.Append(
 				errs, errors.Errorf(
-					"scope type in not supported yet: %s", autoOption.Scope[i],
+					"scope type in not supported: %s", autoOption.Scope[i],
 				),
 			)
 		}

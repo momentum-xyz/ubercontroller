@@ -56,6 +56,7 @@ func run() error {
 	cfg := config.GetConfig()
 
 	ctx := context.WithValue(context.Background(), types.LoggerContextKey, log)
+	ctx = context.WithValue(ctx, types.ConfigContextKey, cfg)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
