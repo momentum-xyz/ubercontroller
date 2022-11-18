@@ -63,3 +63,10 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v1
+      - id: update-docs-site
+        name: Update docs website
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.DOCS_TRIGGER_TOKEN }}
+          repository: momentum-xyz/docs
+          event-type: remote-docs-update
