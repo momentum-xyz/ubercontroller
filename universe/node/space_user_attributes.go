@@ -100,11 +100,9 @@ func (n *Node) UpdateSpaceUserAttributeValue(
 	}
 
 	go func() {
-		changeType := universe.ChangedAttributeChangeType
-		if value == nil {
-			changeType = universe.RemovedAttributeChangeType
-		}
-		if err := n.onSpaceUserAttributeChanged(changeType, spaceUserAttributeID, value, nil); err != nil {
+		if err := n.onSpaceUserAttributeChanged(
+			universe.ChangedAttributeChangeType, spaceUserAttributeID, value, nil,
+		); err != nil {
 			n.log.Error(
 				errors.WithMessagef(
 					err,
