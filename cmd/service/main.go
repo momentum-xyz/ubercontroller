@@ -93,7 +93,7 @@ func run() error {
 	}
 	tm2 := time.Now()
 
-	log.Infof("Node loading time: %+v\n", tm2.Sub(tm1))
+	log.Errorf("Node loading time: %+v\n", tm2.Sub(tm1))
 
 	defer func() {
 		if err := node.Stop(); err != nil {
