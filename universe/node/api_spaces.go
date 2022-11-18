@@ -12,12 +12,26 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
 )
 
+// @Summary Set space sub option
+// @Schemes
+// @Description Sets a space sub option
+// @Tags spaces
+// @Accept json
+// @Produce json
+// @Param space_id path string true "Space ID"
+// @Param body body node.apiSpacesSetSpaceSubOption.Body true "body params"
+// @Success 202 {object} dto.SpaceSubOptions
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/spaces/{space_id}/options/sub [post]
 func (n *Node) apiSpacesSetSpaceSubOption(c *gin.Context) {
-	inBody := struct {
+	type Body struct {
 		SubOptionKey   string `json:"sub_option_key" binding:"required"`
 		SubOptionValue any    `json:"sub_option_value" binding:"required"`
-	}{}
+	}
 
+	var inBody Body
 	if err := c.ShouldBindJSON(&inBody); err != nil {
 		err = errors.WithMessage(err, "Node: apiSpacesSetSpaceSubOption: failed to bind json")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
@@ -64,11 +78,25 @@ func (n *Node) apiSpacesSetSpaceSubOption(c *gin.Context) {
 	c.JSON(http.StatusAccepted, out)
 }
 
+// @Summary Delete space sub option
+// @Schemes
+// @Description Deletes a space sub option
+// @Tags spaces
+// @Accept json
+// @Produce json
+// @Param space_id path string true "Space ID"
+// @Param body body node.apiSpacesRemoveSpaceSubOption.Body true "body params"
+// @Success 200 {object} nil
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/spaces/{space_id}/options/sub [delete]
 func (n *Node) apiSpacesRemoveSpaceSubOption(c *gin.Context) {
-	inBody := struct {
+	type Body struct {
 		SubOptionKey string `json:"sub_option_key" binding:"required"`
-	}{}
+	}
 
+	var inBody Body
 	if err := c.ShouldBindJSON(&inBody); err != nil {
 		err = errors.WithMessage(err, "Node: apiSpacesRemoveSpaceSubOption: failed to bind json")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
@@ -108,17 +136,17 @@ func (n *Node) apiSpacesRemoveSpaceSubOption(c *gin.Context) {
 	c.JSON(http.StatusOK, nil)
 }
 
-// @Summary Returns space effective options
+// @Summary Get space effective options
 // @Schemes
-// @Description Returns space effective options
+// @Description Returns a space effective options
 // @Tags spaces
 // @Accept json
 // @Produce json
 // @Param space_id path string true "Space ID"
 // @Success 200 {object} dto.SpaceEffectiveOptions
-// @Success 500 {object} api.HTTPError
-// @Success 400 {object} api.HTTPError
-// @Success 404 {object} api.HTTPError
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
 // @Router /api/v4/spaces/{space_id}/effective-options [get]
 func (n *Node) apiSpacesGetSpaceEffectiveOptions(c *gin.Context) {
 	spaceID, err := uuid.Parse(c.Param("spaceID"))
@@ -140,11 +168,25 @@ func (n *Node) apiSpacesGetSpaceEffectiveOptions(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
+// @Summary Get space effective sub option
+// @Schemes
+// @Description Returns a space effective sub option
+// @Tags spaces
+// @Accept json
+// @Produce json
+// @Param space_id path string true "Space ID"
+// @Param query query node.apiSpacesGetSpaceEffectiveSubOption.Query true "query params"
+// @Success 200 {object} dto.SpaceEffectiveSubOptions
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/spaces/{space_id}/effective-options/sub [get]
 func (n *Node) apiSpacesGetSpaceEffectiveSubOption(c *gin.Context) {
-	inQuery := struct {
+	type Query struct {
 		SubOptionKey string `form:"sub_option_key" binding:"required"`
-	}{}
+	}
 
+	var inQuery Query
 	if err := c.ShouldBindQuery(&inQuery); err != nil {
 		err := errors.WithMessage(err, "Node: apiSpacesGetSpaceEffectiveSubOption: failed to bind query")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)

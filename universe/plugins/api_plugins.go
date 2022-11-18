@@ -14,23 +14,23 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
-// @Summary Get list of plugins
+// @Summary Get plugins
 // @Schemes
-// @Description Returns list of plugins filtered by parameters
+// @Description Returns a list of plugins filtered by parameters
 // @Tags plugins
 // @Accept json
 // @Produce json
-// @Param filter query plugins.apiGetPlugins.InQuery false "Filter parameters"
+// @Param query query plugins.apiGetPlugins.Query false "query params"
 // @Success 200 {object} dto.Plugins
 // @Failure 400 {object} api.HTTPError
 // @Router /api/v4/plugins [get]
 func (p *Plugins) apiGetPlugins(c *gin.Context) {
-	type InQuery struct {
+	type Query struct {
 		IDs  []string `form:"ids[]"`
 		Type string   `form:"type"`
 	}
 
-	var inQuery InQuery
+	var inQuery Query
 	if err := c.ShouldBindQuery(&inQuery); err != nil {
 		err = errors.WithMessage(err, "Plugins: apiGetPlugins: failed to bind query")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, p.log)
@@ -99,11 +99,11 @@ func (p *Plugins) apiGetPlugins(c *gin.Context) {
 
 // @Summary Search for plugins
 // @Schemes
-// @Description Returns list of plugins filtered by parameters
+// @Description Returns a list of plugins filtered by parameters
 // @Tags plugins
 // @Accept json
 // @Produce json
-// @Param search query plugins.apiSearchPlugins.InQuery false "Search parameters"
+// @Param query query plugins.apiSearchPlugins.InQuery false "query params"
 // @Success 200 {object} dto.Plugins
 // @Failure 400 {object} api.HTTPError
 // @Router /api/v4/plugins/search [get]
@@ -172,13 +172,13 @@ func (p *Plugins) apiSearchPlugins(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// @Summary Get list of plugins meta
+// @Summary Get plugins meta
 // @Schemes
-// @Description Returns list of plugins meta filtered by parameters
+// @Description Returns a list of plugins meta filtered by parameters
 // @Tags plugins
 // @Accept json
 // @Produce json
-// @Param filter query plugins.apiGetPluginsMeta.InQuery true "Filter parameters"
+// @Param query query plugins.apiGetPluginsMeta.InQuery true "query params"
 // @Success 200 {object} dto.PluginsMeta
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
@@ -218,13 +218,13 @@ func (p *Plugins) apiGetPluginsMeta(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// @Summary Get list of plugins options
+// @Summary Get plugins options
 // @Schemes
-// @Description Returns list of plugins options filtered by parameters
+// @Description Returns a list of plugins options filtered by parameters
 // @Tags plugins
 // @Accept json
 // @Produce json
-// @Param filter query plugins.apiGetPluginsOptions.InQuery true "Filter parameters"
+// @Param query query plugins.apiGetPluginsOptions.InQuery true "query params"
 // @Success 200 {object} dto.PluginsOptions
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError

@@ -15,18 +15,18 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
-// @Summary Returns spaces and one level of children based on world_id
+// @Summary Returns spaces and one level of children
 // @Schemes
-// @Description Returns space information and one level of children (used in explore widget)
+// @Description Returns space information and one level of children based on world_id (used in explore widget)
 // @Tags spaces
 // @Accept json
 // @Produce json
 // @Param world_id path string true "World ID"
-// @Param space_id query string true "Space ID" example(string)
+// @Param query query worlds.apiWorldsGetSpacesWithChildren.Query true "query params"
 // @Success 200 {object} dto.ExploreOption
-// @Success 500 {object} api.HTTPError
-// @Success 400 {object} api.HTTPError
-// @Success 404 {object} api.HTTPError
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
 // @Router /api/v4/worlds/{world_id}/explore [get]
 func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 	type Query struct {
@@ -158,18 +158,18 @@ func (w *Worlds) apiWorldsResolveNameDescription(space universe.Space) (spaceNam
 	return name, description, nil
 }
 
-// @Summary Returns spaces based on a searchQuery and categorizes the results
+// @Summary Search spaces
 // @Schemes
-// @Description Returns space information based on a searchquery
+// @Description Returns spaces information based on a search query and categorizes the results
 // @Tags spaces
 // @Accept json
 // @Produce json
 // @Param world_id path string true "World ID"
-// @Param query query string true "Space name" example(string)
+// @Param query query worlds.apiWorldsSearchSpaces.Query true "query params"
 // @Success 200 {object} dto.SearchOptions
-// @Success 500 {object} api.HTTPError
-// @Success 400 {object} api.HTTPError
-// @Success 404 {object} api.HTTPError
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
 // @Router /api/v4/worlds/{world_id}/explore/search [get]
 func (w *Worlds) apiWorldsSearchSpaces(c *gin.Context) {
 	type Query struct {

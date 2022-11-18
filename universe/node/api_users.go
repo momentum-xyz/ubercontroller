@@ -16,17 +16,17 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
-// @Summary Check if user exists
+// @Summary Check user
 // @Schemes
-// @Description Checks if a logged in user exists in the database and is onboarded
+// @Description Checks if a logged in user exists in the database and is onboarded, otherwise create new one
 // @Tags users
 // @Accept json
 // @Produce json
-// @Param request body node.apiUsersCheck.Body true "body params"
+// @Param body body node.apiUsersCheck.Body true "body params"
 // @Success 200 {object} dto.User
-// @Success 500 {object} api.HTTPError
-// @Success 400 {object} api.HTTPError
-// @Success 404 {object} api.HTTPError
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
 // @Router /api/v4/users/check [post]
 func (n *Node) apiUsersCheck(c *gin.Context) {
 	type Body struct {
@@ -85,16 +85,16 @@ func (n *Node) apiUsersCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, outBody)
 }
 
-// @Summary Returns user-information based on token.
+// @Summary Get user based on token
 // @Schemes
-// @Description Returns user-information based on token.
+// @Description Returns user information based on token
 // @Tags users
 // @Accept json
 // @Produce json
 // @Success 200 {object} dto.User
-// @Success 500 {object} api.HTTPError
-// @Success 400 {object} api.HTTPError
-// @Success 404 {object} api.HTTPError
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
 // @Router /api/v4/users/me [get]
 func (n *Node) apiUsersGetMe(c *gin.Context) {
 	token, err := api.GetTokenFromContext(c)
