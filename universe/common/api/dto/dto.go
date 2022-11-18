@@ -30,9 +30,9 @@ type SpaceAttributeValues map[uuid.UUID]*entry.AttributeValue
 
 type SpaceSubAttributes map[string]any
 
-type SpaceEffectiveOptions SpaceOptions
+type Asset2dMeta *entry.Asset2dMeta
 
-type SpaceEffectiveSubOptions map[string]any
+type Asset2dOptions *entry.Asset2dOptions
 
 type Assets3dOptions map[uuid.UUID]Asset3dOptions
 
@@ -292,6 +292,11 @@ type Plugin struct {
 	SubTitle  *string `json:"subTitle,omitempty"`
 	ScriptURL string  `json:"scriptUrl"`
 	IconName  *string `json:"iconName,omitempty"`
+}
+
+type Asset2d struct {
+	Meta    Asset2dMeta    `json:"meta"`
+	Options Asset2dOptions `json:"options"`
 }
 
 type Asset3d struct {

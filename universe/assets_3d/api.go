@@ -15,7 +15,6 @@ func (a *Assets3d) RegisterAPI(r *gin.Engine) {
 	{
 		assets3d := vx.Group("/assets-3d")
 		{
-
 			assets3d.GET("/options", a.apiGetAssets3dOptions)
 
 			assets3d.GET("/meta", a.apiGetAssets3dMeta)
