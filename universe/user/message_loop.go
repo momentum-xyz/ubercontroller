@@ -107,6 +107,7 @@ func (u *User) InteractionHandler(m *posbus.TriggerInteraction) error {
 				errors.Errorf("failed to add user to space: %s", targetUUID), "failed to handle: enter space",
 			)
 		}
+		return nil
 	case posbus.TriggerLeftSpace:
 		space, ok := universe.GetNode().GetSpaceFromAllSpaces(targetUUID)
 		if !ok {
@@ -119,6 +120,7 @@ func (u *User) InteractionHandler(m *posbus.TriggerInteraction) error {
 				errors.Errorf("failed to remove user from space: %s", targetUUID), "failed to handle: left space",
 			)
 		}
+		return nil
 	}
 	//case posbus.TriggerHighFive:
 	//	if err := u.HandleHighFive(m); err != nil {
