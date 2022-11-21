@@ -10,9 +10,16 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
-	"github.com/momentum-xyz/ubercontroller/universe/world/calendar"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
+
+type Calendar interface {
+	Initialize(ctx context.Context, w World) error
+	Run() error
+	Stop() error
+	OnAttributeUpsert(attributeID entry.AttributeID, value *entry.AttributeValue)
+	OnAttributeRemove(attributeID entry.AttributeID)
+}
 
 type IDer interface {
 	GetID() uuid.UUID
@@ -167,7 +174,7 @@ type World interface {
 	// QUESTION: do we still need this?
 	AddToCounter() int64
 
-	GetCalendar() *calendar.Calendar
+	GetCalendar() Calendar
 }
 
 type Space interface {

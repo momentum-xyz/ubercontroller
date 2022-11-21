@@ -54,7 +54,7 @@ func NewWorld(id uuid.UUID, db database.DB) *World {
 	return world
 }
 
-func (w *World) GetCalendar() *calendar.Calendar {
+func (w *World) GetCalendar() universe.Calendar {
 	return w.calendar
 }
 
@@ -85,7 +85,7 @@ func (w *World) Initialize(ctx context.Context) error {
 		return errors.WithMessage(err, "failed to initialize space")
 	}
 
-	if err := w.calendar.Initialize(ctx); err != nil {
+	if err := w.calendar.Initialize(ctx, w); err != nil {
 		return errors.WithMessage(err, "failed to initialize calendar")
 	}
 
