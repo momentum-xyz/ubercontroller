@@ -23,6 +23,7 @@ func (a *Assets3d) RegisterAPI(r *gin.Engine) {
 			authAssets3d.GET("/meta", a.apiGetAssets3dMeta)
 			authAssets3d.GET("/options", a.apiGetAssets3dOptions)
 			authAssets3d.POST("", a.apiAddAssets3d)
+			authAssets3d.POST("/upload", a.apiUploadAsset3d)
 			authAssets3d.DELETE("", a.apiRemoveAssets3dByIDs)
 		}
 	}

@@ -1,6 +1,7 @@
 package assets_3d
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -111,6 +112,71 @@ func (a *Assets3d) apiAddAssets3d(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, nil)
+}
+
+// @Summary Uploads a 3d asset
+// @Schemes
+// @Description Uploads a 3d asset to the media manager
+// @Tags assets3d
+// @Accept json
+// @Produce json
+// @Success 202 {object} dto.Asset3d
+// @Failure 400	{object} api.HTTPError
+// @Failure 500 {object} api.HTTPError
+// @Router /api/v4/assets3d/upload [post]
+func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
+	assetFile, err := c.FormFile("asset")
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiUploadAsset3d: failed to read file")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_read", err, a.log)
+		return
+	}
+
+	openedFile, err := assetFile.Open()
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiUploadAsset3d: failed to open file")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_open", err, a.log)
+		return
+	}
+
+	defer openedFile.Close()
+
+	req, err := http.NewRequest("POST", a.cfg.Common.RenderInternalUrl+"/addasset", openedFile)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiUploadAsset3d: failed to create post request")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_create_request", err, a.log)
+		return
+	}
+
+	req.Header.Set("Content-Type", assetFile.Header.Get("Content-Type"))
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiUploadAsset3d: failed to post data to media-manager")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_post_request", err, a.log)
+		return
+	}
+
+	defer resp.Body.Close()
+
+	response := dto.HashResponse{}
+
+	errs := json.NewDecoder(resp.Body).Decode(&response)
+	if errs != nil {
+		err := errors.WithMessage(err, "Node: apiUploadAsset3d: failed to decode json into response")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_decode", err, a.log)
+		return
+	}
+
+	parsedHash, err := uuid.Parse(response.Hash)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiUploadAsset3d: failed to parse hash to uuid")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_parse_hash", err, a.log)
+		return
+	}
+
+	c.JSON(http.StatusAccepted, parsedHash)
 }
 
 // @Summary Delete 3d assets

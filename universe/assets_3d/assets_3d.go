@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
+	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -20,6 +21,7 @@ var _ universe.Assets3d = (*Assets3d)(nil)
 
 type Assets3d struct {
 	ctx    context.Context
+	cfg    *config.Config
 	log    *zap.SugaredLogger
 	db     database.DB
 	assets *generic.SyncMap[uuid.UUID, universe.Asset3d]
