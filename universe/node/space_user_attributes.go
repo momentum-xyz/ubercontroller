@@ -71,7 +71,7 @@ func (n *Node) UpsertSpaceUserAttribute(
 	}
 
 	go func() {
-		var value any
+		var value *entry.AttributeValue
 		if spaceUserAttribute.AttributePayload != nil {
 			value = spaceUserAttribute.AttributePayload.Value
 		}
@@ -187,7 +187,7 @@ func (n *Node) RemoveSpaceUserAttribute(spaceUserAttributeID entry.SpaceUserAttr
 }
 
 func (n *Node) onSpaceUserAttributeChanged(
-	changeType universe.AttributeChangeType, spaceUserAttributeID entry.SpaceUserAttributeID, value any,
+	changeType universe.AttributeChangeType, spaceUserAttributeID entry.SpaceUserAttributeID, value *entry.AttributeValue,
 	effectiveOptions *entry.AttributeOptions,
 ) error {
 	if effectiveOptions == nil {

@@ -69,7 +69,7 @@ func (n *Node) UpsertUserAttribute(
 	}
 
 	go func() {
-		var value any
+		var value *entry.AttributeValue
 		if userAttribute.AttributePayload != nil {
 			value = userAttribute.AttributePayload.Value
 		}
@@ -182,7 +182,7 @@ func (n *Node) RemoveUserAttribute(userAttributeID entry.UserAttributeID) (bool,
 }
 
 func (n *Node) onUserAttributeChanged(
-	changeType universe.AttributeChangeType, userAttributeID entry.UserAttributeID, value any,
+	changeType universe.AttributeChangeType, userAttributeID entry.UserAttributeID, value *entry.AttributeValue,
 	effectiveOptions *entry.AttributeOptions,
 ) error {
 	if effectiveOptions == nil {

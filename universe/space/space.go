@@ -431,7 +431,7 @@ func (s *Space) UpdateSpawnMessage() {
 	)
 	if ok {
 		// QUESTION: what to do here? maybe return an error?
-		name = utils.GetFromAnyMap(*v, "name", "")
+		name = utils.GetFromAnyMap(*v, universe.Attributes.Space.Name.Key, "")
 	} else {
 		//fmt.Println("smsg2", s.GetID())
 	}
