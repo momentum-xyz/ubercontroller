@@ -2,12 +2,12 @@ package space
 
 import (
 	"github.com/hashicorp/go-multierror"
-	"github.com/momentum-xyz/ubercontroller/universe/common/posbus"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/message"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/universe/common/posbus"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
@@ -396,6 +396,16 @@ func (s *Space) onSpaceAttributeChanged(
 	changeType universe.AttributeChangeType, attributeID entry.AttributeID, value *entry.AttributeValue,
 	effectiveOptions *entry.AttributeOptions,
 ) error {
+	world := s.GetWorld()
+	if world != nil {
+		if changeType == universe.ChangedAttributeChangeType {
+			world.GetCalendar().OnAttributeUpsert(attributeID, value)
+		}
+		if changeType == universe.RemovedAttributeChangeType {
+			world.GetCalendar().OnAttributeRemove(attributeID)
+		}
+	}
+
 	if effectiveOptions == nil {
 		options, ok := s.GetSpaceAttributeEffectiveOptions(attributeID)
 		if !ok {

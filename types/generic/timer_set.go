@@ -64,3 +64,12 @@ func (t *TimerSet[T]) Stop(key T) {
 		stopFn.Value()()
 	}
 }
+
+func (t *TimerSet[T]) StopAll() {
+	t.timers.Mu.RLock()
+	defer t.timers.Mu.RUnlock()
+
+	for _, v := range t.timers.Data {
+		v.Value()()
+	}
+}

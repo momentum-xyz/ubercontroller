@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/mitchellh/mapstructure"
@@ -25,6 +26,7 @@ func MapDecode(input, output interface{}) error {
 	config := &mapstructure.DecoderConfig{
 		DecodeHook: mapstructure.ComposeDecodeHookFunc(
 			stringToUUIDHookFunc(),
+			stringToTimeHookFunc(),
 		),
 		Result: &output,
 	}
@@ -47,6 +49,21 @@ func stringToUUIDHookFunc() mapstructure.DecodeHookFunc {
 		}
 
 		return uuid.Parse(data.(string))
+	}
+}
+
+func stringToTimeHookFunc() mapstructure.DecodeHookFunc {
+	return func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+		if f.Kind() != reflect.String {
+			return data, nil
+		}
+		if t != reflect.TypeOf(time.Time{}) {
+			return data, nil
+		}
+
+		layout := "2006-01-02T15:04:05Z0700"
+
+		return time.Parse(layout, data.(string))
 	}
 }
 

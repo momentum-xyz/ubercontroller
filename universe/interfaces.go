@@ -13,6 +13,14 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
+type Calendar interface {
+	Initializer
+	RunStopper
+
+	OnAttributeUpsert(attributeID entry.AttributeID, value any)
+	OnAttributeRemove(attributeID entry.AttributeID)
+}
+
 type IDer interface {
 	GetID() uuid.UUID
 }
@@ -165,6 +173,8 @@ type World interface {
 
 	// QUESTION: do we still need this?
 	AddToCounter() int64
+
+	GetCalendar() Calendar
 }
 
 type Space interface {
