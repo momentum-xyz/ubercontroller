@@ -6,10 +6,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
 
+	"github.com/momentum-xyz/ubercontroller/logger"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 type Calendar struct {
@@ -26,6 +29,8 @@ type Event struct {
 	End     time.Time
 	EventID string
 }
+
+var log = logger.L()
 
 func NewCalendar() *Calendar {
 	calendar := &Calendar{
@@ -141,7 +146,10 @@ func getAllEvents(spaces map[uuid.UUID]universe.Space) []Event {
 			attributes = append(attributes, attributeValue)
 			attribute := *attributeValue
 			for _, event := range attribute {
-				e := getEvent(&spaceID, event)
+				e, err := getEvent(&spaceID, event)
+				if err != nil {
+					log.Error(err)
+				}
 				if e != nil {
 					events = append(events, *e)
 				}
@@ -152,33 +160,12 @@ func getAllEvents(spaces map[uuid.UUID]universe.Space) []Event {
 	return events
 }
 
-func getEvent(spaceID *uuid.UUID, item any) *Event {
+func getEvent(spaceID *uuid.UUID, item any) (*Event, error) {
 	e := &Event{SpaceID: spaceID}
 
-	i, ok := item.(map[string]any)
-	if !ok {
-		return nil
-	}
-	start, ok := i["start"].(string)
-	if ok {
-		layout := "2006-01-02T15:04:05Z0700"
-		t, err := time.Parse(layout, start)
-		if err == nil {
-			e.Start = t
-		}
-	}
+	err := utils.MapDecode(item, e)
 
-	title, ok := i["title"].(string)
-	if ok {
-		e.Title = title
-	}
-
-	eventID, ok := i["eventId"].(string)
-	if ok {
-		e.EventID = eventID
-	}
-
-	return e
+	return e, errors.WithMessage(err, "utils.MapDecode")
 }
 
 func (*Calendar) Stop() error {
