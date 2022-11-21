@@ -182,6 +182,7 @@ type Space interface {
 	SetOwnerID(ownerID uuid.UUID, updateDB bool) error
 
 	GetPosition() *cmath.Vec3
+	GetActualPosition() *cmath.Vec3
 	SetPosition(position *cmath.Vec3, updateDB bool) error
 
 	GetOptions() *entry.SpaceOptions

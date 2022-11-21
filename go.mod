@@ -25,6 +25,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sasha-s/go-deadlock v0.3.1
 	github.com/stretchr/testify v1.8.0
+	github.com/zakaria-chahboun/cute v1.2.0
 	github.com/zitadel/oidc v1.9.1
 	go.uber.org/zap v1.23.0
 	golang.org/x/sync v0.0.0-20220929204114-8fcdb60fdcc0

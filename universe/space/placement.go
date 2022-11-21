@@ -72,8 +72,8 @@ func (s *Space) GetPosition() *cmath.Vec3 {
 	return s.position
 }
 
-func (s *Space) GetActualPosition() cmath.Vec3 {
-	return *s.actualPosition.Load()
+func (s *Space) GetActualPosition() *cmath.Vec3 {
+	return s.actualPosition.Load()
 }
 
 func (s *Space) SetPosition(position *cmath.Vec3, updateDB bool) error {
@@ -121,7 +121,7 @@ func (s *Space) UpdateChildrenPosition(recursive bool, force bool) error {
 		sort.Slice(lpm, func(i, j int) bool { return lpm[i].ClockSequence() < lpm[j].ClockSequence() })
 		//fmt.Println("pls4b", s.GetID(), lpm)
 		for i, k := range lpm {
-			pos, theta := pls[u].CalcPos(s.theta, s.GetActualPosition(), i, len(lpm))
+			pos, theta := pls[u].CalcPos(s.theta, *s.GetActualPosition(), i, len(lpm))
 			//fmt.Printf(" Position: %s |  %+v\n", s.GetID(), pos)
 
 			child, ok := s.Children.Data[k]

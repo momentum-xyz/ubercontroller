@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
+	"github.com/zakaria-chahboun/cute"
 
 	assets2dDB "github.com/momentum-xyz/ubercontroller/database/assets_2d"
 	assets3dDB "github.com/momentum-xyz/ubercontroller/database/assets_3d"
@@ -93,7 +94,9 @@ func run() error {
 	}
 	tm2 := time.Now()
 
-	log.Errorf("Node loading time: %+v\n", tm2.Sub(tm1))
+	cute.SetTitleColor(cute.BrightGreen)
+	cute.SetMessageColor(cute.BrightBlue)
+	cute.Println("Node loaded", "Loading time:", tm2.Sub(tm1))
 
 	defer func() {
 		if err := node.Stop(); err != nil {

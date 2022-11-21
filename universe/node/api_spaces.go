@@ -12,6 +12,82 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
 )
 
+// @Summary Get space
+// @Schemes
+// @Description Returns a space info based on query
+// @Tags spaces
+// @Accept json
+// @Produce json
+// @Param space_id path string true "Space ID"
+// @Param query query node.apiGetSpace.InQuery false "query params"
+// @Success 202 {object} dto.Space
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/spaces/{space_id} [get]
+func (n *Node) apiGetSpace(c *gin.Context) {
+	type InQuery struct {
+		Effective bool `form:"effective"`
+	}
+	inQuery := InQuery{
+		Effective: true,
+	}
+
+	if err := c.ShouldBindQuery(&inQuery); err != nil {
+		err := errors.WithMessage(err, "Node: apiGetSpace: failed to bind query")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
+		return
+	}
+
+	spaceID, err := uuid.Parse(c.Param("spaceID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetSpace: failed to parse space id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, n.log)
+		return
+	}
+
+	space, ok := n.GetSpaceFromAllSpaces(spaceID)
+	if !ok {
+		err := errors.Errorf("Node: apiGetSpace: space not found: %s", spaceID)
+		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		return
+	}
+
+	out := dto.Space{
+		OwnerID: space.GetOwnerID().String(),
+	}
+	parent := space.GetParent()
+	position := space.GetActualPosition()
+	spaceType := space.GetSpaceType()
+	if parent != nil {
+		out.ParentID = parent.GetID().String()
+	}
+	if position != nil {
+		out.Position = *position
+	}
+	if spaceType != nil {
+		out.SpaceTypeID = spaceType.GetID().String()
+	}
+
+	asset2d := space.GetAsset2D()
+	asset3d := space.GetAsset3D()
+	if inQuery.Effective {
+		if asset2d == nil && spaceType != nil {
+			asset2d = spaceType.GetAsset2d()
+		}
+		if asset3d == nil && spaceType != nil {
+			asset3d = spaceType.GetAsset3d()
+		}
+	}
+	if asset2d != nil {
+		out.Asset2dID = asset2d.GetID().String()
+	}
+	if asset3d != nil {
+		out.Asset3dID = asset3d.GetID().String()
+	}
+
+	c.JSON(http.StatusOK, out)
+}
+
 // @Summary Set space sub option
 // @Schemes
 // @Description Sets a space sub option

@@ -53,6 +53,8 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		{
 			authSpace := authSpaces.Group("/:spaceID")
 			{
+				authSpace.GET("", n.apiGetSpace)
+
 				authSpace.GET("/options", n.apiSpacesGetSpaceOptions)
 				authSpace.GET("/options/sub", n.apiSpacesGetSpaceSubOptions)
 				authSpace.POST("/options/sub", n.apiSpacesSetSpaceSubOption)
