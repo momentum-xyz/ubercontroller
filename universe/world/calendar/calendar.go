@@ -186,7 +186,7 @@ func (*Calendar) Stop() error {
 }
 
 func (*Calendar) OnAttributeUpsert(attributeID entry.AttributeID, value *entry.AttributeValue) {
-
+	// fmt.Println("OnAttributeUpsert ***", attributeID)
 }
 
 func (*Calendar) OnAttributeRemove(attributeID entry.AttributeID) {
