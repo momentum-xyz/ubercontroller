@@ -176,7 +176,7 @@ func (s *Space) UpsertSpaceAttribute(
 	}
 
 	go func() {
-		var value any
+		var value *entry.AttributeValue
 		if payload != nil {
 			value = payload.Value
 		}
@@ -268,7 +268,7 @@ func (s *Space) UpdateSpaceAttributeOptions(
 	s.spaceAttributes.Data[attributeID] = payload
 
 	go func() {
-		var value any
+		var value *entry.AttributeValue
 		if payload != nil {
 			value = payload.Value
 		}
@@ -393,7 +393,7 @@ func (s *Space) loadSpaceAttributes() error {
 }
 
 func (s *Space) onSpaceAttributeChanged(
-	changeType universe.AttributeChangeType, attributeID entry.AttributeID, value any,
+	changeType universe.AttributeChangeType, attributeID entry.AttributeID, value *entry.AttributeValue,
 	effectiveOptions *entry.AttributeOptions,
 ) error {
 	if effectiveOptions == nil {

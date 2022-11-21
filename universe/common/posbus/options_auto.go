@@ -16,8 +16,8 @@ type AttributeValueChangedMessage struct {
 }
 
 type AttributeValueChangedMessageData struct {
-	AttributeName string `json:"attribute_name"`
-	Value         any    `json:"value"`
+	AttributeName string                `json:"attribute_name"`
+	Value         *entry.AttributeValue `json:"value"`
 }
 
 func GetOptionAutoOption(options *entry.AttributeOptions) (*entry.PosBusAutoAttributeOption, error) {
@@ -40,7 +40,7 @@ func GetOptionAutoOption(options *entry.AttributeOptions) (*entry.PosBusAutoAttr
 
 func GetOptionAutoMessage(
 	option *entry.PosBusAutoAttributeOption, changeType universe.AttributeChangeType,
-	attributeID entry.AttributeID, value any,
+	attributeID entry.AttributeID, value *entry.AttributeValue,
 ) (*websocket.PreparedMessage, error) {
 	if option == nil {
 		return nil, nil
