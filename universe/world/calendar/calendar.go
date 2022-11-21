@@ -16,10 +16,9 @@ import (
 )
 
 type Calendar struct {
-	ctx        context.Context
-	world      universe.World
-	nextEvents []Event
-	timerSet   *generic.TimerSet[string]
+	ctx      context.Context
+	world    universe.World
+	timerSet *generic.TimerSet[string]
 }
 
 type Event struct {
@@ -30,6 +29,8 @@ type Event struct {
 	EventID string
 }
 
+var pluginID = uuid.MustParse("f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0")
+var attributeName = "events"
 var log = logger.L()
 
 func NewCalendar() *Calendar {
@@ -59,9 +60,9 @@ func (c *Calendar) update() {
 	events := getAllEvents(spaces)
 	nextEvents := findNextEvents(events)
 
-	c.nextEvents = nextEvents
+	c.timerSet.StopAll()
 
-	for _, e := range c.nextEvents {
+	for _, e := range nextEvents {
 		d := e.Start.Sub(time.Now())
 		if d > 0 {
 			c.timerSet.Set(e.EventID, d, c.tick)
@@ -76,6 +77,8 @@ func (c *Calendar) updateTimer() error {
 func (c *Calendar) tick(eventID string) error {
 	fmt.Println("TICK", eventID)
 	c.update()
+
+	//c.world.Send()
 
 	return nil
 }
@@ -127,8 +130,7 @@ func findNextEvents(events []Event) []Event {
 }
 
 func getAllEvents(spaces map[uuid.UUID]universe.Space) []Event {
-	pluginID := uuid.MustParse("f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0")
-	attributeID := entry.NewAttributeID(pluginID, "events")
+	attributeID := entry.NewAttributeID(pluginID, attributeName)
 
 	//a := c.world.GetSpaceAttributesValue(true)
 
@@ -172,8 +174,11 @@ func (*Calendar) Stop() error {
 	return nil
 }
 
-func (*Calendar) OnAttributeUpsert(attributeID entry.AttributeID, value *entry.AttributeValue) {
-	// fmt.Println("OnAttributeUpsert ***", attributeID)
+func (c *Calendar) OnAttributeUpsert(attributeID entry.AttributeID, value *entry.AttributeValue) {
+	fmt.Println("OnAttributeUpsert ***", attributeID)
+	if attributeID.PluginID == pluginID && attributeID.Name == attributeName {
+		go c.update()
+	}
 }
 
 func (*Calendar) OnAttributeRemove(attributeID entry.AttributeID) {
