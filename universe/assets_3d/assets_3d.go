@@ -27,8 +27,9 @@ type Assets3d struct {
 	assets *generic.SyncMap[uuid.UUID, universe.Asset3d]
 }
 
-func NewAssets3d(db database.DB) *Assets3d {
+func NewAssets3d(cfg *config.Config, db database.DB) *Assets3d {
 	return &Assets3d{
+		cfg:    cfg,
 		db:     db,
 		assets: generic.NewSyncMap[uuid.UUID, universe.Asset3d](),
 	}

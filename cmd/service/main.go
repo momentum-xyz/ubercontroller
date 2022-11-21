@@ -114,7 +114,7 @@ func run() error {
 func createNode(ctx context.Context, cfg *config.Config, db database.DB) (universe.Node, error) {
 	worlds := worlds.NewWorlds(db)
 	assets2d := assets_2d.NewAssets2d(db)
-	assets3d := assets_3d.NewAssets3d(db)
+	assets3d := assets_3d.NewAssets3d(cfg, db)
 	plugins := plugins.NewPlugins(db)
 	spaceTypes := space_types.NewSpaceTypes(db)
 	userTypes := user_types.NewUserTypes(db)
