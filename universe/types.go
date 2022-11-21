@@ -67,6 +67,7 @@ var (
 		}{
 			Name: Attribute{
 				Name: "name",
+				Key:  "name",
 			},
 			Description: Attribute{
 				Name: "description",

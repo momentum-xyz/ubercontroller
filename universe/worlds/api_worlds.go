@@ -145,7 +145,7 @@ func (w *Worlds) apiWorldsResolveNameDescription(space universe.Space) (spaceNam
 	}
 
 	if nameValue != nil {
-		name = utils.GetFromAnyMap(*nameValue, universe.Attributes.Space.Name.Name, "")
+		name = utils.GetFromAnyMap(*nameValue, universe.Attributes.Space.Name.Key, "")
 	}
 
 	descriptionAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Description.Name)
