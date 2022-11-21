@@ -189,10 +189,6 @@ func (s *Space) UpsertSpaceAttribute(
 		}
 	}()
 
-	if s.world != nil {
-		s.world.GetCalendar().OnAttributeUpsert(attributeID, payload.Value)
-	}
-
 	return spaceAttribute, nil
 }
 
@@ -237,10 +233,6 @@ func (s *Space) UpdateSpaceAttributeValue(
 			)
 		}
 	}()
-
-	if s.world != nil {
-		s.world.GetCalendar().OnAttributeUpsert(attributeID, payload.Value)
-	}
 
 	return value, nil
 }
@@ -332,10 +324,6 @@ func (s *Space) RemoveSpaceAttribute(attributeID entry.AttributeID, updateDB boo
 		}
 	}()
 
-	if s.world != nil {
-		s.world.GetCalendar().OnAttributeRemove(attributeID)
-	}
-
 	return true, nil
 }
 
@@ -408,6 +396,16 @@ func (s *Space) onSpaceAttributeChanged(
 	changeType universe.AttributeChangeType, attributeID entry.AttributeID, value any,
 	effectiveOptions *entry.AttributeOptions,
 ) error {
+	world := s.GetWorld()
+	if world != nil {
+		if changeType == universe.ChangedAttributeChangeType {
+			world.GetCalendar().OnAttributeUpsert(attributeID, value)
+		}
+		if changeType == universe.RemovedAttributeChangeType {
+			world.GetCalendar().OnAttributeRemove(attributeID)
+		}
+	}
+
 	if effectiveOptions == nil {
 		options, ok := s.GetSpaceAttributeEffectiveOptions(attributeID)
 		if !ok {

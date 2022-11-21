@@ -66,8 +66,8 @@ func (t *TimerSet[T]) Stop(key T) {
 }
 
 func (t *TimerSet[T]) StopAll() {
-	t.timers.Mu.Lock()
-	defer t.timers.Mu.Unlock()
+	t.timers.Mu.RLock()
+	defer t.timers.Mu.RUnlock()
 
 	for _, v := range t.timers.Data {
 		v.Value()()

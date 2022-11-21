@@ -7,8 +7,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/momentum-xyz/posbus-protocol/posbus"
+
 	"github.com/pkg/errors"
+
+	"github.com/momentum-xyz/posbus-protocol/posbus"
 
 	"github.com/momentum-xyz/ubercontroller/logger"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -35,39 +37,40 @@ var pluginID = uuid.MustParse("f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0")
 var attributeName = "events"
 var log = logger.L()
 
-func NewCalendar() *Calendar {
+func NewCalendar(w universe.World) *Calendar {
 	calendar := &Calendar{
 		timerSet: generic.NewTimerSet[string](),
+		world:    w,
 	}
 
 	return calendar
 }
 
-func (c *Calendar) Initialize(ctx context.Context, w universe.World) error {
+func (c *Calendar) Initialize(ctx context.Context) error {
 	c.ctx = ctx
-	c.world = w
 	return nil
 }
 
 func (c *Calendar) Run() error {
 	fmt.Println("RUN calendar" + c.world.GetID().String())
 
-	c.update()
+	go c.update()
 
 	return nil
 }
 
 func (c *Calendar) update() {
-	spaces := c.world.GetSpaces(true)
+	spaces := c.world.GetAllSpaces()
+
 	events := getAllEvents(spaces)
 	nextEvents := findNextEvents(events)
 
 	c.timerSet.StopAll()
 
-	for _, e := range nextEvents {
-		d := e.Start.Sub(time.Now())
+	for i := range nextEvents {
+		d := nextEvents[i].Start.Sub(time.Now())
 		if d > 0 {
-			c.timerSet.Set(e.EventID, d, c.tick)
+			c.timerSet.Set(nextEvents[i].EventID, d, c.tick)
 		}
 	}
 }
@@ -80,6 +83,9 @@ func (c *Calendar) tick(eventID string) error {
 	fmt.Println("TICK", eventID)
 
 	e := c.getEventByID(eventID)
+	if e == nil {
+		return nil
+	}
 	topic := "notify-gathering-start"
 	data, err := json.Marshal(&e)
 	if err != nil {
@@ -93,7 +99,7 @@ func (c *Calendar) tick(eventID string) error {
 }
 
 func (c *Calendar) getEventByID(eventID string) *Event {
-	spaces := c.world.GetSpaces(true)
+	spaces := c.world.GetAllSpaces()
 	events := getAllEvents(spaces)
 	for _, e := range events {
 		if e.EventID == eventID {
@@ -128,6 +134,7 @@ func findNextEvents(events []Event) []Event {
 		}
 	}
 
+	// We can have several events starting at the same time
 	result2 := make([]Event, 0)
 	for _, e := range result {
 		if e.Start.Equal(min.Start) {
@@ -183,7 +190,7 @@ func (*Calendar) Stop() error {
 	return nil
 }
 
-func (c *Calendar) OnAttributeUpsert(attributeID entry.AttributeID, value *entry.AttributeValue) {
+func (c *Calendar) OnAttributeUpsert(attributeID entry.AttributeID, value any) {
 	fmt.Println("OnAttributeUpsert ***", attributeID)
 	if attributeID.PluginID == pluginID && attributeID.Name == attributeName {
 		go c.update()

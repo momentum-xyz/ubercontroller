@@ -45,12 +45,12 @@ func NewWorld(id uuid.UUID, db database.DB) *World {
 	world := &World{
 		db:        db,
 		allSpaces: generic.NewSyncMap[uuid.UUID, universe.Space](),
-		calendar:  calendar.NewCalendar(),
 	}
 	world.Space = space.NewSpace(id, db, world)
 	world.pluginController = mplugin.NewPluginController(id)
 	//world.corePluginInstance, _ = world.pluginController.AddPlugin(world.GetID(), world.corePluginInitFunc)
 	world.pluginController.AddPlugin(universe.GetSystemPluginID(), world.corePluginInitFunc)
+	world.calendar = calendar.NewCalendar(world)
 	return world
 }
 
@@ -85,7 +85,7 @@ func (w *World) Initialize(ctx context.Context) error {
 		return errors.WithMessage(err, "failed to initialize space")
 	}
 
-	if err := w.calendar.Initialize(ctx, w); err != nil {
+	if err := w.calendar.Initialize(ctx); err != nil {
 		return errors.WithMessage(err, "failed to initialize calendar")
 	}
 

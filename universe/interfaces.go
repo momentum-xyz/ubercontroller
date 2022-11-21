@@ -14,10 +14,10 @@ import (
 )
 
 type Calendar interface {
-	Initialize(ctx context.Context, w World) error
-	Run() error
-	Stop() error
-	OnAttributeUpsert(attributeID entry.AttributeID, value *entry.AttributeValue)
+	Initializer
+	RunStopper
+
+	OnAttributeUpsert(attributeID entry.AttributeID, value any)
 	OnAttributeRemove(attributeID entry.AttributeID)
 }
 
