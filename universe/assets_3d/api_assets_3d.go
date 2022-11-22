@@ -27,7 +27,7 @@ import (
 // @Router /api/v4/assets-3d [get]
 func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 	type InQuery struct {
-		Kind string `form:"kind" json:"kind"`
+		Category string `form:"category" json:"category"`
 	}
 	var inQuery InQuery
 
@@ -40,11 +40,11 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 	var a3dMap map[uuid.UUID]universe.Asset3d
 	predicateFn := func(asset3dID uuid.UUID, asset3d universe.Asset3d) bool {
 		meta := asset3d.GetMeta()
-		kind := utils.GetFromAnyMap(*meta, "kind", "")
-		return kind == inQuery.Kind
+		category := utils.GetFromAnyMap(*meta, "type", "")
+		return category == inQuery.Category
 	}
 
-	if inQuery.Kind == "" {
+	if inQuery.Category == "" {
 		a3dMap = a.GetAssets3d()
 	} else {
 		a3dMap = a.FilterAssets3d(predicateFn)
@@ -57,6 +57,7 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 
 		assetDTO := &dto.Asset3d{
 			ID:        asset.Asset3dID.String(),
+			Meta:      asset.Meta,
 			CreatedAt: asset.CreatedAt.String(),
 			UpdatedAt: asset.UpdatedAt.String(),
 		}
@@ -96,6 +97,7 @@ func (a *Assets3d) apiAddAssets3d(c *gin.Context) {
 			err = errors.WithMessage(err, "Assets3d: apiAddAssets3d: failed to parse uuid")
 			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_parse_uuid", err, a.log)
 		}
+
 		newAsset, err := a.CreateAsset3d(assetID)
 		if err != nil {
 			err = errors.WithMessage(err, "Assets3d: apiAddAssets3d: failed to create asset3d from input")
