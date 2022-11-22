@@ -1,5 +1,12 @@
 package dto
 
+type Asset3dType int8
+
+const (
+	AddressableAssetType Asset3dType = iota
+	GLTFAsset3dType
+)
+
 type UserStatusType string
 
 const (

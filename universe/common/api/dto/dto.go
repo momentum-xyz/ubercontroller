@@ -92,10 +92,11 @@ type Asset2d struct {
 }
 
 type Asset3d struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	CreatedAt string `json:"createdAt"`
-	UpdatedAt string `json:"updatedAt"`
+	ID        string      `json:"id"`
+	Name      string      `json:"name,omitempty"`
+	Meta      Asset3dMeta `json:"meta,omitempty"`
+	CreatedAt string      `json:"createdAt,omitempty"`
+	UpdatedAt string      `json:"updatedAt,omitempty"`
 }
 
 type Tile struct {
