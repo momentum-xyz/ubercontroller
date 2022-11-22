@@ -13,6 +13,9 @@ import (
 // @title        Momentum API
 // @version      4.0
 // @description  Momentum REST API
+
+// @BasePath /
+
 func (n *Node) RegisterAPI(r *gin.Engine) {
 	n.log.Infof("Registering api for node: %s...", n.GetID())
 
@@ -50,11 +53,12 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		{
 			authSpace := authSpaces.Group("/:spaceID")
 			{
+				authSpace.GET("", n.apiGetSpace)
+
+				authSpace.GET("/options", n.apiSpacesGetSpaceOptions)
+				authSpace.GET("/options/sub", n.apiSpacesGetSpaceSubOptions)
 				authSpace.POST("/options/sub", n.apiSpacesSetSpaceSubOption)
 				authSpace.DELETE("/options/sub", n.apiSpacesRemoveSpaceSubOption)
-
-				authSpace.GET("/effective-options", n.apiSpacesGetSpaceEffectiveOptions)
-				authSpace.GET("/effective-options/sub", n.apiSpacesGetSpaceEffectiveSubOption)
 
 				authSpace.GET("/attributes", n.apiGetSpaceAttributesValue)
 				authSpace.GET("/attributes-with-children", n.apiGetSpaceWithChildrenAttributeValues)
@@ -68,33 +72,63 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 	}
 }
 
-// @Summary Version of running controller app
+// @Summary Get application version
 // @Schemes
-// @Description Version of running controller app
+// @Description Returns version of running controller app
 // @Tags config
 // @Accept json
 // @Produce json
-// @Success 200 {object} any
-// @Success 500 {object} api.HTTPError
+// @Success 200 {object} node.apiGetVersion.Out
 // @Router /version [get]
 func (n *Node) apiGetVersion(c *gin.Context) {
-	c.JSON(
-		http.StatusOK, gin.H{
-			"api": gin.H{
-				"major": ubercontroller.APIMajorVersion,
-				"minor": ubercontroller.APIMinorVersion,
-				"patch": ubercontroller.APIPatchVersion,
-			},
-			"controller": gin.H{
-				"major": ubercontroller.ControllerMajorVersion,
-				"minor": ubercontroller.ControllerMinorVersion,
-				"patch": ubercontroller.ControllerPathVersion,
-				"git":   ubercontroller.ControllerGitVersion,
-			},
+	type Out struct {
+		API struct {
+			Major int `json:"major"`
+			Minor int `json:"minor"`
+			Path  int `json:"patch"`
+		} `json:"api"`
+		Controller struct {
+			Major int    `json:"major"`
+			Minor int    `json:"minor"`
+			Path  int    `json:"patch"`
+			Git   string `json:"git"`
+		} `json:"controller"`
+	}
+
+	out := Out{
+		API: struct {
+			Major int `json:"major"`
+			Minor int `json:"minor"`
+			Path  int `json:"patch"`
+		}{
+			Major: ubercontroller.APIMajorVersion,
+			Minor: ubercontroller.APIMinorVersion,
+			Path:  ubercontroller.APIPatchVersion,
 		},
-	)
+		Controller: struct {
+			Major int    `json:"major"`
+			Minor int    `json:"minor"`
+			Path  int    `json:"patch"`
+			Git   string `json:"git"`
+		}{
+			Major: ubercontroller.ControllerMajorVersion,
+			Minor: ubercontroller.ControllerMinorVersion,
+			Path:  ubercontroller.ControllerPathVersion,
+			Git:   ubercontroller.ControllerGitVersion,
+		},
+	}
+
+	c.JSON(http.StatusOK, out)
 }
 
+// @Summary Application health check
+// @Schemes
+// @Description Controller application health check
+// @Tags app
+// @Accept json
+// @Produce json
+// @Success 200 {object} any
+// @Router /health [get]
 func (n *Node) apiHealthCheck(c *gin.Context) {
 	c.JSON(
 		http.StatusOK, gin.H{

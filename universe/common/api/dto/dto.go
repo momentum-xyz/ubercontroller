@@ -2,7 +2,6 @@ package dto
 
 import (
 	"github.com/google/uuid"
-
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 )
 
@@ -30,9 +29,9 @@ type SpaceAttributeValues map[uuid.UUID]*entry.AttributeValue
 
 type SpaceSubAttributes map[string]any
 
-type SpaceEffectiveOptions SpaceOptions
+type Asset2dMeta *entry.Asset2dMeta
 
-type SpaceEffectiveSubOptions map[string]any
+type Asset2dOptions *entry.Asset2dOptions
 
 type Assets3dOptions map[uuid.UUID]Asset3dOptions
 
@@ -74,6 +73,27 @@ type User struct {
 	IsNodeAdmin bool            `json:"isNodeAdmin"`
 	Status      *UserStatusType `json:"status,omitempty"`
 	Profile     Profile         `json:"profile"`
+}
+
+type Space struct {
+	OwnerID     string              `json:"ownerId"`
+	ParentID    string              `json:"parentId"`
+	SpaceTypeID string              `json:"spaceTypeId"`
+	Asset2dID   string              `json:"asset2dId"`
+	Asset3dID   string              `json:"asset3dId"`
+	Position    entry.SpacePosition `json:"position"`
+}
+
+type Asset2d struct {
+	Meta    Asset2dMeta    `json:"meta"`
+	Options Asset2dOptions `json:"options"`
+}
+
+type Asset3d struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	CreatedAt string `json:"createdAt"`
+	UpdatedAt string `json:"updatedAt"`
 }
 
 type Tile struct {
@@ -187,18 +207,6 @@ type SpaceInfo struct {
 	IsAdmin     bool      `json:"isAdmin"`
 }
 
-type Space struct {
-	SpaceInfo
-	UITypeID string `json:"uiTypeId"`
-	IsMember bool   `json:"isMember"`
-	IsOwner  bool   `json:"isOwner"`
-	Metadata *struct {
-		KusamaMetadata *struct {
-			OperatorID *string `json:"operator_id,omitempty"`
-		}
-	} `json:"metadata,omitempty"`
-}
-
 type SpaceAncestor struct {
 	SpaceID   string `json:"spaceId"`
 	SpaceName string `json:"spaceName"`
@@ -292,11 +300,4 @@ type Plugin struct {
 	SubTitle  *string `json:"subTitle,omitempty"`
 	ScriptURL string  `json:"scriptUrl"`
 	IconName  *string `json:"iconName,omitempty"`
-}
-
-type Asset3d struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	CreatedAt string `json:"createdAt"`
-	UpdatedAt string `json:"updatedAt"`
 }

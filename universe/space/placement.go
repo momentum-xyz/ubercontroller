@@ -71,8 +71,8 @@ func (s *Space) GetPosition() *entry.SpacePosition {
 	return s.position
 }
 
-func (s *Space) GetActualPosition() entry.SpacePosition {
-	return *s.actualPosition.Load()
+func (s *Space) GetActualPosition() *entry.SpacePosition {
+	return s.actualPosition.Load()
 }
 
 func (s *Space) SetPosition(position *entry.SpacePosition, updateDB bool) error {
@@ -82,8 +82,9 @@ func (s *Space) SetPosition(position *entry.SpacePosition, updateDB bool) error 
 		}
 	}
 
+	// TODO: unclear how we have to do it, in case if one or another is nil
+	s.position = position
 	if s.position != nil {
-		s.position = position
 		s.actualPosition.Store(s.position)
 		s.UpdateSpawnMessage()
 	}
@@ -120,7 +121,7 @@ func (s *Space) UpdateChildrenPosition(recursive bool, force bool) error {
 		sort.Slice(lpm, func(i, j int) bool { return lpm[i].ClockSequence() < lpm[j].ClockSequence() })
 		//fmt.Println("pls4b", s.GetID(), lpm)
 		for i, k := range lpm {
-			pos, theta := pls[u].CalcPos(s.theta, s.GetActualPosition(), i, len(lpm))
+			pos, theta := pls[u].CalcPos(s.theta, *s.GetActualPosition(), i, len(lpm))
 			//fmt.Printf(" Position: %s |  %+v\n", s.GetID(), pos)
 
 			child, ok := s.Children.Data[k]

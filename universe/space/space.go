@@ -458,7 +458,7 @@ func (s *Space) UpdateSpawnMessage() {
 			ParentID:         parent,
 			AssetType:        asset3d,
 			Name:             name,
-			Position:         s.GetActualPosition(),
+			Position:         *s.GetActualPosition(),
 			TetheredToParent: true,
 			Minimap:          *utils.GetFromAny(opts.Minimap, falsePtr),
 			InfoUI:           *utils.GetFromAny(opts.InfoUIID, uuidNilPtr),

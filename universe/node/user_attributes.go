@@ -96,11 +96,9 @@ func (n *Node) UpdateUserAttributeValue(
 	}
 
 	go func() {
-		changeType := universe.ChangedAttributeChangeType
-		if value == nil {
-			changeType = universe.RemovedAttributeChangeType
-		}
-		if err := n.onUserAttributeChanged(changeType, userAttributeID, value, nil); err != nil {
+		if err := n.onUserAttributeChanged(
+			universe.ChangedAttributeChangeType, userAttributeID, value, nil,
+		); err != nil {
 			n.log.Error(
 				errors.WithMessagef(
 					err,

@@ -2,7 +2,7 @@ package entry
 
 import (
 	"time"
-	
+
 	"github.com/google/uuid"
 )
 
@@ -16,5 +16,4 @@ type Asset2d struct {
 
 type Asset2dMeta map[string]any
 
-type Asset2dOptions struct {
-}
+type Asset2dOptions map[string]any

@@ -12,12 +12,102 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
 )
 
+// @Summary Get space
+// @Schemes
+// @Description Returns a space info based on query
+// @Tags spaces
+// @Accept json
+// @Produce json
+// @Param space_id path string true "Space ID"
+// @Param query query node.apiGetSpace.InQuery false "query params"
+// @Success 202 {object} dto.Space
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/spaces/{space_id} [get]
+func (n *Node) apiGetSpace(c *gin.Context) {
+	type InQuery struct {
+		Effective bool `form:"effective"`
+	}
+	inQuery := InQuery{
+		Effective: true,
+	}
+
+	if err := c.ShouldBindQuery(&inQuery); err != nil {
+		err := errors.WithMessage(err, "Node: apiGetSpace: failed to bind query")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
+		return
+	}
+
+	spaceID, err := uuid.Parse(c.Param("spaceID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetSpace: failed to parse space id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, n.log)
+		return
+	}
+
+	space, ok := n.GetSpaceFromAllSpaces(spaceID)
+	if !ok {
+		err := errors.Errorf("Node: apiGetSpace: space not found: %s", spaceID)
+		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		return
+	}
+
+	out := dto.Space{
+		OwnerID: space.GetOwnerID().String(),
+	}
+	parent := space.GetParent()
+	position := space.GetActualPosition()
+	spaceType := space.GetSpaceType()
+	if parent != nil {
+		out.ParentID = parent.GetID().String()
+	}
+	if position != nil {
+		out.Position = *position
+	}
+	if spaceType != nil {
+		out.SpaceTypeID = spaceType.GetID().String()
+	}
+
+	asset2d := space.GetAsset2D()
+	asset3d := space.GetAsset3D()
+	if inQuery.Effective {
+		if asset2d == nil && spaceType != nil {
+			asset2d = spaceType.GetAsset2d()
+		}
+		if asset3d == nil && spaceType != nil {
+			asset3d = spaceType.GetAsset3d()
+		}
+	}
+	if asset2d != nil {
+		out.Asset2dID = asset2d.GetID().String()
+	}
+	if asset3d != nil {
+		out.Asset3dID = asset3d.GetID().String()
+	}
+
+	c.JSON(http.StatusOK, out)
+}
+
+// @Summary Set space sub option
+// @Schemes
+// @Description Sets a space sub option
+// @Tags spaces
+// @Accept json
+// @Produce json
+// @Param space_id path string true "Space ID"
+// @Param body body node.apiSpacesSetSpaceSubOption.Body true "body params"
+// @Success 202 {object} dto.SpaceSubOptions
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/spaces/{space_id}/options/sub [post]
 func (n *Node) apiSpacesSetSpaceSubOption(c *gin.Context) {
-	inBody := struct {
+	type Body struct {
 		SubOptionKey   string `json:"sub_option_key" binding:"required"`
 		SubOptionValue any    `json:"sub_option_value" binding:"required"`
-	}{}
+	}
 
+	var inBody Body
 	if err := c.ShouldBindJSON(&inBody); err != nil {
 		err = errors.WithMessage(err, "Node: apiSpacesSetSpaceSubOption: failed to bind json")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
@@ -64,11 +154,25 @@ func (n *Node) apiSpacesSetSpaceSubOption(c *gin.Context) {
 	c.JSON(http.StatusAccepted, out)
 }
 
+// @Summary Delete space sub option
+// @Schemes
+// @Description Deletes a space sub option
+// @Tags spaces
+// @Accept json
+// @Produce json
+// @Param space_id path string true "Space ID"
+// @Param body body node.apiSpacesRemoveSpaceSubOption.Body true "body params"
+// @Success 200 {object} nil
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/spaces/{space_id}/options/sub [delete]
 func (n *Node) apiSpacesRemoveSpaceSubOption(c *gin.Context) {
-	inBody := struct {
+	type Body struct {
 		SubOptionKey string `json:"sub_option_key" binding:"required"`
-	}{}
+	}
 
+	var inBody Body
 	if err := c.ShouldBindJSON(&inBody); err != nil {
 		err = errors.WithMessage(err, "Node: apiSpacesRemoveSpaceSubOption: failed to bind json")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
@@ -108,78 +212,120 @@ func (n *Node) apiSpacesRemoveSpaceSubOption(c *gin.Context) {
 	c.JSON(http.StatusOK, nil)
 }
 
-// @Summary Returns space effective options
+// @Summary Get space options
 // @Schemes
-// @Description Returns space effective options
+// @Description Returns a space options based on query
 // @Tags spaces
 // @Accept json
 // @Produce json
 // @Param space_id path string true "Space ID"
-// @Success 200 {object} dto.SpaceEffectiveOptions
-// @Success 500 {object} api.HTTPError
-// @Success 400 {object} api.HTTPError
-// @Success 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{space_id}/effective-options [get]
-func (n *Node) apiSpacesGetSpaceEffectiveOptions(c *gin.Context) {
-	spaceID, err := uuid.Parse(c.Param("spaceID"))
-	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSpacesGetSpaceEffectiveOptions: failed to parse space id")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, n.log)
-		return
+// @Param query query node.apiSpacesGetSpaceOptions.InQuery false "query params"
+// @Success 200 {object} dto.SpaceOptions
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/spaces/{space_id}/options [get]
+func (n *Node) apiSpacesGetSpaceOptions(c *gin.Context) {
+	type InQuery struct {
+		Effective bool `form:"effective"`
 	}
-
-	space, ok := n.GetSpaceFromAllSpaces(spaceID)
-	if !ok {
-		err := errors.Errorf("Node: apiSpacesGetSpaceEffectiveOptions: space not found: %s", spaceID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
-		return
+	inQuery := InQuery{
+		Effective: true,
 	}
-
-	out := dto.SpaceEffectiveOptions(space.GetEffectiveOptions())
-
-	c.JSON(http.StatusOK, out)
-}
-
-func (n *Node) apiSpacesGetSpaceEffectiveSubOption(c *gin.Context) {
-	inQuery := struct {
-		SubOptionKey string `form:"sub_option_key" binding:"required"`
-	}{}
 
 	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		err := errors.WithMessage(err, "Node: apiSpacesGetSpaceEffectiveSubOption: failed to bind query")
+		err := errors.WithMessage(err, "Node: apiSpacesGetSpaceOptions: failed to bind query")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
 		return
 	}
 
 	spaceID, err := uuid.Parse(c.Param("spaceID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSpacesGetSpaceEffectiveSubOption: failed to parse space id")
+		err := errors.WithMessage(err, "Node: apiSpacesGetSpaceOptions: failed to parse space id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, n.log)
 		return
 	}
 
 	space, ok := n.GetSpaceFromAllSpaces(spaceID)
 	if !ok {
-		err := errors.Errorf("Node: apiSpacesGetSpaceEffectiveSubOption: space not found: %s", spaceID)
+		err := errors.Errorf("Node: apiSpacesGetSpaceOptions: space not found: %s", spaceID)
 		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
 		return
 	}
 
-	effectiveOptions := space.GetEffectiveOptions()
-	if effectiveOptions == nil {
-		err := errors.Errorf("Node: apiSpacesGetSpaceEffectiveSubOption: empty effective options")
-		api.AbortRequest(c, http.StatusNotFound, "empty_effective_options", err, n.log)
+	var out dto.SpaceOptions
+	if inQuery.Effective {
+		out = space.GetEffectiveOptions()
+	} else {
+		out = space.GetOptions()
+	}
+
+	c.JSON(http.StatusOK, out)
+}
+
+// @Summary Get space sub options
+// @Schemes
+// @Description Returns a space sub options based on query
+// @Tags spaces
+// @Accept json
+// @Produce json
+// @Param space_id path string true "Space ID"
+// @Param query query node.apiSpacesGetSpaceSubOptions.InQuery true "query params"
+// @Success 200 {object} dto.SpaceSubOptions
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/spaces/{space_id}/options/sub [get]
+func (n *Node) apiSpacesGetSpaceSubOptions(c *gin.Context) {
+	type InQuery struct {
+		Effective    bool   `form:"effective"`
+		SubOptionKey string `form:"sub_option_key" binding:"required"`
+	}
+	inQuery := InQuery{
+		Effective: true,
+	}
+
+	if err := c.ShouldBindQuery(&inQuery); err != nil {
+		err := errors.WithMessage(err, "Node: apiSpacesGetSpaceSubOptions: failed to bind query")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
 		return
 	}
 
-	if effectiveOptions.Subs == nil {
-		err := errors.Errorf("Node: apiSpacesGetSpaceEffectiveSubOption: empty effective sub options")
-		api.AbortRequest(c, http.StatusNotFound, "empty_effective_sub_options", err, n.log)
+	spaceID, err := uuid.Parse(c.Param("spaceID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSpacesGetSpaceSubOptions: failed to parse space id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, n.log)
 		return
 	}
 
-	out := dto.SpaceEffectiveSubOptions{
-		inQuery.SubOptionKey: effectiveOptions.Subs[inQuery.SubOptionKey],
+	space, ok := n.GetSpaceFromAllSpaces(spaceID)
+	if !ok {
+		err := errors.Errorf("Node: apiSpacesGetSpaceSubOptions: space not found: %s", spaceID)
+		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		return
+	}
+
+	var options *entry.SpaceOptions
+	if inQuery.Effective {
+		options = space.GetEffectiveOptions()
+	} else {
+		options = space.GetOptions()
+	}
+
+	if options == nil {
+		err := errors.Errorf("Node: apiSpacesGetSpaceSubOptions: empty options")
+		api.AbortRequest(c, http.StatusNotFound, "empty_options", err, n.log)
+		return
+	}
+
+	if options.Subs == nil {
+		err := errors.Errorf("Node: apiSpacesGetSpaceSubOptions: empty sub options")
+		api.AbortRequest(c, http.StatusNotFound, "empty_sub_options", err, n.log)
+		return
+	}
+
+	out := dto.SpaceSubOptions{
+		inQuery.SubOptionKey: options.Subs[inQuery.SubOptionKey],
 	}
 
 	c.JSON(http.StatusOK, out)

@@ -11,18 +11,16 @@ import (
 	"github.com/pkg/errors"
 )
 
-// @BasePath /api/v4
-
-// @Summary Edits a profile
+// @Summary Edit user profile
 // @Schemes
-// @Description Edits a profile
+// @Description Edits a user profile
 // @Tags profile
 // @Accept json
 // @Produce json
-// @Param request body node.apiProfileUpdate.Body true "body params"
+// @Param body body node.apiProfileUpdate.Body true "body params"
 // @Success 200 {object} dto.User
-// @Success 500 {object} api.HTTPError
-// @Success 400 {object} api.HTTPError
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
 // @Router /api/v4/profile [patch]
 func (n *Node) apiProfileUpdate(c *gin.Context) {
 	type Body struct {
@@ -90,18 +88,16 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 	n.apiUsersGetMe(c)
 }
 
-// @BasePath /api/v4
-
-// @Summary Uploads a user avatar to media-manager
+// @Summary Upload user avatar
 // @Schemes
 // @Description Sends an image file to the media manager and returns a hash
 // @Tags profile
 // @Accept json
 // @Produce json
 // @Success 200 {object} dto.HashResponse
-// @Success 500 {object} api.HTTPError
-// @Success 400 {object} api.HTTPError
-// @Router /api/v4/profile [patch]
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Router /api/v4/profile/avatar [post]
 func (n *Node) apiProfileUploadAvatar(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {
