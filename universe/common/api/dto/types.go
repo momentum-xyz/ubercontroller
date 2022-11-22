@@ -3,8 +3,8 @@ package dto
 type Asset3dType int8
 
 const (
-	AddressableAssetType Asset3dType = 0
-	GLTFAsset3dType      Asset3dType = 1
+	AddressableAssetType Asset3dType = iota
+	GLTFAsset3dType
 )
 
 type UserStatusType string

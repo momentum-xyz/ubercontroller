@@ -8,6 +8,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
+	"github.com/momentum-xyz/ubercontroller/config"
+	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
@@ -39,8 +41,12 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 
 	var a3dMap map[uuid.UUID]universe.Asset3d
 	predicateFn := func(asset3dID uuid.UUID, asset3d universe.Asset3d) bool {
+		var category string
 		meta := asset3d.GetMeta()
-		category := utils.GetFromAnyMap(*meta, "type", "")
+
+		if meta != nil {
+			category = utils.GetFromAnyMap(*meta, "type", "")
+		}
 		return category == inQuery.Category
 	}
 
@@ -144,7 +150,14 @@ func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 
 	defer openedFile.Close()
 
-	req, err := http.NewRequest("POST", a.cfg.Common.RenderInternalUrl+"/addasset", openedFile)
+	cfg := utils.GetFromAny(a.ctx.Value(types.ConfigContextKey), (*config.Config)(nil))
+	if cfg == nil {
+		err = errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to get config from context")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_asset3d", err, a.log)
+		return
+	}
+
+	req, err := http.NewRequest("POST", cfg.Common.RenderInternalUrl+"/addasset", openedFile)
 	if err != nil {
 		err := errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to create post request")
 		api.AbortRequest(c, http.StatusBadRequest, "failed_to_create_request", err, a.log)
@@ -165,8 +178,7 @@ func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 
 	response := dto.HashResponse{}
 
-	errs := json.NewDecoder(resp.Body).Decode(&response)
-	if errs != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		err := errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to decode json into response")
 		api.AbortRequest(c, http.StatusBadRequest, "failed_to_decode", err, a.log)
 		return
