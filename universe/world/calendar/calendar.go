@@ -26,11 +26,11 @@ type Calendar struct {
 }
 
 type Event struct {
-	SpaceID *uuid.UUID
-	Title   string
-	Start   time.Time
-	End     time.Time
-	EventID string
+	SpaceID *uuid.UUID `json:"spaceId"`
+	Title   string     `json:"title"`
+	Start   time.Time  `json:"start"`
+	End     time.Time  `json:"end"`
+	EventID string     `json:"eventId"`
 }
 
 var pluginID = uuid.MustParse("f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0")
