@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
+	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -21,6 +22,7 @@ var _ universe.Assets3d = (*Assets3d)(nil)
 type Assets3d struct {
 	ctx    context.Context
 	log    *zap.SugaredLogger
+	cfg    *config.Config
 	db     database.DB
 	assets *generic.SyncMap[uuid.UUID, universe.Asset3d]
 }
@@ -38,8 +40,14 @@ func (a *Assets3d) Initialize(ctx context.Context) error {
 		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
 	}
 
+	cfg := utils.GetFromAny(ctx.Value(types.ConfigContextKey), (*config.Config)(nil))
+	if cfg == nil {
+		return errors.Errorf("failed to get config from context: %T", ctx.Value(types.ConfigContextKey))
+	}
+
 	a.ctx = ctx
 	a.log = log
+	a.cfg = cfg
 
 	return nil
 }
