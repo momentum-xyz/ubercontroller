@@ -91,7 +91,7 @@ func (s *Space) Initialize(ctx context.Context) error {
 	s.log = log
 	s.numSendsQueued.Store(chanIsClosed)
 
-	newPos := entry.SpacePosition{Location: *new(cmath.Vec3), Rotation: *new(cmath.Vec3)}
+	newPos := entry.SpacePosition{Location: *new(cmath.Vec3), Rotation: *new(cmath.Vec3), Scale: *new(cmath.Vec3)}
 	s.actualPosition.Store(&newPos)
 	go s.Run()
 
