@@ -142,6 +142,9 @@ func (u *User) SendDirectly(message *websocket.PreparedMessage) error {
 	// not concurrent, to be used in single particular location
 	//u.directLock.Lock()
 	//defer u.directLock.Unlock()
+	if message == nil {
+		return nil
+	}
 
 	u.conn.SetWriteDeadline(time.Now().Add(writeWait))
 	return u.conn.WritePreparedMessage(message)
