@@ -1,13 +1,16 @@
 package worlds
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
+	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
+	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
 )
 
 // @Summary Starts a fly with me session for a certain world
@@ -30,6 +33,55 @@ func (w *Worlds) apiWorldsFlyWithMeStart(c *gin.Context) {
 		return
 	}
 
+	world, ok := w.GetWorld(worldID)
+	if !ok {
+		err := errors.Errorf("Worlds: apiWorldsFlyWithMeStart: space not found: %s", worldID)
+		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
+		return
+	}
+
+	token, err := api.GetTokenFromContext(c)
+	if err != nil {
+		err = errors.WithMessage(err, "Worlds: apiWorldsFlyWithMeStart: failed to get token from context")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_token", err, w.log)
+		return
+	}
+
+	userID, err := api.GetUserIDFromToken(token)
+	if err != nil {
+		err = errors.WithMessage(err, "Worlds: apiWorldsFlyWithMeStart: failed to get user id from token")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_user_id", err, w.log)
+		return
+	}
+
+	user, ok := world.GetUser(userID, true)
+	if !ok {
+		err := errors.Errorf("Worlds: apiWorldsFlyWithMeStart: user not present in world: %s", worldID)
+		api.AbortRequest(c, http.StatusNotFound, "user_not_found", err, w.log)
+		return
+	}
+
+	fwmDto := dto.FlyWithMe{
+		Pilot:   user.GetID(),
+		SpaceID: world.GetID(),
+	}
+
+	data, err := json.Marshal(&fwmDto)
+	if err != nil {
+		err = errors.WithMessage(err, "Worlds: apiWorldsFlyWithMeStart: failed to marshal dto")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_marshal", err, w.log)
+		return
+	}
+
+	m := posbus.NewRelayToReactMsg(string(dto.FlyWithMeStart), data).WebsocketMessage()
+	err := world.Send(m, false)
+	if err != nil {
+		err = errors.WithMessage(err, "Worlds: apiWorldsFlyWithMeStart: failed to dispatch event")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_dispatch_event", err, w.log)
+		return
+	}
+
+	c.JSON(http.StatusOK, nil)
 }
 
 // @Summary Stops a fly with me session for a certain world
@@ -49,6 +101,13 @@ func (w *Worlds) apiWorldsFlyWithMeStop(c *gin.Context) {
 	if err != nil {
 		err := errors.WithMessage(err, "Worlds: apiWorldsFlyWithMeStop: failed to parse world id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
+		return
+	}
+
+	world, ok := w.GetWorld(worldID)
+	if !ok {
+		err := errors.Errorf("Worlds: apiWorldsSearchSpaces: space not found: %s", worldID)
+		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
 		return
 	}
 
