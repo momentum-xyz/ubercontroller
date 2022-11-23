@@ -20,7 +20,7 @@ import (
 // @Accept json
 // @Produce json
 // @Param world_id path string true "World ID"
-// @Success 200 {object} dto.ExploreOption
+// @Success 200 {object} nil
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
@@ -73,11 +73,11 @@ func (w *Worlds) apiWorldsFlyWithMeStart(c *gin.Context) {
 		return
 	}
 
-	m := posbus.NewRelayToReactMsg(string(dto.FlyWithMeStart), data).WebsocketMessage()
-	err := world.Send(m, false)
-	if err != nil {
-		err = errors.WithMessage(err, "Worlds: apiWorldsFlyWithMeStart: failed to dispatch event")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_dispatch_event", err, w.log)
+	msg := posbus.NewRelayToReactMsg(string(dto.FlyWithMeStart), data).WebsocketMessage()
+	sendErr := world.Send(msg, false)
+	if sendErr != nil {
+		sendErr = errors.WithMessage(sendErr, "Worlds: apiWorldsFlyWithMeStart: failed to dispatch event")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_dispatch_event", sendErr, w.log)
 		return
 	}
 
@@ -91,7 +91,7 @@ func (w *Worlds) apiWorldsFlyWithMeStart(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param world_id path string true "World ID"
-// @Success 200 {object} dto.ExploreOption
+// @Success 200 {object} nil
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
@@ -106,9 +106,51 @@ func (w *Worlds) apiWorldsFlyWithMeStop(c *gin.Context) {
 
 	world, ok := w.GetWorld(worldID)
 	if !ok {
-		err := errors.Errorf("Worlds: apiWorldsSearchSpaces: space not found: %s", worldID)
+		err := errors.Errorf("Worlds: apiWorldsFlyWithMeStop: space not found: %s", worldID)
 		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
 		return
 	}
 
+	token, err := api.GetTokenFromContext(c)
+	if err != nil {
+		err = errors.WithMessage(err, "Worlds: apiWorldsFlyWithMeStop: failed to get token from context")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_token", err, w.log)
+		return
+	}
+
+	userID, err := api.GetUserIDFromToken(token)
+	if err != nil {
+		err = errors.WithMessage(err, "Worlds: apiWorldsFlyWithMeStop: failed to get user id from token")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_user_id", err, w.log)
+		return
+	}
+
+	user, ok := world.GetUser(userID, true)
+	if !ok {
+		err := errors.Errorf("Worlds: apiWorldsFlyWithMeStop: user not present in world: %s", worldID)
+		api.AbortRequest(c, http.StatusNotFound, "user_not_found", err, w.log)
+		return
+	}
+
+	fwmDto := dto.FlyWithMe{
+		Pilot:   user.GetID(),
+		SpaceID: world.GetID(),
+	}
+
+	data, err := json.Marshal(&fwmDto)
+	if err != nil {
+		err = errors.WithMessage(err, "Worlds: apiWorldsFlyWithMeStop: failed to marshal dto")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_marshal", err, w.log)
+		return
+	}
+
+	msg := posbus.NewRelayToReactMsg(string(dto.FlyWithMeStop), data).WebsocketMessage()
+	sendErr := world.Send(msg, false)
+	if sendErr != nil {
+		sendErr = errors.WithMessage(sendErr, "Worlds: apiWorldsFlyWithMeStop: failed to dispatch event")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_dispatch_event", sendErr, w.log)
+		return
+	}
+
+	c.JSON(http.StatusOK, nil)
 }
