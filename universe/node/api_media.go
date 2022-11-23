@@ -87,6 +87,12 @@ func (n *Node) apiMediaRenderText(c *gin.Context) {
 
 	inBody := InBody{}
 
+	if err := c.ShouldBindJSON(&inBody); err != nil {
+		err = errors.WithMessage(err, "Node: apiMediaRenderText: failed to bind json")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
 	renderRecipe := dto.BackgroundRecipe{
 		Background: []int{0, 0, 0, 0},
 		Color:      []int{0, 255, 0, 0},
