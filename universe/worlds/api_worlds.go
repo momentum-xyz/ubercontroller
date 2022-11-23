@@ -71,7 +71,7 @@ func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 
 	options, err := w.apiWorldsGetRootOptions(root)
 	if err != nil {
-		err := errors.Errorf("Worlds: apiWorldsGetSpacesWithChildren: unable to get options for spaces and subspaces: %s", err)
+		err := errors.WithMessage(err, "Worlds: apiWorldsGetSpacesWithChildren: unable to get options for spaces and subspaces")
 		api.AbortRequest(c, http.StatusNotFound, "options_not_found", err, w.log)
 		return
 	}

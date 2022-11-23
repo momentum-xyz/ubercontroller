@@ -32,6 +32,12 @@ func (n *Node) apiGenAgoraToken(c *gin.Context) {
 		return
 	}
 
+	if _, ok := n.GetSpaceFromAllSpaces(spaceID); !ok {
+		err := errors.Errorf("Node: apiGenAgoraToken: space not found: %s", spaceID)
+		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		return
+	}
+
 	userID, err := api.GetUserIDFromContext(c)
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiGenAgoraToken: failed to get user id")

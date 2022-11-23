@@ -113,6 +113,7 @@ func (n *Node) apiUsersGetMe(c *gin.Context) {
 
 	userEntry, err := n.db.UsersGetUserByID(c, userID)
 	if err != nil {
+		err = errors.WithMessage(err, "Node: apiUsersGetMe: failed to get user by id")
 		api.AbortRequest(c, http.StatusNotFound, "user_not_found", err, n.log)
 		return
 	}
