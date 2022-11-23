@@ -61,9 +61,25 @@ func (w *Worlds) apiWorldsFlyWithMeStart(c *gin.Context) {
 		return
 	}
 
+	userProfile, err := w.db.UsersGetUserProfileByUserID(c, user.GetID())
+	if err != nil {
+		err = errors.WithMessage(err, "Worlds: apiWorldsFlyWithMeStart: failed to get user profile by user id")
+		api.AbortRequest(c, http.StatusNotFound, "profile_not_found", err, w.log)
+		return
+	}
+
+	var userName = ""
+
+	if userProfile != nil {
+		if userProfile.Name != nil {
+			userName = *userProfile.Name
+		}
+	}
+
 	fwmDto := dto.FlyWithMe{
-		Pilot:   user.GetID(),
-		SpaceID: world.GetID(),
+		Pilot:     user.GetID(),
+		PilotName: userName,
+		SpaceID:   world.GetID(),
 	}
 
 	data, err := json.Marshal(&fwmDto)
@@ -132,9 +148,25 @@ func (w *Worlds) apiWorldsFlyWithMeStop(c *gin.Context) {
 		return
 	}
 
+	userProfile, err := w.db.UsersGetUserProfileByUserID(c, user.GetID())
+	if err != nil {
+		err = errors.WithMessage(err, "Worlds: apiWorldsFlyWithMeStop: failed to get user profile by user id")
+		api.AbortRequest(c, http.StatusNotFound, "profile_not_found", err, w.log)
+		return
+	}
+
+	var userName = ""
+
+	if userProfile != nil {
+		if userProfile.Name != nil {
+			userName = *userProfile.Name
+		}
+	}
+
 	fwmDto := dto.FlyWithMe{
-		Pilot:   user.GetID(),
-		SpaceID: world.GetID(),
+		Pilot:     user.GetID(),
+		PilotName: userName,
+		SpaceID:   world.GetID(),
 	}
 
 	data, err := json.Marshal(&fwmDto)
