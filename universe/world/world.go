@@ -29,6 +29,7 @@ var _ universe.World = (*World)(nil)
 type World struct {
 	*space.Space
 	ctx              context.Context
+	cancel           context.CancelFunc
 	log              *zap.SugaredLogger
 	db               database.DB
 	pluginController *mplugin.PluginController
@@ -77,9 +78,9 @@ func (w *World) Initialize(ctx context.Context) error {
 		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
 	}
 
-	w.counter.Store(0)
-	w.ctx = ctx
+	w.ctx, w.cancel = context.WithCancel(ctx)
 	w.log = log
+	w.counter.Store(0)
 
 	if err := w.Space.Initialize(ctx); err != nil {
 		return errors.WithMessage(err, "failed to initialize space")
@@ -96,13 +97,33 @@ func (w *World) AddToCounter() int64 {
 	return w.counter.Add(1)
 }
 
-// TODO: implement
 func (w *World) Run() error {
-	ticker := time.NewTicker(500 * time.Millisecond)
-	defer ticker.Stop()
+	w.allSpaces.Mu.RLock()
+	for _, space := range w.allSpaces.Data {
+		go func(space universe.Space) {
+			if err := space.Run(); err != nil {
+				w.log.Error(errors.WithMessagef(err, "World: Run: failed to run space: %s", space.GetID()))
+			}
+		}(space)
+	}
+	w.allSpaces.Mu.RUnlock()
 
 	go w.calendar.Run()
-	defer w.calendar.Stop()
+	ticker := time.NewTicker(500 * time.Millisecond)
+
+	defer func() {
+		w.calendar.Stop()
+		ticker.Stop()
+
+		w.allSpaces.Mu.RLock()
+		defer w.allSpaces.Mu.RUnlock()
+
+		for _, space := range w.allSpaces.Data {
+			if err := space.Stop(); err != nil {
+				w.log.Error(errors.WithMessagef(err, "World: Run: failed to stop space: %s", space.GetID()))
+			}
+		}
+	}()
 
 	for {
 		select {
@@ -114,8 +135,14 @@ func (w *World) Run() error {
 		case <-ticker.C:
 			// fmt.Println(color.Red, "Ticker", color.Reset)
 			go w.broadcastPositions()
+		case <-w.ctx.Done():
+			return nil
 		}
 	}
+}
+
+func (w *World) Stop() error {
+	w.cancel()
 	return nil
 }
 
@@ -138,11 +165,6 @@ func (w *World) broadcastPositions() {
 	}
 }
 
-// TODO: implement
-func (w *World) Stop() error {
-	return nil
-}
-
 func (w *World) Load() error {
 	w.log.Infof("Loading world: %s", w.GetID())
 
@@ -157,7 +179,6 @@ func (w *World) Load() error {
 	w.UpdateWorldMetadata()
 
 	w.Space.UpdateChildrenPosition(true, true)
-	go w.Run()
 	//cu.BroadcastPositions()
 
 	w.log.Infof("World loaded: %s", w.GetID())

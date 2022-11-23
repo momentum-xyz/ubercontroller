@@ -91,7 +91,6 @@ func (s *Space) Initialize(ctx context.Context) error {
 	s.log = log
 	s.numSendsQueued.Store(chanIsClosed)
 	s.actualPosition.Store(new(cmath.Vec3))
-	go s.Run()
 
 	return nil
 }
@@ -302,6 +301,37 @@ func (s *Space) GetEntry() *entry.Space {
 	}
 
 	return entry
+}
+
+func (s *Space) Run() error {
+	s.numSendsQueued.Store(0)
+	s.broadcastPipeline = make(chan *websocket.PreparedMessage, 100)
+	defer func() {
+		ns := s.numSendsQueued.Swap(chanIsClosed)
+		for i := int64(0); i < ns; i++ {
+			<-s.broadcastPipeline
+		}
+		close(s.broadcastPipeline)
+	}()
+	for {
+		select {
+		case message := <-s.broadcastPipeline:
+			s.numSendsQueued.Add(-1)
+			//fmt.Println("Got a message from")
+			if message == nil {
+				return nil
+			}
+			s.performBroadcast(message)
+		}
+	}
+}
+
+func (s *Space) Stop() error {
+	ns := s.numSendsQueued.Add(1)
+	if ns >= 0 {
+		s.broadcastPipeline <- nil
+	}
+	return nil
 }
 
 func (s *Space) Update(recursive bool) error {

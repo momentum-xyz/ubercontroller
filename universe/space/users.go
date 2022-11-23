@@ -116,36 +116,6 @@ func (s *Space) Send(msg *websocket.PreparedMessage, recursive bool) error {
 	return nil
 }
 
-func (s *Space) Shutdown() {
-	ns := s.numSendsQueued.Add(1)
-	if ns >= 0 {
-		s.broadcastPipeline <- nil
-	}
-}
-
-func (s *Space) Run() {
-	s.numSendsQueued.Store(0)
-	s.broadcastPipeline = make(chan *websocket.PreparedMessage, 100)
-	defer func() {
-		ns := s.numSendsQueued.Swap(chanIsClosed)
-		for i := int64(0); i < ns; i++ {
-			<-s.broadcastPipeline
-		}
-		close(s.broadcastPipeline)
-	}()
-	for {
-		select {
-		case message := <-s.broadcastPipeline:
-			s.numSendsQueued.Add(-1)
-			//fmt.Println("Got a message from")
-			if message == nil {
-				return
-			}
-			s.performBroadcast(message)
-		}
-	}
-}
-
 func (s *Space) performBroadcast(message *websocket.PreparedMessage) {
 	s.Users.Mu.RLock()
 	defer s.Users.Mu.RUnlock()

@@ -165,7 +165,6 @@ type Worlds interface {
 
 type World interface {
 	Space
-	RunStopper
 	LoadSaver
 	SpaceCacher
 
@@ -180,6 +179,7 @@ type World interface {
 type Space interface {
 	IDer
 	Initializer
+	RunStopper
 
 	CreateSpace(spaceID uuid.UUID) (Space, error)
 
