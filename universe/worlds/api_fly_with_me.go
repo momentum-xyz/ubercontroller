@@ -40,16 +40,9 @@ func (w *Worlds) apiWorldsFlyWithMeStart(c *gin.Context) {
 		return
 	}
 
-	token, err := api.GetTokenFromContext(c)
+	userID, err := api.GetUserIDFromContext(c)
 	if err != nil {
-		err = errors.WithMessage(err, "Worlds: apiWorldsFlyWithMeStart: failed to get token from context")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_token", err, w.log)
-		return
-	}
-
-	userID, err := api.GetUserIDFromToken(token)
-	if err != nil {
-		err = errors.WithMessage(err, "Worlds: apiWorldsFlyWithMeStart: failed to get user id from token")
+		err = errors.WithMessage(err, "Worlds: apiWorldsFlyWithMeStart: failed to get user id from context")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_user_id", err, w.log)
 		return
 	}
@@ -68,7 +61,7 @@ func (w *Worlds) apiWorldsFlyWithMeStart(c *gin.Context) {
 		return
 	}
 
-	var userName = ""
+	userName := ""
 
 	if userProfile != nil {
 		if userProfile.Name != nil {
@@ -127,16 +120,9 @@ func (w *Worlds) apiWorldsFlyWithMeStop(c *gin.Context) {
 		return
 	}
 
-	token, err := api.GetTokenFromContext(c)
+	userID, err := api.GetUserIDFromContext(c)
 	if err != nil {
-		err = errors.WithMessage(err, "Worlds: apiWorldsFlyWithMeStop: failed to get token from context")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_token", err, w.log)
-		return
-	}
-
-	userID, err := api.GetUserIDFromToken(token)
-	if err != nil {
-		err = errors.WithMessage(err, "Worlds: apiWorldsFlyWithMeStop: failed to get user id from token")
+		err = errors.WithMessage(err, "Worlds: apiWorldsFlyWithMeStart: failed to get user id from context")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_user_id", err, w.log)
 		return
 	}
@@ -155,7 +141,7 @@ func (w *Worlds) apiWorldsFlyWithMeStop(c *gin.Context) {
 		return
 	}
 
-	var userName = ""
+	userName := ""
 
 	if userProfile != nil {
 		if userProfile.Name != nil {
