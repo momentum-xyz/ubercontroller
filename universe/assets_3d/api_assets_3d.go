@@ -149,7 +149,7 @@ func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 
 	defer openedFile.Close()
 
-	req, err := http.NewRequest("POST", a.cfg.Common.RenderInternalUrl+"/addasset", openedFile)
+	req, err := http.NewRequest("POST", a.cfg.Common.RenderInternalURL+"/addasset", openedFile)
 	if err != nil {
 		err := errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to create post request")
 		api.AbortRequest(c, http.StatusBadRequest, "failed_to_create_request", err, a.log)

@@ -70,6 +70,11 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 				authSpace.GET("/attributes/sub", n.apiGetSpaceAttributeSubValue)
 				authSpace.POST("/attributes/sub", n.apiSetSpaceAttributeSubValue)
 				authSpace.DELETE("/attributes/sub", n.apiRemoveSpaceAttributeSubValue)
+
+				authAgora := authSpace.Group("/agora")
+				{
+					authAgora.POST("/token", n.apiGenAgoraToken)
+				}
 			}
 		}
 	}

@@ -3,6 +3,7 @@ module github.com/momentum-xyz/ubercontroller
 go 1.19
 
 require (
+	github.com/AgoraIO-Community/go-tokenbuilder v1.0.0
 	github.com/barkimedes/go-deepcopy v0.0.0-20220514131651-17c30cfc62df
 	github.com/c0mm4nd/go-ripemd v0.0.0-20200326052756-bd1759ad7d10
 	github.com/georgysavva/scany v1.2.1

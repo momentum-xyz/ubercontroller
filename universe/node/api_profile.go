@@ -115,7 +115,7 @@ func (n *Node) apiProfileUploadAvatar(c *gin.Context) {
 
 	defer openedFile.Close()
 
-	req, err := http.NewRequest("POST", n.cfg.Common.RenderInternalUrl+"/render/addimage", openedFile)
+	req, err := http.NewRequest("POST", n.cfg.Common.RenderInternalURL+"/render/addimage", openedFile)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiProfileUploadAvatar: failed to create post request")
 		api.AbortRequest(c, http.StatusBadRequest, "failed_to_create_request", err, n.log)

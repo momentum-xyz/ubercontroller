@@ -3,7 +3,6 @@ package calendar
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -52,8 +51,6 @@ func (c *Calendar) Initialize(ctx context.Context) error {
 }
 
 func (c *Calendar) Run() error {
-	fmt.Println("RUN calendar" + c.world.GetID().String())
-
 	go c.update()
 
 	return nil
@@ -80,8 +77,6 @@ func (c *Calendar) updateTimer() error {
 }
 
 func (c *Calendar) tick(eventID string) error {
-	fmt.Println("TICK", eventID)
-
 	e := c.getEventByID(eventID)
 	if e == nil {
 		return nil
@@ -191,7 +186,6 @@ func (*Calendar) Stop() error {
 }
 
 func (c *Calendar) OnAttributeUpsert(attributeID entry.AttributeID, value any) {
-	fmt.Println("OnAttributeUpsert ***", attributeID)
 	if attributeID.PluginID == pluginID && attributeID.Name == attributeName {
 		go c.update()
 	}
