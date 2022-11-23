@@ -1,6 +1,7 @@
 package node
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 
@@ -14,13 +15,13 @@ import (
 // @Summary Uploads an image to the media manager
 // @Schemes
 // @Description Sends an image file to the media manager and returns a hash
-// @Tags profile
+// @Tags media
 // @Accept json
 // @Produce json
 // @Success 200 {object} dto.HashResponse
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
-// @Router /api/v4/profile/avatar [post]
+// @Router /api/v4/media/upload-image [post]
 func (n *Node) apiMediaUploadImage(c *gin.Context) {
 	imageFile, err := c.FormFile("file")
 	if err != nil {
@@ -59,9 +60,84 @@ func (n *Node) apiMediaUploadImage(c *gin.Context) {
 
 	response := dto.HashResponse{}
 
-	errs := json.NewDecoder(resp.Body).Decode(&response)
-	if errs != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		err := errors.WithMessage(err, "Node: apiMediaUploadImage: failed to decode json into response")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_decode", err, n.log)
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// @Summary Renders text as image, returns media manager hash
+// @Schemes
+// @Description Sends text to the media manager and returns a hash
+// @Tags media
+// @Accept json
+// @Produce json
+// @Param body body node.apiMediaRenderText.inBody true "body params"
+// @Success 200 {object} dto.HashResponse
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Router /api/v4/media/render-text [post]
+func (n *Node) apiMediaRenderText(c *gin.Context) {
+	type InBody struct {
+		Text string `json:"text" binding:"required"`
+	}
+
+	inBody := InBody{}
+
+	renderRecipe := dto.BackgroundRecipe{
+		Background: []int{0, 0, 0, 0},
+		Color:      []int{0, 255, 0, 0},
+		Thickness:  0,
+		Width:      1024,
+		Height:     64,
+		X:          0,
+		Y:          0,
+		Text: dto.TextRecipe{
+			String:    inBody.Text,
+			FontFile:  "",
+			FontSize:  0,
+			FontColor: []int{220, 220, 200, 255},
+			Wrap:      false,
+			PadX:      0,
+			PadY:      1,
+			AlignH:    "center",
+			AlignV:    "center",
+		},
+	}
+
+	buffer := new(bytes.Buffer)
+	if err := json.NewEncoder(buffer).Encode(&renderRecipe); err != nil {
+		err := errors.WithMessage(err, "Node: apiMediaRenderText: failed to decode json into response")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_decode", err, n.log)
+		return
+	}
+
+	req, err := http.NewRequest("POST", n.cfg.Common.RenderInternalURL+"/render/addframe", buffer)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiMediaRenderText: failed to create post request")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_create_request", err, n.log)
+		return
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiMediaRenderText: failed to post data to media-manager")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_post_request", err, n.log)
+		return
+	}
+
+	defer resp.Body.Close()
+
+	response := dto.HashResponse{}
+
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		err := errors.WithMessage(err, "Node: apiMediaRenderText: failed to decode json into response")
 		api.AbortRequest(c, http.StatusBadRequest, "failed_to_decode", err, n.log)
 		return
 	}
