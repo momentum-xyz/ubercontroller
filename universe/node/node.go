@@ -75,8 +75,8 @@ func NewNode(
 		spaceTypes:       spaceTypes,
 		userTypes:        userTypes,
 		attributeTypes:   attributeTypes,
-		nodeAttributes:   generic.NewSyncMap[entry.AttributeID, *entry.AttributePayload](),
-		spaceIDToWorldID: generic.NewSyncMap[uuid.UUID, uuid.UUID](),
+		nodeAttributes:   generic.NewSyncMap[entry.AttributeID, *entry.AttributePayload](0),
+		spaceIDToWorldID: generic.NewSyncMap[uuid.UUID, uuid.UUID](0),
 	}
 }
 

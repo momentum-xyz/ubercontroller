@@ -28,7 +28,7 @@ type Assets2d struct {
 func NewAssets2d(db database.DB) *Assets2d {
 	return &Assets2d{
 		db:     db,
-		assets: generic.NewSyncMap[uuid.UUID, universe.Asset2d](),
+		assets: generic.NewSyncMap[uuid.UUID, universe.Asset2d](0),
 	}
 }
 

@@ -63,10 +63,10 @@ func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
 	return &Space{
 		id:                id,
 		db:                db,
-		Users:             generic.NewSyncMap[uuid.UUID, universe.User](),
-		Children:          generic.NewSyncMap[uuid.UUID, universe.Space](),
-		spaceAttributes:   generic.NewSyncMap[entry.AttributeID, *entry.AttributePayload](),
-		attributesMsg:     generic.NewSyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]](),
+		Users:             generic.NewSyncMap[uuid.UUID, universe.User](0),
+		Children:          generic.NewSyncMap[uuid.UUID, universe.Space](0),
+		spaceAttributes:   generic.NewSyncMap[entry.AttributeID, *entry.AttributePayload](0),
+		attributesMsg:     generic.NewSyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]](0),
 		renderTextureAttr: make(map[string]string),
 		world:             world,
 	}
@@ -518,7 +518,7 @@ func (s *Space) SendAttributes(f func(*websocket.PreparedMessage), recursive boo
 func (s *Space) SetAttributesMsg(kind, name string, msg *websocket.PreparedMessage) {
 	m, ok := s.attributesMsg.Load(kind)
 	if !ok {
-		m = generic.NewSyncMap[string, *websocket.PreparedMessage]()
+		m = generic.NewSyncMap[string, *websocket.PreparedMessage](0)
 		s.attributesMsg.Store(kind, m)
 	}
 	m.Store(name, msg)

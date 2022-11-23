@@ -32,7 +32,7 @@ type Worlds struct {
 func NewWorlds(db database.DB) *Worlds {
 	return &Worlds{
 		db:     db,
-		worlds: generic.NewSyncMap[uuid.UUID, universe.World](),
+		worlds: generic.NewSyncMap[uuid.UUID, universe.World](0),
 	}
 }
 

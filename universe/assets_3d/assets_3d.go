@@ -30,7 +30,7 @@ type Assets3d struct {
 func NewAssets3d(db database.DB) *Assets3d {
 	return &Assets3d{
 		db:     db,
-		assets: generic.NewSyncMap[uuid.UUID, universe.Asset3d](),
+		assets: generic.NewSyncMap[uuid.UUID, universe.Asset3d](0),
 	}
 }
 

@@ -44,7 +44,7 @@ type World struct {
 func NewWorld(id uuid.UUID, db database.DB) *World {
 	world := &World{
 		db:        db,
-		allSpaces: generic.NewSyncMap[uuid.UUID, universe.Space](),
+		allSpaces: generic.NewSyncMap[uuid.UUID, universe.Space](0),
 	}
 	world.Space = space.NewSpace(id, db, world)
 	world.pluginController = mplugin.NewPluginController(id)
