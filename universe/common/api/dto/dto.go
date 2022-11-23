@@ -50,6 +50,12 @@ type ExploreOption struct {
 	SubSpaces   []ExploreOption `json:"subSpaces,omitempty"`
 }
 
+type FlyWithMe struct {
+	Pilot     uuid.UUID `json:"pilot"`
+	PilotName string    `json:"pilot_name"`
+	SpaceID   uuid.UUID `json:"space_id"`
+}
+
 type Profile struct {
 	Bio         *string `json:"bio,omitempty"`
 	Location    *string `json:"location,omitempty"`
