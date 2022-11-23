@@ -162,11 +162,11 @@ func (n *Node) apiCreateSpace(c *gin.Context) {
 		return
 	}
 
-	if err := space.Run(); err != nil {
-		err := errors.WithMessage(err, "Node: apiCreateSpace: failed to run space")
-		api.AbortRequest(c, http.StatusInternalServerError, "run_space_failed", err, n.log)
-		return
-	}
+	go func() {
+		if err := space.Run(); err != nil {
+			n.log.Error(errors.WithMessagef(err, "Node: apiCreateSpace: failed to run space: %s", space.GetID()))
+		}
+	}()
 
 	type Out struct {
 		SpaceID string `json:"space_id"`
