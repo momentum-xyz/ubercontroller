@@ -45,7 +45,7 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 		if meta == nil {
 			return false
 		}
-		category = utils.GetFromAnyMap(*meta, "type", "")
+		category = utils.GetFromAnyMap(*meta, "category", "")
 		return category == inQuery.Category
 	}
 
