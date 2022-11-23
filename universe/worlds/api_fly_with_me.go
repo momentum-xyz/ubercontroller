@@ -35,7 +35,7 @@ func (w *Worlds) apiWorldsFlyWithMeStart(c *gin.Context) {
 
 	world, ok := w.GetWorld(worldID)
 	if !ok {
-		err := errors.Errorf("Worlds: apiWorldsFlyWithMeStart: space not found: %s", worldID)
+		err := errors.Errorf("Worlds: apiWorldsFlyWithMeStart: world not found: %s", worldID)
 		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
 		return
 	}
@@ -90,10 +90,10 @@ func (w *Worlds) apiWorldsFlyWithMeStart(c *gin.Context) {
 	}
 
 	msg := posbus.NewRelayToReactMsg(string(dto.FlyWithMeStart), data).WebsocketMessage()
-	sendErr := world.Send(msg, false)
-	if sendErr != nil {
-		sendErr = errors.WithMessage(sendErr, "Worlds: apiWorldsFlyWithMeStart: failed to dispatch event")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_dispatch_event", sendErr, w.log)
+
+	if err := world.Send(msg, false); err != nil {
+		err = errors.WithMessage(err, "Worlds: apiWorldsFlyWithMeStart: failed to dispatch event")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_dispatch_event", err, w.log)
 		return
 	}
 
@@ -122,7 +122,7 @@ func (w *Worlds) apiWorldsFlyWithMeStop(c *gin.Context) {
 
 	world, ok := w.GetWorld(worldID)
 	if !ok {
-		err := errors.Errorf("Worlds: apiWorldsFlyWithMeStop: space not found: %s", worldID)
+		err := errors.Errorf("Worlds: apiWorldsFlyWithMeStop: world not found: %s", worldID)
 		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
 		return
 	}
@@ -177,10 +177,9 @@ func (w *Worlds) apiWorldsFlyWithMeStop(c *gin.Context) {
 	}
 
 	msg := posbus.NewRelayToReactMsg(string(dto.FlyWithMeStop), data).WebsocketMessage()
-	sendErr := world.Send(msg, false)
-	if sendErr != nil {
-		sendErr = errors.WithMessage(sendErr, "Worlds: apiWorldsFlyWithMeStop: failed to dispatch event")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_dispatch_event", sendErr, w.log)
+	if err := world.Send(msg, false); err != nil {
+		err = errors.WithMessage(err, "Worlds: apiWorldsFlyWithMeStart: failed to dispatch event")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_dispatch_event", err, w.log)
 		return
 	}
 
