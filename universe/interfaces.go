@@ -263,7 +263,7 @@ type Space interface {
 type User interface {
 	IDer
 	Initializer
-	Stopper
+	RunStopper
 
 	GetWorld() World
 	SetWorld(world World)

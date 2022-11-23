@@ -147,6 +147,11 @@ func (u *User) SetUserType(userType universe.UserType, updateDB bool) error {
 	return nil
 }
 
+func (u *User) Run() error {
+	u.StartIOPumps()
+	return nil
+}
+
 func (u *User) Stop() error {
 	ns := u.numSendsQueued.Add(1)
 	if ns >= 0 {

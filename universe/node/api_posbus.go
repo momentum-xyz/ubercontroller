@@ -102,6 +102,7 @@ func (n *Node) handShake(socketConnection *websocket.Conn) error {
 		return errors.WithMessagef(err, "failed to load user from entry: %s", userID)
 	}
 	user.SetConnection(sessionID, socketConnection)
+	user.Run()
 
 	return n.detectSpawnWorld(userID).AddUser(user, true)
 }

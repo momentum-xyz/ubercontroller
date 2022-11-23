@@ -166,7 +166,6 @@ func (u *User) Send(m *websocket.PreparedMessage) error {
 func (u *User) SetConnection(id uuid.UUID, socketConnection *websocket.Conn) error {
 	u.sessionID = id
 	u.conn = socketConnection
-	u.StartIOPumps()
 	return nil
 }
 
