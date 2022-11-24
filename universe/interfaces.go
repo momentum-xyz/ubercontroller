@@ -13,14 +13,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
-type Calendar interface {
-	Initializer
-	RunStopper
-
-	OnAttributeUpsert(attributeID entry.AttributeID, value any)
-	OnAttributeRemove(attributeID entry.AttributeID)
-}
-
 type IDer interface {
 	GetID() uuid.UUID
 }
@@ -489,4 +481,12 @@ type UserType interface {
 
 	GetEntry() *entry.UserType
 	LoadFromEntry(entry *entry.UserType) error
+}
+
+type Calendar interface {
+	Initializer
+	RunStopper
+
+	OnAttributeUpsert(attributeID entry.AttributeID, value any)
+	OnAttributeRemove(attributeID entry.AttributeID)
 }

@@ -19,8 +19,8 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/universe/calendar"
 	"github.com/momentum-xyz/ubercontroller/universe/space"
-	"github.com/momentum-xyz/ubercontroller/universe/world/calendar"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
@@ -52,10 +52,6 @@ func NewWorld(id uuid.UUID, db database.DB) *World {
 	world.pluginController.AddPlugin(universe.GetSystemPluginID(), world.corePluginInitFunc)
 	world.calendar = calendar.NewCalendar(world)
 	return world
-}
-
-func (w *World) GetCalendar() universe.Calendar {
-	return w.calendar
 }
 
 func (w *World) GetID() uuid.UUID {
@@ -90,6 +86,10 @@ func (w *World) Initialize(ctx context.Context) error {
 	}
 
 	return w.AddSpaceToAllSpaces(w.Space)
+}
+
+func (w *World) GetCalendar() universe.Calendar {
+	return w.calendar
 }
 
 func (w *World) AddToCounter() int64 {
