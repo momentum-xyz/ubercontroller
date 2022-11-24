@@ -29,6 +29,7 @@ type Space struct {
 	id       uuid.UUID
 	world    universe.World
 	ctx      context.Context
+	cancel   context.CancelFunc
 	log      *zap.SugaredLogger
 	db       database.DB
 	Users    *generic.SyncMap[uuid.UUID, universe.User]
@@ -87,7 +88,7 @@ func (s *Space) Initialize(ctx context.Context) error {
 		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
 	}
 
-	s.ctx = ctx
+	s.ctx, s.cancel = context.WithCancel(ctx)
 	s.log = log
 	s.numSendsQueued.Store(chanIsClosed)
 	s.actualPosition.Store(new(cmath.Vec3))
@@ -313,24 +314,24 @@ func (s *Space) Run() error {
 		}
 		close(s.broadcastPipeline)
 	}()
+
 	for {
 		select {
 		case message := <-s.broadcastPipeline:
 			s.numSendsQueued.Add(-1)
 			//fmt.Println("Got a message from")
 			if message == nil {
-				return nil
+				continue
 			}
 			s.performBroadcast(message)
+		case <-s.ctx.Done():
+			return nil
 		}
 	}
 }
 
 func (s *Space) Stop() error {
-	ns := s.numSendsQueued.Add(1)
-	if ns >= 0 {
-		s.broadcastPipeline <- nil
-	}
+	s.cancel()
 	return nil
 }
 

@@ -98,31 +98,14 @@ func (w *World) AddToCounter() int64 {
 }
 
 func (w *World) Run() error {
-	w.allSpaces.Mu.RLock()
-	for _, space := range w.allSpaces.Data {
-		go func(space universe.Space) {
-			if err := space.Run(); err != nil {
-				w.log.Error(errors.WithMessagef(err, "World: Run: failed to run space: %s", space.GetID()))
-			}
-		}(space)
-	}
-	w.allSpaces.Mu.RUnlock()
-
+	go w.runSpaces()
 	go w.calendar.Run()
 	ticker := time.NewTicker(500 * time.Millisecond)
 
 	defer func() {
+		w.stopSpaces()
 		w.calendar.Stop()
 		ticker.Stop()
-
-		w.allSpaces.Mu.RLock()
-		defer w.allSpaces.Mu.RUnlock()
-
-		for _, space := range w.allSpaces.Data {
-			if err := space.Stop(); err != nil {
-				w.log.Error(errors.WithMessagef(err, "World: Run: failed to stop space: %s", space.GetID()))
-			}
-		}
 	}()
 
 	for {
@@ -143,6 +126,35 @@ func (w *World) Run() error {
 
 func (w *World) Stop() error {
 	w.cancel()
+	return nil
+}
+
+func (w *World) runSpaces() error {
+	w.allSpaces.Mu.RLock()
+	defer w.allSpaces.Mu.RUnlock()
+
+	for _, space := range w.allSpaces.Data {
+		go func(space universe.Space) {
+			if err := space.Run(); err != nil {
+				w.log.Error(errors.WithMessagef(err, "World: runSpaces: failed to run space: %s", space.GetID()))
+			}
+		}(space)
+	}
+	return nil
+}
+
+func (w *World) stopSpaces() error {
+	w.allSpaces.Mu.RLock()
+	defer w.allSpaces.Mu.RUnlock()
+
+	for _, space := range w.allSpaces.Data {
+		go func(space universe.Space) {
+			if err := space.Stop(); err != nil {
+				w.log.Error(errors.WithMessagef(err, "World: stopSpaces: failed to stop space: %s", space.GetID()))
+			}
+		}(space)
+	}
+
 	return nil
 }
 
