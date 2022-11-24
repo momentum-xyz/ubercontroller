@@ -162,6 +162,12 @@ func (n *Node) apiCreateSpace(c *gin.Context) {
 		return
 	}
 
+	if err := parent.UpdateChildrenPosition(false, false); err != nil {
+		err := errors.WithMessage(err, "Node: apiCreateSpace: failed to update children position")
+		api.AbortRequest(c, http.StatusInternalServerError, "update_children_position_failed", err, n.log)
+		return
+	}
+
 	type Out struct {
 		SpaceID string `json:"space_id"`
 	}

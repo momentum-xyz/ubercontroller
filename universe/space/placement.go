@@ -135,7 +135,6 @@ func (s *Space) UpdateChildrenPosition(recursive bool, force bool) error {
 			}
 			if recursive {
 				child.UpdateChildrenPosition(recursive, force)
-
 			}
 		}
 	}

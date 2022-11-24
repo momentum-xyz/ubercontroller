@@ -225,6 +225,7 @@ func (s *Space) SetSpaceType(spaceType universe.SpaceType, updateDB bool) error 
 	}
 
 	s.spaceType = spaceType
+	s.effectiveOptions = nil
 
 	return nil
 }
@@ -430,7 +431,6 @@ func (s *Space) UpdateSpawnMessage() {
 		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name),
 	)
 	if ok {
-		// QUESTION: what to do here? maybe return an error?
 		name = utils.GetFromAnyMap(*v, universe.Attributes.Space.Name.Key, "")
 	} else {
 		//fmt.Println("smsg2", s.GetID())
@@ -515,6 +515,7 @@ func (s *Space) SendAttributes(f func(*websocket.PreparedMessage), recursive boo
 	}
 }
 
+// QUESTION: why this method is never called?
 func (s *Space) SetAttributesMsg(kind, name string, msg *websocket.PreparedMessage) {
 	m, ok := s.attributesMsg.Load(kind)
 	if !ok {
