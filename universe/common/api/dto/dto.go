@@ -56,29 +56,6 @@ type FlyWithMe struct {
 	SpaceID   uuid.UUID `json:"space_id"`
 }
 
-type BackgroundRecipe struct {
-	Background []int      `json:"background"`
-	Color      []int      `json:"color"`
-	Thickness  int        `json:"thickness"`
-	Width      int        `json:"width"`
-	Height     int        `json:"height"`
-	X          int        `json:"x"`
-	Y          int        `json:"y"`
-	Text       TextRecipe `json:"text"`
-}
-
-type TextRecipe struct {
-	String    string `json:"string"`
-	FontFile  string `json:"fontfile"`
-	FontSize  int    `json:"fontsize"`
-	FontColor []int  `json:"fontcolor"`
-	Wrap      bool   `json:"wrap"`
-	PadX      int    `json:"padX"`
-	PadY      int    `json:"padY"`
-	AlignH    string `json:"alignH"`
-	AlignV    string `json:"alignV"`
-}
-
 type Profile struct {
 	Bio         *string `json:"bio,omitempty"`
 	Location    *string `json:"location,omitempty"`
