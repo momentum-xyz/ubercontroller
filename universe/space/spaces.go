@@ -3,6 +3,7 @@ package space
 import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
+	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -175,7 +176,15 @@ func (s *Space) RemoveSpace(space universe.Space, recursive, updateDB bool) (boo
 
 		delete(s.Children.Data, space.GetID())
 
-		return space.GetWorld().RemoveSpaceFromAllSpaces(space)
+		if _, err := space.GetWorld().RemoveSpaceFromAllSpaces(space); err != nil {
+			return false, errors.WithMessagef(err, "failed to remove space from world all spaces: %s", space.GetID())
+		}
+
+		removeMsg := posbus.NewRemoveStaticObjectsMsg(1)
+		removeMsg.SetObject(0, space.GetID())
+		space.GetWorld().Send(removeMsg.WebsocketMessage(), true)
+
+		return true, nil
 	}
 	s.Children.Mu.Unlock()
 
