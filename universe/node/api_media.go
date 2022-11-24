@@ -20,7 +20,7 @@ import (
 // @Success 200 {object} dto.HashResponse
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
-// @Router /api/v4/media/upload-image [post]
+// @Router /api/v4/media/upload/image [post]
 func (n *Node) apiMediaUploadImage(c *gin.Context) {
 	imageFile, err := c.FormFile("file")
 	if err != nil {
