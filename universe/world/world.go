@@ -2,6 +2,7 @@ package world
 
 import (
 	"context"
+	"github.com/hashicorp/go-multierror"
 	"sync/atomic"
 	"time"
 
@@ -103,9 +104,11 @@ func (w *World) Run() error {
 	ticker := time.NewTicker(500 * time.Millisecond)
 
 	defer func() {
-		w.stopSpaces()
 		w.calendar.Stop()
 		ticker.Stop()
+		if err := w.stopSpaces(); err != nil {
+			w.log.Error(errors.WithMessagef(err, "World: Run: failed to stop spaces: %s", w.GetID()))
+		}
 	}()
 
 	for {
@@ -140,6 +143,7 @@ func (w *World) runSpaces() error {
 			}
 		}(space)
 	}
+
 	return nil
 }
 
@@ -147,15 +151,14 @@ func (w *World) stopSpaces() error {
 	w.allSpaces.Mu.RLock()
 	defer w.allSpaces.Mu.RUnlock()
 
+	var errs *multierror.Error
 	for _, space := range w.allSpaces.Data {
-		go func(space universe.Space) {
-			if err := space.Stop(); err != nil {
-				w.log.Error(errors.WithMessagef(err, "World: stopSpaces: failed to stop space: %s", space.GetID()))
-			}
-		}(space)
+		if err := space.Stop(); err != nil {
+			errs = multierror.Append(errs, errors.WithMessagef(err, "failed to stop space: %s", space.GetID()))
+		}
 	}
 
-	return nil
+	return errs.ErrorOrNil()
 }
 
 func (w *World) broadcastPositions() {
@@ -232,7 +235,7 @@ func (w *World) UpdateWorldMetadata() error {
 func (w *World) Save() error {
 	w.log.Infof("Saving world: %s", w.GetID())
 
-	spaces := w.GetSpaces(true)
+	spaces := w.GetAllSpaces()
 
 	entries := make([]*entry.Space, 0, len(spaces))
 	for _, space := range spaces {
