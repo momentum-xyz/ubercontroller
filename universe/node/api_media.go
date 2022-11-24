@@ -69,18 +69,18 @@ func (n *Node) apiMediaUploadImage(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// @Summary Renders text as image, returns media manager hash
+// @Summary Renders name as image, returns media manager hash
 // @Schemes
-// @Description Sends text to the media manager and returns a hash
+// @Description Sends name to the media manager and returns a hash
 // @Tags media
 // @Accept json
 // @Produce json
-// @Param body body node.apiMediaRenderText.inBody true "body params"
+// @Param body body node.apiMediaRenderName.inBody true "body params"
 // @Success 200 {object} dto.HashResponse
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
-// @Router /api/v4/media/render-text [post]
-func (n *Node) apiMediaRenderText(c *gin.Context) {
+// @Router /api/v4/media/render-name [post]
+func (n *Node) apiMediaRenderName(c *gin.Context) {
 	type InBody struct {
 		Text string `json:"text" binding:"required"`
 	}

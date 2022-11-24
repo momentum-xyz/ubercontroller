@@ -41,6 +41,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		authMedia := auth.Group("/media")
 		{
 			authMedia.POST("/upload-image", n.apiMediaUploadImage)
+			authMedia.POST("/render-name", n.apiMediaRenderName)
 			authMedia.POST("/render-text", n.apiMediaRenderText)
 		}
 
