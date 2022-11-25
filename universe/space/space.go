@@ -95,7 +95,6 @@ func (s *Space) Initialize(ctx context.Context) error {
 
 	newPos := cmath.SpacePosition{Location: *new(cmath.Vec3), Rotation: *new(cmath.Vec3), Scale: *new(cmath.Vec3)}
 	s.actualPosition.Store(&newPos)
-	go s.Run()
 
 	return nil
 }

@@ -83,6 +83,7 @@ func (s *Space) GetActualPosition() *cmath.SpacePosition {
 func (s *Space) SetPosition(position *cmath.SpacePosition, updateDB bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	if updateDB {
 		if err := s.db.SpacesUpdateSpacePosition(s.ctx, s.id, position); err != nil {
 			return errors.WithMessage(err, "failed to update db")
