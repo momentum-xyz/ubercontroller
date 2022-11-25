@@ -156,6 +156,9 @@ func (u *User) SendDirectly(message *websocket.PreparedMessage) error {
 
 func (u *User) Send(m *websocket.PreparedMessage) error {
 	if m == nil {
+		cute.SetTitleColor(cute.BrightRed)
+		cute.SetMessageColor(cute.Red)
+		cute.Printf("User: Send", "%+v", errors.WithStack(errors.Errorf("empty message received")))
 		return nil
 	}
 	// ns acts simultaneously as number of clients in send process and as blocker if negative
