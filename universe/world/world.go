@@ -207,13 +207,14 @@ func (w *World) UpdateWorldMetadata() error {
 			uuid.UUID(w.corePluginInterface.GetId()), universe.Attributes.World.Meta.Name,
 		),
 	)
-	if !ok {
-		w.metaMsg.Store(nil)
-		return nil
-	}
-	metaMap := (map[string]any)(*meta)
 
-	utils.MapDecode(metaMap, &w.metaData)
+	if ok {
+		metaMap := (map[string]any)(*meta)
+		utils.MapDecode(metaMap, &w.metaData)
+	} else {
+		// TODO: print warning and call stack here
+		w.metaData = Metadata{}
+	}
 
 	//TODO: Ut is all ugly with circular deps
 	dec := make([]message.DecorationMetadata, len(w.metaData.Decorations))
