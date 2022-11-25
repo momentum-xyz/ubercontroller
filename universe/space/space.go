@@ -2,6 +2,7 @@ package space
 
 import (
 	"context"
+	"github.com/zakaria-chahboun/cute"
 	"sync/atomic"
 
 	"github.com/google/uuid"
@@ -29,6 +30,7 @@ type Space struct {
 	id       uuid.UUID
 	world    universe.World
 	ctx      context.Context
+	cancel   context.CancelFunc
 	log      *zap.SugaredLogger
 	db       database.DB
 	Users    *generic.SyncMap[uuid.UUID, universe.User]
@@ -87,11 +89,10 @@ func (s *Space) Initialize(ctx context.Context) error {
 		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
 	}
 
-	s.ctx = ctx
+	s.ctx, s.cancel = context.WithCancel(ctx)
 	s.log = log
 	s.numSendsQueued.Store(chanIsClosed)
 	s.actualPosition.Store(new(cmath.Vec3))
-	go s.Run()
 
 	return nil
 }
@@ -305,6 +306,40 @@ func (s *Space) GetEntry() *entry.Space {
 	return entry
 }
 
+func (s *Space) Run() error {
+	s.numSendsQueued.Store(0)
+	s.broadcastPipeline = make(chan *websocket.PreparedMessage, 100)
+	defer func() {
+		ns := s.numSendsQueued.Swap(chanIsClosed)
+		for i := int64(0); i < ns; i++ {
+			<-s.broadcastPipeline
+		}
+		close(s.broadcastPipeline)
+	}()
+
+	for {
+		select {
+		case message := <-s.broadcastPipeline:
+			s.numSendsQueued.Add(-1)
+			//fmt.Println("Got a message from")
+			if message == nil {
+				cute.SetTitleColor(cute.BrightRed)
+				cute.SetMessageColor(cute.Red)
+				cute.Println("Space: Run", "broadcastPipeline:", "empty message received")
+				continue
+			}
+			s.performBroadcast(message)
+		case <-s.ctx.Done():
+			return nil
+		}
+	}
+}
+
+func (s *Space) Stop() error {
+	s.cancel()
+	return nil
+}
+
 func (s *Space) Update(recursive bool) error {
 	s.mu.Lock()
 	s.effectiveOptions = nil
@@ -494,6 +529,7 @@ func (s *Space) SendTextures(f func(*websocket.PreparedMessage) error, recursive
 	}
 }
 
+// QUESTION: why this method is never called?
 func (s *Space) SendAttributes(f func(*websocket.PreparedMessage), recursive bool) {
 	s.attributesMsg.Mu.RLock()
 	for _, g := range s.attributesMsg.Data {
@@ -511,7 +547,6 @@ func (s *Space) SendAttributes(f func(*websocket.PreparedMessage), recursive boo
 		for _, space := range s.Children.Data {
 			space.SendAttributes(f, recursive)
 		}
-		s.Children.Mu.RUnlock()
 	}
 }
 

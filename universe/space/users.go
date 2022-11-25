@@ -4,6 +4,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
+	"github.com/zakaria-chahboun/cute"
 
 	"github.com/momentum-xyz/ubercontroller/universe"
 )
@@ -97,6 +98,9 @@ func (s *Space) RemoveUser(user universe.User, updateDB bool) error {
 func (s *Space) Send(msg *websocket.PreparedMessage, recursive bool) error {
 	//return errors.Errorf("implement me")
 	if msg == nil {
+		cute.SetTitleColor(cute.BrightRed)
+		cute.SetMessageColor(cute.Red)
+		cute.Printf("Space: Send", "%+v", errors.WithStack(errors.Errorf("empty message received")))
 		return nil
 	}
 	if s.numSendsQueued.Add(1) < 0 {
@@ -114,36 +118,6 @@ func (s *Space) Send(msg *websocket.PreparedMessage, recursive bool) error {
 	}
 
 	return nil
-}
-
-func (s *Space) Shutdown() {
-	ns := s.numSendsQueued.Add(1)
-	if ns >= 0 {
-		s.broadcastPipeline <- nil
-	}
-}
-
-func (s *Space) Run() {
-	s.numSendsQueued.Store(0)
-	s.broadcastPipeline = make(chan *websocket.PreparedMessage, 100)
-	defer func() {
-		ns := s.numSendsQueued.Swap(chanIsClosed)
-		for i := int64(0); i < ns; i++ {
-			<-s.broadcastPipeline
-		}
-		close(s.broadcastPipeline)
-	}()
-	for {
-		select {
-		case message := <-s.broadcastPipeline:
-			s.numSendsQueued.Add(-1)
-			//fmt.Println("Got a message from")
-			if message == nil {
-				return
-			}
-			s.performBroadcast(message)
-		}
-	}
 }
 
 func (s *Space) performBroadcast(message *websocket.PreparedMessage) {
