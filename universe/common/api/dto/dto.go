@@ -2,7 +2,6 @@ package dto
 
 import (
 	"github.com/google/uuid"
-	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 )
