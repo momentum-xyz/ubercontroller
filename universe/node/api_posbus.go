@@ -1,6 +1,7 @@
 package node
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 
@@ -103,6 +104,6 @@ func (n *Node) handShake(socketConnection *websocket.Conn) error {
 	}
 	user.SetConnection(sessionID, socketConnection)
 	user.Run()
-
+	fmt.Println("frrfr")
 	return n.detectSpawnWorld(userID).AddUser(user, true)
 }
