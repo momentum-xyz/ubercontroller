@@ -56,6 +56,7 @@ func (s *Space) GetPlacements() map[uuid.UUID]position_algo.Algo {
 func (s *Space) SetActualPosition(pos entry.SpacePosition, theta float64, force bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	if (s.theta != theta) || (*s.actualPosition.Load() != pos) || (force) {
 		s.theta = theta
 		s.actualPosition.Store(&pos)
@@ -80,6 +81,7 @@ func (s *Space) GetActualPosition() *entry.SpacePosition {
 func (s *Space) SetPosition(position *entry.SpacePosition, updateDB bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	if updateDB {
 		if err := s.db.SpacesUpdateSpacePosition(s.ctx, s.id, position); err != nil {
 			return errors.WithMessage(err, "failed to update db")
