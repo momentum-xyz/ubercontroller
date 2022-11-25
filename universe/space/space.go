@@ -529,6 +529,7 @@ func (s *Space) SendTextures(f func(*websocket.PreparedMessage) error, recursive
 	}
 }
 
+// QUESTION: why this method is never called?
 func (s *Space) SendAttributes(f func(*websocket.PreparedMessage), recursive bool) {
 	s.attributesMsg.Mu.RLock()
 	for _, g := range s.attributesMsg.Data {
@@ -546,7 +547,6 @@ func (s *Space) SendAttributes(f func(*websocket.PreparedMessage), recursive boo
 		for _, space := range s.Children.Data {
 			space.SendAttributes(f, recursive)
 		}
-		s.Children.Mu.RUnlock()
 	}
 }
 
