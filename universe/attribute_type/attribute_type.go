@@ -2,6 +2,7 @@ package attribute_type
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/universe"
 	"sync"
 
 	"github.com/google/uuid"
@@ -14,6 +15,8 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
+
+var _ universe.AttributeType = (*AttributeType)(nil)
 
 type AttributeType struct {
 	ctx context.Context

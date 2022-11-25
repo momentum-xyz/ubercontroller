@@ -55,13 +55,16 @@ func (s *Space) GetPlacements() map[uuid.UUID]position_algo.Algo {
 }
 
 func (s *Space) SetActualPosition(pos cmath.Vec3, theta float64, force bool) error {
-	//s.mu.Lock()
-	//defer s.mu.Unlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if (s.theta != theta) || (*s.actualPosition.Load() != pos) || (force) {
 		s.theta = theta
 		s.actualPosition.Store(&pos)
-		s.UpdateSpawnMessage()
+
+		go s.UpdateSpawnMessage()
 	}
+
 	return nil
 }
 
@@ -77,6 +80,9 @@ func (s *Space) GetActualPosition() *cmath.Vec3 {
 }
 
 func (s *Space) SetPosition(position *cmath.Vec3, updateDB bool) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if updateDB {
 		if err := s.db.SpacesUpdateSpacePosition(s.ctx, s.id, position); err != nil {
 			return errors.WithMessage(err, "failed to update db")
@@ -86,7 +92,8 @@ func (s *Space) SetPosition(position *cmath.Vec3, updateDB bool) error {
 	s.position = position
 	if s.position != nil {
 		s.actualPosition.Store(s.position)
-		s.UpdateSpawnMessage()
+
+		go s.UpdateSpawnMessage()
 	}
 
 	return nil

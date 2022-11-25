@@ -17,7 +17,7 @@ func (n *Node) UpsertNodeAttribute(
 
 	payload, ok := n.nodeAttributes.Data[attributeID]
 	if !ok {
-		payload = (*entry.AttributePayload)(nil)
+		payload = nil
 	}
 
 	payload, err := modifyFn(payload)

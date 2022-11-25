@@ -385,7 +385,8 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 		if err := s.SetPosition(entry.Position, false); err != nil {
 			return errors.WithMessage(err, "failed to set position")
 		}
-		s.UpdateSpawnMessage()
+
+		go s.UpdateSpawnMessage()
 
 		if !recursive {
 			return nil
@@ -457,7 +458,7 @@ func (s *Space) loadDependencies(entry *entry.Space) error {
 }
 
 func (s *Space) UpdateSpawnMessage() {
-	if s.world == nil {
+	if s.GetWorld() == nil {
 		return
 	}
 
@@ -465,31 +466,38 @@ func (s *Space) UpdateSpawnMessage() {
 	v, ok := s.GetSpaceAttributeValue(
 		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name),
 	)
-	if ok {
+	if ok && v != nil {
 		name = utils.GetFromAnyMap(*v, universe.Attributes.Space.Name.Key, "")
 	} else {
 		//fmt.Println("smsg2", s.GetID())
 	}
 
-	opts := s.GetEffectiveOptions()
-	parent := uuid.Nil
-	if s.GetParent() != nil {
-		parent = s.GetParent().GetID()
+	parentID := uuid.Nil
+	parent := s.GetParent()
+	if parent != nil {
+		parentID = parent.GetID()
 	}
-	asset3d := uuid.Nil
-	if s.asset3d != nil {
-		asset3d = s.asset3d.GetID()
-	} else if s.GetSpaceType().GetAsset3d() != nil {
-		asset3d = s.GetSpaceType().GetAsset3d().GetID()
+
+	asset3dID := uuid.Nil
+	asset3d := s.GetAsset3D()
+	spaceType := s.GetSpaceType()
+	if asset3d != nil {
+		asset3dID = asset3d.GetID()
+	} else if spaceType != nil {
+		asset3d = spaceType.GetAsset3d()
+		if asset3d != nil {
+			asset3dID = asset3d.GetID()
+		}
 	}
 
 	uuidNilPtr := utils.GetPTR(uuid.Nil)
 	falsePtr := utils.GetPTR(false)
+	opts := s.GetEffectiveOptions()
 	msg := message.GetBuilder().MsgObjectDefinition(
 		message.ObjectDefinition{
-			ObjectID:         s.id,
-			ParentID:         parent,
-			AssetType:        asset3d,
+			ObjectID:         s.GetID(),
+			ParentID:         parentID,
+			AssetType:        asset3dID,
 			Name:             name,
 			Position:         *s.GetActualPosition(),
 			TetheredToParent: true,
@@ -510,10 +518,11 @@ func (s *Space) SendSpawnMessage(f func(*websocket.PreparedMessage) error, recur
 	//time.Sleep(time.Millisecond * 100)
 	if recursive {
 		s.Children.Mu.RLock()
+		defer s.Children.Mu.RUnlock()
+
 		for _, space := range s.Children.Data {
 			space.SendSpawnMessage(f, true)
 		}
-		s.Children.Mu.RUnlock()
 	}
 }
 
