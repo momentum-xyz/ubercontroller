@@ -2,6 +2,8 @@ package space
 
 import (
 	"github.com/google/uuid"
+	"github.com/momentum-xyz/posbus-protocol/posbus"
+	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/pkg/position_algo"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/pkg/errors"
@@ -53,31 +55,32 @@ func (s *Space) GetPlacements() map[uuid.UUID]position_algo.Algo {
 	return pls
 }
 
-func (s *Space) SetActualPosition(pos entry.SpacePosition, theta float64, force bool) error {
+func (s *Space) SetActualPosition(pos cmath.SpacePosition, theta float64) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if (s.theta != theta) || (*s.actualPosition.Load() != pos) || (force) {
+	if (s.theta != theta) || (*s.actualPosition.Load() != pos) {
 		s.theta = theta
 		s.actualPosition.Store(&pos)
 
-		go s.UpdateSpawnMessage()
+		go s.UpdateSpawnMessage(false)
 	}
 
+	s.GetWorld().Send(posbus.NewSetStaticObjectPositionMsg(s.id, s.actualPosition.Load()).WebsocketMessage(), false)
 	return nil
 }
 
-func (s *Space) GetPosition() *entry.SpacePosition {
+func (s *Space) GetPosition() *cmath.SpacePosition {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	return s.position
 }
 
-func (s *Space) GetActualPosition() *entry.SpacePosition {
+func (s *Space) GetActualPosition() *cmath.SpacePosition {
 	return s.actualPosition.Load()
 }
 
-func (s *Space) SetPosition(position *entry.SpacePosition, updateDB bool) error {
+func (s *Space) SetPosition(position *cmath.SpacePosition, updateDB bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if updateDB {
@@ -90,14 +93,15 @@ func (s *Space) SetPosition(position *entry.SpacePosition, updateDB bool) error 
 	s.position = position
 	if s.position != nil {
 		s.actualPosition.Store(s.position)
+		//s.SetActualPosition(s.position)
 
-		go s.UpdateSpawnMessage()
+		go s.UpdateSpawnMessage(false)
 	}
 
 	return nil
 }
 
-func (s *Space) UpdateChildrenPosition(recursive bool, force bool) error {
+func (s *Space) UpdateChildrenPosition(recursive bool) error {
 	//fmt.Println("pls1", s.GetID())
 	pls := s.GetPlacements()
 	//fmt.Printf("pls1a:%+v : %+v\n", s.GetID(), pls)
@@ -135,11 +139,11 @@ func (s *Space) UpdateChildrenPosition(recursive bool, force bool) error {
 				s.log.Errorf("Space: UpdatePosition: failed to get space: %s", k)
 				continue
 			}
-			if err := child.SetActualPosition(pos, theta, force); err != nil {
+			if err := child.SetActualPosition(pos, theta); err != nil {
 				s.log.Errorf("Space: UpdatePosition: failed to update position: %s", k)
 			}
 			if recursive {
-				child.UpdateChildrenPosition(recursive, force)
+				child.UpdateChildrenPosition(recursive)
 			}
 		}
 	}

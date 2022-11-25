@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
-	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -62,7 +61,7 @@ func (u *User) UpdateSpacePosition(msg *posbus.SetStaticObjectPosition) error {
 
 	pbPosition := msg.Position()
 	// TODO: fix this bloody stuff with old controller dependencies
-	position := &entry.SpacePosition{
+	position := &cmath.SpacePosition{
 		Location: cmath.Vec3(pbPosition.Location),
 		Rotation: cmath.Vec3(pbPosition.Rotation),
 		Scale:    cmath.Vec3(pbPosition.Scale),

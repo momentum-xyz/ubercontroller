@@ -947,6 +947,8 @@ github.com/momentum-xyz/controller v0.1.14 h1:garsHJqPoZGOuEUJPbWkU87kavJUCSxoOR
 github.com/momentum-xyz/controller v0.1.14/go.mod h1:zUAtgUrbxDREkcfKjCK9tueI0C1C0wY6mY3+vG1dDxE=
 github.com/momentum-xyz/posbus-protocol v0.1.8 h1:W4GskVq1BxNDw+qR1i4kJM/cq+vpAHkj/zC//dj+K0I=
 github.com/momentum-xyz/posbus-protocol v0.1.8/go.mod h1:jEDhJo9Zsk0hHbpWLp33O4kvnPctL7BXBvIq2WE2Hyc=
+github.com/momentum-xyz/posbus-protocol v0.1.19 h1:m/hZx+x/pFisFJf0LQ2BFrhN5Z3RVIDnNPx2YOxaz2U=
+github.com/momentum-xyz/posbus-protocol v0.1.19/go.mod h1:jEDhJo9Zsk0hHbpWLp33O4kvnPctL7BXBvIq2WE2Hyc=
 github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe/go.mod h1:wL8QJuTMNUDYhXwkmfOly8iTdp5TEcJFWZD2D7SIkUc=
 github.com/morikuni/aec v1.0.0 h1:nP9CBfwrvYnBRgY6qfDQkygYDmYwOilePFkwzv4dU8A=
 github.com/morikuni/aec v1.0.0/go.mod h1:BbKIizmSmc5MMPqRYbxO4ZU0S0+P200+tUnFx7PXmsc=

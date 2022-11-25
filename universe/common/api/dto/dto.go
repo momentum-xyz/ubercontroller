@@ -2,6 +2,7 @@ package dto
 
 import (
 	"github.com/google/uuid"
+	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 )
@@ -88,7 +89,7 @@ type Space struct {
 	SpaceTypeID string              `json:"space_type_id"`
 	Asset2dID   string              `json:"asset_2d_id"`
 	Asset3dID   string              `json:"asset_3d_id"`
-	Position    entry.SpacePosition `json:"position"`
+	Position    cmath.SpacePosition `json:"position"`
 }
 
 type Asset2d struct {

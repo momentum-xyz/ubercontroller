@@ -194,7 +194,7 @@ func (w *World) Load() error {
 	}
 	w.UpdateWorldMetadata()
 
-	w.Space.UpdateChildrenPosition(true, true)
+	w.Space.UpdateChildrenPosition(true)
 	//cu.BroadcastPositions()
 
 	w.log.Infof("World loaded: %s", w.GetID())

@@ -3,6 +3,7 @@ package node
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
@@ -30,7 +31,7 @@ func (n *Node) apiCreateSpace(c *gin.Context) {
 		SpaceTypeID string               `json:"space_type_id" binding:"required"`
 		Asset2dID   string               `json:"asset_2d_id"`
 		Asset3dID   string               `json:"asset_3d_id"`
-		Position    *entry.SpacePosition `json:"position"`
+		Position    *cmath.SpacePosition `json:"position"`
 	}
 	var inBody InBody
 
@@ -167,7 +168,7 @@ func (n *Node) apiCreateSpace(c *gin.Context) {
 		}
 	}()
 
-	if err := parent.UpdateChildrenPosition(true, false); err != nil {
+	if err := parent.UpdateChildrenPosition(true); err != nil {
 		err := errors.WithMessage(err, "Node: apiCreateSpace: failed to update children position")
 		api.AbortRequest(c, http.StatusInternalServerError, "update_children_position_failed", err, n.log)
 		return

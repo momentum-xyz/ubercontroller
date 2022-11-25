@@ -187,7 +187,7 @@ func (n *Node) apiRemoveSpace(c *gin.Context) {
 		return
 	}
 
-	if err := parent.UpdateChildrenPosition(true, false); err != nil {
+	if err := parent.UpdateChildrenPosition(true); err != nil {
 		err := errors.WithMessage(err, "Node: apiRemoveSpace: failed to update children position")
 		api.AbortRequest(c, http.StatusInternalServerError, "update_children_position_failed", err, n.log)
 		return

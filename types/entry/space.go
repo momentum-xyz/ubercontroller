@@ -1,11 +1,10 @@
 package entry
 
 import (
+	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"time"
 
 	"github.com/google/uuid"
-
-	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 )
 
 type SpaceVisibleType byte
@@ -17,16 +16,16 @@ const (
 )
 
 type Space struct {
-	SpaceID     uuid.UUID      `db:"space_id"`
-	SpaceTypeID *uuid.UUID     `db:"space_type_id"`
-	OwnerID     *uuid.UUID     `db:"owner_id"`
-	ParentID    *uuid.UUID     `db:"parent_id"`
-	Asset2dID   *uuid.UUID     `db:"asset_2d_id"`
-	Asset3dID   *uuid.UUID     `db:"asset_3d_id"`
-	Options     *SpaceOptions  `db:"options"`
-	Position    *SpacePosition `db:"position"`
-	CreatedAt   time.Time      `db:"created_at"`
-	UpdatedAt   *time.Time     `db:"updated_at"`
+	SpaceID     uuid.UUID            `db:"space_id"`
+	SpaceTypeID *uuid.UUID           `db:"space_type_id"`
+	OwnerID     *uuid.UUID           `db:"owner_id"`
+	ParentID    *uuid.UUID           `db:"parent_id"`
+	Asset2dID   *uuid.UUID           `db:"asset_2d_id"`
+	Asset3dID   *uuid.UUID           `db:"asset_3d_id"`
+	Options     *SpaceOptions        `db:"options"`
+	Position    *cmath.SpacePosition `db:"position"`
+	CreatedAt   time.Time            `db:"created_at"`
+	UpdatedAt   *time.Time           `db:"updated_at"`
 }
 
 type SpaceOptions struct {
@@ -42,12 +41,6 @@ type SpaceOptions struct {
 	Private          *bool                              `db:"private" json:"private,omitempty"`
 	DashboardPlugins []string                           `db:"dashboard_plugins" json:"dashboard_plugins,omitempty"`
 	Subs             map[string]any                     `db:"subs" json:"subs"`
-}
-
-type SpacePosition struct {
-	Location cmath.Vec3 `db:"location" json:"location"`
-	Rotation cmath.Vec3 `db:"rotation" json:"rotation"`
-	Scale    cmath.Vec3 `db:"scale" json:"scale"`
 }
 
 type SpaceChildPlacement struct {

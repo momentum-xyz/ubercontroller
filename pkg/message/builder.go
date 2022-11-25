@@ -11,7 +11,6 @@ import (
 	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/momentum-xyz/ubercontroller/logger"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
-	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
@@ -20,7 +19,7 @@ type ObjectDefinition struct {
 	ParentID         uuid.UUID
 	AssetType        uuid.UUID
 	Name             string
-	Position         entry.SpacePosition
+	Position         cmath.SpacePosition
 	TetheredToParent bool
 	Minimap          bool
 	InfoUI           uuid.UUID

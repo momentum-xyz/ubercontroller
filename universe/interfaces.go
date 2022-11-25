@@ -118,7 +118,9 @@ type Node interface {
 	GetSpaceUserAttributePayload(spaceUserAttributeID entry.SpaceUserAttributeID) (*entry.AttributePayload, bool)
 	GetSpaceUserAttributeValue(spaceUserAttributeID entry.SpaceUserAttributeID) (*entry.AttributeValue, bool)
 	GetSpaceUserAttributeOptions(spaceUserAttributeID entry.SpaceUserAttributeID) (*entry.AttributeOptions, bool)
-	GetSpaceUserAttributeEffectiveOptions(spaceUserAttributeID entry.SpaceUserAttributeID) (*entry.AttributeOptions, bool)
+	GetSpaceUserAttributeEffectiveOptions(spaceUserAttributeID entry.SpaceUserAttributeID) (
+		*entry.AttributeOptions, bool,
+	)
 
 	UpsertSpaceUserAttribute(
 		spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
@@ -183,9 +185,10 @@ type Space interface {
 	GetOwnerID() uuid.UUID
 	SetOwnerID(ownerID uuid.UUID, updateDB bool) error
 
-	GetPosition() *entry.SpacePosition
-	GetActualPosition() *entry.SpacePosition
-	SetPosition(position *entry.SpacePosition, updateDB bool) error
+	GetPosition() *cmath.SpacePosition
+	GetActualPosition() *cmath.SpacePosition
+	SetPosition(position *cmath.SpacePosition, updateDB bool) error
+	SetActualPosition(pos cmath.SpacePosition, theta float64) error
 
 	//GetRotation() *cmath.Vec3
 	//SetRotation(rotation *cmath.Vec3, updateDB bool) error
@@ -249,8 +252,7 @@ type Space interface {
 	RemoveSpaceAttribute(attributeID entry.AttributeID, updateDB bool) (bool, error)
 	RemoveSpaceAttributes(attributeIDs []entry.AttributeID, updateDB bool) (bool, error)
 
-	UpdateChildrenPosition(recursive bool, force bool) error
-	SetActualPosition(pos entry.SpacePosition, theta float64, force bool) error
+	UpdateChildrenPosition(recursive bool) error
 
 	SendTextures(sendFn func(msg *websocket.PreparedMessage) error, recursive bool)
 }
