@@ -2,6 +2,7 @@ package space
 
 import (
 	"context"
+	"github.com/zakaria-chahboun/cute"
 	"sync/atomic"
 
 	"github.com/google/uuid"
@@ -322,6 +323,9 @@ func (s *Space) Run() error {
 			s.numSendsQueued.Add(-1)
 			//fmt.Println("Got a message from")
 			if message == nil {
+				cute.SetTitleColor(cute.BrightRed)
+				cute.SetMessageColor(cute.Red)
+				cute.Println("Space: Run", "broadcastPipeline:", "empty message received")
 				continue
 			}
 			s.performBroadcast(message)

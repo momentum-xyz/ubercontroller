@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/pkg/errors"
+	"github.com/zakaria-chahboun/cute"
 	"time"
 )
 
@@ -143,6 +144,9 @@ func (u *User) SendDirectly(message *websocket.PreparedMessage) error {
 	//u.directLock.Lock()
 	//defer u.directLock.Unlock()
 	if message == nil {
+		cute.SetTitleColor(cute.BrightRed)
+		cute.SetMessageColor(cute.Red)
+		cute.Printf("User: SendDirectly", "%+v", errors.WithStack(errors.Errorf("empty message received")))
 		return nil
 	}
 

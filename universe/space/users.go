@@ -4,6 +4,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
+	"github.com/zakaria-chahboun/cute"
 
 	"github.com/momentum-xyz/ubercontroller/universe"
 )
@@ -97,6 +98,9 @@ func (s *Space) RemoveUser(user universe.User, updateDB bool) error {
 func (s *Space) Send(msg *websocket.PreparedMessage, recursive bool) error {
 	//return errors.Errorf("implement me")
 	if msg == nil {
+		cute.SetTitleColor(cute.BrightRed)
+		cute.SetMessageColor(cute.Red)
+		cute.Printf("Space: Send", "%+v", errors.WithStack(errors.Errorf("empty message received")))
 		return nil
 	}
 	if s.numSendsQueued.Add(1) < 0 {
