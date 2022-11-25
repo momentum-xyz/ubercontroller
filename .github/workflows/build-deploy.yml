@@ -15,7 +15,7 @@ jobs:
     runs-on: self-hosted  # ubuntu-latest
     steps:
       - id: build
-        uses: momentum-xyz/docker-build-action@v5
+        uses: momentum-xyz/docker-build-action@662e60f1c7a9324d4b636249302c828165681d2e
         with:
           registry-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
           registry-user: ${{ secrets.REGISTRY_USERNAME }}
