@@ -91,7 +91,7 @@ func (n *Node) handShake(socketConnection *websocket.Conn) error {
 	if err != nil {
 		return errors.WithMessagef(err, "failed to parse url: %s", string(handshake.Url()))
 	}
-	n.log.Infof("Node: url to use: %s", url)
+	n.log.Debugf("Node: url to use: %s", url)
 
 	userIDClaim, err := uuid.Parse(utils.GetFromAnyMap(claims, "sub", ""))
 	if err != nil {
