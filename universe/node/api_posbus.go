@@ -25,7 +25,9 @@ var websocketUpgrader = websocket.Upgrader{
 }
 
 func (n *Node) apiPosBusHandler(c *gin.Context) {
+	fmt.Println("KKK")
 	ws, err := websocketUpgrader.Upgrade(c.Writer, c.Request, nil)
+	fmt.Println("KKK2")
 	if err != nil {
 		n.log.Error(errors.WithMessage(err, "error: socket upgrade error, aborting connection"))
 		return
