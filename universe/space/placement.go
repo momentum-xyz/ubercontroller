@@ -2,6 +2,7 @@ package space
 
 import (
 	"github.com/google/uuid"
+	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/pkg/position_algo"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/pkg/errors"
@@ -54,13 +55,15 @@ func (s *Space) GetPlacements() map[uuid.UUID]position_algo.Algo {
 }
 
 func (s *Space) SetActualPosition(pos entry.SpacePosition, theta float64, force bool) error {
-	//s.mu.Lock()
-	//defer s.mu.Unlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if (s.theta != theta) || (*s.actualPosition.Load() != pos) || (force) {
 		s.theta = theta
 		s.actualPosition.Store(&pos)
-		s.UpdateSpawnMessage()
+
+		go s.UpdateSpawnMessage()
 	}
+
 	return nil
 }
 
@@ -76,6 +79,8 @@ func (s *Space) GetActualPosition() *entry.SpacePosition {
 }
 
 func (s *Space) SetPosition(position *entry.SpacePosition, updateDB bool) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if updateDB {
 		if err := s.db.SpacesUpdateSpacePosition(s.ctx, s.id, position); err != nil {
 			return errors.WithMessage(err, "failed to update db")
@@ -86,7 +91,8 @@ func (s *Space) SetPosition(position *entry.SpacePosition, updateDB bool) error 
 	s.position = position
 	if s.position != nil {
 		s.actualPosition.Store(s.position)
-		s.UpdateSpawnMessage()
+
+		go s.UpdateSpawnMessage()
 	}
 
 	return nil

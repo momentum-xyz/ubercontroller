@@ -153,7 +153,7 @@ func (s *Space) UpsertSpaceAttribute(
 
 	payload, ok := s.spaceAttributes.Data[attributeID]
 	if !ok {
-		payload = (*entry.AttributePayload)(nil)
+		payload = nil
 	}
 
 	payload, err := modifyFn(payload)
@@ -263,14 +263,14 @@ func (s *Space) UpdateSpaceAttributeOptions(
 }
 
 func (s *Space) RemoveSpaceAttribute(attributeID entry.AttributeID, updateDB bool) (bool, error) {
-	s.spaceAttributes.Mu.Lock()
-	defer s.spaceAttributes.Mu.Unlock()
-
-	if _, ok := s.spaceAttributes.Data[attributeID]; !ok {
+	if _, ok := s.spaceAttributes.Load(attributeID); !ok {
 		return false, nil
 	}
 
 	attributeEffectiveOptions, attributeEffectiveOptionsOK := s.GetSpaceAttributeEffectiveOptions(attributeID)
+
+	s.spaceAttributes.Mu.Lock()
+	defer s.spaceAttributes.Mu.Unlock()
 
 	if updateDB {
 		if err := s.db.SpaceAttributesRemoveSpaceAttributeByID(

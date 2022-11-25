@@ -147,6 +147,7 @@ func (w *World) runSpaces() error {
 	return nil
 }
 
+// TODO: optimize
 func (w *World) stopSpaces() error {
 	w.allSpaces.Mu.RLock()
 	defer w.allSpaces.Mu.RUnlock()

@@ -196,13 +196,14 @@ func (s *SpaceType) SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB 
 	s.mu.Unlock()
 
 	for _, space := range universe.GetNode().GetAllSpaces() {
-		if space.GetSpaceType() == nil {
+		spaceType := space.GetSpaceType()
+		if spaceType == nil {
 			continue
 		}
-		if space.GetSpaceType().GetID() != s.GetID() {
+		if spaceType.GetID() != s.GetID() {
 			continue
 		}
-		if err := space.Update(true); err != nil {
+		if err := space.Update(false); err != nil {
 			return nil, errors.WithMessagef(err, "failed to update space: %s", space.GetID())
 		}
 	}
