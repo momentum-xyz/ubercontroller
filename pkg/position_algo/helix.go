@@ -5,6 +5,7 @@ import (
 
 	"github.com/momentum-xyz/controller/utils"
 	cm "github.com/momentum-xyz/ubercontroller/pkg/cmath"
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 )
 
 const (
@@ -33,8 +34,8 @@ func NewHelix(parameterMap map[string]interface{}) Algo {
 	}
 }
 
-func (h *helix) CalcPos(parentTheta float64, parentVector cm.Vec3, i, n int) (cm.Vec3, float64) {
-	parent := parentVector.ToVec3f64()
+func (h *helix) CalcPos(parentTheta float64, parentPosition entry.SpacePosition, i, n int) (entry.SpacePosition, float64) {
+	parent := parentPosition.Location.ToVec3f64()
 	id := float64(i)
 
 	acf := h.Angle / 360.0 * id
@@ -49,7 +50,8 @@ func (h *helix) CalcPos(parentTheta float64, parentVector cm.Vec3, i, n int) (cm
 		Z: math.Round((parent.Z+r*math.Sin(angle))*10.0) / 10.0,
 	}
 
-	return p.ToVec3(), math.Atan2(p.Z-parent.Z, p.X-parent.X) /* theta */
+	np := entry.SpacePosition{Location: p.ToVec3()}
+	return np, math.Atan2(p.Z-parent.Z, p.X-parent.X) /* theta */
 }
 
 func (*helix) Name() string {

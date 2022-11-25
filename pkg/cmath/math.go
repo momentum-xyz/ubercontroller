@@ -24,15 +24,6 @@ func (v *Vec3) ToVec3f64() Vec3f64 {
 	}
 }
 
-/*type vec6 struct {
-	X     float32 `json:"x"`
-	Y     float32 `json:"y"`
-	Z     float32 `json:"z"`
-	Alpha float32 `json:"alpha"`
-	Beta  float32 `json:"beta"`
-	Gamma float32 `json:"gamma"`
-}*/
-
 type Vec3f64 struct {
 	X float64 `json:"x" db:"x"`
 	Y float64 `json:"y" db:"y"`

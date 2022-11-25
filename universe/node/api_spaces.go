@@ -3,7 +3,6 @@ package node
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
@@ -26,12 +25,12 @@ import (
 // @Router /api/v4/spaces [post]
 func (n *Node) apiCreateSpace(c *gin.Context) {
 	type InBody struct {
-		SpaceName   string      `json:"space_name" binding:"required"`
-		ParentID    string      `json:"parent_id" binding:"required"`
-		SpaceTypeID string      `json:"space_type_id" binding:"required"`
-		Asset2dID   string      `json:"asset_2d_id"`
-		Asset3dID   string      `json:"asset_3d_id"`
-		Position    *cmath.Vec3 `json:"position"`
+		SpaceName   string               `json:"space_name" binding:"required"`
+		ParentID    string               `json:"parent_id" binding:"required"`
+		SpaceTypeID string               `json:"space_type_id" binding:"required"`
+		Asset2dID   string               `json:"asset_2d_id"`
+		Asset3dID   string               `json:"asset_3d_id"`
+		Position    *entry.SpacePosition `json:"position"`
 	}
 	var inBody InBody
 

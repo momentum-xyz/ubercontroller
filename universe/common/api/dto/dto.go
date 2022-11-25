@@ -2,7 +2,6 @@ package dto
 
 import (
 	"github.com/google/uuid"
-	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 )
@@ -84,12 +83,12 @@ type User struct {
 }
 
 type Space struct {
-	OwnerID     string     `json:"owner_id"`
-	ParentID    string     `json:"parent_id"`
-	SpaceTypeID string     `json:"space_type_id"`
-	Asset2dID   string     `json:"asset_2d_id"`
-	Asset3dID   string     `json:"asset_3d_id"`
-	Position    cmath.Vec3 `json:"position"`
+	OwnerID     string              `json:"owner_id"`
+	ParentID    string              `json:"parent_id"`
+	SpaceTypeID string              `json:"space_type_id"`
+	Asset2dID   string              `json:"asset_2d_id"`
+	Asset3dID   string              `json:"asset_3d_id"`
+	Position    entry.SpacePosition `json:"position"`
 }
 
 type Asset2d struct {
