@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/pkg/errors"
+	"github.com/zakaria-chahboun/cute"
 	"time"
 )
 
@@ -142,6 +143,12 @@ func (u *User) SendDirectly(message *websocket.PreparedMessage) error {
 	// not concurrent, to be used in single particular location
 	//u.directLock.Lock()
 	//defer u.directLock.Unlock()
+	if message == nil {
+		cute.SetTitleColor(cute.BrightRed)
+		cute.SetMessageColor(cute.Red)
+		cute.Printf("User: SendDirectly", "%+v", errors.WithStack(errors.Errorf("empty message received")))
+		return nil
+	}
 
 	u.conn.SetWriteDeadline(time.Now().Add(writeWait))
 	return u.conn.WritePreparedMessage(message)
@@ -149,6 +156,9 @@ func (u *User) SendDirectly(message *websocket.PreparedMessage) error {
 
 func (u *User) Send(m *websocket.PreparedMessage) error {
 	if m == nil {
+		cute.SetTitleColor(cute.BrightRed)
+		cute.SetMessageColor(cute.Red)
+		cute.Printf("User: Send", "%+v", errors.WithStack(errors.Errorf("empty message received")))
 		return nil
 	}
 	// ns acts simultaneously as number of clients in send process and as blocker if negative
@@ -163,7 +173,6 @@ func (u *User) Send(m *websocket.PreparedMessage) error {
 func (u *User) SetConnection(id uuid.UUID, socketConnection *websocket.Conn) error {
 	u.sessionID = id
 	u.conn = socketConnection
-	u.StartIOPumps()
 	return nil
 }
 

@@ -32,9 +32,9 @@ type PluginController struct {
 func NewPluginController(parent uuid.UUID) *PluginController {
 	pc := PluginController{parent: parent,
 		pluginInstances: make(map[PluginID]internalPluginInterface),
-		hooksMap:        generic.NewSyncMap[string, any](),
+		hooksMap:        generic.NewSyncMap[string, any](0),
 		secretList:      make(map[PluginID]uuid.UUID),
-		loadedPlugins:   generic.NewSyncMap[uuid.UUID, PluginInstance](),
+		loadedPlugins:   generic.NewSyncMap[uuid.UUID, PluginInstance](0),
 	}
 	return &pc
 }

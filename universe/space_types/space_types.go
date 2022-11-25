@@ -27,7 +27,7 @@ type SpaceTypes struct {
 func NewSpaceTypes(db database.DB) *SpaceTypes {
 	return &SpaceTypes{
 		db:         db,
-		spaceTypes: generic.NewSyncMap[uuid.UUID, universe.SpaceType](),
+		spaceTypes: generic.NewSyncMap[uuid.UUID, universe.SpaceType](0),
 	}
 }
 

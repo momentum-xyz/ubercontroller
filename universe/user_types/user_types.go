@@ -28,7 +28,7 @@ type UserTypes struct {
 func NewUserTypes(db database.DB) *UserTypes {
 	return &UserTypes{
 		db:        db,
-		userTypes: generic.NewSyncMap[uuid.UUID, universe.UserType](),
+		userTypes: generic.NewSyncMap[uuid.UUID, universe.UserType](0),
 	}
 }
 

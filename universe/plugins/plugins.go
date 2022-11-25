@@ -28,7 +28,7 @@ type Plugins struct {
 func NewPlugins(db database.DB) *Plugins {
 	return &Plugins{
 		db:      db,
-		plugins: generic.NewSyncMap[uuid.UUID, universe.Plugin](),
+		plugins: generic.NewSyncMap[uuid.UUID, universe.Plugin](0),
 	}
 }
 

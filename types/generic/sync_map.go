@@ -10,11 +10,11 @@ type SyncMap[K comparable, V any] struct {
 	Data map[K]V
 }
 
-func NewSyncMap[K comparable, V any]() *SyncMap[K, V] {
+func NewSyncMap[K comparable, V any](size int) *SyncMap[K, V] {
 	return &SyncMap[K, V]{
 		//Mu:   sync.RWMutex{},
 		Mu:   deadlock.RWMutex{},
-		Data: make(map[K]V),
+		Data: make(map[K]V, size),
 	}
 }
 

@@ -2,6 +2,8 @@ package dto
 
 import (
 	"github.com/google/uuid"
+	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
+
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 )
 
@@ -48,6 +50,12 @@ type ExploreOption struct {
 	SubSpaces   []ExploreOption `json:"subSpaces,omitempty"`
 }
 
+type FlyWithMe struct {
+	Pilot     uuid.UUID `json:"pilot"`
+	PilotName string    `json:"pilot_name"`
+	SpaceID   uuid.UUID `json:"space_id"`
+}
+
 type Profile struct {
 	Bio         *string `json:"bio,omitempty"`
 	Location    *string `json:"location,omitempty"`
@@ -76,11 +84,11 @@ type User struct {
 }
 
 type Space struct {
-	OwnerID     string              `json:"ownerId"`
-	ParentID    string              `json:"parentId"`
-	SpaceTypeID string              `json:"spaceTypeId"`
-	Asset2dID   string              `json:"asset2dId"`
-	Asset3dID   string              `json:"asset3dId"`
+	OwnerID     string              `json:"owner_id"`
+	ParentID    string              `json:"parent_id"`
+	SpaceTypeID string              `json:"space_type_id"`
+	Asset2dID   string              `json:"asset_2d_id"`
+	Asset3dID   string              `json:"asset_3d_id"`
 	Position    entry.SpacePosition `json:"position"`
 }
 
@@ -90,10 +98,11 @@ type Asset2d struct {
 }
 
 type Asset3d struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	CreatedAt string `json:"createdAt"`
-	UpdatedAt string `json:"updatedAt"`
+	ID        string      `json:"id"`
+	Name      string      `json:"name,omitempty"`
+	Meta      Asset3dMeta `json:"meta,omitempty"`
+	CreatedAt string      `json:"createdAt,omitempty"`
+	UpdatedAt string      `json:"updatedAt,omitempty"`
 }
 
 type Tile struct {

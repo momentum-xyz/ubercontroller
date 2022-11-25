@@ -2,12 +2,12 @@ package space
 
 import (
 	"github.com/hashicorp/go-multierror"
-	"github.com/momentum-xyz/ubercontroller/universe/common/posbus"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/message"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/universe/common/posbus"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
@@ -176,17 +176,11 @@ func (s *Space) UpsertSpaceAttribute(
 	}
 
 	go func() {
-		var value any
+		var value *entry.AttributeValue
 		if payload != nil {
 			value = payload.Value
 		}
-		if err := s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil); err != nil {
-			s.log.Error(
-				errors.WithMessagef(
-					err, "Space: UpsertSpaceAttribute: failed to call onSpaceAttributeChanged: %+v", attributeID,
-				),
-			)
-		}
+		s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
 	}()
 
 	return spaceAttribute, nil
@@ -222,17 +216,7 @@ func (s *Space) UpdateSpaceAttributeValue(
 	payload.Value = value
 	s.spaceAttributes.Data[attributeID] = payload
 
-	go func() {
-		if err := s.onSpaceAttributeChanged(
-			universe.ChangedAttributeChangeType, attributeID, value, nil,
-		); err != nil {
-			s.log.Error(
-				errors.WithMessagef(
-					err, "Space: UpdateSpaceAttributeValue: failed to call onSpaceAttributeChanged: %+v", attributeID,
-				),
-			)
-		}
-	}()
+	go s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
 
 	return value, nil
 }
@@ -268,17 +252,11 @@ func (s *Space) UpdateSpaceAttributeOptions(
 	s.spaceAttributes.Data[attributeID] = payload
 
 	go func() {
-		var value any
+		var value *entry.AttributeValue
 		if payload != nil {
 			value = payload.Value
 		}
-		if err := s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil); err != nil {
-			s.log.Error(
-				errors.WithMessagef(
-					err, "Space: UpdateSpaceAttributeOptions: failed to call onSpaceAttributeChanged: %+v", attributeID,
-				),
-			)
-		}
+		s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
 	}()
 
 	return options, nil
@@ -313,15 +291,7 @@ func (s *Space) RemoveSpaceAttribute(attributeID entry.AttributeID, updateDB boo
 			)
 			return
 		}
-		if err := s.onSpaceAttributeChanged(
-			universe.RemovedAttributeChangeType, attributeID, nil, attributeEffectiveOptions,
-		); err != nil {
-			s.log.Error(
-				errors.WithMessagef(
-					err, "Space: RemoveSpaceAttribute: failed to call onSpaceAttributeChanged: %+v", attributeID,
-				),
-			)
-		}
+		s.onSpaceAttributeChanged(universe.RemovedAttributeChangeType, attributeID, nil, attributeEffectiveOptions)
 	}()
 
 	return true, nil
@@ -393,17 +363,39 @@ func (s *Space) loadSpaceAttributes() error {
 }
 
 func (s *Space) onSpaceAttributeChanged(
-	changeType universe.AttributeChangeType, attributeID entry.AttributeID, value any,
+	changeType universe.AttributeChangeType, attributeID entry.AttributeID, value *entry.AttributeValue,
 	effectiveOptions *entry.AttributeOptions,
-) error {
+) {
+	go s.calendarOnSpaceAttributeChanged(changeType, attributeID, value, effectiveOptions)
+
 	if effectiveOptions == nil {
 		options, ok := s.GetSpaceAttributeEffectiveOptions(attributeID)
 		if !ok {
-			return errors.Errorf("failed to get attribute effective options: %+v", attributeID)
+			s.log.Error(
+				errors.Errorf(
+					"Space: onSpaceAttributeChanged: failed to get attribute effective options: %+v", attributeID,
+				),
+			)
+			return
 		}
 		effectiveOptions = options
 	}
 
+	go func() {
+		if err := s.posBusAutoOnSpaceAttributeChanged(changeType, attributeID, value, effectiveOptions); err != nil {
+			s.log.Error(
+				errors.WithMessagef(
+					err, "Space: onSpaceAttributeChanged: failed to handle pos bus auto: %+v", attributeID,
+				),
+			)
+		}
+	}()
+}
+
+func (s *Space) posBusAutoOnSpaceAttributeChanged(
+	changeType universe.AttributeChangeType, attributeID entry.AttributeID, value *entry.AttributeValue,
+	effectiveOptions *entry.AttributeOptions,
+) error {
 	autoOption, err := posbus.GetOptionAutoOption(effectiveOptions)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to get auto option: %+v", attributeID)
@@ -452,4 +444,25 @@ func (s *Space) onSpaceAttributeChanged(
 	}
 
 	return errs.ErrorOrNil()
+}
+
+func (s *Space) calendarOnSpaceAttributeChanged(
+	changeType universe.AttributeChangeType, attributeID entry.AttributeID, value *entry.AttributeValue,
+	effectiveOptions *entry.AttributeOptions,
+) error {
+	world := s.GetWorld()
+	if world == nil {
+		return nil
+	}
+
+	switch changeType {
+	case universe.ChangedAttributeChangeType:
+		world.GetCalendar().OnAttributeUpsert(attributeID, value)
+	case universe.RemovedAttributeChangeType:
+		world.GetCalendar().OnAttributeRemove(attributeID)
+	default:
+		return errors.Errorf("unsupported change type: %s", changeType)
+	}
+
+	return nil
 }

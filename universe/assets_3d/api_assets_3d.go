@@ -1,12 +1,14 @@
 package assets_3d
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
@@ -25,7 +27,7 @@ import (
 // @Router /api/v4/assets-3d [get]
 func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 	type InQuery struct {
-		Kind string `form:"kind" json:"kind"`
+		Category string `form:"category" json:"category"`
 	}
 	var inQuery InQuery
 
@@ -37,12 +39,17 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 
 	var a3dMap map[uuid.UUID]universe.Asset3d
 	predicateFn := func(asset3dID uuid.UUID, asset3d universe.Asset3d) bool {
+		var category string
 		meta := asset3d.GetMeta()
-		kind := utils.GetFromAnyMap(*meta, "kind", "")
-		return kind == inQuery.Kind
+
+		if meta == nil {
+			return false
+		}
+		category = utils.GetFromAnyMap(*meta, "category", "")
+		return category == inQuery.Category
 	}
 
-	if inQuery.Kind == "" {
+	if inQuery.Category == "" {
 		a3dMap = a.GetAssets3d()
 	} else {
 		a3dMap = a.FilterAssets3d(predicateFn)
@@ -55,6 +62,7 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 
 		assetDTO := &dto.Asset3d{
 			ID:        asset.Asset3dID.String(),
+			Meta:      asset.Meta,
 			CreatedAt: asset.CreatedAt.String(),
 			UpdatedAt: asset.UpdatedAt.String(),
 		}
@@ -74,7 +82,7 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 // @Success 200 {object} nil
 // @Failure 400	{object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/assets3d [post]
+// @Router /api/v4/assets-3d [post]
 func (a *Assets3d) apiAddAssets3d(c *gin.Context) {
 	type InBody struct {
 		Assets3dIDs []string `form:"assets3d_ids[]" binding:"required"`
@@ -93,7 +101,9 @@ func (a *Assets3d) apiAddAssets3d(c *gin.Context) {
 		if err != nil {
 			err = errors.WithMessage(err, "Assets3d: apiAddAssets3d: failed to parse uuid")
 			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_parse_uuid", err, a.log)
+			return
 		}
+
 		newAsset, err := a.CreateAsset3d(assetID)
 		if err != nil {
 			err = errors.WithMessage(err, "Assets3d: apiAddAssets3d: failed to create asset3d from input")
@@ -113,6 +123,98 @@ func (a *Assets3d) apiAddAssets3d(c *gin.Context) {
 	c.JSON(http.StatusOK, nil)
 }
 
+// @Summary Uploads a 3d asset
+// @Schemes
+// @Description Uploads a 3d asset to the media manager
+// @Tags assets3d
+// @Accept json
+// @Produce json
+// @Success 202 {object} dto.Asset3d
+// @Failure 400	{object} api.HTTPError
+// @Failure 500 {object} api.HTTPError
+// @Router /api/v4/assets-3d/upload [post]
+func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
+	assetFile, err := c.FormFile("asset")
+	if err != nil {
+		err := errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to read file")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_read", err, a.log)
+		return
+	}
+
+	openedFile, err := assetFile.Open()
+	if err != nil {
+		err := errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to open file")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_open", err, a.log)
+		return
+	}
+
+	defer openedFile.Close()
+
+	req, err := http.NewRequest("POST", a.cfg.Common.RenderInternalURL+"/addasset", openedFile)
+	if err != nil {
+		err := errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to create post request")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_create_request", err, a.log)
+		return
+	}
+
+	req.Header.Set("Content-Type", assetFile.Header.Get("Content-Type"))
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		err := errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to post data to media-manager")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_post_request", err, a.log)
+		return
+	}
+
+	defer resp.Body.Close()
+
+	response := dto.HashResponse{}
+
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		err := errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to decode json into response")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_decode", err, a.log)
+		return
+	}
+
+	assetID, err := uuid.Parse(response.Hash)
+	if err != nil {
+		err := errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to parse hash to uuid")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_parse_hash", err, a.log)
+		return
+	}
+
+	newAsset, err := a.CreateAsset3d(assetID)
+	if err != nil {
+		err = errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to create asset3d from input")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_create_asset3d", err, a.log)
+		return
+	}
+
+	meta := entry.Asset3dMeta{
+		"type": dto.GLTFAsset3dType,
+	}
+
+	if err := newAsset.SetMeta(&meta, true); err != nil {
+		err = errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to set meta")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_meta", err, a.log)
+		return
+	}
+
+	if err := a.AddAsset3d(newAsset, true); err != nil {
+		err = errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to add assets3d")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_add_asset3d", err, a.log)
+		return
+	}
+
+	out := dto.Asset3d{
+		ID:   newAsset.GetID().String(),
+		Meta: newAsset.GetMeta(),
+	}
+
+	c.JSON(http.StatusAccepted, out)
+}
+
 // @Summary Delete 3d assets
 // @Schemes
 // @Description Deletes 3d assets by list of ids
@@ -123,7 +225,7 @@ func (a *Assets3d) apiAddAssets3d(c *gin.Context) {
 // @Success 200 {object} nil
 // @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/assets3d [delete]
+// @Router /api/v4/assets-3d [delete]
 func (a *Assets3d) apiRemoveAssets3dByIDs(c *gin.Context) {
 	type InBody struct {
 		Assets3dIDs []string `form:"assets3d_ids[]" binding:"required"`
@@ -166,7 +268,7 @@ func (a *Assets3d) apiRemoveAssets3dByIDs(c *gin.Context) {
 // @Success 200 {object} dto.Assets3dOptions
 // @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/assets3d/options [get]
+// @Router /api/v4/assets-3d/options [get]
 func (a *Assets3d) apiGetAssets3dOptions(c *gin.Context) {
 	type InQuery struct {
 		Assets3dIDs []string `form:"assets3d_ids[]" binding:"required"`
@@ -191,7 +293,7 @@ func (a *Assets3d) apiGetAssets3dOptions(c *gin.Context) {
 
 		gotAsset3d, ok := a.GetAsset3d(asset3dID)
 		if !ok {
-			err = errors.WithMessage(err, "Assets3d: apiGetAsset3dOptions: failed to get asset3d")
+			err = errors.Errorf("Assets3d: apiGetAsset3dOptions: failed to get asset3d")
 			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_asset3d", err, a.log)
 			return
 		}
@@ -212,7 +314,7 @@ func (a *Assets3d) apiGetAssets3dOptions(c *gin.Context) {
 // @Success 200 {object} dto.Assets3dMeta
 // @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/assets3d/meta [get]
+// @Router /api/v4/assets-3d/meta [get]
 func (a *Assets3d) apiGetAssets3dMeta(c *gin.Context) {
 	type InQuery struct {
 		Assets3dIDs []string `form:"assets3d_ids[]" binding:"required"`
@@ -237,7 +339,7 @@ func (a *Assets3d) apiGetAssets3dMeta(c *gin.Context) {
 
 		gotAsset3d, ok := a.GetAsset3d(asset3dID)
 		if !ok {
-			err = errors.WithMessage(err, "Assets3d: apiGetAsset3dMeta: failed to get asset3d")
+			err = errors.Errorf("Assets3d: apiGetAsset3dMeta: failed to get asset3d")
 			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_asset3d", err, a.log)
 			return
 		}

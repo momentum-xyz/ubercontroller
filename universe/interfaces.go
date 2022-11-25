@@ -157,7 +157,6 @@ type Worlds interface {
 
 type World interface {
 	Space
-	RunStopper
 	LoadSaver
 	SpaceCacher
 
@@ -165,11 +164,14 @@ type World interface {
 
 	// QUESTION: do we still need this?
 	AddToCounter() int64
+
+	GetCalendar() Calendar
 }
 
 type Space interface {
 	IDer
 	Initializer
+	RunStopper
 
 	CreateSpace(spaceID uuid.UUID) (Space, error)
 
@@ -256,7 +258,7 @@ type Space interface {
 type User interface {
 	IDer
 	Initializer
-	Stopper
+	RunStopper
 
 	GetWorld() World
 	SetWorld(world World)
@@ -482,4 +484,12 @@ type UserType interface {
 
 	GetEntry() *entry.UserType
 	LoadFromEntry(entry *entry.UserType) error
+}
+
+type Calendar interface {
+	Initializer
+	RunStopper
+
+	OnAttributeUpsert(attributeID entry.AttributeID, value any)
+	OnAttributeRemove(attributeID entry.AttributeID)
 }

@@ -36,12 +36,12 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 	if ok {
 		if exUser != user {
 			if exUser.GetSessionID() == user.GetSessionID() {
-				w.log.Info(
+				w.log.Infof(
 					"World: same session, must be teleport or network failure: world %s, user %s", w.GetID(),
 					user.GetID(),
 				)
 			} else {
-				w.log.Info("World: double-login detected for world %s, user %s", w.GetID(), exUser.GetID())
+				w.log.Infof("World: double-login detected for world %s, user %s", w.GetID(), exUser.GetID())
 
 				exUser.SendDirectly(posbus.NewSignalMsg(posbus.SignalDualConnection).WebsocketMessage())
 

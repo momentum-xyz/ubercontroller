@@ -1,5 +1,19 @@
 package dto
 
+type Asset3dType int8
+
+const (
+	AddressableAssetType Asset3dType = iota
+	GLTFAsset3dType
+)
+
+type FlyWithMeType string
+
+const (
+	FlyWithMeStop  FlyWithMeType = "fly_with_me_stop"
+	FlyWithMeStart FlyWithMeType = "fly_with_me_start"
+)
+
 type UserStatusType string
 
 const (

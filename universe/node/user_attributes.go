@@ -69,19 +69,11 @@ func (n *Node) UpsertUserAttribute(
 	}
 
 	go func() {
-		var value any
+		var value *entry.AttributeValue
 		if userAttribute.AttributePayload != nil {
 			value = userAttribute.AttributePayload.Value
 		}
-		if err := n.onUserAttributeChanged(universe.ChangedAttributeChangeType, userAttributeID, value, nil); err != nil {
-			n.log.Error(
-				errors.WithMessagef(
-					err,
-					"Node: UpsertUserAttribute: failed to call onUserAttributeChanged: %+v",
-					userAttributeID,
-				),
-			)
-		}
+		n.onUserAttributeChanged(universe.ChangedAttributeChangeType, userAttributeID, value, nil)
 	}()
 
 	return userAttribute, nil
@@ -95,19 +87,7 @@ func (n *Node) UpdateUserAttributeValue(
 		return nil, errors.WithMessage(err, "failed to update user attribute value")
 	}
 
-	go func() {
-		if err := n.onUserAttributeChanged(
-			universe.ChangedAttributeChangeType, userAttributeID, value, nil,
-		); err != nil {
-			n.log.Error(
-				errors.WithMessagef(
-					err,
-					"Node: UpdateUserAttributeValue: failed to call onUserAttributeChanged: %+v",
-					userAttributeID,
-				),
-			)
-		}
-	}()
+	go n.onUserAttributeChanged(universe.ChangedAttributeChangeType, userAttributeID, value, nil)
 
 	return value, nil
 }
@@ -130,17 +110,7 @@ func (n *Node) UpdateUserAttributeOptions(
 			)
 			return
 		}
-		if err := n.onUserAttributeChanged(
-			universe.ChangedAttributeChangeType, userAttributeID, value, nil,
-		); err != nil {
-			n.log.Error(
-				errors.WithMessagef(
-					err,
-					"Node: UpdateUserAttributeValue: failed to call onUserAttributeChanged: %+v",
-					userAttributeID,
-				),
-			)
-		}
+		n.onUserAttributeChanged(universe.ChangedAttributeChangeType, userAttributeID, value, nil)
 	}()
 
 	return options, nil
@@ -165,34 +135,45 @@ func (n *Node) RemoveUserAttribute(userAttributeID entry.UserAttributeID) (bool,
 			)
 			return
 		}
-		if err := n.onUserAttributeChanged(
-			universe.RemovedAttributeChangeType, userAttributeID, nil, attributeEffectiveOptions,
-		); err != nil {
-			n.log.Error(
-				errors.WithMessagef(
-					err,
-					"Node: RemoveUserAttribute: failed to call onUserAttributeChanged: %+v",
-					userAttributeID,
-				),
-			)
-		}
+		n.onUserAttributeChanged(universe.RemovedAttributeChangeType, userAttributeID, nil, attributeEffectiveOptions)
 	}()
 
 	return true, nil
 }
 
 func (n *Node) onUserAttributeChanged(
-	changeType universe.AttributeChangeType, userAttributeID entry.UserAttributeID, value any,
+	changeType universe.AttributeChangeType, userAttributeID entry.UserAttributeID, value *entry.AttributeValue,
 	effectiveOptions *entry.AttributeOptions,
-) error {
+) {
 	if effectiveOptions == nil {
 		options, ok := n.GetUserAttributeEffectiveOptions(userAttributeID)
 		if !ok {
-			return errors.Errorf("failed to get user attribute effective options: %+v", userAttributeID)
+			n.log.Error(
+				errors.Errorf(
+					"Node: onUserAttributeChanged: failed to get user attribute effective options: %+v",
+					userAttributeID,
+				),
+			)
+			return
 		}
 		effectiveOptions = options
 	}
 
+	go func() {
+		if err := n.posBusAutoOnUserAttributeChanged(changeType, userAttributeID, value, effectiveOptions); err != nil {
+			n.log.Error(
+				errors.WithMessagef(
+					err, "Node: onUserAttributeChanged: failed to handle pos bus auto: %+v", userAttributeID,
+				),
+			)
+		}
+	}()
+}
+
+func (n *Node) posBusAutoOnUserAttributeChanged(
+	changeType universe.AttributeChangeType, userAttributeID entry.UserAttributeID, value *entry.AttributeValue,
+	effectiveOptions *entry.AttributeOptions,
+) error {
 	autoOption, err := posbus.GetOptionAutoOption(effectiveOptions)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to get auto option: %+v", userAttributeID)

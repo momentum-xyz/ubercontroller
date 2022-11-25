@@ -19,7 +19,7 @@ type TimerSet[T comparable] struct {
 
 func NewTimerSet[T comparable]() *TimerSet[T] {
 	return &TimerSet[T]{
-		timers: NewSyncMap[T, Unique[context.CancelFunc]](),
+		timers: NewSyncMap[T, Unique[context.CancelFunc]](0),
 	}
 }
 
@@ -62,5 +62,14 @@ func (t *TimerSet[T]) Set(key T, delay time.Duration, fn TimerFunc[T]) {
 func (t *TimerSet[T]) Stop(key T) {
 	if stopFn, ok := t.timers.Load(key); ok {
 		stopFn.Value()()
+	}
+}
+
+func (t *TimerSet[T]) StopAll() {
+	t.timers.Mu.RLock()
+	defer t.timers.Mu.RUnlock()
+
+	for _, v := range t.timers.Data {
+		v.Value()()
 	}
 }

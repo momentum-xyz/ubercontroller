@@ -54,7 +54,6 @@ type Node struct {
 
 func NewNode(
 	id uuid.UUID,
-	cfg *config.Config,
 	db database.DB,
 	worlds universe.Worlds,
 	assets2D universe.Assets2d,
@@ -66,7 +65,6 @@ func NewNode(
 ) *Node {
 	return &Node{
 		Space:            space.NewSpace(id, db, nil),
-		cfg:              cfg,
 		db:               db,
 		worlds:           worlds,
 		assets2d:         assets2D,
@@ -75,8 +73,8 @@ func NewNode(
 		spaceTypes:       spaceTypes,
 		userTypes:        userTypes,
 		attributeTypes:   attributeTypes,
-		nodeAttributes:   generic.NewSyncMap[entry.AttributeID, *entry.AttributePayload](),
-		spaceIDToWorldID: generic.NewSyncMap[uuid.UUID, uuid.UUID](),
+		nodeAttributes:   generic.NewSyncMap[entry.AttributeID, *entry.AttributePayload](0),
+		spaceIDToWorldID: generic.NewSyncMap[uuid.UUID, uuid.UUID](0),
 	}
 }
 
@@ -89,8 +87,13 @@ func (n *Node) Initialize(ctx context.Context) error {
 	if log == nil {
 		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
 	}
+	cfg := utils.GetFromAny(ctx.Value(types.ConfigContextKey), (*config.Config)(nil))
+	if cfg == nil {
+		return errors.Errorf("failed to get config from context: %T", ctx.Value(types.ConfigContextKey))
+	}
 
 	n.ctx = ctx
+	n.cfg = cfg
 	n.log = log
 
 	consoleWriter := zapcore.Lock(os.Stdout)
