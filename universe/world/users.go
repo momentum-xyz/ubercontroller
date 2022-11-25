@@ -2,7 +2,6 @@ package world
 
 import (
 	"github.com/gorilla/websocket"
-	cmath2 "github.com/momentum-xyz/controller/pkg/cmath"
 	"time"
 
 	"github.com/google/uuid"
@@ -100,7 +99,11 @@ func (w *World) initializeUnity(user universe.User) error {
 	}
 
 	// TODO: fix circular dependency
-	if err := user.SendDirectly(posbus.NewSendPositionMsg(cmath2.Vec3(user.GetPosition()), cmath2.Vec3{0, 0, 0}, cmath2.Vec3{0, 0, 0}).WebsocketMessage()); err != nil {
+	if err := user.SendDirectly(
+		posbus.NewSendPositionMsg(
+			cmath.Vec3(user.GetPosition()), cmath.Vec3{0, 0, 0}, cmath.Vec3{0, 0, 0},
+		).WebsocketMessage(),
+	); err != nil {
 		return errors.WithMessage(err, "failed to send position")
 	}
 
