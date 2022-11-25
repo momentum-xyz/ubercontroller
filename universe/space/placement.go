@@ -2,7 +2,6 @@ package space
 
 import (
 	"github.com/google/uuid"
-	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/pkg/position_algo"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/pkg/errors"
