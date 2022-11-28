@@ -331,6 +331,8 @@ func (s *Space) Run() error {
 		close(s.broadcastPipeline)
 	}()
 
+	go s.UpdateSpawnMessage(true)
+
 	for {
 		select {
 		case message := <-s.broadcastPipeline:
@@ -402,9 +404,6 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 			if err := s.SetPosition(entry.Position, false); err != nil {
 				return errors.WithMessage(err, "failed to set position")
 			}
-
-			// QUESTION: do we really want to broadcast something to not loaded world?
-			go s.UpdateSpawnMessage(true)
 
 			if !recursive {
 				return nil
