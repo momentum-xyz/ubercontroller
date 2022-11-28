@@ -9,6 +9,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/common/posbus"
+	"github.com/momentum-xyz/ubercontroller/universe/common/unity"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
@@ -462,4 +463,26 @@ func (s *Space) calendarOnSpaceAttributeChanged(
 	}
 
 	return nil
+}
+
+func (s *Space) unityAutoOnSpaceAttributeChanged(
+	changeType universe.AttributeChangeType, attributeID entry.AttributeID, value *entry.AttributeValue,
+	effectiveOptions *entry.AttributeOptions,
+) error {
+
+	autoOption, err := unity.GetOptionAutoOption(effectiveOptions)
+	if err != nil {
+		return errors.WithMessagef(err, "failed to get auto option: %+v", attributeID)
+	}
+	autoMessage, err := unity.GetOptionAutoMessage(autoOption, changeType, attributeID, value)
+	if err != nil {
+		return errors.WithMessagef(err, "failed to get auto message: %+v", attributeID)
+	}
+
+	if autoMessage == nil {
+		return nil
+	}
+
+	world := s.GetWorld()
+	return world.Send(autoMessage, false)
 }

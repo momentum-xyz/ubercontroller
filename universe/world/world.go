@@ -2,9 +2,10 @@ package world
 
 import (
 	"context"
-	"github.com/hashicorp/go-multierror"
 	"sync/atomic"
 	"time"
+
+	"github.com/hashicorp/go-multierror"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
