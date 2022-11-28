@@ -197,6 +197,7 @@ func (n *Node) apiRemoveSpace(c *gin.Context) {
 		if err := space.Stop(); err != nil {
 			n.log.Error(errors.WithMessagef(err, "Node: apiRemoveSpace: failed to stop space: %s", spaceID))
 		}
+		space.SetEnabled(false)
 	}()
 
 	c.JSON(http.StatusOK, nil)

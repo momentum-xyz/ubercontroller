@@ -162,6 +162,7 @@ func (n *Node) apiCreateSpace(c *gin.Context) {
 		return
 	}
 
+	space.SetEnabled(true)
 	go func() {
 		if err := space.Run(); err != nil {
 			n.log.Error(errors.WithMessagef(err, "Node: apiCreateSpace: failed to run space: %s", space.GetID()))

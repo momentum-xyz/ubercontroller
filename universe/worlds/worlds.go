@@ -206,6 +206,7 @@ func (w *Worlds) Run() error {
 
 	for _, world := range w.worlds.Data {
 		go func(world universe.World) {
+			world.SetEnabled(true)
 			if err := world.Run(); err != nil {
 				w.log.Error(errors.WithMessagef(err, "Worlds: Run: failed to run world: %s", world.GetID()))
 			}
@@ -228,6 +229,7 @@ func (w *Worlds) Stop() error {
 			if err := world.Stop(); err != nil {
 				return errors.WithMessagef(err, "failed to stop world: %s", world.GetID())
 			}
+			world.SetEnabled(false)
 			return nil
 		})
 	}

@@ -2,6 +2,7 @@ package space
 
 import (
 	"github.com/hashicorp/go-multierror"
+	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/message"
@@ -170,18 +171,15 @@ func (s *Space) UpsertSpaceAttribute(
 
 	s.spaceAttributes.Data[attributeID] = payload
 
-	// TODO: find better way how to skip "onSpaceAttributeChanged" on node loading
-	if !updateDB {
-		return spaceAttribute, nil
+	if s.GetEnabled() {
+		go func() {
+			var value *entry.AttributeValue
+			if payload != nil {
+				value = payload.Value
+			}
+			s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
+		}()
 	}
-
-	go func() {
-		var value *entry.AttributeValue
-		if payload != nil {
-			value = payload.Value
-		}
-		s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
-	}()
 
 	return spaceAttribute, nil
 }
@@ -251,13 +249,15 @@ func (s *Space) UpdateSpaceAttributeOptions(
 	payload.Options = options
 	s.spaceAttributes.Data[attributeID] = payload
 
-	go func() {
-		var value *entry.AttributeValue
-		if payload != nil {
-			value = payload.Value
-		}
-		s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
-	}()
+	if s.GetEnabled() {
+		go func() {
+			var value *entry.AttributeValue
+			if payload != nil {
+				value = payload.Value
+			}
+			s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
+		}()
+	}
 
 	return options, nil
 }
@@ -282,17 +282,19 @@ func (s *Space) RemoveSpaceAttribute(attributeID entry.AttributeID, updateDB boo
 
 	delete(s.spaceAttributes.Data, attributeID)
 
-	go func() {
-		if !attributeEffectiveOptionsOK {
-			s.log.Error(
-				errors.Errorf(
-					"Space: RemoveSpaceAttribute: failed to get space attribute effective options",
-				),
-			)
-			return
-		}
-		s.onSpaceAttributeChanged(universe.RemovedAttributeChangeType, attributeID, nil, attributeEffectiveOptions)
-	}()
+	if s.GetEnabled() {
+		go func() {
+			if !attributeEffectiveOptionsOK {
+				s.log.Error(
+					errors.Errorf(
+						"Space: RemoveSpaceAttribute: failed to get space attribute effective options",
+					),
+				)
+				return
+			}
+			s.onSpaceAttributeChanged(universe.RemovedAttributeChangeType, attributeID, nil, attributeEffectiveOptions)
+		}()
+	}
 
 	return true, nil
 }
@@ -320,25 +322,18 @@ func (s *Space) CheckIfRendered(instance *entry.SpaceAttribute) {
 	if !ok {
 		return
 	}
-	var opts entry.AttributeOptions
-	//if instance.Options != nil {
-	//	opts = *instance.Options
-	//} else {
-	//	opts = entry.AttributeOptions{}
-	//}
 
-	if attr.GetOptions() != nil {
-		opts = *attr.GetOptions()
-	} else {
+	attrOpts := attr.GetOptions()
+	if attrOpts == nil {
 		return
 	}
-	//utils.MergePTRs(&opts, attr.GetOptions())
-	//if opts == nil {
-	//	return
-	//}
-	if v, ok := opts["render_type"]; ok && v.(string) == "texture" {
-		if c, ok := (map[string]any)(*instance.Value)["render_hash"]; ok {
-			s.renderTextureAttr[attr.GetName()] = c.(string)
+	opts := *attrOpts
+
+	if v := utils.GetFromAnyMap(opts, "render_type", ""); v == "texture" {
+		if instance.Value != nil {
+			if c, ok := (*instance.Value)["render_hash"]; ok {
+				s.renderTextureAttr[attr.GetName()] = utils.GetFromAny(c, "")
+			}
 		}
 	}
 	s.textMsg.Store(message.GetBuilder().SetObjectTextures(s.id, s.renderTextureAttr))

@@ -70,13 +70,15 @@ func (n *Node) UpsertSpaceUserAttribute(
 		return nil, errors.WithMessage(err, "failed to upsert space user attribute")
 	}
 
-	go func() {
-		var value *entry.AttributeValue
-		if spaceUserAttribute.AttributePayload != nil {
-			value = spaceUserAttribute.AttributePayload.Value
-		}
-		n.onSpaceUserAttributeChanged(universe.ChangedAttributeChangeType, spaceUserAttributeID, value, nil)
-	}()
+	if n.GetEnabled() {
+		go func() {
+			var value *entry.AttributeValue
+			if spaceUserAttribute.AttributePayload != nil {
+				value = spaceUserAttribute.AttributePayload.Value
+			}
+			n.onSpaceUserAttributeChanged(universe.ChangedAttributeChangeType, spaceUserAttributeID, value, nil)
+		}()
+	}
 
 	return spaceUserAttribute, nil
 }
@@ -89,7 +91,9 @@ func (n *Node) UpdateSpaceUserAttributeValue(
 		return nil, errors.WithMessage(err, "failed to update space user attribute value")
 	}
 
-	go n.onSpaceUserAttributeChanged(universe.ChangedAttributeChangeType, spaceUserAttributeID, value, nil)
+	if n.GetEnabled() {
+		go n.onSpaceUserAttributeChanged(universe.ChangedAttributeChangeType, spaceUserAttributeID, value, nil)
+	}
 
 	return value, nil
 }
@@ -102,19 +106,21 @@ func (n *Node) UpdateSpaceUserAttributeOptions(
 		return nil, errors.WithMessage(err, "failed to update space user attribute options")
 	}
 
-	go func() {
-		value, ok := n.GetSpaceUserAttributeValue(spaceUserAttributeID)
-		if !ok {
-			n.log.Error(
-				errors.Errorf(
-					"Node: UpdateSpaceUserAttributeOptions: failed to get space user attribute value: %+v",
-					spaceUserAttributeID,
-				),
-			)
-			return
-		}
-		n.onSpaceUserAttributeChanged(universe.ChangedAttributeChangeType, spaceUserAttributeID, value, nil)
-	}()
+	if n.GetEnabled() {
+		go func() {
+			value, ok := n.GetSpaceUserAttributeValue(spaceUserAttributeID)
+			if !ok {
+				n.log.Error(
+					errors.Errorf(
+						"Node: UpdateSpaceUserAttributeOptions: failed to get space user attribute value: %+v",
+						spaceUserAttributeID,
+					),
+				)
+				return
+			}
+			n.onSpaceUserAttributeChanged(universe.ChangedAttributeChangeType, spaceUserAttributeID, value, nil)
+		}()
+	}
 
 	return options, nil
 }
@@ -129,17 +135,21 @@ func (n *Node) RemoveSpaceUserAttribute(spaceUserAttributeID entry.SpaceUserAttr
 		return false, errors.WithMessage(err, "failed to remove space user attribute")
 	}
 
-	go func() {
-		if !attributeEffectiveOptionsOK {
-			n.log.Error(
-				errors.Errorf(
-					"Node: RemoveSpaceUserAttribute: failed to get space user attribute effective options",
-				),
+	if n.GetEnabled() {
+		go func() {
+			if !attributeEffectiveOptionsOK {
+				n.log.Error(
+					errors.Errorf(
+						"Node: RemoveSpaceUserAttribute: failed to get space user attribute effective options",
+					),
+				)
+				return
+			}
+			n.onSpaceUserAttributeChanged(
+				universe.RemovedAttributeChangeType, spaceUserAttributeID, nil, attributeEffectiveOptions,
 			)
-			return
-		}
-		n.onSpaceUserAttributeChanged(universe.RemovedAttributeChangeType, spaceUserAttributeID, nil, attributeEffectiveOptions)
-	}()
+		}()
+	}
 
 	return true, nil
 }

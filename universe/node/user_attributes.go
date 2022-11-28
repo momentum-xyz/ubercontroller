@@ -68,13 +68,15 @@ func (n *Node) UpsertUserAttribute(
 		return nil, errors.WithMessage(err, "failed to upsert user attribute")
 	}
 
-	go func() {
-		var value *entry.AttributeValue
-		if userAttribute.AttributePayload != nil {
-			value = userAttribute.AttributePayload.Value
-		}
-		n.onUserAttributeChanged(universe.ChangedAttributeChangeType, userAttributeID, value, nil)
-	}()
+	if n.GetEnabled() {
+		go func() {
+			var value *entry.AttributeValue
+			if userAttribute.AttributePayload != nil {
+				value = userAttribute.AttributePayload.Value
+			}
+			n.onUserAttributeChanged(universe.ChangedAttributeChangeType, userAttributeID, value, nil)
+		}()
+	}
 
 	return userAttribute, nil
 }
@@ -87,7 +89,9 @@ func (n *Node) UpdateUserAttributeValue(
 		return nil, errors.WithMessage(err, "failed to update user attribute value")
 	}
 
-	go n.onUserAttributeChanged(universe.ChangedAttributeChangeType, userAttributeID, value, nil)
+	if n.GetEnabled() {
+		go n.onUserAttributeChanged(universe.ChangedAttributeChangeType, userAttributeID, value, nil)
+	}
 
 	return value, nil
 }
@@ -100,18 +104,20 @@ func (n *Node) UpdateUserAttributeOptions(
 		return nil, errors.WithMessage(err, "failed to update user attribute options")
 	}
 
-	go func() {
-		value, ok := n.GetUserAttributeValue(userAttributeID)
-		if !ok {
-			n.log.Error(
-				errors.Errorf(
-					"Node: UpdateUserAttributeOptions: failed to get user attribute value: %+v", userAttributeID,
-				),
-			)
-			return
-		}
-		n.onUserAttributeChanged(universe.ChangedAttributeChangeType, userAttributeID, value, nil)
-	}()
+	if n.GetEnabled() {
+		go func() {
+			value, ok := n.GetUserAttributeValue(userAttributeID)
+			if !ok {
+				n.log.Error(
+					errors.Errorf(
+						"Node: UpdateUserAttributeOptions: failed to get user attribute value: %+v", userAttributeID,
+					),
+				)
+				return
+			}
+			n.onUserAttributeChanged(universe.ChangedAttributeChangeType, userAttributeID, value, nil)
+		}()
+	}
 
 	return options, nil
 }
@@ -126,17 +132,19 @@ func (n *Node) RemoveUserAttribute(userAttributeID entry.UserAttributeID) (bool,
 		return false, errors.WithMessage(err, "failed to remove user attribute")
 	}
 
-	go func() {
-		if !attributeEffectiveOptionsOK {
-			n.log.Error(
-				errors.Errorf(
-					"Node: RemoveUserAttribute: failed to get user attribute effective options",
-				),
-			)
-			return
-		}
-		n.onUserAttributeChanged(universe.RemovedAttributeChangeType, userAttributeID, nil, attributeEffectiveOptions)
-	}()
+	if n.GetEnabled() {
+		go func() {
+			if !attributeEffectiveOptionsOK {
+				n.log.Error(
+					errors.Errorf(
+						"Node: RemoveUserAttribute: failed to get user attribute effective options",
+					),
+				)
+				return
+			}
+			n.onUserAttributeChanged(universe.RemovedAttributeChangeType, userAttributeID, nil, attributeEffectiveOptions)
+		}()
+	}
 
 	return true, nil
 }

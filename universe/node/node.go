@@ -227,12 +227,18 @@ func (n *Node) Run() error {
 	if err := n.worlds.Run(); err != nil {
 		return errors.WithMessage(err, "failed to run worlds")
 	}
+	n.SetEnabled(true)
 
 	return n.router.Run(fmt.Sprintf("%s:%d", n.cfg.Settings.Address, n.cfg.Settings.Port))
 }
 
 func (n *Node) Stop() error {
-	return n.worlds.Stop()
+	if err := n.worlds.Stop(); err != nil {
+		return errors.WithMessage(err, "failed to stop worlds")
+	}
+	n.SetEnabled(false)
+
+	return nil
 }
 
 func (n *Node) Load() error {

@@ -138,6 +138,7 @@ func (w *World) runSpaces() error {
 
 	for _, space := range w.allSpaces.Data {
 		go func(space universe.Space) {
+			space.SetEnabled(true)
 			if err := space.Run(); err != nil {
 				w.log.Error(errors.WithMessagef(err, "World: runSpaces: failed to run space: %s", space.GetID()))
 			}
@@ -157,6 +158,7 @@ func (w *World) stopSpaces() error {
 		if err := space.Stop(); err != nil {
 			errs = multierror.Append(errs, errors.WithMessagef(err, "failed to stop space: %s", space.GetID()))
 		}
+		space.SetEnabled(false)
 	}
 
 	return errs.ErrorOrNil()
