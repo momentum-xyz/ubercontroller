@@ -137,15 +137,15 @@ func (w *World) runSpaces() error {
 	defer w.allSpaces.Mu.RUnlock()
 
 	for _, space := range w.allSpaces.Data {
+		space.SetEnabled(true)
 		go func(space universe.Space) {
-			space.SetEnabled(true)
 			if err := space.Run(); err != nil {
 				w.log.Error(errors.WithMessagef(err, "World: runSpaces: failed to run space: %s", space.GetID()))
 			}
 		}(space)
 	}
 
-	return nil
+	return w.UpdateChildrenPosition(true)
 }
 
 // TODO: optimize
@@ -195,8 +195,6 @@ func (w *World) Load() error {
 		return errors.WithMessage(err, "failed to load from entry")
 	}
 	w.UpdateWorldMetadata()
-
-	w.Space.UpdateChildrenPosition(true)
 	//cu.BroadcastPositions()
 
 	w.log.Infof("World loaded: %s", w.GetID())
