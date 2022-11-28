@@ -2,7 +2,6 @@ package space
 
 import (
 	"context"
-	"github.com/zakaria-chahboun/cute"
 	"sync/atomic"
 
 	"github.com/google/uuid"
@@ -30,7 +29,6 @@ type Space struct {
 	id       uuid.UUID
 	world    universe.World
 	ctx      context.Context
-	cancel   context.CancelFunc
 	log      *zap.SugaredLogger
 	db       database.DB
 	Users    *generic.SyncMap[uuid.UUID, universe.User]
@@ -89,7 +87,7 @@ func (s *Space) Initialize(ctx context.Context) error {
 		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
 	}
 
-	s.ctx, s.cancel = context.WithCancel(ctx)
+	s.ctx = ctx
 	s.log = log
 	s.numSendsQueued.Store(chanIsClosed)
 
@@ -325,20 +323,20 @@ func (s *Space) Run() error {
 			s.numSendsQueued.Add(-1)
 			//fmt.Println("Got a message from")
 			if message == nil {
-				cute.SetTitleColor(cute.BrightRed)
-				cute.SetMessageColor(cute.Red)
-				cute.Println("Space: Run", "broadcastPipeline:", "empty message received")
-				continue
+				return nil
 			}
 			s.performBroadcast(message)
 		case <-s.ctx.Done():
-			return nil
+			s.Stop()
 		}
 	}
 }
 
 func (s *Space) Stop() error {
-	s.cancel()
+	ns := s.numSendsQueued.Add(1)
+	if ns >= 0 {
+		s.broadcastPipeline <- nil
+	}
 	return nil
 }
 
@@ -464,7 +462,8 @@ func (s *Space) loadDependencies(entry *entry.Space) error {
 }
 
 func (s *Space) UpdateSpawnMessage(doSend bool) {
-	if s.GetWorld() == nil {
+	world := s.GetWorld()
+	if world == nil {
 		return
 	}
 
@@ -513,7 +512,7 @@ func (s *Space) UpdateSpawnMessage(doSend bool) {
 	)
 	s.spawnMsg.Store(msg)
 	if doSend {
-		s.world.Send(s.spawnMsg.Load(), true)
+		world.Send(s.spawnMsg.Load(), true)
 	}
 }
 
