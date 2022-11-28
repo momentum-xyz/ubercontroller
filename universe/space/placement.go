@@ -58,14 +58,18 @@ func (s *Space) GetPlacements() map[uuid.UUID]position_algo.Algo {
 func (s *Space) SetActualPosition(pos cmath.SpacePosition, theta float64) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	if (s.theta != theta) || (*s.actualPosition.Load() != pos) {
 		s.theta = theta
 		s.actualPosition.Store(&pos)
 
-		go s.UpdateSpawnMessage(false)
-		s.GetWorld().Send(
-			posbus.NewSetStaticObjectPositionMsg(s.id, *(s.actualPosition.Load())).WebsocketMessage(), false,
-		)
+		go func() {
+			s.UpdateSpawnMessage(false)
+			s.GetWorld().Send(
+				posbus.NewSetStaticObjectPositionMsg(s.GetID(), *(s.actualPosition.Load())).WebsocketMessage(),
+				false,
+			)
+		}()
 	}
 
 	return nil
@@ -98,10 +102,13 @@ func (s *Space) SetPosition(position *cmath.SpacePosition, updateDB bool) error 
 		s.actualPosition.Store(s.position)
 		//s.SetActualPosition(s.position)
 
-		go s.UpdateSpawnMessage(false)
-		s.GetWorld().Send(
-			posbus.NewSetStaticObjectPositionMsg(s.id, *(s.actualPosition.Load())).WebsocketMessage(), false,
-		)
+		go func() {
+			s.UpdateSpawnMessage(false)
+			s.GetWorld().Send(
+				posbus.NewSetStaticObjectPositionMsg(s.GetID(), *(s.actualPosition.Load())).WebsocketMessage(),
+				false,
+			)
+		}()
 	}
 
 	return nil

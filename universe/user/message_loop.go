@@ -3,7 +3,7 @@ package user
 import (
 	"fmt"
 	"github.com/momentum-xyz/posbus-protocol/posbus"
-	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
+	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -59,15 +59,7 @@ func (u *User) UpdateSpacePosition(msg *posbus.SetStaticObjectPosition) error {
 		return errors.Errorf("space not found: %s", msg.ObjectID())
 	}
 
-	pbPosition := msg.Position()
-	// TODO: fix this bloody stuff with old controller dependencies
-	position := &cmath.SpacePosition{
-		Location: cmath.Vec3(pbPosition.Location),
-		Rotation: cmath.Vec3(pbPosition.Rotation),
-		Scale:    cmath.Vec3(pbPosition.Scale),
-	}
-
-	if err := space.SetPosition(position, true); err != nil {
+	if err := space.SetPosition(utils.GetPTR(msg.Position()), true); err != nil {
 		return errors.WithMessage(err, "failed to set space position")
 	}
 

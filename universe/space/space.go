@@ -463,7 +463,7 @@ func (s *Space) loadDependencies(entry *entry.Space) error {
 	return nil
 }
 
-func (s *Space) UpdateSpawnMessage(do_send bool) {
+func (s *Space) UpdateSpawnMessage(doSend bool) {
 	if s.GetWorld() == nil {
 		return
 	}
@@ -512,7 +512,7 @@ func (s *Space) UpdateSpawnMessage(do_send bool) {
 		},
 	)
 	s.spawnMsg.Store(msg)
-	if do_send {
+	if doSend {
 		s.world.Send(s.spawnMsg.Load(), true)
 	}
 }
