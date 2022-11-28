@@ -7,11 +7,11 @@ const (
 	GLTFAsset3dType
 )
 
-type FlyWithMeType string
+type FlyToMeType string
 
 const (
-	FlyWithMeStop  FlyWithMeType = "stop"
-	FlyWithMeStart FlyWithMeType = "start"
+	FlyToMeStop  FlyToMeType = "stop"
+	FlyToMeStart FlyToMeType = "start"
 )
 
 type UserStatusType string

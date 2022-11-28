@@ -69,7 +69,7 @@ func (w *Worlds) apiWorldsFlyToMe(c *gin.Context) {
 		}
 	}
 
-	fwmDto := dto.FlyWithMe{
+	fwmDto := dto.FlyToMe{
 		Pilot:     user.GetID(),
 		PilotName: userName,
 		SpaceID:   world.GetID(),
@@ -82,7 +82,7 @@ func (w *Worlds) apiWorldsFlyToMe(c *gin.Context) {
 		return
 	}
 
-	msg := posbus.NewRelayToReactMsg(string(dto.FlyWithMeStart), data).WebsocketMessage()
+	msg := posbus.NewRelayToReactMsg(string(dto.FlyToMeStart), data).WebsocketMessage()
 
 	if err := world.Send(msg, false); err != nil {
 		err = errors.WithMessage(err, "Worlds: apiWorldsFlyToMe: failed to dispatch event")
