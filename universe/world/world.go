@@ -212,8 +212,9 @@ func (w *World) UpdateWorldMetadata() error {
 	)
 
 	if ok {
-		metaMap := (map[string]any)(*meta)
-		utils.MapDecode(metaMap, &w.metaData)
+		if err := utils.MapDecode(*meta, &w.metaData); err != nil {
+			return errors.WithMessage(err, "failed to decode meta")
+		}
 	} else {
 		// TODO: print warning and call stack here
 		w.metaData = Metadata{}
