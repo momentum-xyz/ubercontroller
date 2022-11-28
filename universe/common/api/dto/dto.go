@@ -50,7 +50,7 @@ type ExploreOption struct {
 	SubSpaces   []ExploreOption `json:"subSpaces,omitempty"`
 }
 
-type FlyWithMe struct {
+type FlyToMe struct {
 	Pilot     uuid.UUID `json:"pilot"`
 	PilotName string    `json:"pilot_name"`
 	SpaceID   uuid.UUID `json:"space_id"`
