@@ -27,7 +27,7 @@ type AttributeTypes struct {
 func NewAttributeTypes(db database.DB) *AttributeTypes {
 	return &AttributeTypes{
 		db:             db,
-		attributeTypes: generic.NewSyncMap[entry.AttributeTypeID, universe.AttributeType](),
+		attributeTypes: generic.NewSyncMap[entry.AttributeTypeID, universe.AttributeType](0),
 	}
 }
 

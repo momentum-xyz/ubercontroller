@@ -38,6 +38,11 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		// with auth
 		auth := vx.Group("", middleware.VerifyUser(n.log))
 
+		authMedia := auth.Group("/media")
+		{
+			authMedia.POST("/upload/image", n.apiMediaUploadImage)
+		}
+
 		authUsers := auth.Group("/users")
 		{
 			authUsers.GET("/me", n.apiUsersGetMe)
@@ -46,7 +51,6 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		authProfile := auth.Group("/profile")
 		{
 			authProfile.PATCH("", n.apiProfileUpdate)
-			authProfile.POST("/avatar", n.apiProfileUploadAvatar)
 		}
 
 		authSpaces := auth.Group("/spaces")
@@ -70,6 +74,11 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 				authSpace.GET("/attributes/sub", n.apiGetSpaceAttributeSubValue)
 				authSpace.POST("/attributes/sub", n.apiSetSpaceAttributeSubValue)
 				authSpace.DELETE("/attributes/sub", n.apiRemoveSpaceAttributeSubValue)
+
+				authAgora := authSpace.Group("/agora")
+				{
+					authAgora.POST("/token", n.apiGenAgoraToken)
+				}
 			}
 		}
 	}

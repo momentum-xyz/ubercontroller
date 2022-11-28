@@ -2,6 +2,7 @@ package space
 
 import (
 	"github.com/google/uuid"
+	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/pkg/position_algo"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -54,45 +55,66 @@ func (s *Space) GetPlacements() map[uuid.UUID]position_algo.Algo {
 	return pls
 }
 
-func (s *Space) SetActualPosition(pos cmath.Vec3, theta float64, force bool) error {
-	//s.mu.Lock()
-	//defer s.mu.Unlock()
-	if (s.theta != theta) || (*s.actualPosition.Load() != pos) || (force) {
+func (s *Space) SetActualPosition(pos cmath.SpacePosition, theta float64) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if (s.theta != theta) || (*s.actualPosition.Load() != pos) {
 		s.theta = theta
 		s.actualPosition.Store(&pos)
-		s.UpdateSpawnMessage()
+
+		go func() {
+			s.UpdateSpawnMessage(false)
+			s.GetWorld().Send(
+				posbus.NewSetStaticObjectPositionMsg(s.GetID(), *(s.actualPosition.Load())).WebsocketMessage(),
+				false,
+			)
+		}()
 	}
+
 	return nil
 }
 
-func (s *Space) GetPosition() *cmath.Vec3 {
+func (s *Space) GetPosition() *cmath.SpacePosition {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	return s.position
 }
 
-func (s *Space) GetActualPosition() *cmath.Vec3 {
+func (s *Space) GetActualPosition() *cmath.SpacePosition {
 	return s.actualPosition.Load()
 }
 
-func (s *Space) SetPosition(position *cmath.Vec3, updateDB bool) error {
+func (s *Space) SetPosition(position *cmath.SpacePosition, updateDB bool) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if updateDB {
 		if err := s.db.SpacesUpdateSpacePosition(s.ctx, s.id, position); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
 
+	// TODO: unclear how we have to do it, in case if one or another is nil
 	s.position = position
 	if s.position != nil {
 		s.actualPosition.Store(s.position)
-		s.UpdateSpawnMessage()
+		//s.SetActualPosition(s.position)
+
+		go func() {
+			s.UpdateSpawnMessage(false)
+			s.GetWorld().Send(
+				posbus.NewSetStaticObjectPositionMsg(s.GetID(), *(s.actualPosition.Load())).WebsocketMessage(),
+				false,
+			)
+		}()
 	}
 
 	return nil
 }
 
-func (s *Space) UpdateChildrenPosition(recursive bool, force bool) error {
+func (s *Space) UpdateChildrenPosition(recursive bool) error {
 	//fmt.Println("pls1", s.GetID())
 	pls := s.GetPlacements()
 	//fmt.Printf("pls1a:%+v : %+v\n", s.GetID(), pls)
@@ -130,12 +152,11 @@ func (s *Space) UpdateChildrenPosition(recursive bool, force bool) error {
 				s.log.Errorf("Space: UpdatePosition: failed to get space: %s", k)
 				continue
 			}
-			if err := child.SetActualPosition(pos, theta, force); err != nil {
+			if err := child.SetActualPosition(pos, theta); err != nil {
 				s.log.Errorf("Space: UpdatePosition: failed to update position: %s", k)
 			}
 			if recursive {
-				child.UpdateChildrenPosition(recursive, force)
-
+				child.UpdateChildrenPosition(recursive)
 			}
 		}
 	}

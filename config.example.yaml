@@ -1,0 +1,12 @@
+# Example minimal config for local development
+# Copy this file to config.yaml and modify for your env
+settings:
+  loglevel: 0
+postgres:
+  database: momentum4
+  host: localhost
+  port: 5432
+  username: momentum
+  password: ""
+  max_conns: 42
+

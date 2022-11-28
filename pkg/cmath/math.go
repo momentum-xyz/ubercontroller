@@ -10,6 +10,12 @@ type Vec3 struct {
 	Z float32 `json:"z" db:"z"`
 }
 
+type SpacePosition struct {
+	Location Vec3 `db:"location" json:"location"`
+	Rotation Vec3 `db:"rotation" json:"rotation"`
+	Scale    Vec3 `db:"scale" json:"scale"`
+}
+
 func (v *Vec3) Plus(v2 Vec3) {
 	v.X += v2.X
 	v.Y += v2.Y
@@ -23,15 +29,6 @@ func (v *Vec3) ToVec3f64() Vec3f64 {
 		float64(v.Z),
 	}
 }
-
-/*type vec6 struct {
-	X     float32 `json:"x"`
-	Y     float32 `json:"y"`
-	Z     float32 `json:"z"`
-	Alpha float32 `json:"alpha"`
-	Beta  float32 `json:"beta"`
-	Gamma float32 `json:"gamma"`
-}*/
 
 type Vec3f64 struct {
 	X float64 `json:"x" db:"x"`

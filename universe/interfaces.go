@@ -13,14 +13,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
-type Calendar interface {
-	Initializer
-	RunStopper
-
-	OnAttributeUpsert(attributeID entry.AttributeID, value any)
-	OnAttributeRemove(attributeID entry.AttributeID)
-}
-
 type IDer interface {
 	GetID() uuid.UUID
 }
@@ -126,7 +118,9 @@ type Node interface {
 	GetSpaceUserAttributePayload(spaceUserAttributeID entry.SpaceUserAttributeID) (*entry.AttributePayload, bool)
 	GetSpaceUserAttributeValue(spaceUserAttributeID entry.SpaceUserAttributeID) (*entry.AttributeValue, bool)
 	GetSpaceUserAttributeOptions(spaceUserAttributeID entry.SpaceUserAttributeID) (*entry.AttributeOptions, bool)
-	GetSpaceUserAttributeEffectiveOptions(spaceUserAttributeID entry.SpaceUserAttributeID) (*entry.AttributeOptions, bool)
+	GetSpaceUserAttributeEffectiveOptions(spaceUserAttributeID entry.SpaceUserAttributeID) (
+		*entry.AttributeOptions, bool,
+	)
 
 	UpsertSpaceUserAttribute(
 		spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
@@ -165,7 +159,6 @@ type Worlds interface {
 
 type World interface {
 	Space
-	RunStopper
 	LoadSaver
 	SpaceCacher
 
@@ -180,6 +173,7 @@ type World interface {
 type Space interface {
 	IDer
 	Initializer
+	RunStopper
 
 	CreateSpace(spaceID uuid.UUID) (Space, error)
 
@@ -191,9 +185,13 @@ type Space interface {
 	GetOwnerID() uuid.UUID
 	SetOwnerID(ownerID uuid.UUID, updateDB bool) error
 
-	GetPosition() *cmath.Vec3
-	GetActualPosition() *cmath.Vec3
-	SetPosition(position *cmath.Vec3, updateDB bool) error
+	GetPosition() *cmath.SpacePosition
+	GetActualPosition() *cmath.SpacePosition
+	SetPosition(position *cmath.SpacePosition, updateDB bool) error
+	SetActualPosition(pos cmath.SpacePosition, theta float64) error
+
+	//GetRotation() *cmath.Vec3
+	//SetRotation(rotation *cmath.Vec3, updateDB bool) error
 
 	GetOptions() *entry.SpaceOptions
 	GetEffectiveOptions() *entry.SpaceOptions
@@ -254,8 +252,7 @@ type Space interface {
 	RemoveSpaceAttribute(attributeID entry.AttributeID, updateDB bool) (bool, error)
 	RemoveSpaceAttributes(attributeIDs []entry.AttributeID, updateDB bool) (bool, error)
 
-	UpdateChildrenPosition(recursive bool, force bool) error
-	SetActualPosition(pos cmath.Vec3, theta float64, force bool) error
+	UpdateChildrenPosition(recursive bool) error
 
 	SendTextures(sendFn func(msg *websocket.PreparedMessage) error, recursive bool)
 }
@@ -263,7 +260,7 @@ type Space interface {
 type User interface {
 	IDer
 	Initializer
-	Stopper
+	RunStopper
 
 	GetWorld() World
 	SetWorld(world World)
@@ -489,4 +486,12 @@ type UserType interface {
 
 	GetEntry() *entry.UserType
 	LoadFromEntry(entry *entry.UserType) error
+}
+
+type Calendar interface {
+	Initializer
+	RunStopper
+
+	OnAttributeUpsert(attributeID entry.AttributeID, value any)
+	OnAttributeRemove(attributeID entry.AttributeID)
 }

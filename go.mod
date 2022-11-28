@@ -3,13 +3,14 @@ module github.com/momentum-xyz/ubercontroller
 go 1.19
 
 require (
+	github.com/AgoraIO-Community/go-tokenbuilder v1.0.0
 	github.com/barkimedes/go-deepcopy v0.0.0-20220514131651-17c30cfc62df
 	github.com/c0mm4nd/go-ripemd v0.0.0-20200326052756-bd1759ad7d10
 	github.com/georgysavva/scany v1.2.1
 	github.com/gin-gonic/gin v1.8.1
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang-migrate/migrate/v4 v4.15.2
-	github.com/google/flatbuffers v22.9.29+incompatible
+	github.com/google/flatbuffers v22.11.23+incompatible
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.5.0
 	github.com/hashicorp/go-multierror v1.1.1
@@ -20,7 +21,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/momentum-xyz/controller v0.1.14
-	github.com/momentum-xyz/posbus-protocol v0.1.3-0.20220823125430-eae4f9f48e55
+	github.com/momentum-xyz/posbus-protocol v0.1.20
 	github.com/pborman/getopt/v2 v2.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/sasha-s/go-deadlock v0.3.1

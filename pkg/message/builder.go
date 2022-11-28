@@ -19,7 +19,7 @@ type ObjectDefinition struct {
 	ParentID         uuid.UUID
 	AssetType        uuid.UUID
 	Name             string
-	Position         cmath.Vec3
+	Position         cmath.SpacePosition
 	TetheredToParent bool
 	Minimap          bool
 	InfoUI           uuid.UUID
@@ -99,7 +99,9 @@ func (mb *Builder) MsgSetWorld(
 		rot := decorations[i].rotation
 		api.DecorationMetadataStart(builder)
 		api.DecorationMetadataAddAssetId(builder, mb.SerializeGUID(builder, decorations[i].AssetID))
-		api.DecorationMetadataAddPos(builder, api.CreatePosRot(builder, pos.X, pos.Y, pos.Z, rot.X, rot.Y, rot.Z))
+		api.DecorationMetadataAddPos(
+			builder, api.CreatePosition(builder, pos.X, pos.Y, pos.Z, rot.X, rot.Y, rot.Z, 0, 0, 0),
+		)
 		offset := api.DecorationMetadataEnd(builder)
 		decorationOffsets = append(decorationOffsets, offset)
 	}
@@ -171,8 +173,11 @@ func (mb *Builder) MsgObjectDefinition(obj ObjectDefinition) *websocket.Prepared
 	api.ObjectDefinitionAddObjectId(builder, mb.SerializeGUID(builder, obj.ObjectID))
 	api.ObjectDefinitionAddName(builder, objName)
 	api.ObjectDefinitionAddPosition(
-		builder,
-		api.CreateVec3(builder, obj.Position.X, obj.Position.Y, obj.Position.Z),
+		builder, api.CreatePosition(
+			builder, obj.Position.Location.X, obj.Position.Location.Y, obj.Position.Location.Z, obj.Position.Rotation.X,
+			obj.Position.Rotation.Y, obj.Position.Rotation.Z, obj.Position.Scale.X, obj.Position.Scale.Y,
+			obj.Position.Scale.Z,
+		),
 	)
 	api.ObjectDefinitionAddParentId(builder, mb.SerializeGUID(builder, obj.ParentID))
 	api.ObjectDefinitionAddAssetType(builder, mb.SerializeGUID(builder, obj.AssetType))
@@ -200,7 +205,13 @@ func (mb *Builder) MsgAddStaticObjects(objects []ObjectDefinition) *websocket.Pr
 		api.ObjectDefinitionAddObjectId(builder, mb.SerializeGUID(builder, obj.ObjectID))
 		api.ObjectDefinitionAddName(builder, nameObj)
 		api.ObjectDefinitionAddPosition(
-			builder, api.CreateVec3(builder, obj.Position.X, obj.Position.Y, obj.Position.Z),
+			builder,
+			api.CreatePosition(
+				builder, obj.Position.Location.X, obj.Position.Location.Y, obj.Position.Location.Z,
+				obj.Position.Rotation.X,
+				obj.Position.Rotation.Y, obj.Position.Rotation.Z, obj.Position.Scale.X, obj.Position.Scale.Y,
+				obj.Position.Scale.Z,
+			),
 		)
 		api.ObjectDefinitionAddParentId(builder, mb.SerializeGUID(builder, obj.ParentID))
 		api.ObjectDefinitionAddAssetType(builder, mb.SerializeGUID(builder, obj.AssetType))

@@ -2,6 +2,7 @@ package world
 
 import (
 	"context"
+	"github.com/hashicorp/go-multierror"
 	"sync/atomic"
 	"time"
 
@@ -19,8 +20,8 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/universe/calendar"
 	"github.com/momentum-xyz/ubercontroller/universe/space"
-	"github.com/momentum-xyz/ubercontroller/universe/world/calendar"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
@@ -29,6 +30,7 @@ var _ universe.World = (*World)(nil)
 type World struct {
 	*space.Space
 	ctx              context.Context
+	cancel           context.CancelFunc
 	log              *zap.SugaredLogger
 	db               database.DB
 	pluginController *mplugin.PluginController
@@ -44,7 +46,7 @@ type World struct {
 func NewWorld(id uuid.UUID, db database.DB) *World {
 	world := &World{
 		db:        db,
-		allSpaces: generic.NewSyncMap[uuid.UUID, universe.Space](),
+		allSpaces: generic.NewSyncMap[uuid.UUID, universe.Space](0),
 	}
 	world.Space = space.NewSpace(id, db, world)
 	world.pluginController = mplugin.NewPluginController(id)
@@ -52,10 +54,6 @@ func NewWorld(id uuid.UUID, db database.DB) *World {
 	world.pluginController.AddPlugin(universe.GetSystemPluginID(), world.corePluginInitFunc)
 	world.calendar = calendar.NewCalendar(world)
 	return world
-}
-
-func (w *World) GetCalendar() universe.Calendar {
-	return w.calendar
 }
 
 func (w *World) GetID() uuid.UUID {
@@ -77,9 +75,9 @@ func (w *World) Initialize(ctx context.Context) error {
 		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
 	}
 
-	w.counter.Store(0)
-	w.ctx = ctx
+	w.ctx, w.cancel = context.WithCancel(ctx)
 	w.log = log
+	w.counter.Store(0)
 
 	if err := w.Space.Initialize(ctx); err != nil {
 		return errors.WithMessage(err, "failed to initialize space")
@@ -92,17 +90,26 @@ func (w *World) Initialize(ctx context.Context) error {
 	return w.AddSpaceToAllSpaces(w.Space)
 }
 
+func (w *World) GetCalendar() universe.Calendar {
+	return w.calendar
+}
+
 func (w *World) AddToCounter() int64 {
 	return w.counter.Add(1)
 }
 
-// TODO: implement
 func (w *World) Run() error {
-	ticker := time.NewTicker(500 * time.Millisecond)
-	defer ticker.Stop()
-
+	go w.runSpaces()
 	go w.calendar.Run()
-	defer w.calendar.Stop()
+	ticker := time.NewTicker(500 * time.Millisecond)
+
+	defer func() {
+		w.calendar.Stop()
+		ticker.Stop()
+		if err := w.stopSpaces(); err != nil {
+			w.log.Error(errors.WithMessagef(err, "World: Run: failed to stop spaces: %s", w.GetID()))
+		}
+	}()
 
 	for {
 		select {
@@ -114,9 +121,45 @@ func (w *World) Run() error {
 		case <-ticker.C:
 			// fmt.Println(color.Red, "Ticker", color.Reset)
 			go w.broadcastPositions()
+		case <-w.ctx.Done():
+			return nil
 		}
 	}
+}
+
+func (w *World) Stop() error {
+	w.cancel()
 	return nil
+}
+
+func (w *World) runSpaces() error {
+	w.allSpaces.Mu.RLock()
+	defer w.allSpaces.Mu.RUnlock()
+
+	for _, space := range w.allSpaces.Data {
+		go func(space universe.Space) {
+			if err := space.Run(); err != nil {
+				w.log.Error(errors.WithMessagef(err, "World: runSpaces: failed to run space: %s", space.GetID()))
+			}
+		}(space)
+	}
+
+	return nil
+}
+
+// TODO: optimize
+func (w *World) stopSpaces() error {
+	w.allSpaces.Mu.RLock()
+	defer w.allSpaces.Mu.RUnlock()
+
+	var errs *multierror.Error
+	for _, space := range w.allSpaces.Data {
+		if err := space.Stop(); err != nil {
+			errs = multierror.Append(errs, errors.WithMessagef(err, "failed to stop space: %s", space.GetID()))
+		}
+	}
+
+	return errs.ErrorOrNil()
 }
 
 func (w *World) broadcastPositions() {
@@ -138,11 +181,6 @@ func (w *World) broadcastPositions() {
 	}
 }
 
-// TODO: implement
-func (w *World) Stop() error {
-	return nil
-}
-
 func (w *World) Load() error {
 	w.log.Infof("Loading world: %s", w.GetID())
 
@@ -156,8 +194,7 @@ func (w *World) Load() error {
 	}
 	w.UpdateWorldMetadata()
 
-	w.Space.UpdateChildrenPosition(true, true)
-	go w.Run()
+	w.Space.UpdateChildrenPosition(true)
 	//cu.BroadcastPositions()
 
 	w.log.Infof("World loaded: %s", w.GetID())
@@ -171,13 +208,14 @@ func (w *World) UpdateWorldMetadata() error {
 			uuid.UUID(w.corePluginInterface.GetId()), universe.Attributes.World.Meta.Name,
 		),
 	)
-	if !ok {
-		w.metaMsg.Store(nil)
-		return nil
-	}
-	metaMap := (map[string]any)(*meta)
 
-	utils.MapDecode(metaMap, &w.metaData)
+	if ok {
+		metaMap := (map[string]any)(*meta)
+		utils.MapDecode(metaMap, &w.metaData)
+	} else {
+		// TODO: print warning and call stack here
+		w.metaData = Metadata{}
+	}
 
 	//TODO: Ut is all ugly with circular deps
 	dec := make([]message.DecorationMetadata, len(w.metaData.Decorations))
@@ -199,7 +237,7 @@ func (w *World) UpdateWorldMetadata() error {
 func (w *World) Save() error {
 	w.log.Infof("Saving world: %s", w.GetID())
 
-	spaces := w.GetSpaces(true)
+	spaces := w.GetAllSpaces()
 
 	entries := make([]*entry.Space, 0, len(spaces))
 	for _, space := range spaces {

@@ -4,7 +4,7 @@ import (
 	"math"
 
 	"github.com/momentum-xyz/controller/utils"
-	cm "github.com/momentum-xyz/ubercontroller/pkg/cmath"
+	cmath "github.com/momentum-xyz/ubercontroller/pkg/cmath"
 )
 
 const (
@@ -27,8 +27,10 @@ func NewSector(parameterMap map[string]interface{}) Algo {
 	}
 }
 
-func (sec *sector) CalcPos(parentTheta float64, parentVector cm.Vec3, i, n int) (cm.Vec3, float64) {
-	parent := parentVector.ToVec3f64()
+func (sec *sector) CalcPos(parentTheta float64, parentPosition cmath.SpacePosition, i, n int) (
+	cmath.SpacePosition, float64,
+) {
+	parent := parentPosition.Location.ToVec3f64()
 
 	scl := float64(0)
 	phi := parentTheta
@@ -38,13 +40,14 @@ func (sec *sector) CalcPos(parentTheta float64, parentVector cm.Vec3, i, n int) 
 	}
 
 	angle := phi + float64(i)*scl
-	p := cm.Vec3f64{
+	p := cmath.Vec3f64{
 		X: math.Round((parent.X+sec.R*math.Cos(angle))*10.0) / 10.0,
 		Y: parent.Y + sec.VShift,
 		Z: math.Round((parent.Z+sec.R*math.Sin(angle))*10.0) / 10.0,
 	}
 
-	return p.ToVec3(), math.Atan2(p.Z-parent.Z, p.X-parent.X) /* theta */
+	np := cmath.SpacePosition{Location: p.ToVec3()}
+	return np, math.Atan2(p.Z-parent.Z, p.X-parent.X) /* theta */
 }
 
 func (*sector) Name() string {

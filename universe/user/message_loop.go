@@ -2,8 +2,8 @@ package user
 
 import (
 	"fmt"
-
 	"github.com/momentum-xyz/posbus-protocol/posbus"
+	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -43,9 +43,27 @@ func (u *User) OnMessage(msg *posbus.Message) error {
 			return errors.WithMessage(err, "failed to handle: signal")
 		}
 		return nil
+	case posbus.MsgTypeSetStaticObjectPosition:
+		if err := u.UpdateSpacePosition(msg.AsSetStaticObjectPosition()); err != nil {
+			return errors.WithMessage(err, "failed to update space position")
+		}
+		return nil
 	}
 
 	return errors.Errorf("unknown message: %d", msg.Type())
+}
+
+func (u *User) UpdateSpacePosition(msg *posbus.SetStaticObjectPosition) error {
+	space, ok := universe.GetNode().GetSpaceFromAllSpaces(msg.ObjectID())
+	if !ok {
+		return errors.Errorf("space not found: %s", msg.ObjectID())
+	}
+
+	if err := space.SetPosition(utils.GetPTR(msg.Position()), true); err != nil {
+		return errors.WithMessage(err, "failed to set space position")
+	}
+
+	return space.GetWorld().Send(msg.WebsocketMessage(), true)
 }
 
 func (u *User) Teleport(msg *posbus.SwitchWorld) error {

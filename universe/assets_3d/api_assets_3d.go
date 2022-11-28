@@ -45,7 +45,7 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 		if meta == nil {
 			return false
 		}
-		category = utils.GetFromAnyMap(*meta, "type", "")
+		category = utils.GetFromAnyMap(*meta, "category", "")
 		return category == inQuery.Category
 	}
 
@@ -101,6 +101,7 @@ func (a *Assets3d) apiAddAssets3d(c *gin.Context) {
 		if err != nil {
 			err = errors.WithMessage(err, "Assets3d: apiAddAssets3d: failed to parse uuid")
 			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_parse_uuid", err, a.log)
+			return
 		}
 
 		newAsset, err := a.CreateAsset3d(assetID)
@@ -149,7 +150,7 @@ func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 
 	defer openedFile.Close()
 
-	req, err := http.NewRequest("POST", a.cfg.Common.RenderInternalUrl+"/addasset", openedFile)
+	req, err := http.NewRequest("POST", a.cfg.Common.RenderInternalURL+"/addasset", openedFile)
 	if err != nil {
 		err := errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to create post request")
 		api.AbortRequest(c, http.StatusBadRequest, "failed_to_create_request", err, a.log)
@@ -292,7 +293,7 @@ func (a *Assets3d) apiGetAssets3dOptions(c *gin.Context) {
 
 		gotAsset3d, ok := a.GetAsset3d(asset3dID)
 		if !ok {
-			err = errors.WithMessage(err, "Assets3d: apiGetAsset3dOptions: failed to get asset3d")
+			err = errors.Errorf("Assets3d: apiGetAsset3dOptions: failed to get asset3d")
 			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_asset3d", err, a.log)
 			return
 		}
@@ -338,7 +339,7 @@ func (a *Assets3d) apiGetAssets3dMeta(c *gin.Context) {
 
 		gotAsset3d, ok := a.GetAsset3d(asset3dID)
 		if !ok {
-			err = errors.WithMessage(err, "Assets3d: apiGetAsset3dMeta: failed to get asset3d")
+			err = errors.Errorf("Assets3d: apiGetAsset3dMeta: failed to get asset3d")
 			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_asset3d", err, a.log)
 			return
 		}

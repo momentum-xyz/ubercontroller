@@ -124,11 +124,12 @@ func (u *UserType) SetOptions(modifyFn modify.Fn[entry.UserOptions], updateDB bo
 	u.mu.Unlock()
 
 	for _, world := range universe.GetNode().GetWorlds().GetWorlds() {
-		for _, user := range world.GetUsers(false) {
-			if user.GetUserType() == nil {
+		for _, user := range world.GetUsers(true) {
+			userType := user.GetUserType()
+			if userType == nil {
 				continue
 			}
-			if user.GetUserType().GetID() != u.GetID() {
+			if userType.GetID() != u.GetID() {
 				continue
 			}
 			if err := user.Update(); err != nil {

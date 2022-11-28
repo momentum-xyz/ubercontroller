@@ -18,7 +18,7 @@ import (
 // @Summary Returns spaces and one level of children
 // @Schemes
 // @Description Returns space information and one level of children based on world_id (used in explore widget)
-// @Tags spaces
+// @Tags worlds
 // @Accept json
 // @Produce json
 // @Param world_id path string true "World ID"
@@ -36,42 +36,42 @@ func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 	inQuery := Query{}
 
 	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		err := errors.WithMessage(err, "Node: apiWorldsGetSpacesWithChildren: failed to bind query")
+		err := errors.WithMessage(err, "Worlds: apiWorldsGetSpacesWithChildren: failed to bind query")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, w.log)
 		return
 	}
 
 	spaceID, err := uuid.Parse(inQuery.SpaceID)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiWorldsGetSpacesWithChildren: failed to parse space id")
+		err := errors.WithMessage(err, "Worlds: apiWorldsGetSpacesWithChildren: failed to parse space id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, w.log)
 		return
 	}
 
 	worldID, err := uuid.Parse(c.Param("worldID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiWorldsGetSpacesWithChildren: failed to parse world id")
+		err := errors.WithMessage(err, "Worlds: apiWorldsGetSpacesWithChildren: failed to parse world id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
 		return
 	}
 
 	world, ok := w.GetWorld(worldID)
 	if !ok {
-		err := errors.Errorf("Node: apiWorldsGetSpacesWithChildren: space not found: %s", worldID)
+		err := errors.Errorf("Worlds: apiWorldsGetSpacesWithChildren: space not found: %s", worldID)
 		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
 		return
 	}
 
 	root, ok := world.GetSpaceFromAllSpaces(spaceID)
 	if !ok {
-		err := errors.Errorf("Node: apiWorldsGetSpacesWithChildren: failed to get space: %s", spaceID)
+		err := errors.Errorf("Worlds: apiWorldsGetSpacesWithChildren: failed to get space: %s", spaceID)
 		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, w.log)
 		return
 	}
 
 	options, err := w.apiWorldsGetRootOptions(root)
 	if err != nil {
-		err := errors.Errorf("Node: apiWorldsGetSpacesWithChildren: unable to get options for spaces and subspaces: %s", err)
+		err := errors.WithMessage(err, "Worlds: apiWorldsGetSpacesWithChildren: unable to get options for spaces and subspaces")
 		api.AbortRequest(c, http.StatusNotFound, "options_not_found", err, w.log)
 		return
 	}
@@ -161,7 +161,7 @@ func (w *Worlds) apiWorldsResolveNameDescription(space universe.Space) (spaceNam
 // @Summary Search spaces
 // @Schemes
 // @Description Returns spaces information based on a search query and categorizes the results
-// @Tags spaces
+// @Tags worlds
 // @Accept json
 // @Produce json
 // @Param world_id path string true "World ID"
@@ -179,28 +179,28 @@ func (w *Worlds) apiWorldsSearchSpaces(c *gin.Context) {
 	inQuery := Query{}
 
 	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		err := errors.WithMessage(err, "Node: apiWorldsSearchSpaces: failed to bind query")
+		err := errors.WithMessage(err, "Worlds: apiWorldsSearchSpaces: failed to bind query")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, w.log)
 		return
 	}
 
 	worldID, err := uuid.Parse(c.Param("worldID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiWorldsSearchSpaces: failed to parse world id")
+		err := errors.WithMessage(err, "Worlds: apiWorldsSearchSpaces: failed to parse world id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
 		return
 	}
 
 	world, ok := w.GetWorld(worldID)
 	if !ok {
-		err := errors.Errorf("Node: apiWorldsSearchSpaces: space not found: %s", worldID)
+		err := errors.Errorf("Worlds: apiWorldsSearchSpaces: space not found: %s", worldID)
 		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
 		return
 	}
 
 	spaces, err := w.apiWorldsFilterSpaces(inQuery.SearchQuery, world)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiWorldsSearchSpaces: failed to filter spaces")
+		err := errors.WithMessage(err, "Worlds: apiWorldsSearchSpaces: failed to filter spaces")
 		api.AbortRequest(c, http.StatusBadRequest, "failed_to_filter", err, w.log)
 		return
 	}

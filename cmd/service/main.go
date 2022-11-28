@@ -84,7 +84,7 @@ func run() error {
 		return errors.WithMessage(err, "failed to create db")
 	}
 
-	node, err := createNode(ctx, cfg, db)
+	node, err := createNode(ctx, db)
 	if err != nil {
 		return errors.WithMessage(err, "failed to create node")
 	}
@@ -111,7 +111,7 @@ func run() error {
 	return nil
 }
 
-func createNode(ctx context.Context, cfg *config.Config, db database.DB) (universe.Node, error) {
+func createNode(ctx context.Context, db database.DB) (universe.Node, error) {
 	worlds := worlds.NewWorlds(db)
 	assets2d := assets_2d.NewAssets2d(db)
 	assets3d := assets_3d.NewAssets3d(db)
@@ -127,7 +127,6 @@ func createNode(ctx context.Context, cfg *config.Config, db database.DB) (univer
 
 	node := node.NewNode(
 		nodeEntry.SpaceID,
-		cfg,
 		db,
 		worlds,
 		assets2d,

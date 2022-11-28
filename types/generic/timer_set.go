@@ -19,7 +19,7 @@ type TimerSet[T comparable] struct {
 
 func NewTimerSet[T comparable]() *TimerSet[T] {
 	return &TimerSet[T]{
-		timers: NewSyncMap[T, Unique[context.CancelFunc]](),
+		timers: NewSyncMap[T, Unique[context.CancelFunc]](0),
 	}
 }
 

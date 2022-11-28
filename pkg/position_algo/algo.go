@@ -12,5 +12,5 @@ const (
 
 type Algo interface {
 	Name() string
-	CalcPos(parentTheta float64, parentVector cmath.Vec3, i, n int) (cmath.Vec3, float64)
+	CalcPos(parentTheta float64, parentPosition cmath.SpacePosition, i, n int) (cmath.SpacePosition, float64)
 }

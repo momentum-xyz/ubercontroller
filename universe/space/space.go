@@ -36,7 +36,7 @@ type Space struct {
 	//mu               sync.RWMutex
 	mu               deadlock.RWMutex
 	ownerID          uuid.UUID
-	position         *cmath.Vec3
+	position         *cmath.SpacePosition
 	options          *entry.SpaceOptions
 	parent           universe.Space
 	asset2d          universe.Asset2d
@@ -50,7 +50,7 @@ type Space struct {
 	attributesMsg     *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
 	renderTextureAttr map[string]string
 	textMsg           atomic.Pointer[websocket.PreparedMessage]
-	actualPosition    atomic.Pointer[cmath.Vec3]
+	actualPosition    atomic.Pointer[cmath.SpacePosition]
 	broadcastPipeline chan *websocket.PreparedMessage
 	messageAccept     atomic.Bool
 	numSendsQueued    atomic.Int64
@@ -63,10 +63,10 @@ func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
 	return &Space{
 		id:                id,
 		db:                db,
-		Users:             generic.NewSyncMap[uuid.UUID, universe.User](),
-		Children:          generic.NewSyncMap[uuid.UUID, universe.Space](),
-		spaceAttributes:   generic.NewSyncMap[entry.AttributeID, *entry.AttributePayload](),
-		attributesMsg:     generic.NewSyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]](),
+		Users:             generic.NewSyncMap[uuid.UUID, universe.User](0),
+		Children:          generic.NewSyncMap[uuid.UUID, universe.Space](0),
+		spaceAttributes:   generic.NewSyncMap[entry.AttributeID, *entry.AttributePayload](0),
+		attributesMsg:     generic.NewSyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]](0),
 		renderTextureAttr: make(map[string]string),
 		world:             world,
 	}
@@ -90,8 +90,9 @@ func (s *Space) Initialize(ctx context.Context) error {
 	s.ctx = ctx
 	s.log = log
 	s.numSendsQueued.Store(chanIsClosed)
-	s.actualPosition.Store(new(cmath.Vec3))
-	go s.Run()
+
+	newPos := cmath.SpacePosition{Location: *new(cmath.Vec3), Rotation: *new(cmath.Vec3), Scale: *new(cmath.Vec3)}
+	s.actualPosition.Store(&newPos)
 
 	return nil
 }
@@ -225,6 +226,7 @@ func (s *Space) SetSpaceType(spaceType universe.SpaceType, updateDB bool) error 
 	}
 
 	s.spaceType = spaceType
+	s.effectiveOptions = nil
 
 	return nil
 }
@@ -304,6 +306,40 @@ func (s *Space) GetEntry() *entry.Space {
 	return entry
 }
 
+func (s *Space) Run() error {
+	s.numSendsQueued.Store(0)
+	s.broadcastPipeline = make(chan *websocket.PreparedMessage, 100)
+	defer func() {
+		ns := s.numSendsQueued.Swap(chanIsClosed)
+		for i := int64(0); i < ns; i++ {
+			<-s.broadcastPipeline
+		}
+		close(s.broadcastPipeline)
+	}()
+
+	for {
+		select {
+		case message := <-s.broadcastPipeline:
+			s.numSendsQueued.Add(-1)
+			//fmt.Println("Got a message from")
+			if message == nil {
+				return nil
+			}
+			s.performBroadcast(message)
+		case <-s.ctx.Done():
+			s.Stop()
+		}
+	}
+}
+
+func (s *Space) Stop() error {
+	ns := s.numSendsQueued.Add(1)
+	if ns >= 0 {
+		s.broadcastPipeline <- nil
+	}
+	return nil
+}
+
 func (s *Space) Update(recursive bool) error {
 	s.mu.Lock()
 	s.effectiveOptions = nil
@@ -333,46 +369,51 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 	}
 
 	group, _ := errgroup.WithContext(s.ctx)
-	group.Go(func() error {
-		if err := s.loadSpaceAttributes(); err != nil {
-			return errors.WithMessage(err, "failed to load space attributes")
-		}
-		return nil
-	})
-	group.Go(func() error {
-		if err := s.loadSelfData(entry); err != nil {
-			return errors.WithMessage(err, "failed to load self data")
-		}
-		if err := s.loadDependencies(entry); err != nil {
-			return errors.WithMessage(err, "failed to load dependencies")
-		}
-		if err := s.SetPosition(entry.Position, false); err != nil {
-			return errors.WithMessage(err, "failed to set position")
-		}
-		s.UpdateSpawnMessage()
-
-		if !recursive {
+	group.Go(
+		func() error {
+			if err := s.loadSpaceAttributes(); err != nil {
+				return errors.WithMessage(err, "failed to load space attributes")
+			}
 			return nil
-		}
+		},
+	)
+	group.Go(
+		func() error {
+			if err := s.loadSelfData(entry); err != nil {
+				return errors.WithMessage(err, "failed to load self data")
+			}
+			if err := s.loadDependencies(entry); err != nil {
+				return errors.WithMessage(err, "failed to load dependencies")
+			}
+			if err := s.SetPosition(entry.Position, false); err != nil {
+				return errors.WithMessage(err, "failed to set position")
+			}
 
-		entries, err := s.db.SpacesGetSpacesByParentID(s.ctx, s.id)
-		if err != nil {
-			return errors.WithMessagef(err, "failed to get spaces by parent id: %s", s.id)
-		}
+			go s.UpdateSpawnMessage(true)
 
-		for i := range entries {
-			space, err := s.CreateSpace(entries[i].SpaceID)
+			if !recursive {
+				return nil
+			}
+
+			entries, err := s.db.SpacesGetSpacesByParentID(s.ctx, s.id)
 			if err != nil {
-				return errors.WithMessagef(err, "failed to create new space: %s", entries[i].SpaceID)
+				return errors.WithMessagef(err, "failed to get spaces by parent id: %s", s.id)
 			}
-			if err := space.LoadFromEntry(entries[i], recursive); err != nil {
-				return errors.WithMessagef(err, "failed to load space from entry: %s", entries[i].SpaceID)
-			}
-			s.Children.Store(entries[i].SpaceID, space)
-		}
 
-		return nil
-	})
+			for i := range entries {
+				space, err := s.CreateSpace(entries[i].SpaceID)
+				if err != nil {
+					return errors.WithMessagef(err, "failed to create new space: %s", entries[i].SpaceID)
+				}
+				if err := space.LoadFromEntry(entries[i], recursive); err != nil {
+					return errors.WithMessagef(err, "failed to load space from entry: %s", entries[i].SpaceID)
+				}
+				s.Children.Store(entries[i].SpaceID, space)
+			}
+
+			return nil
+		},
+	)
 	return group.Wait()
 }
 
@@ -420,8 +461,9 @@ func (s *Space) loadDependencies(entry *entry.Space) error {
 	return nil
 }
 
-func (s *Space) UpdateSpawnMessage() {
-	if s.world == nil {
+func (s *Space) UpdateSpawnMessage(doSend bool) {
+	world := s.GetWorld()
+	if world == nil {
 		return
 	}
 
@@ -429,32 +471,38 @@ func (s *Space) UpdateSpawnMessage() {
 	v, ok := s.GetSpaceAttributeValue(
 		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name),
 	)
-	if ok {
-		// QUESTION: what to do here? maybe return an error?
+	if ok && v != nil {
 		name = utils.GetFromAnyMap(*v, universe.Attributes.Space.Name.Key, "")
 	} else {
 		//fmt.Println("smsg2", s.GetID())
 	}
 
-	opts := s.GetEffectiveOptions()
-	parent := uuid.Nil
-	if s.GetParent() != nil {
-		parent = s.GetParent().GetID()
+	parentID := uuid.Nil
+	parent := s.GetParent()
+	if parent != nil {
+		parentID = parent.GetID()
 	}
-	asset3d := uuid.Nil
-	if s.asset3d != nil {
-		asset3d = s.asset3d.GetID()
-	} else if s.GetSpaceType().GetAsset3d() != nil {
-		asset3d = s.GetSpaceType().GetAsset3d().GetID()
+
+	asset3dID := uuid.Nil
+	asset3d := s.GetAsset3D()
+	spaceType := s.GetSpaceType()
+	if asset3d != nil {
+		asset3dID = asset3d.GetID()
+	} else if spaceType != nil {
+		asset3d = spaceType.GetAsset3d()
+		if asset3d != nil {
+			asset3dID = asset3d.GetID()
+		}
 	}
 
 	uuidNilPtr := utils.GetPTR(uuid.Nil)
 	falsePtr := utils.GetPTR(false)
+	opts := s.GetEffectiveOptions()
 	msg := message.GetBuilder().MsgObjectDefinition(
 		message.ObjectDefinition{
-			ObjectID:         s.id,
-			ParentID:         parent,
-			AssetType:        asset3d,
+			ObjectID:         s.GetID(),
+			ParentID:         parentID,
+			AssetType:        asset3dID,
 			Name:             name,
 			Position:         *s.GetActualPosition(),
 			TetheredToParent: true,
@@ -463,7 +511,9 @@ func (s *Space) UpdateSpawnMessage() {
 		},
 	)
 	s.spawnMsg.Store(msg)
-	s.world.Send(s.spawnMsg.Load(), true)
+	if doSend {
+		world.Send(s.spawnMsg.Load(), true)
+	}
 }
 
 func (s *Space) GetSpawnMessage() *websocket.PreparedMessage {
@@ -475,10 +525,11 @@ func (s *Space) SendSpawnMessage(f func(*websocket.PreparedMessage) error, recur
 	//time.Sleep(time.Millisecond * 100)
 	if recursive {
 		s.Children.Mu.RLock()
+		defer s.Children.Mu.RUnlock()
+
 		for _, space := range s.Children.Data {
 			space.SendSpawnMessage(f, true)
 		}
-		s.Children.Mu.RUnlock()
 	}
 }
 
@@ -494,6 +545,7 @@ func (s *Space) SendTextures(f func(*websocket.PreparedMessage) error, recursive
 	}
 }
 
+// QUESTION: why this method is never called?
 func (s *Space) SendAttributes(f func(*websocket.PreparedMessage), recursive bool) {
 	s.attributesMsg.Mu.RLock()
 	for _, g := range s.attributesMsg.Data {
@@ -511,14 +563,14 @@ func (s *Space) SendAttributes(f func(*websocket.PreparedMessage), recursive boo
 		for _, space := range s.Children.Data {
 			space.SendAttributes(f, recursive)
 		}
-		s.Children.Mu.RUnlock()
 	}
 }
 
+// QUESTION: why this method is never called?
 func (s *Space) SetAttributesMsg(kind, name string, msg *websocket.PreparedMessage) {
 	m, ok := s.attributesMsg.Load(kind)
 	if !ok {
-		m = generic.NewSyncMap[string, *websocket.PreparedMessage]()
+		m = generic.NewSyncMap[string, *websocket.PreparedMessage](0)
 		s.attributesMsg.Store(kind, m)
 	}
 	m.Store(name, msg)

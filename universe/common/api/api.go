@@ -39,7 +39,7 @@ func Initialize(ctx context.Context, cfg *config.Config) error {
 	api.ctx = ctx
 	api.log = log
 	api.cfg = cfg
-	api.oidcProviders = generic.NewSyncMap[string, rs.ResourceServer]()
+	api.oidcProviders = generic.NewSyncMap[string, rs.ResourceServer](0)
 
 	return nil
 }

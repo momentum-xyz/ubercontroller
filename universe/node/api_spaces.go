@@ -26,12 +26,12 @@ import (
 // @Router /api/v4/spaces [post]
 func (n *Node) apiCreateSpace(c *gin.Context) {
 	type InBody struct {
-		SpaceName   string      `json:"space_name" binding:"required"`
-		ParentID    string      `json:"parent_id" binding:"required"`
-		SpaceTypeID string      `json:"space_type_id" binding:"required"`
-		Asset2dID   string      `json:"asset_2d_id"`
-		Asset3dID   string      `json:"asset_3d_id"`
-		Position    *cmath.Vec3 `json:"position"`
+		SpaceName   string               `json:"space_name" binding:"required"`
+		ParentID    string               `json:"parent_id" binding:"required"`
+		SpaceTypeID string               `json:"space_type_id" binding:"required"`
+		Asset2dID   string               `json:"asset_2d_id"`
+		Asset3dID   string               `json:"asset_3d_id"`
+		Position    *cmath.SpacePosition `json:"position"`
 	}
 	var inBody InBody
 
@@ -159,6 +159,18 @@ func (n *Node) apiCreateSpace(c *gin.Context) {
 	if _, err := space.UpsertSpaceAttribute(attributeID, modify.MergeWith(payload), true); err != nil {
 		err := errors.WithMessage(err, "Node: apiCreateSpace: failed to upsert space name attribute")
 		api.AbortRequest(c, http.StatusInternalServerError, "upsert_space_attribute_failed", err, n.log)
+		return
+	}
+
+	go func() {
+		if err := space.Run(); err != nil {
+			n.log.Error(errors.WithMessagef(err, "Node: apiCreateSpace: failed to run space: %s", space.GetID()))
+		}
+	}()
+
+	if err := parent.UpdateChildrenPosition(true); err != nil {
+		err := errors.WithMessage(err, "Node: apiCreateSpace: failed to update children position")
+		api.AbortRequest(c, http.StatusInternalServerError, "update_children_position_failed", err, n.log)
 		return
 	}
 

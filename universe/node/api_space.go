@@ -3,6 +3,7 @@ package node
 import (
 	"net/http"
 
+	"github.com/AgoraIO-Community/go-tokenbuilder/rtctokenbuilder"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -11,6 +12,64 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
 )
+
+// @Summary Generate Agora token
+// @Schemes
+// @Description Returns an Agora token
+// @Tags spaces
+// @Accept json
+// @Produce json
+// @Param space_id path string true "Space ID"
+// @Success 200 {object} node.apiGenAgoraToken.Out
+// @Failure 400 {object} api.HTTPError
+// @Failure 500 {object} api.HTTPError
+// @Router /api/v4/spaces/{space_id}/agora/token [post]
+func (n *Node) apiGenAgoraToken(c *gin.Context) {
+	spaceID, err := uuid.Parse(c.Param("spaceID"))
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiGenAgoraToken: failed to parse space id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, n.log)
+		return
+	}
+
+	if _, ok := n.GetSpaceFromAllSpaces(spaceID); !ok {
+		err := errors.Errorf("Node: apiGenAgoraToken: space not found: %s", spaceID)
+		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		return
+	}
+
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiGenAgoraToken: failed to get user id")
+		api.AbortRequest(c, http.StatusInternalServerError, "get_user_id_failed", err, n.log)
+		return
+	}
+
+	// 1 day in seconds
+	expire := uint32(1 * 24 * 60 * 60)
+	token, err := rtctokenbuilder.BuildTokenWithUserAccount(
+		n.cfg.UIClient.AgoraAppID,
+		n.cfg.Common.AgoraAppCertificate,
+		spaceID.String(),
+		userID.String(),
+		rtctokenbuilder.RolePublisher,
+		expire,
+	)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiGenAgoraToken: failed to get token")
+		api.AbortRequest(c, http.StatusInternalServerError, "get_token_failed", err, n.log)
+		return
+	}
+
+	type Out struct {
+		Token string `json:"token"`
+	}
+	out := Out{
+		Token: token,
+	}
+
+	c.JSON(http.StatusOK, out)
+}
 
 // @Summary Get space
 // @Schemes
@@ -127,6 +186,18 @@ func (n *Node) apiRemoveSpace(c *gin.Context) {
 		api.AbortRequest(c, http.StatusInternalServerError, "remove_space_failed", err, n.log)
 		return
 	}
+
+	if err := parent.UpdateChildrenPosition(true); err != nil {
+		err := errors.WithMessage(err, "Node: apiRemoveSpace: failed to update children position")
+		api.AbortRequest(c, http.StatusInternalServerError, "update_children_position_failed", err, n.log)
+		return
+	}
+
+	go func() {
+		if err := space.Stop(); err != nil {
+			n.log.Error(errors.WithMessagef(err, "Node: apiRemoveSpace: failed to stop space: %s", spaceID))
+		}
+	}()
 
 	c.JSON(http.StatusOK, nil)
 }

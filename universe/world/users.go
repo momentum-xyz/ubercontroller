@@ -2,7 +2,6 @@ package world
 
 import (
 	"github.com/gorilla/websocket"
-	cmath2 "github.com/momentum-xyz/controller/pkg/cmath"
 	"time"
 
 	"github.com/google/uuid"
@@ -36,12 +35,12 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 	if ok {
 		if exUser != user {
 			if exUser.GetSessionID() == user.GetSessionID() {
-				w.log.Info(
+				w.log.Infof(
 					"World: same session, must be teleport or network failure: world %s, user %s", w.GetID(),
 					user.GetID(),
 				)
 			} else {
-				w.log.Info("World: double-login detected for world %s, user %s", w.GetID(), exUser.GetID())
+				w.log.Infof("World: double-login detected for world %s, user %s", w.GetID(), exUser.GetID())
 
 				exUser.SendDirectly(posbus.NewSignalMsg(posbus.SignalDualConnection).WebsocketMessage())
 
@@ -87,6 +86,7 @@ func (w *World) noLockRemoveUser(user universe.User, updateDB bool) error {
 	}
 	user.SetWorld(nil)
 	delete(w.Users.Data, user.GetID())
+
 	user.Stop()
 
 	return nil
@@ -99,7 +99,11 @@ func (w *World) initializeUnity(user universe.User) error {
 	}
 
 	// TODO: fix circular dependency
-	if err := user.SendDirectly(posbus.NewSendPositionMsg(cmath2.Vec3(user.GetPosition())).WebsocketMessage()); err != nil {
+	if err := user.SendDirectly(
+		posbus.NewSendPositionMsg(
+			cmath.Vec3(user.GetPosition()), cmath.Vec3{0, 0, 0}, cmath.Vec3{0, 0, 0},
+		).WebsocketMessage(),
+	); err != nil {
 		return errors.WithMessage(err, "failed to send position")
 	}
 

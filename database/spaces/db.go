@@ -2,6 +2,7 @@ package spaces
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/google/uuid"
@@ -11,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/database"
-	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 )
 
@@ -101,7 +101,7 @@ func (db *DB) SpacesUpdateSpaceParentID(ctx context.Context, spaceID uuid.UUID, 
 	return nil
 }
 
-func (db *DB) SpacesUpdateSpacePosition(ctx context.Context, spaceID uuid.UUID, position *cmath.Vec3) error {
+func (db *DB) SpacesUpdateSpacePosition(ctx context.Context, spaceID uuid.UUID, position *cmath.SpacePosition) error {
 	if _, err := db.conn.Exec(ctx, updateSpacePositionQuery, spaceID, position); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
@@ -144,9 +144,11 @@ func (db *DB) SpacesUpdateSpaceOptions(ctx context.Context, spaceID uuid.UUID, o
 }
 
 func (db *DB) SpacesUpsertSpace(ctx context.Context, space *entry.Space) error {
-	if _, err := db.conn.Exec(ctx, upsertSpaceQuery,
+	if _, err := db.conn.Exec(
+		ctx, upsertSpaceQuery,
 		space.SpaceID, space.SpaceTypeID, space.OwnerID, space.ParentID, space.Asset2dID, space.Asset3dID,
-		space.Options, space.Position); err != nil {
+		space.Options, space.Position,
+	); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
@@ -155,8 +157,10 @@ func (db *DB) SpacesUpsertSpace(ctx context.Context, space *entry.Space) error {
 func (db *DB) SpacesUpsertSpaces(ctx context.Context, spaces []*entry.Space) error {
 	batch := &pgx.Batch{}
 	for _, space := range spaces {
-		batch.Queue(upsertSpaceQuery, space.SpaceID, space.SpaceTypeID, space.OwnerID,
-			space.ParentID, space.Asset2dID, space.Asset3dID, space.Options, space.Position)
+		batch.Queue(
+			upsertSpaceQuery, space.SpaceID, space.SpaceTypeID, space.OwnerID,
+			space.ParentID, space.Asset2dID, space.Asset3dID, space.Options, space.Position,
+		)
 	}
 
 	batchRes := db.conn.SendBatch(ctx, batch)
