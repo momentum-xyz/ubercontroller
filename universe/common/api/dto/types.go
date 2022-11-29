@@ -10,8 +10,7 @@ const (
 type FlyToMeType string
 
 const (
-	FlyToMeStop  FlyToMeType = "stop"
-	FlyToMeStart FlyToMeType = "start"
+	FlyToMeTrigger FlyToMeType = "fly-to-me"
 )
 
 type UserStatusType string
