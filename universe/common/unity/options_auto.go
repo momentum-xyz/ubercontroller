@@ -140,7 +140,7 @@ func renderFrame(preRenderHash []byte) (*dto.HashResponse, error) {
 	cfg := config.GetConfig()
 	req, err := http.NewRequest("POST", cfg.Common.RenderInternalURL+"/render/addframe", bytes.NewBuffer(preRenderHash))
 	if err != nil {
-		return nil, errors.WithMessage(err, "Space: renderFrame: failed to create post request")
+		return nil, errors.WithMessage(err, "Common: renderFrame: failed to create post request")
 	}
 
 	req.Header.Set("Content-Type", "image/png")
@@ -148,7 +148,7 @@ func renderFrame(preRenderHash []byte) (*dto.HashResponse, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, errors.WithMessage(err, "Space: renderFrame: failed to post data to media-manager")
+		return nil, errors.WithMessage(err, "Common: renderFrame: failed to post data to media-manager")
 	}
 
 	defer resp.Body.Close()
@@ -157,7 +157,7 @@ func renderFrame(preRenderHash []byte) (*dto.HashResponse, error) {
 
 	errs := json.NewDecoder(resp.Body).Decode(response)
 	if errs != nil {
-		return nil, errors.WithMessage(err, "Space: renderFrame: failed to decode json into response")
+		return nil, errors.WithMessage(err, "Common: renderFrame: failed to decode json into response")
 	}
 
 	return response, nil
@@ -168,7 +168,7 @@ func renderVideo(url []byte) (*dto.HashResponse, error) {
 	cfg := config.GetConfig()
 	req, err := http.NewRequest("POST", cfg.Common.RenderInternalURL+"/render/addtube", bytes.NewBuffer(url))
 	if err != nil {
-		return nil, errors.WithMessage(err, "Space: renderFrame: failed to create post request")
+		return nil, errors.WithMessage(err, "Common: renderFrame: failed to create post request")
 	}
 
 	req.Header.Set("Content-Type", "image/png")
@@ -176,7 +176,7 @@ func renderVideo(url []byte) (*dto.HashResponse, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, errors.WithMessage(err, "Space: renderFrame: failed to post data to media-manager")
+		return nil, errors.WithMessage(err, "Common: renderFrame: failed to post data to media-manager")
 	}
 	defer resp.Body.Close()
 
