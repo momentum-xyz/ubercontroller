@@ -145,7 +145,7 @@ func (w *World) runSpaces() error {
 		}(space)
 	}
 
-	return w.UpdateChildrenPosition(true)
+	return nil
 }
 
 // TODO: optimize
@@ -194,8 +194,12 @@ func (w *World) Load() error {
 	if err := w.LoadFromEntry(entry, true); err != nil {
 		return errors.WithMessage(err, "failed to load from entry")
 	}
-	w.UpdateWorldMetadata()
-	//cu.BroadcastPositions()
+	if err := w.UpdateWorldMetadata(); err != nil {
+		return errors.WithMessage(err, "failed to update world metadata")
+	}
+	if err := w.UpdateChildrenPosition(true); err != nil {
+		return errors.WithMessage(err, "failed to update children position")
+	}
 
 	w.log.Infof("World loaded: %s", w.GetID())
 

@@ -331,7 +331,7 @@ func (s *Space) Run() error {
 		close(s.broadcastPipeline)
 	}()
 
-	go s.UpdateSpawnMessage(true)
+	s.UpdateSpawnMessage()
 
 	for {
 		select {
@@ -380,8 +380,8 @@ func (s *Space) Update(recursive bool) error {
 func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 	s.log.Debugf("Loading space %s...", entry.SpaceID)
 
-	if entry.SpaceID != s.id {
-		return errors.Errorf("space ids mismatch: %s != %s", entry.SpaceID, s.id)
+	if entry.SpaceID != s.GetID() {
+		return errors.Errorf("space ids mismatch: %s != %s", entry.SpaceID, s.GetID())
 	}
 
 	group, _ := errgroup.WithContext(s.ctx)
@@ -409,9 +409,9 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 				return nil
 			}
 
-			entries, err := s.db.SpacesGetSpacesByParentID(s.ctx, s.id)
+			entries, err := s.db.SpacesGetSpacesByParentID(s.ctx, s.GetID())
 			if err != nil {
-				return errors.WithMessagef(err, "failed to get spaces by parent id: %s", s.id)
+				return errors.WithMessagef(err, "failed to get spaces by parent id: %s", s.GetID())
 			}
 
 			for i := range entries {
@@ -475,10 +475,10 @@ func (s *Space) loadDependencies(entry *entry.Space) error {
 	return nil
 }
 
-func (s *Space) UpdateSpawnMessage(doSend bool) {
+func (s *Space) UpdateSpawnMessage() error {
 	world := s.GetWorld()
 	if world == nil {
-		return
+		return errors.Errorf("world is empty")
 	}
 
 	name := " "
@@ -488,7 +488,7 @@ func (s *Space) UpdateSpawnMessage(doSend bool) {
 	if ok && v != nil {
 		name = utils.GetFromAnyMap(*v, universe.Attributes.Space.Name.Key, "")
 	} else {
-		//fmt.Println("smsg2", s.GetID())
+		s.log.Warnf("Space: UpdateSpawnMessage: empty space name attribute value: %s", s.GetID())
 	}
 
 	parentID := uuid.Nil
@@ -526,10 +526,7 @@ func (s *Space) UpdateSpawnMessage(doSend bool) {
 	)
 	s.spawnMsg.Store(msg)
 
-	// QUESTION: do we really need this?
-	if doSend {
-		world.Send(s.spawnMsg.Load(), true)
-	}
+	return nil
 }
 
 func (s *Space) GetSpawnMessage() *websocket.PreparedMessage {
@@ -544,7 +541,7 @@ func (s *Space) SendSpawnMessage(sendFn func(*websocket.PreparedMessage) error, 
 		defer s.Children.Mu.RUnlock()
 
 		for _, space := range s.Children.Data {
-			space.SendSpawnMessage(sendFn, true)
+			space.SendSpawnMessage(sendFn, recursive)
 		}
 	}
 }
