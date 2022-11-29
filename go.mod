@@ -26,7 +26,6 @@ require (
 	github.com/sasha-s/go-deadlock v0.3.1
 	github.com/stretchr/testify v1.8.1
 	github.com/zakaria-chahboun/cute v1.2.0
-	github.com/zitadel/oidc v1.9.1
 	go.uber.org/zap v1.23.0
 	golang.org/x/sync v0.1.0
 	gopkg.in/yaml.v3 v3.0.1
