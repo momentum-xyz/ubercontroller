@@ -160,7 +160,7 @@ func (s *Space) UpdateChildrenPosition(recursive bool) error {
 			}
 
 			if recursive {
-				return child.UpdateChildrenPosition(recursive)
+				child.UpdateChildrenPosition(recursive)
 			}
 		}
 	}
