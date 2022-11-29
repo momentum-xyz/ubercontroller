@@ -82,7 +82,7 @@ func (w *Worlds) apiWorldsFlyToMe(c *gin.Context) {
 		return
 	}
 
-	msg := posbus.NewRelayToReactMsg(string(dto.FlyToMeStart), data).WebsocketMessage()
+	msg := posbus.NewRelayToReactMsg(string(dto.FlyToMeTrigger), data).WebsocketMessage()
 
 	if err := world.Send(msg, false); err != nil {
 		err = errors.WithMessage(err, "Worlds: apiWorldsFlyToMe: failed to dispatch event")
