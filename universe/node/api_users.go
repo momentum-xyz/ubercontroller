@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -12,8 +11,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils"
-	"github.com/momentum-xyz/ubercontroller/utils/merge"
-	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
 // @Summary Check user
@@ -75,9 +72,6 @@ func (n *Node) apiUsersCheck(c *gin.Context) {
 	if userEntry.UpdatedAt != nil {
 		outBody.UpdatedAt = utils.GetPTR(userEntry.UpdatedAt.String())
 	}
-	if idToken.Web3Address != "" {
-		outBody.Wallet = &idToken.Web3Address
-	}
 	if userProfileEntry.Name != nil {
 		outBody.Name = *userProfileEntry.Name
 	}
@@ -136,9 +130,6 @@ func (n *Node) apiUsersGetMe(c *gin.Context) {
 	if userEntry.UpdatedAt != nil {
 		outUser.UpdatedAt = utils.GetPTR(userEntry.UpdatedAt.String())
 	}
-	if token.Web3Address != "" {
-		outUser.Wallet = &token.Web3Address
-	}
 	if userProfileEntry != nil {
 		if userProfileEntry.Name != nil {
 			outUser.Name = *userProfileEntry.Name
@@ -191,81 +182,11 @@ func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken
 
 	// TODO: check issuer
 
-	nodeSettings, ok := n.GetNodeAttributeValue(
+	_, ok := n.GetNodeAttributeValue(
 		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.Settings.Name),
 	)
 	if !ok {
 		return nil, http.StatusInternalServerError, errors.Errorf("failed to get node settings")
-	}
-
-	if idToken.Guest.IsGuest {
-		guestUserType := utils.GetFromAnyMap(*nodeSettings, "guest_user_type", "")
-		guestUserTypeID, err := uuid.Parse(guestUserType)
-		if err != nil {
-			return nil, http.StatusInternalServerError, errors.Errorf("failed to parse guest user type id")
-		}
-		userEntry.UserTypeID = &guestUserTypeID
-
-		if err := n.db.UsersUpsertUser(c, userEntry); err != nil {
-			return nil, http.StatusInternalServerError, errors.WithMessagef(
-				err, "failed to upsert guest: %s", userEntry.UserID,
-			)
-		}
-
-		n.log.Infof("Node: apiGetOrCreateUserFromTokens: guest created: %s", userEntry.UserID)
-	} else {
-		// TODO: check idToken web3 type
-
-		if idToken.Web3Address == "" {
-			return nil, http.StatusBadRequest, errors.Errorf("empty web3 address: %s", userEntry.UserID)
-		}
-
-		// TODO: validate idToken
-
-		normUserType := utils.GetFromAnyMap(*nodeSettings, "normal_user_type", "")
-		normUserTypeID, err := uuid.Parse(normUserType)
-		if err != nil {
-			return nil, http.StatusInternalServerError, errors.Errorf("failed to parse normal user type id")
-		}
-		userEntry.UserTypeID = &normUserTypeID
-
-		if err := n.db.UsersUpsertUser(c, userEntry); err != nil {
-			return nil, http.StatusInternalServerError, errors.WithMessagef(err, "failed to upsert user: %s", userEntry.UserID)
-		}
-
-		n.log.Infof("Node: apiGetOrCreateUserFromTokens: user created: %s", userEntry.UserID)
-
-		// adding wallet to user attributes
-		userAttributeID := entry.NewUserAttributeID(
-			entry.NewAttributeID(
-				universe.GetKusamaPluginID(), universe.Attributes.Kusama.User.Wallet.Name,
-			),
-			userEntry.UserID,
-		)
-
-		walletAddressKey := universe.Attributes.Kusama.User.Wallet.Key
-		newPayload := entry.NewAttributePayload(
-			&entry.AttributeValue{
-				walletAddressKey: []string{idToken.Web3Address},
-			},
-			nil,
-		)
-
-		walletAddressKeyPath := ".Value." + walletAddressKey
-		if _, err := n.db.UserAttributesUpsertUserAttribute(
-			n.ctx, userAttributeID,
-			modify.MergeWith(
-				newPayload,
-				merge.NewTrigger(walletAddressKeyPath, merge.AppendTriggerFn),
-				merge.NewTrigger(walletAddressKeyPath, merge.UniqueTriggerFn),
-			)); err != nil {
-			// TODO: think about rollback
-			return nil, http.StatusInternalServerError, errors.WithMessagef(
-				err, "failed to upsert user attribute for user: %s", userEntry.UserID,
-			)
-		}
-
-		n.log.Infof("Node: apiGetOrCreateUserFromTokens: wallet %q added to user: %s", idToken.Web3Address, userEntry.UserID)
 	}
 
 	return userEntry, 0, nil

@@ -12,14 +12,12 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/momentum-xyz/ubercontroller/logger"
-	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 // Config : structure to hold configuration
 type Config struct {
 	Common   Common   `yaml:"common"`
 	Settings Local    `yaml:"settings"`
-	Auth     Auth     `yaml:"auth"`
 	Postgres Postgres `yaml:"postgres"`
 	Influx   Influx   `yaml:"influx"`
 	UIClient UIClient `yaml:"ui_client"`
@@ -31,7 +29,6 @@ var log = logger.L()
 
 func (x *Config) Init() {
 	x.Common.Init()
-	x.Auth.Init()
 	x.Postgres.Init()
 	x.Settings.Init()
 	x.UIClient.Init()
@@ -93,8 +90,6 @@ func readFile(cfg *Config) error {
 	if err := yaml.Unmarshal(data, &rawData); err != nil {
 		return errors.WithMessage(err, "failed to unmarshal raw data")
 	}
-
-	cfg.Auth.rawData = utils.GetFromAnyMap(rawData, "auth", map[string]any{})
 
 	return nil
 }
