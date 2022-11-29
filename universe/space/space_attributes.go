@@ -391,6 +391,12 @@ func (s *Space) onSpaceAttributeChanged(
 			)
 		}
 	}()
+
+	go func() {
+		if err := s.unityAutoOnSpaceAttributeChanged(changeType, attributeID, value, effectiveOptions); err != nil {
+			s.log.Error(errors.WithMessagef(err, "Space: onSpaceAttributeChanged: failed to handle unity auto: %+v", attributeID))
+		}
+	}()
 }
 
 func (s *Space) posBusAutoOnSpaceAttributeChanged(
