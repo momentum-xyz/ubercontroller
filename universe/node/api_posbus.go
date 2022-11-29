@@ -1,7 +1,6 @@
 package node
 
 import (
-	"fmt"
 	"net/http"
 	"net/url"
 
@@ -25,14 +24,11 @@ var websocketUpgrader = websocket.Upgrader{
 }
 
 func (n *Node) apiPosBusHandler(c *gin.Context) {
-	fmt.Println("KKK")
 	ws, err := websocketUpgrader.Upgrade(c.Writer, c.Request, nil)
-	fmt.Println("KKK2")
 	if err != nil {
 		n.log.Error(errors.WithMessage(err, "error: socket upgrade error, aborting connection"))
 		return
 	}
-	fmt.Println("r1")
 	if err := n.handShake(ws); err != nil {
 		n.log.Error(errors.WithMessage(err, "failed to handle hand shake"))
 	}
@@ -44,7 +40,6 @@ func (n *Node) handShake(socketConnection *websocket.Conn) error {
 	if err != nil || mt != websocket.BinaryMessage {
 		return errors.WithMessagef(err, "error: wrong PreHandShake (1), aborting connection")
 	}
-	fmt.Println("r2")
 
 	msg := posbus.MsgFromBytes(incomingMessage)
 	if msg.Type() != posbus.MsgTypeFlatBufferMessage {
@@ -52,7 +47,6 @@ func (n *Node) handShake(socketConnection *websocket.Conn) error {
 	}
 	msgObj := posbus.MsgFromBytes(incomingMessage).AsFlatBufferMessage()
 	msgType := msgObj.MsgType()
-	fmt.Println("r3")
 	if msgType != api.MsgHandshake {
 		return errors.New("error: wrong message type received, not handshake")
 	}
@@ -63,7 +57,6 @@ func (n *Node) handShake(socketConnection *websocket.Conn) error {
 		handshake = &api.Handshake{}
 		handshake.Init(unionTable.Bytes, unionTable.Pos)
 	}
-	fmt.Println("r4")
 
 	n.log.Debugf("Node: handshake for user %s:", message.DeserializeGUID(handshake.UserId(nil)))
 	n.log.Debugf("Node: handshake version: %d", handshake.HandshakeVersion())
@@ -109,6 +102,5 @@ func (n *Node) handShake(socketConnection *websocket.Conn) error {
 	}
 	user.SetConnection(sessionID, socketConnection)
 	user.Run()
-	fmt.Println("frrfr")
 	return n.detectSpawnWorld(userID).AddUser(user, true)
 }

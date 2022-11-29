@@ -84,7 +84,6 @@ func (mb *Builder) MsgSetWorld(
 	builder := mb.GetBuilder()
 	defer func() {
 		mb.ReleaseBuilder(builder)
-		log.Info("MSG: msgSetWorld", uint32(api.MsgSetWorld))
 	}()
 	nameObj := builder.CreateString(name)
 

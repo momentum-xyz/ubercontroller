@@ -81,7 +81,7 @@ func (w *Worlds) apiWorldsFlyToMe(c *gin.Context) {
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_marshal", err, w.log)
 		return
 	}
-
+	
 	msg := posbus.NewRelayToReactMsg(string(dto.FlyToMeTrigger), data).WebsocketMessage()
 
 	if err := world.Send(msg, false); err != nil {

@@ -2,7 +2,6 @@ package assets_2d
 
 import (
 	"context"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -174,16 +173,10 @@ func (a *Assets2d) Load() error {
 		if err != nil {
 			return errors.WithMessagef(err, "failed to create new asset 2d: %s", entries[i].Asset2dID)
 		}
-		fmt.Println(entries[i])
 		if err := asset2d.LoadFromEntry(entries[i]); err != nil {
 			return errors.WithMessagef(err, "failed to load asset 2d from entry: %s", entries[i].Asset2dID)
 		}
 		a.assets.Store(entries[i].Asset2dID, asset2d)
-	}
-
-	fmt.Printf("ddd1\n")
-	for _, d := range a.assets.Data {
-		fmt.Printf("ID:%+v, Options: %+v\n", d.GetID(), d.GetOptions())
 	}
 
 	universe.GetNode().AddAPIRegister(a)

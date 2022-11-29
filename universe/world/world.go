@@ -137,6 +137,7 @@ func (w *World) runSpaces() error {
 	defer w.allSpaces.Mu.RUnlock()
 
 	for _, space := range w.allSpaces.Data {
+		space.SetEnabled(true)
 		go func(space universe.Space) {
 			if err := space.Run(); err != nil {
 				w.log.Error(errors.WithMessagef(err, "World: runSpaces: failed to run space: %s", space.GetID()))
@@ -157,6 +158,7 @@ func (w *World) stopSpaces() error {
 		if err := space.Stop(); err != nil {
 			errs = multierror.Append(errs, errors.WithMessagef(err, "failed to stop space: %s", space.GetID()))
 		}
+		space.SetEnabled(false)
 	}
 
 	return errs.ErrorOrNil()
@@ -192,10 +194,12 @@ func (w *World) Load() error {
 	if err := w.LoadFromEntry(entry, true); err != nil {
 		return errors.WithMessage(err, "failed to load from entry")
 	}
-	w.UpdateWorldMetadata()
-
-	w.Space.UpdateChildrenPosition(true)
-	//cu.BroadcastPositions()
+	if err := w.UpdateWorldMetadata(); err != nil {
+		return errors.WithMessage(err, "failed to update world metadata")
+	}
+	if err := w.UpdateChildrenPosition(true); err != nil {
+		return errors.WithMessage(err, "failed to update children position")
+	}
 
 	w.log.Infof("World loaded: %s", w.GetID())
 
@@ -210,8 +214,9 @@ func (w *World) UpdateWorldMetadata() error {
 	)
 
 	if ok {
-		metaMap := (map[string]any)(*meta)
-		utils.MapDecode(metaMap, &w.metaData)
+		if err := utils.MapDecode(*meta, &w.metaData); err != nil {
+			return errors.WithMessage(err, "failed to decode meta")
+		}
 	} else {
 		// TODO: print warning and call stack here
 		w.metaData = Metadata{}

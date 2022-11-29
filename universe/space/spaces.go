@@ -100,7 +100,9 @@ func (s *Space) AddSpace(space universe.Space, updateDB bool) error {
 	s.Children.Mu.Lock()
 	defer s.Children.Mu.Unlock()
 
-	if space.GetWorld().GetID() != s.GetWorld().GetID() {
+	if space == s {
+		return errors.Errorf("space can't be part of itself")
+	} else if space.GetWorld().GetID() != s.GetWorld().GetID() {
 		return errors.Errorf("worlds mismatch: %s != %s", space.GetWorld().GetID(), s.GetWorld().GetID())
 	}
 
@@ -125,12 +127,15 @@ func (s *Space) AddSpaces(spaces []universe.Space, updateDB bool) error {
 	defer s.Children.Mu.Unlock()
 
 	for i := range spaces {
-		if spaces[i].GetWorld().GetID() != s.GetWorld().GetID() {
+		if spaces[i] == s {
+			return errors.Errorf("space can't be part of itself")
+		} else if spaces[i].GetWorld().GetID() != s.GetWorld().GetID() {
 			return errors.Errorf(
 				"space %s: worlds mismatch: %s != %s", spaces[i].GetID(), spaces[i].GetWorld().GetID(),
 				s.GetWorld().GetID(),
 			)
 		}
+
 		if err := spaces[i].SetParent(s, false); err != nil {
 			return errors.WithMessagef(err, "failed to set parent %s to space: %s", s.GetID(), spaces[i].GetID())
 		}
@@ -155,10 +160,12 @@ func (s *Space) AddSpaces(spaces []universe.Space, updateDB bool) error {
 
 // TODO: think about rollback on error
 func (s *Space) RemoveSpace(space universe.Space, recursive, updateDB bool) (bool, error) {
+	spaceWorld := space.GetWorld()
+
 	s.Children.Mu.Lock()
-	if space.GetWorld().GetID() != s.GetWorld().GetID() {
+	if spaceWorld.GetID() != s.GetWorld().GetID() {
 		s.Children.Mu.Unlock()
-		return false, errors.Errorf("worlds mismatch: %s != %s", space.GetWorld().GetID(), s.GetWorld().GetID())
+		return false, errors.Errorf("worlds mismatch: %s != %s", spaceWorld.GetID(), s.GetWorld().GetID())
 	}
 
 	if _, ok := s.Children.Data[space.GetID()]; ok {
@@ -176,13 +183,17 @@ func (s *Space) RemoveSpace(space universe.Space, recursive, updateDB bool) (boo
 
 		delete(s.Children.Data, space.GetID())
 
-		if _, err := space.GetWorld().RemoveSpaceFromAllSpaces(space); err != nil {
+		if _, err := spaceWorld.RemoveSpaceFromAllSpaces(space); err != nil {
 			return false, errors.WithMessagef(err, "failed to remove space from world all spaces: %s", space.GetID())
 		}
 
-		removeMsg := posbus.NewRemoveStaticObjectsMsg(1)
-		removeMsg.SetObject(0, space.GetID())
-		space.GetWorld().Send(removeMsg.WebsocketMessage(), true)
+		if space.GetEnabled() {
+			go func() {
+				removeMsg := posbus.NewRemoveStaticObjectsMsg(1)
+				removeMsg.SetObject(0, space.GetID())
+				spaceWorld.Send(removeMsg.WebsocketMessage(), true)
+			}()
+		}
 
 		return true, nil
 	}

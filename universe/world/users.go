@@ -112,7 +112,7 @@ func (w *World) initializeUnity(user universe.User) error {
 	//	user.ReleaseSendBuffer()
 	//}()
 
-	w.Space.SendSpawnMessage(user.SendDirectly, true)
+	w.SendSpawnMessage(user.SendDirectly, true)
 	time.Sleep(1 * time.Second)
 	user.SendDirectly(
 		posbus.NewSignalMsg(
@@ -120,7 +120,7 @@ func (w *World) initializeUnity(user universe.User) error {
 		).WebsocketMessage(),
 	)
 
-	w.Space.SendTextures(user.SendDirectly, true)
+	w.SendTextures(user.SendDirectly, true)
 	user.ReleaseSendBuffer()
 	return nil
 }

@@ -3,8 +3,8 @@ package position_algo
 import (
 	"math"
 
-	"github.com/momentum-xyz/controller/utils"
-	cmath "github.com/momentum-xyz/ubercontroller/pkg/cmath"
+	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
+	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 const (

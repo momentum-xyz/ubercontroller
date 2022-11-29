@@ -63,13 +63,15 @@ func (s *Space) SetActualPosition(pos cmath.SpacePosition, theta float64) error 
 		s.theta = theta
 		s.actualPosition.Store(&pos)
 
-		go func() {
-			s.UpdateSpawnMessage(false)
-			s.GetWorld().Send(
-				posbus.NewSetStaticObjectPositionMsg(s.GetID(), *(s.actualPosition.Load())).WebsocketMessage(),
-				false,
-			)
-		}()
+		if s.GetEnabled() {
+			go func() {
+				s.UpdateSpawnMessage()
+				s.GetWorld().Send(
+					posbus.NewSetStaticObjectPositionMsg(s.GetID(), *(s.GetActualPosition())).WebsocketMessage(),
+					true,
+				)
+			}()
+		}
 	}
 
 	return nil
@@ -100,15 +102,16 @@ func (s *Space) SetPosition(position *cmath.SpacePosition, updateDB bool) error 
 	s.position = position
 	if s.position != nil {
 		s.actualPosition.Store(s.position)
-		//s.SetActualPosition(s.position)
 
-		go func() {
-			s.UpdateSpawnMessage(false)
-			s.GetWorld().Send(
-				posbus.NewSetStaticObjectPositionMsg(s.GetID(), *(s.actualPosition.Load())).WebsocketMessage(),
-				false,
-			)
-		}()
+		if s.GetEnabled() {
+			go func() {
+				s.UpdateSpawnMessage()
+				s.GetWorld().Send(
+					posbus.NewSetStaticObjectPositionMsg(s.GetID(), *(s.GetActualPosition())).WebsocketMessage(),
+					true,
+				)
+			}()
+		}
 	}
 
 	return nil
@@ -128,11 +131,11 @@ func (s *Space) UpdateChildrenPosition(recursive bool) error {
 
 	for _, child := range s.Children.Data {
 		if child.GetPosition() == nil {
-			spaceTypeId := child.GetSpaceType().GetID()
-			if _, ok := pls[spaceTypeId]; !ok {
-				spaceTypeId = uuid.Nil
+			spaceTypeID := child.GetSpaceType().GetID()
+			if _, ok := pls[spaceTypeID]; !ok {
+				spaceTypeID = uuid.Nil
 			}
-			ChildMap[spaceTypeId] = append(ChildMap[spaceTypeId], child.GetID())
+			ChildMap[spaceTypeID] = append(ChildMap[spaceTypeID], child.GetID())
 		}
 	}
 	//fmt.Println("pls3", s.GetID(), ChildMap)
@@ -155,8 +158,9 @@ func (s *Space) UpdateChildrenPosition(recursive bool) error {
 			if err := child.SetActualPosition(pos, theta); err != nil {
 				s.log.Errorf("Space: UpdatePosition: failed to update position: %s", k)
 			}
+
 			if recursive {
-				child.UpdateChildrenPosition(recursive)
+				return child.UpdateChildrenPosition(recursive)
 			}
 		}
 	}

@@ -31,6 +31,7 @@ type Space struct {
 	ctx      context.Context
 	log      *zap.SugaredLogger
 	db       database.DB
+	enabled  atomic.Bool
 	Users    *generic.SyncMap[uuid.UUID, universe.User]
 	Children *generic.SyncMap[uuid.UUID, universe.Space]
 	//mu               sync.RWMutex
@@ -81,6 +82,14 @@ func (s *Space) GetName() string {
 	return "unknown"
 }
 
+func (s *Space) GetEnabled() bool {
+	return s.enabled.Load()
+}
+
+func (s *Space) SetEnabled(enabled bool) {
+	s.enabled.Store(enabled)
+}
+
 func (s *Space) Initialize(ctx context.Context) error {
 	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
 	if log == nil {
@@ -98,6 +107,9 @@ func (s *Space) Initialize(ctx context.Context) error {
 }
 
 func (s *Space) GetWorld() universe.World {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
 	return s.world
 }
 
@@ -112,7 +124,9 @@ func (s *Space) SetParent(parent universe.Space, updateDB bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if parent != nil && parent.GetWorld().GetID() != s.world.GetID() {
+	if parent == s {
+		return errors.Errorf("space can't be a parent of itself")
+	} else if parent != nil && parent.GetWorld().GetID() != s.world.GetID() {
 		return errors.Errorf("worlds mismatch: %s != %s", parent.GetWorld().GetID(), s.world.GetID())
 	}
 
@@ -317,6 +331,8 @@ func (s *Space) Run() error {
 		close(s.broadcastPipeline)
 	}()
 
+	s.UpdateSpawnMessage()
+
 	for {
 		select {
 		case message := <-s.broadcastPipeline:
@@ -364,8 +380,8 @@ func (s *Space) Update(recursive bool) error {
 func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 	s.log.Debugf("Loading space %s...", entry.SpaceID)
 
-	if entry.SpaceID != s.id {
-		return errors.Errorf("space ids mismatch: %s != %s", entry.SpaceID, s.id)
+	if entry.SpaceID != s.GetID() {
+		return errors.Errorf("space ids mismatch: %s != %s", entry.SpaceID, s.GetID())
 	}
 
 	group, _ := errgroup.WithContext(s.ctx)
@@ -389,15 +405,13 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 				return errors.WithMessage(err, "failed to set position")
 			}
 
-			go s.UpdateSpawnMessage(true)
-
 			if !recursive {
 				return nil
 			}
 
-			entries, err := s.db.SpacesGetSpacesByParentID(s.ctx, s.id)
+			entries, err := s.db.SpacesGetSpacesByParentID(s.ctx, s.GetID())
 			if err != nil {
-				return errors.WithMessagef(err, "failed to get spaces by parent id: %s", s.id)
+				return errors.WithMessagef(err, "failed to get spaces by parent id: %s", s.GetID())
 			}
 
 			for i := range entries {
@@ -461,10 +475,10 @@ func (s *Space) loadDependencies(entry *entry.Space) error {
 	return nil
 }
 
-func (s *Space) UpdateSpawnMessage(doSend bool) {
+func (s *Space) UpdateSpawnMessage() error {
 	world := s.GetWorld()
 	if world == nil {
-		return
+		return errors.Errorf("world is empty")
 	}
 
 	name := " "
@@ -474,7 +488,7 @@ func (s *Space) UpdateSpawnMessage(doSend bool) {
 	if ok && v != nil {
 		name = utils.GetFromAnyMap(*v, universe.Attributes.Space.Name.Key, "")
 	} else {
-		//fmt.Println("smsg2", s.GetID())
+		s.log.Warnf("Space: UpdateSpawnMessage: empty space name attribute value: %s", s.GetID())
 	}
 
 	parentID := uuid.Nil
@@ -511,57 +525,56 @@ func (s *Space) UpdateSpawnMessage(doSend bool) {
 		},
 	)
 	s.spawnMsg.Store(msg)
-	if doSend {
-		world.Send(s.spawnMsg.Load(), true)
-	}
+
+	return nil
 }
 
 func (s *Space) GetSpawnMessage() *websocket.PreparedMessage {
 	return s.spawnMsg.Load()
 }
 
-func (s *Space) SendSpawnMessage(f func(*websocket.PreparedMessage) error, recursive bool) {
-	f(s.spawnMsg.Load())
+func (s *Space) SendSpawnMessage(sendFn func(*websocket.PreparedMessage) error, recursive bool) {
+	sendFn(s.spawnMsg.Load())
 	//time.Sleep(time.Millisecond * 100)
 	if recursive {
 		s.Children.Mu.RLock()
 		defer s.Children.Mu.RUnlock()
 
 		for _, space := range s.Children.Data {
-			space.SendSpawnMessage(f, true)
+			space.SendSpawnMessage(sendFn, recursive)
 		}
 	}
 }
 
-func (s *Space) SendTextures(f func(*websocket.PreparedMessage) error, recursive bool) {
-	f(s.textMsg.Load())
+func (s *Space) SendTextures(sendFn func(*websocket.PreparedMessage) error, recursive bool) {
+	sendFn(s.textMsg.Load())
 	if recursive {
 		s.Children.Mu.RLock()
 		defer s.Children.Mu.RUnlock()
 
 		for _, space := range s.Children.Data {
-			space.SendTextures(f, recursive)
+			space.SendTextures(sendFn, recursive)
 		}
 	}
 }
 
 // QUESTION: why this method is never called?
-func (s *Space) SendAttributes(f func(*websocket.PreparedMessage), recursive bool) {
+func (s *Space) SendAttributes(sendFn func(*websocket.PreparedMessage), recursive bool) {
 	s.attributesMsg.Mu.RLock()
 	for _, g := range s.attributesMsg.Data {
 		for _, a := range g.Data {
-			f(a)
+			sendFn(a)
 		}
 	}
 	s.attributesMsg.Mu.RUnlock()
 
-	f(s.spawnMsg.Load())
+	sendFn(s.spawnMsg.Load())
 	if recursive {
 		s.Children.Mu.RLock()
 		defer s.Children.Mu.RUnlock()
 
 		for _, space := range s.Children.Data {
-			space.SendAttributes(f, recursive)
+			space.SendAttributes(sendFn, recursive)
 		}
 	}
 }

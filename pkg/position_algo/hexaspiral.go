@@ -4,8 +4,8 @@ import (
 	"math"
 	"math/rand"
 
-	"github.com/momentum-xyz/controller/utils"
-	cmath "github.com/momentum-xyz/ubercontroller/pkg/cmath"
+	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
+	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 const (

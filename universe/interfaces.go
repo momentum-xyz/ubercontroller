@@ -17,6 +17,11 @@ type IDer interface {
 	GetID() uuid.UUID
 }
 
+type Enabler interface {
+	GetEnabled() bool
+	SetEnabled(enabled bool)
+}
+
 type Initializer interface {
 	Initialize(ctx context.Context) error
 }
@@ -172,6 +177,7 @@ type World interface {
 
 type Space interface {
 	IDer
+	Enabler
 	Initializer
 	RunStopper
 
