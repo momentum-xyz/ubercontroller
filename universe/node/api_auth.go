@@ -30,11 +30,18 @@ func (n *Node) apiGenChallenge(c *gin.Context) {
 		return
 	}
 
+	challenge, err := api.GenerateChallenge(inQuery.Wallet)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGenChallenge: failed to generate challenge")
+		api.AbortRequest(c, http.StatusInternalServerError, "challenge_generation_failed", err, n.log)
+		return
+	}
+
 	type Out struct {
 		Challenge string `json:"challenge"`
 	}
 	out := Out{
-		Challenge: "my super secret challenge",
+		Challenge: challenge,
 	}
 
 	c.JSON(http.StatusOK, out)
