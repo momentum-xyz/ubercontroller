@@ -41,29 +41,26 @@ func (n *Node) apiGenChallenge(c *gin.Context) {
 	}
 
 	challengesKey := universe.Attributes.Kusama.ChallengeStore.Key
-	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
+	modifyFn := func(current *entry.AttributeValue) (*entry.AttributeValue, error) {
 		if current == nil {
-			current = entry.NewAttributePayload(nil, nil)
-		}
-		if current.Value == nil {
-			current.Value = entry.NewAttributeValue()
+			current = entry.NewAttributeValue()
 		}
 
-		challenges := utils.GetFromAnyMap(*current.Value, challengesKey, make(map[string]any))
+		challenges := utils.GetFromAnyMap(*current, challengesKey, make(map[string]any))
 		challenges[inQuery.Wallet] = challenge
 
 		// store challenges because we don't know where we got it from
-		(*current.Value)[challengesKey] = challenges
+		(*current)[challengesKey] = challenges
 
 		return current, nil
 	}
 
-	if _, err := n.UpsertNodeAttribute(
+	if _, err := n.UpdateNodeAttributeValue(
 		entry.NewAttributeID(universe.GetKusamaPluginID(), universe.Attributes.Kusama.ChallengeStore.Name),
 		modifyFn, true,
 	); err != nil {
-		err := errors.WithMessage(err, "Node: apiGenChallenge: failed to upsert node attribute")
-		api.AbortRequest(c, http.StatusInternalServerError, "node_attribute_upsert_failed", err, n.log)
+		err := errors.WithMessage(err, "Node: apiGenChallenge: failed to update node attribute value")
+		api.AbortRequest(c, http.StatusInternalServerError, "attribute_update_failed", err, n.log)
 		return
 	}
 
@@ -101,25 +98,46 @@ func (n *Node) apiGenToken(c *gin.Context) {
 		return
 	}
 
-	value, ok := n.GetNodeAttributeValue(
-		entry.NewAttributeID(universe.GetKusamaPluginID(), universe.Attributes.Kusama.ChallengeStore.Name),
-	)
+	attributeID := entry.NewAttributeID(universe.GetKusamaPluginID(), universe.Attributes.Kusama.ChallengeStore.Name)
+
+	value, ok := n.GetNodeAttributeValue(attributeID)
 	if !ok {
 		err := errors.Errorf("Node: apiGenToken: node attribute not found")
-		api.AbortRequest(c, http.StatusNotFound, "node_attribute_not_found", err, n.log)
+		api.AbortRequest(c, http.StatusInternalServerError, "attribute_not_found", err, n.log)
 		return
 	}
 
 	var challenge string
 	if value != nil {
-		if store, ok := (*value)[universe.Attributes.Kusama.ChallengeStore.Key]; ok {
-			store := utils.GetFromAny(store, (map[string]any)(nil))
+		store := utils.GetFromAnyMap(*value, universe.Attributes.Kusama.ChallengeStore.Key, (map[string]any)(nil))
+		if store != nil {
 			challenge = utils.GetFromAnyMap(store, inBody.Wallet, "")
 		}
 	}
 	if challenge == "" {
 		err := errors.Errorf("Node: apiGenToken: challenge not found")
 		api.AbortRequest(c, http.StatusNotFound, "challenge_not_found", err, n.log)
+		return
+	}
+
+	modifyFn := func(current *entry.AttributeValue) (*entry.AttributeValue, error) {
+		if current == nil {
+			return current, nil
+		}
+
+		challenges := utils.GetFromAnyMap(*current, universe.Attributes.Kusama.ChallengeStore.Key, (map[string]any)(nil))
+		if challenges == nil {
+			return current, nil
+		}
+
+		delete(challenges, inBody.Wallet)
+
+		return current, nil
+	}
+
+	if _, err := n.UpdateNodeAttributeValue(attributeID, modifyFn, true); err != nil {
+		err := errors.WithMessage(err, "Node: apiGenToken: failed to update node attribute value")
+		api.AbortRequest(c, http.StatusInternalServerError, "attribute_update_failed", err, n.log)
 		return
 	}
 

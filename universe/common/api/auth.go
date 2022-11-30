@@ -131,7 +131,7 @@ func ParseToken(token string) (Token, error) {
 
 func GenerateChallenge(wallet string) (string, error) {
 	return fmt.Sprintf(
-		"Please sign this message with the private key for address %s to prove that you own it\n%s",
+		"Please sign this message with the private key for address %s to prove that you own it. %s",
 		wallet, uuid.New().String(),
 	), nil
 }
