@@ -52,6 +52,11 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		verifiedUsers := verified.Group("/users")
 		{
 			verifiedUsers.GET("/me", n.apiUsersGetMe)
+
+			verifiedUser := verifiedUsers.Group("/:userID")
+			{
+				verifiedUser.GET("", n.apiUsersGetById)
+			}
 		}
 
 		verifiedProfile := verified.Group("/profile")
