@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-// @Summary Get auth challenge
+// @Summary Generate auth challenge
 // @Schemes
 // @Description Returns a new generated challenge
 // @Tags auth
@@ -40,7 +40,7 @@ func (n *Node) apiGenChallenge(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// @Summary Get auth token
+// @Summary Generate auth token
 // @Schemes
 // @Description Returns a new generated token based on challenge
 // @Tags auth
@@ -53,6 +53,7 @@ func (n *Node) apiGenChallenge(c *gin.Context) {
 // @Router /api/v4/auth/token [post]
 func (n *Node) apiGenToken(c *gin.Context) {
 	type InBody struct {
+		Wallet    string `json:"wallet" binding:"required"`
 		Challenge string `json:"challenge" binding:"required"`
 	}
 	var inBody InBody
