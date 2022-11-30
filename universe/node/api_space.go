@@ -1,7 +1,9 @@
 package node
 
 import (
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/AgoraIO-Community/go-tokenbuilder/rtctokenbuilder"
 	"github.com/gin-gonic/gin"
@@ -20,6 +22,7 @@ import (
 // @Accept json
 // @Produce json
 // @Param space_id path string true "Space ID"
+// @Param screenshare body node.apiGenAgoraToken.Body false "Get get token for screensharing."
 // @Success 200 {object} node.apiGenAgoraToken.Out
 // @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
@@ -45,12 +48,29 @@ func (n *Node) apiGenAgoraToken(c *gin.Context) {
 		return
 	}
 
+	type Body struct {
+		ScreenShare bool `json:"screenshare,default=false"`
+	}
+	var inBody Body
+	if err := c.ShouldBindJSON(&inBody); err != nil {
+		//too keep it compatible with current calls, which are empty.
+		n.log.Debugf("Invalid (empty) body, ignoring.")
+	}
+
 	// 1 day in seconds
-	expire := uint32(1 * 24 * 60 * 60)
+	expireSeconds := uint32(1 * 24 * 60 * 60)
+	currentTimestamp := uint32(time.Now().UTC().Unix())
+	expire := currentTimestamp + expireSeconds
+	var channel string
+	if inBody.ScreenShare {
+		channel = fmt.Sprintf("ss|%s", spaceID)
+	} else {
+		channel = spaceID.String()
+	}
 	token, err := rtctokenbuilder.BuildTokenWithUserAccount(
 		n.cfg.UIClient.AgoraAppID,
 		n.cfg.Common.AgoraAppCertificate,
-		spaceID.String(),
+		channel,
 		userID.String(),
 		rtctokenbuilder.RolePublisher,
 		expire,
@@ -62,10 +82,12 @@ func (n *Node) apiGenAgoraToken(c *gin.Context) {
 	}
 
 	type Out struct {
-		Token string `json:"token"`
+		Token   string `json:"token"`
+		Channel string `json:"channel"`
 	}
 	out := Out{
-		Token: token,
+		Token:   token,
+		Channel: channel,
 	}
 
 	c.JSON(http.StatusOK, out)

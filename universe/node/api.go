@@ -30,54 +30,60 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 			config.GET("/ui-client", n.apiGetUIClientConfig)
 		}
 
+		auth := vx.Group("/auth")
+		{
+			auth.GET("/challenge", n.apiGenChallenge)
+			auth.POST("/token", n.apiGenToken)
+		}
+
 		users := vx.Group("/users")
 		{
 			users.POST("/check", n.apiUsersCheck)
 		}
 
-		// with auth
-		auth := vx.Group("", middleware.VerifyUser(n.log))
+		// with verified user
+		verified := vx.Group("", middleware.VerifyUser(n.log))
 
-		authMedia := auth.Group("/media")
+		verifiedMedia := verified.Group("/media")
 		{
-			authMedia.POST("/upload/image", n.apiMediaUploadImage)
+			verifiedMedia.POST("/upload/image", n.apiMediaUploadImage)
 		}
 
-		authUsers := auth.Group("/users")
+		verifiedUsers := verified.Group("/users")
 		{
-			authUsers.GET("/me", n.apiUsersGetMe)
+			verifiedUsers.GET("/me", n.apiUsersGetMe)
 		}
 
-		authProfile := auth.Group("/profile")
+		verifiedProfile := verified.Group("/profile")
 		{
-			authProfile.PATCH("", n.apiProfileUpdate)
+			verifiedProfile.PATCH("", n.apiProfileUpdate)
 		}
 
-		authSpaces := auth.Group("/spaces")
+		verifiedSpaces := verified.Group("/spaces")
 		{
-			authSpaces.POST("", n.apiCreateSpace)
+			verifiedSpaces.POST("", n.apiCreateSpace)
 
-			authSpace := authSpaces.Group("/:spaceID")
+			verifiedSpace := verifiedSpaces.Group("/:spaceID")
 			{
-				authSpace.GET("", n.apiGetSpace)
-				authSpace.DELETE("", n.apiRemoveSpace)
+				verifiedSpace.GET("", n.apiGetSpace)
+				verifiedSpace.DELETE("", n.apiRemoveSpace)
 
-				authSpace.GET("/options", n.apiSpacesGetSpaceOptions)
-				authSpace.GET("/options/sub", n.apiSpacesGetSpaceSubOptions)
-				authSpace.POST("/options/sub", n.apiSpacesSetSpaceSubOption)
-				authSpace.DELETE("/options/sub", n.apiSpacesRemoveSpaceSubOption)
+				verifiedSpace.GET("/options", n.apiSpacesGetSpaceOptions)
+				verifiedSpace.GET("/options/sub", n.apiSpacesGetSpaceSubOptions)
+				verifiedSpace.POST("/options/sub", n.apiSpacesSetSpaceSubOption)
+				verifiedSpace.DELETE("/options/sub", n.apiSpacesRemoveSpaceSubOption)
 
-				authSpace.GET("/attributes", n.apiGetSpaceAttributesValue)
-				authSpace.GET("/attributes-with-children", n.apiGetSpaceWithChildrenAttributeValues)
-				authSpace.POST("/attributes", n.apiSetSpaceAttributesValue)
-				authSpace.DELETE("/attributes", n.apiRemoveSpaceAttributeValue)
-				authSpace.GET("/attributes/sub", n.apiGetSpaceAttributeSubValue)
-				authSpace.POST("/attributes/sub", n.apiSetSpaceAttributeSubValue)
-				authSpace.DELETE("/attributes/sub", n.apiRemoveSpaceAttributeSubValue)
+				verifiedSpace.GET("/attributes", n.apiGetSpaceAttributesValue)
+				verifiedSpace.GET("/attributes-with-children", n.apiGetSpaceWithChildrenAttributeValues)
+				verifiedSpace.POST("/attributes", n.apiSetSpaceAttributesValue)
+				verifiedSpace.DELETE("/attributes", n.apiRemoveSpaceAttributeValue)
+				verifiedSpace.GET("/attributes/sub", n.apiGetSpaceAttributeSubValue)
+				verifiedSpace.POST("/attributes/sub", n.apiSetSpaceAttributeSubValue)
+				verifiedSpace.DELETE("/attributes/sub", n.apiRemoveSpaceAttributeSubValue)
 
-				authAgora := authSpace.Group("/agora")
+				verifiedAgora := verifiedSpace.Group("/agora")
 				{
-					authAgora.POST("/token", n.apiGenAgoraToken)
+					verifiedAgora.POST("/token", n.apiGenAgoraToken)
 				}
 			}
 		}

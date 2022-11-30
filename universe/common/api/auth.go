@@ -1,12 +1,15 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"net/http"
 	"strings"
 
+	"github.com/ChainSafe/go-schnorrkel"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -124,6 +127,44 @@ func ParseToken(token string) (Token, error) {
 	parsedToken.RawToken = token
 
 	return parsedToken, nil
+}
+
+func GenerateChallenge(wallet string) (string, error) {
+	buf := bytes.NewBuffer(nil)
+	encoder := hex.NewEncoder(buf)
+	prefixID := uuid.New()
+	suffixID := uuid.New()
+	if _, err := encoder.Write(prefixID[:]); err != nil {
+		return "", errors.WithMessage(err, "failed to write prefix")
+	}
+	if _, err := buf.WriteString(wallet); err != nil {
+		return "", errors.WithMessage(err, "failed to write wallet")
+	}
+	if _, err := encoder.Write(suffixID[:]); err != nil {
+		return "", errors.WithMessage(err, "failed to write suffix")
+	}
+
+	return buf.String(), nil
+}
+
+func VerifyPolkadotSignature(wallet, challenge, signature string) (bool, error) {
+	pub, err := schnorrkel.NewPublicKeyFromHex(wallet)
+	if err != nil {
+		return false, errors.WithMessage(err, "failed to get public key")
+	}
+	sig, err := schnorrkel.NewSignatureFromHex(signature)
+	if err != nil {
+		return false, errors.WithMessage(err, "failed to get signature")
+	}
+
+	trContext := []byte("substrate")
+	trMessage := bytes.NewBufferString("<Bytes>")
+	trMessage.WriteString(challenge)
+	trMessage.WriteString("</Bytes>")
+
+	transcript := schnorrkel.NewSigningContext(trContext, trMessage.Bytes())
+
+	return pub.Verify(sig, transcript)
 }
 
 func createProvider(provider string) (rs.ResourceServer, error) {

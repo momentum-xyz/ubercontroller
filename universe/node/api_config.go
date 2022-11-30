@@ -15,7 +15,7 @@ import (
 // @Accept json
 // @Produce json
 // @Success 200 {object} node.apiGetUIClientConfig.Response
-// @Success 500 {object} api.HTTPError
+// @Failure 500 {object} api.HTTPError
 // @Router /api/v4/config/ui-client [get]
 func (n *Node) apiGetUIClientConfig(c *gin.Context) {
 	type Response struct {
