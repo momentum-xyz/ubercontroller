@@ -62,7 +62,6 @@ type Profile struct {
 	AvatarHash  *string `json:"avatarHash,omitempty"`
 	ProfileLink *string `json:"profileLink,omitempty"`
 	OnBoarded   *bool   `json:"onBoarded,omitempty"`
-	ImageHash   string  `json:"imageHash"`
 }
 
 type HashResponse struct {
