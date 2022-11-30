@@ -88,10 +88,10 @@ func (s *Space) GetEnabled() bool {
 
 func (s *Space) SetEnabled(enabled bool) {
 	s.enabled.Store(enabled)
-	s.UpdateSpawnMessage()
-	if s.GetWorld() != nil {
-		s.GetWorld().Send(s.spawnMsg.Load(), false)
-	}
+	//s.UpdateSpawnMessage()
+	//if s.GetWorld() != nil {
+	//	s.GetWorld().Send(s.spawnMsg.Load(), false)
+	//}
 
 }
 
