@@ -32,7 +32,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 		auth := vx.Group("/auth")
 		{
-			auth.GET("/challenge", n.apiGetChallenge)
+			auth.GET("/challenge", n.apiGenChallenge)
 			auth.POST("/token", n.apiGenToken)
 		}
 
