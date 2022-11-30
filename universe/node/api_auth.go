@@ -9,7 +9,7 @@ import (
 
 // @Summary Generate auth challenge
 // @Schemes
-// @Description Returns a new generated challenge
+// @Description Returns a new generated challenge based on params
 // @Tags auth
 // @Accept json
 // @Produce json
@@ -42,7 +42,7 @@ func (n *Node) apiGenChallenge(c *gin.Context) {
 
 // @Summary Generate auth token
 // @Schemes
-// @Description Returns a new generated token based on challenge
+// @Description Returns a new generated token based on params
 // @Tags auth
 // @Accept json
 // @Produce json
@@ -53,8 +53,8 @@ func (n *Node) apiGenChallenge(c *gin.Context) {
 // @Router /api/v4/auth/token [post]
 func (n *Node) apiGenToken(c *gin.Context) {
 	type InBody struct {
-		Wallet    string `json:"wallet" binding:"required"`
-		Challenge string `json:"challenge" binding:"required"`
+		Wallet          string `json:"wallet" binding:"required"`
+		SignedChallenge string `json:"signedChallenge" binding:"required"`
 	}
 	var inBody InBody
 
