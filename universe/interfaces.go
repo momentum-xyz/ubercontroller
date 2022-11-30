@@ -261,6 +261,7 @@ type Space interface {
 	UpdateChildrenPosition(recursive bool) error
 
 	SendTextures(sendFn func(msg *websocket.PreparedMessage) error, recursive bool)
+	LockUnityObject(user User, state uint32) bool
 }
 
 type User interface {

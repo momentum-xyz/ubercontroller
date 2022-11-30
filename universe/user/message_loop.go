@@ -48,6 +48,11 @@ func (u *User) OnMessage(msg *posbus.Message) error {
 			return errors.WithMessage(err, "failed to update space position")
 		}
 		return nil
+	case posbus.MsgTypeSetObjectLockState:
+		if err := u.LockObject(msg.AsSetObjectLockState()); err != nil {
+			return errors.WithMessage(err, "failed to handle: signal")
+		}
+		return nil
 	}
 
 	return errors.Errorf("unknown message: %d", msg.Type())
@@ -148,4 +153,19 @@ func (u *User) InteractionHandler(m *posbus.TriggerInteraction) error {
 	//	u.HandleStake(m)
 
 	return errors.Errorf("unknown message: %d", kind)
+}
+
+func (u *User) LockObject(m *posbus.SetObjectLockState) error {
+	id := m.ObjectID()
+	state := m.State()
+	if space, ok := u.GetWorld().GetSpace(id, true); ok {
+		result := space.LockUnityObject(u, state)
+		newState := state
+		if !result {
+			newState = 1 - state
+		}
+		m.SetLockState(id, newState)
+		u.Send(m.WebsocketMessage())
+	}
+	return nil
 }

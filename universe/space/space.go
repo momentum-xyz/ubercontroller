@@ -56,7 +56,8 @@ type Space struct {
 	messageAccept     atomic.Bool
 	numSendsQueued    atomic.Int64
 
-	lockedBy atomic.Pointer[uuid.UUID]
+	lockedBy atomic.Pointer[universe.User]
+
 	// TODO: replace theta with full calculation of orientation, once Unity is read
 	theta float64
 }
@@ -610,4 +611,12 @@ func (s *Space) SetAttributesMsg(kind, name string, msg *websocket.PreparedMessa
 		s.attributesMsg.Store(kind, m)
 	}
 	m.Store(name, msg)
+}
+
+func (s *Space) LockUnityObject(user universe.User, state uint32) bool {
+	if state == 1 {
+		return s.lockedBy.CompareAndSwap(nil, &user)
+	} else {
+		return s.lockedBy.CompareAndSwap(&user, nil)
+	}
 }
