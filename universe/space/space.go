@@ -88,6 +88,7 @@ func (s *Space) GetEnabled() bool {
 
 func (s *Space) SetEnabled(enabled bool) {
 	s.enabled.Store(enabled)
+	s.GetWorld().Send(s.spawnMsg.Load(), false)
 }
 
 func (s *Space) Initialize(ctx context.Context) error {
