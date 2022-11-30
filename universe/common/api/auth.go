@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -130,21 +130,10 @@ func ParseToken(token string) (Token, error) {
 }
 
 func GenerateChallenge(wallet string) (string, error) {
-	buf := bytes.NewBuffer(nil)
-	encoder := hex.NewEncoder(buf)
-	prefixID := uuid.New()
-	suffixID := uuid.New()
-	if _, err := encoder.Write(prefixID[:]); err != nil {
-		return "", errors.WithMessage(err, "failed to write prefix")
-	}
-	if _, err := buf.WriteString(wallet); err != nil {
-		return "", errors.WithMessage(err, "failed to write wallet")
-	}
-	if _, err := encoder.Write(suffixID[:]); err != nil {
-		return "", errors.WithMessage(err, "failed to write suffix")
-	}
-
-	return buf.String(), nil
+	return fmt.Sprintf(
+		"Please sign this message with the private key for address %s to prove that you own it\n%s",
+		wallet, uuid.New().String(),
+	), nil
 }
 
 func VerifyPolkadotSignature(wallet, challenge, signature string) (bool, error) {

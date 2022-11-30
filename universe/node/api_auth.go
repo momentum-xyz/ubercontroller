@@ -2,7 +2,10 @@ package node
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
+	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/pkg/errors"
 	"net/http"
 )
@@ -37,6 +40,33 @@ func (n *Node) apiGenChallenge(c *gin.Context) {
 		return
 	}
 
+	challengesKey := universe.Attributes.Kusama.ChallengeStore.Key
+	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
+		if current == nil {
+			current = entry.NewAttributePayload(nil, nil)
+		}
+		if current.Value == nil {
+			current.Value = entry.NewAttributeValue()
+		}
+
+		challenges := utils.GetFromAnyMap(*current.Value, challengesKey, make(map[string]any))
+		challenges[inQuery.Wallet] = challenge
+
+		// store challenges because we don't know where we got it from
+		(*current.Value)[challengesKey] = challenges
+
+		return current, nil
+	}
+
+	if _, err := n.UpsertNodeAttribute(
+		entry.NewAttributeID(universe.GetKusamaPluginID(), universe.Attributes.Kusama.ChallengeStore.Name),
+		modifyFn, true,
+	); err != nil {
+		err := errors.WithMessage(err, "Node: apiGenChallenge: failed to upsert node attribute")
+		api.AbortRequest(c, http.StatusInternalServerError, "node_attribute_upsert_failed", err, n.log)
+		return
+	}
+
 	type Out struct {
 		Challenge string `json:"challenge"`
 	}
@@ -66,8 +96,43 @@ func (n *Node) apiGenToken(c *gin.Context) {
 	var inBody InBody
 
 	if err := c.ShouldBindJSON(&inBody); err != nil {
-		err = errors.WithMessage(err, "Node: apiGenToken: failed to bind json")
+		err := errors.WithMessage(err, "Node: apiGenToken: failed to bind json")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
+	value, ok := n.GetNodeAttributeValue(
+		entry.NewAttributeID(universe.GetKusamaPluginID(), universe.Attributes.Kusama.ChallengeStore.Name),
+	)
+	if !ok {
+		err := errors.Errorf("Node: apiGenToken: node attribute not found")
+		api.AbortRequest(c, http.StatusNotFound, "node_attribute_not_found", err, n.log)
+		return
+	}
+
+	var challenge string
+	if value != nil {
+		if store, ok := (*value)[universe.Attributes.Kusama.ChallengeStore.Key]; ok {
+			store := utils.GetFromAny(store, (map[string]any)(nil))
+			challenge = utils.GetFromAnyMap(store, inBody.Wallet, "")
+		}
+	}
+	if challenge == "" {
+		err := errors.Errorf("Node: apiGenToken: challenge not found")
+		api.AbortRequest(c, http.StatusNotFound, "challenge_not_found", err, n.log)
+		return
+	}
+
+	valid, err := api.VerifyPolkadotSignature(inBody.Wallet, challenge, inBody.SignedChallenge)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGenToken: failed to verify polkadot signature")
+		api.AbortRequest(c, http.StatusBadRequest, "signature_validation_failed", err, n.log)
+		return
+	}
+
+	if !valid {
+		err := errors.Errorf("Node: apiGenToken: invalid signature")
+		api.AbortRequest(c, http.StatusForbidden, "invalid_signature", err, n.log)
 		return
 	}
 
