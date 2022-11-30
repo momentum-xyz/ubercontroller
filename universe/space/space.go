@@ -56,6 +56,7 @@ type Space struct {
 	messageAccept     atomic.Bool
 	numSendsQueued    atomic.Int64
 
+	lockedBy atomic.Pointer[uuid.UUID]
 	// TODO: replace theta with full calculation of orientation, once Unity is read
 	theta float64
 }
@@ -326,31 +327,32 @@ func (s *Space) GetEntry() *entry.Space {
 }
 
 func (s *Space) Run() error {
-	s.numSendsQueued.Store(0)
-	s.broadcastPipeline = make(chan *websocket.PreparedMessage, 100)
-	defer func() {
-		ns := s.numSendsQueued.Swap(chanIsClosed)
-		for i := int64(0); i < ns; i++ {
-			<-s.broadcastPipeline
-		}
-		close(s.broadcastPipeline)
-	}()
 
-	s.UpdateSpawnMessage()
-
-	for {
-		select {
-		case message := <-s.broadcastPipeline:
-			s.numSendsQueued.Add(-1)
-			//fmt.Println("Got a message from")
-			if message == nil {
-				return nil
+	go func() {
+		s.numSendsQueued.Store(0)
+		s.broadcastPipeline = make(chan *websocket.PreparedMessage, 100)
+		defer func() {
+			ns := s.numSendsQueued.Swap(chanIsClosed)
+			for i := int64(0); i < ns; i++ {
+				<-s.broadcastPipeline
 			}
-			s.performBroadcast(message)
-		case <-s.ctx.Done():
-			s.Stop()
+			close(s.broadcastPipeline)
+		}()
+		for {
+			select {
+			case message := <-s.broadcastPipeline:
+				s.numSendsQueued.Add(-1)
+				//fmt.Println("Got a message from")
+				if message == nil {
+					return
+				}
+				s.performBroadcast(message)
+			case <-s.ctx.Done():
+				s.Stop()
+			}
 		}
-	}
+	}()
+	return nil
 }
 
 func (s *Space) Stop() error {
@@ -362,9 +364,25 @@ func (s *Space) Stop() error {
 }
 
 func (s *Space) Update(recursive bool) error {
+	if !s.GetEnabled() {
+		return nil
+	}
 	s.mu.Lock()
 	s.effectiveOptions = nil
 	s.mu.Unlock()
+
+	s.UpdateSpawnMessage()
+
+	w := s.GetWorld()
+	if w != nil {
+		w.Send(s.spawnMsg.Load(), false)
+		w.SendTextures(
+			func(preparedMessage *websocket.PreparedMessage) error {
+				return w.Send(preparedMessage, false)
+			}, false,
+		)
+		//fmt.Printf("%+v\n", errors.WithStack(errors.New("here")))
+	}
 
 	if !recursive {
 		return nil
