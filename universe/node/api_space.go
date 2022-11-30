@@ -3,6 +3,7 @@ package node
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/AgoraIO-Community/go-tokenbuilder/rtctokenbuilder"
 	"github.com/gin-gonic/gin"
@@ -57,7 +58,9 @@ func (n *Node) apiGenAgoraToken(c *gin.Context) {
 	}
 
 	// 1 day in seconds
-	expire := uint32(1 * 24 * 60 * 60)
+	expireSeconds := uint32(1 * 24 * 60 * 60)
+	currentTimestamp := uint32(time.Now().UTC().Unix())
+	expire := currentTimestamp + expireSeconds
 	var channel string
 	if inBody.ScreenShare {
 		channel = fmt.Sprintf("ss|%s", spaceID)
