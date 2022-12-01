@@ -26,7 +26,7 @@ import (
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{space_id}/attributes [get]
+// @Router /api/v4/spaces/{space_id}/{user_id}/attributes [get]
 func (n *Node) apiGetSpaceUserAttributesValue(c *gin.Context) {
 	type InQuery struct {
 		PluginID      string `form:"plugin_id" binding:"required"`
@@ -48,6 +48,13 @@ func (n *Node) apiGetSpaceUserAttributesValue(c *gin.Context) {
 		return
 	}
 
+	userID, err := uuid.Parse(c.Param("userID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSetSpaceUserAttributesValue: failed to parse user id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
+		return
+	}
+
 	pluginID, err := uuid.Parse(inQuery.PluginID)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetSpaceUserAttributesValue: failed to parse plugin id")
@@ -55,15 +62,9 @@ func (n *Node) apiGetSpaceUserAttributesValue(c *gin.Context) {
 		return
 	}
 
-	space, ok := n.GetSpaceFromAllSpaces(spaceID)
-	if !ok {
-		err := errors.Errorf("Node: apiGetSpaceUserAttributesValue: space not found: %s", spaceID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
-		return
-	}
-
 	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
-	out, ok := space.GetSpaceAttributeValue(attributeID)
+	spaceUserAttributeID := entry.NewSpaceUserAttributeID(attributeID, spaceID, userID)
+	out, ok := n.GetSpaceUserAttributeValue(spaceUserAttributeID)
 	if !ok {
 		err := errors.Errorf("Node: apiGetSpaceUserAttributesValue: space attribute value not found: %s", attributeID)
 		api.AbortRequest(c, http.StatusNotFound, "attribute_not_found", err, n.log)
@@ -85,7 +86,7 @@ func (n *Node) apiGetSpaceUserAttributesValue(c *gin.Context) {
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{space_id}/attributes [post]
+// @Router /api/v4/spaces/{space_id}/{user_id}/attributes [post]
 func (n *Node) apiSetSpaceUserAttributesValue(c *gin.Context) {
 	type InBody struct {
 		PluginID       string         `json:"plugin_id" binding:"required"`
@@ -108,6 +109,13 @@ func (n *Node) apiSetSpaceUserAttributesValue(c *gin.Context) {
 		return
 	}
 
+	userID, err := uuid.Parse(c.Param("userID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSetSpaceUserAttributesValue: failed to parse user id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
+		return
+	}
+
 	pluginID, err := uuid.Parse(inBody.PluginID)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiSetSpaceUserAttributesValue: failed to parse plugin id")
@@ -115,14 +123,8 @@ func (n *Node) apiSetSpaceUserAttributesValue(c *gin.Context) {
 		return
 	}
 
-	space, ok := n.GetSpaceFromAllSpaces(spaceID)
-	if !ok {
-		err := errors.Errorf("Node: apiSetSpaceUserAttributesValue: space not found: %s", spaceID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
-		return
-	}
-
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
+	spaceUserAttributeID := entry.NewSpaceUserAttributeID(attributeID, spaceID, userID)
 
 	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
 		newValue := func() *entry.AttributeValue {
@@ -145,14 +147,14 @@ func (n *Node) apiSetSpaceUserAttributesValue(c *gin.Context) {
 		return current, nil
 	}
 
-	spaceAttribute, err := space.UpsertSpaceAttribute(attributeID, modifyFn, true)
+	spaceUserAttribute, err := n.UpsertSpaceUserAttribute(spaceUserAttributeID, modifyFn)
 	if err != nil {
-		err = errors.WithMessage(err, "Node: apiSetSpaceUserAttributesValue: failed to upsert space attribute")
+		err = errors.WithMessage(err, "Node: apiSetSpaceUserAttributesValue: failed to upsert space user attribute")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert", err, n.log)
 		return
 	}
 
-	c.JSON(http.StatusAccepted, spaceAttribute.Value)
+	c.JSON(http.StatusAccepted, spaceUserAttribute.Value)
 }
 
 // @Summary Get space sub attributes
@@ -167,7 +169,7 @@ func (n *Node) apiSetSpaceUserAttributesValue(c *gin.Context) {
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{space_id}/attributes/sub [get]
+// @Router /api/v4/spaces/{space_id}/{user_id}/attributes/sub [get]
 func (n *Node) apiGetSpaceUserAttributeSubValue(c *gin.Context) {
 	type InQuery struct {
 		PluginID        string `form:"plugin_id" binding:"required"`
@@ -190,6 +192,13 @@ func (n *Node) apiGetSpaceUserAttributeSubValue(c *gin.Context) {
 		return
 	}
 
+	userID, err := uuid.Parse(c.Param("userID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetSpaceUserAttributeSubValue: failed to parse user id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
+		return
+	}
+
 	pluginID, err := uuid.Parse(inQuery.PluginID)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetSpaceUserAttributeSubValue: failed to parse plugin id")
@@ -197,29 +206,24 @@ func (n *Node) apiGetSpaceUserAttributeSubValue(c *gin.Context) {
 		return
 	}
 
-	space, ok := n.GetSpaceFromAllSpaces(spaceID)
-	if !ok {
-		err := errors.Errorf("Node: apiGetSpaceUserAttributeSubValue: space not found: %s", spaceID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
-		return
-	}
-
 	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
-	attributeValue, ok := space.GetSpaceAttributeValue(attributeID)
+	spaceUserAttributeID := entry.NewSpaceUserAttributeID(attributeID, spaceID, userID)
+
+	spaceUserAttributeValue, ok := n.GetSpaceUserAttributeValue(spaceUserAttributeID)
 	if !ok {
-		err := errors.Errorf("Node: apiGetSpaceUserAttributeSubValue: attribute value not found: %s", attributeID)
+		err := errors.Errorf("Node: apiGetSpaceUserAttributeSubValue: space user attribute value not found: %s", attributeID)
 		api.AbortRequest(c, http.StatusNotFound, "attribute_value_not_found", err, n.log)
 		return
 	}
 
-	if attributeValue == nil {
+	if spaceUserAttributeValue == nil {
 		err := errors.Errorf("Node: apiGetSpaceUserAttributeSubValue: attribute value is nil")
 		api.AbortRequest(c, http.StatusNotFound, "attribute_value_nil", err, n.log)
 		return
 	}
 
 	out := dto.SpaceSubAttributes{
-		inQuery.SubAttributeKey: (*attributeValue)[inQuery.SubAttributeKey],
+		inQuery.SubAttributeKey: (*spaceUserAttributeValue)[inQuery.SubAttributeKey],
 	}
 
 	c.JSON(http.StatusOK, out)
@@ -237,7 +241,7 @@ func (n *Node) apiGetSpaceUserAttributeSubValue(c *gin.Context) {
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{space_id}/attributes/sub [post]
+// @Router /api/v4/spaces/{space_id}/{user_id}/attributes/sub [post]
 func (n *Node) apiSetSpaceUserAttributeSubValue(c *gin.Context) {
 	type Body struct {
 		PluginID          string `json:"plugin_id" binding:"required"`
@@ -261,6 +265,13 @@ func (n *Node) apiSetSpaceUserAttributeSubValue(c *gin.Context) {
 		return
 	}
 
+	userID, err := uuid.Parse(c.Param("userID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSetSpaceUserAttributeSubValue: failed to parse user id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
+		return
+	}
+
 	pluginID, err := uuid.Parse(inBody.PluginID)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiSetSpaceUserAttributeSubValue: failed to parse plugin id")
@@ -268,14 +279,8 @@ func (n *Node) apiSetSpaceUserAttributeSubValue(c *gin.Context) {
 		return
 	}
 
-	space, ok := n.GetSpaceFromAllSpaces(spaceID)
-	if !ok {
-		err := errors.Errorf("Node: apiSetSpaceUserAttributeSubValue: space not found: %s", spaceID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
-		return
-	}
-
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
+	spaceUserAttributeID := entry.NewSpaceUserAttributeID(attributeID, spaceID, userID)
 
 	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
 		newValue := func() *entry.AttributeValue {
@@ -298,15 +303,15 @@ func (n *Node) apiSetSpaceUserAttributeSubValue(c *gin.Context) {
 		return current, nil
 	}
 
-	spaceAttribute, err := space.UpsertSpaceAttribute(attributeID, modifyFn, true)
+	spaceUserAttribute, err := n.UpsertSpaceUserAttribute(spaceUserAttributeID, modifyFn)
 	if err != nil {
-		err = errors.WithMessage(err, "Node: apiSetSpaceUserAttributeSubValue: failed to upsert space attribute")
+		err = errors.WithMessage(err, "Node: apiSetSpaceUserAttributeSubValue: failed to upsert space user attribute")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert", err, n.log)
 		return
 	}
 
 	out := dto.SpaceSubAttributes{
-		inBody.SubAttributeKey: (*spaceAttribute.Value)[inBody.SubAttributeKey],
+		inBody.SubAttributeKey: (*spaceUserAttribute.Value)[inBody.SubAttributeKey],
 	}
 
 	c.JSON(http.StatusAccepted, out)
@@ -324,7 +329,7 @@ func (n *Node) apiSetSpaceUserAttributeSubValue(c *gin.Context) {
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{space_id}/attributes/sub [delete]
+// @Router /api/v4/spaces/{space_id}/{user_id}/attributes/sub [delete]
 func (n *Node) apiRemoveSpaceUserAttributeSubValue(c *gin.Context) {
 	type Body struct {
 		PluginID        string `json:"plugin_id" binding:"required"`
@@ -347,6 +352,13 @@ func (n *Node) apiRemoveSpaceUserAttributeSubValue(c *gin.Context) {
 		return
 	}
 
+	userID, err := uuid.Parse(c.Param("userID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSetSpaceUserAttributeSubValue: failed to parse user id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
+		return
+	}
+
 	pluginID, err := uuid.Parse(inBody.PluginID)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiRemoveSpaceUserAttributeSubValue: failed to parse plugin id")
@@ -354,14 +366,8 @@ func (n *Node) apiRemoveSpaceUserAttributeSubValue(c *gin.Context) {
 		return
 	}
 
-	space, ok := n.GetSpaceFromAllSpaces(spaceID)
-	if !ok {
-		err := errors.Errorf("Node: apiRemoveSpaceUserAttributeSubValue: space not found: %s", spaceID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
-		return
-	}
-
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
+	spaceUserAttributeID := entry.NewSpaceUserAttributeID(attributeID, spaceID, userID)
 
 	modifyFn := func(current *entry.AttributeValue) (*entry.AttributeValue, error) {
 		if current == nil {
@@ -373,8 +379,8 @@ func (n *Node) apiRemoveSpaceUserAttributeSubValue(c *gin.Context) {
 		return current, nil
 	}
 
-	if _, err := space.UpdateSpaceAttributeValue(attributeID, modifyFn, true); err != nil {
-		err = errors.WithMessage(err, "Node: apiRemoveSpaceUserAttributeSubValue: failed to update space attribute")
+	if _, err := n.UpdateSpaceUserAttributeValue(spaceUserAttributeID, modifyFn); err != nil {
+		err = errors.WithMessage(err, "Node: apiRemoveSpaceUserAttributeSubValue: failed to update space user attribute")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_update", err, n.log)
 		return
 	}
@@ -394,7 +400,7 @@ func (n *Node) apiRemoveSpaceUserAttributeSubValue(c *gin.Context) {
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{space_id}/attributes [delete]
+// @Router /api/v4/spaces/{space_id}/{user_id}/attributes [delete]
 func (n *Node) apiRemoveSpaceUserAttributeValue(c *gin.Context) {
 	type Body struct {
 		PluginID      string `json:"plugin_id" binding:"required"`
@@ -415,6 +421,13 @@ func (n *Node) apiRemoveSpaceUserAttributeValue(c *gin.Context) {
 		return
 	}
 
+	userID, err := uuid.Parse(c.Param("userID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSetSpaceUserAttributeSubValue: failed to parse user id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
+		return
+	}
+
 	pluginID, err := uuid.Parse(inBody.PluginID)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiRemoveSpaceUserAttributeValue: failed to parse plugin id")
@@ -422,18 +435,13 @@ func (n *Node) apiRemoveSpaceUserAttributeValue(c *gin.Context) {
 		return
 	}
 
-	space, ok := n.GetSpaceFromAllSpaces(spaceID)
-	if !ok {
-		err := errors.Errorf("Node: apiRemoveSpaceUserAttributeValue: space not found: %s", spaceID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
-		return
-	}
-
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
-	if _, err := space.UpdateSpaceAttributeValue(
-		attributeID, modify.ReplaceWith[entry.AttributeValue](nil), true,
+	spaceUserAttributeID := entry.NewSpaceUserAttributeID(attributeID, spaceID, userID)
+
+	if _, err := n.UpdateSpaceUserAttributeValue(
+		spaceUserAttributeID, modify.ReplaceWith[entry.AttributeValue](nil),
 	); err != nil {
-		err = errors.WithMessage(err, "Node: apiRemoveSpaceUserAttributeValue: failed to update space attribute")
+		err = errors.WithMessage(err, "Node: apiRemoveSpaceUserAttributeValue: failed to update space user attribute")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_update", err, n.log)
 		return
 	}
