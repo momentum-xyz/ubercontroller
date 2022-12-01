@@ -61,7 +61,6 @@ func main() {
 }
 
 func run(ctx context.Context) error {
-
 	cfg := config.GetConfig()
 
 	ctx = context.WithValue(ctx, types.LoggerContextKey, log)

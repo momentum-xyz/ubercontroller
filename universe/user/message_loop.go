@@ -2,7 +2,6 @@ package user
 
 import (
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/pkg/errors"
@@ -11,10 +10,6 @@ import (
 )
 
 func (u *User) OnMessage(msg *posbus.Message) error {
-	if u.GetID() == uuid.MustParse("1d6e540f-c708-472b-9af1-416df09b47fd") {
-		u.log.Infof("User: OnMessage: message type: %d", msg.Type())
-	}
-
 	switch msg.Type() {
 	case posbus.MsgTypeSendPosition:
 		if err := u.UpdatePosition(msg.AsSendPos()); err != nil {
@@ -64,10 +59,6 @@ func (u *User) OnMessage(msg *posbus.Message) error {
 }
 
 func (u *User) UpdateSpacePosition(msg *posbus.SetStaticObjectPosition) error {
-	if u.GetID() == uuid.MustParse("1d6e540f-c708-472b-9af1-416df09b47fd") {
-		u.log.Infof("User: UpdateSpacePosition: object id: %s, position: %+v", msg.ObjectID(), msg.Position())
-	}
-
 	space, ok := universe.GetNode().GetSpaceFromAllSpaces(msg.ObjectID())
 	if !ok {
 		return errors.Errorf("space not found: %s", msg.ObjectID())
@@ -123,9 +114,11 @@ func (u *User) InteractionHandler(m *posbus.TriggerInteraction) error {
 	targetUUID := m.Target()
 	flag := m.Flag()
 	label := m.Label()
-	u.log.Info(
-		"Incoming interaction for user", u.id, "kind:", kind, "target:", targetUUID, "flag:", flag, "label:", label,
+	u.log.Infof(
+		"Incoming interaction for user: %s, kind: %d, target: %s, flag: %d, label: %s",
+		u.GetID(), kind, targetUUID, flag, label,
 	)
+
 	switch kind {
 	case posbus.TriggerEnteredSpace:
 		space, ok := universe.GetNode().GetSpaceFromAllSpaces(targetUUID)
@@ -168,28 +161,15 @@ func (u *User) LockObject(msg *posbus.SetObjectLockState) error {
 	id := msg.ObjectID()
 	state := msg.State()
 
-	if u.GetID() == uuid.MustParse("1d6e540f-c708-472b-9af1-416df09b47fd") {
-		u.log.Infof("User: LockObject: begin: object id: %s, state: %d", id, state)
-	}
-
 	space, ok := u.GetWorld().GetSpaceFromAllSpaces(id)
 	if !ok {
 		return errors.Errorf("space not found: %s", id)
 	}
 
 	result := space.LockUnityObject(u, state)
-
-	if u.GetID() == uuid.MustParse("1d6e540f-c708-472b-9af1-416df09b47fd") {
-		u.log.Infof("User: LockObject: lock unity object: object id: %s, state: %d, result: %t", id, state, result)
-	}
-
 	newState := state
 	if !result {
 		newState = 1 - state
-	}
-
-	if u.GetID() == uuid.MustParse("1d6e540f-c708-472b-9af1-416df09b47fd") {
-		u.log.Infof("User: LockObject: finish: object id: %s, state: %d", id, newState)
 	}
 
 	msg.SetLockState(id, newState)
