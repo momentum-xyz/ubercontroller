@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/zakaria-chahboun/cute"
+	"go.uber.org/zap"
 
 	assets2dDB "github.com/momentum-xyz/ubercontroller/database/assets_2d"
 	assets3dDB "github.com/momentum-xyz/ubercontroller/database/assets_3d"
@@ -25,6 +26,7 @@ import (
 	userUserAttributesDB "github.com/momentum-xyz/ubercontroller/database/user_user_attributes"
 	usersDB "github.com/momentum-xyz/ubercontroller/database/users"
 	worldsDB "github.com/momentum-xyz/ubercontroller/database/worlds"
+	"github.com/momentum-xyz/ubercontroller/utils"
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
@@ -167,7 +169,8 @@ func createNode(ctx context.Context, db database.DB) (universe.Node, error) {
 }
 
 func createDBConnection(ctx context.Context, cfg *config.Postgres) (*pgxpool.Pool, error) {
-	config, err := cfg.GenConfig()
+	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
+	config, err := cfg.GenConfig(log.Desugar())
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to gen postgres config")
 	}
