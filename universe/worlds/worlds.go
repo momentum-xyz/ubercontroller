@@ -208,9 +208,6 @@ func (w *Worlds) Run() error {
 		if err := world.Run(); err != nil {
 			w.log.Error(errors.WithMessagef(err, "Worlds: Run: failed to run world: %s", world.GetID()))
 		}
-		if err := world.Update(true); err != nil {
-			w.log.Error(errors.WithMessagef(err, "Worlds: Run: failed to update world: %s", world.GetID()))
-		}
 		world.SetEnabled(true)
 	}
 

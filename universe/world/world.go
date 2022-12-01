@@ -200,6 +200,9 @@ func (w *World) Load() error {
 	if err := w.UpdateChildrenPosition(true); err != nil {
 		return errors.WithMessage(err, "failed to update children position")
 	}
+	if err := w.Update(true); err != nil {
+		w.log.Error(errors.WithMessagef(err, "failed to update world"))
+	}
 
 	w.log.Infof("World loaded: %s", w.GetID())
 
