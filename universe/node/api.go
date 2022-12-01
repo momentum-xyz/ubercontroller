@@ -91,6 +91,16 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 					verifiedAgora.POST("/token", n.apiGenAgoraToken)
 				}
 			}
+
+			verifiedSpaceUser := verifiedSpaces.Group("/:spaceID/:userID")
+			{
+				verifiedSpaceUser.GET("/attributes", n.apiGetSpaceUserAttributesValue)
+				verifiedSpaceUser.POST("/attributes", n.apiSetSpaceUserAttributesValue)
+				verifiedSpaceUser.DELETE("/attributes", n.apiRemoveSpaceUserAttributeValue)
+				verifiedSpaceUser.GET("/attributes/sub", n.apiGetSpaceUserAttributeSubValue)
+				verifiedSpaceUser.POST("/attributes/sub", n.apiSetSpaceUserAttributeSubValue)
+				verifiedSpaceUser.DELETE("/attributes/sub", n.apiRemoveSpaceUserAttributeSubValue)
+			}
 		}
 	}
 }
