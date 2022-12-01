@@ -1,6 +1,7 @@
 package space
 
 import (
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
@@ -105,11 +106,12 @@ func (s *Space) SetPosition(position *cmath.SpacePosition, updateDB bool) error 
 	s.position = position
 	if s.position != nil {
 		s.actualPosition.Store(s.position)
-
+		fmt.Printf("NewPos1: %+v\n", position)
 		if s.enabled.Load() {
 			go func() {
 				s.UpdateSpawnMessage()
 				world := s.GetWorld()
+				fmt.Printf("NewPos2: %+v\n", s.GetActualPosition())
 				if world != nil {
 					world.Send(
 						posbus.NewSetStaticObjectPositionMsg(s.GetID(), *(s.GetActualPosition())).WebsocketMessage(),
