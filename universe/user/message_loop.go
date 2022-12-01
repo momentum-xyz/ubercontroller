@@ -169,7 +169,7 @@ func (u *User) LockObject(msg *posbus.SetObjectLockState) error {
 	state := msg.State()
 
 	if u.GetID() == uuid.MustParse("1d6e540f-c708-472b-9af1-416df09b47fd") {
-		u.log.Infof("User: LockObject: object id: %s, state: %d", msg.ObjectID(), msg.State())
+		u.log.Infof("User: LockObject: begin: object id: %s, state: %d", id, state)
 	}
 
 	space, ok := u.GetWorld().GetSpaceFromAllSpaces(id)
@@ -182,6 +182,11 @@ func (u *User) LockObject(msg *posbus.SetObjectLockState) error {
 	if !result {
 		newState = 1 - state
 	}
+
+	if u.GetID() == uuid.MustParse("1d6e540f-c708-472b-9af1-416df09b47fd") {
+		u.log.Infof("User: LockObject: finish: object id: %s, state: %d", id, newState)
+	}
+
 	msg.SetLockState(id, newState)
 	u.Send(msg.WebsocketMessage())
 
