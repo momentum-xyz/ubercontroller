@@ -3,8 +3,6 @@ package node
 import (
 	"net/http"
 
-	"github.com/momentum-xyz/ubercontroller/utils/modify"
-
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -12,6 +10,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
+	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
 // @Summary Get space user attribute
