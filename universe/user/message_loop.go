@@ -2,6 +2,7 @@ package user
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/pkg/errors"
@@ -10,6 +11,10 @@ import (
 )
 
 func (u *User) OnMessage(msg *posbus.Message) error {
+	if u.GetID() == uuid.MustParse("1d6e540f-c708-472b-9af1-416df09b47fd") {
+		u.log.Infof("User: OnMessage: message type: %d", msg.Type())
+	}
+
 	switch msg.Type() {
 	case posbus.MsgTypeSendPosition:
 		if err := u.UpdatePosition(msg.AsSendPos()); err != nil {
@@ -50,7 +55,7 @@ func (u *User) OnMessage(msg *posbus.Message) error {
 		return nil
 	case posbus.MsgTypeSetObjectLockState:
 		if err := u.LockObject(msg.AsSetObjectLockState()); err != nil {
-			return errors.WithMessage(err, "failed to handle: signal")
+			return errors.WithMessage(err, "failed to set object lock state")
 		}
 		return nil
 	}
@@ -59,6 +64,10 @@ func (u *User) OnMessage(msg *posbus.Message) error {
 }
 
 func (u *User) UpdateSpacePosition(msg *posbus.SetStaticObjectPosition) error {
+	if u.GetID() == uuid.MustParse("1d6e540f-c708-472b-9af1-416df09b47fd") {
+		u.log.Infof("User: UpdateSpacePosition: object id: %s, position: %+v", msg.ObjectID(), msg.Position())
+	}
+
 	space, ok := universe.GetNode().GetSpaceFromAllSpaces(msg.ObjectID())
 	if !ok {
 		return errors.Errorf("space not found: %s", msg.ObjectID())
@@ -155,17 +164,26 @@ func (u *User) InteractionHandler(m *posbus.TriggerInteraction) error {
 	return errors.Errorf("unknown message: %d", kind)
 }
 
-func (u *User) LockObject(m *posbus.SetObjectLockState) error {
-	id := m.ObjectID()
-	state := m.State()
-	if space, ok := u.GetWorld().GetSpace(id, true); ok {
-		result := space.LockUnityObject(u, state)
-		newState := state
-		if !result {
-			newState = 1 - state
-		}
-		m.SetLockState(id, newState)
-		u.Send(m.WebsocketMessage())
+func (u *User) LockObject(msg *posbus.SetObjectLockState) error {
+	id := msg.ObjectID()
+	state := msg.State()
+
+	if u.GetID() == uuid.MustParse("1d6e540f-c708-472b-9af1-416df09b47fd") {
+		u.log.Infof("User: LockObject: object id: %s, state: %d", msg.ObjectID(), msg.State())
 	}
+
+	space, ok := u.GetWorld().GetSpaceFromAllSpaces(id)
+	if !ok {
+		return errors.Errorf("space not found: %s", id)
+	}
+
+	result := space.LockUnityObject(u, state)
+	newState := state
+	if !result {
+		newState = 1 - state
+	}
+	msg.SetLockState(id, newState)
+	u.Send(msg.WebsocketMessage())
+
 	return nil
 }
