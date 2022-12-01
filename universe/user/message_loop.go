@@ -178,6 +178,11 @@ func (u *User) LockObject(msg *posbus.SetObjectLockState) error {
 	}
 
 	result := space.LockUnityObject(u, state)
+
+	if u.GetID() == uuid.MustParse("1d6e540f-c708-472b-9af1-416df09b47fd") {
+		u.log.Infof("User: LockObject: lock unity object: object id: %s, state: %d, result: %t", id, state, result)
+	}
+
 	newState := state
 	if !result {
 		newState = 1 - state
