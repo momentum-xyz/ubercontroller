@@ -63,12 +63,7 @@ func (u *User) UpdateSpacePosition(msg *posbus.SetStaticObjectPosition) error {
 	if !ok {
 		return errors.Errorf("space not found: %s", msg.ObjectID())
 	}
-
-	if err := space.SetPosition(utils.GetPTR(msg.Position()), true); err != nil {
-		return errors.WithMessage(err, "failed to set space position")
-	}
-
-	return space.GetWorld().Send(msg.WebsocketMessage(), true)
+	return space.SetPosition(utils.GetPTR(msg.Position()), true)
 }
 
 func (u *User) Teleport(msg *posbus.SwitchWorld) error {
