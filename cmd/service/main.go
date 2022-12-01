@@ -2,12 +2,16 @@ package main
 
 import (
 	"context"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/zakaria-chahboun/cute"
+	"go.uber.org/zap"
 
 	assets2dDB "github.com/momentum-xyz/ubercontroller/database/assets_2d"
 	assets3dDB "github.com/momentum-xyz/ubercontroller/database/assets_3d"
@@ -25,6 +29,7 @@ import (
 	userUserAttributesDB "github.com/momentum-xyz/ubercontroller/database/user_user_attributes"
 	usersDB "github.com/momentum-xyz/ubercontroller/database/users"
 	worldsDB "github.com/momentum-xyz/ubercontroller/database/worlds"
+	"github.com/momentum-xyz/ubercontroller/utils"
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
@@ -48,15 +53,18 @@ import (
 var log = logger.L()
 
 func main() {
-	if err := run(); err != nil {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	if err := run(ctx); err != nil {
 		log.Fatal(errors.WithMessage(err, "failed to run service"))
 	}
 }
 
-func run() error {
+func run(ctx context.Context) error {
+
 	cfg := config.GetConfig()
 
-	ctx := context.WithValue(context.Background(), types.LoggerContextKey, log)
+	ctx = context.WithValue(ctx, types.LoggerContextKey, log)
 	ctx = context.WithValue(ctx, types.ConfigContextKey, cfg)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -107,6 +115,9 @@ func run() error {
 	if err := node.Run(); err != nil {
 		return errors.WithMessagef(err, "failed to run node: %s", node.GetID())
 	}
+
+	cute.SetTitleColor(cute.BrightPurple)
+	cute.Println("Node stopped", "That's all folks!")
 
 	return nil
 }
@@ -167,7 +178,8 @@ func createNode(ctx context.Context, db database.DB) (universe.Node, error) {
 }
 
 func createDBConnection(ctx context.Context, cfg *config.Postgres) (*pgxpool.Pool, error) {
-	config, err := cfg.GenConfig()
+	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
+	config, err := cfg.GenConfig(log.Desugar())
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to gen postgres config")
 	}

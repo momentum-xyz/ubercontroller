@@ -3,8 +3,10 @@ package node
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -38,6 +40,7 @@ type Node struct {
 	log                 *zap.SugaredLogger
 	db                  database.DB
 	router              *gin.Engine
+	httpServer          *http.Server
 	worlds              universe.Worlds
 	assets2d            universe.Assets2d
 	assets3d            universe.Assets3d
@@ -107,6 +110,10 @@ func (n *Node) Initialize(ctx context.Context) error {
 	r.Use(gin.RecoveryWithWriter(consoleWriter))
 
 	n.router = r
+	n.httpServer = &http.Server{
+		Addr:    fmt.Sprintf("%s:%d", n.cfg.Settings.Address, n.cfg.Settings.Port),
+		Handler: n.router,
+	}
 	n.pluginController = mplugin.NewPluginController(n.GetID())
 
 	return n.Space.Initialize(ctx)
@@ -229,7 +236,20 @@ func (n *Node) Run() error {
 	}
 	n.SetEnabled(true)
 
-	return n.router.Run(fmt.Sprintf("%s:%d", n.cfg.Settings.Address, n.cfg.Settings.Port))
+	// in goroutine for graceful shutdown
+	go func() {
+		if err := n.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			n.log.Fatalf("Http serve: %s\n", err)
+		}
+	}()
+	<-n.ctx.Done()
+	gracePeriod := 3 * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), gracePeriod)
+	defer cancel()
+	if err := n.httpServer.Shutdown(ctx); err != nil {
+		return errors.WithMessage(err, "Http server shutdown")
+	}
+	return nil
 }
 
 func (n *Node) Stop() error {
