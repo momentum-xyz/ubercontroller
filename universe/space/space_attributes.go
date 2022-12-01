@@ -480,7 +480,7 @@ func (s *Space) unityAutoOnSpaceAttributeChanged(
 	if err != nil {
 		return errors.WithMessagef(err, "failed to get auto option: %+v", attributeID)
 	}
-	autoMessage, err := unity.GetOptionAutoMessage(autoOption, changeType, attributeID, value)
+	autoMessage, err := unity.GetOptionAutoMessage(s.ctx, autoOption, changeType, attributeID, value)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to get auto message: %+v", attributeID)
 	}
@@ -490,5 +490,8 @@ func (s *Space) unityAutoOnSpaceAttributeChanged(
 	}
 
 	world := s.GetWorld()
+	if world == nil {
+		return errors.New("Got nil world")
+	}
 	return world.Send(autoMessage, false)
 }

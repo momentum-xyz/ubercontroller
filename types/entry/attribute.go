@@ -63,13 +63,13 @@ func NewAttributeValue() *AttributeValue {
 	return utils.GetPTR(AttributeValue(make(map[string]any)))
 }
 
-type UnitySlotKind string
+type UnitySlotType string
 
 const (
-	UnitySlotKindInvalid UnitySlotKind = ""
-	UnitySlotKindTexture UnitySlotKind = "texture"
-	UnitySlotKindString  UnitySlotKind = "string"
-	UnitySlotKindNumber  UnitySlotKind = "number"
+	UnitySlotTypeInvalid UnitySlotType = ""
+	UnitySlotTypeTexture UnitySlotType = "texture"
+	UnitySlotTypeString  UnitySlotType = "string"
+	UnitySlotTypeNumber  UnitySlotType = "number"
 )
 
 type UnityContentType string
@@ -84,7 +84,7 @@ const (
 )
 
 type UnityAutoAttributeOption struct {
-	SlotKind           UnitySlotKind    `json:"slot_kind" db:"slot_kind" mapstructure:"send_to"`
+	SlotType           UnitySlotType    `json:"slot_type" db:"slot_type" mapstructure:"slot_type"`
 	SlotName           string           `json:"slot_name" db:"slot_name" mapstructure:"slot_name"`
 	ValueField         string           `json:"value_field" db:"value_field" mapstructure:"value_field"`
 	ContentType        UnityContentType `json:"content_type" db:"content_type" mapstructure:"content_type"`
