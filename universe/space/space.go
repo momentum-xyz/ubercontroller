@@ -101,6 +101,7 @@ func (s *Space) Initialize(ctx context.Context) error {
 	s.ctx = ctx
 	s.log = log
 	s.numSendsQueued.Store(chanIsClosed)
+	s.lockedBy.Store(uuid.Nil)
 
 	newPos := cmath.SpacePosition{Location: *new(cmath.Vec3), Rotation: *new(cmath.Vec3), Scale: *new(cmath.Vec3)}
 	s.actualPosition.Store(&newPos)
@@ -627,8 +628,8 @@ func (s *Space) LockUnityObject(user universe.User, state uint32) bool {
 	}
 
 	if state == 1 {
-		return s.lockedBy.CompareAndSwap(nil, user.GetID())
+		return s.lockedBy.CompareAndSwap(uuid.Nil, user.GetID())
 	} else {
-		return s.lockedBy.CompareAndSwap(user.GetID(), nil)
+		return s.lockedBy.CompareAndSwap(user.GetID(), uuid.Nil)
 	}
 }
