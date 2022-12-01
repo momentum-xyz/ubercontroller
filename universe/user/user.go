@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -160,6 +161,7 @@ func (u *User) Stop() error {
 		u.send <- nil
 	}
 
+	fmt.Printf("ulock %+v\n", u.lockedSpace)
 	space, ok := u.GetWorld().GetSpaceFromAllSpaces(u.lockedSpace)
 	if ok {
 		space.LockUnityObject(u, 0)
