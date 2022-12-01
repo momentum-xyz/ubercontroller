@@ -161,14 +161,14 @@ func (u *User) LockObject(msg *posbus.SetObjectLockState) error {
 		return errors.Errorf("space not found: %s", id)
 	}
 
-	result := space.LockUnityObject(u, state, false)
+	result := space.LockUnityObject(u, state)
 	newState := state
 	if !result {
 		newState = 1 - state
 	}
 
 	msg.SetLockState(id, newState)
-	u.Send(msg.WebsocketMessage())
+	u.GetWorld().Send(msg.WebsocketMessage(), true)
 
 	return nil
 }

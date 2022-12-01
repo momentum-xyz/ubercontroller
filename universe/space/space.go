@@ -621,21 +621,11 @@ func (s *Space) SetAttributesMsg(kind, name string, msg *websocket.PreparedMessa
 	m.Store(name, msg)
 }
 
-func (s *Space) LockUnityObject(user universe.User, state uint32, recursive bool) bool {
-	var rval bool
+func (s *Space) LockUnityObject(user universe.User, state uint32) bool {
 	if state == 1 {
-		rval = s.lockedBy.CompareAndSwap(uuid.Nil, user.GetID())
+		return s.lockedBy.CompareAndSwap(uuid.Nil, user.GetID())
 	} else {
-		rval = s.lockedBy.CompareAndSwap(user.GetID(), uuid.Nil)
+		return s.lockedBy.CompareAndSwap(user.GetID(), uuid.Nil)
 	}
 
-	if recursive {
-		s.Children.Mu.RLock()
-		defer s.Children.Mu.RUnlock()
-		for _, child := range s.Children.Data {
-			child.LockUnityObject(user, state, true)
-		}
-	}
-
-	return rval
 }
