@@ -2,6 +2,7 @@ package user
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/pkg/errors"
@@ -59,7 +60,6 @@ func (u *User) OnMessage(msg *posbus.Message) error {
 }
 
 func (u *User) UpdateSpacePosition(msg *posbus.SetStaticObjectPosition) error {
-	fmt.Printf("NewPos: %+v %+v\n", msg.ObjectID(), msg.Position())
 	space, ok := universe.GetNode().GetSpaceFromAllSpaces(msg.ObjectID())
 	if !ok {
 		return errors.Errorf("space not found: %s", msg.ObjectID())
@@ -166,6 +166,12 @@ func (u *User) LockObject(msg *posbus.SetObjectLockState) error {
 	newState := state
 	if !result {
 		newState = 1 - state
+	} else {
+		if state == 1 {
+			u.lockedSpace = space.GetID()
+		} else {
+			u.lockedSpace = uuid.Nil
+		}
 	}
 
 	msg.SetLockState(id, newState)
