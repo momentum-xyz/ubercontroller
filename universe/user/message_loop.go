@@ -59,6 +59,7 @@ func (u *User) OnMessage(msg *posbus.Message) error {
 }
 
 func (u *User) UpdateSpacePosition(msg *posbus.SetStaticObjectPosition) error {
+	fmt.Printf("NewPos: %+v %+v\n", msg.ObjectID(), msg.Position())
 	space, ok := universe.GetNode().GetSpaceFromAllSpaces(msg.ObjectID())
 	if !ok {
 		return errors.Errorf("space not found: %s", msg.ObjectID())
