@@ -99,32 +99,34 @@ func (w *World) AddToCounter() int64 {
 }
 
 func (w *World) Run() error {
-	go w.runSpaces()
-	go w.calendar.Run()
-	ticker := time.NewTicker(500 * time.Millisecond)
+	go func() {
+		go w.runSpaces()
+		go w.calendar.Run()
+		ticker := time.NewTicker(500 * time.Millisecond)
 
-	defer func() {
-		w.calendar.Stop()
-		ticker.Stop()
-		if err := w.stopSpaces(); err != nil {
-			w.log.Error(errors.WithMessagef(err, "World: Run: failed to stop spaces: %s", w.GetID()))
+		defer func() {
+			w.calendar.Stop()
+			ticker.Stop()
+			w.stopSpaces()
+		}()
+
+		for {
+			select {
+			//case message := <-cu.broadcast:
+			// v := reflect.ValueOf(cu.broadcast)
+			// fmt.Println(color.Red, "Bcast", wc.users.Num(), v.Len(), color.Reset)
+			//go cu.PerformBroadcast(message)
+			// logger.Logln(4, "BcastE")
+			case <-ticker.C:
+				// fmt.Println(color.Red, "Ticker", color.Reset)
+				go w.broadcastPositions()
+			case <-w.ctx.Done():
+				return
+			}
 		}
 	}()
 
-	for {
-		select {
-		//case message := <-cu.broadcast:
-		// v := reflect.ValueOf(cu.broadcast)
-		// fmt.Println(color.Red, "Bcast", wc.users.Num(), v.Len(), color.Reset)
-		//go cu.PerformBroadcast(message)
-		// logger.Logln(4, "BcastE")
-		case <-ticker.C:
-			// fmt.Println(color.Red, "Ticker", color.Reset)
-			go w.broadcastPositions()
-		case <-w.ctx.Done():
-			return nil
-		}
-	}
+	return nil
 }
 
 func (w *World) Stop() error {
@@ -137,9 +139,10 @@ func (w *World) runSpaces() error {
 	defer w.allSpaces.Mu.RUnlock()
 
 	for _, space := range w.allSpaces.Data {
+		if err := space.Run(); err != nil {
+			w.log.Error(errors.WithMessagef(err, "World: runSpaces: failed to run space: %s", space.GetID()))
+		}
 		space.SetEnabled(true)
-		space.Update(false)
-		space.Run()
 	}
 
 	return nil
