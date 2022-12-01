@@ -2,7 +2,6 @@ package user
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -49,7 +48,6 @@ type User struct {
 	bufferSends                 atomic.Bool
 	numSendsQueued              atomic.Int64
 	directLock                  sync.Mutex
-	lockedSpace                 uuid.UUID
 }
 
 func NewUser(id uuid.UUID, db database.DB) *User {
@@ -159,13 +157,6 @@ func (u *User) Stop() error {
 	ns := u.numSendsQueued.Add(1)
 	if ns >= 0 {
 		u.send <- nil
-	}
-
-	fmt.Printf("ulock %+v\n", u.lockedSpace)
-	space, ok := u.GetWorld().GetSpaceFromAllSpaces(u.lockedSpace)
-	if ok {
-		space.LockUnityObject(u, 0)
-		u.lockedSpace = uuid.Nil
 	}
 
 	return nil

@@ -89,6 +89,7 @@ func (w *World) noLockRemoveUser(user universe.User, updateDB bool) error {
 
 	user.Stop()
 
+	w.LockUnityObject(user, 0, true)
 	return nil
 }
 

@@ -2,7 +2,6 @@ package user
 
 import (
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/pkg/errors"
@@ -162,16 +161,10 @@ func (u *User) LockObject(msg *posbus.SetObjectLockState) error {
 		return errors.Errorf("space not found: %s", id)
 	}
 
-	result := space.LockUnityObject(u, state)
+	result := space.LockUnityObject(u, state, false)
 	newState := state
 	if !result {
 		newState = 1 - state
-	} else {
-		if state == 1 {
-			u.lockedSpace = space.GetID()
-		} else {
-			u.lockedSpace = uuid.Nil
-		}
 	}
 
 	msg.SetLockState(id, newState)
