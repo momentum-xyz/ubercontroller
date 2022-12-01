@@ -49,7 +49,7 @@ type Space struct {
 
 	spawnMsg          atomic.Pointer[websocket.PreparedMessage]
 	attributesMsg     *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
-	renderTextureAttr map[string]string
+	renderTextureAttr *generic.SyncMap[string, string]
 	textMsg           atomic.Pointer[websocket.PreparedMessage]
 	actualPosition    atomic.Pointer[cmath.SpacePosition]
 	broadcastPipeline chan *websocket.PreparedMessage
@@ -70,7 +70,7 @@ func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
 		Children:          generic.NewSyncMap[uuid.UUID, universe.Space](0),
 		spaceAttributes:   generic.NewSyncMap[entry.AttributeID, *entry.AttributePayload](0),
 		attributesMsg:     generic.NewSyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]](0),
-		renderTextureAttr: make(map[string]string),
+		renderTextureAttr: generic.NewSyncMap[string, string](0),
 		world:             world,
 	}
 }
@@ -572,7 +572,10 @@ func (s *Space) SendSpawnMessage(sendFn func(*websocket.PreparedMessage) error, 
 }
 
 func (s *Space) SendTextures(sendFn func(*websocket.PreparedMessage) error, recursive bool) {
-	sendFn(s.textMsg.Load())
+	msg := s.textMsg.Load()
+	if msg != nil {
+		sendFn(msg)
+	}
 
 	if !recursive {
 		return

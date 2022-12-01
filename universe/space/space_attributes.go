@@ -329,14 +329,17 @@ func (s *Space) CheckIfRendered(attributeID entry.AttributeID, attributeValue *e
 		return
 	}
 
+	s.renderTextureAttr.Mu.Lock()
+	defer s.renderTextureAttr.Mu.Unlock()
+
 	if v := utils.GetFromAnyMap(*attrOpts, "render_type", ""); v == "texture" {
 		if attributeValue != nil {
 			if c, ok := (*attributeValue)["render_hash"]; ok {
-				s.renderTextureAttr[attr.GetName()] = utils.GetFromAny(c, "")
+				s.renderTextureAttr.Data[attr.GetName()] = utils.GetFromAny(c, "")
 			}
 		}
 	}
-	s.textMsg.Store(message.GetBuilder().SetObjectTextures(s.id, s.renderTextureAttr))
+	s.textMsg.Store(message.GetBuilder().SetObjectTextures(s.GetID(), s.renderTextureAttr.Data))
 }
 
 func (s *Space) loadSpaceAttributes() error {
