@@ -158,7 +158,7 @@ func (u *User) InteractionHandler(m *posbus.TriggerInteraction) error {
 func (u *User) LockObject(m *posbus.SetObjectLockState) error {
 	id := m.ObjectID()
 	state := m.State()
-	if space, ok := u.GetWorld().GetSpace(id, true); ok {
+	if space, ok := u.GetWorld().GetSpaceFromAllSpaces(id); ok {
 		result := space.LockUnityObject(u, state)
 		newState := state
 		if !result {

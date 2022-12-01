@@ -189,13 +189,11 @@ func (s *Space) RemoveSpace(space universe.Space, recursive, updateDB bool) (boo
 			return false, errors.WithMessagef(err, "failed to remove space from world all spaces: %s", space.GetID())
 		}
 
-		//if space.GetEnabled() {
 		go func() {
 			removeMsg := posbus.NewRemoveStaticObjectsMsg(1)
 			removeMsg.SetObject(0, space.GetID())
 			spaceWorld.Send(removeMsg.WebsocketMessage(), true)
 		}()
-		//}
 
 		return true, nil
 	}

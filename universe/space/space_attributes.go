@@ -171,14 +171,13 @@ func (s *Space) UpsertSpaceAttribute(
 
 	s.spaceAttributes.Data[attributeID] = payload
 
+	var value *entry.AttributeValue
+	if payload != nil {
+		value = payload.Value
+	}
+	s.CheckIfRendered(attributeID, value)
 	if s.GetEnabled() {
-		go func() {
-			var value *entry.AttributeValue
-			if payload != nil {
-				value = payload.Value
-			}
-			s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
-		}()
+		go s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
 	}
 
 	return spaceAttribute, nil
@@ -214,6 +213,7 @@ func (s *Space) UpdateSpaceAttributeValue(
 	payload.Value = value
 	s.spaceAttributes.Data[attributeID] = payload
 
+	s.CheckIfRendered(attributeID, value)
 	go s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
 
 	return value, nil
@@ -249,14 +249,13 @@ func (s *Space) UpdateSpaceAttributeOptions(
 	payload.Options = options
 	s.spaceAttributes.Data[attributeID] = payload
 
+	var value *entry.AttributeValue
+	if payload != nil {
+		value = payload.Value
+	}
+	s.CheckIfRendered(attributeID, value)
 	if s.GetEnabled() {
-		go func() {
-			var value *entry.AttributeValue
-			if payload != nil {
-				value = payload.Value
-			}
-			s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
-		}()
+		go s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
 	}
 
 	return options, nil
@@ -317,21 +316,22 @@ func (s *Space) RemoveSpaceAttributes(attributeIDs []entry.AttributeID, updateDB
 	return res, errs.ErrorOrNil()
 }
 
-func (s *Space) CheckIfRendered(instance *entry.SpaceAttribute) {
-	attr, ok := universe.GetNode().GetAttributeTypes().GetAttributeType(entry.AttributeTypeID(instance.AttributeID))
+// TODO: we need to rename it properly and also find a right place to call it
+func (s *Space) CheckIfRendered(attributeID entry.AttributeID, attributeValue *entry.AttributeValue) {
+	attr, ok := universe.GetNode().GetAttributeTypes().GetAttributeType(entry.AttributeTypeID(attributeID))
 	if !ok {
 		return
 	}
 
+	// QUESTION: maybe we need EffectiveOptions here?
 	attrOpts := attr.GetOptions()
 	if attrOpts == nil {
 		return
 	}
-	opts := *attrOpts
 
-	if v := utils.GetFromAnyMap(opts, "render_type", ""); v == "texture" {
-		if instance.Value != nil {
-			if c, ok := (*instance.Value)["render_hash"]; ok {
+	if v := utils.GetFromAnyMap(*attrOpts, "render_type", ""); v == "texture" {
+		if attributeValue != nil {
+			if c, ok := (*attributeValue)["render_hash"]; ok {
 				s.renderTextureAttr[attr.GetName()] = utils.GetFromAny(c, "")
 			}
 		}
@@ -346,7 +346,6 @@ func (s *Space) loadSpaceAttributes() error {
 	}
 
 	for _, instance := range entries {
-		s.CheckIfRendered(instance)
 		if _, err := s.UpsertSpaceAttribute(
 			instance.AttributeID, modify.MergeWith(instance.AttributePayload), false,
 		); err != nil {

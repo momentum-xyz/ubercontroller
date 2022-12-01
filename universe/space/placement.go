@@ -63,13 +63,16 @@ func (s *Space) SetActualPosition(pos cmath.SpacePosition, theta float64) error 
 		s.theta = theta
 		s.actualPosition.Store(&pos)
 
-		if s.GetEnabled() {
+		if s.enabled.Load() {
 			go func() {
 				s.UpdateSpawnMessage()
-				s.GetWorld().Send(
-					posbus.NewSetStaticObjectPositionMsg(s.GetID(), *(s.GetActualPosition())).WebsocketMessage(),
-					true,
-				)
+				world := s.GetWorld()
+				if world != nil {
+					world.Send(
+						posbus.NewSetStaticObjectPositionMsg(s.GetID(), *(s.GetActualPosition())).WebsocketMessage(),
+						true,
+					)
+				}
 			}()
 		}
 	}
@@ -103,13 +106,16 @@ func (s *Space) SetPosition(position *cmath.SpacePosition, updateDB bool) error 
 	if s.position != nil {
 		s.actualPosition.Store(s.position)
 
-		if s.GetEnabled() {
+		if s.enabled.Load() {
 			go func() {
 				s.UpdateSpawnMessage()
-				s.GetWorld().Send(
-					posbus.NewSetStaticObjectPositionMsg(s.GetID(), *(s.GetActualPosition())).WebsocketMessage(),
-					true,
-				)
+				world := s.GetWorld()
+				if world != nil {
+					world.Send(
+						posbus.NewSetStaticObjectPositionMsg(s.GetID(), *(s.GetActualPosition())).WebsocketMessage(),
+						true,
+					)
+				}
 			}()
 		}
 	}
