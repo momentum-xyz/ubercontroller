@@ -622,7 +622,7 @@ func (s *Space) SetAttributesMsg(kind, name string, msg *websocket.PreparedMessa
 
 func (s *Space) LockUnityObject(user universe.User, state uint32) bool {
 	if user.GetID() == uuid.MustParse("1d6e540f-c708-472b-9af1-416df09b47fd") {
-		s.log.Infof("Space: LockUnityObject: is user the same: %T", s.lockedBy.Load() == &user)
+		s.log.Infof("Space: LockUnityObject: is user the same: %t", s.lockedBy.Load() == &user)
 	}
 
 	if state == 1 {
