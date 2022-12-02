@@ -3,6 +3,7 @@ package assets_3d
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -63,8 +64,8 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 		assetDTO := &dto.Asset3d{
 			ID:        asset.Asset3dID.String(),
 			Meta:      asset.Meta,
-			CreatedAt: asset.CreatedAt.String(),
-			UpdatedAt: asset.UpdatedAt.String(),
+			CreatedAt: asset.CreatedAt.Format(time.RFC3339),
+			UpdatedAt: asset.UpdatedAt.Format(time.RFC3339),
 		}
 		assets = append(assets, assetDTO)
 	}

@@ -2,6 +2,7 @@ package node
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -70,10 +71,10 @@ func (n *Node) apiUsersCheck(c *gin.Context) {
 		ID:         userEntry.UserID.String(),
 		UserTypeID: userEntry.UserTypeID.String(),
 		Profile:    outProfile,
-		CreatedAt:  userEntry.CreatedAt.String(),
+		CreatedAt:  userEntry.CreatedAt.Format(time.RFC3339),
 	}
 	if userEntry.UpdatedAt != nil {
-		outBody.UpdatedAt = utils.GetPTR(userEntry.UpdatedAt.String())
+		outBody.UpdatedAt = utils.GetPTR(userEntry.UpdatedAt.Format(time.RFC3339))
 	}
 	if idToken.Web3Address != "" {
 		outBody.Wallet = &idToken.Web3Address
@@ -128,13 +129,13 @@ func (n *Node) apiUsersGetMe(c *gin.Context) {
 			ProfileLink: userProfileEntry.ProfileLink,
 			OnBoarded:   userProfileEntry.OnBoarded,
 		},
-		CreatedAt: userEntry.CreatedAt.String(),
+		CreatedAt: userEntry.CreatedAt.Format(time.RFC3339),
 	}
 	if userEntry.UserTypeID != nil {
 		outUser.UserTypeID = userEntry.UserTypeID.String()
 	}
 	if userEntry.UpdatedAt != nil {
-		outUser.UpdatedAt = utils.GetPTR(userEntry.UpdatedAt.String())
+		outUser.UpdatedAt = utils.GetPTR(userEntry.UpdatedAt.Format(time.RFC3339))
 	}
 	if token.Web3Address != "" {
 		outUser.Wallet = &token.Web3Address
@@ -184,13 +185,13 @@ func (n *Node) apiUsersGetById(c *gin.Context) {
 			ProfileLink: userProfileEntry.ProfileLink,
 			OnBoarded:   userProfileEntry.OnBoarded,
 		},
-		CreatedAt: userEntry.CreatedAt.String(),
+		CreatedAt: userEntry.CreatedAt.Format(time.RFC3339),
 	}
 	if userEntry.UserTypeID != nil {
 		outUser.UserTypeID = userEntry.UserTypeID.String()
 	}
 	if userEntry.UpdatedAt != nil {
-		outUser.UpdatedAt = utils.GetPTR(userEntry.UpdatedAt.String())
+		outUser.UpdatedAt = utils.GetPTR(userEntry.UpdatedAt.Format(time.RFC3339))
 	}
 	if userProfileEntry != nil {
 		if userProfileEntry.Name != nil {
