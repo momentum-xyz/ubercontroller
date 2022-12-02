@@ -3,11 +3,6 @@ package node
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"os"
-	"sync"
-	"time"
-
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
@@ -16,6 +11,10 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/sync/errgroup"
+	"net/http"
+	"os"
+	"sync"
+	"time"
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
@@ -239,16 +238,19 @@ func (n *Node) Run() error {
 	// in goroutine for graceful shutdown
 	go func() {
 		if err := n.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			n.log.Fatalf("Http serve: %s\n", err)
+			n.log.Fatal(errors.WithMessage(err, "Node: Run: failed to run http server"))
 		}
 	}()
+
 	<-n.ctx.Done()
 	gracePeriod := 3 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), gracePeriod)
 	defer cancel()
+
 	if err := n.httpServer.Shutdown(ctx); err != nil {
-		return errors.WithMessage(err, "Http server shutdown")
+		return errors.WithMessage(err, "failed to shutdown http server")
 	}
+
 	return nil
 }
 

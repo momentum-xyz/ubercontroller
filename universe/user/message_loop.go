@@ -168,7 +168,6 @@ func (u *User) LockObject(msg *posbus.SetObjectLockState) error {
 	}
 
 	msg.SetLockState(id, newState)
-	u.GetWorld().Send(msg.WebsocketMessage(), true)
 
-	return nil
+	return u.GetWorld().Send(msg.WebsocketMessage(), true)
 }

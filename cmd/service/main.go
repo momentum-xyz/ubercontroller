@@ -55,6 +55,7 @@ var log = logger.L()
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+
 	if err := run(ctx); err != nil {
 		log.Fatal(errors.WithMessage(err, "failed to run service"))
 	}
@@ -116,6 +117,7 @@ func run(ctx context.Context) error {
 	}
 
 	cute.SetTitleColor(cute.BrightPurple)
+	cute.SetMessageColor(cute.BrightBlue)
 	cute.Println("Node stopped", "That's all folks!")
 
 	return nil

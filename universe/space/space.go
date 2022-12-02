@@ -627,5 +627,4 @@ func (s *Space) LockUnityObject(user universe.User, state uint32) bool {
 	} else {
 		return s.lockedBy.CompareAndSwap(user.GetID(), uuid.Nil)
 	}
-
 }
