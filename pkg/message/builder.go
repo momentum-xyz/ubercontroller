@@ -11,6 +11,7 @@ import (
 	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/momentum-xyz/ubercontroller/logger"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
+	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
@@ -18,6 +19,7 @@ type ObjectDefinition struct {
 	ObjectID         uuid.UUID
 	ParentID         uuid.UUID
 	AssetType        uuid.UUID
+	AssetFormat      dto.Asset3dType // TODO: Rename AssetType to AssetID, so Type can be used for this.
 	Name             string
 	Position         cmath.SpacePosition
 	TetheredToParent bool
@@ -183,6 +185,7 @@ func (mb *Builder) MsgObjectDefinition(obj ObjectDefinition) *websocket.Prepared
 	api.ObjectDefinitionAddTetheredToParent(builder, obj.TetheredToParent)
 	api.ObjectDefinitionAddMinimap(builder, obj.Minimap)
 	api.ObjectDefinitionAddInfouiType(builder, mb.SerializeGUID(builder, obj.InfoUI))
+	api.ObjectDefinitionAddIsGltf(builder, obj.AssetFormat == dto.GLTFAsset3dType)
 	msgOffset := api.ObjectDefinitionEnd(builder)
 
 	return mb.FinishMessage(builder, api.MsgObjectDefinition, msgOffset)

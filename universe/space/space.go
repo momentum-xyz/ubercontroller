@@ -18,6 +18,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
@@ -526,12 +527,20 @@ func (s *Space) UpdateSpawnMessage() error {
 	asset3dID := uuid.Nil
 	asset3d := s.GetAsset3D()
 	spaceType := s.GetSpaceType()
+	assetFormat := dto.AddressableAssetType
+	if asset3d == nil && spaceType != nil {
+		asset3d = spaceType.GetAsset3d()
+	}
 	if asset3d != nil {
 		asset3dID = asset3d.GetID()
-	} else if spaceType != nil {
-		asset3d = spaceType.GetAsset3d()
-		if asset3d != nil {
-			asset3dID = asset3d.GetID()
+		asset3dMeta := asset3d.GetMeta()
+		if asset3dMeta != nil {
+			// TODO: make GetMeta return struct type
+			metaData := struct {
+				Type int `mapstructure:"type"`
+			}{}
+			utils.MapDecode(*asset3dMeta, &metaData)
+			assetFormat = dto.Asset3dType(metaData.Type)
 		}
 	}
 
@@ -543,6 +552,7 @@ func (s *Space) UpdateSpawnMessage() error {
 			ObjectID:         s.GetID(),
 			ParentID:         parentID,
 			AssetType:        asset3dID,
+			AssetFormat:      assetFormat,
 			Name:             name,
 			Position:         *s.GetActualPosition(),
 			TetheredToParent: true,

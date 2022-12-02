@@ -16,5 +16,4 @@ type Asset3d struct {
 
 type Asset3dMeta map[string]any
 
-type Asset3dOptions struct {
-}
+type Asset3dOptions map[string]any
