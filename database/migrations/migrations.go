@@ -26,7 +26,7 @@ import (
 var migrationFS embed.FS
 
 func pgDBMigrationsConnect(ctx context.Context, log *zap.SugaredLogger, cfg *config.Postgres) (*sql.DB, error) {
-	minCfg, err := cfg.MinVersion().GenConfig()
+	minCfg, err := cfg.MinVersion().GenConfig(log.Desugar())
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to generate min config")
 	}
@@ -57,7 +57,7 @@ func pgDBMigrationsConnect(ctx context.Context, log *zap.SugaredLogger, cfg *con
 }
 
 func createNewDatabase(ctx context.Context, log *zap.SugaredLogger, cfg *config.Postgres) error {
-	pgxCfg, err := cfg.GenConfig()
+	pgxCfg, err := cfg.GenConfig(log.Desugar())
 	if err != nil {
 		return errors.WithMessage(err, "failed to generate config")
 	}

@@ -2,7 +2,12 @@ package config
 
 import (
 	"fmt"
+	"os"
 
+	"go.uber.org/zap"
+
+	"github.com/jackc/pgx/v4"
+	zapadaptor "github.com/jackc/pgx/v4/log/zapadapter"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 )
@@ -25,7 +30,8 @@ func (x *Postgres) Init() {
 	x.MAXCONNS = 100
 }
 
-func (x *Postgres) GenConfig() (*pgxpool.Config, error) {
+func (x *Postgres) GenConfig(log *zap.Logger) (*pgxpool.Config, error) {
+
 	connString := fmt.Sprintf("postgres://%s:%s@%s:%d/%s",
 		x.USERNAME, x.PASSWORD, x.HOST, x.PORT, x.DATABASE)
 	if x.MAXCONNS > 0 {
@@ -36,6 +42,14 @@ func (x *Postgres) GenConfig() (*pgxpool.Config, error) {
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to parse postgres config")
 	}
+
+	hostname, err := os.Hostname()
+	if err != nil {
+		hostname = "<unknown>"
+	}
+	cfg.ConnConfig.RuntimeParams["application_name"] = fmt.Sprintf("Controller on %s", hostname)
+	cfg.ConnConfig.LogLevel = pgx.LogLevelError
+	cfg.ConnConfig.Logger = zapadaptor.NewLogger(log)
 
 	return cfg, nil
 }

@@ -203,9 +203,7 @@ func (s *SpaceType) SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB 
 		if spaceType.GetID() != s.GetID() {
 			continue
 		}
-		if err := space.Update(false); err != nil {
-			return nil, errors.WithMessagef(err, "failed to update space: %s", space.GetID())
-		}
+		space.DropCache()
 	}
 
 	return options, nil

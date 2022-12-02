@@ -48,6 +48,11 @@ func (u *User) OnMessage(msg *posbus.Message) error {
 			return errors.WithMessage(err, "failed to update space position")
 		}
 		return nil
+	case posbus.MsgTypeSetObjectLockState:
+		if err := u.LockObject(msg.AsSetObjectLockState()); err != nil {
+			return errors.WithMessage(err, "failed to set object lock state")
+		}
+		return nil
 	}
 
 	return errors.Errorf("unknown message: %d", msg.Type())
@@ -58,12 +63,7 @@ func (u *User) UpdateSpacePosition(msg *posbus.SetStaticObjectPosition) error {
 	if !ok {
 		return errors.Errorf("space not found: %s", msg.ObjectID())
 	}
-
-	if err := space.SetPosition(utils.GetPTR(msg.Position()), true); err != nil {
-		return errors.WithMessage(err, "failed to set space position")
-	}
-
-	return space.GetWorld().Send(msg.WebsocketMessage(), true)
+	return space.SetPosition(utils.GetPTR(msg.Position()), true)
 }
 
 func (u *User) Teleport(msg *posbus.SwitchWorld) error {
@@ -109,9 +109,11 @@ func (u *User) InteractionHandler(m *posbus.TriggerInteraction) error {
 	targetUUID := m.Target()
 	flag := m.Flag()
 	label := m.Label()
-	u.log.Info(
-		"Incoming interaction for user", u.id, "kind:", kind, "target:", targetUUID, "flag:", flag, "label:", label,
+	u.log.Infof(
+		"Incoming interaction for user: %s, kind: %d, target: %s, flag: %d, label: %s",
+		u.GetID(), kind, targetUUID, flag, label,
 	)
+
 	switch kind {
 	case posbus.TriggerEnteredSpace:
 		space, ok := universe.GetNode().GetSpaceFromAllSpaces(targetUUID)
@@ -148,4 +150,24 @@ func (u *User) InteractionHandler(m *posbus.TriggerInteraction) error {
 	//	u.HandleStake(m)
 
 	return errors.Errorf("unknown message: %d", kind)
+}
+
+func (u *User) LockObject(msg *posbus.SetObjectLockState) error {
+	id := msg.ObjectID()
+	state := msg.State()
+
+	space, ok := u.GetWorld().GetSpaceFromAllSpaces(id)
+	if !ok {
+		return errors.Errorf("space not found: %s", id)
+	}
+
+	result := space.LockUnityObject(u, state)
+	newState := state
+	if !result {
+		newState = 1 - state
+	}
+
+	msg.SetLockState(id, newState)
+
+	return u.GetWorld().Send(msg.WebsocketMessage(), true)
 }

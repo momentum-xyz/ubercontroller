@@ -49,12 +49,14 @@ type Space struct {
 
 	spawnMsg          atomic.Pointer[websocket.PreparedMessage]
 	attributesMsg     *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
-	renderTextureAttr map[string]string
+	renderTextureAttr *generic.SyncMap[string, string]
 	textMsg           atomic.Pointer[websocket.PreparedMessage]
 	actualPosition    atomic.Pointer[cmath.SpacePosition]
 	broadcastPipeline chan *websocket.PreparedMessage
 	messageAccept     atomic.Bool
 	numSendsQueued    atomic.Int64
+
+	lockedBy atomic.Value
 
 	// TODO: replace theta with full calculation of orientation, once Unity is read
 	theta float64
@@ -68,7 +70,7 @@ func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
 		Children:          generic.NewSyncMap[uuid.UUID, universe.Space](0),
 		spaceAttributes:   generic.NewSyncMap[entry.AttributeID, *entry.AttributePayload](0),
 		attributesMsg:     generic.NewSyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]](0),
-		renderTextureAttr: make(map[string]string),
+		renderTextureAttr: generic.NewSyncMap[string, string](0),
 		world:             world,
 	}
 }
@@ -99,6 +101,7 @@ func (s *Space) Initialize(ctx context.Context) error {
 	s.ctx = ctx
 	s.log = log
 	s.numSendsQueued.Store(chanIsClosed)
+	s.lockedBy.Store(uuid.Nil)
 
 	newPos := cmath.SpacePosition{Location: *new(cmath.Vec3), Rotation: *new(cmath.Vec3), Scale: *new(cmath.Vec3)}
 	s.actualPosition.Store(&newPos)
@@ -240,7 +243,7 @@ func (s *Space) SetSpaceType(spaceType universe.SpaceType, updateDB bool) error 
 	}
 
 	s.spaceType = spaceType
-	s.effectiveOptions = nil
+	s.dropCache()
 
 	return nil
 }
@@ -268,7 +271,7 @@ func (s *Space) SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool
 	}
 
 	s.options = options
-	s.effectiveOptions = nil
+	s.dropCache()
 
 	return options, nil
 }
@@ -292,6 +295,17 @@ func (s *Space) GetEffectiveOptions() *entry.SpaceOptions {
 	}
 
 	return s.effectiveOptions
+}
+
+func (s *Space) DropCache() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.dropCache()
+}
+
+func (s *Space) dropCache() {
+	s.effectiveOptions = nil
 }
 
 func (s *Space) GetEntry() *entry.Space {
@@ -323,29 +337,31 @@ func (s *Space) GetEntry() *entry.Space {
 func (s *Space) Run() error {
 	s.numSendsQueued.Store(0)
 	s.broadcastPipeline = make(chan *websocket.PreparedMessage, 100)
-	defer func() {
-		ns := s.numSendsQueued.Swap(chanIsClosed)
-		for i := int64(0); i < ns; i++ {
-			<-s.broadcastPipeline
+
+	go func() {
+		defer func() {
+			ns := s.numSendsQueued.Swap(chanIsClosed)
+			for i := int64(0); i < ns; i++ {
+				<-s.broadcastPipeline
+			}
+			close(s.broadcastPipeline)
+		}()
+
+		for {
+			select {
+			case message := <-s.broadcastPipeline:
+				s.numSendsQueued.Add(-1)
+				if message == nil {
+					return
+				}
+				s.performBroadcast(message)
+			case <-s.ctx.Done():
+				s.Stop()
+			}
 		}
-		close(s.broadcastPipeline)
 	}()
 
-	s.UpdateSpawnMessage()
-
-	for {
-		select {
-		case message := <-s.broadcastPipeline:
-			s.numSendsQueued.Add(-1)
-			//fmt.Println("Got a message from")
-			if message == nil {
-				return nil
-			}
-			s.performBroadcast(message)
-		case <-s.ctx.Done():
-			s.Stop()
-		}
-	}
+	return nil
 }
 
 func (s *Space) Stop() error {
@@ -357,9 +373,19 @@ func (s *Space) Stop() error {
 }
 
 func (s *Space) Update(recursive bool) error {
-	s.mu.Lock()
-	s.effectiveOptions = nil
-	s.mu.Unlock()
+	s.UpdateSpawnMessage()
+
+	if s.GetEnabled() {
+		world := s.GetWorld()
+		if world != nil {
+			world.Send(s.spawnMsg.Load(), true)
+			s.SendTextures(
+				func(msg *websocket.PreparedMessage) error {
+					return world.Send(msg, false)
+				}, false,
+			)
+		}
+	}
 
 	if !recursive {
 		return nil
@@ -547,14 +573,20 @@ func (s *Space) SendSpawnMessage(sendFn func(*websocket.PreparedMessage) error, 
 }
 
 func (s *Space) SendTextures(sendFn func(*websocket.PreparedMessage) error, recursive bool) {
-	sendFn(s.textMsg.Load())
-	if recursive {
-		s.Children.Mu.RLock()
-		defer s.Children.Mu.RUnlock()
+	msg := s.textMsg.Load()
+	if msg != nil {
+		sendFn(msg)
+	}
 
-		for _, space := range s.Children.Data {
-			space.SendTextures(sendFn, recursive)
-		}
+	if !recursive {
+		return
+	}
+
+	s.Children.Mu.RLock()
+	defer s.Children.Mu.RUnlock()
+
+	for _, space := range s.Children.Data {
+		space.SendTextures(sendFn, recursive)
 	}
 }
 
@@ -587,4 +619,12 @@ func (s *Space) SetAttributesMsg(kind, name string, msg *websocket.PreparedMessa
 		s.attributesMsg.Store(kind, m)
 	}
 	m.Store(name, msg)
+}
+
+func (s *Space) LockUnityObject(user universe.User, state uint32) bool {
+	if state == 1 {
+		return s.lockedBy.CompareAndSwap(uuid.Nil, user.GetID())
+	} else {
+		return s.lockedBy.CompareAndSwap(user.GetID(), uuid.Nil)
+	}
 }

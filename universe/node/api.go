@@ -32,7 +32,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 		auth := vx.Group("/auth")
 		{
-			auth.GET("/challenge", n.apiGetChallenge)
+			auth.GET("/challenge", n.apiGenChallenge)
 			auth.POST("/token", n.apiGenToken)
 
 			auth.POST("/guest-token", n.apiGenerateGuestToken)
@@ -55,6 +55,11 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		verifiedUsers := verified.Group("/users")
 		{
 			verifiedUsers.GET("/me", n.apiUsersGetMe)
+
+			verifiedUser := verifiedUsers.Group("/:userID")
+			{
+				verifiedUser.GET("", n.apiUsersGetById)
+			}
 		}
 
 		verifiedProfile := verified.Group("/profile")
@@ -88,6 +93,16 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 				{
 					verifiedAgora.POST("/token", n.apiGenAgoraToken)
 				}
+			}
+
+			verifiedSpaceUser := verifiedSpaces.Group("/:spaceID/:userID")
+			{
+				verifiedSpaceUser.GET("/attributes", n.apiGetSpaceUserAttributesValue)
+				verifiedSpaceUser.POST("/attributes", n.apiSetSpaceUserAttributesValue)
+				verifiedSpaceUser.DELETE("/attributes", n.apiRemoveSpaceUserAttributeValue)
+				verifiedSpaceUser.GET("/attributes/sub", n.apiGetSpaceUserAttributeSubValue)
+				verifiedSpaceUser.POST("/attributes/sub", n.apiSetSpaceUserAttributeSubValue)
+				verifiedSpaceUser.DELETE("/attributes/sub", n.apiRemoveSpaceUserAttributeSubValue)
 			}
 		}
 

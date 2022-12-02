@@ -32,7 +32,9 @@ func (s *Space) CreateSpace(spaceID uuid.UUID) (universe.Space, error) {
 	return space, nil
 }
 
-func (s *Space) FilterSpaces(predicateFn universe.SpacesFilterPredicateFn, recursive bool) map[uuid.UUID]universe.Space {
+func (s *Space) FilterSpaces(
+	predicateFn universe.SpacesFilterPredicateFn, recursive bool,
+) map[uuid.UUID]universe.Space {
 	spaces := s.Children.Filter(predicateFn)
 
 	if !recursive {
@@ -187,13 +189,11 @@ func (s *Space) RemoveSpace(space universe.Space, recursive, updateDB bool) (boo
 			return false, errors.WithMessagef(err, "failed to remove space from world all spaces: %s", space.GetID())
 		}
 
-		if space.GetEnabled() {
-			go func() {
-				removeMsg := posbus.NewRemoveStaticObjectsMsg(1)
-				removeMsg.SetObject(0, space.GetID())
-				spaceWorld.Send(removeMsg.WebsocketMessage(), true)
-			}()
-		}
+		go func() {
+			removeMsg := posbus.NewRemoveStaticObjectsMsg(1)
+			removeMsg.SetObject(0, space.GetID())
+			spaceWorld.Send(removeMsg.WebsocketMessage(), true)
+		}()
 
 		return true, nil
 	}

@@ -205,12 +205,10 @@ func (w *Worlds) Run() error {
 	defer w.worlds.Mu.RUnlock()
 
 	for _, world := range w.worlds.Data {
+		if err := world.Run(); err != nil {
+			w.log.Error(errors.WithMessagef(err, "Worlds: Run: failed to run world: %s", world.GetID()))
+		}
 		world.SetEnabled(true)
-		go func(world universe.World) {
-			if err := world.Run(); err != nil {
-				w.log.Error(errors.WithMessagef(err, "Worlds: Run: failed to run world: %s", world.GetID()))
-			}
-		}(world)
 	}
 
 	return nil

@@ -64,9 +64,12 @@ type SpaceCacher interface {
 	RemoveSpaceFromAllSpaces(space Space) (bool, error)
 }
 
+type DropCacher interface {
+	DropCache()
+}
+
 type Node interface {
 	Space
-	RunStopper
 	LoadSaver
 	APIRegister
 	SpaceCacher
@@ -180,6 +183,7 @@ type Space interface {
 	Enabler
 	Initializer
 	RunStopper
+	DropCacher
 
 	CreateSpace(spaceID uuid.UUID) (Space, error)
 
@@ -261,6 +265,7 @@ type Space interface {
 	UpdateChildrenPosition(recursive bool) error
 
 	SendTextures(sendFn func(msg *websocket.PreparedMessage) error, recursive bool)
+	LockUnityObject(user User, state uint32) bool
 }
 
 type User interface {

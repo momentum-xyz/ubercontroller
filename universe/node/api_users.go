@@ -139,6 +139,59 @@ func (n *Node) apiUsersGetMe(c *gin.Context) {
 	c.JSON(http.StatusOK, outUser)
 }
 
+// @Summary Get user profile based on UserID
+// @Schemes
+// @Description Returns user profile based on UserID
+// @Tags users
+// @Accept json
+// @Produce json
+// @Success 200 {object} dto.User
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/users/{user_id} [get]
+func (n *Node) apiUsersGetById(c *gin.Context) {
+	userID, err := uuid.Parse(c.Param("userID"))
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiUsersGetById: failed to parse user id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
+		return
+	}
+
+	userEntry, err := n.db.UsersGetUserByID(c, userID)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiUsersGetById: failed to get user by id")
+		api.AbortRequest(c, http.StatusNotFound, "user_not_found", err, n.log)
+		return
+	}
+	userProfileEntry := userEntry.Profile
+
+	outUser := dto.User{
+		ID: userEntry.UserID.String(),
+		Profile: dto.Profile{
+			Bio:         userProfileEntry.Bio,
+			Location:    userProfileEntry.Location,
+			AvatarHash:  userProfileEntry.AvatarHash,
+			ProfileLink: userProfileEntry.ProfileLink,
+			OnBoarded:   userProfileEntry.OnBoarded,
+		},
+		CreatedAt: userEntry.CreatedAt.String(),
+	}
+	if userEntry.UserTypeID != nil {
+		outUser.UserTypeID = userEntry.UserTypeID.String()
+	}
+	if userEntry.UpdatedAt != nil {
+		outUser.UpdatedAt = utils.GetPTR(userEntry.UpdatedAt.String())
+	}
+	if userProfileEntry != nil {
+		if userProfileEntry.Name != nil {
+			outUser.Name = *userProfileEntry.Name
+		}
+	}
+
+	c.JSON(http.StatusOK, outUser)
+}
+
 func (n *Node) apiCheckTokens(c *gin.Context, accessToken, idToken string) (api.Token, api.Token, int, error) {
 	parsedAccessToken, err := api.VerifyToken(c, accessToken)
 	if err != nil {

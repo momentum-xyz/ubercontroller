@@ -89,6 +89,17 @@ func (w *World) noLockRemoveUser(user universe.User, updateDB bool) error {
 
 	user.Stop()
 
+	// clean up all locks hold by this user,
+	// temporarily here.
+	w.allSpaces.Mu.RLock()
+	defer w.allSpaces.Mu.RUnlock()
+
+	for _, child := range w.allSpaces.Data {
+		if child.LockUnityObject(user, 0) {
+			w.Send(posbus.NewSetObjectLockState(user.GetID(), 0).WebsocketMessage(), true)
+		}
+	}
+
 	return nil
 }
 
@@ -101,7 +112,7 @@ func (w *World) initializeUnity(user universe.User) error {
 	// TODO: fix circular dependency
 	if err := user.SendDirectly(
 		posbus.NewSendPositionMsg(
-			cmath.Vec3(user.GetPosition()), cmath.Vec3{0, 0, 0}, cmath.Vec3{0, 0, 0},
+			user.GetPosition(), cmath.Vec3{X: 0, Y: 0, Z: 0}, cmath.Vec3{X: 0, Y: 0, Z: 0},
 		).WebsocketMessage(),
 	); err != nil {
 		return errors.WithMessage(err, "failed to send position")

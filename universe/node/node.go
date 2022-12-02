@@ -3,9 +3,6 @@ package node
 import (
 	"context"
 	"fmt"
-	"os"
-	"sync"
-
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
@@ -14,6 +11,10 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/sync/errgroup"
+	"net/http"
+	"os"
+	"sync"
+	"time"
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
@@ -38,6 +39,7 @@ type Node struct {
 	log                 *zap.SugaredLogger
 	db                  database.DB
 	router              *gin.Engine
+	httpServer          *http.Server
 	worlds              universe.Worlds
 	assets2d            universe.Assets2d
 	assets3d            universe.Assets3d
@@ -107,6 +109,10 @@ func (n *Node) Initialize(ctx context.Context) error {
 	r.Use(gin.RecoveryWithWriter(consoleWriter))
 
 	n.router = r
+	n.httpServer = &http.Server{
+		Addr:    fmt.Sprintf("%s:%d", n.cfg.Settings.Address, n.cfg.Settings.Port),
+		Handler: n.router,
+	}
 	n.pluginController = mplugin.NewPluginController(n.GetID())
 
 	return n.Space.Initialize(ctx)
@@ -229,7 +235,23 @@ func (n *Node) Run() error {
 	}
 	n.SetEnabled(true)
 
-	return n.router.Run(fmt.Sprintf("%s:%d", n.cfg.Settings.Address, n.cfg.Settings.Port))
+	// in goroutine for graceful shutdown
+	go func() {
+		if err := n.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			n.log.Fatal(errors.WithMessage(err, "Node: Run: failed to run http server"))
+		}
+	}()
+
+	<-n.ctx.Done()
+	gracePeriod := 3 * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), gracePeriod)
+	defer cancel()
+
+	if err := n.httpServer.Shutdown(ctx); err != nil {
+		return errors.WithMessage(err, "failed to shutdown http server")
+	}
+
+	return nil
 }
 
 func (n *Node) Stop() error {

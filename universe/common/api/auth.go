@@ -1,11 +1,16 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
+
+	"fmt"
+  "net/http"
 	"strings"
 
+	"github.com/ChainSafe/go-schnorrkel"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/momentum-xyz/ubercontroller/utils"
@@ -84,4 +89,58 @@ func ParseToken(token string) (Token, error) {
 	parsedToken.RawToken = token
 
 	return parsedToken, nil
+}
+
+func GenerateChallenge(wallet string) (string, error) {
+	return fmt.Sprintf(
+		"Please sign this message with the private key for address %s to prove that you own it. %s",
+		wallet, uuid.New().String(),
+	), nil
+}
+
+func VerifyPolkadotSignature(wallet, challenge, signature string) (bool, error) {
+	pub, err := schnorrkel.NewPublicKeyFromHex(wallet)
+	if err != nil {
+		return false, errors.WithMessage(err, "failed to get public key")
+	}
+	sig, err := schnorrkel.NewSignatureFromHex(signature)
+	if err != nil {
+		return false, errors.WithMessage(err, "failed to get signature")
+	}
+
+	trContext := []byte("substrate")
+	trMessage := bytes.NewBufferString("<Bytes>")
+	trMessage.WriteString(challenge)
+	trMessage.WriteString("</Bytes>")
+
+	transcript := schnorrkel.NewSigningContext(trContext, trMessage.Bytes())
+
+	return pub.Verify(sig, transcript)
+}
+
+func createProvider(provider string) (rs.ResourceServer, error) {
+	cfg := api.cfg.Auth
+	oidcURL := cfg.OIDCURL
+	clientID := cfg.GetIDByProvider(provider)
+	secret := cfg.GetSecretByProvider(provider)
+	introspectURL := cfg.GetIntrospectURLByProvider(provider)
+
+	api.log.Infof("API: creating oidc provider: %s, url: %s, client id: %s, secret: %s, introspect url: %s",
+		provider, oidcURL, clientID, secret, introspectURL)
+
+	opts := make([]rs.Option, 0, 1)
+	if introspectURL != "" {
+		oidcConfig, err := client.Discover(oidcURL, http.DefaultClient)
+		if err != nil {
+			return nil, errors.WithMessagef(err, "failed to discover provider: %s", provider)
+		}
+		opts = append(opts, rs.WithStaticEndpoints(oidcConfig.TokenEndpoint, introspectURL))
+	}
+
+	oidcProvider, err := rs.NewResourceServerClientCredentials(oidcURL, clientID, secret, opts...)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "failed to create resource server client: %s", provider)
+	}
+
+	return oidcProvider, nil
 }
