@@ -22,12 +22,23 @@ import (
 // @Accept json
 // @Produce json
 // @Param space_id path string true "Space ID"
-// @Param screenshare body node.apiGenAgoraToken.Body false "Get get token for screensharing."
+// @Param body body node.apiGenAgoraToken.Body false "body params"
 // @Success 200 {object} node.apiGenAgoraToken.Out
 // @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
 // @Router /api/v4/spaces/{space_id}/agora/token [post]
 func (n *Node) apiGenAgoraToken(c *gin.Context) {
+	type Body struct {
+		ScreenShare bool `json:"screenshare"`
+	}
+	var inBody Body
+
+	if err := c.ShouldBindJSON(&inBody); err != nil {
+		err = errors.WithMessage(err, "Node: apiGenAgoraToken: failed to bind json")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
 	spaceID, err := uuid.Parse(c.Param("spaceID"))
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiGenAgoraToken: failed to parse space id")
@@ -46,15 +57,6 @@ func (n *Node) apiGenAgoraToken(c *gin.Context) {
 		err = errors.WithMessage(err, "Node: apiGenAgoraToken: failed to get user id")
 		api.AbortRequest(c, http.StatusInternalServerError, "get_user_id_failed", err, n.log)
 		return
-	}
-
-	type Body struct {
-		ScreenShare bool `json:"screenshare,default=false"`
-	}
-	var inBody Body
-	if err := c.ShouldBindJSON(&inBody); err != nil {
-		//too keep it compatible with current calls, which are empty.
-		n.log.Debugf("Invalid (empty) body, ignoring.")
 	}
 
 	// 1 day in seconds
