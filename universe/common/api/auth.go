@@ -18,6 +18,7 @@ import (
 	"github.com/zitadel/oidc/pkg/client"
 	"github.com/zitadel/oidc/pkg/client/rs"
 
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
@@ -187,7 +188,7 @@ func createProvider(provider string) (rs.ResourceServer, error) {
 
 // SignJWTToken saves a jwt token with the given userID as subject
 // and signed with the given secret
-func SignJWTToken(userID string, secret []byte) (*jwt.Token, string, error) {
+func SignJWTToken(userID string, secret []byte) (*entry.Token, error) {
 	claims := jwt.StandardClaims{
 		IssuedAt:  time.Now().Unix(),
 		ExpiresAt: time.Now().Add(4 * time.Hour).Unix(),
@@ -195,14 +196,24 @@ func SignJWTToken(userID string, secret []byte) (*jwt.Token, string, error) {
 		Subject:   userID,
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	jwt := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	signedString, err := token.SignedString(secret)
+	signedString, err := jwt.SignedString(secret)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
-	return token, signedString, nil
+	exp := time.Unix(claims.ExpiresAt, 0)
+
+	token := &entry.Token{
+		SignedString: &signedString,
+		Subject:      &claims.Subject,
+		Issuer:       &claims.Issuer,
+		IssuedAt:     time.Unix(claims.IssuedAt, 0),
+		ExpiresAt:    &exp,
+	}
+
+	return token, nil
 }
 
 func ValidateJWT(signedString string, secret []byte) (*jwt.Token, error) {

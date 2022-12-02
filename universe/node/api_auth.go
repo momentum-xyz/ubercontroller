@@ -1,12 +1,9 @@
 package node
 
 import (
-	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
@@ -201,7 +198,7 @@ func (n *Node) apiGuestToken(c *gin.Context) {
 	}
 
 	// get jwt secret to sign token
-	jwtKeyAttribute, ok := n.GetNodeAttributeValue(entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.Settings.Name))
+	jwtKeyAttribute, ok := n.GetNodeAttributeValue(entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.JWTKey.Name))
 	if !ok {
 		err := errors.New("Node: apiGuestToken: failed to get jwt_key_attribute")
 		api.AbortRequest(c, http.StatusInternalServerError, "no_jwt_key", err, n.log)
@@ -210,22 +207,14 @@ func (n *Node) apiGuestToken(c *gin.Context) {
 
 	secret := utils.GetFromAnyMap(*jwtKeyAttribute, "secret", "")
 
-	token, signedString, err := api.SignJWTToken(userEntry.UserID.String(), []byte(fmt.Sprintf("%v", secret)))
+	token, err := api.SignJWTToken(userEntry.UserID.String(), []byte(secret))
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiGuestToken: failed get or create user from tokens")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_or_create_user", err, n.log)
 		return
 	}
 
-	userEntry.Token.SignedString = &signedString
-
-	claims := token.Claims.(jwt.StandardClaims)
-
-	userEntry.Token.Subject = &claims.Subject
-	userEntry.Token.Issuer = &claims.Issuer
-	unixExpires := time.Unix(claims.ExpiresAt, 0)
-	userEntry.Token.ExpiresAt = &unixExpires
-	userEntry.Token.IssuedAt = time.Unix(claims.IssuedAt, 0)
+	userEntry.Token = token
 
 	// add tokens to new jsonb column in users
 	if err := n.db.UsersUpsertUser(c, userEntry); err != nil {

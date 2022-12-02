@@ -329,7 +329,6 @@ func (n *Node) apiCreateUserByName(c *gin.Context, name *string) (*entry.User, e
 		return nil, errors.New("Node: apiCreateUserByName; got nil name")
 	}
 	ue := &entry.User{
-		// TODO: make it impossible to have collission
 		UserID: uuid.New(),
 		Profile: &entry.UserProfile{
 			Name: name,
