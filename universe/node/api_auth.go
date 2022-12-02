@@ -40,7 +40,7 @@ func (n *Node) apiGenChallenge(c *gin.Context) {
 		return
 	}
 
-	challengesKey := universe.Attributes.Kusama.ChallengeStore.Key
+	challengesKey := universe.Attributes.Kusama.Challenges.Key
 	modifyFn := func(current *entry.AttributeValue) (*entry.AttributeValue, error) {
 		if current == nil {
 			current = entry.NewAttributeValue()
@@ -56,7 +56,7 @@ func (n *Node) apiGenChallenge(c *gin.Context) {
 	}
 
 	if _, err := n.UpdateNodeAttributeValue(
-		entry.NewAttributeID(universe.GetKusamaPluginID(), universe.Attributes.Kusama.ChallengeStore.Name),
+		entry.NewAttributeID(universe.GetKusamaPluginID(), universe.Attributes.Kusama.Challenges.Name),
 		modifyFn, true,
 	); err != nil {
 		err := errors.WithMessage(err, "Node: apiGenChallenge: failed to update node attribute value")
@@ -98,7 +98,7 @@ func (n *Node) apiGenToken(c *gin.Context) {
 		return
 	}
 
-	attributeID := entry.NewAttributeID(universe.GetKusamaPluginID(), universe.Attributes.Kusama.ChallengeStore.Name)
+	attributeID := entry.NewAttributeID(universe.GetKusamaPluginID(), universe.Attributes.Kusama.Challenges.Name)
 
 	value, ok := n.GetNodeAttributeValue(attributeID)
 	if !ok {
@@ -109,7 +109,7 @@ func (n *Node) apiGenToken(c *gin.Context) {
 
 	var challenge string
 	if value != nil {
-		store := utils.GetFromAnyMap(*value, universe.Attributes.Kusama.ChallengeStore.Key, (map[string]any)(nil))
+		store := utils.GetFromAnyMap(*value, universe.Attributes.Kusama.Challenges.Key, (map[string]any)(nil))
 		if store != nil {
 			challenge = utils.GetFromAnyMap(store, inBody.Wallet, "")
 		}
@@ -125,7 +125,7 @@ func (n *Node) apiGenToken(c *gin.Context) {
 			return current, nil
 		}
 
-		challenges := utils.GetFromAnyMap(*current, universe.Attributes.Kusama.ChallengeStore.Key, (map[string]any)(nil))
+		challenges := utils.GetFromAnyMap(*current, universe.Attributes.Kusama.Challenges.Key, (map[string]any)(nil))
 		if challenges == nil {
 			return current, nil
 		}

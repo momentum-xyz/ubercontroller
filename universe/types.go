@@ -45,7 +45,7 @@ var (
 			User struct {
 				Wallet Attribute
 			}
-			ChallengeStore Attribute
+			Challenges Attribute
 		}
 	}{
 		Node: struct {
@@ -78,7 +78,7 @@ var (
 			User struct {
 				Wallet Attribute
 			}
-			ChallengeStore Attribute
+			Challenges Attribute
 		}{
 			User: struct {
 				Wallet Attribute
@@ -88,7 +88,7 @@ var (
 					Key:  "wallet",
 				},
 			},
-			ChallengeStore: Attribute{
+			Challenges: Attribute{
 				Name: "challenge_store",
 				Key:  "challenges",
 			},

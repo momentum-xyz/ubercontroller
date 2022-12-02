@@ -175,7 +175,7 @@ func (s *Space) UpsertSpaceAttribute(
 	if payload != nil {
 		value = payload.Value
 	}
-	s.CheckIfRendered(attributeID, value)
+	s.UpdateTextures(attributeID, value)
 	if s.GetEnabled() {
 		go s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
 	}
@@ -213,7 +213,7 @@ func (s *Space) UpdateSpaceAttributeValue(
 	payload.Value = value
 	s.spaceAttributes.Data[attributeID] = payload
 
-	s.CheckIfRendered(attributeID, value)
+	s.UpdateTextures(attributeID, value)
 	go s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
 
 	return value, nil
@@ -253,7 +253,7 @@ func (s *Space) UpdateSpaceAttributeOptions(
 	if payload != nil {
 		value = payload.Value
 	}
-	s.CheckIfRendered(attributeID, value)
+	s.UpdateTextures(attributeID, value)
 	if s.GetEnabled() {
 		go s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
 	}
@@ -317,7 +317,7 @@ func (s *Space) RemoveSpaceAttributes(attributeIDs []entry.AttributeID, updateDB
 }
 
 // TODO: we need to rename it properly and also find a right place to call it
-func (s *Space) CheckIfRendered(attributeID entry.AttributeID, attributeValue *entry.AttributeValue) {
+func (s *Space) UpdateTextures(attributeID entry.AttributeID, attributeValue *entry.AttributeValue) {
 	attr, ok := universe.GetNode().GetAttributeTypes().GetAttributeType(entry.AttributeTypeID(attributeID))
 	if !ok {
 		return
