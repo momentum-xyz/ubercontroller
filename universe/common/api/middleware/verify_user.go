@@ -12,12 +12,14 @@ import (
 
 func VerifyUser(log *zap.SugaredLogger) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		token, err := api.VerifyToken(c, api.GetTokenFromRequest(c))
+
+		var secret []byte
+		token, err := api.ValidateJWT(api.GetTokenFromRequest(c), secret)
 		if err != nil {
 			err = errors.WithMessage(err, "Middleware: VerifyUser: failed to verify token")
 			api.AbortRequest(c, http.StatusForbidden, "failed_to_verify_access_token", err, log)
 			return
 		}
-		c.Set(api.TokenContextKey, token)
+		c.Set(api.JWTContextKey, token)
 	}
 }

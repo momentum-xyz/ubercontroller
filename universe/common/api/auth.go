@@ -205,13 +205,23 @@ func SignJWTToken(userID string, secret []byte) (*jwt.Token, string, error) {
 	return token, signedString, nil
 }
 
-func ValidateJWT(token string, secret []byte) (*jwt.Token, error) {
-	return jwt.Parse(token,
-		func(t *jwt.Token) (interface{}, error) {
-			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
-			}
+func ValidateJWT(signedString string, secret []byte) (*jwt.Token, error) {
+	return jwt.Parse(signedString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Invalid token %v", token.Header["alg"])
 
-			return secret, nil
-		})
+		}
+		return secret, nil
+	})
+}
+
+func GetJWTnFromContext(c *gin.Context) (jwt.Token, error) {
+	value, ok := c.Get(JWTContextKey)
+	if !ok {
+		return jwt.Token{}, errors.Errorf("failed to get token value from context")
+	}
+
+	token := utils.GetFromAny(value, jwt.Token{})
+
+	return token, nil
 }

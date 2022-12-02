@@ -1,2 +1,1 @@
 ALTER TABLE "USER" DROP COLUMN "auth";
-
