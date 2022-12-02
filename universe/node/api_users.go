@@ -323,3 +323,37 @@ func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken
 
 	return userEntry, 0, nil
 }
+
+func (n *Node) apiCreateUserByName(c *gin.Context, name *string) (*entry.User, error) {
+	if name == nil {
+		return nil, errors.New("Node: apiCreateUserByName; got nil name")
+	}
+	ue := &entry.User{
+		// TODO: make it impossible to have collission
+		UserID: uuid.New(),
+		Profile: &entry.UserProfile{
+			Name: name,
+		},
+	}
+
+	nodeSettings, ok := n.GetNodeAttributeValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.Settings.Name),
+	)
+	if !ok {
+		return nil, errors.Errorf("failed to get node settings")
+	}
+
+	// user is always guest
+	guestUserType := utils.GetFromAnyMap(*nodeSettings, "guest_user_type", "")
+	guestUserTypeID, err := uuid.Parse(guestUserType)
+	if err != nil {
+		return nil, errors.Errorf("failed to parse guest user type id")
+	}
+	ue.UserTypeID = &guestUserTypeID
+
+	err = n.db.UsersUpsertUser(c, ue)
+
+	n.log.Infof("Node: apiCreateUserByName: guest created: %s", ue.UserID)
+
+	return ue, err
+}

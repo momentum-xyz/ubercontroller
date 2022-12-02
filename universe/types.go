@@ -33,6 +33,7 @@ var (
 	Attributes = struct {
 		Node struct {
 			Settings Attribute
+			JWTKey   Attribute
 		}
 		World struct {
 			Meta Attribute
@@ -50,9 +51,13 @@ var (
 	}{
 		Node: struct {
 			Settings Attribute
+			JWTKey   Attribute
 		}{
 			Settings: Attribute{
 				Name: "node_settings",
+			},
+			JWTKey: Attribute{
+				Name: "jwt_key",
 			},
 		},
 		World: struct {

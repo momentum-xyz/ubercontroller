@@ -70,7 +70,7 @@ func (db *DB) UsersGetUserProfileByUserID(ctx context.Context, userID uuid.UUID)
 func (db *DB) UsersUpsertUser(ctx context.Context, user *entry.User) error {
 	if _, err := db.conn.Exec(
 		ctx, upsertUserQuery,
-		user.UserID, user.UserTypeID, user.Profile, user.Options, user.JWT,
+		user.UserID, user.UserTypeID, user.Profile, user.Options, user.Token,
 	); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
@@ -82,7 +82,7 @@ func (db *DB) UsersUpsertUsers(ctx context.Context, users []*entry.User) error {
 	batch := &pgx.Batch{}
 	for _, user := range users {
 		batch.Queue(
-			upsertUserQuery, user.UserID, user.UserTypeID, user.Profile, user.Options, user.JWT,
+			upsertUserQuery, user.UserID, user.UserTypeID, user.Profile, user.Options, user.Token,
 		)
 	}
 

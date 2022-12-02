@@ -187,7 +187,7 @@ func createProvider(provider string) (rs.ResourceServer, error) {
 
 // SignJWTToken saves a jwt token with the given userID as subject
 // and signed with the given secret
-func SignJWTToken(userID string, secret []byte) (string, error) {
+func SignJWTToken(userID string, secret []byte) (*jwt.Token, string, error) {
 	claims := jwt.StandardClaims{
 		IssuedAt:  time.Now().Unix(),
 		ExpiresAt: time.Now().Add(4 * time.Hour).Unix(),
@@ -197,11 +197,16 @@ func SignJWTToken(userID string, secret []byte) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	return token.SignedString(secret)
+	signedString, err := token.SignedString(secret)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return token, signedString, nil
 }
 
 func ValidateJWT(token string, secret []byte) (*jwt.Token, error) {
-	return jwt.ParseWithClaims(token, new(jwt.StandardClaims),
+	return jwt.Parse(token,
 		func(t *jwt.Token) (interface{}, error) {
 			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])

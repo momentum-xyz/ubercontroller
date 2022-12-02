@@ -11,7 +11,7 @@ type User struct {
 	UserTypeID *uuid.UUID   `db:"user_type_id"`
 	Profile    *UserProfile `db:"profile"`
 	Options    *UserOptions `db:"options"`
-	JWT        *JWT         `db:"auth"`
+	Token      *Token       `db:"auth"`
 	CreatedAt  time.Time    `db:"created_at"`
 	UpdatedAt  *time.Time   `db:"updated_at"`
 }
@@ -29,9 +29,12 @@ type UserProfile struct {
 	OnBoarded   *bool   `db:"onboarded" json:"onboarded"`
 }
 
-type JWT struct {
-	SignedString string    `db:"signed_string" json:"signed_string"`
-	ExpiresAt    time.Time `db:"expires_at" json:"expires_at"`
+type Token struct {
+	SignedString *string    `db:"signed_string" json:"signed_string"`
+	Subject      *string    `db:"subject" json:"subject"`
+	Issuer       *string    `db:"issuer" json:"issuer"`
+	IssuedAt     time.Time  `db:"issued_at" json:"issued_at"`
+	ExpiresAt    *time.Time `db:"expires_at" json:"expires_at"`
 }
 
 type UserAttributeID struct {
