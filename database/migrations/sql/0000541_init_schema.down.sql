@@ -1,1 +1,1 @@
-ALTER TABLE "USER" DROP COLUMN "auth";
+alter table "user" drop column "auth";

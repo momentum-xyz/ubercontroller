@@ -338,7 +338,7 @@ func (n *Node) apiCreateUserByName(c *gin.Context, name *string) (*entry.User, e
 	nodeSettings, ok := n.GetNodeAttributeValue(
 		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.Settings.Name),
 	)
-	if !ok {
+	if !ok || nodeSettings == nil {
 		return nil, errors.Errorf("failed to get node settings")
 	}
 

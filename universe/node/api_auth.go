@@ -205,7 +205,7 @@ func (n *Node) apiGuestToken(c *gin.Context) {
 		return
 	}
 
-	secret := utils.GetFromAnyMap(*jwtKeyAttribute, "secret", "")
+	secret := utils.GetFromAnyMap(*jwtKeyAttribute, universe.Attributes.Node.JWTKey.Key, "")
 
 	token, err := api.SignJWTToken(userEntry.UserID.String(), []byte(secret))
 	if err != nil {
@@ -246,5 +246,5 @@ func (n *Node) apiGuestToken(c *gin.Context) {
 		outUser.UpdatedAt = utils.GetPTR(userEntry.UpdatedAt.String())
 	}
 
-	c.JSON(http.StatusOK, token)
+	c.JSON(http.StatusOK, outUser)
 }

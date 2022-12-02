@@ -92,6 +92,22 @@ func GetTokenFromContext(c *gin.Context) (Token, error) {
 	return token, nil
 }
 
+// TODO: Remove this when old tokens are removed
+// Made as a second method here so we can use the jwt tokens
+// and still not break node.apiCheckTokens - when the old auth
+// flow is completely removed this method should become the
+// only GetTokenFromContext
+func GetJWTFromContext(c *gin.Context) (jwt.Token, error) {
+	value, ok := c.Get(JWTContextKey)
+	if !ok {
+		return jwt.Token{}, errors.Errorf("failed to get token value from context")
+	}
+
+	token := utils.GetFromAny(value, jwt.Token{})
+
+	return token, nil
+}
+
 func GetUserIDFromContext(c *gin.Context) (uuid.UUID, error) {
 	token, err := GetTokenFromContext(c)
 	if err != nil {
@@ -192,7 +208,7 @@ func SignJWTToken(userID string, secret []byte) (*entry.Token, error) {
 	claims := jwt.StandardClaims{
 		IssuedAt:  time.Now().Unix(),
 		ExpiresAt: time.Now().Add(4 * time.Hour).Unix(),
-		Issuer:    "controller",
+		Issuer:    "ubercontroller",
 		Subject:   userID,
 	}
 
@@ -224,15 +240,4 @@ func ValidateJWT(signedString string, secret []byte) (*jwt.Token, error) {
 		}
 		return secret, nil
 	})
-}
-
-func GetJWTFromContext(c *gin.Context) (jwt.Token, error) {
-	value, ok := c.Get(JWTContextKey)
-	if !ok {
-		return jwt.Token{}, errors.Errorf("failed to get token value from context")
-	}
-
-	token := utils.GetFromAny(value, jwt.Token{})
-
-	return token, nil
 }

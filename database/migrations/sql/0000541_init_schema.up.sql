@@ -1,1 +1,1 @@
-ALTER TABLE "user" ADD COLUMN "auth" jsonb;
+alter table "user" add column "auth" jsonb;

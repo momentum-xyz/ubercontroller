@@ -58,6 +58,7 @@ var (
 			},
 			JWTKey: Attribute{
 				Name: "jwt_key",
+				Key:  "secret",
 			},
 		},
 		World: struct {
