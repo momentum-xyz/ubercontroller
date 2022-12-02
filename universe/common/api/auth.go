@@ -8,9 +8,11 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/ChainSafe/go-schnorrkel"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/zitadel/oidc/pkg/client"
@@ -181,4 +183,30 @@ func createProvider(provider string) (rs.ResourceServer, error) {
 	}
 
 	return oidcProvider, nil
+}
+
+// SignJWTToken saves a jwt token with the given userID as subject
+// and signed with the given secret
+func SignJWTToken(userID string, secret []byte) (string, error) {
+	claims := jwt.StandardClaims{
+		IssuedAt:  time.Now().Unix(),
+		ExpiresAt: time.Now().Add(4 * time.Hour).Unix(),
+		Issuer:    "controller",
+		Subject:   userID,
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	return token.SignedString(secret)
+}
+
+func ValidateJWT(token string, secret []byte) (*jwt.Token, error) {
+	return jwt.ParseWithClaims(token, new(jwt.StandardClaims),
+		func(t *jwt.Token) (interface{}, error) {
+			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+			}
+
+			return secret, nil
+		})
 }
