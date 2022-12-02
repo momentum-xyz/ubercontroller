@@ -215,7 +215,7 @@ func ValidateJWT(signedString string, secret []byte) (*jwt.Token, error) {
 	})
 }
 
-func GetJWTnFromContext(c *gin.Context) (jwt.Token, error) {
+func GetJWTFromContext(c *gin.Context) (jwt.Token, error) {
 	value, ok := c.Get(JWTContextKey)
 	if !ok {
 		return jwt.Token{}, errors.Errorf("failed to get token value from context")
