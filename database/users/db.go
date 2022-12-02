@@ -2,6 +2,7 @@ package users
 
 import (
 	"context"
+
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
@@ -25,12 +26,12 @@ const (
 	updateUserProfileQuery    = `UPDATE "user" SET profile = $2 WHERE user_id = $1;`
 
 	upsertUserQuery = `INSERT INTO "user"
-    						(user_id, user_type_id, profile, options, created_at, updated_at)     									 
+    						(user_id, user_type_id, profile, options, auth, created_at, updated_at)
 						VALUES
-						    ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+						    ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 						ON CONFLICT (user_id)
 						DO UPDATE SET
-							user_type_id = $2, profile = $3, options = $4, updated_at = CURRENT_TIMESTAMP;`
+							user_type_id = $2, profile = $3, options = $4, auth = $5, updated_at = CURRENT_TIMESTAMP;`
 )
 
 var _ database.UsersDB = (*DB)(nil)
@@ -69,7 +70,7 @@ func (db *DB) UsersGetUserProfileByUserID(ctx context.Context, userID uuid.UUID)
 func (db *DB) UsersUpsertUser(ctx context.Context, user *entry.User) error {
 	if _, err := db.conn.Exec(
 		ctx, upsertUserQuery,
-		user.UserID, user.UserTypeID, user.Profile, user.Options,
+		user.UserID, user.UserTypeID, user.Profile, user.Options, user.Token,
 	); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
@@ -81,7 +82,7 @@ func (db *DB) UsersUpsertUsers(ctx context.Context, users []*entry.User) error {
 	batch := &pgx.Batch{}
 	for _, user := range users {
 		batch.Queue(
-			upsertUserQuery, user.UserID, user.UserTypeID, user.Profile, user.Options,
+			upsertUserQuery, user.UserID, user.UserTypeID, user.Profile, user.Options, user.Token,
 		)
 	}
 
