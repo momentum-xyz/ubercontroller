@@ -34,6 +34,9 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		{
 			auth.GET("/challenge", n.apiGetChallenge)
 			auth.POST("/token", n.apiGenToken)
+
+			auth.POST("/guest-token", n.apiGenerateGuestToken)
+			auth.POST("/refresh", n.apiRefreshJWT)
 		}
 
 		users := vx.Group("/users")
@@ -87,6 +90,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 				}
 			}
 		}
+
 	}
 }
 

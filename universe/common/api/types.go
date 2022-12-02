@@ -1,5 +1,6 @@
 package api
 
 const (
-	TokenContextKey = "token"
+	TokenContextKey    = "token"
+	JWTClaimContextKey = "jwt_claims"
 )

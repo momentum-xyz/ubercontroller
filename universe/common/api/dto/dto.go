@@ -310,3 +310,11 @@ type Plugin struct {
 	ScriptURL string  `json:"scriptUrl"`
 	IconName  *string `json:"iconName,omitempty"`
 }
+
+type JWTToken struct {
+	UserID    string `json:"userID"`
+	Issuer    string `json:"issuer"`
+	Subject   string `json:"subject"`
+	IssuedAt  string `json:"issuedAt"`
+	ExpiresAt string `json:"expiresAt"`
+}

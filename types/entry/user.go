@@ -11,6 +11,7 @@ type User struct {
 	UserTypeID *uuid.UUID   `db:"user_type_id"`
 	Profile    *UserProfile `db:"profile"`
 	Options    *UserOptions `db:"options"`
+	Auth       *UserAuth    `db:"auth"`
 	CreatedAt  time.Time    `db:"created_at"`
 	UpdatedAt  *time.Time   `db:"updated_at"`
 }
@@ -47,6 +48,14 @@ type UserAttribute struct {
 type UserUserAttribute struct {
 	UserUserAttributeID
 	*AttributePayload
+}
+
+type UserAuth struct {
+	UserID       *string `db:"userID" json:"userID"`
+	SignedString *string `db:"signedString" json:"signedString"`
+	IssuedAt     *int64  `db:"issuedAt" json:"issuedAt"`
+	ExpiresAt    *int64  `db:"expiresAt" json:"expiresAt"`
+	Issuer       *string `db:"issuer" json:"issuer"`
 }
 
 func NewUserAttribute(userAttributeID UserAttributeID, payload *AttributePayload) *UserAttribute {
