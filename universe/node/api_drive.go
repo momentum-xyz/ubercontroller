@@ -20,7 +20,7 @@ var store = generic.NewSyncMap[uuid.UUID, string](0)
 // @Tags drive
 // @Accept json
 // @Produce json
-// @Param body node.apiDriveMintOdyssey.Body false
+// @Param body body node.apiDriveMintOdyssey.Body true "body params"
 // @Success 200 {object} node.apiDriveMintOdyssey.Out
 // @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
