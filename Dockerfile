@@ -20,6 +20,11 @@ RUN go build -ldflags "-extldflags '-fuse-ld=bfd'" -o ./bin/ubercontroller ./cmd
 # Runtime image
 FROM alpine:3.16 as runtime
 
+#temporary, add nodejs and polkadot package
+
+RUN apk add --update --no-cache nodejs npm 
+RUN npm install -g @polkadot/api
+
 COPY --from=build /project/bin/ubercontroller /srv/ubercontroller
 
 WORKDIR /srv
