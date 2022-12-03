@@ -22,6 +22,7 @@ type UIClient struct {
 	UnityClientCompanyName        string `yaml:"unity_client_company_name" json:"UNITY_CLIENT_COMPANY_NAME" envconfig:"UNITY_CLIENT_COMPANY_NAME"`
 	UnityClientProductName        string `yaml:"unity_client_product_name" json:"UNITY_CLIENT_PRODUCT_NAME" envconfig:"UNITY_CLIENT_PRODUCT_NAME"`
 	UnityClientProductVersion     string `yaml:"unity_client_product_version" json:"UNITY_CLIENT_PRODUCT_VERSION" envconfig:"UNITY_CLIENT_PRODUCT_VERSION"`
+	KusamaWsServer                string `yaml:"kusama_ws_server" json:"KUSAMA_WS_SERVER" envconfig:"KUSAMA_WS_SERVER"`
 }
 
 func (c *UIClient) Init() {
