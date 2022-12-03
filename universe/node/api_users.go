@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
@@ -29,25 +30,7 @@ import (
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/users/check [post]
 func (n *Node) apiUsersCheck(c *gin.Context) {
-	type Body struct {
-		IDToken string `json:"idToken" binding:"required"`
-	}
-	inBody := Body{}
-
-	if err := c.ShouldBindJSON(&inBody); err != nil {
-		err = errors.WithMessage(err, "Node: apiUsersCheck: failed to bind json")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
-		return
-	}
-
-	accessToken, idToken, code, err := n.apiCheckTokens(c, api.GetTokenFromRequest(c), inBody.IDToken)
-	if err != nil {
-		err = errors.WithMessage(err, "Node: apiUsersCheck: failed to check tokens")
-		api.AbortRequest(c, code, "invalid_tokens", err, n.log)
-		return
-	}
-
-	userEntry, httpCode, err := n.apiGetOrCreateUserFromTokens(c, accessToken, idToken)
+	userEntry, httpCode, err := n.apiGetOrCreateUserFromTokens(c, api.GetTokenFromRequest(c))
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiUsersCheck: failed get or create user from tokens")
 		api.AbortRequest(c, httpCode, "failed_to_get_or_create_user", err, n.log)
@@ -74,9 +57,6 @@ func (n *Node) apiUsersCheck(c *gin.Context) {
 	}
 	if userEntry.UpdatedAt != nil {
 		outBody.UpdatedAt = utils.GetPTR(userEntry.UpdatedAt.String())
-	}
-	if idToken.Web3Address != "" {
-		outBody.Wallet = &idToken.Web3Address
 	}
 	if userProfileEntry.Name != nil {
 		outBody.Name = *userProfileEntry.Name
@@ -135,9 +115,6 @@ func (n *Node) apiUsersGetMe(c *gin.Context) {
 	}
 	if userEntry.UpdatedAt != nil {
 		outUser.UpdatedAt = utils.GetPTR(userEntry.UpdatedAt.String())
-	}
-	if token.Web3Address != "" {
-		outUser.Wallet = &token.Web3Address
 	}
 	if userProfileEntry != nil {
 		if userProfileEntry.Name != nil {
@@ -201,33 +178,31 @@ func (n *Node) apiUsersGetById(c *gin.Context) {
 	c.JSON(http.StatusOK, outUser)
 }
 
-func (n *Node) apiCheckTokens(c *gin.Context, accessToken, idToken string) (api.Token, api.Token, int, error) {
-	parsedAccessToken, err := api.VerifyToken(c, accessToken)
+func (n *Node) apiParseJWT(c *gin.Context, token string) (*jwt.Token, int, error) {
+	// get jwt secret to sign token
+	jwtKeyAttribute, ok := n.GetNodeAttributeValue(entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.JWTKey.Name))
+	if !ok {
+		return nil, http.StatusInternalServerError, errors.New("failed to get jwt_key")
+	}
+	secret := utils.GetFromAnyMap(*jwtKeyAttribute, universe.Attributes.Node.JWTKey.Key, "")
+
+	parsedAccessToken, err := api.ValidateJWT(token, []byte(secret))
 	if err != nil {
-		return api.Token{}, api.Token{}, http.StatusForbidden, errors.WithMessage(err,
+		return nil, http.StatusForbidden, errors.WithMessage(err,
 			"failed to verify access token",
 		)
 	}
 
-	parsedIDToken, err := api.ParseToken(idToken)
-	if err != nil {
-		return parsedAccessToken, parsedIDToken, http.StatusBadRequest, errors.WithMessage(err,
-			"failed to parse id token",
-		)
-	}
-
-	if parsedIDToken.Subject != parsedAccessToken.Subject {
-		return parsedAccessToken, parsedIDToken, http.StatusBadRequest, errors.WithMessage(
-			errors.Errorf("%s != %s", parsedIDToken.Subject, parsedAccessToken.Subject),
-			"tokens subject mismatch",
-		)
-	}
-
-	return parsedAccessToken, parsedIDToken, 0, nil
+	return parsedAccessToken, 200, nil
 }
 
-func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken api.Token) (*entry.User, int, error) {
-	userID, err := api.GetUserIDFromToken(accessToken)
+func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken string) (*entry.User, int, error) {
+	jwt, httpCode, err := n.apiParseJWT(c, accessToken)
+	if err != nil {
+		err := errors.New("Node: apiGetOrCreateUserFromTokens: failed to get jwt_key_attribute")
+		return nil, httpCode, err
+	}
+	userID, err := api.GetUserIDFromToken(jwt)
 	if err != nil {
 		return nil, http.StatusBadRequest, errors.WithMessage(err, "failed to get user id from token")
 	}
@@ -251,74 +226,45 @@ func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken, idToken
 		return nil, http.StatusInternalServerError, errors.Errorf("failed to get node settings")
 	}
 
-	if idToken.Guest.IsGuest {
-		guestUserType := utils.GetFromAnyMap(*nodeSettings, "guest_user_type", "")
-		guestUserTypeID, err := uuid.Parse(guestUserType)
-		if err != nil {
-			return nil, http.StatusInternalServerError, errors.Errorf("failed to parse guest user type id")
-		}
-		userEntry.UserTypeID = &guestUserTypeID
+	normUserType := utils.GetFromAnyMap(*nodeSettings, "normal_user_type", "")
+	normUserTypeID, err := uuid.Parse(normUserType)
+	if err != nil {
+		return nil, http.StatusInternalServerError, errors.Errorf("failed to parse normal user type id")
+	}
+	userEntry.UserTypeID = &normUserTypeID
 
-		if err := n.db.UsersUpsertUser(c, userEntry); err != nil {
-			return nil, http.StatusInternalServerError, errors.WithMessagef(
-				err, "failed to upsert guest: %s", userEntry.UserID,
-			)
-		}
+	if err := n.db.UsersUpsertUser(c, userEntry); err != nil {
+		return nil, http.StatusInternalServerError, errors.WithMessagef(err, "failed to upsert user: %s", userEntry.UserID)
+	}
 
-		n.log.Infof("Node: apiGetOrCreateUserFromTokens: guest created: %s", userEntry.UserID)
-	} else {
-		// TODO: check idToken web3 type
+	n.log.Infof("Node: apiGetOrCreateUserFromTokens: user created: %s", userEntry.UserID)
 
-		if idToken.Web3Address == "" {
-			return nil, http.StatusBadRequest, errors.Errorf("empty web3 address: %s", userEntry.UserID)
-		}
+	// adding wallet to user attributes
+	userAttributeID := entry.NewUserAttributeID(
+		entry.NewAttributeID(
+			universe.GetKusamaPluginID(), universe.Attributes.Kusama.User.Wallet.Name,
+		),
+		userEntry.UserID,
+	)
 
-		// TODO: validate idToken
+	walletAddressKey := universe.Attributes.Kusama.User.Wallet.Key
+	newPayload := entry.NewAttributePayload(
+		&entry.AttributeValue{},
+		nil,
+	)
 
-		normUserType := utils.GetFromAnyMap(*nodeSettings, "normal_user_type", "")
-		normUserTypeID, err := uuid.Parse(normUserType)
-		if err != nil {
-			return nil, http.StatusInternalServerError, errors.Errorf("failed to parse normal user type id")
-		}
-		userEntry.UserTypeID = &normUserTypeID
-
-		if err := n.db.UsersUpsertUser(c, userEntry); err != nil {
-			return nil, http.StatusInternalServerError, errors.WithMessagef(err, "failed to upsert user: %s", userEntry.UserID)
-		}
-
-		n.log.Infof("Node: apiGetOrCreateUserFromTokens: user created: %s", userEntry.UserID)
-
-		// adding wallet to user attributes
-		userAttributeID := entry.NewUserAttributeID(
-			entry.NewAttributeID(
-				universe.GetKusamaPluginID(), universe.Attributes.Kusama.User.Wallet.Name,
-			),
-			userEntry.UserID,
+	walletAddressKeyPath := ".Value." + walletAddressKey
+	if _, err := n.db.UserAttributesUpsertUserAttribute(
+		n.ctx, userAttributeID,
+		modify.MergeWith(
+			newPayload,
+			merge.NewTrigger(walletAddressKeyPath, merge.AppendTriggerFn),
+			merge.NewTrigger(walletAddressKeyPath, merge.UniqueTriggerFn),
+		)); err != nil {
+		// TODO: think about rollback
+		return nil, http.StatusInternalServerError, errors.WithMessagef(
+			err, "failed to upsert user attribute for user: %s", userEntry.UserID,
 		)
-
-		walletAddressKey := universe.Attributes.Kusama.User.Wallet.Key
-		newPayload := entry.NewAttributePayload(
-			&entry.AttributeValue{
-				walletAddressKey: []string{idToken.Web3Address},
-			},
-			nil,
-		)
-
-		walletAddressKeyPath := ".Value." + walletAddressKey
-		if _, err := n.db.UserAttributesUpsertUserAttribute(
-			n.ctx, userAttributeID,
-			modify.MergeWith(
-				newPayload,
-				merge.NewTrigger(walletAddressKeyPath, merge.AppendTriggerFn),
-				merge.NewTrigger(walletAddressKeyPath, merge.UniqueTriggerFn),
-			)); err != nil {
-			// TODO: think about rollback
-			return nil, http.StatusInternalServerError, errors.WithMessagef(
-				err, "failed to upsert user attribute for user: %s", userEntry.UserID,
-			)
-		}
-
-		n.log.Infof("Node: apiGetOrCreateUserFromTokens: wallet %q added to user: %s", idToken.Web3Address, userEntry.UserID)
 	}
 
 	return userEntry, 0, nil

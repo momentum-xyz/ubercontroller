@@ -14,7 +14,6 @@ import (
 )
 
 func VerifyUser(log *zap.SugaredLogger) gin.HandlerFunc {
-
 	return func(c *gin.Context) {
 		// get jwt secret
 		jwtSecret, ok := universe.GetNode().GetNodeAttributeValue(entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.JWTKey.Name))
@@ -32,6 +31,6 @@ func VerifyUser(log *zap.SugaredLogger) gin.HandlerFunc {
 			api.AbortRequest(c, http.StatusForbidden, "failed_to_verify_access_token", err, log)
 			return
 		}
-		c.Set(api.JWTContextKey, token)
+		c.Set(api.TokenContextKey, token)
 	}
 }
