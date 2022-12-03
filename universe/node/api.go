@@ -25,6 +25,12 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 	vx := r.Group(fmt.Sprintf("/api/v%d", ubercontroller.APIMajorVersion))
 	{
+		drive := vx.Group("/drive")
+		{
+			drive.POST("/mint-odyssey", n.apiDriveMintOdyssey)
+			drive.GET("/mint-odyssey/check-job/:jobID", n.apiDriveMintOdysseyCheckJob)
+		}
+
 		config := vx.Group("/config")
 		{
 			config.GET("/ui-client", n.apiGetUIClientConfig)
