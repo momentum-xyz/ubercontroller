@@ -69,6 +69,10 @@ func (n *Node) apiGetSpaceAllUsersAttributeValuesList(c *gin.Context) {
 			break
 		}
 
+		if item.AttributeID.Name != inQuery.AttributeName {
+			break
+		}
+
 		value := item.AttributePayload.Value
 		if value != nil {
 			out[item.UserID] = *value
