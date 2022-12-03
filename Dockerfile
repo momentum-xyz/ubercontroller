@@ -24,6 +24,7 @@ FROM alpine:3.16 as runtime
 
 RUN apk add --update --no-cache nodejs npm 
 RUN npm install -g @polkadot/api
+COPY *.js /srv
 
 COPY --from=build /project/bin/ubercontroller /srv/ubercontroller
 

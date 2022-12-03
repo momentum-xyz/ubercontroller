@@ -1,18 +1,36 @@
 package node
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
-	"time"
+	"os/exec"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
+	"github.com/momentum-xyz/ubercontroller/logger"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
 )
 
-var store = generic.NewSyncMap[uuid.UUID, string](0)
+type NodeJSOut struct {
+	Data  any      `json:"data"`
+	Logs  []string `json:"logs"`
+	Error *string  `json:"error"`
+}
+
+type StoreItem struct {
+	Status       string
+	NodeJSResult *NodeJSOut
+}
+
+const StatusInProgress = "in progress"
+const StatusDone = "done"
+
+var log = logger.L()
+var store = generic.NewSyncMap[uuid.UUID, StoreItem](0)
 
 // @Summary Mint Odyssey for given wallet
 // @Schemes
@@ -40,7 +58,10 @@ func (n *Node) apiDriveMintOdyssey(c *gin.Context) {
 
 	jobID := uuid.New()
 
-	store.Store(jobID, "in progress")
+	store.Store(jobID, StoreItem{
+		Status:       StatusInProgress,
+		NodeJSResult: nil,
+	})
 
 	go mint(jobID)
 
@@ -55,8 +76,23 @@ func (n *Node) apiDriveMintOdyssey(c *gin.Context) {
 }
 
 func mint(jobID uuid.UUID) {
-	time.Sleep(time.Second * 30)
-	store.Store(jobID, "done")
+	//time.Sleep(time.Second * 30)
+	bob := "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"
+
+	output, err := exec.Command("node", "mint.js", bob, "//Alice").Output()
+	var nodeJSOut NodeJSOut
+	err = json.Unmarshal(output, &nodeJSOut)
+	if err != nil {
+		log.Error(errors.WithMessage(err, "failed to json.Unmarshal nodejs out"))
+	}
+
+	store.Store(jobID, StoreItem{
+		Status:       StatusDone,
+		NodeJSResult: &nodeJSOut,
+	})
+
+	fmt.Println(string(output))
+	fmt.Println("***")
 }
 
 // @Summary Get Mint Odyssey Job ID
@@ -66,15 +102,15 @@ func mint(jobID uuid.UUID) {
 // @Accept json
 // @Produce json
 // @Param job_id path string true "Job ID"
-// @Param query query node.apiGetSpace.InQuery false "query params"
-// @Success 202 {object} dto.Space
+// @Success 200 {object} node.apiDriveMintOdysseyCheckJob.Out
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/spaces/{job_id} [get]
 func (n *Node) apiDriveMintOdysseyCheckJob(c *gin.Context) {
 	type Out struct {
-		Status string    `json:"status"`
-		JobID  uuid.UUID `json:"job_id"`
+		NodeJSOut *NodeJSOut `json:"nodeJSOut"`
+		Status    string     `json:"status"`
+		JobID     uuid.UUID  `json:"job_id"`
 	}
 
 	jobID, err := uuid.Parse(c.Param("jobID"))
@@ -84,14 +120,15 @@ func (n *Node) apiDriveMintOdysseyCheckJob(c *gin.Context) {
 		return
 	}
 
-	status, ok := store.Load(jobID)
+	item, ok := store.Load(jobID)
 	if !ok {
-		status = "job not found"
+		item.Status = "job not found"
 	}
 
 	out := Out{
-		JobID:  jobID,
-		Status: status,
+		JobID:     jobID,
+		Status:    item.Status,
+		NodeJSOut: item.NodeJSResult,
 	}
 
 	c.JSON(http.StatusOK, out)
