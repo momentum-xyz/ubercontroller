@@ -88,7 +88,7 @@ type User struct {
 	IsNodeAdmin bool            `json:"isNodeAdmin"`
 	Status      *UserStatusType `json:"status,omitempty"`
 	Profile     Profile         `json:"profile"`
-	JWTToken    JWTToken        `json:"profile"`
+	JWTToken    string          `json:"token"`
 }
 
 type Space struct {

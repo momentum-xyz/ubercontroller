@@ -11,7 +11,7 @@ type User struct {
 	UserTypeID *uuid.UUID   `db:"user_type_id"`
 	Profile    *UserProfile `db:"profile"`
 	Options    *UserOptions `db:"options"`
-	Token      *Token       `db:"auth"`
+	Token      *Token       `db:"auth"` // TODO: Nooooo!
 	CreatedAt  time.Time    `db:"created_at"`
 	UpdatedAt  *time.Time   `db:"updated_at"`
 }

@@ -15,7 +15,6 @@ import (
 	"github.com/zitadel/oidc/pkg/client"
 	"github.com/zitadel/oidc/pkg/client/rs"
 
-	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
@@ -51,12 +50,17 @@ func GetUserIDFromToken(token *jwt.Token) (uuid.UUID, error) {
 	if token == nil {
 		return uuid.Nil, errors.New("got nil token")
 	}
-	claims := token.Claims.(jwt.StandardClaims)
-	userID, err := uuid.Parse(claims.Subject)
-	if err != nil {
-		return uuid.Nil, errors.WithMessage(err, "failed to parse user id")
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok /*&& token.Valid*/ {
+		userID, err := uuid.Parse(fmt.Sprint(claims["sub"])) // TODO! proper jwt parsing
+		if err != nil {
+			return uuid.Nil, errors.WithMessage(err, "failed to parse user id")
+		}
+		return userID, nil
+	} else {
+		return uuid.Nil, errors.New("Failed to get token claims")
 	}
-	return userID, nil
+
 }
 
 func GenerateChallenge(wallet string) (string, error) {
@@ -115,7 +119,7 @@ func createProvider(provider string) (rs.ResourceServer, error) {
 
 // SignJWTToken saves a jwt token with the given userID as subject
 // and signed with the given secret
-func SignJWTToken(userID string, secret []byte) (*entry.Token, error) {
+func SignJWTToken(userID string, secret []byte) (string, error) {
 	claims := jwt.StandardClaims{
 		IssuedAt:  time.Now().Unix(),
 		ExpiresAt: time.Now().Add(4 * time.Hour).Unix(),
@@ -127,27 +131,22 @@ func SignJWTToken(userID string, secret []byte) (*entry.Token, error) {
 
 	signedString, err := jwt.SignedString(secret)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	exp := time.Unix(claims.ExpiresAt, 0)
-
-	token := &entry.Token{
-		SignedString: &signedString,
-		Subject:      &claims.Subject,
-		Issuer:       &claims.Issuer,
-		IssuedAt:     time.Unix(claims.IssuedAt, 0),
-		ExpiresAt:    &exp,
-	}
-
-	return token, nil
+	return signedString, nil
 }
 
 func ValidateJWT(signedString string, secret []byte) (*jwt.Token, error) {
+	parser := new(jwt.Parser)
+	token, _, err := parser.ParseUnverified(signedString, jwt.MapClaims{})
+	return token, err
+	/* TODO:
 	return jwt.Parse(signedString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Invalid token %v", token.Header["alg"])
 		}
 		return secret, nil
 	})
+	*/
 }

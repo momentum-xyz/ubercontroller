@@ -214,29 +214,11 @@ func (n *Node) apiGuestToken(c *gin.Context) {
 		return
 	}
 
-	userEntry.Token = token
-
-	// add tokens to new jsonb column in users
-	if err := n.db.UsersUpsertUser(c, userEntry); err != nil {
-		err = errors.WithMessage(err, "Node: apiGuestToken: failed to upsert user")
-		api.AbortRequest(c, http.StatusInternalServerError, "invalid_request_query", err, n.log)
-		return
-	}
-
-	expString := userEntry.Token.ExpiresAt.String()
-	issuedString := userEntry.Token.IssuedAt.String()
-
 	outUser := dto.User{
 		ID:        userEntry.UserID.String(),
 		Name:      *userEntry.Profile.Name,
 		CreatedAt: userEntry.CreatedAt.String(),
-		JWTToken: dto.JWTToken{
-			SignedString: userEntry.Token.SignedString,
-			Issuer:       userEntry.Token.Issuer,
-			Subject:      userEntry.Token.Subject,
-			ExpiresAt:    &expString,
-			IssuedAt:     &issuedString,
-		},
+		JWTToken:  token,
 	}
 
 	if userEntry.UserTypeID != nil {
