@@ -24,7 +24,6 @@ import (
 // @Tags users
 // @Accept json
 // @Produce json
-// @Param body body node.apiUsersCheck.Body true "body params"
 // @Success 200 {object} dto.User
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
