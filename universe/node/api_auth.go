@@ -173,7 +173,7 @@ func (n *Node) apiGenToken(c *gin.Context) {
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param body body node.apiGuestToken.InBody true "body params"
+// @Param body body node.apiGuestToken.Body true "body params"
 // @Success 200 {object} dto.User
 // @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
