@@ -2,6 +2,7 @@ package users
 
 import (
 	"context"
+
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
@@ -25,7 +26,7 @@ const (
 	updateUserProfileQuery    = `UPDATE "user" SET profile = $2 WHERE user_id = $1;`
 
 	upsertUserQuery = `INSERT INTO "user"
-    						(user_id, user_type_id, profile, options, created_at, updated_at)     									 
+    						(user_id, user_type_id, profile, options, created_at, updated_at)
 						VALUES
 						    ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 						ON CONFLICT (user_id)
@@ -81,7 +82,7 @@ func (db *DB) UsersUpsertUsers(ctx context.Context, users []*entry.User) error {
 	batch := &pgx.Batch{}
 	for _, user := range users {
 		batch.Queue(
-			upsertUserQuery, user.UserID, user.UserTypeID, user.Profile, user.Options,
+			upsertUserQuery, user.UserID, user.UserTypeID, user.Profile, user.Options, user.Token,
 		)
 	}
 
