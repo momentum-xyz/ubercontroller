@@ -64,6 +64,14 @@ type Profile struct {
 	OnBoarded   *bool   `json:"onBoarded,omitempty"`
 }
 
+type JWTToken struct {
+	Subject      *string `json:"subject,omitempty"`
+	Issuer       *string `json:"issuer,omitempty"`
+	ExpiresAt    *string `json:"expiresAt,omitempty"`
+	IssuedAt     *string `json:"issuedAt,omitempty"`
+	SignedString *string `json:"signedString,omitempty"`
+}
+
 type HashResponse struct {
 	Hash string `json:"hash"`
 }
@@ -80,6 +88,7 @@ type User struct {
 	IsNodeAdmin bool            `json:"isNodeAdmin"`
 	Status      *UserStatusType `json:"status,omitempty"`
 	Profile     Profile         `json:"profile"`
+	JWTToken    JWTToken        `json:"profile"`
 }
 
 type Space struct {

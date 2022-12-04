@@ -1,13 +1,15 @@
 package node
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
+	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/pkg/errors"
-	"net/http"
 )
 
 // @Summary Generate auth challenge
@@ -163,4 +165,86 @@ func (n *Node) apiGenToken(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, out)
+}
+
+// @Summary Generate jwt guest token
+// @Schemes
+// @Description Returns a new generated token based on params
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param body body node.apiGuestToken.InBody true "body params"
+// @Success 200 {object} dto.User
+// @Failure 400 {object} api.HTTPError
+// @Failure 500 {object} api.HTTPError
+// @Router /api/v4/auth/guest-token [post]
+func (n *Node) apiGuestToken(c *gin.Context) {
+	type Body struct {
+		Name string `json:"name" binding:"required"`
+	}
+	inBody := Body{}
+
+	if err := c.ShouldBindJSON(&inBody); err != nil {
+		err = errors.WithMessage(err, "Node: apiGuestToken: failed to bind json")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
+	userEntry, err := n.apiCreateUserByName(c, &inBody.Name)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiGuestToken: failed get or create user from tokens")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_or_create_user", err, n.log)
+		return
+	}
+
+	// get jwt secret to sign token
+	jwtKeyAttribute, ok := n.GetNodeAttributeValue(entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.JWTKey.Name))
+	if !ok {
+		err := errors.New("Node: apiGuestToken: failed to get jwt_key_attribute")
+		api.AbortRequest(c, http.StatusInternalServerError, "no_jwt_key", err, n.log)
+		return
+	}
+
+	secret := utils.GetFromAnyMap(*jwtKeyAttribute, universe.Attributes.Node.JWTKey.Key, "")
+
+	token, err := api.SignJWTToken(userEntry.UserID.String(), []byte(secret))
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiGuestToken: failed get or create user from tokens")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_or_create_user", err, n.log)
+		return
+	}
+
+	userEntry.Token = token
+
+	// add tokens to new jsonb column in users
+	if err := n.db.UsersUpsertUser(c, userEntry); err != nil {
+		err = errors.WithMessage(err, "Node: apiGuestToken: failed to upsert user")
+		api.AbortRequest(c, http.StatusInternalServerError, "invalid_request_query", err, n.log)
+		return
+	}
+
+	expString := userEntry.Token.ExpiresAt.String()
+	issuedString := userEntry.Token.IssuedAt.String()
+
+	outUser := dto.User{
+		ID:        userEntry.UserID.String(),
+		Name:      *userEntry.Profile.Name,
+		CreatedAt: userEntry.CreatedAt.String(),
+		JWTToken: dto.JWTToken{
+			SignedString: userEntry.Token.SignedString,
+			Issuer:       userEntry.Token.Issuer,
+			Subject:      userEntry.Token.Subject,
+			ExpiresAt:    &expString,
+			IssuedAt:     &issuedString,
+		},
+	}
+
+	if userEntry.UserTypeID != nil {
+		outUser.UserTypeID = userEntry.UserTypeID.String()
+	}
+	if userEntry.UpdatedAt != nil {
+		outUser.UpdatedAt = utils.GetPTR(userEntry.UpdatedAt.String())
+	}
+
+	c.JSON(http.StatusOK, outUser)
 }
