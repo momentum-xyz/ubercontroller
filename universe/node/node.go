@@ -3,6 +3,11 @@ package node
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"os"
+	"sync"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
@@ -11,10 +16,6 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/sync/errgroup"
-	"net/http"
-	"os"
-	"sync"
-	"time"
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
@@ -25,6 +26,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/space"
+	"github.com/momentum-xyz/ubercontroller/universe/streamchat"
 	"github.com/momentum-xyz/ubercontroller/universe/user"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
@@ -52,6 +54,7 @@ type Node struct {
 	influx              influx_api.WriteAPIBlocking
 	pluginController    *mplugin.PluginController
 	corePluginInterface *mplugin.PluginInterface
+	chatService         *streamchat.StreamChat
 }
 
 func NewNode(
@@ -114,6 +117,10 @@ func (n *Node) Initialize(ctx context.Context) error {
 		Handler: n.router,
 	}
 	n.pluginController = mplugin.NewPluginController(n.GetID())
+	n.chatService = streamchat.NewStreamChat()
+	if err := n.chatService.Initialize(ctx); err != nil {
+		return err
+	}
 
 	return n.Space.Initialize(ctx)
 }
@@ -280,6 +287,7 @@ func (n *Node) Load() error {
 	group, _ = errgroup.WithContext(n.ctx)
 	group.Go(n.spaceTypes.Load)
 	group.Go(n.plugins.Load)
+	group.Go(n.chatService.Load)
 	if err := group.Wait(); err != nil {
 		return errors.WithMessage(err, "failed to load additional data")
 	}

@@ -17,12 +17,13 @@ import (
 
 // Config : structure to hold configuration
 type Config struct {
-	Common   Common   `yaml:"common"`
-	Settings Local    `yaml:"settings"`
-	Auth     Auth     `yaml:"auth"`
-	Postgres Postgres `yaml:"postgres"`
-	Influx   Influx   `yaml:"influx"`
-	UIClient UIClient `yaml:"ui_client"`
+	Common     Common     `yaml:"common"`
+	Settings   Local      `yaml:"settings"`
+	Auth       Auth       `yaml:"auth"`
+	Postgres   Postgres   `yaml:"postgres"`
+	Influx     Influx     `yaml:"influx"`
+	UIClient   UIClient   `yaml:"ui_client"`
+	Streamchat Streamchat `yaml:"streamchat"`
 }
 
 const configFileName = "config.yaml"
@@ -36,6 +37,7 @@ func (x *Config) Init() {
 	x.Settings.Init()
 	x.UIClient.Init()
 	x.Influx.Init()
+	x.Streamchat.Init()
 
 }
 
