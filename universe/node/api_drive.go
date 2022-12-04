@@ -26,6 +26,11 @@ type StoreItem struct {
 	NodeJSResult *NodeJSOut
 }
 
+type NFTMeta struct {
+	Name  string `json:"name" binding:"required"`
+	Image string `json:"image" binding:"required"`
+}
+
 const StatusInProgress = "in progress"
 const StatusDone = "done"
 
@@ -46,8 +51,9 @@ var store = generic.NewSyncMap[uuid.UUID, StoreItem](0)
 func (n *Node) apiDriveMintOdyssey(c *gin.Context) {
 
 	type Body struct {
-		BlockHash string `json:"block_hash" binding:"required"`
-		Meta      any    `json:"meta" binding:"required"`
+		BlockHash string  `json:"block_hash" binding:"required"`
+		Wallet    string  `json:"wallet" binding:"required"`
+		Meta      NFTMeta `json:"meta" binding:"required"`
 	}
 	var inBody Body
 	if err := c.ShouldBindJSON(&inBody); err != nil {
@@ -63,7 +69,7 @@ func (n *Node) apiDriveMintOdyssey(c *gin.Context) {
 		NodeJSResult: nil,
 	})
 
-	go mint(jobID)
+	go mint(jobID, inBody.Wallet, inBody.Meta, inBody.BlockHash)
 
 	type Out struct {
 		JobID uuid.UUID `json:"job_id"`
@@ -75,11 +81,16 @@ func (n *Node) apiDriveMintOdyssey(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-func mint(jobID uuid.UUID) {
-	//time.Sleep(time.Second * 30)
-	bob := "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"
+func mint(jobID uuid.UUID, wallet string, meta NFTMeta, blockHash string) {
+	// node src/mint.js 5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty //Alice '{"name":"Test Name", "image":"link"}'
 
-	output, err := exec.Command("node", "mint.js", bob, "//Alice").Output()
+	b, err := json.Marshal(meta)
+	if err != nil {
+		log.Error(errors.WithMessage(err, "failed to json.Marshal meta to nodejs in"))
+		return
+	}
+
+	output, err := exec.Command("node", "mint.js", wallet, "//Alice", string(b), blockHash).Output()
 	var nodeJSOut NodeJSOut
 	err = json.Unmarshal(output, &nodeJSOut)
 	if err != nil {
