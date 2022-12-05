@@ -9,8 +9,7 @@ import (
 
 func (n *Node) apiNewsFeed(c *gin.Context) {
 	//TODO
-	jsonStr := `
-[
+	jsonStr := `[
   {
     id: 1,
     collectionId: 1,
@@ -250,8 +249,7 @@ func (n *Node) apiNewsFeed(c *gin.Context) {
 
 func (n *Node) apiNotifications(c *gin.Context) {
 	//TODO
-	jsonStr := `
-[
+	jsonStr := `[
   {
     id: 1,
     collectionId: 1,
