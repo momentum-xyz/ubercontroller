@@ -20,6 +20,7 @@ RUN go build -ldflags "-extldflags '-fuse-ld=bfd'" -o ./bin/ubercontroller ./cmd
 # Runtime image
 FROM alpine:3.16 as runtime
 
+RUN apk add --update --no-cache python3 make g++
 #temporary, add nodejs and polkadot package
 
 RUN apk add --update --no-cache nodejs npm 

@@ -108,7 +108,17 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 				verifiedSpaceUser.DELETE("/attributes/sub", n.apiRemoveSpaceUserAttributeSubValue)
 			}
 		}
+
+		newsfeed := vx.Group("/newsfeed")
+		{
+			newsfeed.GET("", n.apiNewsFeed)
+		}
+		notifications := vx.Group("/notifications")
+		{
+			notifications.GET("", n.apiNotifications)
+		}
 	}
+
 }
 
 // @Summary Get application version
