@@ -1,6 +1,7 @@
 package worlds
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -241,4 +242,59 @@ func (w *Worlds) apiWorldsFilterSpaces(searchQuery string, world universe.World)
 	}
 
 	return group, nil
+}
+
+// @Summary Teleports user from token to another world
+// @Schemes
+// @Description Teleports user from token to another world
+// @Tags worlds
+// @Accept json
+// @Produce json
+// @Param world_id path string true "World ID"
+// @Success 200 {object} nil
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/worlds/{world_id}/teleport-user [post]
+func (w *Worlds) apiWorldsTeleportUser(c *gin.Context) {
+	worldID, err := uuid.Parse(c.Param("worldID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Worlds: apiWorldsTeleportUser: failed to parse world id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
+		return
+	}
+
+	world, ok := w.GetWorld(worldID)
+	if !ok {
+		err := errors.Errorf("Worlds: apiWorldsTeleportUser: world not found: %s", worldID)
+		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
+		return
+	}
+
+	fmt.Sprintln(world)
+
+	token, err := api.GetTokenFromContext(c)
+	if err != nil {
+		err = errors.WithMessage(err, "Worlds: apiWorldsTeleportUser: failed to get token from context")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_token", err, w.log)
+		return
+	}
+
+	userID, err := api.GetUserIDFromToken(token)
+	if err != nil {
+		err = errors.WithMessage(err, "Worlds: apiWorldsTeleportUser: failed to get user id from token")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_user_id", err, w.log)
+		return
+	}
+
+	userEntry, err := w.db.UsersGetUserByID(c, userID)
+	if err != nil {
+		err = errors.WithMessage(err, "Worlds: apiWorldsTeleportUser: failed to get user by id")
+		api.AbortRequest(c, http.StatusNotFound, "user_not_found", err, w.log)
+		return
+	}
+
+	fmt.Sprintln(userEntry)
+
+	c.JSON(http.StatusOK, nil)
 }
