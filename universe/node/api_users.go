@@ -196,7 +196,7 @@ func (n *Node) apiParseJWT(c *gin.Context, token string) (jwt.Token, int, error)
 		return jwt.Token{}, http.StatusForbidden, errors.WithMessage(err, "failed to verify access token")
 	}
 
-	return *parsedAccessToken, 200, nil
+	return *parsedAccessToken, http.StatusOK, nil
 }
 
 func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken string) (*entry.User, int, error) {

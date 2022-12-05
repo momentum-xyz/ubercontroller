@@ -305,7 +305,7 @@ func (n *Node) Load() error {
 		return n.loadNodeAttributes()
 	})
 	group.Go(n.worlds.Load)
-	group.Go(n.chatService.Load)
+	group.Go(n.chatService.Load) // TODO: move to "background" stage
 	if err := group.Wait(); err != nil {
 		return errors.WithMessage(err, "failed to load universe")
 	}

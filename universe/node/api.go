@@ -89,13 +89,13 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 				verifiedSpace.POST("/attributes/sub", n.apiSetSpaceAttributeSubValue)
 				verifiedSpace.DELETE("/attributes/sub", n.apiRemoveSpaceAttributeSubValue)
 
+				verifiedSpace.GET("/all-users/attributes", n.apiGetSpaceAllUsersAttributeValuesList)
+
 				verifiedAgora := verifiedSpace.Group("/agora")
 				{
 					verifiedAgora.POST("/token", n.apiGenAgoraToken)
 				}
 			}
-
-			verifiedSpace.GET("/all-users/attributes", n.apiGetSpaceAllUsersAttributeValuesList)
 
 			verifiedSpaceUser := verifiedSpaces.Group("/:spaceID/:userID")
 			{
