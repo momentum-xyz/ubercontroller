@@ -3,7 +3,6 @@ package api
 import (
 	"bytes"
 	"fmt"
-	"net/http"
 	"strings"
 	"time"
 
@@ -11,11 +10,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
-	"github.com/zitadel/oidc/pkg/client"
-	"github.com/zitadel/oidc/pkg/client/rs"
-
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/pkg/errors"
 )
 
 func GetTokenFromRequest(c *gin.Context) string {
@@ -51,16 +47,17 @@ func GetUserIDFromToken(token *jwt.Token) (uuid.UUID, error) {
 		return uuid.Nil, errors.New("got nil token")
 	}
 
-	if claims, ok := token.Claims.(jwt.MapClaims); ok /*&& token.Valid*/ {
-		userID, err := uuid.Parse(fmt.Sprint(claims["sub"])) // TODO! proper jwt parsing
-		if err != nil {
-			return uuid.Nil, errors.WithMessage(err, "failed to parse user id")
-		}
-		return userID, nil
-	} else {
-		return uuid.Nil, errors.New("Failed to get token claims")
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return uuid.Nil, errors.New("failed to get token claims")
 	}
 
+	userID, err := uuid.Parse(utils.GetFromAnyMap(claims, "sub", "")) // TODO! proper jwt parsing
+	if err != nil {
+		return uuid.Nil, errors.WithMessage(err, "failed to parse user id")
+	}
+
+	return userID, nil
 }
 
 func GenerateChallenge(wallet string) (string, error) {
@@ -90,41 +87,14 @@ func VerifyPolkadotSignature(wallet, challenge, signature string) (bool, error) 
 	return pub.Verify(sig, transcript)
 }
 
-func createProvider(provider string) (rs.ResourceServer, error) {
-	cfg := api.cfg.Auth
-	oidcURL := cfg.OIDCURL
-	clientID := cfg.GetIDByProvider(provider)
-	secret := cfg.GetSecretByProvider(provider)
-	introspectURL := cfg.GetIntrospectURLByProvider(provider)
-
-	api.log.Infof("API: creating oidc provider: %s, url: %s, client id: %s, secret: %s, introspect url: %s",
-		provider, oidcURL, clientID, secret, introspectURL)
-
-	opts := make([]rs.Option, 0, 1)
-	if introspectURL != "" {
-		oidcConfig, err := client.Discover(oidcURL, http.DefaultClient)
-		if err != nil {
-			return nil, errors.WithMessagef(err, "failed to discover provider: %s", provider)
-		}
-		opts = append(opts, rs.WithStaticEndpoints(oidcConfig.TokenEndpoint, introspectURL))
-	}
-
-	oidcProvider, err := rs.NewResourceServerClientCredentials(oidcURL, clientID, secret, opts...)
-	if err != nil {
-		return nil, errors.WithMessagef(err, "failed to create resource server client: %s", provider)
-	}
-
-	return oidcProvider, nil
-}
-
-// SignJWTToken saves a jwt token with the given userID as subject
+// CreateJWTToken saves a jwt token with the given userID as subject
 // and signed with the given secret
-func SignJWTToken(userID string, secret []byte) (string, error) {
+func CreateJWTToken(userID uuid.UUID, secret []byte) (string, error) {
 	claims := jwt.StandardClaims{
 		IssuedAt:  time.Now().Unix(),
 		ExpiresAt: time.Now().Add(4 * time.Hour).Unix(),
 		Issuer:    "ubercontroller",
-		Subject:   userID,
+		Subject:   userID.String(),
 	}
 
 	jwt := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

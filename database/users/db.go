@@ -82,7 +82,7 @@ func (db *DB) UsersUpsertUsers(ctx context.Context, users []*entry.User) error {
 	batch := &pgx.Batch{}
 	for _, user := range users {
 		batch.Queue(
-			upsertUserQuery, user.UserID, user.UserTypeID, user.Profile, user.Options, user.Token,
+			upsertUserQuery, user.UserID, user.UserTypeID, user.Profile, user.Options,
 		)
 	}
 
