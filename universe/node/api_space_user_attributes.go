@@ -456,7 +456,7 @@ func (n *Node) apiRemoveSpaceUserAttributeValue(c *gin.Context) {
 // @Produce json
 // @Param space_id path string true "Space ID"
 // @Param query query node.apiGetSpaceAllUsersAttributeValuesList.InQuery true "query params"
-// @Success 200 {object} map[uuid.UUID]entry.AttributeValue
+// @Success 200 {object} map[uuid.UUID]*entry.AttributeValue
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
@@ -489,33 +489,21 @@ func (n *Node) apiGetSpaceAllUsersAttributeValuesList(c *gin.Context) {
 		return
 	}
 
-	sua, err := n.db.SpaceUserAttributesGetSpaceUserAttributesBySpaceID(n.ctx, spaceID)
+	sua, err := n.db.SpaceUserAttributesGetSpaceUserAttributesByPluginIDAndNameAndSpaceID(
+		n.ctx, pluginID, inQuery.AttributeName, spaceID,
+	)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetSpaceAllUsersAttributeValuesList: failed to get space user attributes")
 		api.AbortRequest(c, http.StatusInternalServerError, "get_space_user_attributes_failed", err, n.log)
 		return
 	}
 
-	// TODO: get rid by introducing "db.SpaceUserAttributesGetSpaceUserAttributesByPluginIDAndNameAndSpaceID" method
-	out := make(map[uuid.UUID]entry.AttributeValue)
+	out := make(map[uuid.UUID]*entry.AttributeValue)
 	for i := range sua {
-		if sua[i] == nil {
-			break
+		if sua[i].AttributePayload == nil || sua[i].AttributePayload.Value == nil {
+			continue
 		}
-		item := *sua[i]
-
-		if item.PluginID != pluginID {
-			break
-		}
-
-		if item.AttributeID.Name != inQuery.AttributeName {
-			break
-		}
-
-		value := item.AttributePayload.Value
-		if value != nil {
-			out[item.UserID] = *value
-		}
+		out[sua[i].UserID] = sua[i].AttributePayload.Value
 	}
 
 	c.JSON(http.StatusOK, out)
