@@ -23,6 +23,7 @@ type UIClient struct {
 	UnityClientProductName        string `yaml:"unity_client_product_name" json:"UNITY_CLIENT_PRODUCT_NAME" envconfig:"UNITY_CLIENT_PRODUCT_NAME"`
 	UnityClientProductVersion     string `yaml:"unity_client_product_version" json:"UNITY_CLIENT_PRODUCT_VERSION" envconfig:"UNITY_CLIENT_PRODUCT_VERSION"`
 	KusamaWsServer                string `yaml:"kusama_ws_server" json:"KUSAMA_WS_SERVER" envconfig:"KUSAMA_WS_SERVER"`
+	StreamchatKey                 string `yaml:"streamchat_key" json:"STREAMCHAT_KEY" envconfig:"STREAMCHAT_KEY"`
 }
 
 func (c *UIClient) Init() {
