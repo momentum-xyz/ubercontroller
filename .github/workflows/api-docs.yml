@@ -42,8 +42,9 @@ jobs:
       - id: build-docs
         name: Build docs
         run: |
-          go run github.com/swaggo/swag/cmd/swag@v1.8.7 init \
-          -g universe/node/api.go \
+          go run github.com/swaggo/swag/cmd/swag@v1.8.8 init \
+          -g api.go \
+          -d universe/node,./,universe/streamchat \
           -o build/docs/
       - id: convert-openapi
         name: Convert to OpenAPI v3
