@@ -198,7 +198,6 @@ func (n *Node) apiGenToken(c *gin.Context) {
 	type Out struct {
 		Token string `json:"token"`
 	}
-
 	out := Out{
 		Token: token,
 	}
