@@ -99,7 +99,7 @@ async function setMeta(api, item_id, name, image, admin_pair) {
                 } else if (result.status.isFinalized) {
                     log(`Transaction finalized at blockHash ${result.status.asFinalized}`);
                     // unsub();
-                    resolve()
+                    resolve(uuid)
                 }
             });
     })
@@ -167,9 +167,10 @@ async function main() {
     const itemID = await mint(api, TARGET_WALLET, newPair)
     log(` Item minted: itemID=${itemID}`)
 
-    await setMeta(api, itemID, name, image, newPair)
+    const userID = await setMeta(api, itemID, name, image, newPair)
 
     log("disconnect")
+    out.data = {userID: userID, name, image}
     console.log(JSON.stringify(out))
     await api.disconnect()
 

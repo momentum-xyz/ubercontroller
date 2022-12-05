@@ -16,14 +16,21 @@ import (
 )
 
 type NodeJSOut struct {
-	Data  any      `json:"data"`
-	Logs  []string `json:"logs"`
-	Error *string  `json:"error"`
+	Data  NodeJSOutData `json:"data"`
+	Logs  []string      `json:"logs"`
+	Error *string       `json:"error"`
+}
+
+type NodeJSOutData struct {
+	UserID uuid.UUID `json:"userID"`
+	Name   string    `json:"name"`
+	Image  string    `json:"image"`
 }
 
 type StoreItem struct {
-	Status       string
-	NodeJSResult *NodeJSOut
+	Status    string
+	NodeJSOut *NodeJSOut
+	Error     error
 }
 
 type NFTMeta struct {
@@ -33,6 +40,7 @@ type NFTMeta struct {
 
 const StatusInProgress = "in progress"
 const StatusDone = "done"
+const StatusFailed = "failed"
 
 var log = logger.L()
 var store = generic.NewSyncMap[uuid.UUID, StoreItem](0)
@@ -49,7 +57,6 @@ var store = generic.NewSyncMap[uuid.UUID, StoreItem](0)
 // @Failure 500 {object} api.HTTPError
 // @Router /api/v4/drive/mint-odyssey [post]
 func (n *Node) apiDriveMintOdyssey(c *gin.Context) {
-
 	type Body struct {
 		BlockHash string  `json:"block_hash" binding:"required"`
 		Wallet    string  `json:"wallet" binding:"required"`
@@ -65,11 +72,11 @@ func (n *Node) apiDriveMintOdyssey(c *gin.Context) {
 	jobID := uuid.New()
 
 	store.Store(jobID, StoreItem{
-		Status:       StatusInProgress,
-		NodeJSResult: nil,
+		Status:    StatusInProgress,
+		NodeJSOut: nil,
 	})
 
-	go mint(jobID, inBody.Wallet, inBody.Meta, inBody.BlockHash)
+	go n.mint(jobID, inBody.Wallet, inBody.Meta, inBody.BlockHash)
 
 	type Out struct {
 		JobID uuid.UUID `json:"job_id"`
@@ -81,28 +88,84 @@ func (n *Node) apiDriveMintOdyssey(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-func mint(jobID uuid.UUID, wallet string, meta NFTMeta, blockHash string) {
+func (n *Node) mint(jobID uuid.UUID, wallet string, meta NFTMeta, blockHash string) {
 	// node src/mint.js 5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty //Alice '{"name":"Test Name", "image":"link"}'
+
+	item := StoreItem{
+		Status:    "",
+		NodeJSOut: nil,
+		Error:     nil,
+	}
 
 	b, err := json.Marshal(meta)
 	if err != nil {
-		log.Error(errors.WithMessage(err, "failed to json.Marshal meta to nodejs in"))
+		err = errors.WithMessage(err, "failed to json.Marshal meta to nodejs in")
+		{
+			item.Status = StatusFailed
+			item.Error = err
+			store.Store(jobID, item)
+		}
+		log.Error(err)
 		return
 	}
 
 	output, err := exec.Command("node", "mint.js", wallet, "//Alice", string(b), blockHash).Output()
+	fmt.Println(string(output))
+
 	var nodeJSOut NodeJSOut
 	err = json.Unmarshal(output, &nodeJSOut)
 	if err != nil {
-		log.Error(errors.WithMessage(err, "failed to json.Unmarshal nodejs out"))
+		err = errors.WithMessage(err, "failed to json.Unmarshal nodejs out")
+		{
+			item.Status = StatusFailed
+			item.Error = err
+			store.Store(jobID, item)
+		}
+		log.Error(err)
+		return
 	}
 
-	store.Store(jobID, StoreItem{
-		Status:       StatusDone,
-		NodeJSResult: &nodeJSOut,
-	})
+	item.NodeJSOut = &nodeJSOut
 
-	fmt.Println(string(output))
+	if nodeJSOut.Error != nil {
+		{
+			item.Status = StatusFailed
+			item.Error = errors.New("NodeJS mint script returned logic error:" + *nodeJSOut.Error)
+			item.NodeJSOut = &nodeJSOut
+			store.Store(jobID, item)
+		}
+		log.Error(err)
+		return
+	}
+
+	//world, err := n.GetWorlds().CreateWorld(nodeJSOut.Data.UserID)
+	//if err != nil {
+	//	err = errors.WithMessage(err, "failed to CreateWorld")
+	//	{
+	//		item.Status = StatusFailed
+	//		item.Error = err
+	//		store.Store(jobID, item)
+	//	}
+	//	log.Error(err)
+	//	return
+	//}
+	//
+	//err = n.GetWorlds().AddWorld(world, true)
+	//if err != nil {
+	//	err = errors.WithMessage(err, "failed to AddWorld")
+	//	{
+	//		item.Status = StatusFailed
+	//		item.Error = err
+	//		store.Store(jobID, item)
+	//	}
+	//	log.Error(err)
+	//	return
+	//}
+
+	item.Status = StatusDone
+	item.NodeJSOut = &nodeJSOut
+	store.Store(jobID, item)
+
 	fmt.Println("***")
 }
 
@@ -122,6 +185,7 @@ func (n *Node) apiDriveMintOdysseyCheckJob(c *gin.Context) {
 		NodeJSOut *NodeJSOut `json:"nodeJSOut"`
 		Status    string     `json:"status"`
 		JobID     uuid.UUID  `json:"job_id"`
+		Error     *string    `json:"error"`
 	}
 
 	jobID, err := uuid.Parse(c.Param("jobID"))
@@ -136,10 +200,17 @@ func (n *Node) apiDriveMintOdysseyCheckJob(c *gin.Context) {
 		item.Status = "job not found"
 	}
 
+	var message *string
+	if item.Error != nil {
+		e := item.Error.Error()
+		message = &e
+	}
+
 	out := Out{
 		JobID:     jobID,
 		Status:    item.Status,
-		NodeJSOut: item.NodeJSResult,
+		NodeJSOut: item.NodeJSOut,
+		Error:     message,
 	}
 
 	c.JSON(http.StatusOK, out)
