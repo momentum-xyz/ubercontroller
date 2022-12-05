@@ -456,7 +456,7 @@ func (n *Node) apiRemoveSpaceUserAttributeValue(c *gin.Context) {
 // @Produce json
 // @Param space_id path string true "Space ID"
 // @Param query query node.apiGetSpaceAllUsersAttributeValuesList.InQuery true "query params"
-// @Success 200 {object} map[uuid.UUID]*entry.AttributeValue
+// @Success 200 {object} map[uuid.UUID]entry.AttributeValue
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
