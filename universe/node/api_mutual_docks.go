@@ -70,15 +70,39 @@ func (n *Node) apiUsersMutualDocks(c *gin.Context) {
 		return
 	}
 
+	spaceA, err := n.db.SpacesGetSpaceByID(context.Background(), *A)
+	if err != nil {
+		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+		return
+	}
+	if spaceA == nil {
+		api.AbortRequest(c, http.StatusNotFound, "space_A_not_found", err, n.log)
+		return
+	}
+
+	spaceB, err := n.db.SpacesGetSpaceByID(context.Background(), *B)
+	if err != nil {
+		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+		return
+	}
+	if spaceB != nil {
+		api.AbortRequest(c, http.StatusNotFound, "space_B_not_found", err, n.log)
+		return
+	}
+
 	type Out struct {
 		Status string     `json:"status"`
 		UserA  *uuid.UUID `json:"userA"`
 		UserB  *uuid.UUID `json:"userB"`
+		SpaceA *uuid.UUID `json:"spaceA"`
+		SpaceB *uuid.UUID `json:"spaceB"`
 	}
 	out := Out{
 		Status: "ok",
 		UserA:  A,
 		UserB:  B,
+		SpaceA: &spaceA.SpaceID,
+		SpaceB: &spaceB.SpaceID,
 	}
 
 	c.JSON(http.StatusOK, out)
