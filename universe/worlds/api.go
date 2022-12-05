@@ -23,6 +23,8 @@ func (w *Worlds) RegisterAPI(r *gin.Engine) {
 				authWorld.GET("/explore", w.apiWorldsGetSpacesWithChildren)
 				authWorld.GET("/explore/search", w.apiWorldsSearchSpaces)
 
+				authWorld.POST("/teleport-user", w.apiWorldsTeleportUser)
+
 				authWorld.POST("/fly-to-me", w.apiWorldsFlyToMe)
 			}
 		}

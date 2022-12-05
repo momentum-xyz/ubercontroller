@@ -113,6 +113,12 @@ func (u *User) GetUserType() universe.UserType {
 	return u.userType
 }
 
+func (u *User) GetProfile() *entry.UserProfile {
+	u.mu.RLock()
+	defer u.mu.RUnlock()
+	return u.profile
+}
+
 func (u *User) Initialize(ctx context.Context) error {
 	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
 	if log == nil {

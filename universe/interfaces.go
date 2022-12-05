@@ -298,6 +298,8 @@ type User interface {
 	GetPosBuffer() []byte
 
 	ReleaseSendBuffer()
+
+	GetProfile() *entry.UserProfile
 }
 
 type Assets2d interface {

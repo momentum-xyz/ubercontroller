@@ -18,6 +18,8 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
+/* TODO: remove
+
 // @Summary Check user
 // @Schemes
 // @Description Checks if a logged in user exists in the database and is onboarded, otherwise create new one
@@ -64,6 +66,7 @@ func (n *Node) apiUsersCheck(c *gin.Context) {
 
 	c.JSON(http.StatusOK, outBody)
 }
+*/
 
 // @Summary Get user based on token
 // @Schemes
@@ -178,22 +181,22 @@ func (n *Node) apiUsersGetById(c *gin.Context) {
 	c.JSON(http.StatusOK, outUser)
 }
 
-func (n *Node) apiParseJWT(c *gin.Context, token string) (*jwt.Token, int, error) {
+func (n *Node) apiParseJWT(c *gin.Context, token string) (jwt.Token, int, error) {
 	// get jwt secret to sign token
-	jwtKeyAttribute, ok := n.GetNodeAttributeValue(entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.JWTKey.Name))
+	jwtKeyAttribute, ok := n.GetNodeAttributeValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.JWTKey.Name),
+	)
 	if !ok {
-		return nil, http.StatusInternalServerError, errors.New("failed to get jwt_key")
+		return jwt.Token{}, http.StatusInternalServerError, errors.New("failed to get jwt_key")
 	}
 	secret := utils.GetFromAnyMap(*jwtKeyAttribute, universe.Attributes.Node.JWTKey.Key, "")
 
 	parsedAccessToken, err := api.ValidateJWT(token, []byte(secret))
 	if err != nil {
-		return nil, http.StatusForbidden, errors.WithMessage(err,
-			"failed to verify access token",
-		)
+		return jwt.Token{}, http.StatusForbidden, errors.WithMessage(err, "failed to verify access token")
 	}
 
-	return parsedAccessToken, 200, nil
+	return *parsedAccessToken, http.StatusOK, nil
 }
 
 func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken string) (*entry.User, int, error) {
@@ -270,14 +273,11 @@ func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken string) 
 	return userEntry, 0, nil
 }
 
-func (n *Node) apiCreateUserByName(c *gin.Context, name *string) (*entry.User, error) {
-	if name == nil {
-		return nil, errors.New("Node: apiCreateUserByName; got nil name")
-	}
+func (n *Node) apiCreateGuestUserByName(c *gin.Context, name string) (*entry.User, error) {
 	ue := &entry.User{
 		UserID: uuid.New(),
 		Profile: &entry.UserProfile{
-			Name: name,
+			Name: &name,
 		},
 	}
 
@@ -298,7 +298,7 @@ func (n *Node) apiCreateUserByName(c *gin.Context, name *string) (*entry.User, e
 
 	err = n.db.UsersUpsertUser(c, ue)
 
-	n.log.Infof("Node: apiCreateUserByName: guest created: %s", ue.UserID)
+	n.log.Infof("Node: apiCreateGuestUserByName: guest created: %s", ue.UserID)
 
 	return ue, err
 }

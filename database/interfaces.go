@@ -245,6 +245,9 @@ type SpaceUserAttributesDB interface {
 	SpaceUserAttributesGetSpaceUserAttributesBySpaceIDAndUserID(
 		ctx context.Context, spaceID uuid.UUID, userID uuid.UUID,
 	) ([]*entry.SpaceUserAttribute, error)
+	SpaceUserAttributesGetSpaceUserAttributesByPluginIDAndNameAndSpaceID(
+		ctx context.Context, pluginID uuid.UUID, name string, spaceID uuid.UUID,
+	) ([]*entry.SpaceUserAttribute, error)
 
 	SpaceUserAttributesUpsertSpaceUserAttribute(
 		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,

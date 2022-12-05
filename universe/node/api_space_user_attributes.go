@@ -447,3 +447,64 @@ func (n *Node) apiRemoveSpaceUserAttributeValue(c *gin.Context) {
 
 	c.JSON(http.StatusOK, nil)
 }
+
+// @Summary Get list of attributes for all users limited by space, plugin and attribute_name
+// @Schemes
+// @Description Returns map with key as userID and value as Attribute Value
+// @Tags spaces
+// @Accept json
+// @Produce json
+// @Param space_id path string true "Space ID"
+// @Param query query node.apiGetSpaceAllUsersAttributeValuesList.InQuery true "query params"
+// @Success 200 {object} map[uuid.UUID]entry.AttributeValue
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/spaces/{space_id}/all-users/attributes [get]
+func (n *Node) apiGetSpaceAllUsersAttributeValuesList(c *gin.Context) {
+	type InQuery struct {
+		PluginID      string `form:"plugin_id" binding:"required"`
+		AttributeName string `form:"attribute_name" binding:"required"`
+	}
+
+	inQuery := InQuery{}
+
+	if err := c.ShouldBindQuery(&inQuery); err != nil {
+		err := errors.WithMessage(err, "Node: apiGetSpaceAllUsersAttributeValuesList: failed to bind query")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
+		return
+	}
+
+	spaceID, err := uuid.Parse(c.Param("spaceID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetSpaceAllUsersAttributeValuesList: failed to parse space id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, n.log)
+		return
+	}
+
+	pluginID, err := uuid.Parse(inQuery.PluginID)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetSpaceAllUsersAttributeValuesList: failed to parse plugin id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
+		return
+	}
+
+	sua, err := n.db.SpaceUserAttributesGetSpaceUserAttributesByPluginIDAndNameAndSpaceID(
+		n.ctx, pluginID, inQuery.AttributeName, spaceID,
+	)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetSpaceAllUsersAttributeValuesList: failed to get space user attributes")
+		api.AbortRequest(c, http.StatusInternalServerError, "get_space_user_attributes_failed", err, n.log)
+		return
+	}
+
+	out := make(map[uuid.UUID]*entry.AttributeValue)
+	for i := range sua {
+		if sua[i].AttributePayload == nil || sua[i].AttributePayload.Value == nil {
+			continue
+		}
+		out[sua[i].UserID] = sua[i].AttributePayload.Value
+	}
+
+	c.JSON(http.StatusOK, out)
+}

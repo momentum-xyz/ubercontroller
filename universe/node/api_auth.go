@@ -2,6 +2,7 @@ package node
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -190,7 +191,7 @@ func (n *Node) apiGuestToken(c *gin.Context) {
 		return
 	}
 
-	userEntry, err := n.apiCreateUserByName(c, &inBody.Name)
+	userEntry, err := n.apiCreateGuestUserByName(c, inBody.Name)
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiGuestToken: failed get or create user from tokens")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_or_create_user", err, n.log)
@@ -198,7 +199,9 @@ func (n *Node) apiGuestToken(c *gin.Context) {
 	}
 
 	// get jwt secret to sign token
-	jwtKeyAttribute, ok := n.GetNodeAttributeValue(entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.JWTKey.Name))
+	jwtKeyAttribute, ok := n.GetNodeAttributeValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.JWTKey.Name),
+	)
 	if !ok {
 		err := errors.New("Node: apiGuestToken: failed to get jwt_key_attribute")
 		api.AbortRequest(c, http.StatusInternalServerError, "no_jwt_key", err, n.log)
@@ -207,17 +210,17 @@ func (n *Node) apiGuestToken(c *gin.Context) {
 
 	secret := utils.GetFromAnyMap(*jwtKeyAttribute, universe.Attributes.Node.JWTKey.Key, "")
 
-	token, err := api.SignJWTToken(userEntry.UserID.String(), []byte(secret))
+	token, err := api.CreateJWTToken(userEntry.UserID, []byte(secret))
 	if err != nil {
-		err = errors.WithMessage(err, "Node: apiGuestToken: failed get or create user from tokens")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_or_create_user", err, n.log)
+		err = errors.WithMessage(err, "Node: apiGuestToken: failed create token for user")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_create_token", err, n.log)
 		return
 	}
 
 	outUser := dto.User{
 		ID:        userEntry.UserID.String(),
 		Name:      *userEntry.Profile.Name,
-		CreatedAt: userEntry.CreatedAt.String(),
+		CreatedAt: userEntry.CreatedAt.Format(time.RFC3339),
 		JWTToken:  token,
 	}
 
@@ -225,7 +228,7 @@ func (n *Node) apiGuestToken(c *gin.Context) {
 		outUser.UserTypeID = userEntry.UserTypeID.String()
 	}
 	if userEntry.UpdatedAt != nil {
-		outUser.UpdatedAt = utils.GetPTR(userEntry.UpdatedAt.String())
+		outUser.UpdatedAt = utils.GetPTR(userEntry.UpdatedAt.Format(time.RFC3339))
 	}
 
 	c.JSON(http.StatusOK, outUser)

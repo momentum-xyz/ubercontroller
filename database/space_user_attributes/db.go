@@ -16,13 +16,14 @@ import (
 )
 
 const (
-	getSpaceUserAttributesQuery                   = `SELECT * FROM space_user_attribute;`
-	getSpaceUserAttributeByIDQuery                = `SELECT * FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3 AND user_id = $4;`
-	getSpaceUserAttributeValueByIDQuery           = `SELECT value FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3 AND user_id = $4;`
-	getSpaceUserAttributeOptionsByIDQuery         = `SELECT options FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3 AND user_id = $4;`
-	getSpaceUserAttributesBySpaceIDQuery          = `SELECT * FROM space_user_attribute WHERE space_id = $1;`
-	getSpaceUserAttributesByUserIDQuery           = `SELECT * FROM space_user_attribute WHERE user_id = $1;`
-	getSpaceUserAttributesBySpaceIDAndUserIDQuery = `SELECT * FROM space_user_attribute WHERE space_id = $1 AND user_id = $2;`
+	getSpaceUserAttributesQuery                            = `SELECT * FROM space_user_attribute;`
+	getSpaceUserAttributeByIDQuery                         = `SELECT * FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3 AND user_id = $4;`
+	getSpaceUserAttributeValueByIDQuery                    = `SELECT value FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3 AND user_id = $4;`
+	getSpaceUserAttributeOptionsByIDQuery                  = `SELECT options FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3 AND user_id = $4;`
+	getSpaceUserAttributesBySpaceIDQuery                   = `SELECT * FROM space_user_attribute WHERE space_id = $1;`
+	getSpaceUserAttributesByUserIDQuery                    = `SELECT * FROM space_user_attribute WHERE user_id = $1;`
+	getSpaceUserAttributesBySpaceIDAndUserIDQuery          = `SELECT * FROM space_user_attribute WHERE space_id = $1 AND user_id = $2;`
+	getSpaceUserAttributesByPluginIDAndNameAndSpaceIDQuery = `SELECT * FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3;`
 
 	removeSpaceUserAttributeByNameQuery             = `DELETE FROM space_user_attribute WHERE attribute_name = $1;`
 	removeSpaceUserAttributesByNamesQuery           = `DELETE FROM space_user_attribute WHERE attribute_name IN ($1);`
@@ -149,6 +150,18 @@ func (db *DB) SpaceUserAttributesGetSpaceUserAttributesBySpaceIDAndUserID(
 	var attributes []*entry.SpaceUserAttribute
 	if err := pgxscan.Select(
 		ctx, db.conn, &attributes, getSpaceUserAttributesBySpaceIDAndUserIDQuery, spaceID, userID,
+	); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return attributes, nil
+}
+
+func (db *DB) SpaceUserAttributesGetSpaceUserAttributesByPluginIDAndNameAndSpaceID(
+	ctx context.Context, pluginID uuid.UUID, name string, spaceID uuid.UUID,
+) ([]*entry.SpaceUserAttribute, error) {
+	var attributes []*entry.SpaceUserAttribute
+	if err := pgxscan.Select(ctx, db.conn, &attributes, getSpaceUserAttributesByPluginIDAndNameAndSpaceIDQuery,
+		pluginID, name, spaceID,
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}

@@ -16,7 +16,9 @@ import (
 func VerifyUser(log *zap.SugaredLogger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// get jwt secret
-		jwtSecret, ok := universe.GetNode().GetNodeAttributeValue(entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.JWTKey.Name))
+		jwtSecret, ok := universe.GetNode().GetNodeAttributeValue(
+			entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.JWTKey.Name),
+		)
 		if !ok || jwtSecret == nil {
 			err := errors.New("Middleware: VerifyUser: failed to get jwt_key attribute")
 			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_jwt_key", err, log)
