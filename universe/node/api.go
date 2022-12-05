@@ -55,6 +55,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		verifiedUsers := verified.Group("/users")
 		{
 			verifiedUsers.GET("/me", n.apiUsersGetMe)
+			verifiedUsers.POST("/mutual-docks", n.apiUsersMutualDocks)
 
 			verifiedUser := verifiedUsers.Group("/:userID")
 			{
