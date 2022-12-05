@@ -28,14 +28,6 @@ type UserProfile struct {
 	OnBoarded   *bool   `db:"onboarded" json:"onboarded"`
 }
 
-type Token struct {
-	SignedString *string    `db:"signed_string" json:"signed_string"`
-	Subject      *string    `db:"subject" json:"subject"`
-	Issuer       *string    `db:"issuer" json:"issuer"`
-	IssuedAt     time.Time  `db:"issued_at" json:"issued_at"`
-	ExpiresAt    *time.Time `db:"expires_at" json:"expires_at"`
-}
-
 type UserAttributeID struct {
 	AttributeID
 	UserID uuid.UUID `db:"user_id"`

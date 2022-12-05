@@ -181,24 +181,22 @@ func (n *Node) apiUsersGetById(c *gin.Context) {
 	c.JSON(http.StatusOK, outUser)
 }
 
-func (n *Node) apiParseJWT(c *gin.Context, token string) (*jwt.Token, int, error) {
+func (n *Node) apiParseJWT(c *gin.Context, token string) (jwt.Token, int, error) {
 	// get jwt secret to sign token
 	jwtKeyAttribute, ok := n.GetNodeAttributeValue(
 		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.JWTKey.Name),
 	)
 	if !ok {
-		return nil, http.StatusInternalServerError, errors.New("failed to get jwt_key")
+		return jwt.Token{}, http.StatusInternalServerError, errors.New("failed to get jwt_key")
 	}
 	secret := utils.GetFromAnyMap(*jwtKeyAttribute, universe.Attributes.Node.JWTKey.Key, "")
 
 	parsedAccessToken, err := api.ValidateJWT(token, []byte(secret))
 	if err != nil {
-		return nil, http.StatusForbidden, errors.WithMessage(err,
-			"failed to verify access token",
-		)
+		return jwt.Token{}, http.StatusForbidden, errors.WithMessage(err, "failed to verify access token")
 	}
 
-	return parsedAccessToken, 200, nil
+	return *parsedAccessToken, 200, nil
 }
 
 func (n *Node) apiGetOrCreateUserFromTokens(c *gin.Context, accessToken string) (*entry.User, int, error) {

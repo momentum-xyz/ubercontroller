@@ -287,7 +287,6 @@ func (n *Node) Load() error {
 	group, _ = errgroup.WithContext(n.ctx)
 	group.Go(n.spaceTypes.Load)
 	group.Go(n.plugins.Load)
-	group.Go(n.chatService.Load)
 	if err := group.Wait(); err != nil {
 		return errors.WithMessage(err, "failed to load additional data")
 	}
@@ -306,6 +305,7 @@ func (n *Node) Load() error {
 		return n.loadNodeAttributes()
 	})
 	group.Go(n.worlds.Load)
+	group.Go(n.chatService.Load)
 	if err := group.Wait(); err != nil {
 		return errors.WithMessage(err, "failed to load universe")
 	}

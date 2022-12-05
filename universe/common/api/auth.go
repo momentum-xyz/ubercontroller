@@ -19,15 +19,13 @@ func GetTokenFromRequest(c *gin.Context) string {
 	return strings.TrimPrefix(authHeader, "Bearer ")
 }
 
-func GetTokenFromContext(c *gin.Context) (*jwt.Token, error) {
+func GetTokenFromContext(c *gin.Context) (jwt.Token, error) {
 	value, ok := c.Get(TokenContextKey)
 	if !ok {
-		return nil, errors.Errorf("failed to get token value from context")
+		return jwt.Token{}, errors.Errorf("failed to get token value from context")
 	}
 
-	token := utils.GetFromAny(value, jwt.Token{})
-
-	return &token, nil
+	return utils.GetFromAny(value, jwt.Token{}), nil
 }
 
 func GetUserIDFromContext(c *gin.Context) (uuid.UUID, error) {
@@ -42,21 +40,15 @@ func GetUserIDFromContext(c *gin.Context) (uuid.UUID, error) {
 	return userID, nil
 }
 
-func GetUserIDFromToken(token *jwt.Token) (uuid.UUID, error) {
-	if token == nil {
-		return uuid.Nil, errors.New("got nil token")
-	}
-
+func GetUserIDFromToken(token jwt.Token) (uuid.UUID, error) {
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
 		return uuid.Nil, errors.New("failed to get token claims")
 	}
-
 	userID, err := uuid.Parse(utils.GetFromAnyMap(claims, "sub", "")) // TODO! proper jwt parsing
 	if err != nil {
 		return uuid.Nil, errors.WithMessage(err, "failed to parse user id")
 	}
-
 	return userID, nil
 }
 
