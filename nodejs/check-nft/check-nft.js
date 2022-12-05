@@ -88,24 +88,30 @@ async function main() {
     }
 
     let data
+
     try {
         data = JSON.parse(meta.data)
     } catch (e) {
         exitWithError(3, `Can not parse to JSON metadata for itemID=${itemId} collectionID=${collectionId} wallet=${WALLET}`)
     }
 
-    if (!Array.isArray(data)) {
-        exitWithError(4, `Metadata is not array for itemID=${itemId} collectionID=${collectionId} wallet=${WALLET}`)
-    }
-
-    if (!data[0]) {
-        exitWithError(4, `Metadata array is empty for itemID=${itemId} collectionID=${collectionId} wallet=${WALLET}`)
-    }
-
-    out.data.userUUID = data[0]
+    out.data = data
     console.log(JSON.stringify(out))
     process.exit(0)
     await api.disconnect()
+
+    // if (!Array.isArray(data)) {
+    //     exitWithError(4, `Metadata is not array for itemID=${itemId} collectionID=${collectionId} wallet=${WALLET}`)
+    // }
+    //
+    // if (!data[0]) {
+    //     exitWithError(4, `Metadata array is empty for itemID=${itemId} collectionID=${collectionId} wallet=${WALLET}`)
+    // }
+    //
+    // out.data.userUUID = data[0]
+    // console.log(JSON.stringify(out))
+    // process.exit(0)
+    // await api.disconnect()
 }
 
 main()
