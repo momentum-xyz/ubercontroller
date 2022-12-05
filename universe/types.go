@@ -32,8 +32,9 @@ type Attribute struct {
 var (
 	Attributes = struct {
 		Node struct {
-			Settings Attribute
-			JWTKey   Attribute
+			GuestUserType  Attribute
+			NormalUserType Attribute
+			JWTKey         Attribute
 		}
 		World struct {
 			Meta Attribute
@@ -50,11 +51,17 @@ var (
 		}
 	}{
 		Node: struct {
-			Settings Attribute
-			JWTKey   Attribute
+			GuestUserType  Attribute
+			NormalUserType Attribute
+			JWTKey         Attribute
 		}{
-			Settings: Attribute{
+			GuestUserType: Attribute{
 				Name: "node_settings",
+				Key:  "guest_user_type",
+			},
+			NormalUserType: Attribute{
+				Name: "node_settings",
+				Key:  "normal_user_type",
 			},
 			JWTKey: Attribute{
 				Name: "jwt_key",

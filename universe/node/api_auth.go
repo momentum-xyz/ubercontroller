@@ -1,6 +1,9 @@
 package node
 
 import (
+	"github.com/google/uuid"
+	"github.com/momentum-xyz/ubercontroller/utils/merge"
+	"github.com/momentum-xyz/ubercontroller/utils/modify"
 	"net/http"
 	"time"
 
@@ -86,6 +89,8 @@ func (n *Node) apiGenChallenge(c *gin.Context) {
 // @Param body body node.apiGenToken.InBody true "body params"
 // @Success 200 {object} node.apiGenToken.Out
 // @Failure 400 {object} api.HTTPError
+// @Failure 403 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
 // @Router /api/v4/auth/token [post]
 func (n *Node) apiGenToken(c *gin.Context) {
@@ -103,19 +108,19 @@ func (n *Node) apiGenToken(c *gin.Context) {
 
 	attributeID := entry.NewAttributeID(universe.GetKusamaPluginID(), universe.Attributes.Kusama.Challenges.Name)
 
-	value, ok := n.GetNodeAttributeValue(attributeID)
-	if !ok {
+	challengesAttributeValue, ok := n.GetNodeAttributeValue(attributeID)
+	if !ok || challengesAttributeValue == nil {
 		err := errors.Errorf("Node: apiGenToken: node attribute not found")
 		api.AbortRequest(c, http.StatusInternalServerError, "attribute_not_found", err, n.log)
 		return
 	}
 
 	var challenge string
-	if value != nil {
-		store := utils.GetFromAnyMap(*value, universe.Attributes.Kusama.Challenges.Key, (map[string]any)(nil))
-		if store != nil {
-			challenge = utils.GetFromAnyMap(store, inBody.Wallet, "")
-		}
+	store := utils.GetFromAnyMap(
+		*challengesAttributeValue, universe.Attributes.Kusama.Challenges.Key, (map[string]any)(nil),
+	)
+	if store != nil {
+		challenge = utils.GetFromAnyMap(store, inBody.Wallet, "")
 	}
 	if challenge == "" {
 		err := errors.Errorf("Node: apiGenToken: challenge not found")
@@ -157,12 +162,45 @@ func (n *Node) apiGenToken(c *gin.Context) {
 		return
 	}
 
+	walletMeta, err := n.getWalletMetadata(inBody.Wallet)
+	if err != nil {
+		err := errors.Errorf("Node: apiGenToken: invalid wallet")
+		api.AbortRequest(c, http.StatusForbidden, "invalid_wallet", err, n.log)
+		return
+	}
+
+	userEntry, httpCode, err := n.apiGetOrCreateUserFromMeta(c, walletMeta)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGenToken: failed to get or create user from meta")
+		api.AbortRequest(c, httpCode, "get_or_create_user_failed", err, n.log)
+		return
+	}
+
+	// get jwt secret to sign token
+	jwtKeyAttributeValue, ok := n.GetNodeAttributeValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.JWTKey.Name),
+	)
+	if !ok || jwtKeyAttributeValue == nil {
+		err := errors.New("Node: apiGenToken: failed to get jwt_key_attribute")
+		api.AbortRequest(c, http.StatusInternalServerError, "no_jwt_key", err, n.log)
+		return
+	}
+
+	secret := utils.GetFromAnyMap(*jwtKeyAttributeValue, universe.Attributes.Node.JWTKey.Key, "")
+
+	token, err := api.CreateJWTToken(userEntry.UserID, []byte(secret))
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiGenToken: failed create token for user")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_create_token", err, n.log)
+		return
+	}
+
 	type Out struct {
 		Token string `json:"token"`
 	}
 
 	out := Out{
-		Token: "my super secret token",
+		Token: token,
 	}
 
 	c.JSON(http.StatusOK, out)
@@ -193,22 +231,22 @@ func (n *Node) apiGuestToken(c *gin.Context) {
 
 	userEntry, err := n.apiCreateGuestUserByName(c, inBody.Name)
 	if err != nil {
-		err = errors.WithMessage(err, "Node: apiGuestToken: failed get or create user from tokens")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_or_create_user", err, n.log)
+		err = errors.WithMessage(err, "Node: apiGuestToken: failed create guest user")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_create_guest_user", err, n.log)
 		return
 	}
 
 	// get jwt secret to sign token
-	jwtKeyAttribute, ok := n.GetNodeAttributeValue(
+	jwtKeyAttributeValue, ok := n.GetNodeAttributeValue(
 		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.JWTKey.Name),
 	)
-	if !ok {
+	if !ok || jwtKeyAttributeValue == nil {
 		err := errors.New("Node: apiGuestToken: failed to get jwt_key_attribute")
 		api.AbortRequest(c, http.StatusInternalServerError, "no_jwt_key", err, n.log)
 		return
 	}
 
-	secret := utils.GetFromAnyMap(*jwtKeyAttribute, universe.Attributes.Node.JWTKey.Key, "")
+	secret := utils.GetFromAnyMap(*jwtKeyAttributeValue, universe.Attributes.Node.JWTKey.Key, "")
 
 	token, err := api.CreateJWTToken(userEntry.UserID, []byte(secret))
 	if err != nil {
@@ -232,4 +270,71 @@ func (n *Node) apiGuestToken(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, outUser)
+}
+
+func (n *Node) apiGetOrCreateUserFromMeta(c *gin.Context, meta *WalletMeta) (*entry.User, int, error) {
+	userEntry, err := n.db.UsersGetUserByID(c, meta.UserID)
+	if err == nil {
+		return userEntry, 0, nil
+	}
+
+	userEntry = &entry.User{
+		UserID: meta.UserID,
+		Profile: &entry.UserProfile{
+			Name:       &meta.Username,
+			AvatarHash: &meta.Avatar,
+		},
+	}
+
+	userTypeAttributeValue, ok := n.GetNodeAttributeValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.NormalUserType.Name),
+	)
+	if !ok || userTypeAttributeValue == nil {
+		return nil, http.StatusInternalServerError, errors.Errorf("failed to get user type attribute value")
+	}
+
+	normUserType := utils.GetFromAnyMap(*userTypeAttributeValue, universe.Attributes.Node.NormalUserType.Key, "")
+	normUserTypeID, err := uuid.Parse(normUserType)
+	if err != nil {
+		return nil, http.StatusInternalServerError, errors.Errorf("failed to parse normal user type id")
+	}
+	userEntry.UserTypeID = &normUserTypeID
+
+	if err := n.db.UsersUpsertUser(c, userEntry); err != nil {
+		return nil, http.StatusInternalServerError, errors.WithMessagef(err, "failed to upsert user: %s", userEntry.UserID)
+	}
+
+	n.log.Infof("Node: apiGetOrCreateUserFromMeta: user created: %s", userEntry.UserID)
+
+	// adding wallet to user attributes
+	userAttributeID := entry.NewUserAttributeID(
+		entry.NewAttributeID(
+			universe.GetKusamaPluginID(), universe.Attributes.Kusama.User.Wallet.Name,
+		),
+		userEntry.UserID,
+	)
+
+	walletAddressKey := universe.Attributes.Kusama.User.Wallet.Key
+	newPayload := entry.NewAttributePayload(
+		&entry.AttributeValue{
+			walletAddressKey: []any{meta.Wallet},
+		},
+		nil,
+	)
+
+	walletAddressKeyPath := ".Value." + walletAddressKey
+	if _, err := n.db.UserAttributesUpsertUserAttribute(
+		n.ctx, userAttributeID,
+		modify.MergeWith(
+			newPayload,
+			merge.NewTrigger(walletAddressKeyPath, merge.AppendTriggerFn),
+			merge.NewTrigger(walletAddressKeyPath, merge.UniqueTriggerFn),
+		)); err != nil {
+		// TODO: think about rollback
+		return nil, http.StatusInternalServerError, errors.WithMessagef(
+			err, "failed to upsert user attribute for user: %s", userEntry.UserID,
+		)
+	}
+
+	return userEntry, 0, nil
 }

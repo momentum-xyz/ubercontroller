@@ -13,6 +13,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/logger"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
+	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 type NodeJSOut struct {
@@ -29,6 +30,13 @@ type StoreItem struct {
 type NFTMeta struct {
 	Name  string `json:"name" binding:"required"`
 	Image string `json:"image" binding:"required"`
+}
+
+type WalletMeta struct {
+	Wallet   string
+	UserID   uuid.UUID
+	Username string
+	Avatar   string
 }
 
 const StatusInProgress = "in progress"
@@ -49,12 +57,12 @@ var store = generic.NewSyncMap[uuid.UUID, StoreItem](0)
 // @Failure 500 {object} api.HTTPError
 // @Router /api/v4/drive/mint-odyssey [post]
 func (n *Node) apiDriveMintOdyssey(c *gin.Context) {
-
 	type Body struct {
 		BlockHash string  `json:"block_hash" binding:"required"`
 		Wallet    string  `json:"wallet" binding:"required"`
 		Meta      NFTMeta `json:"meta" binding:"required"`
 	}
+
 	var inBody Body
 	if err := c.ShouldBindJSON(&inBody); err != nil {
 		err = errors.WithMessage(err, "Node: apiDriveMintOdyssey: failed to bind json")
@@ -143,4 +151,35 @@ func (n *Node) apiDriveMintOdysseyCheckJob(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, out)
+}
+
+func (n *Node) getWalletMetadata(wallet string) (*WalletMeta, error) {
+	output, _ := exec.Command("node", "./nodejs/check-nft/check-nft.js", wallet).Output()
+	var nodeJSOut NodeJSOut
+	if err := json.Unmarshal(output, &nodeJSOut); err != nil {
+		return nil, errors.WithMessage(err, "failed to unmarshal output")
+	}
+
+	if nodeJSOut.Error != nil {
+		return nil, errors.New(*nodeJSOut.Error)
+	}
+
+	data := utils.GetFromAny(nodeJSOut.Data, []any{})
+	if len(data) != 4 {
+		return nil, errors.Errorf("invalid data: len %d != 4", len(data))
+	}
+
+	userID, err := uuid.Parse(utils.GetFromAny(data[0], ""))
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to parse user id")
+	}
+
+	meta := &WalletMeta{
+		Wallet:   wallet,
+		UserID:   userID,
+		Username: utils.GetFromAny(data[1], ""),
+		Avatar:   utils.GetFromAny(data[3], ""),
+	}
+
+	return meta, nil
 }
