@@ -93,7 +93,7 @@ func CreateJWTToken(userID uuid.UUID, secret []byte) (string, error) {
 
 	signedString, err := jwt.SignedString(secret)
 	if err != nil {
-		return "", err
+		return "", errors.WithMessage(err, "failed to sign token")
 	}
 
 	return signedString, nil

@@ -15,7 +15,12 @@ import (
 )
 
 const (
-	getUserByIDQuery            = `SELECT * FROM "user" WHERE user_id = $1;`
+	getUserByIDQuery     = `SELECT * FROM "user" WHERE user_id = $1;`
+	getUserByWalletQuery = `SELECT * FROM user
+         						WHERE user_id = (SELECT user_id FROM user_attribute
+         						                                WHERE plugin_id = '86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8'
+         						                                  AND attribute_name = 'wallet'
+         						                                  AND value->'wallet' ? $1);`
 	getUserProfileByUserIDQuery = `SELECT profile FROM "user" WHERE user_id = $1;`
 
 	removeUserByIDQuery   = `DELETE FROM "user" WHERE user_id = $1;`
@@ -51,6 +56,14 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 func (db *DB) UsersGetUserByID(ctx context.Context, userID uuid.UUID) (*entry.User, error) {
 	var user entry.User
 	if err := pgxscan.Get(ctx, db.conn, &user, getUserByIDQuery, userID); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return &user, nil
+}
+
+func (db *DB) UsersGetUserByWallet(ctx context.Context, wallet string) (*entry.User, error) {
+	var user entry.User
+	if err := pgxscan.Get(ctx, db.conn, &user, getUserByWalletQuery, wallet); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return &user, nil

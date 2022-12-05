@@ -63,6 +63,7 @@ type SpacesDB interface {
 
 type UsersDB interface {
 	UsersGetUserByID(ctx context.Context, userID uuid.UUID) (*entry.User, error)
+	UsersGetUserByWallet(ctx context.Context, wallet string) (*entry.User, error)
 	UsersGetUserProfileByUserID(ctx context.Context, userID uuid.UUID) (*entry.UserProfile, error)
 
 	UsersUpsertUser(ctx context.Context, user *entry.User) error
