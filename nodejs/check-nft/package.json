@@ -1,0 +1,16 @@
+{
+  "name": "check-nft",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@polkadot/api": "^9.10.1",
+    "@polkadot/util": "^10.2.1",
+    "@polkadot/util-crypto": "^10.2.1"
+  }
+}

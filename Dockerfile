@@ -25,6 +25,9 @@ FROM alpine:3.16 as runtime
 RUN apk add --update --no-cache nodejs npm 
 RUN npm install -g @polkadot/api uuid
 COPY *.js /srv
+COPY ./nodejs /srv/nodejs
+WORKDIR /srv/nodejs/check-nft
+RUN npm i
 
 COPY --from=build /project/bin/ubercontroller /srv/ubercontroller
 
