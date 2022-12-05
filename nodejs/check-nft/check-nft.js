@@ -76,6 +76,8 @@ async function main() {
         exitWithError(1, `Can not get itemId from response`)
     }
 
+    log(`ItemID=${itemId} collectionID=${collectionId}`)
+
     const r2 = await api.query.uniques.instanceMetadataOf(collectionId, itemId);
     // const r2 = await api.query.uniques.instanceMetadataOf(collectionId, 77227733);
 
