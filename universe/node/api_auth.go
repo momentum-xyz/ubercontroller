@@ -116,15 +116,27 @@ func (n *Node) apiGenToken(c *gin.Context) {
 	}
 
 	var challenge string
-	store := utils.GetFromAnyMap(
+	if store := utils.GetFromAnyMap(
 		*challengesAttributeValue, universe.Attributes.Kusama.Challenges.Key, (map[string]any)(nil),
-	)
-	if store != nil {
+	); store != nil {
 		challenge = utils.GetFromAnyMap(store, inBody.Wallet, "")
 	}
 	if challenge == "" {
 		err := errors.Errorf("Node: apiGenToken: challenge not found")
 		api.AbortRequest(c, http.StatusNotFound, "challenge_not_found", err, n.log)
+		return
+	}
+
+	valid, err := api.VerifyPolkadotSignature(inBody.Wallet, challenge, inBody.SignedChallenge)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGenToken: failed to verify polkadot signature")
+		api.AbortRequest(c, http.StatusBadRequest, "signature_validation_failed", err, n.log)
+		return
+	}
+
+	if !valid {
+		err := errors.Errorf("Node: apiGenToken: invalid signature")
+		api.AbortRequest(c, http.StatusForbidden, "invalid_signature", err, n.log)
 		return
 	}
 
@@ -149,27 +161,7 @@ func (n *Node) apiGenToken(c *gin.Context) {
 		return
 	}
 
-	valid, err := api.VerifyPolkadotSignature(inBody.Wallet, challenge, inBody.SignedChallenge)
-	if err != nil {
-		err := errors.WithMessage(err, "Node: apiGenToken: failed to verify polkadot signature")
-		api.AbortRequest(c, http.StatusBadRequest, "signature_validation_failed", err, n.log)
-		return
-	}
-
-	if !valid {
-		err := errors.Errorf("Node: apiGenToken: invalid signature")
-		api.AbortRequest(c, http.StatusForbidden, "invalid_signature", err, n.log)
-		return
-	}
-
-	walletMeta, err := n.getWalletMetadata(inBody.Wallet)
-	if err != nil {
-		err := errors.Errorf("Node: apiGenToken: invalid wallet")
-		api.AbortRequest(c, http.StatusForbidden, "invalid_wallet", err, n.log)
-		return
-	}
-
-	userEntry, httpCode, err := n.apiGetOrCreateUserFromMeta(c, walletMeta)
+	userEntry, httpCode, err := n.apiGetOrCreateUserFromWallet(c, inBody.Wallet)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGenToken: failed to get or create user from meta")
 		api.AbortRequest(c, httpCode, "get_or_create_user_failed", err, n.log)
@@ -271,17 +263,22 @@ func (n *Node) apiGuestToken(c *gin.Context) {
 	c.JSON(http.StatusOK, outUser)
 }
 
-func (n *Node) apiGetOrCreateUserFromMeta(c *gin.Context, meta *WalletMeta) (*entry.User, int, error) {
-	userEntry, err := n.db.UsersGetUserByID(c, meta.UserID)
+func (n *Node) apiGetOrCreateUserFromWallet(c *gin.Context, wallet string) (*entry.User, int, error) {
+	userEntry, err := n.db.UsersGetUserByWallet(c, wallet)
 	if err == nil {
 		return userEntry, 0, nil
 	}
 
+	walletMeta, err := n.getWalletMetadata(wallet)
+	if err != nil {
+		return nil, http.StatusForbidden, errors.WithMessage(err, "failed to get wallet meta")
+	}
+
 	userEntry = &entry.User{
-		UserID: meta.UserID,
+		UserID: walletMeta.UserID,
 		Profile: &entry.UserProfile{
-			Name:       &meta.Username,
-			AvatarHash: &meta.Avatar,
+			Name:       &walletMeta.Username,
+			AvatarHash: &walletMeta.Avatar,
 		},
 	}
 
@@ -303,7 +300,7 @@ func (n *Node) apiGetOrCreateUserFromMeta(c *gin.Context, meta *WalletMeta) (*en
 		return nil, http.StatusInternalServerError, errors.WithMessagef(err, "failed to upsert user: %s", userEntry.UserID)
 	}
 
-	n.log.Infof("Node: apiGetOrCreateUserFromMeta: user created: %s", userEntry.UserID)
+	n.log.Infof("Node: apiGetOrCreateUserFromWallet: user created: %s", userEntry.UserID)
 
 	// adding wallet to user attributes
 	userAttributeID := entry.NewUserAttributeID(
@@ -316,7 +313,7 @@ func (n *Node) apiGetOrCreateUserFromMeta(c *gin.Context, meta *WalletMeta) (*en
 	walletAddressKey := universe.Attributes.Kusama.User.Wallet.Key
 	newPayload := entry.NewAttributePayload(
 		&entry.AttributeValue{
-			walletAddressKey: []any{meta.Wallet},
+			walletAddressKey: []any{walletMeta.Wallet},
 		},
 		nil,
 	)
