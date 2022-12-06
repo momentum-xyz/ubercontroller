@@ -12,9 +12,12 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/logger"
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
+	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
 type NodeJSOut struct {
@@ -128,6 +131,81 @@ func (n *Node) apiDriveMintOdyssey(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, out)
+}
+
+func (n *Node) apiDriveTest(c *gin.Context) {
+	type Out struct {
+		Data any `json:"data"`
+	}
+
+	err := n.createWorld(uuid.MustParse("e18d6d31-f62e-4dd0-ae62-a985135a1a34"), "Test World")
+	if err != nil {
+		log.Error(err)
+	}
+
+	out := Out{
+		Data: n.GetID(),
+	}
+
+	c.JSON(http.StatusOK, out)
+}
+
+func (n *Node) createWorld(ownerID uuid.UUID, name string) error {
+	// User's world (aka Odyssey) should be equal to user ID
+	world, err := n.GetWorlds().CreateWorld(ownerID)
+	if err != nil {
+		err = errors.WithMessage(err, "failed to CreateWorld")
+		return err
+	}
+
+	err = world.SetOwnerID(ownerID, false)
+	if err != nil {
+		return errors.WithMessage(err, "failed to SetOwnerID")
+	}
+
+	types := n.GetSpaceTypes().GetSpaceTypes()
+	var spaceType universe.SpaceType
+	for _, t := range types {
+		if t.GetName() == "World" {
+			spaceType = t
+		}
+	}
+	if spaceType == nil {
+		return errors.New("Space type with name World not found in DB")
+	}
+
+	err = world.SetSpaceType(spaceType, false)
+	if err != nil {
+		return errors.WithMessage(err, "failed to SetSpaceType")
+	}
+
+	err = world.SetParent(n, false)
+	if err != nil {
+		return errors.WithMessage(err, "failed to SetParent")
+	}
+
+	err = n.GetWorlds().AddWorld(world, true)
+	if err != nil {
+		return errors.WithMessage(err, "failed to AddWorld")
+	}
+
+	attributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name)
+	value := entry.NewAttributeValue()
+	(*value)[universe.Attributes.Space.Name.Key] = name
+	payload := entry.NewAttributePayload(value, nil)
+
+	if _, err := world.UpsertSpaceAttribute(attributeID, modify.MergeWith(payload), true); err != nil {
+		return errors.WithMessage(err, "failed to upsert world name attribute")
+	}
+
+	if err := world.Run(); err != nil {
+		err := errors.WithMessage(err, "Node: apiCreateSpace: failed to run space")
+		return errors.WithMessage(err, "failed to run world")
+	}
+
+	world.SetEnabled(true)
+
+	return nil
 }
 
 func (n *Node) mint(jobID uuid.UUID, wallet string, meta NFTMeta, blockHash string) {
@@ -244,7 +322,7 @@ func (n *Node) mint(jobID uuid.UUID, wallet string, meta NFTMeta, blockHash stri
 		Username: data.Name,
 		Avatar:   data.Image,
 	}
-	user, err := n.apiCreateUserFromWalletMeta(context.Background(), &wm)
+	_, err = n.apiCreateUserFromWalletMeta(context.Background(), &wm)
 	if err != nil {
 		err = errors.WithMessage(err, "failed to apiCreateUserFromWalletMeta")
 		{
@@ -256,7 +334,17 @@ func (n *Node) mint(jobID uuid.UUID, wallet string, meta NFTMeta, blockHash stri
 		return
 	}
 
-	fmt.Println(user)
+	err = n.createWorld(wm.UserID, wm.Username)
+	if err != nil {
+		err = errors.WithMessage(err, "failed to createWorld")
+		{
+			item.Status = StatusFailed
+			item.Error = err
+			store.Store(jobID, item)
+		}
+		log.Error(err)
+		return
+	}
 
 	item.Status = StatusDone
 	item.NodeJSOut = &nodeJSOut
