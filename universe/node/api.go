@@ -27,6 +27,8 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 	{
 		drive := vx.Group("/drive")
 		{
+			drive.GET("/wallet-meta", n.apiGetWalletMeta)
+
 			drive.POST("/mint-odyssey", n.apiDriveMintOdyssey)
 			drive.GET("/mint-odyssey/check-job/:jobID", n.apiDriveMintOdysseyCheckJob)
 		}
