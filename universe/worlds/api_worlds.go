@@ -38,7 +38,12 @@ func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
 			userIDs = append(userIDs, userID)
 		}
 
-		entryUsers, err :=
+		entryUsers, err := w.db.UsersGetUsersByIDs(w.ctx, userIDs)
+		if err != nil {
+			err := errors.WithMessage(err, "Worlds: apiGetOnlineUsers: failed to get users")
+			api.AbortRequest(c, http.StatusInternalServerError, "get_users_failed", err, w.log)
+			return
+		}
 	*/
 }
 
