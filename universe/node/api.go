@@ -85,6 +85,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 				verifiedSpace.DELETE("/options/sub", n.apiSpacesRemoveSpaceSubOption)
 
 				verifiedSpace.GET("/attributes", n.apiGetSpaceAttributesValue)
+				verifiedSpace.GET("/attributes/subs-count", n.apiGetSpaceAttributesSubsCount)
 				verifiedSpace.GET("/attributes-with-children", n.apiGetSpaceWithChildrenAttributeValues)
 				verifiedSpace.POST("/attributes", n.apiSetSpaceAttributesValue)
 				verifiedSpace.DELETE("/attributes", n.apiRemoveSpaceAttributeValue)
