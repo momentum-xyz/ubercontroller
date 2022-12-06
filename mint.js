@@ -11,9 +11,7 @@ try {
     ApiModule = require('/usr/local/lib/node_modules/@polkadot/api');
     UUIDModule = require('/usr/local/lib/node_modules/uuid');
 } catch (e) {
-    out.error = e
-    console.log(JSON.stringify(out))
-    process.exit(3)
+    exitWithError(e.message)
 }
 
 const {ApiPromise, WsProvider, Keyring} = ApiModule
@@ -58,7 +56,6 @@ async function hasPayment(block_hash, from_wallet, amount, api, admin_pair) {
 async function mint(api, owner_wallet, admin_pair) {
     const collection = 0
     const item = getRandom(1, 1_000_000_000)
-    // const item = 66
     log("itemID=" + item)
 
 
@@ -108,9 +105,8 @@ async function setMeta(api, item_id, name, image, admin_pair) {
 async function main() {
 
     if (process.argv.length !== 6) {
-        out.error = `Provide target wallet as first cli argument, admin mnemonic phrase as second, meta as third, block_hash as forth`
-        log(JSON.stringify(out))
-        process.exit(1)
+        const m = `Provide target wallet as first cli argument, admin mnemonic phrase as second, meta as third, block_hash as forth`
+        exitWithError(m)
     }
 
     const TARGET_WALLET = process.argv[2]
@@ -129,18 +125,14 @@ async function main() {
     try {
         m = JSON.parse(META)
     } catch (e) {
-        out.error = e.message
-        console.log(JSON.stringify(out))
-        process.exit(4)
+        exitWithError(e.message)
     }
 
     const name = m.name
     const image = m.image
 
     if (!name || !image) {
-        out.error = `META must contain name and image`
-        console.log(JSON.stringify(out))
-        process.exit(4)
+        exitWithError(`META must contain name and image`)
     }
 
     const url = "wss://drive.antst.net:19947"
@@ -159,9 +151,7 @@ async function main() {
     const amount = 1
     const flag = await hasPayment(BLOCK_HASH, TARGET_WALLET, amount, api, newPair)
     if (!flag) {
-        out.error = `Payment to admin wallet from wallet=${TARGET_WALLET} not found in given block blockHash=${BLOCK_HASH}`
-        console.log(JSON.stringify(out))
-        process.exit(6)
+        exitWithError(`Payment to admin wallet from wallet=${TARGET_WALLET} not found in given block blockHash=${BLOCK_HASH}`)
     }
 
     const itemID = await mint(api, TARGET_WALLET, newPair)
@@ -186,10 +176,13 @@ function getRandom(min, max) {
 }
 
 process.on('unhandledRejection', error => {
-    // log(`unhandledRejection: ${error.message}`);
-    out.error = `unhandledRejection: ${error.message}`
-    console.log(JSON.stringify(out))
-    process.exit(2)
+    exitWithError(`unhandledRejection: ${error.message}`)
 });
+
+function exitWithError(message) {
+    out.error = message
+    console.log(JSON.stringify(out))
+    process.exit(0)
+}
 
 main()

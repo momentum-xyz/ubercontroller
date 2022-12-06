@@ -119,6 +119,16 @@ func (n *Node) mint(jobID uuid.UUID, wallet string, meta NFTMeta, blockHash stri
 	}
 
 	output, err := exec.Command("node", "mint.js", wallet, "//Alice", string(b), blockHash).Output()
+	if err != nil {
+		err = errors.WithMessage(err, "failed to exec node mint.js")
+		{
+			item.Status = StatusFailed
+			item.Error = err
+			store.Store(jobID, item)
+		}
+		log.Error(err)
+		return
+	}
 	fmt.Println(string(output))
 
 	var nodeJSOut NodeJSOut
