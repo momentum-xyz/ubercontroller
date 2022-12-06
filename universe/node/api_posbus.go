@@ -82,6 +82,7 @@ func (n *Node) handShake(socketConnection *websocket.Conn) error {
 
 	userID := message.DeserializeGUID(handshake.UserId(nil))
 	sessionID := message.DeserializeGUID(handshake.SessionId(nil))
+	targetWorldId := message.DeserializeGUID(handshake.WorldId(nil))
 	url, err := url.Parse(string(handshake.Url()))
 	if err != nil {
 		return errors.WithMessagef(err, "failed to parse url: %s", string(handshake.Url()))
@@ -102,5 +103,11 @@ func (n *Node) handShake(socketConnection *websocket.Conn) error {
 	}
 	user.SetConnection(sessionID, socketConnection)
 	user.Run()
-	return n.detectSpawnWorld(userID).AddUser(user, true)
+
+	world, ok := n.GetWorlds().GetWorld(targetWorldId)
+	if !ok {
+		world = n.detectSpawnWorld(userID)
+	}
+
+	return world.AddUser(user, true)
 }

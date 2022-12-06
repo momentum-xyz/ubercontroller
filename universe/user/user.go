@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -222,6 +223,9 @@ func (u *User) UpdatePosition(data []byte) error {
 	return nil
 }
 
-//SetUserType(userType UserType, updateDB bool) error
+func (u *User) TeleportToWorld(id uuid.UUID) {
+	url := universe.GetNode().ResolveNodeByWorldID(id)
+	u.Send(posbus.NewTeleportRequest(id, url).WebsocketMessage())
+	u.close(true)
 
-//func
+}

@@ -146,6 +146,8 @@ type Node interface {
 	AddAPIRegister(register APIRegister)
 
 	WriteInfluxPoint(point *influxWrite.Point) error
+
+	ResolveNodeByWorldID(id uuid.UUID) string
 }
 
 type Worlds interface {

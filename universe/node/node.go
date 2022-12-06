@@ -293,17 +293,19 @@ func (n *Node) Load() error {
 
 	// third stage
 	group, _ = errgroup.WithContext(n.ctx)
-	group.Go(func() error {
-		nodeEntry, err := n.db.NodesGetNode(n.ctx)
-		if err != nil {
-			return errors.WithMessage(err, "failed to get node")
-		}
-		if err := n.LoadFromEntry(nodeEntry.Space, false); err != nil {
-			return errors.WithMessage(err, "failed to load node from entry")
-		}
+	group.Go(
+		func() error {
+			nodeEntry, err := n.db.NodesGetNode(n.ctx)
+			if err != nil {
+				return errors.WithMessage(err, "failed to get node")
+			}
+			if err := n.LoadFromEntry(nodeEntry.Space, false); err != nil {
+				return errors.WithMessage(err, "failed to load node from entry")
+			}
 
-		return n.loadNodeAttributes()
-	})
+			return n.loadNodeAttributes()
+		},
+	)
 	group.Go(n.worlds.Load)
 	group.Go(n.chatService.Load) // TODO: move to "background" stage
 	if err := group.Wait(); err != nil {
@@ -398,4 +400,9 @@ func (n *Node) LoadUser(userID uuid.UUID) (universe.User, error) {
 	user.SetPosition(cmath.Vec3{X: 50, Y: 50, Z: 150})
 	fmt.Printf("%+v\n", user.GetPosition())
 	return user, nil
+}
+
+func (n *Node) ResolveNodeByWorldID(id uuid.UUID) string {
+	return ""
+
 }
