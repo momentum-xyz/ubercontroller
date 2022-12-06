@@ -28,6 +28,7 @@ type DB interface {
 	SpaceUserAttributesDB
 	UserAttributesDB
 	UserUserAttributesDB
+	UserSpaceDB
 }
 
 type CommonDB interface {
