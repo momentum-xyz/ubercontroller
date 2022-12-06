@@ -48,66 +48,79 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 		// with verified user
 		verified := vx.Group("", middleware.VerifyUser(n.log))
-
-		verifiedMedia := verified.Group("/media")
 		{
-			verifiedMedia.POST("/upload/image", n.apiMediaUploadImage)
-		}
-
-		verifiedUsers := verified.Group("/users")
-		{
-			verifiedUsers.GET("/me", n.apiUsersGetMe)
-			verifiedUsers.POST("/mutual-docks", n.apiUsersMutualDocks)
-
-			verifiedUser := verifiedUsers.Group("/:userID")
+			// with admin rights
+			authorizedAdmin := verified.Group("", middleware.AuthorizeAdmin(n.log))
 			{
-				verifiedUser.GET("", n.apiUsersGetById)
+				// Todo: implement
 			}
-		}
 
-		verifiedProfile := verified.Group("/profile")
-		{
-			verifiedProfile.PATCH("", n.apiProfileUpdate)
-		}
-
-		verifiedSpaces := verified.Group("/spaces")
-		{
-			verifiedSpaces.POST("", n.apiCreateSpace)
-
-			verifiedSpace := verifiedSpaces.Group("/:spaceID")
+			// with regular rights
+			authorizedUser := verified.Group("", middleware.AuthorizeUser(n.log))
 			{
-				verifiedSpace.GET("", n.apiGetSpace)
-				verifiedSpace.DELETE("", n.apiRemoveSpace)
+				// Todo: implement
+			}
 
-				verifiedSpace.GET("/options", n.apiSpacesGetSpaceOptions)
-				verifiedSpace.GET("/options/sub", n.apiSpacesGetSpaceSubOptions)
-				verifiedSpace.POST("/options/sub", n.apiSpacesSetSpaceSubOption)
-				verifiedSpace.DELETE("/options/sub", n.apiSpacesRemoveSpaceSubOption)
+			verifiedMedia := verified.Group("/media")
+			{
+				verifiedMedia.POST("/upload/image", n.apiMediaUploadImage)
+			}
 
-				verifiedSpace.GET("/attributes", n.apiGetSpaceAttributesValue)
-				verifiedSpace.GET("/attributes-with-children", n.apiGetSpaceWithChildrenAttributeValues)
-				verifiedSpace.POST("/attributes", n.apiSetSpaceAttributesValue)
-				verifiedSpace.DELETE("/attributes", n.apiRemoveSpaceAttributeValue)
-				verifiedSpace.GET("/attributes/sub", n.apiGetSpaceAttributeSubValue)
-				verifiedSpace.POST("/attributes/sub", n.apiSetSpaceAttributeSubValue)
-				verifiedSpace.DELETE("/attributes/sub", n.apiRemoveSpaceAttributeSubValue)
+			verifiedUsers := verified.Group("/users")
+			{
+				verifiedUsers.GET("/me", n.apiUsersGetMe)
+				verifiedUsers.POST("/mutual-docks", n.apiUsersMutualDocks)
 
-				verifiedSpace.GET("/all-users/attributes", n.apiGetSpaceAllUsersAttributeValuesList)
-
-				verifiedAgora := verifiedSpace.Group("/agora")
+				verifiedUser := verifiedUsers.Group("/:userID")
 				{
-					verifiedAgora.POST("/token", n.apiGenAgoraToken)
+					verifiedUser.GET("", n.apiUsersGetById)
 				}
 			}
 
-			verifiedSpaceUser := verifiedSpaces.Group("/:spaceID/:userID")
+			verifiedProfile := verified.Group("/profile")
 			{
-				verifiedSpaceUser.GET("/attributes", n.apiGetSpaceUserAttributesValue)
-				verifiedSpaceUser.POST("/attributes", n.apiSetSpaceUserAttributesValue)
-				verifiedSpaceUser.DELETE("/attributes", n.apiRemoveSpaceUserAttributeValue)
-				verifiedSpaceUser.GET("/attributes/sub", n.apiGetSpaceUserAttributeSubValue)
-				verifiedSpaceUser.POST("/attributes/sub", n.apiSetSpaceUserAttributeSubValue)
-				verifiedSpaceUser.DELETE("/attributes/sub", n.apiRemoveSpaceUserAttributeSubValue)
+				verifiedProfile.PATCH("", n.apiProfileUpdate)
+			}
+
+			verifiedSpaces := verified.Group("/spaces")
+			{
+				verifiedSpaces.POST("", n.apiCreateSpace)
+
+				verifiedSpace := verifiedSpaces.Group("/:spaceID")
+				{
+					verifiedSpace.GET("", n.apiGetSpace)
+					verifiedSpace.DELETE("", n.apiRemoveSpace)
+
+					verifiedSpace.GET("/options", n.apiSpacesGetSpaceOptions)
+					verifiedSpace.GET("/options/sub", n.apiSpacesGetSpaceSubOptions)
+					verifiedSpace.POST("/options/sub", n.apiSpacesSetSpaceSubOption)
+					verifiedSpace.DELETE("/options/sub", n.apiSpacesRemoveSpaceSubOption)
+
+					verifiedSpace.GET("/attributes", n.apiGetSpaceAttributesValue)
+					verifiedSpace.GET("/attributes-with-children", n.apiGetSpaceWithChildrenAttributeValues)
+					verifiedSpace.POST("/attributes", n.apiSetSpaceAttributesValue)
+					verifiedSpace.DELETE("/attributes", n.apiRemoveSpaceAttributeValue)
+					verifiedSpace.GET("/attributes/sub", n.apiGetSpaceAttributeSubValue)
+					verifiedSpace.POST("/attributes/sub", n.apiSetSpaceAttributeSubValue)
+					verifiedSpace.DELETE("/attributes/sub", n.apiRemoveSpaceAttributeSubValue)
+
+					verifiedSpace.GET("/all-users/attributes", n.apiGetSpaceAllUsersAttributeValuesList)
+
+					verifiedAgora := verifiedSpace.Group("/agora")
+					{
+						verifiedAgora.POST("/token", n.apiGenAgoraToken)
+					}
+				}
+
+				verifiedSpaceUser := verifiedSpaces.Group("/:spaceID/:userID")
+				{
+					verifiedSpaceUser.GET("/attributes", n.apiGetSpaceUserAttributesValue)
+					verifiedSpaceUser.POST("/attributes", n.apiSetSpaceUserAttributesValue)
+					verifiedSpaceUser.DELETE("/attributes", n.apiRemoveSpaceUserAttributeValue)
+					verifiedSpaceUser.GET("/attributes/sub", n.apiGetSpaceUserAttributeSubValue)
+					verifiedSpaceUser.POST("/attributes/sub", n.apiSetSpaceUserAttributeSubValue)
+					verifiedSpaceUser.DELETE("/attributes/sub", n.apiRemoveSpaceUserAttributeSubValue)
+				}
 			}
 		}
 
@@ -115,6 +128,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		{
 			newsfeed.GET("", n.apiNewsFeed)
 		}
+
 		notifications := vx.Group("/notifications")
 		{
 			notifications.GET("", n.apiNotifications)
