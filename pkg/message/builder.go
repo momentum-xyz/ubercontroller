@@ -22,6 +22,7 @@ type ObjectDefinition struct {
 	AssetFormat      dto.Asset3dType // TODO: Rename AssetType to AssetID, so Type can be used for this.
 	Name             string
 	Position         cmath.SpacePosition
+	Editable         bool
 	TetheredToParent bool
 	Minimap          bool
 	InfoUI           uuid.UUID

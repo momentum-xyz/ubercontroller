@@ -555,6 +555,7 @@ func (s *Space) UpdateSpawnMessage() error {
 			AssetFormat:      assetFormat,
 			Name:             name,
 			Position:         *s.GetActualPosition(),
+			Editable:         *utils.GetFromAny(opts.Editable, falsePtr),
 			TetheredToParent: true,
 			Minimap:          *utils.GetFromAny(opts.Minimap, falsePtr),
 			InfoUI:           *utils.GetFromAny(opts.InfoUIID, uuidNilPtr),
