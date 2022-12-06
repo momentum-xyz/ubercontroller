@@ -17,9 +17,9 @@ import (
 )
 
 type NodeJSOut struct {
-	Data  NodeJSOutData `json:"data"`
-	Logs  []string      `json:"logs"`
-	Error *string       `json:"error"`
+	Data  any      `json:"data"`
+	Logs  []string `json:"logs"`
+	Error *string  `json:"error"`
 }
 
 type NodeJSOutData struct {
@@ -125,6 +125,19 @@ func (n *Node) mint(jobID uuid.UUID, wallet string, meta NFTMeta, blockHash stri
 	err = json.Unmarshal(output, &nodeJSOut)
 	if err != nil {
 		err = errors.WithMessage(err, "failed to json.Unmarshal nodejs out")
+		{
+			item.Status = StatusFailed
+			item.Error = err
+			store.Store(jobID, item)
+		}
+		log.Error(err)
+		return
+	}
+
+	var data NodeJSOutData
+	err = utils.MapDecode(nodeJSOut.Data, &data)
+	if err != nil {
+		err = errors.WithMessage(err, "failed to utils.MapDecode data to NodeJSOutData")
 		{
 			item.Status = StatusFailed
 			item.Error = err
