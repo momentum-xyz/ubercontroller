@@ -249,7 +249,11 @@ func (n *Node) apiDriveMintOdysseyCheckJob(c *gin.Context) {
 }
 
 func (n *Node) getWalletMetadata(wallet string) (*WalletMeta, error) {
-	output, _ := exec.Command("node", "./nodejs/check-nft/check-nft.js", wallet).Output()
+	output, err := exec.Command("node", "./nodejs/check-nft/check-nft.js", wallet).Output()
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to execute node script check-nft.js")
+	}
+
 	var nodeJSOut NodeJSOut
 	if err := json.Unmarshal(output, &nodeJSOut); err != nil {
 		return nil, errors.WithMessage(err, "failed to unmarshal output")
