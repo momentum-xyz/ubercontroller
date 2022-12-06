@@ -1,8 +1,12 @@
 package user
 
 import (
+	"encoding/json"
 	"fmt"
+
+	"github.com/google/uuid"
 	"github.com/momentum-xyz/posbus-protocol/posbus"
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/pkg/errors"
 
@@ -141,13 +145,13 @@ func (u *User) InteractionHandler(m *posbus.TriggerInteraction) error {
 			)
 		}
 		return nil
+	case posbus.TriggerHighFive:
+		if err := u.HandleHighFive(m); err != nil {
+			u.log.Warn(errors.WithMessage(err, "InteractionHandler: trigger high fives: failed to handle high five"))
+		}
 	}
-	//case posbus.TriggerHighFive:
-	//	if err := u.HandleHighFive(m); err != nil {
-	//		u.log.Warn(errors.WithMessage(err, "InteractionHandler: trigger high fives: failed to handle high five"))
-	//	}
-	//case posbus.TriggerStake:
-	//	u.HandleStake(m)
+	// case posbus.TriggerStake:
+	// 	u.HandleStake(m)
 
 	return errors.Errorf("unknown message: %d", kind)
 }
@@ -170,4 +174,81 @@ func (u *User) LockObject(msg *posbus.SetObjectLockState) error {
 	msg.SetLockState(id, newState)
 
 	return u.GetWorld().Send(msg.WebsocketMessage(), true)
+}
+
+func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
+	targetID := m.Target()
+	u.log.Info("Got H5 from user:", u.id, "to user:", targetID)
+
+	if targetID == u.id {
+		return errors.New("You can't high-five yourself!")
+	}
+
+	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
+		if current == nil || current.Value == nil {
+			return current, nil
+		}
+
+		updateMap := *current.Value
+
+		// increment value of high five counter by 1
+		updateMap[universe.Attributes.User.HighFive.Key] = utils.GetFromAnyMap(*current.Value, universe.Attributes.User.HighFive.Key, 0) + 1
+
+		return current, nil
+	}
+
+	_, err := universe.GetNode().UpsertUserUserAttribute(entry.NewUserUserAttributeID(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.User.HighFive.Name), u.id, targetID), modifyFn)
+	if err != nil {
+		return errors.New("Could not upsert high-five user user attribute")
+	}
+
+	target, found := u.space.GetUser(targetID, false)
+	if !found {
+		posbus.NewSimpleNotificationMsg(
+			posbus.DestinationReact, posbus.NotificationTextMessage, 0, "Receiving user not found")
+		return errors.Errorf("Target user not found; uuid: %v", targetID)
+	}
+
+	uProfile := u.GetProfile()
+
+	msg := struct {
+		SenderID   string `json:"senderId"`
+		ReceiverID string `json:"receiverId"`
+		Message    string `json:"message"`
+	}{
+		SenderID:   u.id.String(),
+		ReceiverID: targetID.String(),
+		Message:    *uProfile.Name,
+	}
+
+	data, err := json.Marshal(&msg)
+	if err != nil {
+		return errors.WithMessage(err, "failed to marshal data")
+	}
+
+	posbus.NewRelayToReactMsg("high5", data).WebsocketMessage()
+
+	effect := posbus.NewTriggerTransitionalBridgingEffectsOnPositionMsg(1)
+
+	effectsEmitterMap, ok := universe.GetNode().GetSpaceAttributeValue(entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.World.EffectsEmitter.Name))
+	if !ok {
+		return errors.Errorf("Could not get effects emitter attribute")
+	}
+
+	effectsEmitterID := utils.GetFromAnyMap(*effectsEmitterMap, universe.Attributes.World.EffectsEmitter.Key, uuid.Nil)
+	if effectsEmitterID == uuid.Nil {
+		return errors.Errorf("Failed to get effects emitter ID from map")
+	}
+
+	effect.SetEffect(0, effectsEmitterID, *u.pos, target.GetPosition(), 1001)
+	u.world.Send(effect.WebsocketMessage(), false)
+	go u.SendHighFiveStats(&target)
+
+	return nil
+}
+
+func (u *User) SendHighFiveStats(target *universe.User) error {
+	//TODO: WriteInfluxPoint
+	return nil
 }
