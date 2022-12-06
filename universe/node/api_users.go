@@ -43,12 +43,7 @@ func (n *Node) apiUsersGetMe(c *gin.Context) {
 		return
 	}
 
-	userDTO, err := api.ToUserDTO(userEntry)
-	if err != nil {
-		err := errors.WithMessage(err, "Node: apiUsersGetMe: failed to convert user")
-		api.AbortRequest(c, http.StatusInternalServerError, "convert_user_failed", err, n.log)
-		return
-	}
+	userDTO := api.ToUserDTO(userEntry)
 
 	c.JSON(http.StatusOK, userDTO)
 }
@@ -79,12 +74,7 @@ func (n *Node) apiUsersGetById(c *gin.Context) {
 		return
 	}
 
-	userDTO, err := api.ToUserDTO(userEntry)
-	if err != nil {
-		err := errors.WithMessage(err, "Node: apiUsersGetById: failed to convert user")
-		api.AbortRequest(c, http.StatusInternalServerError, "convert_user_failed", err, n.log)
-		return
-	}
+	userDTO := api.ToUserDTO(userEntry)
 
 	c.JSON(http.StatusOK, userDTO)
 }

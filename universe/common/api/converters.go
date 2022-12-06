@@ -9,7 +9,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
-func ToUserDTO(userEntry *entry.User) (*dto.User, error) {
+func ToUserDTO(userEntry *entry.User) *dto.User {
 	var wallet *string
 	walletValue, ok := universe.GetNode().GetUserAttributeValue(
 		entry.NewUserAttributeID(
@@ -51,5 +51,13 @@ func ToUserDTO(userEntry *entry.User) (*dto.User, error) {
 		}
 	}
 
-	return &outUser, nil
+	return &outUser
+}
+
+func ToUserDTOs(userEntries []*entry.User) []*dto.User {
+	userDTOs := make([]*dto.User, len(userEntries))
+	for i := range userEntries {
+		userDTOs[i] = ToUserDTO(userEntries[i])
+	}
+	return userDTOs
 }

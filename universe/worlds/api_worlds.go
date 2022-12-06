@@ -16,35 +16,49 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
+// @Summary Get world online users
+// @Schemes
+// @Description Returns a list of online users for specified world
+// @Tags worlds
+// @Accept json
+// @Produce json
+// @Param worldID path string true "World ID"
+// @Success 200 {array} dto.User
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/worlds/{world_id}/online-users [get]
 func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
-	/*
-		worldID, err := uuid.Parse(c.Param("worldID"))
-		if err != nil {
-			err := errors.WithMessage(err, "Worlds: apiGetOnlineUsers: failed to parse world id")
-			api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
-			return
-		}
+	worldID, err := uuid.Parse(c.Param("worldID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Worlds: apiGetOnlineUsers: failed to parse world id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
+		return
+	}
 
-		world, ok := w.GetWorld(worldID)
-		if !ok || world == nil {
-			err := errors.WithMessage(err, "Worlds: apiGetOnlineUsers: world not found")
-			api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
-			return
-		}
+	world, ok := w.GetWorld(worldID)
+	if !ok || world == nil {
+		err := errors.WithMessage(err, "Worlds: apiGetOnlineUsers: world not found")
+		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
+		return
+	}
 
-		users := world.GetUsers(true)
-		userIDs := make([]uuid.UUID, 0, len(users))
-		for userID, _ := range users {
-			userIDs = append(userIDs, userID)
-		}
+	users := world.GetUsers(true)
+	userIDs := make([]uuid.UUID, 0, len(users))
+	for userID, _ := range users {
+		userIDs = append(userIDs, userID)
+	}
 
-		entryUsers, err := w.db.UsersGetUsersByIDs(w.ctx, userIDs)
-		if err != nil {
-			err := errors.WithMessage(err, "Worlds: apiGetOnlineUsers: failed to get users")
-			api.AbortRequest(c, http.StatusInternalServerError, "get_users_failed", err, w.log)
-			return
-		}
-	*/
+	userEntries, err := w.db.UsersGetUsersByIDs(w.ctx, userIDs)
+	if err != nil {
+		err := errors.WithMessage(err, "Worlds: apiGetOnlineUsers: failed to get users")
+		api.AbortRequest(c, http.StatusInternalServerError, "get_users_failed", err, w.log)
+		return
+	}
+
+	userDTOs := api.ToUserDTOs(userEntries)
+
+	c.JSON(http.StatusOK, userDTOs)
 }
 
 // @Summary Returns spaces and one level of children

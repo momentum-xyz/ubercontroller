@@ -20,12 +20,12 @@ const (
 	getSpaceAttributesQueryBySpaceIDQuery = `SELECT * FROM space_attribute WHERE space_id = $1;`
 
 	removeSpaceAttributeByNameQuery                       = `DELETE FROM space_attribute WHERE attribute_name = $1;`
-	removeSpaceAttributesByNamesQuery                     = `DELETE FROM space_attribute WHERE attribute_name IN ($1);`
+	removeSpaceAttributesByNamesQuery                     = `DELETE FROM space_attribute WHERE attribute_name = ANY($1);`
 	removeSpaceAttributesByPluginIDQuery                  = `DELETE FROM space_attribute WHERE plugin_id = $1;`
 	removeSpaceAttributeByAttributeIDQuery                = `DELETE FROM space_attribute WHERE plugin_id = $1 AND attribute_name = $2;`
 	removeSpaceAttributesBySpaceIDQuery                   = `DELETE FROM space_attribute WHERE space_id = $1;`
 	removeSpaceAttributeByNameAndSpaceIDQuery             = `DELETE FROM space_attribute WHERE attribute_name = $1 AND space_id = $2;`
-	removeSpaceAttributesByNamesAndSpaceIDQuery           = `DELETE FROM space_attribute WHERE attribute_name IN ($1) AND space_id = $2;`
+	removeSpaceAttributesByNamesAndSpaceIDQuery           = `DELETE FROM space_attribute WHERE attribute_name = ANY($1) AND space_id = $2;`
 	removeSpaceAttributesByPluginIDAndSpaceIDQuery        = `DELETE FROM space_attribute WHERE plugin_id = $1 AND space_id = $2;`
 	removeSpaceAttributesByPluginIDAndNameAndSpaceIDQuery = `DELETE FROM space_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3;`
 

@@ -27,20 +27,20 @@ const (
 	getUserUserAttributeByPluginIDAndNameAndSourceUserIDAndTargetUserIDQuery = `SELECT * FROM user_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND source_user_id = $3 AND target_user_id = $4;`
 
 	removeUserUserAttributeByNameQuery                  = `DELETE FROM user_user_attribute WHERE attribute_name = $1;`
-	removeUserUserAttributesByNamesQuery                = `DELETE FROM user_user_attribute WHERE attribute_name IN ($1);`
+	removeUserUserAttributesByNamesQuery                = `DELETE FROM user_user_attribute WHERE attribute_name = ANY($1);`
 	removeUserUserAttributesByPluginIDQuery             = `DELETE FROM user_user_attribute WHERE plugin_id = $1;`
 	removeUserUserAttributeByPluginIDAndNameQuery       = `DELETE FROM user_user_attribute WHERE plugin_id = $1 AND attribute_name = $2;`
 	removeUserUserAttributesBySourceUserIDQuery         = `DELETE FROM user_user_attribute WHERE source_user_id = $1;`
 	removeUserUserAttributeByNameAndSourceUserIDQuery   = `DELETE FROM user_user_attribute WHERE attribute_name = $1 and source_user_id = $2;`
-	removeUserUserAttributesByNamesAndSourceUserIDQuery = `DELETE FROM user_user_attribute WHERE attribute_name IN ($1) AND source_user_id = $2;`
+	removeUserUserAttributesByNamesAndSourceUserIDQuery = `DELETE FROM user_user_attribute WHERE attribute_name = ANY($1) AND source_user_id = $2;`
 
 	removeUserUserAttributesByTargetUserIDQuery         = `DELETE FROM user_user_attribute WHERE target_user_id = $1;`
 	removeUserUserAttributeByNameAndTargetUserIDQuery   = `DELETE FROM user_user_attribute WHERE attribute_name = $1 AND target_user_id = $2;`
-	removeUserUserAttributesByNamesAndTargetUserIDQuery = `DELETE FROM user_user_attribute WHERE attribute_name IN ($1) AND target_user_id = $2;`
+	removeUserUserAttributesByNamesAndTargetUserIDQuery = `DELETE FROM user_user_attribute WHERE attribute_name = ANY($1) AND target_user_id = $2;`
 
 	removeUserUserAttributesBySourceUserIDAndTargetUserIDQuery         = `DELETE FROM user_user_attribute WHERE source_user_id = $1 AND target_user_id = $2;`
 	removeUserUserAttributeByNameAndSourceUserIDAndTargetUserIDQuery   = `DELETE FROM user_user_attribute WHERE attribute_name = $1 AND source_user_id = $2 AND target_user_id = $3;`
-	removeUserUserAttributesByNamesAndSourceUserIDAndTargetUserIDQuery = `DELETE FROM user_user_attribute WHERE attribute_name IN ($1) AND source_user_id = $2 AND target_user_id = $3;`
+	removeUserUserAttributesByNamesAndSourceUserIDAndTargetUserIDQuery = `DELETE FROM user_user_attribute WHERE attribute_name = ANY($1) AND source_user_id = $2 AND target_user_id = $3;`
 
 	removeUserUserAttributesByPluginIDAndSourceUserIDQuery        = `DELETE FROM user_user_attribute WHERE plugin_id = $1 AND source_user_id = $2;`
 	removeUserUserAttributesByPluginIDAndNameAndSourceUserIDQuery = `DELETE FROM user_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND source_user_id = $3;`

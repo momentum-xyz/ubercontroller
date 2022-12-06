@@ -26,20 +26,20 @@ const (
 	getSpaceUserAttributesByPluginIDAndNameAndSpaceIDQuery = `SELECT * FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3;`
 
 	removeSpaceUserAttributeByNameQuery             = `DELETE FROM space_user_attribute WHERE attribute_name = $1;`
-	removeSpaceUserAttributesByNamesQuery           = `DELETE FROM space_user_attribute WHERE attribute_name IN ($1);`
+	removeSpaceUserAttributesByNamesQuery           = `DELETE FROM space_user_attribute WHERE attribute_name = ANY($1);`
 	removeSpaceUserAttributesByPluginIDQuery        = `DELETE FROM space_user_attribute WHERE plugin_id = $1;`
 	removeSpaceUserAttributeByPluginIDAndNameQuery  = `DELETE FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2;`
 	removeSpaceUserAttributesBySpaceIDQuery         = `DELETE FROM space_user_attribute WHERE space_id = $1;`
 	removeSpaceUserAttributeByNameAndSpaceIDQuery   = `DELETE FROM space_user_attribute WHERE attribute_name = $1 AND space_id = $2;`
-	removeSpaceUserAttributesByNamesAndSpaceIDQuery = `DELETE FROM space_user_attribute WHERE attribute_name IN ($1) AND space_id = $2;`
+	removeSpaceUserAttributesByNamesAndSpaceIDQuery = `DELETE FROM space_user_attribute WHERE attribute_name = ANY($1) AND space_id = $2;`
 
 	removeSpaceUserAttributesByUserIDQuery         = `DELETE FROM space_user_attribute WHERE user_id = $1;`
 	removeSpaceUserAttributeByNameAndUserIDQuery   = `DELETE FROM space_user_attribute WHERE attribute_name = $1 AND user_id = $2;`
-	removeSpaceUserAttributesByNamesAndUserIDQuery = `DELETE FROM space_user_attribute WHERE attribute_name IN ($1) AND user_id = $2;`
+	removeSpaceUserAttributesByNamesAndUserIDQuery = `DELETE FROM space_user_attribute WHERE attribute_name = ANY($1) AND user_id = $2;`
 
 	removeSpaceUserAttributesBySpaceIDAndUserIDQuery         = `DELETE FROM space_user_attribute WHERE space_id = $1 AND user_id = $2;`
 	removeSpaceUserAttributeByNameAndSpaceIDAndUserIDQuery   = `DELETE FROM space_user_attribute WHERE attribute_name = $1 AND space_id = $2 AND user_id = $3;`
-	removeSpaceUserAttributesByNamesAndSpaceIDAndUserIDQuery = `DELETE FROM space_user_attribute WHERE attribute_name IN ($1) AND space_id = $2 AND user_id = $3;`
+	removeSpaceUserAttributesByNamesAndSpaceIDAndUserIDQuery = `DELETE FROM space_user_attribute WHERE attribute_name = ANY($1) AND space_id = $2 AND user_id = $3;`
 
 	removeSpaceUserAttributesByPluginIDAndSpaceIDQuery        = `DELETE FROM space_user_attribute WHERE plugin_id = $1 AND space_id = $2;`
 	removeSpaceUserAttributesByPluginIDAndNameAndSpaceIDQuery = `DELETE FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3;`
