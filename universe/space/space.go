@@ -546,6 +546,7 @@ func (s *Space) UpdateSpawnMessage() error {
 
 	uuidNilPtr := utils.GetPTR(uuid.Nil)
 	falsePtr := utils.GetPTR(false)
+	truePtr := utils.GetPTR(true)
 	opts := s.GetEffectiveOptions()
 	msg := message.GetBuilder().MsgObjectDefinition(
 		message.ObjectDefinition{
@@ -555,7 +556,7 @@ func (s *Space) UpdateSpawnMessage() error {
 			AssetFormat:      assetFormat,
 			Name:             name,
 			Position:         *s.GetActualPosition(),
-			Editable:         *utils.GetFromAny(opts.Editable, falsePtr),
+			Editable:         *utils.GetFromAny(opts.Editable, truePtr),
 			TetheredToParent: true,
 			Minimap:          *utils.GetFromAny(opts.Minimap, falsePtr),
 			InfoUI:           *utils.GetFromAny(opts.InfoUIID, uuidNilPtr),
