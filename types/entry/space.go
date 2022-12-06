@@ -38,6 +38,7 @@ type SpaceOptions struct {
 	InfoUIID         *uuid.UUID                         `db:"infoui_id" json:"infoui_id,omitempty"`
 	Minimap          *bool                              `db:"minimap" json:"minimap,omitempty"`
 	Visible          *SpaceVisibleType                  `db:"visible" json:"visible,omitempty"`
+	Editable         *bool                              `db:"editable" json:"editable,omitempty"`
 	Private          *bool                              `db:"private" json:"private,omitempty"`
 	DashboardPlugins []string                           `db:"dashboard_plugins" json:"dashboard_plugins,omitempty"`
 	Subs             map[string]any                     `db:"subs" json:"subs"`
