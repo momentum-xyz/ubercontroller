@@ -79,11 +79,11 @@ type User struct {
 	ID         string  `json:"id"`
 	UserTypeID string  `json:"userTypeId"`
 	Name       string  `json:"name"`
+	Wallet     *string `json:"wallet,omitempty"`
 	Profile    Profile `json:"profile"`
-	Wallet     *string `json:"wallet"`
-	JWTToken   string  `json:"token"`
+	JWTToken   *string `json:"token,omitempty"`
 	CreatedAt  string  `json:"createdAt"`
-	UpdatedAt  *string `json:"updatedAt"`
+	UpdatedAt  *string `json:"updatedAt,omitempty"`
 }
 
 type Space struct {

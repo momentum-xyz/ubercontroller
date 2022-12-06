@@ -43,7 +43,7 @@ func (n *Node) apiUsersGetMe(c *gin.Context) {
 		return
 	}
 
-	userDTO := api.ToUserDTO(userEntry)
+	userDTO := api.ToUserDTO(userEntry, true)
 
 	c.JSON(http.StatusOK, userDTO)
 }
@@ -74,7 +74,7 @@ func (n *Node) apiUsersGetById(c *gin.Context) {
 		return
 	}
 
-	userDTO := api.ToUserDTO(userEntry)
+	userDTO := api.ToUserDTO(userEntry, true)
 
 	c.JSON(http.StatusOK, userDTO)
 }

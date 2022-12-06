@@ -56,7 +56,7 @@ func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
 		return
 	}
 
-	userDTOs := api.ToUserDTOs(userEntries)
+	userDTOs := api.ToUserDTOs(userEntries, false)
 
 	c.JSON(http.StatusOK, userDTOs)
 }

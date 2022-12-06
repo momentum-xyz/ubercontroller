@@ -9,29 +9,11 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
-func ToUserDTO(userEntry *entry.User) *dto.User {
-	var wallet *string
-	// TODO: optimize
-	walletValue, ok := universe.GetNode().GetUserAttributeValue(
-		entry.NewUserAttributeID(
-			entry.NewAttributeID(
-				universe.GetKusamaPluginID(), universe.Attributes.Kusama.User.Wallet.Name,
-			),
-			userEntry.UserID,
-		),
-	)
-	if ok && walletValue != nil {
-		wallets := utils.GetFromAnyMap(*walletValue, universe.Attributes.Kusama.User.Wallet.Key, []any(nil))
-		if len(wallets) > 0 {
-			wallet = utils.GetPTR(utils.GetFromAny(wallets[0], ""))
-		}
-	}
-
+func ToUserDTO(userEntry *entry.User, includeWallet bool) *dto.User {
 	profileEntry := userEntry.Profile
 
-	outUser := dto.User{
-		ID:     userEntry.UserID.String(),
-		Wallet: wallet,
+	userDTO := dto.User{
+		ID: userEntry.UserID.String(),
 		Profile: dto.Profile{
 			Bio:         profileEntry.Bio,
 			Location:    profileEntry.Location,
@@ -41,24 +23,45 @@ func ToUserDTO(userEntry *entry.User) *dto.User {
 		CreatedAt: userEntry.CreatedAt.Format(time.RFC3339),
 	}
 	if userEntry.UserTypeID != nil {
-		outUser.UserTypeID = userEntry.UserTypeID.String()
+		userDTO.UserTypeID = userEntry.UserTypeID.String()
 	}
 	if userEntry.UpdatedAt != nil {
-		outUser.UpdatedAt = utils.GetPTR(userEntry.UpdatedAt.Format(time.RFC3339))
+		userDTO.UpdatedAt = utils.GetPTR(userEntry.UpdatedAt.Format(time.RFC3339))
 	}
 	if profileEntry != nil {
 		if profileEntry.Name != nil {
-			outUser.Name = *profileEntry.Name
+			userDTO.Name = *profileEntry.Name
 		}
 	}
 
-	return &outUser
+	if includeWallet {
+		var wallet *string
+
+		walletValue, ok := universe.GetNode().GetUserAttributeValue(
+			entry.NewUserAttributeID(
+				entry.NewAttributeID(
+					universe.GetKusamaPluginID(), universe.Attributes.Kusama.User.Wallet.Name,
+				),
+				userEntry.UserID,
+			),
+		)
+		if ok && walletValue != nil {
+			wallets := utils.GetFromAnyMap(*walletValue, universe.Attributes.Kusama.User.Wallet.Key, []any(nil))
+			if len(wallets) > 0 {
+				wallet = utils.GetPTR(utils.GetFromAny(wallets[0], ""))
+			}
+		}
+
+		userDTO.Wallet = wallet
+	}
+
+	return &userDTO
 }
 
-func ToUserDTOs(userEntries []*entry.User) []*dto.User {
+func ToUserDTOs(userEntries []*entry.User, includeWallet bool) []*dto.User {
 	userDTOs := make([]*dto.User, len(userEntries))
 	for i := range userEntries {
-		userDTOs[i] = ToUserDTO(userEntries[i])
+		userDTOs[i] = ToUserDTO(userEntries[i], includeWallet)
 	}
 	return userDTOs
 }
