@@ -40,6 +40,7 @@ func NewSpaceType(id uuid.UUID, db database.DB) *SpaceType {
 			AllowedSubspaces: []uuid.UUID{},
 			Minimap:          utils.GetPTR(true),
 			Visible:          utils.GetPTR(entry.ReactUnitySpaceVisibleType),
+			Editable:         utils.GetPTR(true),
 			Private:          utils.GetPTR(false),
 		},
 	}
