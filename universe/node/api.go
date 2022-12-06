@@ -79,6 +79,8 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 				verifiedSpace.GET("", n.apiGetSpace)
 				verifiedSpace.DELETE("", n.apiRemoveSpace)
 
+				verifiedSpace.GET("/docking-bulbs-count", n.apiGetSpaceDockingBulbsCount)
+
 				verifiedSpace.GET("/options", n.apiSpacesGetSpaceOptions)
 				verifiedSpace.GET("/options/sub", n.apiSpacesGetSpaceSubOptions)
 				verifiedSpace.POST("/options/sub", n.apiSpacesSetSpaceSubOption)
