@@ -49,18 +49,6 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		// with verified user
 		verified := vx.Group("", middleware.VerifyUser(n.log))
 		{
-			// with admin rights
-			authorizedAdmin := verified.Group("", middleware.AuthorizeAdmin(n.log))
-			{
-				// Todo: implement
-			}
-
-			// with regular rights
-			authorizedUser := verified.Group("", middleware.AuthorizeUser(n.log))
-			{
-				// Todo: implement
-			}
-
 			verifiedMedia := verified.Group("/media")
 			{
 				verifiedMedia.POST("/upload/image", n.apiMediaUploadImage)
@@ -88,21 +76,30 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 				verifiedSpace := verifiedSpaces.Group("/:spaceID")
 				{
+					// with admin rights
+					authorizedSpaceAdmin := verifiedSpace.Group("", middleware.AuthorizeAdmin(n.log, n.db))
+					{
+						authorizedSpaceAdmin.DELETE("", n.apiRemoveSpace)
+
+						authorizedSpaceAdmin.POST("/options/sub", n.apiSpacesSetSpaceSubOption)
+						authorizedSpaceAdmin.DELETE("/options/sub", n.apiSpacesRemoveSpaceSubOption)
+
+						authorizedSpaceAdmin.POST("/attributes", n.apiSetSpaceAttributesValue)
+						authorizedSpaceAdmin.DELETE("/attributes", n.apiRemoveSpaceAttributeValue)
+
+						authorizedSpaceAdmin.POST("/attributes/sub", n.apiSetSpaceAttributeSubValue)
+						authorizedSpaceAdmin.DELETE("/attributes/sub", n.apiRemoveSpaceAttributeSubValue)
+					}
+
 					verifiedSpace.GET("", n.apiGetSpace)
-					verifiedSpace.DELETE("", n.apiRemoveSpace)
 
 					verifiedSpace.GET("/options", n.apiSpacesGetSpaceOptions)
 					verifiedSpace.GET("/options/sub", n.apiSpacesGetSpaceSubOptions)
-					verifiedSpace.POST("/options/sub", n.apiSpacesSetSpaceSubOption)
-					verifiedSpace.DELETE("/options/sub", n.apiSpacesRemoveSpaceSubOption)
 
 					verifiedSpace.GET("/attributes", n.apiGetSpaceAttributesValue)
 					verifiedSpace.GET("/attributes-with-children", n.apiGetSpaceWithChildrenAttributeValues)
-					verifiedSpace.POST("/attributes", n.apiSetSpaceAttributesValue)
-					verifiedSpace.DELETE("/attributes", n.apiRemoveSpaceAttributeValue)
+
 					verifiedSpace.GET("/attributes/sub", n.apiGetSpaceAttributeSubValue)
-					verifiedSpace.POST("/attributes/sub", n.apiSetSpaceAttributeSubValue)
-					verifiedSpace.DELETE("/attributes/sub", n.apiRemoveSpaceAttributeSubValue)
 
 					verifiedSpace.GET("/all-users/attributes", n.apiGetSpaceAllUsersAttributeValuesList)
 
@@ -114,12 +111,18 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 				verifiedSpaceUser := verifiedSpaces.Group("/:spaceID/:userID")
 				{
+					// with admin rights
+					authorizedSpaceUserAdmin := verifiedSpaceUser.Group("", middleware.AuthorizeAdmin(n.log, n.db))
+					{
+						authorizedSpaceUserAdmin.POST("/attributes", n.apiSetSpaceUserAttributesValue)
+						authorizedSpaceUserAdmin.DELETE("/attributes", n.apiRemoveSpaceUserAttributeValue)
+
+						authorizedSpaceUserAdmin.POST("/attributes/sub", n.apiSetSpaceUserAttributeSubValue)
+						authorizedSpaceUserAdmin.DELETE("/attributes/sub", n.apiRemoveSpaceUserAttributeSubValue)
+					}
 					verifiedSpaceUser.GET("/attributes", n.apiGetSpaceUserAttributesValue)
-					verifiedSpaceUser.POST("/attributes", n.apiSetSpaceUserAttributesValue)
-					verifiedSpaceUser.DELETE("/attributes", n.apiRemoveSpaceUserAttributeValue)
+
 					verifiedSpaceUser.GET("/attributes/sub", n.apiGetSpaceUserAttributeSubValue)
-					verifiedSpaceUser.POST("/attributes/sub", n.apiSetSpaceUserAttributeSubValue)
-					verifiedSpaceUser.DELETE("/attributes/sub", n.apiRemoveSpaceUserAttributeSubValue)
 				}
 			}
 		}

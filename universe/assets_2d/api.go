@@ -12,21 +12,8 @@ func (a *Assets2d) RegisterAPI(r *gin.Engine) {
 
 	vx := r.Group(fmt.Sprintf("/api/v%d", ubercontroller.APIMajorVersion))
 	{
-		// with auth
 		verified := vx.Group("", middleware.VerifyUser(a.log))
 		{
-			// with admin rights
-			authorizedAdmin := verified.Group("", middleware.AuthorizeAdmin(a.log))
-			{
-				// Todo: implement
-			}
-
-			// with regular rights
-			authorizedUser := verified.Group("", middleware.AuthorizeUser(a.log))
-			{
-				// Todo: implement
-			}
-
 			assets2d := verified.Group("/assets-2d")
 			{
 				asset2d := assets2d.Group("/:asset2dID")
@@ -35,6 +22,5 @@ func (a *Assets2d) RegisterAPI(r *gin.Engine) {
 				}
 			}
 		}
-
 	}
 }

@@ -17,27 +17,20 @@ func (a *Assets3d) RegisterAPI(r *gin.Engine) {
 		// with auth
 		auth := vx.Group("", middleware.VerifyUser(a.log))
 		{
-
 			// with admin rights
-			authorizedAdmin := auth.Group("", middleware.AuthorizeAdmin(a.log))
+			authorizedSpecial := auth.Group("", middleware.AuthorizeSpecial(a.log))
 			{
-				// Todo: implement
-			}
-
-			// with regular rights
-			authorizedUser := auth.Group("", middleware.AuthorizeUser(a.log))
-			{
-				authAssets3d := authorizedUser.Group("/assets-3d")
+				authAssets3d := authorizedSpecial.Group("/assets-3d")
 				{
-					authAssets3d.GET("", a.apiGetAssets3d)
-					authAssets3d.GET("/meta", a.apiGetAssets3dMeta)
-					authAssets3d.GET("/options", a.apiGetAssets3dOptions)
 					authAssets3d.POST("", a.apiAddAssets3d)
 					authAssets3d.POST("/upload", a.apiUploadAsset3d)
 					authAssets3d.DELETE("", a.apiRemoveAssets3dByIDs)
 				}
 			}
-		}
 
+			auth.GET("", a.apiGetAssets3d)
+			auth.GET("/meta", a.apiGetAssets3dMeta)
+			auth.GET("/options", a.apiGetAssets3dOptions)
+		}
 	}
 }

@@ -16,18 +16,6 @@ func (w *Worlds) RegisterAPI(r *gin.Engine) {
 	{
 		verified := vx.Group("", middleware.VerifyUser(w.log))
 		{
-			// with admin rights
-			authorizedAdmin := verified.Group("", middleware.AuthorizeAdmin(w.log))
-			{
-				// Todo: implement
-			}
-
-			// with regular rights
-			authorizedUser := verified.Group("", middleware.AuthorizeUser(w.log))
-			{
-				// Todo: implement
-			}
-
 			worlds := verified.Group("/worlds")
 			{
 				world := worlds.Group("/:worldID")
@@ -35,9 +23,13 @@ func (w *Worlds) RegisterAPI(r *gin.Engine) {
 					world.GET("/explore", w.apiWorldsGetSpacesWithChildren)
 					world.GET("/explore/search", w.apiWorldsSearchSpaces)
 
-					world.POST("/teleport-user", w.apiWorldsTeleportUser)
+					// with special rights
+					authorizedSpecial := world.Group("", middleware.AuthorizeSpecial(w.log))
+					{
+						authorizedSpecial.POST("/teleport-user", w.apiWorldsTeleportUser)
 
-					world.POST("/fly-to-me", w.apiWorldsFlyToMe)
+						authorizedSpecial.POST("/fly-to-me", w.apiWorldsFlyToMe)
+					}
 				}
 			}
 		}

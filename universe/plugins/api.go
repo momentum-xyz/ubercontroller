@@ -16,18 +16,6 @@ func (p *Plugins) RegisterAPI(r *gin.Engine) {
 	{
 		verified := vx.Group("", middleware.VerifyUser(p.log))
 		{
-			// with admin rights
-			authorizedAdmin := verified.Group("", middleware.AuthorizeAdmin(p.log))
-			{
-				// Todo: implement
-			}
-
-			// with regular rights
-			authorizedUser := verified.Group("", middleware.AuthorizeUser(p.log))
-			{
-				// Todo: implement
-			}
-
 			plugins := verified.Group("/plugins")
 			{
 				plugins.GET("", p.apiGetPlugins)
