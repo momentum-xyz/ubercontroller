@@ -450,5 +450,5 @@ type UserSpaceDB interface {
 	UserSpaceGetUserSpaceByUserAndSpaceIDs(ctx context.Context, userID, spaceID uuid.UUID) (*entry.UserSpace, error)
 
 	UserSpaceUpdateValueByUserAndSpaceIDs(ctx context.Context, userID, spaceID uuid.UUID, value *entry.UserSpaceValue) error
-	UserSpaceGetValueByUserAndSpaceIDs(ctx context.Context, userID, spaceID uuid.UUID) (entry.UserSpaceValue, error)
+	UserSpaceGetValueByUserAndSpaceIDs(ctx context.Context, userID, spaceID uuid.UUID) (*entry.UserSpaceValue, error)
 }
