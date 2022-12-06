@@ -3,8 +3,7 @@ package node
 import (
 	"context"
 	"net/http"
-	"time"
-
+	
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
@@ -13,7 +12,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
@@ -31,52 +29,21 @@ import (
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/users/me [get]
 func (n *Node) apiUsersGetMe(c *gin.Context) {
-	token, err := api.GetTokenFromContext(c)
+	userID, err := api.GetUserIDFromContext(c)
 	if err != nil {
-		err = errors.WithMessage(err, "Node: apiUsersGetMe: failed to get token from context")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_token", err, n.log)
+		err := errors.WithMessage(err, "Node: apiUsersGetMe: failed to get user id from context")
+		api.AbortRequest(c, http.StatusInternalServerError, "get_user_id_failed", err, n.log)
 		return
 	}
 
-	userID, err := api.GetUserIDFromToken(token)
+	userDTO, httpCode, err := api.GetUserDTOByID(n.db, c, userID)
 	if err != nil {
-		err = errors.WithMessage(err, "Node: apiUsersGetMe: failed to get user id from token")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_user_id", err, n.log)
+		err := errors.WithMessage(err, "Node: apiUsersGetMe: failed to get user dto by id")
+		api.AbortRequest(c, httpCode, "get_user_failed", err, n.log)
 		return
 	}
 
-	userEntry, err := n.db.UsersGetUserByID(c, userID)
-	if err != nil {
-		err = errors.WithMessage(err, "Node: apiUsersGetMe: failed to get user by id")
-		api.AbortRequest(c, http.StatusNotFound, "user_not_found", err, n.log)
-		return
-	}
-	userProfileEntry := userEntry.Profile
-
-	outUser := dto.User{
-		ID: userEntry.UserID.String(),
-		Profile: dto.Profile{
-			Bio:         userProfileEntry.Bio,
-			Location:    userProfileEntry.Location,
-			AvatarHash:  userProfileEntry.AvatarHash,
-			ProfileLink: userProfileEntry.ProfileLink,
-			OnBoarded:   userProfileEntry.OnBoarded,
-		},
-		CreatedAt: userEntry.CreatedAt.Format(time.RFC3339),
-	}
-	if userEntry.UserTypeID != nil {
-		outUser.UserTypeID = userEntry.UserTypeID.String()
-	}
-	if userEntry.UpdatedAt != nil {
-		outUser.UpdatedAt = utils.GetPTR(userEntry.UpdatedAt.Format(time.RFC3339))
-	}
-	if userProfileEntry != nil {
-		if userProfileEntry.Name != nil {
-			outUser.Name = *userProfileEntry.Name
-		}
-	}
-
-	c.JSON(http.StatusOK, outUser)
+	c.JSON(http.StatusOK, userDTO)
 }
 
 // @Summary Get user profile based on UserID
@@ -93,43 +60,19 @@ func (n *Node) apiUsersGetMe(c *gin.Context) {
 func (n *Node) apiUsersGetById(c *gin.Context) {
 	userID, err := uuid.Parse(c.Param("userID"))
 	if err != nil {
-		err = errors.WithMessage(err, "Node: apiUsersGetById: failed to parse user id")
+		err := errors.WithMessage(err, "Node: apiUsersGetById: failed to parse user id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
 		return
 	}
 
-	userEntry, err := n.db.UsersGetUserByID(c, userID)
+	userDTO, httpCode, err := api.GetUserDTOByID(n.db, c, userID)
 	if err != nil {
-		err = errors.WithMessage(err, "Node: apiUsersGetById: failed to get user by id")
-		api.AbortRequest(c, http.StatusNotFound, "user_not_found", err, n.log)
+		err := errors.WithMessage(err, "Node: apiUsersGetById: failed to get user dto by id")
+		api.AbortRequest(c, httpCode, "get_user_failed", err, n.log)
 		return
 	}
-	userProfileEntry := userEntry.Profile
 
-	outUser := dto.User{
-		ID: userEntry.UserID.String(),
-		Profile: dto.Profile{
-			Bio:         userProfileEntry.Bio,
-			Location:    userProfileEntry.Location,
-			AvatarHash:  userProfileEntry.AvatarHash,
-			ProfileLink: userProfileEntry.ProfileLink,
-			OnBoarded:   userProfileEntry.OnBoarded,
-		},
-		CreatedAt: userEntry.CreatedAt.Format(time.RFC3339),
-	}
-	if userEntry.UserTypeID != nil {
-		outUser.UserTypeID = userEntry.UserTypeID.String()
-	}
-	if userEntry.UpdatedAt != nil {
-		outUser.UpdatedAt = utils.GetPTR(userEntry.UpdatedAt.Format(time.RFC3339))
-	}
-	if userProfileEntry != nil {
-		if userProfileEntry.Name != nil {
-			outUser.Name = *userProfileEntry.Name
-		}
-	}
-
-	c.JSON(http.StatusOK, outUser)
+	c.JSON(http.StatusOK, userDTO)
 }
 
 func (n *Node) apiParseJWT(c *gin.Context, token string) (jwt.Token, int, error) {

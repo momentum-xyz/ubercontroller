@@ -16,6 +16,7 @@ import (
 
 const (
 	getUserByIDQuery     = `SELECT * FROM "user" WHERE user_id = $1;`
+	getUsersByIDsQuery   = `SELECT * FROM "user" WHERE user_id IN ($1);`
 	getUserByWalletQuery = `SELECT * FROM user
          						WHERE user_id = (SELECT user_id FROM user_attribute
          						                                WHERE plugin_id = '86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8'
@@ -59,6 +60,14 @@ func (db *DB) UsersGetUserByID(ctx context.Context, userID uuid.UUID) (*entry.Us
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return &user, nil
+}
+
+func (db *DB) UsersGetUsersByIDs(ctx context.Context, userIDs []uuid.UUID) ([]*entry.User, error) {
+	var users []*entry.User
+	if err := pgxscan.Select(ctx, db.conn, &users, getUsersByIDsQuery, userIDs); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return users, nil
 }
 
 func (db *DB) UsersGetUserByWallet(ctx context.Context, wallet string) (*entry.User, error) {

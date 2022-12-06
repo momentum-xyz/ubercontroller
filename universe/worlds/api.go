@@ -14,18 +14,20 @@ func (w *Worlds) RegisterAPI(r *gin.Engine) {
 
 	vx := r.Group(fmt.Sprintf("/api/v%d", ubercontroller.APIMajorVersion))
 	{
-		auth := vx.Group("", middleware.VerifyUser(w.log))
+		verified := vx.Group("", middleware.VerifyUser(w.log))
 
-		authWorlds := auth.Group("/worlds")
+		verifiedWorlds := verified.Group("/worlds")
 		{
-			authWorld := authWorlds.Group("/:worldID")
+			verifiedWorld := verifiedWorlds.Group("/:worldID")
 			{
-				authWorld.GET("/explore", w.apiWorldsGetSpacesWithChildren)
-				authWorld.GET("/explore/search", w.apiWorldsSearchSpaces)
+				verifiedWorld.GET("/online-users", w.apiGetOnlineUsers)
 
-				authWorld.POST("/teleport-user", w.apiWorldsTeleportUser)
+				verifiedWorld.GET("/explore", w.apiWorldsGetSpacesWithChildren)
+				verifiedWorld.GET("/explore/search", w.apiWorldsSearchSpaces)
 
-				authWorld.POST("/fly-to-me", w.apiWorldsFlyToMe)
+				verifiedWorld.POST("/teleport-user", w.apiWorldsTeleportUser)
+
+				verifiedWorld.POST("/fly-to-me", w.apiWorldsFlyToMe)
 			}
 		}
 	}

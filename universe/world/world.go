@@ -57,9 +57,6 @@ func NewWorld(id uuid.UUID, db database.DB) *World {
 }
 
 func (w *World) GetID() uuid.UUID {
-	if w == nil {
-		return uuid.Nil
-	}
 	return w.Space.GetID()
 }
 

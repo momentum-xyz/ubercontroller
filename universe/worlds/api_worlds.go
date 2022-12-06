@@ -16,6 +16,32 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
+func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
+	/*
+		worldID, err := uuid.Parse(c.Param("worldID"))
+		if err != nil {
+			err := errors.WithMessage(err, "Worlds: apiGetOnlineUsers: failed to parse world id")
+			api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
+			return
+		}
+
+		world, ok := w.GetWorld(worldID)
+		if !ok || world == nil {
+			err := errors.WithMessage(err, "Worlds: apiGetOnlineUsers: world not found")
+			api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
+			return
+		}
+
+		users := world.GetUsers(true)
+		userIDs := make([]uuid.UUID, 0, len(users))
+		for userID, _ := range users {
+			userIDs = append(userIDs, userID)
+		}
+
+		entryUsers, err :=
+	*/
+}
+
 // @Summary Returns spaces and one level of children
 // @Schemes
 // @Description Returns space information and one level of children based on world_id (used in explore widget)

@@ -16,7 +16,7 @@ func (n *Node) WriteInfluxPoint(point *influxWrite.Point) error {
 	return nil
 	point.AddTag("Node ID", n.GetID().String())
 	point.AddTag("Node Name", n.GetName())
-	ctx, cancel := context.WithTimeout(context.Background(), influxDBTimeout)
+	ctx, cancel := context.WithTimeout(n.ctx, influxDBTimeout)
 	defer func() {
 		cancel()
 		n.log.Warn("ControllerHub: WriteInfluxPoint: stat sent")

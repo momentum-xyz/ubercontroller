@@ -130,8 +130,11 @@ func (s *Space) SetParent(parent universe.Space, updateDB bool) error {
 
 	if parent == s {
 		return errors.Errorf("space can't be a parent of itself")
-	} else if parent != nil && parent.GetWorld().GetID() != s.world.GetID() {
-		return errors.Errorf("worlds mismatch: %s != %s", parent.GetWorld().GetID(), s.world.GetID())
+	} else if parent != nil {
+		parentWorld := parent.GetWorld()
+		if parentWorld != nil && parentWorld.GetID() != s.world.GetID() {
+			return errors.Errorf("worlds mismatch: %s != %s", parentWorld.GetID(), s.world.GetID())
+		}
 	}
 
 	if updateDB {

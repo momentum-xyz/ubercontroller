@@ -61,7 +61,6 @@ type Profile struct {
 	Location    *string `json:"location,omitempty"`
 	AvatarHash  *string `json:"avatarHash,omitempty"`
 	ProfileLink *string `json:"profileLink,omitempty"`
-	OnBoarded   *bool   `json:"onBoarded,omitempty"`
 }
 
 type JWTToken struct {
@@ -77,18 +76,14 @@ type HashResponse struct {
 }
 
 type User struct {
-	ID          string          `json:"id"`
-	UserTypeID  string          `json:"userTypeId"`
-	Wallet      *string         `json:"wallet"`
-	Name        string          `json:"name"`
-	Email       *string         `json:"email,omitempty"`
-	Description *string         `json:"description"`
-	CreatedAt   string          `json:"createdAt"`
-	UpdatedAt   *string         `json:"updatedAt"`
-	IsNodeAdmin bool            `json:"isNodeAdmin"`
-	Status      *UserStatusType `json:"status,omitempty"`
-	Profile     Profile         `json:"profile"`
-	JWTToken    string          `json:"token"`
+	ID         string  `json:"id"`
+	UserTypeID string  `json:"userTypeId"`
+	Name       string  `json:"name"`
+	Profile    Profile `json:"profile"`
+	Wallet     *string `json:"wallet"`
+	JWTToken   string  `json:"token"`
+	CreatedAt  string  `json:"createdAt"`
+	UpdatedAt  *string `json:"updatedAt"`
 }
 
 type Space struct {

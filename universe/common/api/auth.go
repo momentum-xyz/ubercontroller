@@ -24,7 +24,6 @@ func GetTokenFromContext(c *gin.Context) (jwt.Token, error) {
 	if !ok {
 		return jwt.Token{}, errors.Errorf("failed to get token value from context")
 	}
-
 	return utils.GetFromAny(value, jwt.Token{}), nil
 }
 

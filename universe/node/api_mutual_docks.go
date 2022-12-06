@@ -1,7 +1,6 @@
 package node
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
@@ -25,6 +24,8 @@ import (
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/users/mutual-docks [post]
 func (n *Node) apiUsersMutualDocks(c *gin.Context) {
+	// TODO: reimplementation required!!!
+
 	type Body struct {
 		WalletA string `json:"walletA" binding:"required"`
 		WalletB string `json:"walletB" binding:"required"`
@@ -37,7 +38,7 @@ func (n *Node) apiUsersMutualDocks(c *gin.Context) {
 		return
 	}
 
-	attributes, err := n.db.UserAttributesGetUserAttributes(context.Background())
+	attributes, err := n.db.UserAttributesGetUserAttributes(c)
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiUsersMutualDocks: failed to get users attributes")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_users_attributes", err, n.log)
@@ -70,7 +71,7 @@ func (n *Node) apiUsersMutualDocks(c *gin.Context) {
 		return
 	}
 
-	spaceA, err := n.db.SpacesGetSpaceByID(context.Background(), *A)
+	spaceA, err := n.db.SpacesGetSpaceByID(c, *A)
 	if err != nil {
 		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
 		return
@@ -80,7 +81,7 @@ func (n *Node) apiUsersMutualDocks(c *gin.Context) {
 		return
 	}
 
-	spaceB, err := n.db.SpacesGetSpaceByID(context.Background(), *B)
+	spaceB, err := n.db.SpacesGetSpaceByID(c, *B)
 	if err != nil {
 		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
 		return
