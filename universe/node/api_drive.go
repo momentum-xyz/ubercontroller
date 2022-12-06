@@ -1,6 +1,7 @@
 package node
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -138,6 +139,17 @@ func (n *Node) mint(jobID uuid.UUID, wallet string, meta NFTMeta, blockHash stri
 		Error:     nil,
 	}
 
+	w, _ := n.getWalletMetadata(wallet)
+
+	if w != nil {
+		{
+			item.Status = StatusFailed
+			item.Error = errors.New("Odyssey already minted for wallet=" + wallet + ". This wallet linked to userID=" + w.UserID.String())
+			store.Store(jobID, item)
+		}
+		return
+	}
+
 	b, err := json.Marshal(meta)
 	if err != nil {
 		err = errors.WithMessage(err, "failed to json.Marshal meta to nodejs in")
@@ -225,6 +237,26 @@ func (n *Node) mint(jobID uuid.UUID, wallet string, meta NFTMeta, blockHash stri
 	//	log.Error(err)
 	//	return
 	//}
+
+	wm := WalletMeta{
+		Wallet:   wallet,
+		UserID:   data.UserID,
+		Username: data.Name,
+		Avatar:   data.Image,
+	}
+	user, err := n.apiCreateUserFromWalletMeta(context.Background(), &wm)
+	if err != nil {
+		err = errors.WithMessage(err, "failed to apiCreateUserFromWalletMeta")
+		{
+			item.Status = StatusFailed
+			item.Error = err
+			store.Store(jobID, item)
+		}
+		log.Error(err)
+		return
+	}
+
+	fmt.Println(user)
 
 	item.Status = StatusDone
 	item.NodeJSOut = &nodeJSOut
