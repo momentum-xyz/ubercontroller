@@ -3,6 +3,7 @@ package assets_3d
 import (
 	"encoding/json"
 	"net/http"
+	"path/filepath"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -192,8 +193,13 @@ func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 		return
 	}
 
+	// TODO: let FE pass in a name field to override this.
+	fileName := assetFile.Filename
+	name := fileName[:len(fileName)-len(filepath.Ext(fileName))] // utility function?
 	meta := entry.Asset3dMeta{
-		"type": dto.GLTFAsset3dType,
+		"type":     dto.GLTFAsset3dType,
+		"category": "custom",
+		"name":     name,
 	}
 
 	if err := newAsset.SetMeta(&meta, true); err != nil {
