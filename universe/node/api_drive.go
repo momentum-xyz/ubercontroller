@@ -53,6 +53,38 @@ const StatusFailed = "failed"
 var log = logger.L()
 var store = generic.NewSyncMap[uuid.UUID, StoreItem](0)
 
+// @Summary Get wallet metadata
+// @Schemes
+// @Description Returns a metadata related to wallet
+// @Tags drive
+// @Accept json
+// @Produce json
+// @Param query query node.apiGetWalletMeta.InQuery true "query params"
+// @Success 200 {object} node.WalletMeta
+// @Failure 400 {object} api.HTTPError
+// @Router /api/v4/drive/wallet-meta [get]
+func (n *Node) apiGetWalletMeta(c *gin.Context) {
+	type InQuery struct {
+		Wallet string `form:"wallet" binding:"required"`
+	}
+	var inQuery InQuery
+
+	if err := c.ShouldBindQuery(&inQuery); err != nil {
+		err := errors.WithMessage(err, "Node: apiGetWalletMeta: failed to bind query")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
+		return
+	}
+
+	meta, err := n.getWalletMetadata(inQuery.Wallet)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetWalletMeta: failed to get wallet meta")
+		api.AbortRequest(c, http.StatusBadRequest, "get_meta_failed", err, n.log)
+		return
+	}
+
+	c.JSON(http.StatusOK, meta)
+}
+
 // @Summary Mint Odyssey for given wallet
 // @Schemes
 // @Description Returns job_id
