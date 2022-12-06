@@ -18,7 +18,7 @@ const (
 	getAssetsQuery = `SELECT * FROM asset_2d;`
 
 	removeAssetByIDQuery   = `DELETE FROM asset_2d WHERE asset_2d_id = $1;`
-	removeAssetsByIDsQuery = `DELETE FROM asset_2d WHERE asset_2d_id IN ($1);`
+	removeAssetsByIDsQuery = `DELETE FROM asset_2d WHERE asset_2d_id = ANY($1);`
 
 	updateAssetMetaQuery    = `UPDATE asset_2d SET meta = $2 WHERE asset_2d_id = $1;`
 	updateAssetOptionsQuery = `UPDATE asset_2d SET options = $2 WHERE asset_2d_id = $1;`

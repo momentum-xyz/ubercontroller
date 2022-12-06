@@ -18,10 +18,10 @@ const (
 	getAttributeTypesQuery = `SELECT * FROM attribute_type;`
 
 	removeAttributeTypeByNameQuery             = `DELETE FROM attribute_type WHERE attribute_name = $1;`
-	removeAttributeTypesByNamesQuery           = `DELETE FROM attribute_type WHERE attribute_name IN ($1);`
+	removeAttributeTypesByNamesQuery           = `DELETE FROM attribute_type WHERE attribute_name = ANY($1);`
 	removeAttributeTypesByPluginIDQuery        = `DELETE FROM attribute_type WHERE plugin_id = $1;`
 	removeAttributeTypeByPluginIDAndNameQuery  = `DELETE FROM attribute_type WHERE plugin_id = $1 AND attribute_name = $2;`
-	removeAttributeTypesByPluginIDAndNameQuery = `DELETE FROM attribute_type WHERE plugin_id = $1 AND attribute_name IN ($2);`
+	removeAttributeTypesByPluginIDAndNameQuery = `DELETE FROM attribute_type WHERE plugin_id = $1 AND attribute_name = ANY($2);`
 
 	updateAttributeTypeNameQuery        = `UPDATE attribute_type SET attribute_name = $3 WHERE plugin_id = $1 AND attribute_name = $2;`
 	updateAttributeTypeDescriptionQuery = `UPDATE attribute_type SET description = $3 WHERE plugin_id = $1 AND attribute_name = $2;`

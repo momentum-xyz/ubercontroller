@@ -3,7 +3,7 @@ package node
 import (
 	"context"
 	"net/http"
-	
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
@@ -36,12 +36,14 @@ func (n *Node) apiUsersGetMe(c *gin.Context) {
 		return
 	}
 
-	userDTO, httpCode, err := api.GetUserDTOByID(n.db, c, userID)
+	userEntry, err := n.db.UsersGetUserByID(c, userID)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiUsersGetMe: failed to get user dto by id")
-		api.AbortRequest(c, httpCode, "get_user_failed", err, n.log)
+		err := errors.WithMessage(err, "Node: apiUsersGetMe: user not found")
+		api.AbortRequest(c, http.StatusNotFound, "user_not_found", err, n.log)
 		return
 	}
+
+	userDTO := api.ToUserDTO(userEntry)
 
 	c.JSON(http.StatusOK, userDTO)
 }
@@ -65,12 +67,14 @@ func (n *Node) apiUsersGetById(c *gin.Context) {
 		return
 	}
 
-	userDTO, httpCode, err := api.GetUserDTOByID(n.db, c, userID)
+	userEntry, err := n.db.UsersGetUserByID(c, userID)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiUsersGetById: failed to get user dto by id")
-		api.AbortRequest(c, httpCode, "get_user_failed", err, n.log)
+		err := errors.WithMessage(err, "Node: apiUsersGetById: user not found")
+		api.AbortRequest(c, http.StatusNotFound, "user_not_found", err, n.log)
 		return
 	}
+
+	userDTO := api.ToUserDTO(userEntry)
 
 	c.JSON(http.StatusOK, userDTO)
 }

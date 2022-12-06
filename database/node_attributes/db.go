@@ -23,7 +23,7 @@ const (
 	updateNodeAttributeValueQuery             = `UPDATE node_attribute SET value = $3 WHERE plugin_id = $1 AND attribute_name = $2;`
 	updateNodeAttributeOptionsQuery           = `UPDATE node_attribute SET options = $3 WHERE plugin_id = $1 AND attribute_name = $2;`
 	removeNodeAttributeByNameQuery            = `DELETE FROM node_attribute WHERE attribute_name = $1;`
-	removeNodeAttributesByNamesQuery          = `DELETE FROM node_attribute WHERE attribute_name IN ($1);`
+	removeNodeAttributesByNamesQuery          = `DELETE FROM node_attribute WHERE attribute_name = ANY($1);`
 	removeNodeAttributesByPluginIdQuery       = `DELETE FROM node_attribute WHERE plugin_id = $1;`
 	removeNodeAttributeByPluginIdAndNameQuery = `DELETE FROM node_attribute WHERE plugin_id = $1 AND attribute_name = $2;`
 
