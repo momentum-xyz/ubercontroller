@@ -113,7 +113,7 @@ var (
 		}{
 			HighFive: Attribute{
 				Name: "high_five",
-				Key:  "high_five",
+				Key:  "counter",
 			},
 		},
 	}
