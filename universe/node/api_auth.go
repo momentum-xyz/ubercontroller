@@ -1,19 +1,17 @@
 package node
 
 import (
-	"github.com/google/uuid"
-	"github.com/momentum-xyz/ubercontroller/utils/merge"
-	"github.com/momentum-xyz/ubercontroller/utils/modify"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
+
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils"
-	"github.com/pkg/errors"
 )
 
 // @Summary Generate auth challenge
@@ -261,76 +259,4 @@ func (n *Node) apiGuestToken(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, outUser)
-}
-
-func (n *Node) apiGetOrCreateUserFromWallet(c *gin.Context, wallet string) (*entry.User, int, error) {
-	userEntry, err := n.db.UsersGetUserByWallet(c, wallet)
-	if err == nil {
-		return userEntry, 0, nil
-	}
-
-	walletMeta, err := n.getWalletMetadata(wallet)
-	if err != nil {
-		return nil, http.StatusForbidden, errors.WithMessage(err, "failed to get wallet meta")
-	}
-
-	userEntry = &entry.User{
-		UserID: walletMeta.UserID,
-		Profile: &entry.UserProfile{
-			Name:       &walletMeta.Username,
-			AvatarHash: &walletMeta.Avatar,
-		},
-	}
-
-	userTypeAttributeValue, ok := n.GetNodeAttributeValue(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.NormalUserType.Name),
-	)
-	if !ok || userTypeAttributeValue == nil {
-		return nil, http.StatusInternalServerError, errors.Errorf("failed to get user type attribute value")
-	}
-
-	normUserType := utils.GetFromAnyMap(*userTypeAttributeValue, universe.Attributes.Node.NormalUserType.Key, "")
-	normUserTypeID, err := uuid.Parse(normUserType)
-	if err != nil {
-		return nil, http.StatusInternalServerError, errors.Errorf("failed to parse normal user type id")
-	}
-	userEntry.UserTypeID = &normUserTypeID
-
-	if err := n.db.UsersUpsertUser(c, userEntry); err != nil {
-		return nil, http.StatusInternalServerError, errors.WithMessagef(err, "failed to upsert user: %s", userEntry.UserID)
-	}
-
-	n.log.Infof("Node: apiGetOrCreateUserFromWallet: user created: %s", userEntry.UserID)
-
-	// adding wallet to user attributes
-	userAttributeID := entry.NewUserAttributeID(
-		entry.NewAttributeID(
-			universe.GetKusamaPluginID(), universe.Attributes.Kusama.User.Wallet.Name,
-		),
-		userEntry.UserID,
-	)
-
-	walletAddressKey := universe.Attributes.Kusama.User.Wallet.Key
-	newPayload := entry.NewAttributePayload(
-		&entry.AttributeValue{
-			walletAddressKey: []any{walletMeta.Wallet},
-		},
-		nil,
-	)
-
-	walletAddressKeyPath := ".Value." + walletAddressKey
-	if _, err := n.db.UserAttributesUpsertUserAttribute(
-		n.ctx, userAttributeID,
-		modify.MergeWith(
-			newPayload,
-			merge.NewTrigger(walletAddressKeyPath, merge.AppendTriggerFn),
-			merge.NewTrigger(walletAddressKeyPath, merge.UniqueTriggerFn),
-		)); err != nil {
-		// TODO: think about rollback
-		return nil, http.StatusInternalServerError, errors.WithMessagef(
-			err, "failed to upsert user attribute for user: %s", userEntry.UserID,
-		)
-	}
-
-	return userEntry, 0, nil
 }
