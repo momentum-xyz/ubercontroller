@@ -11,6 +11,7 @@ import (
 
 func ToUserDTO(userEntry *entry.User) *dto.User {
 	var wallet *string
+	// TODO: optimize
 	walletValue, ok := universe.GetNode().GetUserAttributeValue(
 		entry.NewUserAttributeID(
 			entry.NewAttributeID(

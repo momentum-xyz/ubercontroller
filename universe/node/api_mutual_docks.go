@@ -24,8 +24,6 @@ import (
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/users/mutual-docks [post]
 func (n *Node) apiUsersMutualDocks(c *gin.Context) {
-	// TODO: reimplementation required!!!
-
 	type Body struct {
 		WalletA string `json:"walletA" binding:"required"`
 		WalletB string `json:"walletB" binding:"required"`
