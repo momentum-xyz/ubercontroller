@@ -45,11 +45,6 @@ func (n *Node) apiUsersGetMe(c *gin.Context) {
 
 	userDTO := api.ToUserDTO(userEntry, true)
 
-	// REMOVE!!!
-	if err := n.createWorld(userID, "Nikita's test world"); err != nil {
-		n.log.Fatalf("HERE 1: %+v", err)
-	}
-
 	c.JSON(http.StatusOK, userDTO)
 }
 
