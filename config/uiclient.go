@@ -24,7 +24,7 @@ type UIClient struct {
 	UnityClientProductVersion     string `yaml:"unity_client_product_version" json:"UNITY_CLIENT_PRODUCT_VERSION" envconfig:"UNITY_CLIENT_PRODUCT_VERSION"`
 	KusamaWsServer                string `yaml:"kusama_ws_server" json:"KUSAMA_WS_SERVER" envconfig:"KUSAMA_WS_SERVER"`
 	StreamchatKey                 string `yaml:"streamchat_key" json:"STREAMCHAT_KEY" envconfig:"STREAMCHAT_KEY"`
-	NFTAdminAddress               string `yaml:"nft_admin_address" envconfig:"NFT_ADMIN_ADDRESS"`
+	NFTAdminAddress               string `yaml:"nft_admin_address" json:"NFT_ADMIN_ADDRESS" envconfig:"NFT_ADMIN_ADDRESS"`
 }
 
 func (c *UIClient) Init() {
