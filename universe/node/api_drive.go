@@ -438,6 +438,16 @@ func (n *Node) getWalletMetadata(wallet string) (*WalletMeta, error) {
 	return meta, nil
 }
 
+// @Summary Resolve domain/node by objectID
+// @Schemes
+// @Description Returns domain/host for given Odyssey
+// @Tags drive
+// @Accept json
+// @Produce json
+// @Param query query node.apiResolveNode.InQuery true "query params"
+// @Success 200 {object} node.apiResolveNode.Out
+// @Failure 400 {object} api.HTTPError
+// @Router /api/v4/drive/resolve-node [get]
 func (n *Node) apiResolveNode(c *gin.Context) {
 
 	type InQuery struct {
