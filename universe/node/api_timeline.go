@@ -307,7 +307,7 @@ func (n *Node) apiNewsFeed(c *gin.Context) {
 				Owner:        "",
 				Name:         "",
 				Description:  e.Title,
-				Image:        "",
+				Image:        e.ImageHash,
 				Date:         e.Start,
 				Type:         "calendar_event"},
 			ConnectedTo: nil,
