@@ -2,6 +2,7 @@ package assets_3d
 
 import (
 	"encoding/json"
+	"mime/multipart"
 	"net/http"
 	"path/filepath"
 	"time"
@@ -131,17 +132,23 @@ func (a *Assets3d) apiAddAssets3d(c *gin.Context) {
 // @Tags assets3d
 // @Accept json
 // @Produce json
+// @Param body body node.apiUploadAsset3d.MultiPartRequest true "multipart/form-data"
 // @Success 202 {object} dto.Asset3d
 // @Failure 400	{object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
 // @Router /api/v4/assets-3d/upload [post]
 func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
-	assetFile, err := c.FormFile("asset")
-	if err != nil {
-		err := errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to read file")
+	type MultiPartRequest struct {
+		File *multipart.FileHeader `form:"asset"`
+		Name string                `form:"name"`
+	}
+	var request MultiPartRequest
+	if err := c.ShouldBind(&request); err != nil {
+		err := errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to read request")
 		api.AbortRequest(c, http.StatusBadRequest, "failed_to_read", err, a.log)
 		return
 	}
+	assetFile := request.File
 
 	openedFile, err := assetFile.Open()
 	if err != nil {
@@ -193,9 +200,13 @@ func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 		return
 	}
 
-	// TODO: let FE pass in a name field to override this.
-	fileName := assetFile.Filename
-	name := fileName[:len(fileName)-len(filepath.Ext(fileName))] // utility function?
+	var name string
+	if request.Name != "" {
+		name = request.Name
+	} else {
+		fileName := assetFile.Filename
+		name = fileName[:len(fileName)-len(filepath.Ext(fileName))] // utility function?
+	}
 	meta := entry.Asset3dMeta{
 		"type":     dto.GLTFAsset3dType,
 		"category": "custom",
