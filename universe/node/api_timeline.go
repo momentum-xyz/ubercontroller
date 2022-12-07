@@ -267,8 +267,8 @@ type FeedItem struct {
 	UserItem
 	ConnectedTo   *UserItem  `json:"connectedTo,omitempty"`
 	DockedTo      *UserItem  `json:"dockedTo,omitempty"`
-	CalendarImage string     `json:"calendarImage,omitempty"`
-	CalendarTitle string     `json:"calendarTitle,omitempty"`
+	CalendarImage string     `json:"calendarImage"`
+	CalendarTitle string     `json:"calendarTitle"`
 	CalendarStart *time.Time `json:"calendarStart,omitempty"`
 	CalendarEnd   *time.Time `json:"calendarEnd,omitempty"`
 }
