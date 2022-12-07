@@ -38,7 +38,7 @@ func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
 
 	world, ok := w.GetWorld(worldID)
 	if !ok || world == nil {
-		err := errors.WithMessage(err, "Worlds: apiGetOnlineUsers: world not found")
+		err := errors.New("Worlds: apiGetOnlineUsers: world not found")
 		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
 		return
 	}
