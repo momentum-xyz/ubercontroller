@@ -5,15 +5,15 @@ import (
 )
 
 type Vec3 struct {
-	X float32 `json:"x" db:"x"`
-	Y float32 `json:"y" db:"y"`
-	Z float32 `json:"z" db:"z"`
+	X float32 `json:"x" db:"x" mapstructure:"x"`
+	Y float32 `json:"y" db:"y" mapstructure:"y"`
+	Z float32 `json:"z" db:"z" mapstructure:"z"`
 }
 
 type SpacePosition struct {
-	Location Vec3 `db:"location" json:"location"`
-	Rotation Vec3 `db:"rotation" json:"rotation"`
-	Scale    Vec3 `db:"scale" json:"scale"`
+	Location Vec3 `db:"location" json:"location" mapstructure:"location"`
+	Rotation Vec3 `db:"rotation" json:"rotation" mapstructure:"rotation"`
+	Scale    Vec3 `db:"scale" json:"scale" mapstructure:"scale"`
 }
 
 func (v *Vec3) Plus(v2 Vec3) {

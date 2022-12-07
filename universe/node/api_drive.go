@@ -23,7 +23,7 @@ import (
 
 type WorldTemplate struct {
 	SpaceTemplate
-	Spaces []*SpaceTemplate `json:"spaces"`
+	Spaces []*SpaceTemplate `json:"spaces" mapstructure:"spaces"`
 }
 
 type NodeJSOut struct {
