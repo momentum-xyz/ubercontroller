@@ -14,18 +14,6 @@ func (s *StreamChat) RegisterAPI(r *gin.Engine) {
 	{
 		verified := vx.Group("", middleware.VerifyUser(s.log))
 		{
-			// with admin rights
-			authorizedAdmin := verified.Group("", middleware.AuthorizeAdmin(s.log))
-			{
-				// Todo: implement
-			}
-
-			// with regular rights
-			authorizedUser := verified.Group("", middleware.AuthorizeUser(s.log))
-			{
-				// Todo: implement
-			}
-
 			streamChat := verified.Group("/streamchat")
 			{
 				streamChat.POST("/:objectID/token", s.apiChannelToken)

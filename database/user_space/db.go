@@ -23,6 +23,8 @@ const (
 	getUserSpacesBySpaceIDAndUserIDQuery = `SELECT * FROM user_space WHERE user_id = $1 AND space_id = $2;`
 	getUserSpaceValueByIDQuery           = `SELECT value FROM user_space WHERE user_id = $1 AND space_id = $2;`
 
+	getUserSpaceIndirectAdmins = `SELECT GetIndirectSpaceAdmins($1);`
+
 	updateUserSpacesValueQuery = `UPDATE user_space SET value = $3 WHERE user_id = $1 AND space_id = $2;`
 
 	upsertUserSpaceQuery = `INSERT INTO user_space
@@ -87,6 +89,27 @@ func (db *DB) UserSpaceGetUserSpaceValueByID(
 	return &value, nil
 }
 
+func (db *DB) UserSpaceGetUserSpaces(ctx context.Context) ([]*entry.UserSpace, error) {
+	var userSpaces []*entry.UserSpace
+	if err := pgxscan.Select(ctx, db.conn, &userSpaces, getUserSpacesQuery); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return userSpaces, nil
+}
+
+func (db *DB) UserSpaceGetIndirectAdmins(ctx context.Context, spaceID uuid.UUID) ([]*uuid.UUID, error) {
+	var userIDs []*uuid.UUID
+	if err := pgxscan.Select(ctx, db.conn, &userIDs, getUserSpaceIndirectAdmins); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return userIDs, nil
+}
+
+func (db *DB) UserSpaceGetValueByUserAndSpaceIDs(ctx context.Context, userSpaceID entry.UserSpaceID) (*entry.UserSpaceValue, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (db *DB) UserSpaceUpdateValueByUserAndSpaceIDs(ctx context.Context, userSpaceID entry.UserSpaceID, modifyFn modify.Fn[entry.UserSpaceValue]) (*entry.UserSpaceValue, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
@@ -110,19 +133,6 @@ func (db *DB) UserSpaceUpdateValueByUserAndSpaceIDs(ctx context.Context, userSpa
 	}
 
 	return value, nil
-}
-
-func (db *DB) UserSpaceGetValueByUserAndSpaceIDs(ctx context.Context, userSpaceID entry.UserSpaceID) (*entry.UserSpaceValue, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (db *DB) UserSpaceGetUserSpaces(ctx context.Context) ([]*entry.UserSpace, error) {
-	var userSpaces []*entry.UserSpace
-	if err := pgxscan.Select(ctx, db.conn, &userSpaces, getUserSpacesQuery); err != nil {
-		return nil, errors.WithMessage(err, "failed to query db")
-	}
-	return userSpaces, nil
 }
 
 func (db *DB) UserSpacesUpsertUserSpace(ctx context.Context, userSpace *entry.UserSpace) error {

@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -15,6 +14,8 @@ import (
 
 func AuthorizeAdmin(log *zap.SugaredLogger, db database.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		isAdmin := false
+
 		spaceID, err := uuid.Parse(c.Param("spaceID"))
 		if err != nil {
 			err := errors.WithMessage(err, "Middleware: AuthorizeAdmin: failed to parse space id")
@@ -29,16 +30,23 @@ func AuthorizeAdmin(log *zap.SugaredLogger, db database.DB) gin.HandlerFunc {
 			return
 		}
 
-		userSpaceID := entry.NewUserSpaceID(userID, spaceID)
-		_, err = db.UserSpaceGetUserSpaceByUserAndSpaceIDs(c, userSpaceID)
+		userIDs, err := db.UserSpaceGetIndirectAdmins(c, spaceID)
 		if err != nil {
 			err := errors.WithMessage(err, "Middleware: AuthorizeAdmin: failed to get user space entry")
 			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_user_space_entry", err, log)
 			return
 		}
 
-		// check user_space recursively for rights
-		// check if admin role is present
-		c.Next()
+		for _, uID := range userIDs {
+			if uID != nil && *uID == userID {
+				isAdmin = true
+			}
+		}
+
+		if isAdmin == false {
+			return
+		} else {
+			c.Next()
+		}
 	}
 }
