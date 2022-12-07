@@ -66,9 +66,9 @@ func ToUserDTOs(userEntries []*entry.User, registeredUserTypeID uuid.UUID, inclu
 	for i := range userEntries {
 		userDTOs[i] = ToUserDTO(userEntries[i], includeWallet)
 		if userDTOs[i].UserTypeID == str {
-			userDTOs[i].IsGuest = true
-		} else {
 			userDTOs[i].IsGuest = false
+		} else {
+			userDTOs[i].IsGuest = true
 		}
 	}
 	return userDTOs

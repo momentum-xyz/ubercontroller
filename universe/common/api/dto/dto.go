@@ -85,7 +85,7 @@ type User struct {
 	JWTToken   *string `json:"token,omitempty"`
 	CreatedAt  string  `json:"createdAt"`
 	UpdatedAt  *string `json:"updatedAt,omitempty"`
-	IsGuest    bool    `json:"isGuest,omitempty"`
+	IsGuest    bool    `json:"isGuest"`
 }
 
 type Space struct {
