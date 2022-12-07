@@ -265,9 +265,10 @@ type UserItem struct {
 }
 type FeedItem struct {
 	UserItem
-	ConnectedTo *UserItem `json:"connectedTo,omitempty"`
-	DockedTo    *UserItem `json:"dockedTo,omitempty"`
-	EventImage  *UserItem `json:"eventImage,omitempty"`
+	ConnectedTo   *UserItem `json:"connectedTo,omitempty"`
+	DockedTo      *UserItem `json:"dockedTo,omitempty"`
+	CalendarImage string    `json:"calendarImage,omitempty"`
+	CalendarTitle string    `json:"calendarTitle,omitempty"`
 }
 
 type Event struct {
@@ -299,19 +300,37 @@ func (n *Node) apiNewsFeed(c *gin.Context) {
 	}
 
 	for _, e := range events {
+
+		userName := ""
+		userAvatarHash := ""
+		user, ok := n.GetUser(*e.SpaceID, true)
+		if ok {
+			if user.GetProfile() != nil {
+				if user.GetProfile().Name != nil {
+					userName = *user.GetProfile().Name
+				}
+
+				if user.GetProfile().AvatarHash != nil {
+					userAvatarHash = *user.GetProfile().AvatarHash
+				}
+			}
+		}
+
 		item := FeedItem{
 			UserItem: UserItem{
 				Id:           0,
 				CollectionId: 0,
 				Uuid:         *e.SpaceID,
 				Owner:        "",
-				Name:         "",
+				Name:         userName, // User name userID=SpaceID
 				Description:  e.Title,
-				Image:        e.ImageHash,
+				Image:        userAvatarHash, // User Avatar hash
 				Date:         e.Start,
 				Type:         "calendar_event"},
-			ConnectedTo: nil,
-			DockedTo:    nil,
+			ConnectedTo:   nil,
+			DockedTo:      nil,
+			CalendarTitle: e.Title,
+			CalendarImage: e.ImageHash,
 		}
 		list = append(list, item)
 	}
