@@ -46,7 +46,6 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 			auth.POST("/guest-token", n.apiGuestToken)
 		}
 
-		// with verified user
 		verified := vx.Group("", middleware.VerifyUser(n.log))
 		{
 			verifiedMedia := verified.Group("/media")
@@ -70,11 +69,11 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 				verifiedProfile.PATCH("", n.apiProfileUpdate)
 			}
 
-			spaces := verified.Group("/spaces")
+			verifiedSpaces := verified.Group("/spaces")
 			{
-				spaces.POST("", n.apiCreateSpace)
+				verifiedSpaces.POST("", n.apiCreateSpace)
 
-				space := spaces.Group("/:spaceID")
+				space := verifiedSpaces.Group("/:spaceID")
 				{
 					authorizedAdmin := auth.Group("", middleware.AuthorizeAdmin(n.log, n.db))
 					{
@@ -105,7 +104,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 					space.GET("/all-users/attributes", n.apiGetSpaceAllUsersAttributeValuesList)
 				}
 
-				spaceUser := spaces.Group("/:spaceID/:userID")
+				spaceUser := verifiedSpaces.Group("/:spaceID/:userID")
 				{
 					spaceUser.POST("/attributes", n.apiSetSpaceUserAttributesValue)
 					spaceUser.DELETE("/attributes", n.apiRemoveSpaceUserAttributeValue)
