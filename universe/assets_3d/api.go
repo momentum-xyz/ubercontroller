@@ -14,23 +14,18 @@ func (a *Assets3d) RegisterAPI(r *gin.Engine) {
 
 	vx := r.Group(fmt.Sprintf("/api/v%d", ubercontroller.APIMajorVersion))
 	{
-		// with auth
-		auth := vx.Group("", middleware.VerifyUser(a.log))
+		assets3d := vx.Group("", middleware.VerifyUser(a.log))
 		{
-			// with special rights
-			authorizedSpecial := auth.Group("", middleware.AuthorizeSpecial(a.log, a.db))
+			authAssets3d := assets3d.Group("/assets-3d")
 			{
-				authAssets3d := authorizedSpecial.Group("/assets-3d")
-				{
-					authAssets3d.POST("", a.apiAddAssets3d)
-					authAssets3d.POST("/upload", a.apiUploadAsset3d)
-					authAssets3d.DELETE("", a.apiRemoveAssets3dByIDs)
-				}
+				authAssets3d.POST("", a.apiAddAssets3d)
+				authAssets3d.POST("/upload", a.apiUploadAsset3d)
+				authAssets3d.DELETE("", a.apiRemoveAssets3dByIDs)
 			}
 
-			auth.GET("", a.apiGetAssets3d)
-			auth.GET("/meta", a.apiGetAssets3dMeta)
-			auth.GET("/options", a.apiGetAssets3dOptions)
+			assets3d.GET("", a.apiGetAssets3d)
+			assets3d.GET("/meta", a.apiGetAssets3dMeta)
+			assets3d.GET("/options", a.apiGetAssets3dOptions)
 		}
 	}
 }

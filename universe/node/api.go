@@ -72,30 +72,25 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 			spaces := verified.Group("/spaces")
 			{
-				// with admin rights
-				authorizedSpecial := spaces.Group("", middleware.AuthorizeSpecial(n.log, n.db))
-				{
-					authorizedSpecial.POST("", n.apiCreateSpace)
-				}
+				spaces.POST("", n.apiCreateSpace)
 
 				space := spaces.Group("/:spaceID")
 				{
-					// with admin rights
-					authorizedSpaceAdmin := space.Group("", middleware.AuthorizeAdmin(n.log, n.db))
+					authorizedAdmin := auth.Group("", middleware.AuthorizeAdmin(n.log, n.db))
 					{
-						authorizedSpaceAdmin.DELETE("", n.apiRemoveSpace)
+						space.POST("/options/sub", n.apiSpacesSetSpaceSubOption)
+						space.DELETE("/options/sub", n.apiSpacesRemoveSpaceSubOption)
 
-						authorizedSpaceAdmin.POST("/options/sub", n.apiSpacesSetSpaceSubOption)
-						authorizedSpaceAdmin.DELETE("/options/sub", n.apiSpacesRemoveSpaceSubOption)
-
-						authorizedSpaceAdmin.POST("/attributes", n.apiSetSpaceAttributesValue)
-						authorizedSpaceAdmin.DELETE("/attributes", n.apiRemoveSpaceAttributeValue)
-
-						authorizedSpaceAdmin.POST("/attributes/sub", n.apiSetSpaceAttributeSubValue)
-						authorizedSpaceAdmin.DELETE("/attributes/sub", n.apiRemoveSpaceAttributeSubValue)
-
-						authorizedSpaceAdmin.POST("/agora/token", n.apiGenAgoraToken)
+						authorizedAdmin.DELETE("", n.apiRemoveSpace)
 					}
+
+					space.POST("/attributes", n.apiSetSpaceAttributesValue)
+					space.DELETE("/attributes", n.apiRemoveSpaceAttributeValue)
+
+					space.POST("/attributes/sub", n.apiSetSpaceAttributeSubValue)
+					space.DELETE("/attributes/sub", n.apiRemoveSpaceAttributeSubValue)
+
+					space.POST("/agora/token", n.apiGenAgoraToken)
 
 					space.GET("", n.apiGetSpace)
 
@@ -112,15 +107,11 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 				spaceUser := spaces.Group("/:spaceID/:userID")
 				{
-					// with admin rights
-					authorizedSpaceUserAdmin := spaceUser.Group("", middleware.AuthorizeAdmin(n.log, n.db))
-					{
-						authorizedSpaceUserAdmin.POST("/attributes", n.apiSetSpaceUserAttributesValue)
-						authorizedSpaceUserAdmin.DELETE("/attributes", n.apiRemoveSpaceUserAttributeValue)
+					spaceUser.POST("/attributes", n.apiSetSpaceUserAttributesValue)
+					spaceUser.DELETE("/attributes", n.apiRemoveSpaceUserAttributeValue)
 
-						authorizedSpaceUserAdmin.POST("/attributes/sub", n.apiSetSpaceUserAttributeSubValue)
-						authorizedSpaceUserAdmin.DELETE("/attributes/sub", n.apiRemoveSpaceUserAttributeSubValue)
-					}
+					spaceUser.POST("/attributes/sub", n.apiSetSpaceUserAttributeSubValue)
+					spaceUser.DELETE("/attributes/sub", n.apiRemoveSpaceUserAttributeSubValue)
 
 					spaceUser.GET("/attributes", n.apiGetSpaceUserAttributesValue)
 

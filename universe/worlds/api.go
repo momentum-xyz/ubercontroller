@@ -18,17 +18,15 @@ func (w *Worlds) RegisterAPI(r *gin.Engine) {
 		{
 			worlds := verified.Group("/worlds")
 			{
-				world := worlds.Group("/:worldID")
+				world := worlds.Group("/:spaceID")
 				{
 					world.GET("/explore", w.apiWorldsGetSpacesWithChildren)
 					world.GET("/explore/search", w.apiWorldsSearchSpaces)
 
-					// with special rights
-					authorizedSpecial := world.Group("", middleware.AuthorizeSpecial(w.log, w.db))
+					authorizedAdmin := world.Group("", middleware.AuthorizeAdmin(w.log, w.db))
 					{
-						authorizedSpecial.POST("/teleport-user", w.apiWorldsTeleportUser)
-
-						authorizedSpecial.POST("/fly-to-me", w.apiWorldsFlyToMe)
+						authorizedAdmin.POST("/fly-to-me", w.apiWorldsFlyToMe)
+						// authorizedSpecial.POST("/teleport-user", w.apiWorldsTeleportUser)
 					}
 				}
 			}
