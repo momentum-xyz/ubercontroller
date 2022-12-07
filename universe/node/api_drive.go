@@ -21,6 +21,11 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
+type WorldTemplate struct {
+	SpaceTemplate
+	Spaces []*SpaceTemplate `json:"spaces"`
+}
+
 type NodeJSOut struct {
 	Data  any      `json:"data"`
 	Logs  []string `json:"logs"`
@@ -154,6 +159,40 @@ func (n *Node) apiDriveTest(c *gin.Context) {
 }
 
 func (n *Node) createWorld(ownerID uuid.UUID, name string) error {
+	templateValue, ok := n.GetNodeAttributeValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.WorldTemplate.Name),
+	)
+	if !ok || templateValue == nil {
+		return errors.Errorf("failed to get world template attribute value")
+	}
+
+	// filling template
+	var worldTemplate WorldTemplate
+	if err := utils.MapDecode(templateValue, &worldTemplate); err != nil {
+		return errors.WithMessage(err, "failed to decode template map")
+	}
+	worldTemplate.SpaceAttributes = append(
+		worldTemplate.SpaceAttributes,
+		&entry.Attribute{
+			AttributeID: entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name),
+			AttributePayload: entry.NewAttributePayload(
+				&entry.AttributeValue{
+					universe.Attributes.Space.Name.Key: name,
+				},
+				nil),
+		},
+	)
+	for i := range worldTemplate.Spaces {
+		worldTemplate.Spaces[i].SpaceID = uuid.New()
+		worldTemplate.Spaces[i].OwnerID = ownerID
+		worldTemplate.Spaces[i].ParentID = ownerID
+	}
+
+	worldType, ok := n.GetSpaceTypes().GetSpaceType(worldTemplate.SpaceTypeID)
+	if !ok {
+		return errors.Errorf("failed to get world space type: %s", worldTemplate.SpaceTypeID)
+	}
+
 	// User's world (aka Odyssey) should be equal to user ID
 	world, err := n.GetWorlds().CreateWorld(ownerID)
 	if err != nil {
@@ -161,52 +200,45 @@ func (n *Node) createWorld(ownerID uuid.UUID, name string) error {
 		return err
 	}
 
-	err = world.SetOwnerID(ownerID, false)
-	if err != nil {
+	if err := world.SetOwnerID(ownerID, false); err != nil {
 		return errors.WithMessage(err, "failed to SetOwnerID")
 	}
-
-	types := n.GetSpaceTypes().GetSpaceTypes()
-	var spaceType universe.SpaceType
-	for _, t := range types {
-		if t.GetName() == "World" {
-			spaceType = t
-		}
-	}
-	if spaceType == nil {
-		return errors.New("Space type with name World not found in DB")
-	}
-
-	err = world.SetSpaceType(spaceType, false)
-	if err != nil {
+	if err := world.SetSpaceType(worldType, false); err != nil {
 		return errors.WithMessage(err, "failed to SetSpaceType")
 	}
-
-	err = world.SetParent(n, false)
-	if err != nil {
+	if err := world.SetParent(n, false); err != nil {
 		return errors.WithMessage(err, "failed to SetParent")
 	}
 
-	err = n.GetWorlds().AddWorld(world, true)
-	if err != nil {
+	if err := n.GetWorlds().AddWorld(world, true); err != nil {
 		return errors.WithMessage(err, "failed to AddWorld")
 	}
 
-	attributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name)
-	value := entry.NewAttributeValue()
-	(*value)[universe.Attributes.Space.Name.Key] = name
-	payload := entry.NewAttributePayload(value, nil)
-
-	if _, err := world.UpsertSpaceAttribute(attributeID, modify.MergeWith(payload), true); err != nil {
-		return errors.WithMessage(err, "failed to upsert world name attribute")
+	for i := range worldTemplate.SpaceAttributes {
+		if _, err := world.UpsertSpaceAttribute(
+			worldTemplate.SpaceAttributes[i].AttributeID,
+			modify.MergeWith(worldTemplate.SpaceAttributes[i].AttributePayload),
+			true,
+		); err != nil {
+			return errors.WithMessagef(err, "failed to upsert world space attribute: %+v", worldTemplate.SpaceAttributes[i])
+		}
 	}
 
 	if err := world.Run(); err != nil {
-		err := errors.WithMessage(err, "Node: apiCreateSpace: failed to run space")
 		return errors.WithMessage(err, "failed to run world")
 	}
 
 	world.SetEnabled(true)
+
+	if err := world.Update(true); err != nil {
+		return errors.WithMessage(err, "failed to update world")
+	}
+
+	for i := range worldTemplate.Spaces {
+		if err := n.addSpaceFromTemplate(worldTemplate.Spaces[i]); err != nil {
+			return errors.WithMessagef(err, "failed to add space from template: %+v", worldTemplate.Spaces[i])
+		}
+	}
 
 	return nil
 }

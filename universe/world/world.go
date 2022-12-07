@@ -191,9 +191,6 @@ func (w *World) Load() error {
 	if err := w.LoadFromEntry(entry, true); err != nil {
 		return errors.WithMessage(err, "failed to load from entry")
 	}
-	if err := w.UpdateWorldMetadata(); err != nil {
-		return errors.WithMessage(err, "failed to update world metadata")
-	}
 	if err := w.UpdateChildrenPosition(true); err != nil {
 		return errors.WithMessage(err, "failed to update children position")
 	}
@@ -204,6 +201,14 @@ func (w *World) Load() error {
 	w.log.Infof("World loaded: %s", w.GetID())
 
 	return nil
+}
+
+func (w *World) Update(recursive bool) error {
+	if err := w.UpdateWorldMetadata(); err != nil {
+		w.log.Error(errors.WithMessagef(err, "World: Update: failed to update world metadata: %s", w.GetID()))
+	}
+
+	return w.Space.Update(recursive)
 }
 
 func (w *World) UpdateWorldMetadata() error {
