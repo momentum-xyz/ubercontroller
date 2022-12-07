@@ -130,19 +130,19 @@ func (a *Assets3d) apiAddAssets3d(c *gin.Context) {
 // @Schemes
 // @Description Uploads a 3d asset to the media manager
 // @Tags assets3d
-// @Accept json
+// @Accept multipart/form-data
 // @Produce json
-// @Param body body node.apiUploadAsset3d.MultiPartRequest true "multipart/form-data"
 // @Success 202 {object} dto.Asset3d
 // @Failure 400	{object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
 // @Router /api/v4/assets-3d/upload [post]
+// TODO: swag doc for multipart, it does not get *multipart.FileHeader
 func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
-	type MultiPartRequest struct {
+	type InBody struct {
 		File *multipart.FileHeader `form:"asset"`
 		Name string                `form:"name"`
 	}
-	var request MultiPartRequest
+	var request InBody
 	if err := c.ShouldBind(&request); err != nil {
 		err := errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to read request")
 		api.AbortRequest(c, http.StatusBadRequest, "failed_to_read", err, a.log)
