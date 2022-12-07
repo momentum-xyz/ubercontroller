@@ -24,7 +24,7 @@ func (w *Worlds) RegisterAPI(r *gin.Engine) {
 					world.GET("/explore/search", w.apiWorldsSearchSpaces)
 
 					// with special rights
-					authorizedSpecial := world.Group("", middleware.AuthorizeSpecial(w.log))
+					authorizedSpecial := world.Group("", middleware.AuthorizeSpecial(w.log, w.db))
 					{
 						authorizedSpecial.POST("/teleport-user", w.apiWorldsTeleportUser)
 

@@ -17,8 +17,8 @@ func (a *Assets3d) RegisterAPI(r *gin.Engine) {
 		// with auth
 		auth := vx.Group("", middleware.VerifyUser(a.log))
 		{
-			// with admin rights
-			authorizedSpecial := auth.Group("", middleware.AuthorizeSpecial(a.log))
+			// with special rights
+			authorizedSpecial := auth.Group("", middleware.AuthorizeSpecial(a.log, a.db))
 			{
 				authAssets3d := authorizedSpecial.Group("/assets-3d")
 				{
