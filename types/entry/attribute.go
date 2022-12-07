@@ -28,13 +28,13 @@ const (
 type AttributeID AttributeTypeID
 
 type Attribute struct {
-	AttributeID       `mapstructure:",squash"`
-	*AttributePayload `mapstructure:",squash"`
+	AttributeID       `json:",squash"`
+	*AttributePayload `json:",squash"`
 }
 
 type AttributePayload struct {
-	Value   *AttributeValue   `db:"value" mapstructure:"value"`
-	Options *AttributeOptions `db:"options" mapstructure:"options"`
+	Value   *AttributeValue   `db:"value" json:"value"`
+	Options *AttributeOptions `db:"options" json:"options"`
 }
 
 type AttributeValue map[string]any
