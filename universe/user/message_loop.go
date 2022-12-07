@@ -247,9 +247,8 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 	if u.pos == nil {
 		return errors.Errorf("Failed to get user position")
 	}
-	userPosition := *u.pos
 
-	effect.SetEffect(0, effectsEmitterID, userPosition, target.GetPosition(), 1001)
+	effect.SetEffect(0, effectsEmitterID, u.GetPosition(), target.GetPosition(), 1001)
 	u.world.Send(effect.WebsocketMessage(), false)
 	go u.SendHighFiveStats(&target)
 
