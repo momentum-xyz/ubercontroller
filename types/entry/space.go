@@ -103,3 +103,10 @@ func NewSpaceUserAttributeID(attributeID AttributeID, spaceID, userID uuid.UUID)
 		UserID:      userID,
 	}
 }
+
+func NewUserSpaceID(userID uuid.UUID, spaceID uuid.UUID) UserSpaceID {
+	return UserSpaceID{
+		UserID:  userID,
+		SpaceID: spaceID,
+	}
+}

@@ -65,14 +65,14 @@ func (db *DB) UserSpaceGetUserSpacesBySpaceID(ctx context.Context, spaceID uuid.
 	return userSpaces, nil
 }
 
-func (db *DB) UserSpaceGetUserSpaceByUserAndSpaceIDs(ctx context.Context, userSpaceID entry.UserSpaceID) ([]*entry.UserSpace, error) {
-	var userSpaces []*entry.UserSpace
+func (db *DB) UserSpaceGetUserSpaceByUserAndSpaceIDs(ctx context.Context, userSpaceID entry.UserSpaceID) (*entry.UserSpace, error) {
+	var userSpace *entry.UserSpace
 	if err := pgxscan.Select(
-		ctx, db.conn, &userSpaces, getUserSpacesBySpaceIDAndUserIDQuery, userSpaceID.UserID, userSpaceID.SpaceID,
+		ctx, db.conn, &userSpace, getUserSpacesBySpaceIDAndUserIDQuery, userSpaceID.UserID, userSpaceID.SpaceID,
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
-	return userSpaces, nil
+	return userSpace, nil
 }
 
 func (db *DB) UserSpaceGetUserSpaceValueByID(

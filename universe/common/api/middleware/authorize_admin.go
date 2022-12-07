@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -28,7 +29,8 @@ func AuthorizeAdmin(log *zap.SugaredLogger, db database.DB) gin.HandlerFunc {
 			return
 		}
 
-		_, err = db.UserSpaceGetUserSpaceByUserAndSpaceIDs(c, userID, spaceID)
+		userSpaceID := entry.NewUserSpaceID(userID, spaceID)
+		_, err = db.UserSpaceGetUserSpaceByUserAndSpaceIDs(c, userSpaceID)
 		if err != nil {
 			err := errors.WithMessage(err, "Middleware: AuthorizeAdmin: failed to get user space entry")
 			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_user_space_entry", err, log)

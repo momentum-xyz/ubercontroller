@@ -447,7 +447,7 @@ type UserSpaceDB interface {
 
 	UserSpaceGetUserSpacesByUserID(ctx context.Context, userID uuid.UUID) ([]*entry.UserSpace, error)
 	UserSpaceGetUserSpacesBySpaceID(ctx context.Context, spaceID uuid.UUID) ([]*entry.UserSpace, error)
-	UserSpaceGetUserSpaceByUserAndSpaceIDs(ctx context.Context, userSpaceID entry.UserSpaceID) ([]*entry.UserSpace, error)
+	UserSpaceGetUserSpaceByUserAndSpaceIDs(ctx context.Context, userSpaceID entry.UserSpaceID) (*entry.UserSpace, error)
 
 	UserSpaceUpdateValueByUserAndSpaceIDs(ctx context.Context, userSpaceID entry.UserSpaceID, modifyFn modify.Fn[entry.UserSpaceValue]) (*entry.UserSpaceValue, error)
 	UserSpaceGetValueByUserAndSpaceIDs(ctx context.Context, userSpaceID entry.UserSpaceID) (*entry.UserSpaceValue, error)
