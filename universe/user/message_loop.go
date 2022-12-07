@@ -235,7 +235,10 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 
 	effect := posbus.NewTriggerTransitionalBridgingEffectsOnPositionMsg(1)
 
-	effectsEmitterMap, ok := universe.GetNode().GetSpaceAttributeValue(entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.World.EffectsEmitter.Name))
+	// TODO: fix this stuff, maybe we need to get it from "world->world_settings" attribute
+	effectsEmitterMap, ok := universe.GetNode().GetSpaceAttributeValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.World.EffectsEmitter.Name),
+	)
 	if !ok {
 		return errors.Errorf("Could not get effects emitter attribute")
 	}

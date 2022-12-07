@@ -86,7 +86,7 @@ var (
 			},
 			EffectsEmitter: Attribute{
 				Name: "effects_emitter",
-				Key:  "effects_emitte",
+				Key:  "effects_emitter",
 			},
 		},
 		Space: struct {

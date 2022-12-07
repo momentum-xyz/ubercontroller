@@ -13,21 +13,21 @@ import (
 )
 
 type SpaceTemplate struct {
-	SpaceID         uuid.UUID            `json:"space_id" mapstructure:"space_id"`
-	SpaceTypeID     uuid.UUID            `json:"space_type_id" mapstructure:"space_type_id"`
-	OwnerID         uuid.UUID            `json:"owner_id" mapstructure:"owner_id"`
-	ParentID        uuid.UUID            `json:"parent_id" mapstructure:"parent_id"`
-	Asset2dID       *uuid.UUID           `json:"asset_2d_id" mapstructure:"asset_2d_id"`
-	Asset3dID       *uuid.UUID           `json:"asset_3d_id" mapstructure:"asset_3d_id"`
-	Options         *entry.SpaceOptions  `json:"options" mapstructure:"options"`
-	Position        *cmath.SpacePosition `json:"position" mapstructure:"position"`
-	SpaceAttributes []*Attribute         `json:"space_attributes" mapstructure:"space_attributes"`
+	SpaceID         uuid.UUID            `json:"space_id"`
+	SpaceTypeID     uuid.UUID            `json:"space_type_id"`
+	OwnerID         uuid.UUID            `json:"owner_id"`
+	ParentID        uuid.UUID            `json:"parent_id"`
+	Asset2dID       *uuid.UUID           `json:"asset_2d_id"`
+	Asset3dID       *uuid.UUID           `json:"asset_3d_id"`
+	Options         *entry.SpaceOptions  `json:"options"`
+	Position        *cmath.SpacePosition `json:"position"`
+	SpaceAttributes []*Attribute         `json:"space_attributes"`
 }
 
-// workaround for mapstructure squash error
+// workaround for mapstructure errors
 type Attribute struct {
-	entry.AttributeID      `mapstructure:",squash"`
-	entry.AttributePayload `mapstructure:",squash"`
+	entry.AttributeID      `json:",squash"`
+	entry.AttributePayload `json:",squash"`
 }
 
 // @Summary Create space

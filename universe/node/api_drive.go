@@ -22,8 +22,8 @@ import (
 )
 
 type WorldTemplate struct {
-	SpaceTemplate `mapstructure:",squash"`
-	Spaces        []*SpaceTemplate `json:"spaces" mapstructure:"spaces"`
+	SpaceTemplate `json:",squash"`
+	Spaces        []*SpaceTemplate `json:"spaces"`
 }
 
 type NodeJSOut struct {
