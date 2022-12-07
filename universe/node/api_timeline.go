@@ -305,16 +305,19 @@ func (n *Node) apiNewsFeed(c *gin.Context) {
 
 		userName := ""
 		userAvatarHash := ""
-		user, ok := n.GetUser(*e.SpaceID, true)
-		if ok {
-			if user.GetProfile() != nil {
-				if user.GetProfile().Name != nil {
-					userName = *user.GetProfile().Name
-				}
+		user, err := n.db.UsersGetUserByID(context.Background(), *e.SpaceID)
+		if err != nil {
+			err = errors.WithMessage(err, "Node: apiNewsFeed: failed to UsersGetUserByID")
+			api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+		}
 
-				if user.GetProfile().AvatarHash != nil {
-					userAvatarHash = *user.GetProfile().AvatarHash
-				}
+		if user.Profile != nil {
+			if user.Profile.Name != nil {
+				userName = *user.Profile.Name
+			}
+
+			if user.Profile.AvatarHash != nil {
+				userAvatarHash = *user.Profile.AvatarHash
 			}
 		}
 
