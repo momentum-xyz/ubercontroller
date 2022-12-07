@@ -149,6 +149,7 @@ func (u *User) InteractionHandler(m *posbus.TriggerInteraction) error {
 		if err := u.HandleHighFive(m); err != nil {
 			u.log.Warn(errors.WithMessage(err, "InteractionHandler: trigger high fives: failed to handle high five"))
 		}
+		return nil
 	}
 	// case posbus.TriggerStake:
 	// 	u.HandleStake(m)
@@ -203,14 +204,17 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 		return errors.New("Could not upsert high-five user user attribute")
 	}
 
-	target, found := u.space.GetUser(targetID, false)
+	target, found := u.world.GetUser(targetID, false)
 	if !found {
 		posbus.NewSimpleNotificationMsg(
-			posbus.DestinationReact, posbus.NotificationTextMessage, 0, "Receiving user not found")
+			posbus.DestinationReact, posbus.NotificationTextMessage, 0, "Target user not found")
 		return errors.Errorf("Target user not found; uuid: %v", targetID)
 	}
 
 	uProfile := u.GetProfile()
+	if uProfile == nil {
+		return errors.Errorf("User profile not found; uuid: %v", u.id)
+	}
 
 	msg := struct {
 		SenderID   string `json:"senderId"`
@@ -224,7 +228,7 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 
 	data, err := json.Marshal(&msg)
 	if err != nil {
-		return errors.WithMessage(err, "failed to marshal data")
+		return errors.WithMessage(err, "Failed to marshal data")
 	}
 
 	posbus.NewRelayToReactMsg("high5", data).WebsocketMessage()
@@ -240,15 +244,14 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 	if effectsEmitterID == uuid.Nil {
 		return errors.Errorf("Failed to get effects emitter ID from map")
 	}
+	if u.pos == nil {
+		return errors.Errorf("Failed to get user position")
+	}
+	userPosition := *u.pos
 
-	effect.SetEffect(0, effectsEmitterID, *u.pos, target.GetPosition(), 1001)
+	effect.SetEffect(0, effectsEmitterID, userPosition, target.GetPosition(), 1001)
 	u.world.Send(effect.WebsocketMessage(), false)
 	go u.SendHighFiveStats(&target)
 
-	return nil
-}
-
-func (u *User) SendHighFiveStats(target *universe.User) error {
-	//TODO: WriteInfluxPoint
 	return nil
 }
