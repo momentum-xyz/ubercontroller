@@ -308,7 +308,7 @@ func (n *Node) apiNewsFeed(c *gin.Context) {
 		user, err := n.db.UsersGetUserByID(context.Background(), *e.SpaceID)
 		if err != nil {
 			err = errors.WithMessage(err, "Node: apiNewsFeed: failed to UsersGetUserByID")
-			log.Warn(err)
+			//log.Debug(err)
 		}
 
 		if user != nil {
