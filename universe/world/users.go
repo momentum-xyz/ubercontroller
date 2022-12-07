@@ -33,6 +33,7 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 	exUser, ok := w.Users.Load(user.GetID())
 
 	if ok {
+		w.log.Infof("Found existing user: %+v\n", exUser.GetID())
 		if exUser != user {
 			if exUser.GetSessionID() == user.GetSessionID() {
 				w.log.Infof(
@@ -54,8 +55,10 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 		}
 	}
 
+	w.log.Infof("Setworld: %+v\n", user.GetID())
 	user.SetWorld(w)
 
+	w.log.Infof("AddUser: %+v\n", user.GetID())
 	// effectively replace user if exists
 	if err = w.Space.AddUser(user, updateDB); err != nil {
 		return errors.WithMessagef(err, "failed to add user %s to world: %s", user.GetID(), w.GetID())
@@ -124,15 +127,19 @@ func (w *World) initializeUnity(user universe.User) error {
 	//}()
 
 	w.SendSpawnMessage(user.SendDirectly, true)
+	w.log.Infof("Sent Spawn: %+v\n", user.GetID())
 	time.Sleep(1 * time.Second)
 	user.SendDirectly(
 		posbus.NewSignalMsg(
 			posbus.SignalSpawn,
 		).WebsocketMessage(),
 	)
+	w.log.Infof("Sent Signal: %+v\n", user.GetID())
 
 	w.SendTextures(user.SendDirectly, true)
+	w.log.Infof("Sent Textures: %+v\n", user.GetID())
 	user.ReleaseSendBuffer()
+	w.log.Infof("Opened waterfall: %+v\n", user.GetID())
 	return nil
 }
 
