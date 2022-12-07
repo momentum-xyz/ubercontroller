@@ -244,9 +244,6 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 	if effectsEmitterID == uuid.Nil {
 		return errors.Errorf("Failed to get effects emitter ID from map")
 	}
-	if u.pos == nil {
-		return errors.Errorf("Failed to get user position")
-	}
 
 	effect.SetEffect(0, effectsEmitterID, u.GetPosition(), target.GetPosition(), 1001)
 	u.GetWorld().Send(effect.WebsocketMessage(), false)
