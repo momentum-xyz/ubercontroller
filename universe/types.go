@@ -34,6 +34,7 @@ var (
 		Node struct {
 			GuestUserType  Attribute
 			NormalUserType Attribute
+			WorldTemplate  Attribute
 			JWTKey         Attribute
 		}
 		World struct {
@@ -53,6 +54,7 @@ var (
 		Node: struct {
 			GuestUserType  Attribute
 			NormalUserType Attribute
+			WorldTemplate  Attribute
 			JWTKey         Attribute
 		}{
 			GuestUserType: Attribute{
@@ -62,6 +64,9 @@ var (
 			NormalUserType: Attribute{
 				Name: "node_settings",
 				Key:  "normal_user_type",
+			},
+			WorldTemplate: Attribute{
+				Name: "world_template",
 			},
 			JWTKey: Attribute{
 				Name: "jwt_key",
