@@ -179,9 +179,9 @@ func (u *User) LockObject(msg *posbus.SetObjectLockState) error {
 
 func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 	targetID := m.Target()
-	u.log.Info("Got H5 from user:", u.id, "to user:", targetID)
+	u.log.Info("Got H5 from user:", u.GetID(), "to user:", targetID)
 
-	if targetID == u.id {
+	if targetID == u.GetID() {
 		return errors.New("You can't high-five yourself!")
 	}
 
@@ -199,12 +199,12 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 	}
 
 	_, err := universe.GetNode().UpsertUserUserAttribute(entry.NewUserUserAttributeID(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.User.HighFive.Name), u.id, targetID), modifyFn)
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.User.HighFive.Name), u.GetID(), targetID), modifyFn)
 	if err != nil {
 		return errors.New("Could not upsert high-five user user attribute")
 	}
 
-	target, found := u.world.GetUser(targetID, false)
+	target, found := u.GetWorld().GetUser(targetID, false)
 	if !found {
 		posbus.NewSimpleNotificationMsg(
 			posbus.DestinationReact, posbus.NotificationTextMessage, 0, "Target user not found")
@@ -213,7 +213,7 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 
 	uProfile := u.GetProfile()
 	if uProfile == nil {
-		return errors.Errorf("User profile not found; uuid: %v", u.id)
+		return errors.Errorf("User profile not found; uuid: %v", u.GetID())
 	}
 
 	msg := struct {
@@ -221,7 +221,7 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 		ReceiverID string `json:"receiverId"`
 		Message    string `json:"message"`
 	}{
-		SenderID:   u.id.String(),
+		SenderID:   u.GetID().String(),
 		ReceiverID: targetID.String(),
 		Message:    *uProfile.Name,
 	}
@@ -249,7 +249,7 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 	}
 
 	effect.SetEffect(0, effectsEmitterID, u.GetPosition(), target.GetPosition(), 1001)
-	u.world.Send(effect.WebsocketMessage(), false)
+	u.GetWorld().Send(effect.WebsocketMessage(), false)
 	go u.SendHighFiveStats(&target)
 
 	return nil
