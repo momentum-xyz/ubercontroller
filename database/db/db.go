@@ -26,6 +26,7 @@ type DB struct {
 	database.SpaceUserAttributesDB
 	database.UserAttributesDB
 	database.UserUserAttributesDB
+	database.UserSpaceDB
 }
 
 func NewDB(
@@ -46,6 +47,7 @@ func NewDB(
 	spaceUserAttributes database.SpaceUserAttributesDB,
 	userAttributes database.UserAttributesDB,
 	userUserAttributes database.UserUserAttributesDB,
+	userSpace database.UserSpaceDB,
 ) *DB {
 	return &DB{
 		conn:                  conn,
@@ -65,5 +67,6 @@ func NewDB(
 		SpaceUserAttributesDB: spaceUserAttributes,
 		UserAttributesDB:      userAttributes,
 		UserUserAttributesDB:  userUserAttributes,
+		UserSpaceDB:           userSpace,
 	}
 }
