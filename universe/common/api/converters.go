@@ -3,6 +3,8 @@ package api
 import (
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
@@ -58,10 +60,16 @@ func ToUserDTO(userEntry *entry.User, includeWallet bool) *dto.User {
 	return &userDTO
 }
 
-func ToUserDTOs(userEntries []*entry.User, includeWallet bool) []*dto.User {
+func ToUserDTOs(userEntries []*entry.User, registeredUserTypeID uuid.UUID, includeWallet bool) []*dto.User {
+	str := registeredUserTypeID.String()
 	userDTOs := make([]*dto.User, len(userEntries))
 	for i := range userEntries {
 		userDTOs[i] = ToUserDTO(userEntries[i], includeWallet)
+		if userDTOs[i].UserTypeID == str {
+			userDTOs[i].IsGuest = true
+		} else {
+			userDTOs[i].IsGuest = false
+		}
 	}
 	return userDTOs
 }

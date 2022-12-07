@@ -1,6 +1,7 @@
 package worlds
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -56,7 +57,21 @@ func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
 		return
 	}
 
-	userDTOs := api.ToUserDTOs(userEntries, false)
+	userTypes, err := w.db.UserTypesGetUserTypes(context.Background())
+	if err != nil {
+		err := errors.WithMessage(err, "Worlds: apiGetOnlineUsers: failed to UserTypesGetUserTypes")
+		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, w.log)
+		return
+	}
+
+	registeredUserTypeID := uuid.Nil
+	for _, userType := range userTypes {
+		if userType.UserTypeName == "User" {
+			registeredUserTypeID = userType.UserTypeID
+		}
+	}
+
+	userDTOs := api.ToUserDTOs(userEntries, registeredUserTypeID, false)
 
 	c.JSON(http.StatusOK, userDTOs)
 }

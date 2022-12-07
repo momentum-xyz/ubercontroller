@@ -2,6 +2,7 @@ package dto
 
 import (
 	"github.com/google/uuid"
+
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -84,6 +85,7 @@ type User struct {
 	JWTToken   *string `json:"token,omitempty"`
 	CreatedAt  string  `json:"createdAt"`
 	UpdatedAt  *string `json:"updatedAt,omitempty"`
+	IsGuest    bool    `json:"isGuest,omitempty"`
 }
 
 type Space struct {
