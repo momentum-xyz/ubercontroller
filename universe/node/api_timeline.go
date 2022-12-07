@@ -265,10 +265,12 @@ type UserItem struct {
 }
 type FeedItem struct {
 	UserItem
-	ConnectedTo   *UserItem `json:"connectedTo,omitempty"`
-	DockedTo      *UserItem `json:"dockedTo,omitempty"`
-	CalendarImage string    `json:"calendarImage,omitempty"`
-	CalendarTitle string    `json:"calendarTitle,omitempty"`
+	ConnectedTo   *UserItem  `json:"connectedTo,omitempty"`
+	DockedTo      *UserItem  `json:"dockedTo,omitempty"`
+	CalendarImage string     `json:"calendarImage,omitempty"`
+	CalendarTitle string     `json:"calendarTitle,omitempty"`
+	CalendarStart *time.Time `json:"calendarStart,omitempty"`
+	CalendarEnd   *time.Time `json:"calendarEnd,omitempty"`
 }
 
 type Event struct {
@@ -331,6 +333,8 @@ func (n *Node) apiNewsFeed(c *gin.Context) {
 			DockedTo:      nil,
 			CalendarTitle: e.Title,
 			CalendarImage: e.ImageHash,
+			CalendarStart: &e.Start,
+			CalendarEnd:   &e.End,
 		}
 		list = append(list, item)
 	}
