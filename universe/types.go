@@ -38,7 +38,8 @@ var (
 			JWTKey         Attribute
 		}
 		World struct {
-			Meta Attribute
+			Meta           Attribute
+			EffectsEmitter Attribute
 		}
 		Space struct {
 			Name        Attribute
@@ -49,6 +50,9 @@ var (
 				Wallet Attribute
 			}
 			Challenges Attribute
+		}
+		User struct {
+			HighFive Attribute
 		}
 	}{
 		Node: struct {
@@ -74,10 +78,15 @@ var (
 			},
 		},
 		World: struct {
-			Meta Attribute
+			Meta           Attribute
+			EffectsEmitter Attribute
 		}{
 			Meta: Attribute{
 				Name: "world_meta",
+			},
+			EffectsEmitter: Attribute{
+				Name: "effects_emitter",
+				Key:  "effects_emitte",
 			},
 		},
 		Space: struct {
@@ -109,6 +118,14 @@ var (
 			Challenges: Attribute{
 				Name: "challenge_store",
 				Key:  "challenges",
+			},
+		},
+		User: struct {
+			HighFive Attribute
+		}{
+			HighFive: Attribute{
+				Name: "high_five",
+				Key:  "counter",
 			},
 		},
 	}
