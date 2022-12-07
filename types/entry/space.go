@@ -60,6 +60,11 @@ type SpaceUserAttributeID struct {
 	UserID  uuid.UUID `db:"user_id"`
 }
 
+type UserSpaceID struct {
+	UserID  uuid.UUID `db:"user_id"`
+	SpaceID uuid.UUID `db:"space_id"`
+}
+
 type SpaceAttribute struct {
 	SpaceAttributeID
 	*AttributePayload

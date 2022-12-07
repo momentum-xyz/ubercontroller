@@ -19,6 +19,7 @@ type DB struct {
 	database.Assets3dDB
 	database.PluginsDB
 	database.SpaceTypesDB
+	database.UserSpaceDB
 	database.UserTypesDB
 	database.AttributeTypesDB
 	database.NodeAttributesDB
@@ -38,6 +39,7 @@ func NewDB(
 	assets2d database.Assets2dDB,
 	assets3d database.Assets3dDB,
 	plugins database.PluginsDB,
+	userSpace database.UserSpaceDB,
 	spaceTypes database.SpaceTypesDB,
 	userTypes database.UserTypesDB,
 	attributeTypes database.AttributeTypesDB,
@@ -58,6 +60,7 @@ func NewDB(
 		Assets3dDB:            assets3d,
 		PluginsDB:             plugins,
 		SpaceTypesDB:          spaceTypes,
+		UserSpaceDB:           userSpace,
 		UserTypesDB:           userTypes,
 		AttributeTypesDB:      attributeTypes,
 		NodeAttributesDB:      nodeAttributes,
