@@ -8,8 +8,9 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/pkg/errors"
+
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 
 	"github.com/momentum-xyz/ubercontroller/database"
 )
@@ -17,7 +18,7 @@ import (
 const (
 	getUserByIDQuery     = `SELECT * FROM "user" WHERE user_id = $1;`
 	getUsersByIDsQuery   = `SELECT * FROM "user" WHERE user_id = ANY($1);`
-	getUserByWalletQuery = `SELECT * FROM user
+	getUserByWalletQuery = `SELECT * FROM "user"
          						WHERE user_id = (SELECT user_id FROM user_attribute
          						                                WHERE plugin_id = '86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8'
          						                                  AND attribute_name = 'wallet'
