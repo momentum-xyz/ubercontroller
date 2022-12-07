@@ -99,7 +99,7 @@ func (db *DB) UserSpaceGetUserSpaces(ctx context.Context) ([]*entry.UserSpace, e
 
 func (db *DB) UserSpaceGetIndirectAdmins(ctx context.Context, spaceID uuid.UUID) ([]*uuid.UUID, error) {
 	var userIDs []*uuid.UUID
-	if err := pgxscan.Select(ctx, db.conn, &userIDs, getUserSpaceIndirectAdmins); err != nil {
+	if err := pgxscan.Select(ctx, db.conn, &userIDs, getUserSpaceIndirectAdmins, spaceID); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return userIDs, nil
