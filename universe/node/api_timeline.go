@@ -1,12 +1,20 @@
 package node
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/pkg/errors"
+
+	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/universe/common/api"
+	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 const jsonStr = `[
@@ -247,7 +255,7 @@ const jsonStr = `[
 type UserItem struct {
 	Id           int       `json:"id"`
 	CollectionId int       `json:"collectionId"`
-	Uuid         string    `json:"uuid"`
+	Uuid         uuid.UUID `json:"uuid"`
 	Owner        string    `json:"owner"`
 	Name         string    `json:"name"`
 	Description  string    `json:"description"`
@@ -259,17 +267,94 @@ type FeedItem struct {
 	UserItem
 	ConnectedTo *UserItem `json:"connectedTo,omitempty"`
 	DockedTo    *UserItem `json:"dockedTo,omitempty"`
+	EventImage  *UserItem `json:"eventImage,omitempty"`
+}
+
+type Event struct {
+	SpaceID     *uuid.UUID `json:"spaceId"`
+	Title       string     `json:"title"`
+	Start       time.Time  `json:"start"`
+	End         time.Time  `json:"end"`
+	EventID     string     `json:"eventId"`
+	ImageHash   string     `json:"image"`
+	WebLink     string     `json:"web_link"`
+	Description string     `json:"description"`
+	HostedBy    string     `json:"hosted_by"`
 }
 
 func (n *Node) apiNewsFeed(c *gin.Context) {
 
 	list := make([]FeedItem, 0)
 
-	json.Unmarshal([]byte(jsonStr), &list)
+	err := json.Unmarshal([]byte(jsonStr), &list)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiNewsFeed: failed to Unmarshal sample jsonString")
+		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+	}
 
-	//TODO
+	events, err := n.getAllEvents()
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiNewsFeed: failed to getAllEvents")
+		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+	}
+
+	for _, e := range events {
+		item := FeedItem{
+			UserItem: UserItem{
+				Id:           0,
+				CollectionId: 0,
+				Uuid:         *e.SpaceID,
+				Owner:        "",
+				Name:         "",
+				Description:  e.Title,
+				Image:        "",
+				Date:         e.Start,
+				Type:         "calendar_event"},
+			ConnectedTo: nil,
+			DockedTo:    nil,
+		}
+		list = append(list, item)
+	}
+
+	sort.Slice(list, func(i, j int) bool {
+		return list[i].Date.Before(list[j].Date)
+	})
 
 	c.JSON(http.StatusOK, list)
+}
+
+func (n *Node) getAllEvents() ([]*Event, error) {
+	attributes, err := n.db.SpaceAttributesGetSpaceAttributesByPluginIDAndAttributeName(context.Background(), universe.GetSystemPluginID(), "events")
+	if err != nil {
+		return nil, errors.WithMessage(err, "Node: getAllEvents: failed to SpaceAttributesGetSpaceAttributesByPluginIDAndAttributeName")
+	}
+
+	events := make([]*Event, 0)
+
+	for _, attribute := range attributes {
+		if attribute.Value != nil {
+			for _, eventData := range *attribute.Value {
+				e := getEvent(&attribute.SpaceID, eventData)
+				if e != nil {
+					events = append(events, e)
+				}
+			}
+		}
+	}
+
+	return events, nil
+}
+
+func getEvent(spaceID *uuid.UUID, item any) *Event {
+	e := &Event{SpaceID: spaceID}
+
+	err := utils.MapDecode(item, e)
+	if err != nil {
+		log.Error(errors.WithMessage(err, "getEvent: failed to MapDecode 'events' attribute payload"))
+		return nil
+	}
+
+	return e
 }
 
 func (n *Node) apiNotifications(c *gin.Context) {

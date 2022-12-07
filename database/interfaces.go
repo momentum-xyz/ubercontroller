@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 
 	"github.com/google/uuid"
@@ -199,6 +200,7 @@ type NodeAttributesDB interface {
 
 type SpaceAttributesDB interface {
 	SpaceAttributesGetSpaceAttributes(ctx context.Context) ([]*entry.SpaceAttribute, error)
+	SpaceAttributesGetSpaceAttributesByPluginIDAndAttributeName(ctx context.Context, pluginID uuid.UUID, attributeName string) ([]*entry.SpaceAttribute, error)
 	SpaceAttributesGetSpaceAttributeByID(
 		ctx context.Context, spaceAttributeID entry.SpaceAttributeID,
 	) (*entry.SpaceAttribute, error)
