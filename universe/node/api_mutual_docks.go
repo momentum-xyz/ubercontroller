@@ -1,6 +1,7 @@
 package node
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -8,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
 )
 
@@ -55,87 +56,94 @@ func (n *Node) apiUsersMutualDocks(c *gin.Context) {
 	//	return
 	//}
 
-	A, B := findUserIDs(inBody.WalletA, inBody.WalletB, attributes)
-
-	if A == nil {
+	userA, err := n.db.UsersGetUserByWallet(context.Background(), inBody.WalletA)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiUsersMutualDocks: failed to UsersGetUserByWallet")
+		api.AbortRequest(c, http.StatusInternalServerError, "internal_server_error", err, n.log)
+		return
+	}
+	if userA == nil {
 		m := "User UUID not found for wallet:" + inBody.WalletA
 		api.AbortRequest(c, http.StatusNotFound, "user_A_not_found", errors.New(m), n.log)
 		return
 	}
 
-	if B == nil {
+	userB, err := n.db.UsersGetUserByWallet(context.Background(), inBody.WalletB)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiUsersMutualDocks: failed to UsersGetUserByWallet")
+		api.AbortRequest(c, http.StatusInternalServerError, "internal_server_error", err, n.log)
+		return
+	}
+	if userB == nil {
 		m := "User UUID not found for wallet:" + inBody.WalletB
 		api.AbortRequest(c, http.StatusNotFound, "user_B_not_found", errors.New(m), n.log)
 		return
 	}
 
-	spaceA, err := n.db.SpacesGetSpaceByID(c, *A)
+	spaceA, err := n.db.SpacesGetSpaceByID(c, userA.UserID)
 	if err != nil {
+		err = errors.WithMessage(err, "Node: apiUsersMutualDocks: failed to SpacesGetSpaceByID for userA")
 		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
 		return
 	}
 	if spaceA == nil {
+		err = errors.New("space not found for userID=:" + userA.UserID.String())
 		api.AbortRequest(c, http.StatusNotFound, "space_A_not_found", err, n.log)
 		return
 	}
 
-	spaceB, err := n.db.SpacesGetSpaceByID(c, *B)
+	spaceB, err := n.db.SpacesGetSpaceByID(c, userB.UserID)
 	if err != nil {
+		err = errors.WithMessage(err, "Node: apiUsersMutualDocks: failed to SpacesGetSpaceByID for userB")
 		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
 		return
 	}
-	if spaceB != nil {
+	if spaceB == nil {
+		err = errors.New("space not found for userID=:" + userB.UserID.String())
 		api.AbortRequest(c, http.StatusNotFound, "space_B_not_found", err, n.log)
 		return
 	}
 
+	name := "Docking station"
+	dockStationType := n.getSpaceTypeByName(name)
+	if dockStationType == nil {
+		err = errors.New("dockStationType not found for name=:" + name)
+		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, n.log)
+		return
+	}
+	fmt.Println(dockStationType)
+
 	type Out struct {
-		Status string     `json:"status"`
-		UserA  *uuid.UUID `json:"userA"`
-		UserB  *uuid.UUID `json:"userB"`
-		SpaceA *uuid.UUID `json:"spaceA"`
-		SpaceB *uuid.UUID `json:"spaceB"`
+		Status          string     `json:"status"`
+		UserA           *uuid.UUID `json:"userA"`
+		UserB           *uuid.UUID `json:"userB"`
+		SpaceA          *uuid.UUID `json:"spaceA"`
+		SpaceB          *uuid.UUID `json:"spaceB"`
+		DockStationType string     `json:"dockStationType"`
 	}
 	out := Out{
-		Status: "ok",
-		UserA:  A,
-		UserB:  B,
-		SpaceA: &spaceA.SpaceID,
-		SpaceB: &spaceB.SpaceID,
+		Status:          "ok",
+		UserA:           &userA.UserID,
+		UserB:           &userB.UserID,
+		SpaceA:          &spaceA.SpaceID,
+		SpaceB:          &spaceB.SpaceID,
+		DockStationType: dockStationType.GetID().String(),
 	}
 
 	c.JSON(http.StatusOK, out)
 }
 
-func findUserIDs(walletA string, walletB string, allUserAttributes []*entry.UserAttribute) (*uuid.UUID, *uuid.UUID) {
-	var userIDA *uuid.UUID
-	var userIDB *uuid.UUID
-
-	for _, a := range allUserAttributes {
-		if a == nil {
-			continue
-		}
-		if a.AttributePayload == nil {
-			continue
-		}
-		if a.AttributePayload.Value != nil {
-			value := *a.AttributePayload.Value
-			wallets, ok := value["wallet"]
-			if ok {
-				list, ok := wallets.([]any)
-				if ok {
-					for _, w := range list {
-						if w == walletA {
-							userIDA = &a.UserID
-						}
-						if w == walletB {
-							userIDB = &a.UserID
-						}
-					}
-				}
-			}
+func (n *Node) getSpaceTypeByName(name string) universe.SpaceType {
+	types := n.GetSpaceTypes().GetSpaceTypes()
+	for _, v := range types {
+		if v.GetName() == name {
+			return v
 		}
 	}
 
-	return userIDA, userIDB
+	return nil
+}
+
+func (n *Node) getDockStation(dockStationType universe.SpaceType) (universe.Space, error) {
+	return nil, nil
 }
