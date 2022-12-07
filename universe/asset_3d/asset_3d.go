@@ -3,6 +3,7 @@ package asset_3d
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -27,10 +28,13 @@ type Asset3d struct {
 }
 
 func NewAsset3d(id uuid.UUID, db database.DB) *Asset3d {
+	now := time.Now().UTC()
 	return &Asset3d{
 		db: db,
 		entry: &entry.Asset3d{
 			Asset3dID: id,
+			CreatedAt: now,
+			UpdatedAt: &now, // TODO: not nullable, convert from pointer
 		},
 	}
 }
