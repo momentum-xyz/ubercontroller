@@ -24,6 +24,7 @@ func BinID(id uuid.UUID) []byte {
 
 func MapDecode(input, output interface{}) error {
 	config := &mapstructure.DecoderConfig{
+		TagName: "json",
 		DecodeHook: mapstructure.ComposeDecodeHookFunc(
 			stringToUUIDHookFunc(),
 			stringToTimeHookFunc(),
