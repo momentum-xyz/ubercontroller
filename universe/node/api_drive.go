@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os/exec"
 
 	"github.com/gin-gonic/gin"
@@ -116,10 +117,12 @@ func (n *Node) apiDriveMintOdyssey(c *gin.Context) {
 
 	jobID := uuid.New()
 
-	store.Store(jobID, StoreItem{
-		Status:    StatusInProgress,
-		NodeJSOut: nil,
-	})
+	store.Store(
+		jobID, StoreItem{
+			Status:    StatusInProgress,
+			NodeJSOut: nil,
+		},
+	)
 
 	go n.mint(jobID, inBody.Wallet, inBody.Meta, inBody.BlockHash)
 
@@ -433,4 +436,34 @@ func (n *Node) getWalletMetadata(wallet string) (*WalletMeta, error) {
 	}
 
 	return meta, nil
+}
+
+func (n *Node) apiResolveNode(c *gin.Context) {
+
+	type InQuery struct {
+		Object string `form:"object_id" binding:"required"`
+	}
+
+	type Out struct {
+		Domain string    `json:"domain"`
+		NodeID uuid.UUID `json:"node_id"`
+	}
+
+	var inQuery InQuery
+
+	if err := c.ShouldBindQuery(&inQuery); err != nil {
+		err := errors.WithMessage(err, "Node: apiResolveNode: failed to bind query")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
+		return
+	}
+
+	u, _ := url.Parse(n.cfg.UIClient.FrontendURL)
+	h := u.Hostname()
+	if h == "" {
+		h = "localhost"
+	}
+	Response := Out{Domain: h, NodeID: n.GetID()}
+
+	c.JSON(http.StatusOK, Response)
+
 }

@@ -401,8 +401,3 @@ func (n *Node) LoadUser(userID uuid.UUID) (universe.User, error) {
 	fmt.Printf("%+v\n", user.GetPosition())
 	return user, nil
 }
-
-func (n *Node) ResolveNodeByWorldID(id uuid.UUID) string {
-	return ""
-
-}
