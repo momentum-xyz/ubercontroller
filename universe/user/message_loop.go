@@ -212,7 +212,7 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 	}
 
 	uProfile := u.GetProfile()
-	if uProfile == nil {
+	if uProfile == nil || uProfile.Name == nil {
 		return errors.Errorf("User profile not found; uuid: %v", u.GetID())
 	}
 
