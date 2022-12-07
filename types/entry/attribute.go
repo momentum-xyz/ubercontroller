@@ -28,8 +28,8 @@ const (
 type AttributeID AttributeTypeID
 
 type Attribute struct {
-	AttributeID       `json:",squash"`
-	*AttributePayload `json:",squash"`
+	AttributeID
+	*AttributePayload
 }
 
 type AttributePayload struct {

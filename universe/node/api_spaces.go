@@ -24,7 +24,7 @@ type SpaceTemplate struct {
 	SpaceAttributes []*Attribute         `json:"space_attributes"`
 }
 
-// workaround for mapstructure squash error
+// workaround for mapstructure errors
 type Attribute struct {
 	entry.AttributeID      `json:",squash"`
 	entry.AttributePayload `json:",squash"`
