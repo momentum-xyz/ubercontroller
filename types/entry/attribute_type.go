@@ -7,8 +7,8 @@ import (
 )
 
 type AttributeTypeID struct {
-	PluginID uuid.UUID `db:"plugin_id"`
-	Name     string    `db:"attribute_name"`
+	PluginID uuid.UUID `db:"plugin_id" mapstructure:"plugin_id"`
+	Name     string    `db:"attribute_name" mapstructure:"attribute_name"`
 }
 
 type AttributeType struct {

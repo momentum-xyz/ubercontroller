@@ -22,8 +22,8 @@ import (
 )
 
 type WorldTemplate struct {
-	SpaceTemplate
-	Spaces []*SpaceTemplate `json:"spaces" mapstructure:"spaces"`
+	SpaceTemplate `mapstructure:",squash"`
+	Spaces        []*SpaceTemplate `json:"spaces" mapstructure:"spaces"`
 }
 
 type NodeJSOut struct {
@@ -168,18 +168,18 @@ func (n *Node) createWorld(ownerID uuid.UUID, name string) error {
 
 	// filling template
 	var worldTemplate WorldTemplate
-	if err := utils.MapDecode(templateValue, &worldTemplate); err != nil {
+	if err := utils.MapDecode(*templateValue, &worldTemplate); err != nil {
 		return errors.WithMessage(err, "failed to decode template map")
 	}
 	worldTemplate.SpaceAttributes = append(
 		worldTemplate.SpaceAttributes,
-		&entry.Attribute{
+		&Attribute{
 			AttributeID: entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name),
-			AttributePayload: entry.NewAttributePayload(
-				&entry.AttributeValue{
+			AttributePayload: entry.AttributePayload{
+				Value: &entry.AttributeValue{
 					universe.Attributes.Space.Name.Key: name,
 				},
-				nil),
+			},
 		},
 	)
 	for i := range worldTemplate.Spaces {
@@ -217,7 +217,7 @@ func (n *Node) createWorld(ownerID uuid.UUID, name string) error {
 	for i := range worldTemplate.SpaceAttributes {
 		if _, err := world.UpsertSpaceAttribute(
 			worldTemplate.SpaceAttributes[i].AttributeID,
-			modify.MergeWith(worldTemplate.SpaceAttributes[i].AttributePayload),
+			modify.MergeWith(&worldTemplate.SpaceAttributes[i].AttributePayload),
 			true,
 		); err != nil {
 			return errors.WithMessagef(err, "failed to upsert world space attribute: %+v", worldTemplate.SpaceAttributes[i])

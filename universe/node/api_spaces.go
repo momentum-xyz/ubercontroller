@@ -21,7 +21,13 @@ type SpaceTemplate struct {
 	Asset3dID       *uuid.UUID           `json:"asset_3d_id" mapstructure:"asset_3d_id"`
 	Options         *entry.SpaceOptions  `json:"options" mapstructure:"options"`
 	Position        *cmath.SpacePosition `json:"position" mapstructure:"position"`
-	SpaceAttributes []*entry.Attribute   `json:"space_attributes" mapstructure:"space_attributes"`
+	SpaceAttributes []*Attribute         `json:"space_attributes" mapstructure:"space_attributes"`
+}
+
+// workaround for mapstructure squash error
+type Attribute struct {
+	entry.AttributeID      `mapstructure:",squash"`
+	entry.AttributePayload `mapstructure:",squash"`
 }
 
 // @Summary Create space
@@ -106,14 +112,14 @@ func (n *Node) apiCreateSpace(c *gin.Context) {
 		Asset2dID:   asset2dID,
 		Asset3dID:   asset3dID,
 		Position:    inBody.Position,
-		SpaceAttributes: []*entry.Attribute{
+		SpaceAttributes: []*Attribute{
 			{
 				AttributeID: entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name),
-				AttributePayload: entry.NewAttributePayload(
-					&entry.AttributeValue{
+				AttributePayload: entry.AttributePayload{
+					Value: &entry.AttributeValue{
 						universe.Attributes.Space.Name.Key: inBody.SpaceName,
 					},
-					nil),
+				},
 			},
 		},
 	}
@@ -199,7 +205,7 @@ func (n *Node) addSpaceFromTemplate(spaceTemplate *SpaceTemplate) error {
 	for i := range spaceTemplate.SpaceAttributes {
 		if _, err := space.UpsertSpaceAttribute(
 			spaceTemplate.SpaceAttributes[i].AttributeID,
-			modify.MergeWith(spaceTemplate.SpaceAttributes[i].AttributePayload),
+			modify.MergeWith(&spaceTemplate.SpaceAttributes[i].AttributePayload),
 			true,
 		); err != nil {
 			return errors.WithMessagef(err, "failed to upsert space attribute: %+v", spaceTemplate.SpaceAttributes[i])
