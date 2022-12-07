@@ -54,7 +54,7 @@ func (n *Node) apiGetSpaceDockingBulbsCount(c *gin.Context) {
 
 	space, ok := n.GetSpaceFromAllSpaces(spaceID)
 	if !ok {
-		err := errors.Errorf("Node: apiGetSpace: space not found: %s", spaceID)
+		err := errors.Errorf("Node: apiGetSpaceDockingBulbsCount: space not found: %s", spaceID)
 		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
 		return
 	}
