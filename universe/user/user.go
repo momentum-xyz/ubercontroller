@@ -218,7 +218,7 @@ func (u *User) LoadFromEntry(entry *entry.User) error {
 func (u *User) UpdatePosition(data []byte) error {
 	// not locking will speed up but introduce minor data race with zero impact
 	//u.world.users.positionLock.RLock()
-	copy(u.posMsgBuffer[16:28], data)
+	copy(u.posMsgBuffer[16:40], data)
 	//u.world.users.positionLock.RUnlock()
 	fmt.Printf("POS: %+v %+v\n", u.pos, u.rotation)
 	currentTime := time.Now().Unix()
