@@ -62,3 +62,31 @@ func NewAttributePayload(value *AttributeValue, options *AttributeOptions) *Attr
 func NewAttributeValue() *AttributeValue {
 	return utils.GetPTR(AttributeValue(make(map[string]any)))
 }
+
+type UnitySlotType string
+
+const (
+	UnitySlotTypeInvalid UnitySlotType = ""
+	UnitySlotTypeTexture UnitySlotType = "texture"
+	UnitySlotTypeString  UnitySlotType = "string"
+	UnitySlotTypeNumber  UnitySlotType = "number"
+)
+
+type UnityContentType string
+
+const (
+	UnityContentTypeInvalid UnityContentType = ""
+	UnityContentTypeString  UnityContentType = "string"
+	UnityContentTypeNumber  UnityContentType = "number"
+	UnityContentTypeImage   UnityContentType = "image"
+	UnityContentTypeText    UnityContentType = "text"
+	UnityContentTypeVideo   UnityContentType = "video"
+)
+
+type UnityAutoAttributeOption struct {
+	SlotType           UnitySlotType    `json:"slot_type" db:"slot_type" mapstructure:"slot_type"`
+	SlotName           string           `json:"slot_name" db:"slot_name" mapstructure:"slot_name"`
+	ValueField         string           `json:"value_field" db:"value_field" mapstructure:"value_field"`
+	ContentType        UnityContentType `json:"content_type" db:"content_type" mapstructure:"content_type"`
+	TextRenderTemplate string           `json:"text_render_template" db:"text_render_template" mapstructure:"text_render_template"`
+}

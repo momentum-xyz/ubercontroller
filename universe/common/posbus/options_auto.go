@@ -2,6 +2,7 @@ package posbus
 
 import (
 	"encoding/json"
+
 	"github.com/gorilla/websocket"
 	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/momentum-xyz/ubercontroller/types/entry"

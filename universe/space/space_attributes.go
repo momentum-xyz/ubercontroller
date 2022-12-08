@@ -1,8 +1,9 @@
 package space
 
 import (
+	"github.com/gorilla/websocket"
 	"github.com/hashicorp/go-multierror"
-	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/universe/common/unity"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/message"
@@ -175,9 +176,18 @@ func (s *Space) UpsertSpaceAttribute(
 	if payload != nil {
 		value = payload.Value
 	}
-	s.UpdateTextures(attributeID, value)
 	if s.GetEnabled() {
 		go s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
+	} else {
+		go func() {
+			options, ok := s.GetSpaceAttributeEffectiveOptions(attributeID)
+			if ok {
+				autoOption, err := unity.GetOptionAutoOption(options, attributeID)
+				if err == nil {
+					s.UpdateAutoTextureMap(autoOption, value)
+				}
+			}
+		}()
 	}
 
 	return spaceAttribute, nil
@@ -213,7 +223,6 @@ func (s *Space) UpdateSpaceAttributeValue(
 	payload.Value = value
 	s.spaceAttributes.Data[attributeID] = payload
 
-	s.UpdateTextures(attributeID, value)
 	go s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
 
 	return value, nil
@@ -253,7 +262,6 @@ func (s *Space) UpdateSpaceAttributeOptions(
 	if payload != nil {
 		value = payload.Value
 	}
-	s.UpdateTextures(attributeID, value)
 	if s.GetEnabled() {
 		go s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
 	}
@@ -305,7 +313,8 @@ func (s *Space) RemoveSpaceAttributes(attributeIDs []entry.AttributeID, updateDB
 	for i := range attributeIDs {
 		removed, err := s.RemoveSpaceAttribute(attributeIDs[i], updateDB)
 		if err != nil {
-			errs = multierror.Append(errs,
+			errs = multierror.Append(
+				errs,
 				errors.WithMessagef(err, "failed to remove space attribute: %+v", attributeIDs[i]),
 			)
 		}
@@ -314,32 +323,6 @@ func (s *Space) RemoveSpaceAttributes(attributeIDs []entry.AttributeID, updateDB
 		}
 	}
 	return res, errs.ErrorOrNil()
-}
-
-// TODO: we need to rename it properly and also find a right place to call it
-func (s *Space) UpdateTextures(attributeID entry.AttributeID, attributeValue *entry.AttributeValue) {
-	attr, ok := universe.GetNode().GetAttributeTypes().GetAttributeType(entry.AttributeTypeID(attributeID))
-	if !ok {
-		return
-	}
-
-	// QUESTION: maybe we need EffectiveOptions here?
-	attrOpts := attr.GetOptions()
-	if attrOpts == nil {
-		return
-	}
-
-	s.renderTextureAttr.Mu.Lock()
-	defer s.renderTextureAttr.Mu.Unlock()
-
-	if v := utils.GetFromAnyMap(*attrOpts, "render_type", ""); v == "texture" {
-		if attributeValue != nil {
-			if c, ok := (*attributeValue)["render_hash"]; ok {
-				s.renderTextureAttr.Data[attr.GetName()] = utils.GetFromAny(c, "")
-			}
-		}
-	}
-	s.textMsg.Store(message.GetBuilder().SetObjectTextures(s.GetID(), s.renderTextureAttr.Data))
 }
 
 func (s *Space) loadSpaceAttributes() error {
@@ -383,6 +366,16 @@ func (s *Space) onSpaceAttributeChanged(
 			s.log.Error(
 				errors.WithMessagef(
 					err, "Space: onSpaceAttributeChanged: failed to handle pos bus auto: %+v", attributeID,
+				),
+			)
+		}
+	}()
+
+	go func() {
+		if err := s.unityAutoOnSpaceAttributeChanged(changeType, attributeID, value, effectiveOptions); err != nil {
+			s.log.Error(
+				errors.WithMessagef(
+					err, "Space: onSpaceAttributeChanged: failed to handle unity auto: %+v", attributeID,
 				),
 			)
 		}
@@ -462,4 +455,117 @@ func (s *Space) calendarOnSpaceAttributeChanged(
 	}
 
 	return nil
+}
+
+func (s *Space) unityAutoOnSpaceAttributeChanged(
+	changeType universe.AttributeChangeType,
+	attributeID entry.AttributeID,
+	value *entry.AttributeValue,
+	effectiveOptions *entry.AttributeOptions,
+) error {
+	autoOption, err := unity.GetOptionAutoOption(effectiveOptions, attributeID)
+	if err != nil {
+		return errors.WithMessagef(err, "failed to get auto option: %+v", attributeID)
+	}
+	if autoOption == nil {
+		return nil
+	}
+
+	hash, err := unity.PrerenderAutoValue(s.ctx, autoOption, value)
+	if err != nil {
+		return errors.WithMessagef(err, "prerendering error: %+v", attributeID)
+	}
+
+	//dirty hack to set auto_render_hash value without triggering processing again
+	// TODO: fix it properly later
+	if hash != nil || hash.Hash != "" {
+		s.spaceAttributes.Mu.Lock()
+
+		(*value)["auto_render_hash"] = hash.Hash
+
+		if err := s.db.SpaceAttributesUpdateSpaceAttributeValue(
+			s.ctx, entry.NewSpaceAttributeID(attributeID, s.GetID()), value,
+		); err != nil {
+			s.spaceAttributes.Mu.Unlock()
+			return errors.WithMessage(err, "failed to update db")
+		}
+		s.spaceAttributes.Mu.Unlock()
+		return nil
+	}
+	s.SendUnityAutoAttributeMessage(
+		autoOption, value, func(m *websocket.PreparedMessage) error { return s.GetWorld().Send(m, false) },
+	)
+	return nil
+}
+
+func (s *Space) SendUnityAutoAttributeMessage(
+	option *entry.UnityAutoAttributeOption,
+	value *entry.AttributeValue,
+	send func(*websocket.PreparedMessage) error,
+) {
+	msg := s.UpdateAutoTextureMap(option, value)
+	if msg != nil {
+		send(msg)
+	}
+	return
+}
+
+func (s *Space) UpdateAutoTextureMap(
+	option *entry.UnityAutoAttributeOption,
+	value *entry.AttributeValue,
+) *websocket.PreparedMessage {
+	if option == nil {
+		return nil
+	}
+	var msg *websocket.PreparedMessage
+	switch option.SlotType {
+	case entry.UnitySlotTypeNumber:
+		v, ok := (*value)[option.ValueField]
+		if !ok {
+			return nil
+		}
+		val, ok := v.(int)
+		if !ok {
+			return nil
+		}
+		sendMap := map[string]int32{option.SlotName: int32(val)}
+		msg = message.GetBuilder().SetObjectAttributes(s.id, sendMap)
+	case entry.UnitySlotTypeString:
+		v, ok := (*value)[option.ValueField]
+		if !ok {
+			return nil
+		}
+		val, ok := v.(string)
+		if !ok {
+			return nil
+		}
+
+		sendMap := map[string]string{option.SlotName: val}
+		msg = message.GetBuilder().SetObjectStrings(s.id, sendMap)
+	case entry.UnitySlotTypeTexture:
+		valField := "auto_render_hash"
+		if option.ContentType == "image" {
+			valField = "render_hash"
+		}
+		v, ok := (*value)[valField]
+		if !ok {
+			return nil
+		}
+		val, ok := v.(string)
+		if !ok {
+			return nil
+		}
+
+		s.renderTextureMap.Store(option.SlotName, val)
+		func() {
+			s.renderTextureMap.Mu.RLock()
+			s.textMsg.Store(message.GetBuilder().SetObjectTextures(s.id, s.renderTextureMap.Data))
+			s.renderTextureMap.Mu.RUnlock()
+		}()
+
+		sendMap := map[string]string{option.SlotName: val}
+		msg = message.GetBuilder().SetObjectTextures(s.id, sendMap)
+
+	}
+	return msg
 }
