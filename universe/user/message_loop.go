@@ -14,8 +14,6 @@ import (
 func (u *User) OnMessage(msg *posbus.Message) error {
 	switch msg.Type() {
 	case posbus.MsgTypeSendPosition:
-		fmt.Printf("PBUF: %+v\n", msg.Msg())
-		fmt.Printf("PBUF: %+v\n", msg.AsSendPos())
 		if err := u.UpdatePosition(msg.AsSendPos()); err != nil {
 			return errors.WithMessage(err, "failed to handle: send position")
 		}

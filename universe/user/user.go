@@ -2,7 +2,6 @@ package user
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -220,7 +219,6 @@ func (u *User) UpdatePosition(data []byte) error {
 	//u.world.users.positionLock.RLock()
 	copy(u.posMsgBuffer[16:40], data)
 	//u.world.users.positionLock.RUnlock()
-	fmt.Printf("POS: %+v %+v\n", u.pos, u.rotation)
 	currentTime := time.Now().Unix()
 	u.lastPositionUpdateTimestamp = currentTime
 
