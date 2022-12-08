@@ -52,7 +52,7 @@ func GetOptionAutoOption(
 	if err := utils.MapDecode(autoOptionsValue, autoOption); err != nil {
 		return nil, errors.WithMessage(err, "failed to decode auto option")
 	}
-	fmt.Printf("FFF: %+v\n", autoOption)
+	fmt.Printf("FFF: %+v %+v \n", autoOption, autoOptionsValue)
 	if autoOption.SlotType == entry.UnitySlotTypeInvalid || autoOption.ContentType == entry.UnityContentTypeInvalid {
 		return nil, nil
 	}
