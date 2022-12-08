@@ -33,8 +33,8 @@ type Attribute struct {
 }
 
 type AttributePayload struct {
-	Value   *AttributeValue   `db:"value" json:"value"`
-	Options *AttributeOptions `db:"options" json:"options"`
+	Value   *AttributeValue   `db:"value"`
+	Options *AttributeOptions `db:"options"`
 }
 
 type AttributeValue map[string]any
@@ -88,5 +88,5 @@ type UnityAutoAttributeOption struct {
 	SlotName           string           `json:"slot_name" db:"slot_name" mapstructure:"slot_name"`
 	ValueField         string           `json:"value_field" db:"value_field" mapstructure:"value_field"`
 	ContentType        UnityContentType `json:"content_type" db:"content_type" mapstructure:"content_type"`
-	TextRenderTemplate AttributeValue   `json:"text_render_template" db:"text_render_template" mapstructure:"text_render_template"`
+	TextRenderTemplate string           `json:"text_render_template" db:"text_render_template" mapstructure:"text_render_template"`
 }

@@ -5,9 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 
-	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -15,7 +15,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils"
 
-	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 )
 
@@ -29,18 +28,16 @@ type AttributeValueChangedMessageData struct {
 	Value         any    `json:"value"`
 }
 
-type AttributeSlotKind string
-
 const (
-	AttributeSlotKindInvalid AttributeSlotKind = ""
-	AttributeSlotKindTexture AttributeSlotKind = "texture"
-	AttributeSlotKindVideo   AttributeSlotKind = "video"
-	AttributeSlotKindNumber  AttributeSlotKind = "number"
-	AttributeSlotKindString  AttributeSlotKind = "string"
-	AttributeSlotKindImage   AttributeSlotKind = "image"
+	RenderKindNone uint = iota
+	RenderKindVideo
+	RenderKindText
 )
 
-func GetOptionAutoOption(options *entry.AttributeOptions) (*entry.UnityAutoAttributeOption, error) {
+// TODO: requre optimization to not do it every time we touch attribute
+func GetOptionAutoOption(
+	options *entry.AttributeOptions, attributeID entry.AttributeID,
+) (*entry.UnityAutoAttributeOption, error) {
 	if options == nil {
 		return nil, nil
 	}
@@ -54,86 +51,93 @@ func GetOptionAutoOption(options *entry.AttributeOptions) (*entry.UnityAutoAttri
 	if err := utils.MapDecode(autoOptionsValue, autoOption); err != nil {
 		return nil, errors.WithMessage(err, "failed to decode auto option")
 	}
-
+	if autoOption.SlotType == entry.UnitySlotTypeInvalid || autoOption.ContentType == entry.UnityContentTypeInvalid {
+		return nil, nil
+	}
+	if autoOption.SlotName == "" {
+		autoOption.SlotName = attributeID.Name
+	}
+	if autoOption.ValueField == "" {
+		if autoOption.ContentType == "image" {
+			autoOption.ValueField = "render_hash"
+		} else {
+			autoOption.ValueField = "value"
+		}
+	}
 	return autoOption, nil
 }
 
-func GetOptionAutoMessage(ctx context.Context, option *entry.UnityAutoAttributeOption, changeType universe.AttributeChangeType,
-	attributeID entry.AttributeID, value *entry.AttributeValue) (*websocket.PreparedMessage, error) {
-
-	// do checks if obligatory fields are present
-	if option == nil {
-		return nil, nil
-	}
-	if option.SlotType == entry.UnitySlotTypeInvalid || option.ContentType == entry.UnityContentTypeInvalid {
+func PrerenderAutoValue(
+	ctx context.Context, option *entry.UnityAutoAttributeOption, value *entry.AttributeValue,
+) (*dto.HashResponse, error) {
+	if option == nil || option.SlotType != "texture" || value == nil {
 		return nil, nil
 	}
 
-	data := &AttributeValueChangedMessage{
-		Type: changeType,
-		Data: AttributeValueChangedMessageData{
-			AttributeName: attributeID.Name,
-			Value:         value,
-		},
+	if option.ContentType == "image" {
+		return nil, nil
 	}
 
-	// do some checks depending on slot kind
-	// for textures we need to render them depending on the
-	// content type: currently there are 2 options:
-	// video and text/number/string
-	switch option.SlotType {
-	case "texture":
-		if option.ContentType == "video" {
-			payload, err := json.Marshal(map[string]any{
-				"url": option.ValueField,
-			})
+	valueAny, ok := (*value)[option.ValueField]
+	if !ok {
+		return nil, nil
+	}
+	var valueString string
+
+	var renderKind uint
+	switch option.ContentType {
+	case "video", "text", "string":
+		valueString, ok = valueAny.(string)
+		if !ok {
+			errors.New("Can not cast value to string in PrerenderAutoValue")
+		}
+		renderKind = RenderKindVideo
+	case "number":
+		valueUint, ok := valueAny.(uint32)
+		if !ok {
+			errors.New("Can not cast value to uint32 in PrerenderAutoValue")
+		}
+		valueString = strconv.FormatUint(uint64(valueUint), 10)
+		renderKind = RenderKindText
+	default:
+		return nil, nil
+	}
+
+	var hash *dto.HashResponse
+	var err error
+	switch renderKind {
+	case RenderKindVideo:
+		{
+			payload, err := json.Marshal(
+				map[string]any{
+					"url": valueString,
+				},
+			)
 			if err != nil {
 				return nil, errors.WithMessage(err, "Failed to marshal preRenderHash")
 			}
 
-			hash, err := renderVideo(ctx, payload)
+			hash, err = renderVideo(ctx, payload)
 			if err != nil {
 				return nil, err
 			}
-			if hash != nil {
-				data.Data.Value = hash.Hash
+		}
+	case RenderKindText:
+		{
+			if option.TextRenderTemplate == "" {
+				return nil, nil
+			}
+
+			payload := []byte(strings.Replace(option.TextRenderTemplate, "%TEXT%", valueString, -1))
+
+			hash, err = renderFrame(ctx, payload)
+			if err != nil {
+				return nil, err
 			}
 		}
 
-		// if we need to render a string or a number we extract the
-		// "string" field of the ValueField
-		start := strings.Index(option.ValueField, "string")
-		end := strings.Index(option.ValueField[start:], ",")
-
-		preRenderHash := option.ValueField[start : start+end]
-
-		payload, err := json.Marshal(map[string]any{
-			"hash": preRenderHash,
-		})
-		if err != nil {
-			return nil, errors.WithMessage(err, "Failed to marshal preRenderHash")
-		}
-
-		hash, err := renderFrame(ctx, payload)
-		if err != nil {
-			return nil, err
-		}
-		if hash != nil {
-			data.Data.Value = hash.Hash
-		}
 	}
-
-	sendData, err := json.Marshal(data)
-	if err != nil {
-		return nil, errors.WithMessagef(err, "failed to marshal message payload")
-	}
-
-	topic := string(option.ContentType)
-	if topic == "" {
-		topic = attributeID.PluginID.String()
-	}
-
-	return posbus.NewRelayToUnityMsg(topic, sendData).WebsocketMessage(), nil
+	return hash, nil
 }
 
 func renderFrame(ctx context.Context, preRenderHash []byte) (*dto.HashResponse, error) {
