@@ -50,7 +50,7 @@ type Space struct {
 
 	spawnMsg          atomic.Pointer[websocket.PreparedMessage]
 	attributesMsg     *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
-	renderTextureAttr *generic.SyncMap[string, string]
+	renderTextureMap  *generic.SyncMap[string, string]
 	textMsg           atomic.Pointer[websocket.PreparedMessage]
 	actualPosition    atomic.Pointer[cmath.SpacePosition]
 	broadcastPipeline chan *websocket.PreparedMessage
@@ -65,14 +65,14 @@ type Space struct {
 
 func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
 	return &Space{
-		id:                id,
-		db:                db,
-		Users:             generic.NewSyncMap[uuid.UUID, universe.User](0),
-		Children:          generic.NewSyncMap[uuid.UUID, universe.Space](0),
-		spaceAttributes:   generic.NewSyncMap[entry.AttributeID, *entry.AttributePayload](0),
-		attributesMsg:     generic.NewSyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]](0),
-		renderTextureAttr: generic.NewSyncMap[string, string](0),
-		world:             world,
+		id:               id,
+		db:               db,
+		Users:            generic.NewSyncMap[uuid.UUID, universe.User](0),
+		Children:         generic.NewSyncMap[uuid.UUID, universe.Space](0),
+		spaceAttributes:  generic.NewSyncMap[entry.AttributeID, *entry.AttributePayload](0),
+		attributesMsg:    generic.NewSyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]](0),
+		renderTextureMap: generic.NewSyncMap[string, string](0),
+		world:            world,
 	}
 }
 

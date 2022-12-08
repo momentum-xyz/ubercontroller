@@ -3,14 +3,15 @@ package space
 import (
 	"github.com/gorilla/websocket"
 	"github.com/hashicorp/go-multierror"
+	"github.com/momentum-xyz/ubercontroller/universe/common/unity"
+	"github.com/pkg/errors"
+
 	"github.com/momentum-xyz/ubercontroller/pkg/message"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/common/posbus"
-	"github.com/momentum-xyz/ubercontroller/universe/common/unity"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
-	"github.com/pkg/errors"
 )
 
 func (s *Space) GetSpaceAttributeValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool) {
@@ -149,8 +150,6 @@ func (s *Space) GetSpaceAttributesPayload(recursive bool) map[entry.SpaceAttribu
 func (s *Space) UpsertSpaceAttribute(
 	attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
 ) (*entry.SpaceAttribute, error) {
-	options, ok := s.GetSpaceAttributeEffectiveOptions(attributeID)
-
 	s.spaceAttributes.Mu.Lock()
 	defer s.spaceAttributes.Mu.Unlock()
 
@@ -173,29 +172,21 @@ func (s *Space) UpsertSpaceAttribute(
 
 	s.spaceAttributes.Data[attributeID] = payload
 
-	// TODO: find better way how to skip "onSpaceAttributeChanged" on node loading
-	// TODO: changed to process unity-auto attributes
 	var value *entry.AttributeValue
 	if payload != nil {
 		value = payload.Value
 	}
-
-	if !updateDB {
-		if ok {
-			autoOption, err := unity.GetOptionAutoOption(options, attributeID)
-			if err == nil {
-				s.SendUnityAutoAttributeMessage(
-					autoOption,
-					value,
-					func(*websocket.PreparedMessage) error { return nil },
-				)
-			}
-		}
-
+	if s.GetEnabled() {
+		go s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
 	} else {
-
 		go func() {
-			s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
+			options, ok := s.GetSpaceAttributeEffectiveOptions(attributeID)
+			if ok {
+				autoOption, err := unity.GetOptionAutoOption(options, attributeID)
+				if err == nil {
+					s.UpdateAutoTextureMap(autoOption, value)
+				}
+			}
 		}()
 	}
 
@@ -267,13 +258,13 @@ func (s *Space) UpdateSpaceAttributeOptions(
 	payload.Options = options
 	s.spaceAttributes.Data[attributeID] = payload
 
-	go func() {
-		var value *entry.AttributeValue
-		if payload != nil {
-			value = payload.Value
-		}
-		s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
-	}()
+	var value *entry.AttributeValue
+	if payload != nil {
+		value = payload.Value
+	}
+	if s.GetEnabled() {
+		go s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
+	}
 
 	return options, nil
 }
@@ -298,17 +289,19 @@ func (s *Space) RemoveSpaceAttribute(attributeID entry.AttributeID, updateDB boo
 
 	delete(s.spaceAttributes.Data, attributeID)
 
-	go func() {
-		if !attributeEffectiveOptionsOK {
-			s.log.Error(
-				errors.Errorf(
-					"Space: RemoveSpaceAttribute: failed to get space attribute effective options",
-				),
-			)
-			return
-		}
-		s.onSpaceAttributeChanged(universe.RemovedAttributeChangeType, attributeID, nil, attributeEffectiveOptions)
-	}()
+	if s.GetEnabled() {
+		go func() {
+			if !attributeEffectiveOptionsOK {
+				s.log.Error(
+					errors.Errorf(
+						"Space: RemoveSpaceAttribute: failed to get space attribute effective options",
+					),
+				)
+				return
+			}
+			s.onSpaceAttributeChanged(universe.RemovedAttributeChangeType, attributeID, nil, attributeEffectiveOptions)
+		}()
+	}
 
 	return true, nil
 }
@@ -510,30 +503,41 @@ func (s *Space) SendUnityAutoAttributeMessage(
 	value *entry.AttributeValue,
 	send func(*websocket.PreparedMessage) error,
 ) {
+	msg := s.UpdateAutoTextureMap(option, value)
+	if msg != nil {
+		send(msg)
+	}
+	return
+}
+
+func (s *Space) UpdateAutoTextureMap(
+	option *entry.UnityAutoAttributeOption,
+	value *entry.AttributeValue,
+) *websocket.PreparedMessage {
 	if option == nil {
-		return
+		return nil
 	}
 	var msg *websocket.PreparedMessage
 	switch option.SlotType {
 	case entry.UnitySlotTypeNumber:
 		v, ok := (*value)[option.ValueField]
 		if !ok {
-			return
+			return nil
 		}
 		val, ok := v.(int)
 		if !ok {
-			return
+			return nil
 		}
 		sendMap := map[string]int32{option.SlotName: int32(val)}
 		msg = message.GetBuilder().SetObjectAttributes(s.id, sendMap)
 	case entry.UnitySlotTypeString:
 		v, ok := (*value)[option.ValueField]
 		if !ok {
-			return
+			return nil
 		}
 		val, ok := v.(string)
 		if !ok {
-			return
+			return nil
 		}
 
 		sendMap := map[string]string{option.SlotName: val}
@@ -545,24 +549,23 @@ func (s *Space) SendUnityAutoAttributeMessage(
 		}
 		v, ok := (*value)[valField]
 		if !ok {
-			return
+			return nil
 		}
 		val, ok := v.(string)
 		if !ok {
-			return
+			return nil
 		}
 
-		s.renderTextureAttr.Store(option.SlotName, val)
+		s.renderTextureMap.Store(option.SlotName, val)
 		func() {
-			s.renderTextureAttr.Mu.RLock()
-			s.textMsg.Store(message.GetBuilder().SetObjectTextures(s.id, s.renderTextureAttr.Data))
-			s.renderTextureAttr.Mu.RUnlock()
+			s.renderTextureMap.Mu.RLock()
+			s.textMsg.Store(message.GetBuilder().SetObjectTextures(s.id, s.renderTextureMap.Data))
+			s.renderTextureMap.Mu.RUnlock()
 		}()
 
 		sendMap := map[string]string{option.SlotName: val}
 		msg = message.GetBuilder().SetObjectTextures(s.id, sendMap)
 
 	}
-	send(msg)
-	return
+	return msg
 }
