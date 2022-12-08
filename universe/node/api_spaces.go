@@ -1,6 +1,7 @@
 package node
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -116,6 +117,7 @@ func (n *Node) apiCreateSpace(c *gin.Context) {
 			if parentWorld != nil {
 				user, ok := parentWorld.GetUser(userID, true)
 				if ok {
+					fmt.Println("User rotation: %v", user.GetRotation())
 					distance := float32(10)
 					position = &cmath.SpacePosition{
 						Location: cmath.Add(user.GetPosition(), cmath.MultiplyN(user.GetRotation(), distance)),
