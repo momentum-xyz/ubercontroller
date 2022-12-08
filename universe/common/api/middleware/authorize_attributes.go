@@ -7,7 +7,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/database"
 )
 
-func AuthorizeSpecial(log *zap.SugaredLogger, db database.DB) gin.HandlerFunc {
+func AuthorizeAttributes(log *zap.SugaredLogger, db database.DB, attributeType any) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		return
 	}
