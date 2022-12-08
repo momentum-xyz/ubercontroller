@@ -275,7 +275,7 @@ func (n *Node) mint(jobID uuid.UUID, wallet string, meta NFTMeta, blockHash stri
 		return
 	}
 
-	output, err := exec.Command("node", "mint.js", wallet, "//Alice", string(b), blockHash).Output()
+	output, err := exec.Command("node", "mint.js", wallet, n.cfg.Common.MnemonicPhrase, string(b), blockHash).Output()
 	if err != nil {
 		err = errors.WithMessage(err, "failed to exec node mint.js")
 		{
