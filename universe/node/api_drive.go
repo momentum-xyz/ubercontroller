@@ -21,11 +21,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
-type WorldTemplate struct {
-	SpaceTemplate `json:",squash"`
-	Spaces        []*SpaceTemplate `json:"spaces"`
-}
-
 type NodeJSOut struct {
 	Data  any      `json:"data"`
 	Logs  []string `json:"logs"`
@@ -166,78 +161,16 @@ func (n *Node) createWorld(ownerID uuid.UUID, name string) error {
 		return errors.Errorf("failed to get world template attribute value")
 	}
 
-	// filling template
-	var worldTemplate WorldTemplate
+	var worldTemplate SpaceTemplate
 	if err := utils.MapDecode(*templateValue, &worldTemplate); err != nil {
 		return errors.WithMessage(err, "failed to decode template map")
 	}
-	worldTemplate.SpaceAttributes = append(
-		worldTemplate.SpaceAttributes,
-		&Attribute{
-			AttributeID: entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name),
-			AttributePayload: entry.AttributePayload{
-				Value: &entry.AttributeValue{
-					universe.Attributes.Space.Name.Key: name,
-				},
-			},
-		},
-	)
-	for i := range worldTemplate.Spaces {
-		worldTemplate.Spaces[i].SpaceID = uuid.New()
-		worldTemplate.Spaces[i].OwnerID = ownerID
-		worldTemplate.Spaces[i].ParentID = ownerID
-	}
+	worldTemplate.SpaceID = &ownerID // User's world (aka Odyssey) should be equal to user ID
+	worldTemplate.SpaceName = name
+	worldTemplate.OwnerID = &ownerID
 
-	worldType, ok := n.GetSpaceTypes().GetSpaceType(worldTemplate.SpaceTypeID)
-	if !ok {
-		return errors.Errorf("failed to get world space type: %s", worldTemplate.SpaceTypeID)
-	}
-
-	// User's world (aka Odyssey) should be equal to user ID
-	world, err := n.GetWorlds().CreateWorld(ownerID)
-	if err != nil {
-		err = errors.WithMessage(err, "failed to CreateWorld")
-		return err
-	}
-
-	if err := world.SetOwnerID(ownerID, false); err != nil {
-		return errors.WithMessage(err, "failed to SetOwnerID")
-	}
-	if err := world.SetSpaceType(worldType, false); err != nil {
-		return errors.WithMessage(err, "failed to SetSpaceType")
-	}
-	if err := world.SetParent(n, false); err != nil {
-		return errors.WithMessage(err, "failed to SetParent")
-	}
-
-	if err := n.GetWorlds().AddWorld(world, true); err != nil {
-		return errors.WithMessage(err, "failed to AddWorld")
-	}
-
-	for i := range worldTemplate.SpaceAttributes {
-		if _, err := world.UpsertSpaceAttribute(
-			worldTemplate.SpaceAttributes[i].AttributeID,
-			modify.MergeWith(&worldTemplate.SpaceAttributes[i].AttributePayload),
-			true,
-		); err != nil {
-			return errors.WithMessagef(err, "failed to upsert world space attribute: %+v", worldTemplate.SpaceAttributes[i])
-		}
-	}
-
-	if err := world.Run(); err != nil {
-		return errors.WithMessage(err, "failed to run world")
-	}
-
-	world.SetEnabled(true)
-
-	if err := world.Update(true); err != nil {
-		return errors.WithMessage(err, "failed to update world")
-	}
-
-	for i := range worldTemplate.Spaces {
-		if err := n.addSpaceFromTemplate(worldTemplate.Spaces[i]); err != nil {
-			return errors.WithMessagef(err, "failed to add space from template: %+v", worldTemplate.Spaces[i])
-		}
+	if _, err := n.addWorldFromTemplate(&worldTemplate); err != nil {
+		return errors.WithMessagef(err, "failed to add world from template: %+v", worldTemplate)
 	}
 
 	return nil
@@ -508,4 +441,82 @@ func (n *Node) apiResolveNode(c *gin.Context) {
 
 	c.JSON(http.StatusOK, Response)
 
+}
+
+func (n *Node) addWorldFromTemplate(worldTemplate *SpaceTemplate) (uuid.UUID, error) {
+	// loading
+	worldSpaceType, ok := n.GetSpaceTypes().GetSpaceType(worldTemplate.SpaceTypeID)
+	if !ok {
+		return uuid.Nil, errors.Errorf("failed to get world space type: %s", worldTemplate.SpaceTypeID)
+	}
+
+	worldID := worldTemplate.SpaceID
+	if worldID == nil {
+		worldID = utils.GetPTR(uuid.New())
+	}
+
+	// creation
+	world, err := n.GetWorlds().CreateWorld(*worldID)
+	if err != nil {
+		return uuid.Nil, errors.WithMessagef(err, "failed to create world: %s", worldID)
+	}
+
+	if err := world.SetOwnerID(*worldTemplate.OwnerID, false); err != nil {
+		return uuid.Nil, errors.WithMessagef(err, "failed to set owner: %s", worldTemplate.OwnerID)
+	}
+	if err := world.SetSpaceType(worldSpaceType, false); err != nil {
+		return uuid.Nil, errors.WithMessagef(err, "failed to set space type: %s", worldTemplate.SpaceTypeID)
+	}
+	if err := world.SetParent(n, false); err != nil {
+		return uuid.Nil, errors.WithMessagef(err, "failed to set parent: %s", n.GetID())
+	}
+
+	if err := n.GetWorlds().AddWorld(world, true); err != nil {
+		return uuid.Nil, errors.WithMessage(err, "failed to add world")
+	}
+
+	// adding attributes
+	worldTemplate.SpaceAttributes = append(
+		worldTemplate.SpaceAttributes,
+		&Attribute{
+			AttributeID: entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name),
+			AttributePayload: entry.AttributePayload{
+				Value: &entry.AttributeValue{
+					universe.Attributes.Space.Name.Key: worldTemplate.SpaceName,
+				},
+			},
+		},
+	)
+	for i := range worldTemplate.SpaceAttributes {
+		if _, err := world.UpsertSpaceAttribute(
+			worldTemplate.SpaceAttributes[i].AttributeID,
+			modify.MergeWith(&worldTemplate.SpaceAttributes[i].AttributePayload),
+			true,
+		); err != nil {
+			return uuid.Nil, errors.WithMessagef(
+				err, "failed to upsert world space attribute: %+v", worldTemplate.SpaceAttributes[i],
+			)
+		}
+	}
+
+	// run
+	if err := world.Run(); err != nil {
+		return uuid.Nil, errors.WithMessage(err, "failed to run world")
+	}
+
+	world.SetEnabled(true)
+
+	if err := world.Update(true); err != nil {
+		return uuid.Nil, errors.WithMessage(err, "failed to update world")
+	}
+
+	// children
+	for i := range worldTemplate.Spaces {
+		worldTemplate.Spaces[i].ParentID = *worldID
+		if _, err := n.addSpaceFromTemplate(worldTemplate.Spaces[i]); err != nil {
+			return uuid.Nil, errors.WithMessagef(err, "failed to add space from template: %+v", worldTemplate.Spaces[i])
+		}
+	}
+
+	return *worldID, nil
 }
