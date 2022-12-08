@@ -40,9 +40,9 @@ type AttributePayload struct {
 type AttributeValue map[string]any
 
 type PosBusAutoAttributeOption struct {
-	SendTo PosBusDestinationType            `json:"send_to" db:"send_to" mapstructure:"send_to"`
-	Scope  []PosBusAutoScopeAttributeOption `json:"scope" db:"scope" mapstructure:"scope"`
-	Topic  string                           `json:"topic" db:"topic" mapstructure:"topic"`
+	SendTo PosBusDestinationType            `json:"send_to" db:"send_to"`
+	Scope  []PosBusAutoScopeAttributeOption `json:"scope" db:"scope"`
+	Topic  string                           `json:"topic" db:"topic"`
 }
 
 func NewAttributeID(pluginID uuid.UUID, name string) AttributeID {
