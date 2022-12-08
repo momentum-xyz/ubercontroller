@@ -74,6 +74,10 @@ func (u *User) GetPosition() cmath.Vec3 {
 	return *u.pos
 }
 
+func (u *User) GetRotation() cmath.Vec3 {
+	return *u.rotation
+}
+
 func (u *User) GetPosBuffer() []byte {
 	return u.posMsgBuffer
 }

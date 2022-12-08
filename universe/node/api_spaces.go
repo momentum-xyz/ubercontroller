@@ -114,9 +114,13 @@ func (n *Node) apiCreateSpace(c *gin.Context) {
 		if options == nil || len(options.ChildPlacements) == 0 {
 			parentWorld := parent.GetWorld()
 			if parentWorld != nil {
-				_, ok := parentWorld.GetUser(userID, true)
+				user, ok := parentWorld.GetUser(userID, true)
 				if ok {
-					// TODO: calculate space position to be in front of the user
+					position = &cmath.SpacePosition{
+						Location: cmath.Add(user.GetPosition(), cmath.MultiplyN(user.GetRotation(), 20)),
+						Rotation: cmath.Vec3{},
+						Scale:    cmath.Vec3{X: 1, Y: 1, Z: 1},
+					}
 				}
 			}
 		}
