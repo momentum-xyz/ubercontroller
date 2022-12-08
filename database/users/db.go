@@ -8,15 +8,17 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/pkg/errors"
+
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 
 	"github.com/momentum-xyz/ubercontroller/database"
 )
 
 const (
 	getUserByIDQuery     = `SELECT * FROM "user" WHERE user_id = $1;`
-	getUserByWalletQuery = `SELECT * FROM user
+	getUsersByIDsQuery   = `SELECT * FROM "user" WHERE user_id = ANY($1);`
+	getUserByWalletQuery = `SELECT * FROM "user"
          						WHERE user_id = (SELECT user_id FROM user_attribute
          						                                WHERE plugin_id = '86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8'
          						                                  AND attribute_name = 'wallet'
@@ -24,7 +26,7 @@ const (
 	getUserProfileByUserIDQuery = `SELECT profile FROM "user" WHERE user_id = $1;`
 
 	removeUserByIDQuery   = `DELETE FROM "user" WHERE user_id = $1;`
-	removeUsersByIDsQuery = `DELETE FROM "user" WHERE user_id IN ($1);`
+	removeUsersByIDsQuery = `DELETE FROM "user" WHERE user_id = ANY($1);`
 
 	updateUserUserTypeIDQuery = `UPDATE "user" SET user_type_id = $2 WHERE user_id = $1;`
 	updateUserOptionsQuery    = `UPDATE "user" SET options = $2 WHERE user_id = $1;`
@@ -59,6 +61,14 @@ func (db *DB) UsersGetUserByID(ctx context.Context, userID uuid.UUID) (*entry.Us
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return &user, nil
+}
+
+func (db *DB) UsersGetUsersByIDs(ctx context.Context, userIDs []uuid.UUID) ([]*entry.User, error) {
+	var users []*entry.User
+	if err := pgxscan.Select(ctx, db.conn, &users, getUsersByIDsQuery, userIDs); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return users, nil
 }
 
 func (db *DB) UsersGetUserByWallet(ctx context.Context, wallet string) (*entry.User, error) {

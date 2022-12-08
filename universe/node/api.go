@@ -31,6 +31,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 			drive.POST("/mint-odyssey", n.apiDriveMintOdyssey)
 			drive.GET("/mint-odyssey/check-job/:jobID", n.apiDriveMintOdysseyCheckJob)
+			drive.GET("/resolve-node", n.apiResolveNode)
 		}
 
 		config := vx.Group("/config")

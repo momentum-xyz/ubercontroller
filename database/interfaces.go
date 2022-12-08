@@ -65,6 +65,7 @@ type SpacesDB interface {
 
 type UsersDB interface {
 	UsersGetUserByID(ctx context.Context, userID uuid.UUID) (*entry.User, error)
+	UsersGetUsersByIDs(ctx context.Context, userIDs []uuid.UUID) ([]*entry.User, error)
 	UsersGetUserByWallet(ctx context.Context, wallet string) (*entry.User, error)
 	UsersGetUserProfileByUserID(ctx context.Context, userID uuid.UUID) (*entry.UserProfile, error)
 
@@ -200,6 +201,7 @@ type NodeAttributesDB interface {
 
 type SpaceAttributesDB interface {
 	SpaceAttributesGetSpaceAttributes(ctx context.Context) ([]*entry.SpaceAttribute, error)
+	SpaceAttributesGetSpaceAttributesByPluginIDAndAttributeName(ctx context.Context, pluginID uuid.UUID, attributeName string) ([]*entry.SpaceAttribute, error)
 	SpaceAttributesGetSpaceAttributeByID(
 		ctx context.Context, spaceAttributeID entry.SpaceAttributeID,
 	) (*entry.SpaceAttribute, error)

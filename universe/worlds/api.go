@@ -22,11 +22,12 @@ func (w *Worlds) RegisterAPI(r *gin.Engine) {
 				{
 					world.GET("/explore", w.apiWorldsGetSpacesWithChildren)
 					world.GET("/explore/search", w.apiWorldsSearchSpaces)
+					world.GET("/online-users", w.apiGetOnlineUsers)
 
 					authorizedAdmin := world.Group("", middleware.AuthorizeAdmin(w.log, w.db))
 					{
 						authorizedAdmin.POST("/fly-to-me", w.apiWorldsFlyToMe)
-						// authorizedSpecial.POST("/teleport-user", w.apiWorldsTeleportUser)
+						authorizedAdmin.POST("/teleport-user", w.apiWorldsTeleportUser)
 					}
 				}
 			}

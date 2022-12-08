@@ -143,11 +143,27 @@ type Node interface {
 
 	RemoveSpaceUserAttribute(spaceUserAttributeID entry.SpaceUserAttributeID) (bool, error)
 
+	GetUserUserAttributePayload(userUserAttributeID entry.UserUserAttributeID) (*entry.AttributePayload, bool)
+	GetUserUserAttributeValue(userUserAttributeID entry.UserUserAttributeID) (*entry.AttributeValue, bool)
+	GetUserUserAttributeOptions(userUserAttributeID entry.UserUserAttributeID) (*entry.AttributeOptions, bool)
+	GetUserUserAttributeEffectiveOptions(userUserAttributeID entry.UserUserAttributeID) (*entry.AttributeOptions, bool)
+
+	UpsertUserUserAttribute(
+		userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
+	) (*entry.UserUserAttribute, error)
+
+	UpdateUserUserAttributeValue(
+		userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributeValue],
+	) (*entry.AttributeValue, error)
+	UpdateUserUserAttributeOptions(
+		userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributeOptions],
+	) (*entry.AttributeOptions, error)
+
+	RemoveUserUserAttribute(userUserAttributeID entry.UserUserAttributeID) (bool, error)
+
 	AddAPIRegister(register APIRegister)
 
 	WriteInfluxPoint(point *influxWrite.Point) error
-
-	ResolveNodeByWorldID(id uuid.UUID) string
 }
 
 type Worlds interface {

@@ -16,20 +16,20 @@ import (
 )
 
 const (
-	getUserAttributesQuery                                 = `SELECT * FROM user_attribute;`
-	getUserAttributesQueryByUserID                         = `SELECT * FROM user_attribute WHERE user_id = $1;`
-	getUserAttributeByPluginIDAndNameAndUserIDQuery        = `SELECT * FROM user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
-	getUserAttributeValueByPluginIDAndNameAndUserIDQuery   = `SELECT value FROM user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
-	getUserAttributeOptionsByPluginIDAndNameAndUserIDQuery = `SELECT options FROM user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
+	getUserAttributesQuery           = `SELECT * FROM user_attribute;`
+	getUserAttributesQueryByUserID   = `SELECT * FROM user_attribute WHERE user_id = $1;`
+	getUserAttributeByIDQuery        = `SELECT * FROM user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
+	getUserAttributeValueByIDQuery   = `SELECT value FROM user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
+	getUserAttributeOptionsByIDQuery = `SELECT options FROM user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
 
 	removeUserAttributeByIDQuery                 = `DELETE FROM user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
 	removeUserAttributesByNameQuery              = `DELETE FROM user_attribute WHERE attribute_name = $1;`
-	removeUserAttributesByNamesQuery             = `DELETE FROM user_attribute WHERE attribute_name IN ($1);`
+	removeUserAttributesByNamesQuery             = `DELETE FROM user_attribute WHERE attribute_name = ANY($1);`
 	removeUserAttributesByPluginIDQuery          = `DELETE FROM user_attribute WHERE plugin_id = $1;`
 	removeUserAttributesByPluginIDAndNameQuery   = `DELETE FROM user_attribute WHERE plugin_id = $1 AND attribute_name = $2;`
 	removeUserAttributesByUserIDQuery            = `DELETE FROM user_attribute WHERE user_id = $1;`
 	removeUserAttributeByNameAndUserIDQuery      = `DELETE FROM user_attribute WHERE attribute_name = $1 AND user_id = $2;`
-	removeUserAttributesByNamesAndUserIDQuery    = `DELETE FROM user_attribute WHERE attribute_name IN ($1)  AND user_id = $2;`
+	removeUserAttributesByNamesAndUserIDQuery    = `DELETE FROM user_attribute WHERE attribute_name = ANY($1)  AND user_id = $2;`
 	removeUserAttributesByPluginIDAndUserIDQuery = `DELETE FROM user_attribute WHERE plugin_id = $1 AND user_id = $2;`
 
 	updateUserAttributeValueQuery   = `UPDATE user_attribute SET value = $4 WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
@@ -83,7 +83,7 @@ func (db *DB) UserAttributesGetUserAttributeByID(
 	var attribute entry.UserAttribute
 
 	if err := pgxscan.Get(
-		ctx, db.conn, &attribute, getUserAttributeByPluginIDAndNameAndUserIDQuery,
+		ctx, db.conn, &attribute, getUserAttributeByIDQuery,
 		userAttributeID.PluginID, userAttributeID.Name, userAttributeID.UserID,
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
@@ -98,7 +98,7 @@ func (db *DB) UserAttributesGetUserAttributeValueByID(
 	var value entry.AttributeValue
 
 	if err := pgxscan.Get(
-		ctx, db.conn, &value, getUserAttributeValueByPluginIDAndNameAndUserIDQuery,
+		ctx, db.conn, &value, getUserAttributeValueByIDQuery,
 		userAttributeID.PluginID, userAttributeID.Name, userAttributeID.UserID,
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
@@ -113,7 +113,7 @@ func (db *DB) UserAttributesGetUserAttributeOptionsByID(
 	var options entry.AttributeOptions
 
 	if err := pgxscan.Get(
-		ctx, db.conn, &options, getUserAttributeOptionsByPluginIDAndNameAndUserIDQuery,
+		ctx, db.conn, &options, getUserAttributeOptionsByIDQuery,
 		userAttributeID.PluginID, userAttributeID.Name, userAttributeID.UserID,
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")

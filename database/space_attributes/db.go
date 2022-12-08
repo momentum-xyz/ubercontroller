@@ -15,17 +15,18 @@ import (
 )
 
 const (
-	getSpaceAttributesQuery               = `SELECT * FROM space_attribute;`
-	getSpaceAttributeByIDQuery            = `SELECT * FROM space_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3;`
-	getSpaceAttributesQueryBySpaceIDQuery = `SELECT * FROM space_attribute WHERE space_id = $1;`
+	getSpaceAttributesQuery                           = `SELECT * FROM space_attribute;`
+	getSpaceAttributeByIDQuery                        = `SELECT * FROM space_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3;`
+	getSpaceAttributesQueryBySpaceIDQuery             = `SELECT * FROM space_attribute WHERE space_id = $1;`
+	getSpaceAttributesByPluginIDAndAttributeNameQuery = `SELECT * FROM space_attribute WHERE plugin_id = $1 AND attribute_name = $2;`
 
 	removeSpaceAttributeByNameQuery                       = `DELETE FROM space_attribute WHERE attribute_name = $1;`
-	removeSpaceAttributesByNamesQuery                     = `DELETE FROM space_attribute WHERE attribute_name IN ($1);`
+	removeSpaceAttributesByNamesQuery                     = `DELETE FROM space_attribute WHERE attribute_name = ANY($1);`
 	removeSpaceAttributesByPluginIDQuery                  = `DELETE FROM space_attribute WHERE plugin_id = $1;`
 	removeSpaceAttributeByAttributeIDQuery                = `DELETE FROM space_attribute WHERE plugin_id = $1 AND attribute_name = $2;`
 	removeSpaceAttributesBySpaceIDQuery                   = `DELETE FROM space_attribute WHERE space_id = $1;`
 	removeSpaceAttributeByNameAndSpaceIDQuery             = `DELETE FROM space_attribute WHERE attribute_name = $1 AND space_id = $2;`
-	removeSpaceAttributesByNamesAndSpaceIDQuery           = `DELETE FROM space_attribute WHERE attribute_name IN ($1) AND space_id = $2;`
+	removeSpaceAttributesByNamesAndSpaceIDQuery           = `DELETE FROM space_attribute WHERE attribute_name = ANY($1) AND space_id = $2;`
 	removeSpaceAttributesByPluginIDAndSpaceIDQuery        = `DELETE FROM space_attribute WHERE plugin_id = $1 AND space_id = $2;`
 	removeSpaceAttributesByPluginIDAndNameAndSpaceIDQuery = `DELETE FROM space_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3;`
 
@@ -58,6 +59,15 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 func (db *DB) SpaceAttributesGetSpaceAttributes(ctx context.Context) ([]*entry.SpaceAttribute, error) {
 	var spaceAttribute []*entry.SpaceAttribute
 	if err := pgxscan.Select(ctx, db.conn, &spaceAttribute, getSpaceAttributesQuery); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return spaceAttribute, nil
+}
+
+func (db *DB) SpaceAttributesGetSpaceAttributesByPluginIDAndAttributeName(ctx context.Context, pluginID uuid.UUID, attributeName string) ([]*entry.SpaceAttribute, error) {
+	var spaceAttribute []*entry.SpaceAttribute
+	err := pgxscan.Select(ctx, db.conn, &spaceAttribute, getSpaceAttributesByPluginIDAndAttributeNameQuery, pluginID, attributeName)
+	if err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return spaceAttribute, nil

@@ -2,6 +2,7 @@ package dto
 
 import (
 	"github.com/google/uuid"
+
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -61,7 +62,6 @@ type Profile struct {
 	Location    *string `json:"location,omitempty"`
 	AvatarHash  *string `json:"avatarHash,omitempty"`
 	ProfileLink *string `json:"profileLink,omitempty"`
-	OnBoarded   *bool   `json:"onBoarded,omitempty"`
 }
 
 type JWTToken struct {
@@ -77,18 +77,15 @@ type HashResponse struct {
 }
 
 type User struct {
-	ID          string          `json:"id"`
-	UserTypeID  string          `json:"userTypeId"`
-	Wallet      *string         `json:"wallet"`
-	Name        string          `json:"name"`
-	Email       *string         `json:"email,omitempty"`
-	Description *string         `json:"description"`
-	CreatedAt   string          `json:"createdAt"`
-	UpdatedAt   *string         `json:"updatedAt"`
-	IsNodeAdmin bool            `json:"isNodeAdmin"`
-	Status      *UserStatusType `json:"status,omitempty"`
-	Profile     Profile         `json:"profile"`
-	JWTToken    string          `json:"token"`
+	ID         string  `json:"id"`
+	UserTypeID string  `json:"userTypeId"`
+	Name       string  `json:"name"`
+	Wallet     *string `json:"wallet,omitempty"`
+	Profile    Profile `json:"profile"`
+	JWTToken   *string `json:"token,omitempty"`
+	CreatedAt  string  `json:"createdAt"`
+	UpdatedAt  *string `json:"updatedAt,omitempty"`
+	IsGuest    bool    `json:"isGuest"`
 }
 
 type Space struct {

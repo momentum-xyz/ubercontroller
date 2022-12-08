@@ -20,7 +20,7 @@ const (
 	updateUserTypeDescriptionQuery = `UPDATE user_type SET description = $2 WHERE user_type_id = $1;`
 	updateUserTypeOptionsQuery     = `UPDATE user_type SET options = $2 WHERE user_type_id = $1;`
 	removeUserTypeByIDQuery        = `DELETE FROM user_type WHERE user_type_id = $1;`
-	removeUserTypesByIDsQuery      = `DELETE FROM user_type WHERE user_type_id IN ($1);`
+	removeUserTypesByIDsQuery      = `DELETE FROM user_type WHERE user_type_id = ANY($1);`
 	upsertUserTypeQuery            = `INSERT INTO user_type
 											(user_type_id, user_type_name,description, options, created_at, updated_at)
 										VALUES

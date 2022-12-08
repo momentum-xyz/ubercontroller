@@ -2,7 +2,9 @@ package assets_3d
 
 import (
 	"encoding/json"
+	"mime/multipart"
 	"net/http"
+	"path/filepath"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -128,19 +130,25 @@ func (a *Assets3d) apiAddAssets3d(c *gin.Context) {
 // @Schemes
 // @Description Uploads a 3d asset to the media manager
 // @Tags assets3d
-// @Accept json
+// @Accept multipart/form-data
 // @Produce json
 // @Success 202 {object} dto.Asset3d
 // @Failure 400	{object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
 // @Router /api/v4/assets-3d/upload [post]
+// TODO: swag doc for multipart, it does not get *multipart.FileHeader
 func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
-	assetFile, err := c.FormFile("asset")
-	if err != nil {
-		err := errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to read file")
+	type InBody struct {
+		File *multipart.FileHeader `form:"asset"`
+		Name string                `form:"name"`
+	}
+	var request InBody
+	if err := c.ShouldBind(&request); err != nil {
+		err := errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to read request")
 		api.AbortRequest(c, http.StatusBadRequest, "failed_to_read", err, a.log)
 		return
 	}
+	assetFile := request.File
 
 	openedFile, err := assetFile.Open()
 	if err != nil {
@@ -192,8 +200,17 @@ func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 		return
 	}
 
+	var name string
+	if request.Name != "" {
+		name = request.Name
+	} else {
+		fileName := assetFile.Filename
+		name = fileName[:len(fileName)-len(filepath.Ext(fileName))] // utility function?
+	}
 	meta := entry.Asset3dMeta{
-		"type": dto.GLTFAsset3dType,
+		"type":     dto.GLTFAsset3dType,
+		"category": "custom",
+		"name":     name,
 	}
 
 	if err := newAsset.SetMeta(&meta, true); err != nil {

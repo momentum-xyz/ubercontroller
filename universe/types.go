@@ -34,10 +34,12 @@ var (
 		Node struct {
 			GuestUserType  Attribute
 			NormalUserType Attribute
+			WorldTemplate  Attribute
 			JWTKey         Attribute
 		}
 		World struct {
-			Meta Attribute
+			Meta           Attribute
+			EffectsEmitter Attribute
 		}
 		Space struct {
 			Name        Attribute
@@ -49,10 +51,14 @@ var (
 			}
 			Challenges Attribute
 		}
+		User struct {
+			HighFive Attribute
+		}
 	}{
 		Node: struct {
 			GuestUserType  Attribute
 			NormalUserType Attribute
+			WorldTemplate  Attribute
 			JWTKey         Attribute
 		}{
 			GuestUserType: Attribute{
@@ -63,16 +69,24 @@ var (
 				Name: "node_settings",
 				Key:  "normal_user_type",
 			},
+			WorldTemplate: Attribute{
+				Name: "world_template",
+			},
 			JWTKey: Attribute{
 				Name: "jwt_key",
 				Key:  "secret",
 			},
 		},
 		World: struct {
-			Meta Attribute
+			Meta           Attribute
+			EffectsEmitter Attribute
 		}{
 			Meta: Attribute{
 				Name: "world_meta",
+			},
+			EffectsEmitter: Attribute{
+				Name: "effects_emitter",
+				Key:  "effects_emitter",
 			},
 		},
 		Space: struct {
@@ -104,6 +118,14 @@ var (
 			Challenges: Attribute{
 				Name: "challenge_store",
 				Key:  "challenges",
+			},
+		},
+		User: struct {
+			HighFive Attribute
+		}{
+			HighFive: Attribute{
+				Name: "high_five",
+				Key:  "counter",
 			},
 		},
 	}

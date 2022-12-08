@@ -23,7 +23,7 @@ const (
 	updateSpaceTypeOptionsQuery      = `UPDATE space_type SET options = $2 WHERE space_type_id = $1;`
 
 	removeSpaceTypeByIDQuery   = `DELETE FROM space_type WHERE space_type_id = $1;`
-	removeSpaceTypesByIDsQuery = `DELETE FROM space_type WHERE space_type_id IN ($1);`
+	removeSpaceTypesByIDsQuery = `DELETE FROM space_type WHERE space_type_id = ANY($1);`
 
 	upsertSpaceTypeQuery = `INSERT INTO space_type
 								(space_type_id, asset_2d_id, asset_3d_id, space_type_name,

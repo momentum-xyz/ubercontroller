@@ -21,7 +21,7 @@ const (
 	getSpacesByParentIDQuery   = `SELECT * FROM space WHERE parent_id = $1;`
 
 	removeSpaceByIDQuery   = `DELETE FROM space WHERE space_id = $1;`
-	removeSpacesByIDsQuery = `DELETE FROM space WHERE space_id IN ($1);`
+	removeSpacesByIDsQuery = `DELETE FROM space WHERE space_id = ANY($1);`
 
 	updateSpaceParentIDQuery    = `UPDATE space SET parent_id = $2 WHERE space_id = $1;`
 	updateSpacePositionQuery    = `UPDATE space SET position = $2 WHERE space_id = $1;`

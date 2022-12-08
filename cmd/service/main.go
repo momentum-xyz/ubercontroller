@@ -77,7 +77,7 @@ func run(ctx context.Context) error {
 		uuid.MustParse("86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8")); err != nil {
 		return errors.WithMessage(err, "failed to initialize universe")
 	}
-	if err := api.Initialize(ctx, cfg); err != nil {
+	if err := api.Initialize(ctx); err != nil {
 		return errors.WithMessage(err, "failed to initialize api")
 	}
 

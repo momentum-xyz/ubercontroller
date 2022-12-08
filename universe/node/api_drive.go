@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os/exec"
 
 	"github.com/gin-gonic/gin"
@@ -12,10 +13,18 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/logger"
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
+	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
+
+type WorldTemplate struct {
+	SpaceTemplate `json:",squash"`
+	Spaces        []*SpaceTemplate `json:"spaces"`
+}
 
 type NodeJSOut struct {
 	Data  any      `json:"data"`
@@ -113,10 +122,12 @@ func (n *Node) apiDriveMintOdyssey(c *gin.Context) {
 
 	jobID := uuid.New()
 
-	store.Store(jobID, StoreItem{
-		Status:    StatusInProgress,
-		NodeJSOut: nil,
-	})
+	store.Store(
+		jobID, StoreItem{
+			Status:    StatusInProgress,
+			NodeJSOut: nil,
+		},
+	)
 
 	go n.mint(jobID, inBody.Wallet, inBody.Meta, inBody.BlockHash)
 
@@ -128,6 +139,108 @@ func (n *Node) apiDriveMintOdyssey(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, out)
+}
+
+func (n *Node) apiDriveTest(c *gin.Context) {
+	type Out struct {
+		Data any `json:"data"`
+	}
+
+	err := n.createWorld(uuid.MustParse("e18d6d31-f62e-4dd0-ae62-a985135a1a34"), "Test World")
+	if err != nil {
+		log.Error(err)
+	}
+
+	out := Out{
+		Data: n.GetID(),
+	}
+
+	c.JSON(http.StatusOK, out)
+}
+
+func (n *Node) createWorld(ownerID uuid.UUID, name string) error {
+	templateValue, ok := n.GetNodeAttributeValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.WorldTemplate.Name),
+	)
+	if !ok || templateValue == nil {
+		return errors.Errorf("failed to get world template attribute value")
+	}
+
+	// filling template
+	var worldTemplate WorldTemplate
+	if err := utils.MapDecode(*templateValue, &worldTemplate); err != nil {
+		return errors.WithMessage(err, "failed to decode template map")
+	}
+	worldTemplate.SpaceAttributes = append(
+		worldTemplate.SpaceAttributes,
+		&Attribute{
+			AttributeID: entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name),
+			AttributePayload: entry.AttributePayload{
+				Value: &entry.AttributeValue{
+					universe.Attributes.Space.Name.Key: name,
+				},
+			},
+		},
+	)
+	for i := range worldTemplate.Spaces {
+		worldTemplate.Spaces[i].SpaceID = uuid.New()
+		worldTemplate.Spaces[i].OwnerID = ownerID
+		worldTemplate.Spaces[i].ParentID = ownerID
+	}
+
+	worldType, ok := n.GetSpaceTypes().GetSpaceType(worldTemplate.SpaceTypeID)
+	if !ok {
+		return errors.Errorf("failed to get world space type: %s", worldTemplate.SpaceTypeID)
+	}
+
+	// User's world (aka Odyssey) should be equal to user ID
+	world, err := n.GetWorlds().CreateWorld(ownerID)
+	if err != nil {
+		err = errors.WithMessage(err, "failed to CreateWorld")
+		return err
+	}
+
+	if err := world.SetOwnerID(ownerID, false); err != nil {
+		return errors.WithMessage(err, "failed to SetOwnerID")
+	}
+	if err := world.SetSpaceType(worldType, false); err != nil {
+		return errors.WithMessage(err, "failed to SetSpaceType")
+	}
+	if err := world.SetParent(n, false); err != nil {
+		return errors.WithMessage(err, "failed to SetParent")
+	}
+
+	if err := n.GetWorlds().AddWorld(world, true); err != nil {
+		return errors.WithMessage(err, "failed to AddWorld")
+	}
+
+	for i := range worldTemplate.SpaceAttributes {
+		if _, err := world.UpsertSpaceAttribute(
+			worldTemplate.SpaceAttributes[i].AttributeID,
+			modify.MergeWith(&worldTemplate.SpaceAttributes[i].AttributePayload),
+			true,
+		); err != nil {
+			return errors.WithMessagef(err, "failed to upsert world space attribute: %+v", worldTemplate.SpaceAttributes[i])
+		}
+	}
+
+	if err := world.Run(); err != nil {
+		return errors.WithMessage(err, "failed to run world")
+	}
+
+	world.SetEnabled(true)
+
+	if err := world.Update(true); err != nil {
+		return errors.WithMessage(err, "failed to update world")
+	}
+
+	for i := range worldTemplate.Spaces {
+		if err := n.addSpaceFromTemplate(worldTemplate.Spaces[i]); err != nil {
+			return errors.WithMessagef(err, "failed to add space from template: %+v", worldTemplate.Spaces[i])
+		}
+	}
+
+	return nil
 }
 
 func (n *Node) mint(jobID uuid.UUID, wallet string, meta NFTMeta, blockHash string) {
@@ -244,7 +357,7 @@ func (n *Node) mint(jobID uuid.UUID, wallet string, meta NFTMeta, blockHash stri
 		Username: data.Name,
 		Avatar:   data.Image,
 	}
-	user, err := n.apiCreateUserFromWalletMeta(context.Background(), &wm)
+	_, err = n.apiCreateUserFromWalletMeta(context.Background(), &wm)
 	if err != nil {
 		err = errors.WithMessage(err, "failed to apiCreateUserFromWalletMeta")
 		{
@@ -256,7 +369,17 @@ func (n *Node) mint(jobID uuid.UUID, wallet string, meta NFTMeta, blockHash stri
 		return
 	}
 
-	fmt.Println(user)
+	err = n.createWorld(wm.UserID, wm.Username)
+	if err != nil {
+		err = errors.WithMessage(err, "failed to createWorld")
+		{
+			item.Status = StatusFailed
+			item.Error = err
+			store.Store(jobID, item)
+		}
+		log.Error(err)
+		return
+	}
 
 	item.Status = StatusDone
 	item.NodeJSOut = &nodeJSOut
@@ -345,4 +468,44 @@ func (n *Node) getWalletMetadata(wallet string) (*WalletMeta, error) {
 	}
 
 	return meta, nil
+}
+
+// @Summary Resolve domain/node by objectID
+// @Schemes
+// @Description Returns domain/host for given Odyssey
+// @Tags drive
+// @Accept json
+// @Produce json
+// @Param query query node.apiResolveNode.InQuery true "query params"
+// @Success 200 {object} node.apiResolveNode.Out
+// @Failure 400 {object} api.HTTPError
+// @Router /api/v4/drive/resolve-node [get]
+func (n *Node) apiResolveNode(c *gin.Context) {
+
+	type InQuery struct {
+		Object string `form:"object_id" binding:"required"`
+	}
+
+	type Out struct {
+		Domain string    `json:"domain"`
+		NodeID uuid.UUID `json:"node_id"`
+	}
+
+	var inQuery InQuery
+
+	if err := c.ShouldBindQuery(&inQuery); err != nil {
+		err := errors.WithMessage(err, "Node: apiResolveNode: failed to bind query")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
+		return
+	}
+
+	u, _ := url.Parse(n.cfg.UIClient.FrontendURL)
+	h := u.Hostname()
+	if h == "" {
+		h = "localhost"
+	}
+	Response := Out{Domain: h, NodeID: n.GetID()}
+
+	c.JSON(http.StatusOK, Response)
+
 }

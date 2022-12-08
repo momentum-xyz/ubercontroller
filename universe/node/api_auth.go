@@ -248,7 +248,7 @@ func (n *Node) apiGuestToken(c *gin.Context) {
 		ID:        userEntry.UserID.String(),
 		Name:      *userEntry.Profile.Name,
 		CreatedAt: userEntry.CreatedAt.Format(time.RFC3339),
-		JWTToken:  token,
+		JWTToken:  &token,
 	}
 
 	if userEntry.UserTypeID != nil {

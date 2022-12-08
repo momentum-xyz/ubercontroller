@@ -33,8 +33,8 @@ type Attribute struct {
 }
 
 type AttributePayload struct {
-	Value   *AttributeValue   `db:"value"`
-	Options *AttributeOptions `db:"options"`
+	Value   *AttributeValue   `db:"value" json:"value"`
+	Options *AttributeOptions `db:"options" json:"options"`
 }
 
 type AttributeValue map[string]any

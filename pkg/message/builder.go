@@ -187,6 +187,7 @@ func (mb *Builder) MsgObjectDefinition(obj ObjectDefinition) *websocket.Prepared
 	api.ObjectDefinitionAddMinimap(builder, obj.Minimap)
 	api.ObjectDefinitionAddInfouiType(builder, mb.SerializeGUID(builder, obj.InfoUI))
 	api.ObjectDefinitionAddIsGltf(builder, obj.AssetFormat == dto.GLTFAsset3dType)
+	api.ObjectDefinitionAddIsEditable(builder, obj.Editable)
 	msgOffset := api.ObjectDefinitionEnd(builder)
 
 	return mb.FinishMessage(builder, api.MsgObjectDefinition, msgOffset)
