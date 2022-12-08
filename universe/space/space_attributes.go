@@ -463,6 +463,7 @@ func (s *Space) unityAutoOnSpaceAttributeChanged(
 ) error {
 	s.log.Infof("attribute Unuty Auto processing for %+v %+v", s.id, attributeID)
 	autoOption, err := unity.GetOptionAutoOption(effectiveOptions, attributeID)
+	s.log.Infof("unity-auto stage1 for %+v %+v", s.id, attributeID)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to get auto option: %+v", attributeID)
 	}
@@ -470,10 +471,14 @@ func (s *Space) unityAutoOnSpaceAttributeChanged(
 		return nil
 	}
 
+	s.log.Infof("unity-auto stage3 for %+v %+v", s.id, attributeID)
+
 	hash, err := unity.PrerenderAutoValue(s.ctx, autoOption, value)
 	if err != nil {
 		return errors.WithMessagef(err, "prerendering error: %+v", attributeID)
 	}
+
+	s.log.Infof("unity-auto stage4 for %+v %+v %+v", s.id, attributeID, hash)
 
 	//dirty hack to set auto_render_hash value without triggering processing again
 	// TODO: fix it properly later
