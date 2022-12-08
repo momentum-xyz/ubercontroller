@@ -113,7 +113,8 @@ async function main() {
     log(`target wallet: ${TARGET_WALLET}`)
 
     const PHRASE = process.argv[3]
-    log(`mnemonic phrase: ${PHRASE}`)
+    log(`mnemonic phrase: ${PHRASE.substring(0, 3)} ... ${PHRASE.substring(PHRASE.length - 3)}; length: ${PHRASE.length}`)
+
 
     const META = process.argv[4]
     log(`NFT metadata: ${META}`)
