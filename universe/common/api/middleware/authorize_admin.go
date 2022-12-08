@@ -35,6 +35,7 @@ func AuthorizeAdmin(log *zap.SugaredLogger, db database.DB) gin.HandlerFunc {
 			return
 		}
 
+		// TODO: optimize
 		isAdmin := false
 		for _, uID := range userIDs {
 			if uID != nil {

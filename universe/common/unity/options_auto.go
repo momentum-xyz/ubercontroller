@@ -46,6 +46,7 @@ func GetOptionAutoOption(
 	if !ok {
 		return nil, nil
 	}
+
 	//fmt.Printf("FFF0: %+v \n", autoOptionsValue)
 
 	var autoOption *entry.UnityAutoAttributeOption
@@ -88,26 +89,29 @@ func PrerenderAutoValue(
 	var valueString string
 
 	var renderKind uint
+	renderKind = RenderKindText
+	if option.ContentType == "video" {
+		renderKind = RenderKindVideo
+	}
 	switch option.ContentType {
 	case "video", "text", "string":
 		valueString, ok = valueAny.(string)
 		if !ok {
 			errors.New("Can not cast value to string in PrerenderAutoValue")
 		}
-		renderKind = RenderKindVideo
 	case "number":
 		valueUint, ok := valueAny.(uint32)
 		if !ok {
 			errors.New("Can not cast value to uint32 in PrerenderAutoValue")
 		}
 		valueString = strconv.FormatUint(uint64(valueUint), 10)
-		renderKind = RenderKindText
 	default:
 		return nil, nil
 	}
 
 	var hash *dto.HashResponse
 	var err error
+
 	switch renderKind {
 	case RenderKindVideo:
 		{
@@ -143,14 +147,14 @@ func PrerenderAutoValue(
 	return hash, nil
 }
 
-func renderFrame(ctx context.Context, preRenderHash []byte) (*dto.HashResponse, error) {
+func renderFrame(ctx context.Context, textJob []byte) (*dto.HashResponse, error) {
 	// need config for the media-manager render URLs
 	cfg := utils.GetFromAny(ctx.Value(types.ConfigContextKey), (*config.Config)(nil))
 	if cfg == nil {
 		return nil, errors.Errorf("failed to get config from context: %T", ctx.Value(types.ConfigContextKey))
 	}
 
-	req, err := http.NewRequest("POST", cfg.Common.RenderInternalURL+"/render/addframe", bytes.NewBuffer(preRenderHash))
+	req, err := http.NewRequest("POST", cfg.Common.RenderInternalURL+"/render/addframe", bytes.NewBuffer(textJob))
 	if err != nil {
 		return nil, errors.WithMessage(err, "Common: renderFrame: failed to create post request")
 	}
