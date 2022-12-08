@@ -67,7 +67,7 @@ func (db *DB) UserSpaceGetUserSpacesBySpaceID(ctx context.Context, spaceID uuid.
 	return userSpaces, nil
 }
 
-func (db *DB) UserSpaceGetUserSpaceByUserAndSpaceIDs(ctx context.Context, userSpaceID entry.UserSpaceID) (*entry.UserSpace, error) {
+func (db *DB) UserSpaceGetUserSpaceByUserAndSpaceID(ctx context.Context, userSpaceID entry.UserSpaceID) (*entry.UserSpace, error) {
 	var userSpace *entry.UserSpace
 	if err := pgxscan.Select(
 		ctx, db.conn, &userSpace, getUserSpacesBySpaceIDAndUserIDQuery, userSpaceID.UserID, userSpaceID.SpaceID,
@@ -105,7 +105,7 @@ func (db *DB) UserSpaceGetIndirectAdmins(ctx context.Context, spaceID uuid.UUID)
 	return userIDs, nil
 }
 
-func (db *DB) UserSpaceGetValueByUserAndSpaceIDs(ctx context.Context, userSpaceID entry.UserSpaceID) (*entry.UserSpaceValue, error) {
+func (db *DB) UserSpaceGetValueByUserAndSpaceID(ctx context.Context, userSpaceID entry.UserSpaceID) (*entry.UserSpaceValue, error) {
 	//TODO implement me
 	panic("implement me")
 }

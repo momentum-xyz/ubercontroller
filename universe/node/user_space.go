@@ -8,7 +8,7 @@ import (
 )
 
 func (n *Node) GetUserSpaceValue(userSpaceID entry.UserSpaceID) (*entry.UserSpaceValue, bool) {
-	value, err := n.db.UserSpaceGetValueByUserAndSpaceIDs(n.ctx, userSpaceID)
+	value, err := n.db.UserSpaceGetUserSpaceValueByID(n.ctx, userSpaceID)
 	if err != nil {
 		return nil, false
 	}
