@@ -48,75 +48,76 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		}
 
 		verified := vx.Group("", middleware.VerifyUser(n.log))
+
+		//verifiedMedia := verified.Group("/media")
+		//{
+		//	verifiedMedia.POST("/upload/image", n.apiMediaUploadImage)
+		//}
+
+		vx.POST("/media/upload/image", n.apiMediaUploadImage)
+
+		verifiedUsers := verified.Group("/users")
 		{
-			verifiedMedia := verified.Group("/media")
+			verifiedUsers.GET("/me", n.apiUsersGetMe)
+			verifiedUsers.POST("/mutual-docks", n.apiUsersMutualDocks)
+
+			verifiedUser := verifiedUsers.Group("/:userID")
 			{
-				verifiedMedia.POST("/upload/image", n.apiMediaUploadImage)
+				verifiedUser.GET("", n.apiUsersGetById)
 			}
+		}
 
-			verifiedUsers := verified.Group("/users")
+		verifiedProfile := verified.Group("/profile")
+		{
+			verifiedProfile.PATCH("", n.apiProfileUpdate)
+		}
+
+		verifiedSpaces := verified.Group("/spaces")
+		{
+			verifiedSpaces.POST("", n.apiCreateSpace)
+
+			space := verifiedSpaces.Group("/:spaceID")
 			{
-				verifiedUsers.GET("/me", n.apiUsersGetMe)
-				verifiedUsers.POST("/mutual-docks", n.apiUsersMutualDocks)
-
-				verifiedUser := verifiedUsers.Group("/:userID")
+				authorizedAdmin := auth.Group("", middleware.AuthorizeAdmin(n.log, n.db))
 				{
-					verifiedUser.GET("", n.apiUsersGetById)
-				}
-			}
+					space.POST("/options/sub", n.apiSpacesSetSpaceSubOption)
+					space.DELETE("/options/sub", n.apiSpacesRemoveSpaceSubOption)
 
-			verifiedProfile := verified.Group("/profile")
-			{
-				verifiedProfile.PATCH("", n.apiProfileUpdate)
-			}
-
-			verifiedSpaces := verified.Group("/spaces")
-			{
-				verifiedSpaces.POST("", n.apiCreateSpace)
-
-				space := verifiedSpaces.Group("/:spaceID")
-				{
-					authorizedAdmin := auth.Group("", middleware.AuthorizeAdmin(n.log, n.db))
-					{
-						space.POST("/options/sub", n.apiSpacesSetSpaceSubOption)
-						space.DELETE("/options/sub", n.apiSpacesRemoveSpaceSubOption)
-
-						authorizedAdmin.DELETE("", n.apiRemoveSpace)
-					}
-
-					space.POST("/attributes", n.apiSetSpaceAttributesValue)
-					space.DELETE("/attributes", n.apiRemoveSpaceAttributeValue)
-
-					space.POST("/attributes/sub", n.apiSetSpaceAttributeSubValue)
-					space.DELETE("/attributes/sub", n.apiRemoveSpaceAttributeSubValue)
-
-					space.POST("/agora/token", n.apiGenAgoraToken)
-
-					space.GET("", n.apiGetSpace)
-
-					space.GET("/options", n.apiSpacesGetSpaceOptions)
-					space.GET("/options/sub", n.apiSpacesGetSpaceSubOptions)
-
-					space.GET("/attributes", n.apiGetSpaceAttributesValue)
-					space.GET("/attributes-with-children", n.apiGetSpaceWithChildrenAttributeValues)
-
-					space.GET("/attributes/sub", n.apiGetSpaceAttributeSubValue)
-
-					space.GET("/all-users/attributes", n.apiGetSpaceAllUsersAttributeValuesList)
+					authorizedAdmin.DELETE("", n.apiRemoveSpace)
 				}
 
-				spaceUser := verifiedSpaces.Group("/:spaceID/:userID")
-				{
-					spaceUser.POST("/attributes", n.apiSetSpaceUserAttributesValue)
-					spaceUser.DELETE("/attributes", n.apiRemoveSpaceUserAttributeValue)
+				space.POST("/attributes", n.apiSetSpaceAttributesValue)
+				space.DELETE("/attributes", n.apiRemoveSpaceAttributeValue)
 
-					spaceUser.POST("/attributes/sub", n.apiSetSpaceUserAttributeSubValue)
-					spaceUser.DELETE("/attributes/sub", n.apiRemoveSpaceUserAttributeSubValue)
+				space.POST("/attributes/sub", n.apiSetSpaceAttributeSubValue)
+				space.DELETE("/attributes/sub", n.apiRemoveSpaceAttributeSubValue)
 
-					spaceUser.GET("/attributes", n.apiGetSpaceUserAttributesValue)
+				space.POST("/agora/token", n.apiGenAgoraToken)
 
-					spaceUser.GET("/attributes/sub", n.apiGetSpaceUserAttributeSubValue)
-				}
+				space.GET("", n.apiGetSpace)
+
+				space.GET("/options", n.apiSpacesGetSpaceOptions)
+				space.GET("/options/sub", n.apiSpacesGetSpaceSubOptions)
+
+				space.GET("/attributes", n.apiGetSpaceAttributesValue)
+				space.GET("/attributes-with-children", n.apiGetSpaceWithChildrenAttributeValues)
+
+				space.GET("/attributes/sub", n.apiGetSpaceAttributeSubValue)
+
+				space.GET("/all-users/attributes", n.apiGetSpaceAllUsersAttributeValuesList)
+			}
+
+			spaceUser := verifiedSpaces.Group("/:spaceID/:userID")
+			{
+				spaceUser.POST("/attributes", n.apiSetSpaceUserAttributesValue)
+				spaceUser.DELETE("/attributes", n.apiRemoveSpaceUserAttributeValue)
+
+				spaceUser.POST("/attributes/sub", n.apiSetSpaceUserAttributeSubValue)
+				spaceUser.DELETE("/attributes/sub", n.apiRemoveSpaceUserAttributeSubValue)
+
+				spaceUser.GET("/attributes", n.apiGetSpaceUserAttributesValue)
+
+				spaceUser.GET("/attributes/sub", n.apiGetSpaceUserAttributeSubValue)
 			}
 		}
 
