@@ -456,4 +456,6 @@ type UserSpaceDB interface {
 	UserSpaceGetIndirectAdmins(ctx context.Context, spaceID uuid.UUID) ([]*uuid.UUID, error)
 
 	UserSpaceUpdateValueByUserAndSpaceIDs(ctx context.Context, userSpaceID entry.UserSpaceID, modifyFn modify.Fn[entry.UserSpaceValue]) (*entry.UserSpaceValue, error)
+
+	UserSpacesUpsertUserSpaces(ctx context.Context, userSpaces []*entry.UserSpace) error
 }
