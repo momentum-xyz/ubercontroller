@@ -185,21 +185,28 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 	}
 
 	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
-		if current == nil || current.Value == nil {
-			return current, nil
+		if current == nil {
+			current = entry.NewAttributePayload(nil, nil)
+		}
+		if current.Value == nil {
+			current.Value = entry.NewAttributeValue()
 		}
 
-		updateMap := *current.Value
-
 		// increment value of high five counter by 1
-		updateMap[universe.Attributes.User.HighFive.Key] = utils.GetFromAnyMap(*current.Value, universe.Attributes.User.HighFive.Key, 0) + 1
+		(*current.Value)[universe.Attributes.User.HighFive.Key] = utils.GetFromAnyMap(
+			*current.Value, universe.Attributes.User.HighFive.Key, 0,
+		) + 1
 
 		return current, nil
 	}
 
-	_, err := universe.GetNode().UpsertUserUserAttribute(entry.NewUserUserAttributeID(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.User.HighFive.Name), u.GetID(), targetID), modifyFn)
-	if err != nil {
+	if _, err := universe.GetNode().UpsertUserUserAttribute(
+		entry.NewUserUserAttributeID(
+			entry.NewAttributeID(
+				universe.GetSystemPluginID(), universe.Attributes.User.HighFive.Name,
+			),
+			u.GetID(), targetID), modifyFn,
+	); err != nil {
 		return errors.New("Could not upsert high-five user user attribute")
 	}
 
