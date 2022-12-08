@@ -65,6 +65,10 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 			{
 				verifiedUser.GET("", n.apiUsersGetById)
 			}
+			attributes := verifiedUsers.Group("/attributes")
+			{
+				attributes.POST("/sub/:userID/:targetID", n.apiSetUserUserAttributeValue)
+			}
 		}
 
 		verifiedProfile := verified.Group("/profile")
