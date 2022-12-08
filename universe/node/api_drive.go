@@ -478,42 +478,12 @@ func (n *Node) addWorldFromTemplate(worldTemplate *SpaceTemplate) (uuid.UUID, er
 		return uuid.Nil, errors.WithMessage(err, "failed to add world")
 	}
 
-	// adding attributes
-	worldTemplate.SpaceAttributes = append(
-		worldTemplate.SpaceAttributes,
-		&Attribute{
-			AttributeID: entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name),
-			AttributePayload: entry.AttributePayload{
-				Value: &entry.AttributeValue{
-					universe.Attributes.Space.Name.Key: worldTemplate.SpaceName,
-				},
-			},
-		},
-	)
-	for i := range worldTemplate.SpaceAttributes {
-		if _, err := world.UpsertSpaceAttribute(
-			worldTemplate.SpaceAttributes[i].AttributeID,
-			modify.MergeWith(&worldTemplate.SpaceAttributes[i].AttributePayload),
-			true,
-		); err != nil {
-			return uuid.Nil, errors.WithMessagef(
-				err, "failed to upsert world space attribute: %+v", worldTemplate.SpaceAttributes[i],
-			)
-		}
-	}
-
 	// run
 	if err := world.Run(); err != nil {
 		return uuid.Nil, errors.WithMessage(err, "failed to run world")
 	}
 
-	world.SetEnabled(true)
-
-	if err := world.Update(true); err != nil {
-		return uuid.Nil, errors.WithMessage(err, "failed to update world")
-	}
-
-	// children
+	// adding children
 	spaceLabelToID := make(map[string]uuid.UUID)
 	for i := range worldTemplate.Spaces {
 		worldTemplate.Spaces[i].ParentID = *worldID
@@ -527,27 +497,51 @@ func (n *Node) addWorldFromTemplate(worldTemplate *SpaceTemplate) (uuid.UUID, er
 		}
 	}
 
-	// adding "world_settings" world space attribute
-	worldSettings := entry.NewAttributePayload(
-		&entry.AttributeValue{
+	// enabling
+	world.SetEnabled(true)
+
+	// adding attributes
+	worldSettings := entry.AttributePayload{
+		Value: &entry.AttributeValue{
 			"kind":        "basic",
 			"spaces":      spaceLabelToID,
 			"attributes":  map[string]any{},
 			"space_types": map[string]any{},
 			"effects":     map[string]any{},
 		},
-		nil,
-	)
-	if _, err := world.UpsertSpaceAttribute(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.World.Settings.Name),
-		modify.MergeWith(worldSettings),
-		true,
-	); err != nil {
-		return uuid.Nil, errors.WithMessagef(
-			err, "failed to upsert world settings space attribute: %+v", worldSettings,
-		)
 	}
 
+	worldTemplate.SpaceAttributes = append(
+		worldTemplate.SpaceAttributes,
+		[]*Attribute{
+			{
+				AttributeID: entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name),
+				AttributePayload: entry.AttributePayload{
+					Value: &entry.AttributeValue{
+						universe.Attributes.Space.Name.Key: worldTemplate.SpaceName,
+					},
+				},
+			},
+			{
+				AttributeID:      entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.World.Settings.Name),
+				AttributePayload: worldSettings,
+			},
+		}...,
+	)
+
+	for i := range worldTemplate.SpaceAttributes {
+		if _, err := world.UpsertSpaceAttribute(
+			worldTemplate.SpaceAttributes[i].AttributeID,
+			modify.MergeWith(&worldTemplate.SpaceAttributes[i].AttributePayload),
+			true,
+		); err != nil {
+			return uuid.Nil, errors.WithMessagef(
+				err, "failed to upsert world space attribute: %+v", worldTemplate.SpaceAttributes[i],
+			)
+		}
+	}
+
+	// updating
 	if err := world.Update(true); err != nil {
 		return uuid.Nil, errors.WithMessage(err, "failed to update world")
 	}
