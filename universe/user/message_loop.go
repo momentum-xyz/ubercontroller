@@ -3,9 +3,9 @@ package user
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 
 	"github.com/momentum-xyz/posbus-protocol/posbus"
-	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/pkg/errors"
 
@@ -182,34 +182,7 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 		return errors.New("You can't high-five yourself!")
 	}
 
-	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
-		if current == nil {
-			current = entry.NewAttributePayload(nil, nil)
-		}
-		if current.Value == nil {
-			current.Value = entry.NewAttributeValue()
-		}
-
-		// increment value of high five counter by 1
-		(*current.Value)[universe.Attributes.User.HighFive.Key] = utils.GetFromAnyMap(
-			*current.Value, universe.Attributes.User.HighFive.Key, uint(0),
-		) + 1
-
-		return current, nil
-	}
-
-	if _, err := universe.GetNode().UpsertUserUserAttribute(
-		entry.NewUserUserAttributeID(
-			entry.NewAttributeID(
-				universe.GetSystemPluginID(), universe.Attributes.User.HighFive.Name,
-			),
-			u.GetID(), targetID), modifyFn,
-	); err != nil {
-		return errors.New("Could not upsert high-five user user attribute")
-	}
-
 	world := u.GetWorld()
-
 	target, ok := world.GetUser(targetID, false)
 	if !ok {
 		u.Send(
@@ -256,6 +229,32 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 	effect := posbus.NewTriggerTransitionalBridgingEffectsOnPositionMsg(1)
 	effect.SetEffect(0, effectsEmitterID, u.GetPosition(), target.GetPosition(), 1001)
 	u.GetWorld().Send(effect.WebsocketMessage(), false)
+
+	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
+		if current == nil {
+			current = entry.NewAttributePayload(nil, nil)
+		}
+		if current.Value == nil {
+			current.Value = entry.NewAttributeValue()
+		}
+
+		// increment value of high five counter by 1
+		(*current.Value)[universe.Attributes.User.HighFive.Key] = utils.GetFromAnyMap(
+			*current.Value, universe.Attributes.User.HighFive.Key, float64(0),
+		) + 1
+
+		return current, nil
+	}
+
+	if _, err := universe.GetNode().UpsertUserUserAttribute(
+		entry.NewUserUserAttributeID(
+			entry.NewAttributeID(
+				universe.GetSystemPluginID(), universe.Attributes.User.HighFive.Name,
+			),
+			u.GetID(), targetID), modifyFn,
+	); err != nil {
+		return errors.New("Could not upsert high-five user user attribute")
+	}
 
 	go u.SendHighFiveStats(&target)
 
