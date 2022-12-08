@@ -116,8 +116,9 @@ func (n *Node) apiCreateSpace(c *gin.Context) {
 			if parentWorld != nil {
 				user, ok := parentWorld.GetUser(userID, true)
 				if ok {
+					distance := float32(5)
 					position = &cmath.SpacePosition{
-						Location: cmath.Add(user.GetPosition(), cmath.MultiplyN(user.GetRotation(), 20)),
+						Location: cmath.Add(user.GetPosition(), cmath.MultiplyN(user.GetRotation(), distance)),
 						Rotation: cmath.Vec3{},
 						Scale:    cmath.Vec3{X: 1, Y: 1, Z: 1},
 					}
