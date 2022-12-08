@@ -84,6 +84,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 					authorizedAdmin.DELETE("/options/sub", n.apiSpacesRemoveSpaceSubOption)
 
 					authorizedAdmin.DELETE("", n.apiRemoveSpace)
+					authorizedAdmin.PATCH("", n.apiUpdateSpace)
 				}
 
 				space.POST("/attributes", n.apiSetSpaceAttributesValue)

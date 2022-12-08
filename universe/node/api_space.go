@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
 )
@@ -225,6 +226,83 @@ func (n *Node) apiRemoveSpace(c *gin.Context) {
 	}()
 
 	c.JSON(http.StatusOK, nil)
+}
+
+// @Summary Update space
+// @Description Updates a space
+// @Tags spaces
+// @Accept json
+// @Produce json
+// @Param space_id path string true "Space ID"
+// @Param body body node.apiUpdateSpace.InBody true "body params"
+// @Success 200 {object} node.apiUpdateSpace.Out
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/spaces/{space_id} [delete]
+func (n *Node) apiUpdateSpace(c *gin.Context) {
+	spaceID, err := uuid.Parse(c.Param("spaceID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetSpace: failed to parse space id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, n.log)
+		return
+	}
+
+	// not supporting 're-parenting' and changing type'. Have to delete and recreate for that.
+	// Update/edit the positioning is done through unity edit mode.
+	type InBody struct {
+		Asset2dID string `json:"asset_2d_id"`
+		//TODO: rename functionality:
+		//	SpaceName string `json:"space_name"`
+		//TODO: update 3d asset:
+		// Asset3dID string `json:"asset_3d_id"`
+	}
+	var inBody InBody
+
+	if err := c.ShouldBindJSON(&inBody); err != nil {
+		err = errors.WithMessage(err, "Node: apiCreateSpace: failed to bind json")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
+	space, ok := n.GetSpaceFromAllSpaces(spaceID)
+	if !ok {
+		err := errors.Errorf("Node: apiGetSpace: space not found: %s", spaceID)
+		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		return
+	}
+
+	var asset2d universe.Asset2d
+	if inBody.Asset2dID != "" {
+		asset2dID, err := uuid.Parse(inBody.Asset2dID)
+		if err != nil {
+			err := errors.WithMessage(err, "Node: apiCreateSpace: failed to parse asset 2d id")
+			api.AbortRequest(c, http.StatusBadRequest, "invalid_asset_2d_id", err, n.log)
+			return
+		}
+		asset2d, ok = n.GetAssets2d().GetAsset2d(asset2dID)
+		if !ok {
+			err := errors.Errorf("Node: apiGetSpace: 2D asset not found: %s", asset2dID)
+			api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+			return
+		}
+	}
+	if inBody.Asset2dID != "" {
+		if err := space.SetAsset2D(asset2d, true); err != nil {
+			err := errors.Errorf("Node: apiGetSpace: failed to update 2d asset: %s", asset2d)
+			api.AbortRequest(c, http.StatusNotFound, "space_asset_2d", err, n.log)
+			return
+		}
+	}
+	// TODO: output full space data
+	type Out struct {
+		SpaceID string `json:"space_id"`
+	}
+	out := Out{
+		SpaceID: spaceID.String(),
+	}
+
+	c.JSON(http.StatusOK, out)
 }
 
 // @Summary Set space sub option
