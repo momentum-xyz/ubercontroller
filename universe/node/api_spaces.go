@@ -7,21 +7,24 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
+	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 	"github.com/pkg/errors"
 	"net/http"
 )
 
 type SpaceTemplate struct {
-	SpaceID         uuid.UUID            `json:"space_id"`
+	SpaceID         *uuid.UUID           `json:"space_id"`
+	SpaceName       string               `json:"space_name"`
 	SpaceTypeID     uuid.UUID            `json:"space_type_id"`
-	OwnerID         uuid.UUID            `json:"owner_id"`
 	ParentID        uuid.UUID            `json:"parent_id"`
+	OwnerID         *uuid.UUID           `json:"owner_id"`
 	Asset2dID       *uuid.UUID           `json:"asset_2d_id"`
 	Asset3dID       *uuid.UUID           `json:"asset_3d_id"`
 	Options         *entry.SpaceOptions  `json:"options"`
 	Position        *cmath.SpacePosition `json:"position"`
 	SpaceAttributes []*Attribute         `json:"space_attributes"`
+	Spaces          []*SpaceTemplate     `json:"spaces"`
 }
 
 // workaround for mapstructure errors
@@ -105,25 +108,16 @@ func (n *Node) apiCreateSpace(c *gin.Context) {
 	}
 
 	spaceTemplate := SpaceTemplate{
-		SpaceID:     uuid.New(),
+		SpaceName:   inBody.SpaceName,
 		SpaceTypeID: spaceTypeID,
-		OwnerID:     ownerID,
 		ParentID:    parentID,
+		OwnerID:     &ownerID,
 		Asset2dID:   asset2dID,
 		Asset3dID:   asset3dID,
 		Position:    inBody.Position,
-		SpaceAttributes: []*Attribute{
-			{
-				AttributeID: entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name),
-				AttributePayload: entry.AttributePayload{
-					Value: &entry.AttributeValue{
-						universe.Attributes.Space.Name.Key: inBody.SpaceName,
-					},
-				},
-			},
-		},
 	}
-	if err := n.addSpaceFromTemplate(&spaceTemplate); err != nil {
+	spaceID, err := n.addSpaceFromTemplate(&spaceTemplate)
+	if err != nil {
 		err := errors.WithMessage(err, "Node: apiCreateSpace: failed to add space from template")
 		api.AbortRequest(c, http.StatusInternalServerError, "add_space_failed", err, n.log)
 		return
@@ -133,22 +127,22 @@ func (n *Node) apiCreateSpace(c *gin.Context) {
 		SpaceID string `json:"space_id"`
 	}
 	out := Out{
-		SpaceID: spaceTemplate.SpaceID.String(),
+		SpaceID: spaceID.String(),
 	}
 
 	c.JSON(http.StatusCreated, out)
 }
 
-func (n *Node) addSpaceFromTemplate(spaceTemplate *SpaceTemplate) error {
+func (n *Node) addSpaceFromTemplate(spaceTemplate *SpaceTemplate) (uuid.UUID, error) {
 	// loading
 	spaceType, ok := n.GetSpaceTypes().GetSpaceType(spaceTemplate.SpaceTypeID)
 	if !ok {
-		return errors.Errorf("failed to get space type: %s", spaceTemplate.SpaceTypeID)
+		return uuid.Nil, errors.Errorf("failed to get space type: %s", spaceTemplate.SpaceTypeID)
 	}
 
 	parent, ok := n.GetSpaceFromAllSpaces(spaceTemplate.ParentID)
 	if !ok {
-		return errors.Errorf("parent space not found: %s", spaceTemplate.ParentID)
+		return uuid.Nil, errors.Errorf("parent space not found: %s", spaceTemplate.ParentID)
 	}
 
 	// TODO: should be available for admin or owner of parent
@@ -156,7 +150,7 @@ func (n *Node) addSpaceFromTemplate(spaceTemplate *SpaceTemplate) error {
 	if spaceTemplate.Asset2dID != nil {
 		asset2d, ok = n.GetAssets2d().GetAsset2d(*spaceTemplate.Asset2dID)
 		if !ok {
-			return errors.Errorf("asset 2d not found: %s", spaceTemplate.Asset2dID)
+			return uuid.Nil, errors.Errorf("asset 2d not found: %s", spaceTemplate.Asset2dID)
 		}
 	}
 
@@ -165,66 +159,94 @@ func (n *Node) addSpaceFromTemplate(spaceTemplate *SpaceTemplate) error {
 	if spaceTemplate.Asset3dID != nil {
 		asset3d, ok = n.GetAssets3d().GetAsset3d(*spaceTemplate.Asset3dID)
 		if !ok {
-			return errors.Errorf("asset 3d not found: %s", spaceTemplate.Asset3dID)
+			return uuid.Nil, errors.Errorf("asset 3d not found: %s", spaceTemplate.Asset3dID)
 		}
 	}
 
-	// creation
-	space, err := parent.CreateSpace(spaceTemplate.SpaceID)
-	if err != nil {
-		return errors.WithMessagef(err, "failed to create space: %s", spaceTemplate.SpaceID)
+	spaceID := spaceTemplate.SpaceID
+	ownerID := spaceTemplate.OwnerID
+	if spaceID == nil {
+		spaceID = utils.GetPTR(uuid.New())
+	}
+	if ownerID == nil {
+		ownerID = utils.GetPTR(parent.GetOwnerID())
 	}
 
-	if err := space.SetOwnerID(spaceTemplate.OwnerID, false); err != nil {
-		return errors.WithMessagef(err, "failed to set owner id: %s", spaceTemplate.OwnerID)
+	// creation
+	space, err := parent.CreateSpace(*spaceID)
+	if err != nil {
+		return uuid.Nil, errors.WithMessagef(err, "failed to create space: %s", spaceID)
+	}
+
+	if err := space.SetOwnerID(*ownerID, false); err != nil {
+		return uuid.Nil, errors.WithMessagef(err, "failed to set owner id: %s", ownerID)
 	}
 	if err := space.SetSpaceType(spaceType, false); err != nil {
-		return errors.WithMessagef(err, "failed to set space type: %s", spaceTemplate.SpaceTypeID)
+		return uuid.Nil, errors.WithMessagef(err, "failed to set space type: %s", spaceTemplate.SpaceTypeID)
 	}
 	if spaceTemplate.Position != nil {
 		if err := space.SetPosition(spaceTemplate.Position, false); err != nil {
-			return errors.WithMessagef(err, "failed to set position: %+v", spaceTemplate.Position)
+			return uuid.Nil, errors.WithMessagef(err, "failed to set position: %+v", spaceTemplate.Position)
 		}
 	}
 	if asset2d != nil {
 		if err := space.SetAsset2D(asset2d, false); err != nil {
-			return errors.WithMessagef(err, "failed to set asset 2d: %s", spaceTemplate.Asset2dID)
+			return uuid.Nil, errors.WithMessagef(err, "failed to set asset 2d: %s", spaceTemplate.Asset2dID)
 		}
 	}
 	if asset3d != nil {
 		if err := space.SetAsset3D(asset3d, false); err != nil {
-			return errors.WithMessagef(err, "failed to set asset 3d: %s", spaceTemplate.Asset3dID)
+			return uuid.Nil, errors.WithMessagef(err, "failed to set asset 3d: %s", spaceTemplate.Asset3dID)
 		}
 	}
 
 	if err := parent.AddSpace(space, true); err != nil {
-		return errors.WithMessage(err, "failed to add space")
+		return uuid.Nil, errors.WithMessage(err, "failed to add space")
 	}
 
 	// adding attributes
+	spaceTemplate.SpaceAttributes = append(
+		spaceTemplate.SpaceAttributes,
+		&Attribute{
+			AttributeID: entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name),
+			AttributePayload: entry.AttributePayload{
+				Value: &entry.AttributeValue{
+					universe.Attributes.Space.Name.Key: spaceTemplate.SpaceName,
+				},
+			},
+		},
+	)
 	for i := range spaceTemplate.SpaceAttributes {
 		if _, err := space.UpsertSpaceAttribute(
 			spaceTemplate.SpaceAttributes[i].AttributeID,
 			modify.MergeWith(&spaceTemplate.SpaceAttributes[i].AttributePayload),
 			true,
 		); err != nil {
-			return errors.WithMessagef(err, "failed to upsert space attribute: %+v", spaceTemplate.SpaceAttributes[i])
+			return uuid.Nil, errors.WithMessagef(err, "failed to upsert space attribute: %+v", spaceTemplate.SpaceAttributes[i])
 		}
 	}
 
 	// run
 	if err := parent.UpdateChildrenPosition(true); err != nil {
-		return errors.WithMessage(err, "failed to update children position")
+		return uuid.Nil, errors.WithMessage(err, "failed to update children position")
 	}
 	if err := space.Run(); err != nil {
-		return errors.WithMessage(err, "failed to run space")
+		return uuid.Nil, errors.WithMessage(err, "failed to run space")
 	}
 
 	space.SetEnabled(true)
 
-	if err := space.Update(false); err != nil {
-		return errors.WithMessage(err, "failed to update space")
+	if err := space.Update(true); err != nil {
+		return uuid.Nil, errors.WithMessage(err, "failed to update space")
 	}
 
-	return nil
+	// children
+	for i := range spaceTemplate.Spaces {
+		spaceTemplate.Spaces[i].ParentID = *spaceID
+		if _, err := n.addSpaceFromTemplate(spaceTemplate.Spaces[i]); err != nil {
+			return uuid.Nil, errors.WithMessagef(err, "failed to add space from template: %+v", spaceTemplate.Spaces[i])
+		}
+	}
+
+	return *spaceID, nil
 }
