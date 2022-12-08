@@ -45,6 +45,10 @@ type PosBusAutoAttributeOption struct {
 	Topic  string                           `json:"topic" db:"topic"`
 }
 
+type PermissionsAttributeOption struct {
+	Mutations []string `json:"mutations" db:"mutations"`
+}
+
 func NewAttributeID(pluginID uuid.UUID, name string) AttributeID {
 	return AttributeID{
 		PluginID: pluginID,

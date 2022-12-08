@@ -16,7 +16,7 @@ import (
 
 const (
 	getAttributeTypesQuery = `SELECT * FROM attribute_type;`
-	getAttributeTypeByName = `SELECT * FROM attribute_type WHERE attribute_name = $1 AND plugin_id = $2;`
+	getAttributeTypeByID   = `SELECT * FROM attribute_type WHERE attribute_name = $1 AND plugin_id = $2;`
 
 	removeAttributeTypeByNameQuery             = `DELETE FROM attribute_type WHERE attribute_name = $1;`
 	removeAttributeTypesByNamesQuery           = `DELETE FROM attribute_type WHERE attribute_name = ANY($1);`
@@ -59,12 +59,12 @@ func (db *DB) AttributeTypesGetAttributeTypes(ctx context.Context) ([]*entry.Att
 	return attributeTypes, nil
 }
 
-func (db *DB) AttributeTypesGetAttributeTypeByID(ctx context.Context, attributeID entry.AttributeID) (*entry.AttributeType, error) {
-	var attributeType *entry.AttributeType
-	if err := pgxscan.Select(ctx, db.conn, &attributeType, getAttributeTypeByName, attributeID.Name, attributeID.PluginID); err != nil {
+func (db *DB) AttributeTypesGetAttributeTypeByID(ctx context.Context, attributeTypeID entry.AttributeTypeID) (*entry.AttributeType, error) {
+	var attributeTypes []*entry.AttributeType
+	if err := pgxscan.Select(ctx, db.conn, &attributeTypes, getAttributeTypeByID, attributeTypeID.Name, attributeTypeID.PluginID); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
-	return attributeType, nil
+	return attributeTypes[0], nil
 }
 
 func (db *DB) AttributeTypesUpsertAttributeType(ctx context.Context, attributeType *entry.AttributeType) error {

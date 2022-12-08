@@ -11,7 +11,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
-	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 func AuthorizeAttributes(log *zap.SugaredLogger, db database.DB) gin.HandlerFunc {
@@ -50,7 +49,7 @@ func AuthorizeAttributes(log *zap.SugaredLogger, db database.DB) gin.HandlerFunc
 			return
 		}
 
-		attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
+		attributeID := entry.NewAttributeTypeID(pluginID, inBody.AttributeName)
 		attributeType, err := db.AttributeTypesGetAttributeTypeByID(c, attributeID)
 		if err != nil {
 			err := errors.WithMessage(err, "Middleware: AuthorizeAttributes: failed to get attribute type")
@@ -65,40 +64,25 @@ func AuthorizeAttributes(log *zap.SugaredLogger, db database.DB) gin.HandlerFunc
 			return
 		}
 
-		permissions := utils.GetFromAnyMap(*options, "permissions", (map[string]any)(nil))
-		if permissions == nil {
-			err := errors.WithMessage(err, "Middleware: AuthorizeAttributes: no permissions in options")
-			api.AbortRequest(c, http.StatusNotFound, "permissions_not_found", err, log)
-			return
-		}
-
-		mutations := utils.GetFromAnyMap(*options, "permissions", (map[string]string)(nil))
-		if mutations == nil {
-			err := errors.WithMessage(err, "Middleware: AuthorizeAttributes: no mutations in permissions")
-			api.AbortRequest(c, http.StatusNotFound, "mutations_not_found", err, log)
+		role := (*options)["permissions"]
+		if role == nil {
+			err := errors.WithMessage(err, "Middleware: AuthorizeAttributes: no role in permissions")
+			api.AbortRequest(c, http.StatusNotFound, "failed_to_get_permissions", err, log)
 			return
 		}
 
 		userSpaceID := entry.NewUserSpaceID(userID, spaceID)
-		userSpaceValue, err := db.UserSpaceGetUserSpaceValueByID(c, userSpaceID)
+		_, err = db.UserSpaceGetUserSpaceValueByID(c, userSpaceID)
 		if err != nil {
 			err := errors.WithMessage(err, "Middleware: AuthorizeAttributes: failed to get userSpaceValue")
 			api.AbortRequest(c, http.StatusBadRequest, "failed_to_get_user_space_value", err, log)
 			return
 		}
 
-		if userSpaceValue == nil {
-			err := errors.WithMessage(err, "Middleware: AuthorizeAttributes: no user space value found")
-			api.AbortRequest(c, http.StatusNotFound, "mutations_not_found", err, log)
-			return
-		}
-
-		role := utils.GetFromAnyMap(*userSpaceValue, "role", "")
-
-		if mutations[role] == "" {
-			return
-		} else {
-			c.Next()
-		}
+		//if userRole != role {
+		//	return
+		//} else {
+		//	c.Next()
+		//}
 	}
 }

@@ -87,17 +87,14 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 					authorizedAdmin.POST("/options/sub", n.apiSpacesSetSpaceSubOption)
 					authorizedAdmin.DELETE("/options/sub", n.apiSpacesRemoveSpaceSubOption)
 
+					authorizedAdmin.POST("/attributes", n.apiSetSpaceAttributesValue)
+					authorizedAdmin.DELETE("/attributes", n.apiRemoveSpaceAttributeValue)
+
+					authorizedAdmin.POST("/attributes/sub", n.apiSetSpaceAttributeSubValue)
+					authorizedAdmin.DELETE("/attributes/sub", n.apiRemoveSpaceAttributeSubValue)
+
 					authorizedAdmin.DELETE("", n.apiRemoveSpace)
 					authorizedAdmin.PATCH("", n.apiUpdateSpace)
-				}
-
-				authorizedAttributes := space.Group("", middleware.AuthorizeAttributes(n.log, n.db))
-				{
-					authorizedAttributes.POST("/attributes", n.apiSetSpaceAttributesValue)
-					authorizedAttributes.DELETE("/attributes", n.apiRemoveSpaceAttributeValue)
-
-					authorizedAttributes.POST("/attributes/sub", n.apiSetSpaceAttributeSubValue)
-					authorizedAttributes.DELETE("/attributes/sub", n.apiRemoveSpaceAttributeSubValue)
 				}
 
 				space.POST("/agora/token", n.apiGenAgoraToken)
@@ -117,13 +114,13 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 			spaceUser := verifiedSpaces.Group("/:spaceID/:userID")
 			{
-				authorizedAttributes := spaceUser.Group("", middleware.AuthorizeAttributes(n.log, n.db))
+				authorizedAdmin := spaceUser.Group("", middleware.AuthorizeAdmin(n.log, n.db))
 				{
-					authorizedAttributes.POST("/attributes", n.apiSetSpaceUserAttributesValue)
-					authorizedAttributes.DELETE("/attributes", n.apiRemoveSpaceUserAttributeValue)
+					authorizedAdmin.POST("/attributes", n.apiSetSpaceUserAttributesValue)
+					authorizedAdmin.DELETE("/attributes", n.apiRemoveSpaceUserAttributeValue)
 
-					authorizedAttributes.POST("/attributes/sub", n.apiSetSpaceUserAttributeSubValue)
-					authorizedAttributes.DELETE("/attributes/sub", n.apiRemoveSpaceUserAttributeSubValue)
+					authorizedAdmin.POST("/attributes/sub", n.apiSetSpaceUserAttributeSubValue)
+					authorizedAdmin.DELETE("/attributes/sub", n.apiRemoveSpaceUserAttributeSubValue)
 				}
 
 				spaceUser.GET("/attributes", n.apiGetSpaceUserAttributesValue)
