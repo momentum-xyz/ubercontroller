@@ -90,20 +90,22 @@ func PrerenderAutoValue(
 	var valueString string
 
 	var renderKind uint
+	renderKind = RenderKindText
+	if option.ContentType == "video" {
+		renderKind = RenderKindVideo
+	}
 	switch option.ContentType {
 	case "video", "text", "string":
 		valueString, ok = valueAny.(string)
 		if !ok {
 			errors.New("Can not cast value to string in PrerenderAutoValue")
 		}
-		renderKind = RenderKindVideo
 	case "number":
 		valueUint, ok := valueAny.(uint32)
 		if !ok {
 			errors.New("Can not cast value to uint32 in PrerenderAutoValue")
 		}
 		valueString = strconv.FormatUint(uint64(valueUint), 10)
-		renderKind = RenderKindText
 	default:
 		return nil, nil
 	}
@@ -154,7 +156,7 @@ func renderFrame(ctx context.Context, textJob []byte) (*dto.HashResponse, error)
 		return nil, errors.Errorf("failed to get config from context: %T", ctx.Value(types.ConfigContextKey))
 	}
 
-	fmt.Printf("GG: %+v\n", string(textJob))
+	//fmt.Printf("GG: %+v\n", string(textJob))
 	req, err := http.NewRequest("POST", cfg.Common.RenderInternalURL+"/render/addframe", bytes.NewBuffer(textJob))
 	if err != nil {
 		return nil, errors.WithMessage(err, "Common: renderFrame: failed to create post request")
@@ -170,7 +172,7 @@ func renderFrame(ctx context.Context, textJob []byte) (*dto.HashResponse, error)
 
 	defer resp.Body.Close()
 
-	fmt.Printf("%+v\n", resp.Body)
+	//fmt.Printf("%+v\n", resp.Body)
 	response := &dto.HashResponse{}
 
 	errs := json.NewDecoder(resp.Body).Decode(response)
