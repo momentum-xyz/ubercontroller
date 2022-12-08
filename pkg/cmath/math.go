@@ -5,21 +5,37 @@ import (
 )
 
 type Vec3 struct {
-	X float32 `json:"x" db:"x" mapstructure:"x"`
-	Y float32 `json:"y" db:"y" mapstructure:"y"`
-	Z float32 `json:"z" db:"z" mapstructure:"z"`
+	X float32 `json:"x" db:"x"`
+	Y float32 `json:"y" db:"y"`
+	Z float32 `json:"z" db:"z"`
 }
 
 type SpacePosition struct {
-	Location Vec3 `db:"location" json:"location" mapstructure:"location"`
-	Rotation Vec3 `db:"rotation" json:"rotation" mapstructure:"rotation"`
-	Scale    Vec3 `db:"scale" json:"scale" mapstructure:"scale"`
+	Location Vec3 `db:"location" json:"location"`
+	Rotation Vec3 `db:"rotation" json:"rotation"`
+	Scale    Vec3 `db:"scale" json:"scale"`
 }
 
 func (v *Vec3) Plus(v2 Vec3) {
 	v.X += v2.X
 	v.Y += v2.Y
 	v.Z += v2.Z
+}
+
+func Add(v1 Vec3, v2 Vec3) Vec3 {
+	return Vec3{
+		X: v1.X + v2.X,
+		Y: v1.Y + v2.Y,
+		Z: v1.Z + v2.Z,
+	}
+}
+
+func MultiplyN(v Vec3, n float32) Vec3 {
+	return Vec3{
+		X: v.X * n,
+		Y: v.Y * n,
+		Z: v.Z * n,
+	}
 }
 
 func (v *Vec3) ToVec3f64() Vec3f64 {

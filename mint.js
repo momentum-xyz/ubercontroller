@@ -17,6 +17,8 @@ try {
 const {ApiPromise, WsProvider, Keyring} = ApiModule
 const {v4} = UUIDModule
 
+const collectionId = 3
+
 async function hasPayment(block_hash, from_wallet, amount, api, admin_pair) {
     const signedBlock = await api.rpc.chain.getBlock(block_hash);
     // console.log(signedBlock)
@@ -54,14 +56,14 @@ async function hasPayment(block_hash, from_wallet, amount, api, admin_pair) {
 }
 
 async function mint(api, owner_wallet, admin_pair) {
-    const collection = 0
+
     const item = getRandom(1, 1_000_000_000)
     log("itemID=" + item)
 
 
     return new Promise((resolve, reject) => {
         api.tx.uniques
-            .mint(collection, item, owner_wallet)
+            .mint(collectionId, item, owner_wallet)
             .signAndSend(admin_pair, (result) => {
                 log(`Current status is ${result.status}`);
 
@@ -78,7 +80,7 @@ async function mint(api, owner_wallet, admin_pair) {
 }
 
 async function setMeta(api, item_id, name, image, admin_pair) {
-    const collection = 0
+
     const isFrozen = false
     const uuid = v4()
 
@@ -87,7 +89,7 @@ async function setMeta(api, item_id, name, image, admin_pair) {
 
     return new Promise((resolve, reject) => {
         api.tx.uniques
-            .setMetadata(collection, item_id, JSON.stringify(meta), isFrozen)
+            .setMetadata(collectionId, item_id, JSON.stringify(meta), isFrozen)
             .signAndSend(admin_pair, (result) => {
                 log(`Current status is ${result.status}`);
 

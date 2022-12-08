@@ -67,7 +67,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 			}
 			attributes := verifiedUsers.Group("/attributes")
 			{
-				attributes.POST("/sub/:userID/:targetID", n.apiSetUserUserAttributeValue)
+				attributes.POST("/sub/:userID/:targetID", n.apiSetUserUserSubAttributeValue)
 			}
 		}
 
@@ -128,7 +128,8 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 		newsfeed := vx.Group("/newsfeed")
 		{
-			newsfeed.GET("", n.apiNewsFeed)
+			newsfeed.POST("", n.apiNewsFeedAddItem)
+			newsfeed.GET("", n.apiNewsFeedGetAll)
 		}
 
 		notifications := vx.Group("/notifications")
@@ -136,7 +137,6 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 			notifications.GET("", n.apiNotifications)
 		}
 	}
-
 }
 
 // @Summary Get application version

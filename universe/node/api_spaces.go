@@ -101,6 +101,32 @@ func (n *Node) apiCreateSpace(c *gin.Context) {
 		return
 	}
 
+	// TODO: fix this bloody stuff
+	position := inBody.Position
+	if position == nil {
+		parent, ok := n.GetSpaceFromAllSpaces(parentID)
+		if !ok {
+			err := errors.Errorf("Node: apiCreateSpace: parent space not found")
+			api.AbortRequest(c, http.StatusBadRequest, "parent_not_found", err, n.log)
+			return
+		}
+		options := parent.GetOptions()
+		if options == nil || len(options.ChildPlacements) == 0 {
+			parentWorld := parent.GetWorld()
+			if parentWorld != nil {
+				user, ok := parentWorld.GetUser(userID, true)
+				if ok {
+					distance := float32(5)
+					position = &cmath.SpacePosition{
+						Location: cmath.Add(user.GetPosition(), cmath.MultiplyN(user.GetRotation(), distance)),
+						Rotation: cmath.Vec3{},
+						Scale:    cmath.Vec3{X: 1, Y: 1, Z: 1},
+					}
+				}
+			}
+		}
+	}
+
 	spaceTypeID, err := uuid.Parse(inBody.SpaceTypeID)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiCreateSpace: failed to parse space type id")

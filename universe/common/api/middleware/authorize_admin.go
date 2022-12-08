@@ -14,8 +14,6 @@ import (
 
 func AuthorizeAdmin(log *zap.SugaredLogger, db database.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		isAdmin := false
-
 		spaceID, err := uuid.Parse(c.Param("spaceID"))
 		if err != nil {
 			err := errors.WithMessage(err, "Middleware: AuthorizeAdmin: failed to parse space id")
@@ -37,16 +35,17 @@ func AuthorizeAdmin(log *zap.SugaredLogger, db database.DB) gin.HandlerFunc {
 			return
 		}
 
+		isAdmin := false
 		for _, uID := range userIDs {
 			if uID != nil && *uID == userID {
 				isAdmin = true
 			}
 		}
 
-		if isAdmin == false {
+		if !isAdmin {
+			err := errors.WithMessage(err, "Middleware: AuthorizeAdmin: user is not admin")
+			api.AbortRequest(c, http.StatusForbidden, "not_admin", err, log)
 			return
-		} else {
-			c.Next()
 		}
 	}
 }

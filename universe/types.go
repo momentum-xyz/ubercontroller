@@ -31,8 +31,9 @@ var (
 			Settings Attribute
 		}
 		Space struct {
-			Name        Attribute
-			Description Attribute
+			Name          Attribute
+			Description   Attribute
+			NewsFeedItems Attribute
 		}
 		Kusama struct {
 			User struct {
@@ -78,8 +79,9 @@ var (
 			},
 		},
 		Space: struct {
-			Name        Attribute
-			Description Attribute
+			Name          Attribute
+			Description   Attribute
+			NewsFeedItems Attribute
 		}{
 			Name: Attribute{
 				Name: "name",
@@ -87,6 +89,10 @@ var (
 			},
 			Description: Attribute{
 				Name: "description",
+			},
+			NewsFeedItems: Attribute{
+				Name: "news_feed",
+				Key:  "items",
 			},
 		},
 		Kusama: struct {

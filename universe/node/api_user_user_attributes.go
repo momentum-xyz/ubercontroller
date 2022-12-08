@@ -16,42 +16,44 @@ import (
 // @Tags users
 // @Accept json
 // @Produce json
+// @Param body body node.apiSetUserUserSubAttributeValue.InBody true "body params"
 // @Success 200 {object} entry.AttributeValue
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Router /api/v4/users/attributes/sub/{user_id}/{target_id} [post]
-func (n *Node) apiSetUserUserAttributeValue(c *gin.Context) {
+func (n *Node) apiSetUserUserSubAttributeValue(c *gin.Context) {
 	type InBody struct {
-		PluginID       string         `json:"plugin_id" binding: "required"`
-		AttributeName  string         `json:"attribute_name" binding:"required"`
-		AttributeValue map[string]any `json:"attribute_value" binding:"required"`
+		PluginID          string `json:"plugin_id" binding:"required"`
+		AttributeName     string `json:"attribute_name" binding:"required"`
+		SubAttributeKey   string `json:"sub_attribute_key" binding:"required"`
+		SubAttributeValue any    `json:"sub_attribute_value" binding:"required"`
 	}
 
 	inBody := InBody{}
 
 	if err := c.ShouldBindJSON(&inBody); err != nil {
-		err = errors.WithMessage(err, "Node: apiSetUserUserAttributeValue: failed to bind json")
+		err = errors.WithMessage(err, "Node: apiSetUserUserSubAttributeValue: failed to bind json")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
 		return
 	}
 
 	userID, err := uuid.Parse(c.Param("userID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSetUserUserAttributeValue: failed to parse user id")
+		err := errors.WithMessage(err, "Node: apiSetUserUserSubAttributeValue: failed to parse user id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
 		return
 	}
 
 	targetID, err := uuid.Parse(c.Param("targetID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSetUserUserAttributeValue: failed to parse user id")
+		err := errors.WithMessage(err, "Node: apiSetUserUserSubAttributeValue: failed to parse user id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_target_id", err, n.log)
 		return
 	}
 
 	pluginID, err := uuid.Parse(inBody.PluginID)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSetUserUserAttributeValue: failed to parse plugin id")
+		err := errors.WithMessage(err, "Node: apiSetUserUserSubAttributeValue: failed to parse plugin id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
 		return
 	}
@@ -62,7 +64,7 @@ func (n *Node) apiSetUserUserAttributeValue(c *gin.Context) {
 	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
 		newValue := func() *entry.AttributeValue {
 			value := entry.NewAttributeValue()
-			*value = inBody.AttributeValue
+			(*value)[inBody.SubAttributeKey] = inBody.SubAttributeValue
 			return value
 		}
 
@@ -75,14 +77,14 @@ func (n *Node) apiSetUserUserAttributeValue(c *gin.Context) {
 			return current, nil
 		}
 
-		*current.Value = inBody.AttributeValue
+		(*current.Value)[inBody.SubAttributeKey] = inBody.SubAttributeValue
 
 		return current, nil
 	}
 
 	userUserAttribute, err := n.UpsertUserUserAttribute(userUserAttributeID, modifyFn)
 	if err != nil {
-		err = errors.WithMessage(err, "Node: apiSetUserUserAttributeValue: failed to upsert user user attribute")
+		err = errors.WithMessage(err, "Node: apiSetUserUserSubAttributeValue: failed to upsert user user attribute")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert", err, n.log)
 		return
 	}

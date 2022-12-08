@@ -215,7 +215,7 @@ func (w *World) Update(recursive bool) error {
 		w.log.Error(errors.WithMessagef(err, "World: Update: failed to update world metadata: %s", w.GetID()))
 	}
 	if err := w.UpdateWorldSettings(); err != nil {
-		w.log.Error(errors.WithMessagef(err, "World: Update: failed to update world settings: %s", w.GetID()))
+		w.log.Warn(errors.WithMessagef(err, "World: Update: failed to update world settings: %s", w.GetID()))
 	}
 
 	return w.Space.Update(recursive)

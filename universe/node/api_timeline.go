@@ -284,6 +284,7 @@ type Event struct {
 	HostedBy    string     `json:"hosted_by"`
 }
 
+// REPLACED WITH NEW LOGIC (api_newsfeed.go)!!!
 func (n *Node) apiNewsFeed(c *gin.Context) {
 
 	list := make([]FeedItem, 0)
