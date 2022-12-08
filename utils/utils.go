@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"runtime"
@@ -28,6 +29,7 @@ func MapDecode(input, output interface{}) error {
 		DecodeHook: mapstructure.ComposeDecodeHookFunc(
 			stringToUUIDHookFunc(),
 			stringToTimeHookFunc(),
+			mapToStringHookFunc(),
 		),
 		Result: &output,
 	}
@@ -50,6 +52,20 @@ func stringToUUIDHookFunc() mapstructure.DecodeHookFunc {
 		}
 
 		return uuid.Parse(data.(string))
+	}
+}
+
+func mapToStringHookFunc() mapstructure.DecodeHookFunc {
+	return func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+		if f.Kind() != reflect.Map {
+			return data, nil
+		}
+		if t.Kind() != reflect.String {
+			return data, nil
+		}
+
+		bytes, err := json.Marshal(data)
+		return string(bytes), err
 	}
 }
 
