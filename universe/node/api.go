@@ -65,6 +65,10 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 			{
 				verifiedUser.GET("", n.apiUsersGetById)
 			}
+			attributes := verifiedUsers.Group("/attributes")
+			{
+				attributes.POST("/sub/:userID/:targetID", n.apiSetUserUserSubAttributeValue)
+			}
 		}
 
 		verifiedProfile := verified.Group("/profile")
@@ -78,12 +82,13 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 			space := verifiedSpaces.Group("/:spaceID")
 			{
-				authorizedAdmin := auth.Group("", middleware.AuthorizeAdmin(n.log, n.db))
+				authorizedAdmin := space.Group("", middleware.AuthorizeAdmin(n.log, n.db))
 				{
-					space.POST("/options/sub", n.apiSpacesSetSpaceSubOption)
-					space.DELETE("/options/sub", n.apiSpacesRemoveSpaceSubOption)
+					authorizedAdmin.POST("/options/sub", n.apiSpacesSetSpaceSubOption)
+					authorizedAdmin.DELETE("/options/sub", n.apiSpacesRemoveSpaceSubOption)
 
 					authorizedAdmin.DELETE("", n.apiRemoveSpace)
+					authorizedAdmin.PATCH("", n.apiUpdateSpace)
 				}
 
 				space.POST("/attributes", n.apiSetSpaceAttributesValue)

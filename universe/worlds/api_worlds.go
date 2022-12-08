@@ -1,7 +1,6 @@
 package worlds
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -50,14 +49,14 @@ func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
 		userIDs = append(userIDs, userID)
 	}
 
-	userEntries, err := w.db.UsersGetUsersByIDs(w.ctx, userIDs)
+	userEntries, err := w.db.UsersGetUsersByIDs(c, userIDs)
 	if err != nil {
 		err := errors.WithMessage(err, "Worlds: apiGetOnlineUsers: failed to get users")
 		api.AbortRequest(c, http.StatusInternalServerError, "get_users_failed", err, w.log)
 		return
 	}
 
-	userTypes, err := w.db.UserTypesGetUserTypes(context.Background())
+	userTypes, err := w.db.UserTypesGetUserTypes(c)
 	if err != nil {
 		err := errors.WithMessage(err, "Worlds: apiGetOnlineUsers: failed to UserTypesGetUserTypes")
 		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, w.log)

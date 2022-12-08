@@ -54,7 +54,7 @@ async function hasPayment(block_hash, from_wallet, amount, api, admin_pair) {
 }
 
 async function mint(api, owner_wallet, admin_pair) {
-    const collection = 0
+    const collection = 3
     const item = getRandom(1, 1_000_000_000)
     log("itemID=" + item)
 

@@ -2,27 +2,16 @@ package universe
 
 import (
 	"github.com/google/uuid"
-
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 )
 
-type AttributeChangeType string
-
-const (
-	InvalidAttributeChangeType AttributeChangeType = ""
-	ChangedAttributeChangeType AttributeChangeType = "attribute_changed"
-	RemovedAttributeChangeType AttributeChangeType = "attribute_removed"
-)
-
-type SpaceFilterPredicateFn func(spaceID uuid.UUID, space Space) bool
-type WorldsFilterPredicateFn func(worldID uuid.UUID, world World) bool
-type SpacesFilterPredicateFn func(spaceID uuid.UUID, space Space) bool
-type Assets2dFilterPredicateFn func(asset2dID uuid.UUID, asset2d Asset2d) bool
-type Assets3dFilterPredicateFn func(asset3dID uuid.UUID, asset3d Asset3d) bool
-type PluginsFilterPredicateFn func(pluginID uuid.UUID, plugin Plugin) bool
-type AttributeTypesFilterPredicateFn func(attributeTypeID entry.AttributeTypeID, attributeType AttributeType) bool
-type SpaceTypesFilterPredicateFn func(spaceTypeID uuid.UUID, spaceType SpaceType) bool
-type UserTypesFilterPredicateFn func(userTypeID uuid.UUID, userType UserType) bool
+type WorldSettings struct {
+	Kind       string               `db:"kind" json:"kind"`
+	Spaces     map[string]uuid.UUID `db:"spaces" json:"spaces"`
+	Attributes map[string]uuid.UUID `db:"spaces" json:"attributes"`
+	SpaceTypes map[string]uuid.UUID `db:"space_types" json:"space_types"`
+	Effects    map[string]uuid.UUID `db:"effects" json:"effects"`
+}
 
 type Attribute struct {
 	Name string
@@ -38,8 +27,8 @@ var (
 			JWTKey         Attribute
 		}
 		World struct {
-			Meta           Attribute
-			EffectsEmitter Attribute
+			Meta     Attribute
+			Settings Attribute
 		}
 		Space struct {
 			Name        Attribute
@@ -78,15 +67,14 @@ var (
 			},
 		},
 		World: struct {
-			Meta           Attribute
-			EffectsEmitter Attribute
+			Meta     Attribute
+			Settings Attribute
 		}{
 			Meta: Attribute{
 				Name: "world_meta",
 			},
-			EffectsEmitter: Attribute{
-				Name: "effects_emitter",
-				Key:  "effects_emitter",
+			Settings: Attribute{
+				Name: "world_settings",
 			},
 		},
 		Space: struct {
@@ -130,3 +118,21 @@ var (
 		},
 	}
 )
+
+type AttributeChangeType string
+
+const (
+	InvalidAttributeChangeType AttributeChangeType = ""
+	ChangedAttributeChangeType AttributeChangeType = "attribute_changed"
+	RemovedAttributeChangeType AttributeChangeType = "attribute_removed"
+)
+
+type SpaceFilterPredicateFn func(spaceID uuid.UUID, space Space) bool
+type WorldsFilterPredicateFn func(worldID uuid.UUID, world World) bool
+type SpacesFilterPredicateFn func(spaceID uuid.UUID, space Space) bool
+type Assets2dFilterPredicateFn func(asset2dID uuid.UUID, asset2d Asset2d) bool
+type Assets3dFilterPredicateFn func(asset3dID uuid.UUID, asset3d Asset3d) bool
+type PluginsFilterPredicateFn func(pluginID uuid.UUID, plugin Plugin) bool
+type AttributeTypesFilterPredicateFn func(attributeTypeID entry.AttributeTypeID, attributeType AttributeType) bool
+type SpaceTypesFilterPredicateFn func(spaceTypeID uuid.UUID, spaceType SpaceType) bool
+type UserTypesFilterPredicateFn func(userTypeID uuid.UUID, userType UserType) bool

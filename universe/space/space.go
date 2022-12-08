@@ -540,7 +540,7 @@ func (s *Space) UpdateSpawnMessage() error {
 		if asset3dMeta != nil {
 			// TODO: make GetMeta return struct type
 			metaData := struct {
-				Type int `mapstructure:"type"`
+				Type int `json:"type"`
 			}{}
 			utils.MapDecode(*asset3dMeta, &metaData)
 			assetFormat = dto.Asset3dType(metaData.Type)

@@ -38,6 +38,7 @@ type World struct {
 	corePluginInterface mplugin.PluginInterface
 	metaMsg             atomic.Pointer[websocket.PreparedMessage]
 	metaData            Metadata
+	settings            atomic.Pointer[universe.WorldSettings]
 	counter             atomic.Int64
 	allSpaces           *generic.SyncMap[uuid.UUID, universe.Space]
 	calendar            *calendar.Calendar
@@ -49,6 +50,8 @@ func NewWorld(id uuid.UUID, db database.DB) *World {
 		allSpaces: generic.NewSyncMap[uuid.UUID, universe.Space](0),
 	}
 	world.Space = space.NewSpace(id, db, world)
+	world.settings.Store(&universe.WorldSettings{})
+	world.counter.Store(0)
 	world.pluginController = mplugin.NewPluginController(id)
 	//world.corePluginInstance, _ = world.pluginController.AddPlugin(world.GetID(), world.corePluginInitFunc)
 	world.pluginController.AddPlugin(universe.GetSystemPluginID(), world.corePluginInitFunc)
@@ -74,7 +77,6 @@ func (w *World) Initialize(ctx context.Context) error {
 
 	w.ctx, w.cancel = context.WithCancel(ctx)
 	w.log = log
-	w.counter.Store(0)
 
 	if err := w.Space.Initialize(ctx); err != nil {
 		return errors.WithMessage(err, "failed to initialize space")
@@ -85,6 +87,10 @@ func (w *World) Initialize(ctx context.Context) error {
 	}
 
 	return w.AddSpaceToAllSpaces(w.Space)
+}
+
+func (w *World) GetSettings() *universe.WorldSettings {
+	return w.settings.Load()
 }
 
 func (w *World) GetCalendar() universe.Calendar {
@@ -207,8 +213,29 @@ func (w *World) Update(recursive bool) error {
 	if err := w.UpdateWorldMetadata(); err != nil {
 		w.log.Error(errors.WithMessagef(err, "World: Update: failed to update world metadata: %s", w.GetID()))
 	}
+	if err := w.UpdateWorldSettings(); err != nil {
+		w.log.Error(errors.WithMessagef(err, "World: Update: failed to update world settings: %s", w.GetID()))
+	}
 
 	return w.Space.Update(recursive)
+}
+
+func (w *World) UpdateWorldSettings() error {
+	value, ok := w.GetSpaceAttributeValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.World.Settings.Name),
+	)
+	if !ok || value == nil {
+		return errors.Errorf("space attribute not found")
+	}
+
+	var settings universe.WorldSettings
+	if err := utils.MapDecode(*value, &settings); err != nil {
+		return errors.WithMessage(err, "failed to decode map")
+	}
+
+	w.settings.Store(&settings)
+
+	return nil
 }
 
 func (w *World) UpdateWorldMetadata() error {
