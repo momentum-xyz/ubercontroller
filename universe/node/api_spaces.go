@@ -257,6 +257,25 @@ func (n *Node) addSpaceFromTemplate(spaceTemplate *SpaceTemplate) (uuid.UUID, er
 		return uuid.Nil, errors.WithMessage(err, "failed to add space")
 	}
 
+	// run
+	if err := parent.UpdateChildrenPosition(true); err != nil {
+		return uuid.Nil, errors.WithMessage(err, "failed to update children position")
+	}
+	if err := space.Run(); err != nil {
+		return uuid.Nil, errors.WithMessage(err, "failed to run space")
+	}
+
+	// adding children
+	for i := range spaceTemplate.Spaces {
+		spaceTemplate.Spaces[i].ParentID = *spaceID
+		if _, err := n.addSpaceFromTemplate(spaceTemplate.Spaces[i]); err != nil {
+			return uuid.Nil, errors.WithMessagef(err, "failed to add space from template: %+v", spaceTemplate.Spaces[i])
+		}
+	}
+
+	// enabling
+	space.SetEnabled(true)
+
 	// adding attributes
 	spaceTemplate.SpaceAttributes = append(
 		spaceTemplate.SpaceAttributes,
@@ -269,6 +288,7 @@ func (n *Node) addSpaceFromTemplate(spaceTemplate *SpaceTemplate) (uuid.UUID, er
 			},
 		},
 	)
+
 	for i := range spaceTemplate.SpaceAttributes {
 		if _, err := space.UpsertSpaceAttribute(
 			spaceTemplate.SpaceAttributes[i].AttributeID,
@@ -279,26 +299,9 @@ func (n *Node) addSpaceFromTemplate(spaceTemplate *SpaceTemplate) (uuid.UUID, er
 		}
 	}
 
-	// run
-	if err := parent.UpdateChildrenPosition(true); err != nil {
-		return uuid.Nil, errors.WithMessage(err, "failed to update children position")
-	}
-	if err := space.Run(); err != nil {
-		return uuid.Nil, errors.WithMessage(err, "failed to run space")
-	}
-
-	space.SetEnabled(true)
-
+	// updating
 	if err := space.Update(true); err != nil {
 		return uuid.Nil, errors.WithMessage(err, "failed to update space")
-	}
-
-	// children
-	for i := range spaceTemplate.Spaces {
-		spaceTemplate.Spaces[i].ParentID = *spaceID
-		if _, err := n.addSpaceFromTemplate(spaceTemplate.Spaces[i]); err != nil {
-			return uuid.Nil, errors.WithMessagef(err, "failed to add space from template: %+v", spaceTemplate.Spaces[i])
-		}
 	}
 
 	return *spaceID, nil
