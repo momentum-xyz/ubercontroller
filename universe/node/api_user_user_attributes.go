@@ -16,13 +16,14 @@ import (
 // @Tags users
 // @Accept json
 // @Produce json
+// @Param body body node.apiSetUserUserAttributeValue.InBody true "body params"
 // @Success 200 {object} entry.AttributeValue
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Router /api/v4/users/attributes/sub/{user_id}/{target_id} [post]
 func (n *Node) apiSetUserUserAttributeValue(c *gin.Context) {
 	type InBody struct {
-		PluginID       string         `json:"plugin_id" binding: "required"`
+		PluginID       string         `json:"plugin_id" binding:"required"`
 		AttributeName  string         `json:"attribute_name" binding:"required"`
 		AttributeValue map[string]any `json:"attribute_value" binding:"required"`
 	}
