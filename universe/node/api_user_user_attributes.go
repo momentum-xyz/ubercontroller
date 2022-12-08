@@ -16,7 +16,7 @@ import (
 // @Tags users
 // @Accept json
 // @Produce json
-// @Param body body node.apiSetUserUserAttributeValue.InBody true "body params"
+// @Param body body node.apiSetUserUserSubAttributeValue.InBody true "body params"
 // @Success 200 {object} entry.AttributeValue
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
