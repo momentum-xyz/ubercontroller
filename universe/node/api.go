@@ -128,7 +128,8 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 		newsfeed := vx.Group("/newsfeed")
 		{
-			newsfeed.GET("", n.apiNewsFeed)
+			newsfeed.POST("", n.apiNewsFeedAddItem)
+			newsfeed.GET("", n.apiNewsFeedGetAll)
 		}
 
 		notifications := vx.Group("/notifications")
