@@ -22,6 +22,22 @@ func (v *Vec3) Plus(v2 Vec3) {
 	v.Z += v2.Z
 }
 
+func Add(v1 Vec3, v2 Vec3) Vec3 {
+	return Vec3{
+		X: v1.X + v2.X,
+		Y: v1.Y + v2.Y,
+		Z: v1.Z + v2.Z,
+	}
+}
+
+func MultiplyN(v Vec3, n float32) Vec3 {
+	return Vec3{
+		X: v.X * n,
+		Y: v.Y * n,
+		Z: v.Z * n,
+	}
+}
+
 func (v *Vec3) ToVec3f64() Vec3f64 {
 	return Vec3f64{
 		float64(v.X),

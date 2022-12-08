@@ -252,8 +252,7 @@ func (n *Node) apiUpdateSpace(c *gin.Context) {
 	// Update/edit the positioning is done through unity edit mode.
 	type InBody struct {
 		Asset2dID string `json:"asset_2d_id"`
-		//TODO: rename functionality:
-		//	SpaceName string `json:"space_name"`
+		SpaceName string `json:"space_name"`
 		Asset3dID string `json:"asset_3d_id"`
 	}
 	var inBody InBody
@@ -315,6 +314,33 @@ func (n *Node) apiUpdateSpace(c *gin.Context) {
 			api.AbortRequest(c, http.StatusNotFound, "space_asset_3d", err, n.log)
 			return
 		}
+	}
+
+	attributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name)
+	spaceNameAttribute, ok := n.GetSpaceAttributeValue(entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name))
+	if !ok || spaceNameAttribute == nil {
+		err := errors.New("Node: apiUpdateSpace: failed to get space name attribute")
+		api.AbortRequest(c, http.StatusNotFound, "space_asset_3d", err, n.log)
+		return
+	}
+
+	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
+		if current == nil || current.Value == nil {
+			return nil, nil
+		}
+
+		updateMap := *current.Value
+
+		updateMap[universe.Attributes.Space.Name.Key] = inBody.SpaceName
+
+		return current, nil
+	}
+
+	_, err = n.UpsertSpaceAttribute(attributeID, modifyFn, true)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiUpdateSpace: failed to update space name attribute")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert_space_attribute", err, n.log)
+		return
 	}
 
 	// TODO: output full space data

@@ -312,6 +312,7 @@ type User interface {
 
 	SetPosition(position cmath.Vec3)
 	GetPosition() cmath.Vec3
+	GetRotation() cmath.Vec3
 
 	AddInfluxTags(prefix string, point *influxWrite.Point) *influxWrite.Point
 
