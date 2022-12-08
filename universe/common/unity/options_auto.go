@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -112,7 +111,6 @@ func PrerenderAutoValue(
 
 	var hash *dto.HashResponse
 	var err error
-	fmt.Printf("RR: %+v\n", renderKind)
 
 	switch renderKind {
 	case RenderKindVideo:
@@ -156,7 +154,6 @@ func renderFrame(ctx context.Context, textJob []byte) (*dto.HashResponse, error)
 		return nil, errors.Errorf("failed to get config from context: %T", ctx.Value(types.ConfigContextKey))
 	}
 
-	//fmt.Printf("GG: %+v\n", string(textJob))
 	req, err := http.NewRequest("POST", cfg.Common.RenderInternalURL+"/render/addframe", bytes.NewBuffer(textJob))
 	if err != nil {
 		return nil, errors.WithMessage(err, "Common: renderFrame: failed to create post request")
@@ -172,7 +169,6 @@ func renderFrame(ctx context.Context, textJob []byte) (*dto.HashResponse, error)
 
 	defer resp.Body.Close()
 
-	//fmt.Printf("%+v\n", resp.Body)
 	response := &dto.HashResponse{}
 
 	errs := json.NewDecoder(resp.Body).Decode(response)
