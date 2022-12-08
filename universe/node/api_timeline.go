@@ -1,7 +1,6 @@
 package node
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"sort"
@@ -305,7 +304,7 @@ func (n *Node) apiNewsFeed(c *gin.Context) {
 
 		userName := ""
 		userAvatarHash := ""
-		user, err := n.db.UsersGetUserByID(context.Background(), *e.SpaceID)
+		user, err := n.db.UsersGetUserByID(n.ctx, *e.SpaceID)
 		if err != nil {
 			err = errors.WithMessage(err, "Node: apiNewsFeed: failed to UsersGetUserByID")
 			//log.Debug(err)
@@ -352,7 +351,7 @@ func (n *Node) apiNewsFeed(c *gin.Context) {
 }
 
 func (n *Node) getAllEvents() ([]*Event, error) {
-	attributes, err := n.db.SpaceAttributesGetSpaceAttributesByPluginIDAndAttributeName(context.Background(), universe.GetSystemPluginID(), "events")
+	attributes, err := n.db.SpaceAttributesGetSpaceAttributesByPluginIDAndAttributeName(n.ctx, universe.GetSystemPluginID(), "events")
 	if err != nil {
 		return nil, errors.WithMessage(err, "Node: getAllEvents: failed to SpaceAttributesGetSpaceAttributesByPluginIDAndAttributeName")
 	}

@@ -1,7 +1,6 @@
 package node
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -290,7 +289,7 @@ func (n *Node) mint(jobID uuid.UUID, wallet string, meta NFTMeta, blockHash stri
 		Username: data.Name,
 		Avatar:   data.Image,
 	}
-	_, err = n.apiCreateUserFromWalletMeta(context.Background(), &wm)
+	_, err = n.apiCreateUserFromWalletMeta(n.ctx, &wm)
 	if err != nil {
 		err = errors.WithMessage(err, "failed to apiCreateUserFromWalletMeta")
 		{
@@ -301,6 +300,8 @@ func (n *Node) mint(jobID uuid.UUID, wallet string, meta NFTMeta, blockHash stri
 		log.Error(err)
 		return
 	}
+
+	n.log.Infof("Node: mint: user created: %s", wm.UserID)
 
 	err = n.createWorld(wm.UserID, wm.Username)
 	if err != nil {
@@ -313,6 +314,8 @@ func (n *Node) mint(jobID uuid.UUID, wallet string, meta NFTMeta, blockHash stri
 		log.Error(err)
 		return
 	}
+
+	n.log.Infof("Node: mint: world created: %s", wm.UserID)
 
 	item.Status = StatusDone
 	item.NodeJSOut = &nodeJSOut
