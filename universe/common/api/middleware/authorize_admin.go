@@ -31,7 +31,7 @@ func AuthorizeAdmin(log *zap.SugaredLogger, db database.DB) gin.HandlerFunc {
 		userIDs, err := db.UserSpaceGetIndirectAdmins(c, spaceID)
 		if err != nil {
 			err := errors.WithMessage(err, "Middleware: AuthorizeAdmin: failed to get user space entry")
-			api.AbortRequest(c, http.StatusNotFound, "failed_to_get_user_space_entry", err, log)
+			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_user_space_entry", err, log)
 			return
 		}
 
