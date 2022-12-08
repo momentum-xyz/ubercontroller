@@ -115,7 +115,7 @@ func (w *World) initializeUnity(user universe.User) error {
 	// TODO: fix circular dependency
 	if err := user.SendDirectly(
 		posbus.NewSendPositionMsg(
-			user.GetPosition(), cmath.Vec3{X: 0, Y: 0, Z: 0}, cmath.Vec3{X: 0, Y: 0, Z: 0},
+			user.GetPosition(), user.GetRotation(), cmath.Vec3{X: 0, Y: 0, Z: 0},
 		).WebsocketMessage(),
 	); err != nil {
 		return errors.WithMessage(err, "failed to send position")
