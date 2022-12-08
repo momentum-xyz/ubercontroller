@@ -1,18 +1,16 @@
 package node
 
 import (
+	"net/http"
+	
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
+
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
 	"github.com/momentum-xyz/ubercontroller/utils"
-	"github.com/pkg/errors"
-	"net/http"
 )
-
-var newsFeedAttributeName = "news_feed"
-var newsFeedAttributeKey = "items"
-var newsFeedLimit = 100
 
 // @Summary Add newsfeed items
 // @Schemes
@@ -37,6 +35,7 @@ func (n *Node) apiNewsFeedAddItem(c *gin.Context) {
 		return
 	}
 
+	newsFeedLimit := 100
 	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
 		if current == nil {
 			current = entry.NewAttributePayload(nil, nil)
@@ -45,7 +44,7 @@ func (n *Node) apiNewsFeedAddItem(c *gin.Context) {
 			current.Value = entry.NewAttributeValue()
 		}
 
-		items := utils.GetFromAnyMap(*current.Value, newsFeedAttributeKey, []any(nil))
+		items := utils.GetFromAnyMap(*current.Value, universe.Attributes.Space.NewsFeedItems.Key, []any(nil))
 
 		items = append(inBody.Items, items...)
 
@@ -53,13 +52,15 @@ func (n *Node) apiNewsFeedAddItem(c *gin.Context) {
 			items = items[:newsFeedLimit]
 		}
 
-		(*current.Value)[newsFeedAttributeKey] = items
+		(*current.Value)[universe.Attributes.Space.NewsFeedItems.Key] = items
 
 		return current, nil
 	}
 
 	if _, err := n.UpsertSpaceAttribute(
-		entry.NewAttributeID(universe.GetSystemPluginID(), newsFeedAttributeName), modifyFn, true,
+		entry.NewAttributeID(
+			universe.GetSystemPluginID(), universe.Attributes.Space.NewsFeedItems.Name,
+		), modifyFn, true,
 	); err != nil {
 		err := errors.WithMessage(err, "Node: apiNewsFeedAddItem: failed to upsert node space attribute")
 		api.AbortRequest(c, http.StatusInternalServerError, "upsert_attribute_failed", err, n.log)
@@ -79,7 +80,9 @@ func (n *Node) apiNewsFeedAddItem(c *gin.Context) {
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/newsfeed [get]
 func (n *Node) apiNewsFeedGetAll(c *gin.Context) {
-	value, ok := n.GetSpaceAttributeValue(entry.NewAttributeID(universe.GetSystemPluginID(), newsFeedAttributeName))
+	value, ok := n.GetSpaceAttributeValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.NewsFeedItems.Name),
+	)
 	if !ok || value == nil {
 		err := errors.Errorf("Node: apiNewsFeedGetAll: failed to get node space attribute value")
 		api.AbortRequest(c, http.StatusNotFound, "attribute_not_found", err, n.log)
@@ -90,7 +93,7 @@ func (n *Node) apiNewsFeedGetAll(c *gin.Context) {
 		Items []any `json:"items"`
 	}
 	out := Out{
-		Items: utils.GetFromAnyMap(*value, newsFeedAttributeKey, []any(nil)),
+		Items: utils.GetFromAnyMap(*value, universe.Attributes.Space.NewsFeedItems.Key, []any(nil)),
 	}
 
 	c.JSON(http.StatusOK, out)

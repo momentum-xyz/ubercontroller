@@ -137,7 +137,6 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 			notifications.GET("", n.apiNotifications)
 		}
 	}
-
 }
 
 // @Summary Get application version
