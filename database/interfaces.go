@@ -28,6 +28,7 @@ type DB interface {
 	SpaceUserAttributesDB
 	UserAttributesDB
 	UserUserAttributesDB
+	UserSpaceDB
 }
 
 type CommonDB interface {
@@ -441,4 +442,15 @@ type UserUserAttributesDB interface {
 	UserUserAttributesUpdateUserUserAttributeOptions(
 		ctx context.Context, userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributeOptions],
 	) (*entry.AttributeOptions, error)
+}
+
+type UserSpaceDB interface {
+	UserSpaceGetUserSpaces(ctx context.Context) ([]*entry.UserSpace, error)
+
+	UserSpaceGetUserSpacesByUserID(ctx context.Context, userID uuid.UUID) ([]*entry.UserSpace, error)
+	UserSpaceGetUserSpacesBySpaceID(ctx context.Context, spaceID uuid.UUID) ([]*entry.UserSpace, error)
+	UserSpaceGetUserSpaceByUserAndSpaceIDs(ctx context.Context, userID, spaceID uuid.UUID) (*entry.UserSpace, error)
+
+	UserSpaceUpdateValueByUserAndSpaceIDs(ctx context.Context, userID, spaceID uuid.UUID, value *entry.UserSpaceValue) error
+	UserSpaceGetValueByUserAndSpaceIDs(ctx context.Context, userID, spaceID uuid.UUID) (*entry.UserSpaceValue, error)
 }
