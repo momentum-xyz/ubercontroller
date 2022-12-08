@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/google/uuid"
 	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/utils"
@@ -204,7 +203,9 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 		return errors.New("Could not upsert high-five user user attribute")
 	}
 
-	target, found := u.GetWorld().GetUser(targetID, false)
+	world := u.GetWorld()
+
+	target, found := world.GetUser(targetID, false)
 	if !found {
 		posbus.NewSimpleNotificationMsg(
 			posbus.DestinationReact, posbus.NotificationTextMessage, 0, "Target user not found")
@@ -235,22 +236,10 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 
 	effect := posbus.NewTriggerTransitionalBridgingEffectsOnPositionMsg(1)
 
-	// TODO: fix this stuff
-	effectsEmitterID := uuid.Nil
-	//effectsEmitterMap, ok := universe.GetNode().GetSpaceAttributeValue(
-	//	entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.World.EffectsEmitter.Name),
-	//)
-	//if !ok {
-	//	return errors.Errorf("Could not get effects emitter attribute")
-	//}
-	//
-	//effectsEmitterID := utils.GetFromAnyMap(*effectsEmitterMap, universe.Attributes.World.EffectsEmitter.Key, uuid.Nil)
-	//if effectsEmitterID == uuid.Nil {
-	//	return errors.Errorf("Failed to get effects emitter ID from map")
-	//}
-
+	effectsEmitterID := world.GetSettings().Effects["effects"]
 	effect.SetEffect(0, effectsEmitterID, u.GetPosition(), target.GetPosition(), 1001)
 	u.GetWorld().Send(effect.WebsocketMessage(), false)
+
 	go u.SendHighFiveStats(&target)
 
 	return nil
