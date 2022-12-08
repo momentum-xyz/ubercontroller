@@ -50,10 +50,12 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		// with verified user
 		verified := vx.Group("", middleware.VerifyUser(n.log))
 
-		verifiedMedia := verified.Group("/media")
-		{
-			verifiedMedia.POST("/upload/image", n.apiMediaUploadImage)
-		}
+		//verifiedMedia := verified.Group("/media")
+		//{
+		//	verifiedMedia.POST("/upload/image", n.apiMediaUploadImage)
+		//}
+
+		vx.POST("/media/upload/image", n.apiMediaUploadImage)
 
 		verifiedUsers := verified.Group("/users")
 		{
