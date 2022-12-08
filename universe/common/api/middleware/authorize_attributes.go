@@ -14,16 +14,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
-type AttributeKind int8
-
-const (
-	SpaceUserAttribute AttributeKind = iota
-	SpaceAttribute
-	UserUserAttribute
-	UserAttribute
-)
-
-func AuthorizeAttributes(log *zap.SugaredLogger, db database.DB, attributeKind AttributeKind) gin.HandlerFunc {
+func AuthorizeAttributes(log *zap.SugaredLogger, db database.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		type InBody struct {
 			PluginID      string `json:"plugin_id" binding:"required"`

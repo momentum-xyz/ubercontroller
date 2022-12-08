@@ -91,11 +91,14 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 					authorizedAdmin.PATCH("", n.apiUpdateSpace)
 				}
 
-				space.POST("/attributes", n.apiSetSpaceAttributesValue)
-				space.DELETE("/attributes", n.apiRemoveSpaceAttributeValue)
+				authorizedAttributes := space.Group("", middleware.AuthorizeAttributes(n.log, n.db))
+				{
+					authorizedAttributes.POST("/attributes", n.apiSetSpaceAttributesValue)
+					authorizedAttributes.DELETE("/attributes", n.apiRemoveSpaceAttributeValue)
 
-				space.POST("/attributes/sub", n.apiSetSpaceAttributeSubValue)
-				space.DELETE("/attributes/sub", n.apiRemoveSpaceAttributeSubValue)
+					authorizedAttributes.POST("/attributes/sub", n.apiSetSpaceAttributeSubValue)
+					authorizedAttributes.DELETE("/attributes/sub", n.apiRemoveSpaceAttributeSubValue)
+				}
 
 				space.POST("/agora/token", n.apiGenAgoraToken)
 
@@ -114,14 +117,16 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 			spaceUser := verifiedSpaces.Group("/:spaceID/:userID")
 			{
-				spaceUser.POST("/attributes", n.apiSetSpaceUserAttributesValue)
-				spaceUser.DELETE("/attributes", n.apiRemoveSpaceUserAttributeValue)
+				authorizedAttributes := spaceUser.Group("", middleware.AuthorizeAttributes(n.log, n.db))
+				{
+					authorizedAttributes.POST("/attributes", n.apiSetSpaceUserAttributesValue)
+					authorizedAttributes.DELETE("/attributes", n.apiRemoveSpaceUserAttributeValue)
 
-				spaceUser.POST("/attributes/sub", n.apiSetSpaceUserAttributeSubValue)
-				spaceUser.DELETE("/attributes/sub", n.apiRemoveSpaceUserAttributeSubValue)
+					authorizedAttributes.POST("/attributes/sub", n.apiSetSpaceUserAttributeSubValue)
+					authorizedAttributes.DELETE("/attributes/sub", n.apiRemoveSpaceUserAttributeSubValue)
+				}
 
 				spaceUser.GET("/attributes", n.apiGetSpaceUserAttributesValue)
-
 				spaceUser.GET("/attributes/sub", n.apiGetSpaceUserAttributeSubValue)
 			}
 		}
