@@ -251,7 +251,8 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 			entry.NewAttributeID(
 				universe.GetSystemPluginID(), universe.Attributes.User.HighFive.Name,
 			),
-			u.GetID(), targetID), modifyFn,
+			u.GetID(), targetID,
+		), modifyFn,
 	); err != nil {
 		return errors.New("Could not upsert high-five user user attribute")
 	}
