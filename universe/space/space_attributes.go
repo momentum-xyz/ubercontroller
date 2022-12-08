@@ -178,16 +178,6 @@ func (s *Space) UpsertSpaceAttribute(
 	}
 	if s.GetEnabled() {
 		go s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
-	} else {
-		go func() {
-			options, ok := s.GetSpaceAttributeEffectiveOptions(attributeID)
-			if ok {
-				autoOption, err := unity.GetOptionAutoOption(options, attributeID)
-				if err == nil {
-					s.UpdateAutoTextureMap(autoOption, value)
-				}
-			}
-		}()
 	}
 
 	return spaceAttribute, nil
@@ -332,6 +322,14 @@ func (s *Space) loadSpaceAttributes() error {
 	}
 
 	for _, instance := range entries {
+		options, ok := s.GetSpaceAttributeEffectiveOptions(instance.AttributeID)
+		if ok {
+			autoOption, err := unity.GetOptionAutoOption(options, instance.AttributeID)
+			if err == nil {
+				s.UpdateAutoTextureMap(autoOption, instance.Value)
+			}
+		}
+
 		if _, err := s.UpsertSpaceAttribute(
 			instance.AttributeID, modify.MergeWith(instance.AttributePayload), false,
 		); err != nil {
