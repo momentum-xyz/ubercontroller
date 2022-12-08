@@ -463,6 +463,7 @@ func (s *Space) unityAutoOnSpaceAttributeChanged(
 	value *entry.AttributeValue,
 	effectiveOptions *entry.AttributeOptions,
 ) error {
+	s.log.Infof("attribute Unuty Auto processing for %+v %+v", s.id, attributeID)
 	autoOption, err := unity.GetOptionAutoOption(effectiveOptions, attributeID)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to get auto option: %+v", attributeID)
