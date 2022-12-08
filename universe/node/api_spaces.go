@@ -122,6 +122,7 @@ func (n *Node) apiCreateSpace(c *gin.Context) {
 						Rotation: cmath.Vec3{},
 						Scale:    cmath.Vec3{X: 1, Y: 1, Z: 1},
 					}
+					n.log.Infof("Node: apiCreateSpace: new space position: %+v", position)
 				}
 			}
 		}
