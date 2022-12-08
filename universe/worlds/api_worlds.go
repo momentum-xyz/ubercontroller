@@ -29,7 +29,7 @@ import (
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/worlds/{world_id}/online-users [get]
 func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
-	worldID, err := uuid.Parse(c.Param("worldID"))
+	worldID, err := uuid.Parse(c.Param("spaceID"))
 	if err != nil {
 		err := errors.WithMessage(err, "Worlds: apiGetOnlineUsers: failed to parse world id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
