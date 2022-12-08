@@ -257,6 +257,8 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 	effect.SetEffect(0, effectsEmitterID, u.GetPosition(), target.GetPosition(), 1001)
 	u.GetWorld().Send(effect.WebsocketMessage(), false)
 
+	u.log.Infof("User: HandleHighFive: high5 messages sent: %s", u.GetID())
+
 	go u.SendHighFiveStats(&target)
 
 	return nil
