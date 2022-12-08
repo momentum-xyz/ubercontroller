@@ -2,11 +2,11 @@ package assets_3d
 
 import (
 	"fmt"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api/middleware"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/momentum-xyz/ubercontroller"
+	"github.com/momentum-xyz/ubercontroller/universe/common/api/middleware"
 )
 
 func (a *Assets3d) RegisterAPI(r *gin.Engine) {
@@ -14,17 +14,18 @@ func (a *Assets3d) RegisterAPI(r *gin.Engine) {
 
 	vx := r.Group(fmt.Sprintf("/api/v%d", ubercontroller.APIMajorVersion))
 	{
-		// with auth
-		auth := vx.Group("", middleware.VerifyUser(a.log))
-
-		authAssets3d := auth.Group("/assets-3d")
+		assets3d := vx.Group("/assets-3d/:spaceID", middleware.VerifyUser(a.log))
 		{
-			authAssets3d.GET("", a.apiGetAssets3d)
-			authAssets3d.GET("/meta", a.apiGetAssets3dMeta)
-			authAssets3d.GET("/options", a.apiGetAssets3dOptions)
-			authAssets3d.POST("", a.apiAddAssets3d)
-			authAssets3d.POST("/upload", a.apiUploadAsset3d)
-			authAssets3d.DELETE("", a.apiRemoveAssets3dByIDs)
+			authorizedAdmin := assets3d.Group("", middleware.AuthorizeAdmin(a.log, a.db))
+			{
+				authorizedAdmin.POST("", a.apiAddAssets3d)
+				authorizedAdmin.POST("/upload", a.apiUploadAsset3d)
+				authorizedAdmin.DELETE("", a.apiRemoveAssets3dByIDs)
+			}
+
+			assets3d.GET("", a.apiGetAssets3d)
+			assets3d.GET("/meta", a.apiGetAssets3dMeta)
+			assets3d.GET("/options", a.apiGetAssets3dOptions)
 		}
 	}
 }

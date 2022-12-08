@@ -18,10 +18,10 @@ import (
 // @Tags chat
 // @Accept json
 // @Produce json
-// @Param objectID path string true "World or object ID"
+// @Param spaceID path string true "World or object ID"
 // @Success 200 {object} streamchat.apiChannelToken.Response
 // @Failure 400 {object} api.HTTPError
-// @Router /api/v4/streamchat/{objectID}/token [post]
+// @Router /api/v4/streamchat/{spaceID}/token [post]
 func (s *StreamChat) apiChannelToken(c *gin.Context) {
 	space, user, err := s.getRequestContextObjects(c)
 	if err != nil {
@@ -67,10 +67,10 @@ func (s *StreamChat) apiChannelToken(c *gin.Context) {
 // @Tags chat
 // @Accept json
 // @Produce json
-// @Param objectID path string true "World or object ID"
+// @Param spaceID path string true "World or object ID"
 // @Success 204 ""
 // @Failure 400 {object} api.HTTPError
-// @Router /api/v4/streamchat/{objectID}/join [post]
+// @Router /api/v4/streamchat/{spaceID}/join [post]
 func (s *StreamChat) apiChannelJoin(c *gin.Context) {
 	space, user, err := s.getRequestContextObjects(c)
 	if err != nil {
@@ -98,10 +98,10 @@ func (s *StreamChat) apiChannelJoin(c *gin.Context) {
 // @Tags chat
 // @Accept json
 // @Produce json
-// @Param objectID path string true "World or object ID"
+// @Param spaceID path string true "World or object ID"
 // @Success 204 ""
 // @Failure 400 {object} api.HTTPError
-// @Router /api/v4/streamchat/{objectID}/leave [post]
+// @Router /api/v4/streamchat/{spaceID}/leave [post]
 func (s *StreamChat) apiChannelLeave(c *gin.Context) {
 	space, user, err := s.getRequestContextObjects(c)
 	if err != nil {
@@ -127,8 +127,8 @@ func (s *StreamChat) apiChannelLeave(c *gin.Context) {
 // Get the common objects for these api requests
 // TODO: put these in the actual context in shared middleware?
 func (s *StreamChat) getRequestContextObjects(c *gin.Context) (space universe.Space, user universe.User, err error) {
-	objectID := c.Param("objectID")
-	space, err = s.getSpace(objectID)
+	spaceID := c.Param("spaceID")
+	space, err = s.getSpace(spaceID)
 	if err != nil {
 		return
 	}

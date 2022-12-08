@@ -12,14 +12,14 @@ func (s *StreamChat) RegisterAPI(r *gin.Engine) {
 	s.log.Debug("Registering api for streamchat...")
 	vx := r.Group(fmt.Sprintf("/api/v%d", ubercontroller.APIMajorVersion))
 	{
-		auth := vx.Group("", middleware.VerifyUser(s.log))
-
-		authPlugins := auth.Group("/streamchat")
+		verified := vx.Group("", middleware.VerifyUser(s.log))
 		{
-			authPlugins.POST("/:objectID/token", s.apiChannelToken)
-			authPlugins.POST("/:objectID/join", s.apiChannelJoin)
-			authPlugins.POST("/:objectID/leave", s.apiChannelLeave)
+			streamChat := verified.Group("/streamchat")
+			{
+				streamChat.POST("/:spaceID/token", s.apiChannelToken)
+				streamChat.POST("/:spaceID/join", s.apiChannelJoin)
+				streamChat.POST("/:spaceID/leave", s.apiChannelLeave)
+			}
 		}
 	}
-
 }

@@ -12,14 +12,14 @@ func (a *Assets2d) RegisterAPI(r *gin.Engine) {
 
 	vx := r.Group(fmt.Sprintf("/api/v%d", ubercontroller.APIMajorVersion))
 	{
-		// with auth
-		auth := vx.Group("", middleware.VerifyUser(a.log))
-
-		authAssets2d := auth.Group("/assets-2d")
+		verified := vx.Group("", middleware.VerifyUser(a.log))
 		{
-			authAsset2d := authAssets2d.Group("/:asset2dID")
+			assets2d := verified.Group("/assets-2d")
 			{
-				authAsset2d.GET("", a.apiGetAsset2d)
+				asset2d := assets2d.Group("/:asset2dID")
+				{
+					asset2d.GET("", a.apiGetAsset2d)
+				}
 			}
 		}
 	}

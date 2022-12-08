@@ -1,16 +1,18 @@
 package node
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
+
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
-	"github.com/pkg/errors"
-	"net/http"
 )
 
 type SpaceTemplate struct {
@@ -69,10 +71,56 @@ func (n *Node) apiCreateSpace(c *gin.Context) {
 		return
 	}
 
-	ownerID, err := api.GetUserIDFromContext(c)
+	parent, ok := n.GetSpaceFromAllSpaces(parentID)
+	if !ok {
+		err := errors.Errorf("Node: apiCreateSpace: parent not found")
+		api.AbortRequest(c, http.StatusBadRequest, "parent_not_found", err, n.log)
+		return
+	}
+
+	userID, err := api.GetUserIDFromContext(c)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiCreateSpace: failed to get owner id")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_owner_id", err, n.log)
+		err := errors.WithMessage(err, "Node: apiCreateSpace: failed to get user id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
+		return
+	}
+
+	// is admin check
+	userIDs, err := n.db.UserSpaceGetIndirectAdmins(c, parent.GetID())
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiCreateSpace: failed to get user space entry for parent space")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_user_space_entry", err, log)
+		return
+	}
+
+	isAdmin := false
+
+	for _, uID := range userIDs {
+		if uID != nil && *uID == userID {
+			isAdmin = true
+		}
+	}
+
+	if !isAdmin {
+		err := errors.Errorf("Node: apiCreateSpace: user does not have the permissions to create a new space")
+		api.AbortRequest(c, http.StatusUnauthorized, "unauthorized_create_space", err, n.log)
+		return
+	}
+
+	spaceID := uuid.New()
+
+	space, err := parent.CreateSpace(spaceID)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiCreateSpace: failed to create space")
+		api.AbortRequest(c, http.StatusInternalServerError, "create_space_failed", err, n.log)
+		return
+	}
+
+	// TODO: revert on error
+
+	if err := space.SetOwnerID(userID, false); err != nil {
+		err := errors.Errorf("Node: apiCreateSpace: failed to set owner id")
+		api.AbortRequest(c, http.StatusInternalServerError, "set_owner_id_failed", err, n.log)
 		return
 	}
 
@@ -111,12 +159,13 @@ func (n *Node) apiCreateSpace(c *gin.Context) {
 		SpaceName:   inBody.SpaceName,
 		SpaceTypeID: spaceTypeID,
 		ParentID:    parentID,
-		OwnerID:     &ownerID,
+		OwnerID:     &userID,
 		Asset2dID:   asset2dID,
 		Asset3dID:   asset3dID,
 		Position:    inBody.Position,
 	}
-	spaceID, err := n.addSpaceFromTemplate(&spaceTemplate)
+
+	tempSpaceID, err := n.addSpaceFromTemplate(&spaceTemplate)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiCreateSpace: failed to add space from template")
 		api.AbortRequest(c, http.StatusInternalServerError, "add_space_failed", err, n.log)
@@ -127,7 +176,7 @@ func (n *Node) apiCreateSpace(c *gin.Context) {
 		SpaceID string `json:"space_id"`
 	}
 	out := Out{
-		SpaceID: spaceID.String(),
+		SpaceID: tempSpaceID.String(),
 	}
 
 	c.JSON(http.StatusCreated, out)

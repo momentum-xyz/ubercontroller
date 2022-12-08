@@ -88,7 +88,7 @@ func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/worlds/{world_id}/explore [get]
+// @Router /api/v4/worlds/{space_id}/explore [get]
 func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 	type Query struct {
 		SpaceID string `form:"space_id" binding:"required"`
@@ -109,7 +109,7 @@ func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 		return
 	}
 
-	worldID, err := uuid.Parse(c.Param("worldID"))
+	worldID, err := uuid.Parse(c.Param("spaceID"))
 	if err != nil {
 		err := errors.WithMessage(err, "Worlds: apiWorldsGetSpacesWithChildren: failed to parse world id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
@@ -118,7 +118,7 @@ func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 
 	world, ok := w.GetWorld(worldID)
 	if !ok {
-		err := errors.Errorf("Worlds: apiWorldsGetSpacesWithChildren: space not found: %s", worldID)
+		err := errors.Errorf("Worlds: apiWorldsGetSpacesWithChildren: space not found: %s", spaceID)
 		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
 		return
 	}
@@ -231,7 +231,7 @@ func (w *Worlds) apiWorldsResolveNameDescription(space universe.Space) (spaceNam
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/worlds/{world_id}/explore/search [get]
+// @Router /api/v4/worlds/{space_id}/explore/search [get]
 func (w *Worlds) apiWorldsSearchSpaces(c *gin.Context) {
 	type Query struct {
 		SearchQuery string `form:"query" binding:"required"`
@@ -245,16 +245,16 @@ func (w *Worlds) apiWorldsSearchSpaces(c *gin.Context) {
 		return
 	}
 
-	worldID, err := uuid.Parse(c.Param("worldID"))
+	spaceID, err := uuid.Parse(c.Param("spaceID"))
 	if err != nil {
 		err := errors.WithMessage(err, "Worlds: apiWorldsSearchSpaces: failed to parse world id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
 		return
 	}
 
-	world, ok := w.GetWorld(worldID)
+	world, ok := w.GetWorld(spaceID)
 	if !ok {
-		err := errors.Errorf("Worlds: apiWorldsSearchSpaces: space not found: %s", worldID)
+		err := errors.Errorf("Worlds: apiWorldsSearchSpaces: space not found: %s", spaceID)
 		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
 		return
 	}
@@ -315,18 +315,18 @@ func (w *Worlds) apiWorldsFilterSpaces(searchQuery string, world universe.World)
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/worlds/{world_id}/teleport-user [post]
+// @Router /api/v4/worlds/{space_id}/teleport-user [post]
 func (w *Worlds) apiWorldsTeleportUser(c *gin.Context) {
-	worldID, err := uuid.Parse(c.Param("worldID"))
+	spaceID, err := uuid.Parse(c.Param("spaceID"))
 	if err != nil {
 		err := errors.WithMessage(err, "Worlds: apiWorldsTeleportUser: failed to parse world id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
 		return
 	}
 
-	world, ok := w.GetWorld(worldID)
+	world, ok := w.GetWorld(spaceID)
 	if !ok {
-		err := errors.Errorf("Worlds: apiWorldsTeleportUser: world not found: %s", worldID)
+		err := errors.Errorf("Worlds: apiWorldsTeleportUser: world not found: %s", spaceID)
 		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
 		return
 	}

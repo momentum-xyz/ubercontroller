@@ -14,14 +14,15 @@ func (p *Plugins) RegisterAPI(r *gin.Engine) {
 
 	vx := r.Group(fmt.Sprintf("/api/v%d", ubercontroller.APIMajorVersion))
 	{
-		auth := vx.Group("", middleware.VerifyUser(p.log))
-
-		authPlugins := auth.Group("/plugins")
+		verified := vx.Group("", middleware.VerifyUser(p.log))
 		{
-			authPlugins.GET("", p.apiGetPlugins)
-			authPlugins.GET("/search", p.apiSearchPlugins)
-			authPlugins.GET("/meta", p.apiGetPluginsMeta)
-			authPlugins.GET("/options", p.apiGetPluginsOptions)
+			plugins := verified.Group("/plugins")
+			{
+				plugins.GET("", p.apiGetPlugins)
+				plugins.GET("/search", p.apiSearchPlugins)
+				plugins.GET("/meta", p.apiGetPluginsMeta)
+				plugins.GET("/options", p.apiGetPluginsOptions)
+			}
 		}
 	}
 }
