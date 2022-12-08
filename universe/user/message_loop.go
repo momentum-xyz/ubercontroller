@@ -178,8 +178,6 @@ func (u *User) LockObject(msg *posbus.SetObjectLockState) error {
 
 func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 	targetID := m.Target()
-	u.log.Info("Got H5 from user:", u.GetID(), "to user:", targetID)
-
 	if targetID == u.GetID() {
 		return errors.New("You can't high-five yourself!")
 	}
@@ -212,40 +210,50 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 
 	world := u.GetWorld()
 
-	target, found := world.GetUser(targetID, false)
-	if !found {
-		posbus.NewSimpleNotificationMsg(
-			posbus.DestinationReact, posbus.NotificationTextMessage, 0, "Target user not found")
+	target, ok := world.GetUser(targetID, false)
+	if !ok {
+		u.Send(
+			posbus.NewSimpleNotificationMsg(
+				posbus.DestinationReact, posbus.NotificationTextMessage, 0, "Target user not found",
+			).WebsocketMessage(),
+		)
 		return errors.Errorf("Target user not found; uuid: %v", targetID)
 	}
 
+	var uName string
+	var tName string
 	uProfile := u.GetProfile()
-	if uProfile == nil || uProfile.Name == nil {
-		return errors.Errorf("User profile not found; uuid: %v", u.GetID())
+	tProfile := target.GetProfile()
+	if uProfile != nil && uProfile.Name != nil {
+		uName = *uProfile.Name
+	}
+	if tProfile != nil && tProfile.Name != nil {
+		tName = *tProfile.Name
 	}
 
-	msg := struct {
+	high5Msg := struct {
 		SenderID   string `json:"senderId"`
 		ReceiverID string `json:"receiverId"`
 		Message    string `json:"message"`
 	}{
 		SenderID:   u.GetID().String(),
 		ReceiverID: targetID.String(),
-		Message:    *uProfile.Name,
+		Message:    uName,
 	}
-
-	data, err := json.Marshal(&msg)
+	high5Data, err := json.Marshal(&high5Msg)
 	if err != nil {
-		return errors.WithMessage(err, "Failed to marshal data")
+		return errors.WithMessage(err, "Failed to marshal high5 data")
 	}
 
-	posbus.NewRelayToReactMsg("high5", data).WebsocketMessage()
-
-	effect := posbus.NewTriggerTransitionalBridgingEffectsOnPositionMsg(1)
-
-	u.log.Info("worldsettings: --> ", world.GetSettings())
+	u.Send(
+		posbus.NewSimpleNotificationMsg(
+			posbus.DestinationReact, posbus.NotificationHighFive, 0, tName,
+		).WebsocketMessage(),
+	)
+	target.Send(posbus.NewRelayToReactMsg("high5", high5Data).WebsocketMessage())
 
 	effectsEmitterID := world.GetSettings().Spaces["effects_emitter"]
+	effect := posbus.NewTriggerTransitionalBridgingEffectsOnPositionMsg(1)
 	effect.SetEffect(0, effectsEmitterID, u.GetPosition(), target.GetPosition(), 1001)
 	u.GetWorld().Send(effect.WebsocketMessage(), false)
 
