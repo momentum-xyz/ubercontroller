@@ -501,16 +501,6 @@ func (n *Node) addWorldFromTemplate(worldTemplate *SpaceTemplate) (uuid.UUID, er
 	world.SetEnabled(true)
 
 	// adding attributes
-	worldSettings := entry.AttributePayload{
-		Value: &entry.AttributeValue{
-			"kind":        "basic",
-			"spaces":      spaceLabelToID,
-			"attributes":  map[string]any{},
-			"space_types": map[string]any{},
-			"effects":     map[string]any{},
-		},
-	}
-
 	worldTemplate.SpaceAttributes = append(
 		worldTemplate.SpaceAttributes,
 		[]*Attribute{
@@ -523,8 +513,16 @@ func (n *Node) addWorldFromTemplate(worldTemplate *SpaceTemplate) (uuid.UUID, er
 				},
 			},
 			{
-				AttributeID:      entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.World.Settings.Name),
-				AttributePayload: worldSettings,
+				AttributeID: entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.World.Settings.Name),
+				AttributePayload: entry.AttributePayload{
+					Value: &entry.AttributeValue{
+						"kind":        "basic",
+						"spaces":      spaceLabelToID,
+						"attributes":  map[string]any{},
+						"space_types": map[string]any{},
+						"effects":     map[string]any{},
+					},
+				},
 			},
 		}...,
 	)
