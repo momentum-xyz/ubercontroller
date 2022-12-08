@@ -166,7 +166,7 @@ func (n *Node) apiCreateSpace(c *gin.Context) {
 		OwnerID:     &userID,
 		Asset2dID:   asset2dID,
 		Asset3dID:   asset3dID,
-		Position:    inBody.Position,
+		Position:    position,
 	}
 
 	spaceID, err := n.addSpaceFromTemplate(&spaceTemplate)
