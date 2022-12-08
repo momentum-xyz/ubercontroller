@@ -1,7 +1,6 @@
 package node
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -11,7 +10,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
-	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
 // @Summary Create mutual docks for teleport if users staked to each other
@@ -38,7 +36,7 @@ func (n *Node) apiUsersMutualDocks(c *gin.Context) {
 		return
 	}
 
-	userA, err := n.db.UsersGetUserByWallet(context.Background(), inBody.WalletA)
+	userA, err := n.db.UsersGetUserByWallet(n.ctx, inBody.WalletA)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiUsersMutualDocks: failed to UsersGetUserByWallet")
 		api.AbortRequest(c, http.StatusInternalServerError, "internal_server_error", err, n.log)
@@ -50,7 +48,7 @@ func (n *Node) apiUsersMutualDocks(c *gin.Context) {
 		return
 	}
 
-	userB, err := n.db.UsersGetUserByWallet(context.Background(), inBody.WalletB)
+	userB, err := n.db.UsersGetUserByWallet(n.ctx, inBody.WalletB)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiUsersMutualDocks: failed to UsersGetUserByWallet")
 		api.AbortRequest(c, http.StatusInternalServerError, "internal_server_error", err, n.log)
@@ -62,25 +60,25 @@ func (n *Node) apiUsersMutualDocks(c *gin.Context) {
 		return
 	}
 
-	spaceA, ok := n.GetWorlds().GetWorld(userA.UserID)
+	worldA, ok := n.GetWorlds().GetWorld(userA.UserID)
 	if !ok {
 		err = errors.New("Node: apiUsersMutualDocks: failed to GetSpace for userA")
 		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
 		return
 	}
-	if spaceA == nil {
+	if worldA == nil {
 		err = errors.New("space not found for userID=:" + userA.UserID.String())
 		api.AbortRequest(c, http.StatusNotFound, "space_A_not_found", err, n.log)
 		return
 	}
 
-	spaceB, ok := n.GetWorlds().GetWorld(userB.UserID)
+	worldB, ok := n.GetWorlds().GetWorld(userB.UserID)
 	if !ok {
 		err = errors.New("Node: apiUsersMutualDocks: failed to GetSpace for userB")
 		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
 		return
 	}
-	if spaceB == nil {
+	if worldB == nil {
 		err = errors.New("space not found for userID=:" + userB.UserID.String())
 		api.AbortRequest(c, http.StatusNotFound, "space_B_not_found", err, n.log)
 		return
@@ -94,14 +92,14 @@ func (n *Node) apiUsersMutualDocks(c *gin.Context) {
 		return
 	}
 
-	bulbAID, err := n.addDockingBulb(spaceA, dockStationType.GetID(), userA, userB)
+	bulbAID, err := n.addDockingBulb(worldA, dockStationType.GetID(), userA, userB)
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiUsersMutualDocks: failed to addDockingBulb for userA")
 		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, n.log)
 		return
 	}
 
-	bulbBID, err := n.addDockingBulb(spaceB, dockStationType.GetID(), userB, userA)
+	bulbBID, err := n.addDockingBulb(worldB, dockStationType.GetID(), userB, userA)
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiUsersMutualDocks: failed to addDockingBulb for userB")
 		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, n.log)
@@ -122,8 +120,8 @@ func (n *Node) apiUsersMutualDocks(c *gin.Context) {
 		Status:          "ok",
 		UserA:           &userA.UserID,
 		UserB:           &userB.UserID,
-		SpaceA:          spaceA.GetID().String(),
-		SpaceB:          spaceB.GetID().String(),
+		SpaceA:          worldA.GetID().String(),
+		SpaceB:          worldB.GetID().String(),
 		DockStationType: dockStationType.GetID().String(),
 		BulbA:           bulbAID.String(),
 		BulbB:           bulbBID.String(),
@@ -132,9 +130,8 @@ func (n *Node) apiUsersMutualDocks(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-func (n *Node) addDockingBulb(space universe.Space, dockStationTypeID uuid.UUID, fromUser *entry.User, toUser *entry.User) (uuid.UUID, error) {
-
-	dockStation := n.getDockStation(space, dockStationTypeID)
+func (n *Node) addDockingBulb(world universe.World, dockStationTypeID uuid.UUID, fromUser *entry.User, toUser *entry.User) (uuid.UUID, error) {
+	dockStation := n.getDockStation(world, dockStationTypeID)
 
 	bulbSpaceID := uuid.New()
 	err := n.createAndAddBulbSpace(bulbSpaceID, dockStation, *fromUser, *toUser)
@@ -146,39 +143,6 @@ func (n *Node) addDockingBulb(space universe.Space, dockStationTypeID uuid.UUID,
 }
 
 func (n *Node) createAndAddBulbSpace(spaceID uuid.UUID, dock universe.Space, fromUser entry.User, toUser entry.User) error {
-	space, err := dock.CreateSpace(spaceID)
-	if err != nil {
-		return errors.WithMessage(err, "Node: createAndAddBulbSpace: failed to create space")
-	}
-
-	err = space.SetOwnerID(fromUser.UserID, false)
-	if err != nil {
-		return errors.Errorf("Node: createAndAddBulbSpace: failed to set owner id")
-	}
-
-	bulbSpaceTypeName := "Docking bulb"
-	spaceType := n.getSpaceTypeByName(bulbSpaceTypeName)
-	if spaceType == nil {
-		return errors.New("Node: createAndAddBulbSpace: Can not find space type for name=" + bulbSpaceTypeName)
-	}
-
-	err = space.SetSpaceType(spaceType, false)
-	if err != nil {
-		return errors.WithMessage(err, "Node: createAndAddBulbSpace: failed to set space type")
-	}
-
-	asset3d := spaceType.GetAsset3d()
-	err = space.SetAsset3D(asset3d, false)
-	if err != nil {
-		err = errors.WithMessage(err, "Node: createAndAddBulbSpace: failed to set asset 3d")
-		return err
-	}
-
-	err = dock.AddSpace(space, true)
-	if err != nil {
-		return errors.WithMessage(err, "Node: createAndAddBulbSpace: failed to add space")
-	}
-
 	toUserName := ""
 	if toUser.Profile != nil {
 		if toUser.Profile.Name != nil {
@@ -186,35 +150,33 @@ func (n *Node) createAndAddBulbSpace(spaceID uuid.UUID, dock universe.Space, fro
 		}
 	}
 
-	attributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name)
-	value := entry.NewAttributeValue()
-	(*value)[universe.Attributes.Space.Name.Key] = toUserName
-	payload := entry.NewAttributePayload(value, nil)
-
-	_, err = space.UpsertSpaceAttribute(attributeID, modify.MergeWith(payload), true)
-	if err != nil {
-		err = errors.WithMessage(err, "Node: createAndAddBulbSpace: failed to upsert space name attribute")
-		return err
+	bulbSpaceTypeName := "Docking bulb"
+	spaceType := n.getSpaceTypeByName(bulbSpaceTypeName)
+	if spaceType == nil {
+		return errors.Errorf("failed to get space type: %s", bulbSpaceTypeName)
 	}
 
-	attributeID = entry.NewAttributeID(universe.GetSystemPluginID(), "teleport")
-	value = entry.NewAttributeValue()
-	(*value)["DestinationWorldID"] = toUser.UserID.String()
-	payload = entry.NewAttributePayload(value, nil)
-
-	_, err = space.UpsertSpaceAttribute(attributeID, modify.MergeWith(payload), true)
-	if err != nil {
-		err = errors.WithMessage(err, "Node: createAndAddBulbSpace: failed to upsert teleport name attribute")
-		return err
+	spaceTemplate := SpaceTemplate{
+		SpaceID:     &spaceID,
+		SpaceName:   toUserName,
+		SpaceTypeID: spaceType.GetID(),
+		ParentID:    dock.GetID(),
+		OwnerID:     &fromUser.UserID,
+		SpaceAttributes: []*Attribute{
+			{
+				AttributeID: entry.NewAttributeID(universe.GetSystemPluginID(), "teleport"),
+				AttributePayload: entry.AttributePayload{
+					Value: &entry.AttributeValue{
+						"DestinationWorldID": toUser.UserID.String(),
+					},
+				},
+			},
+		},
 	}
 
-	err = space.Run()
-	if err != nil {
-		err = errors.WithMessage(err, "Node: createAndAddBulbSpace: failed to run space")
-		return err
+	if _, err := n.addSpaceFromTemplate(&spaceTemplate); err != nil {
+		return errors.WithMessagef(err, "failed to add space from template: %+v", spaceTemplate)
 	}
-
-	space.SetEnabled(true)
 
 	return nil
 }
@@ -230,11 +192,15 @@ func (n *Node) getSpaceTypeByName(name string) universe.SpaceType {
 	return nil
 }
 
-func (n *Node) getDockStation(space universe.Space, dockStationTypeID uuid.UUID) universe.Space {
-	allSpaces := space.GetSpaces(false)
+func (n *Node) getDockStation(world universe.World, dockStationTypeID uuid.UUID) universe.Space {
+	allSpaces := world.GetAllSpaces()
 
 	for _, space := range allSpaces {
-		if space.GetSpaceType().GetID() == dockStationTypeID {
+		spaceType := space.GetSpaceType()
+		if spaceType == nil {
+			continue
+		}
+		if spaceType.GetID() == dockStationTypeID {
 			return space
 		}
 	}

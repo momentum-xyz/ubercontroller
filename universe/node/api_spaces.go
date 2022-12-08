@@ -25,6 +25,7 @@ type SpaceTemplate struct {
 	Asset3dID       *uuid.UUID           `json:"asset_3d_id"`
 	Options         *entry.SpaceOptions  `json:"options"`
 	Position        *cmath.SpacePosition `json:"position"`
+	Label           *string              `json:"label"`
 	SpaceAttributes []*Attribute         `json:"space_attributes"`
 	Spaces          []*SpaceTemplate     `json:"spaces"`
 }

@@ -235,18 +235,19 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 
 	effect := posbus.NewTriggerTransitionalBridgingEffectsOnPositionMsg(1)
 
-	// TODO: fix this stuff, maybe we need to get it from "world->world_settings" attribute
-	effectsEmitterMap, ok := universe.GetNode().GetSpaceAttributeValue(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.World.EffectsEmitter.Name),
-	)
-	if !ok {
-		return errors.Errorf("Could not get effects emitter attribute")
-	}
-
-	effectsEmitterID := utils.GetFromAnyMap(*effectsEmitterMap, universe.Attributes.World.EffectsEmitter.Key, uuid.Nil)
-	if effectsEmitterID == uuid.Nil {
-		return errors.Errorf("Failed to get effects emitter ID from map")
-	}
+	// TODO: fix this stuff
+	effectsEmitterID := uuid.Nil
+	//effectsEmitterMap, ok := universe.GetNode().GetSpaceAttributeValue(
+	//	entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.World.EffectsEmitter.Name),
+	//)
+	//if !ok {
+	//	return errors.Errorf("Could not get effects emitter attribute")
+	//}
+	//
+	//effectsEmitterID := utils.GetFromAnyMap(*effectsEmitterMap, universe.Attributes.World.EffectsEmitter.Key, uuid.Nil)
+	//if effectsEmitterID == uuid.Nil {
+	//	return errors.Errorf("Failed to get effects emitter ID from map")
+	//}
 
 	effect.SetEffect(0, effectsEmitterID, u.GetPosition(), target.GetPosition(), 1001)
 	u.GetWorld().Send(effect.WebsocketMessage(), false)

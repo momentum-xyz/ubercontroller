@@ -188,6 +188,8 @@ type World interface {
 	LoadSaver
 	SpaceCacher
 
+	GetSettings() *WorldSettings
+
 	WriteInfluxPoint(point *influxWrite.Point) error
 
 	// QUESTION: do we still need this?

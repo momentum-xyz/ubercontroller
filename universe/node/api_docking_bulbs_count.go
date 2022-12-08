@@ -62,6 +62,9 @@ func (n *Node) apiGetSpaceDockingBulbsCount(c *gin.Context) {
 	spaces := space.GetSpaces(true)
 	for _, v := range spaces {
 		st := v.GetSpaceType()
+		if st == nil {
+			continue
+		}
 		if st.GetID() == bulbTypeID {
 			out.Count++
 		}
