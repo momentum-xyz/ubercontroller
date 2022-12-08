@@ -192,7 +192,7 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 
 		// increment value of high five counter by 1
 		(*current.Value)[universe.Attributes.User.HighFive.Key] = utils.GetFromAnyMap(
-			*current.Value, universe.Attributes.User.HighFive.Key, 0,
+			*current.Value, universe.Attributes.User.HighFive.Key, uint(0),
 		) + 1
 
 		return current, nil
@@ -256,8 +256,6 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 	effect := posbus.NewTriggerTransitionalBridgingEffectsOnPositionMsg(1)
 	effect.SetEffect(0, effectsEmitterID, u.GetPosition(), target.GetPosition(), 1001)
 	u.GetWorld().Send(effect.WebsocketMessage(), false)
-
-	u.log.Infof("User: HandleHighFive: high5 messages sent: %s", u.GetID())
 
 	go u.SendHighFiveStats(&target)
 
