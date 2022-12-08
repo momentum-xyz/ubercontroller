@@ -1,14 +1,63 @@
 package middleware
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"github.com/momentum-xyz/ubercontroller/database"
+	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe/common/api"
 )
 
-func AuthorizeAttributes(log *zap.SugaredLogger, db database.DB, attributeType any) gin.HandlerFunc {
+type AttributeKind int8
+
+const (
+	SpaceUserAttribute AttributeKind = iota
+	SpaceAttribute
+	UserUserAttribute
+	UserAttribute
+)
+
+func AuthorizeAttributes(log *zap.SugaredLogger, db database.DB, attributeKind AttributeKind) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		return
+		type InBody struct {
+			PluginID      string `json:"plugin_id" binding:"required"`
+			AttributeName string `json:"attribute_name" binding:"required"`
+		}
+
+		inBody := InBody{}
+
+		if err := c.ShouldBindJSON(&inBody); err != nil {
+			err = errors.WithMessage(err, "Middleware: AuthorizeAttributes: failed to bind json")
+			api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, log)
+			return
+		}
+
+		pluginID, err := uuid.Parse(inBody.PluginID)
+		if err != nil {
+			err := errors.WithMessage(err, "Middleware: AuthorizeAttributes: failed to parse plugin id")
+			api.AbortRequest(c, http.StatusInternalServerError, "invalid_plugin_id", err, log)
+			return
+		}
+
+		attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
+		attributeType, err := db.AttributeTypesGetAttributeTypeByID(c, attributeID)
+		if err != nil {
+			err := errors.WithMessage(err, "Middleware: AuthorizeAttributes: failed to get attribute type")
+			api.AbortRequest(c, http.StatusBadRequest, "failed_to_get_attribute_type", err, log)
+			return
+		}
+
+		options := attributeType.Options
+		if options == nil {
+			err := errors.WithMessage(err, "Middleware: AuthorizeAttributes: no options in attribute type")
+			api.AbortRequest(c, http.StatusBadRequest, "failed_to_get_options", err, log)
+			return
+		}
+
 	}
 }

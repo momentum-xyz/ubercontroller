@@ -152,6 +152,7 @@ type UserTypesDB interface {
 
 type AttributeTypesDB interface {
 	AttributeTypesGetAttributeTypes(ctx context.Context) ([]*entry.AttributeType, error)
+	AttributeTypesGetAttributeTypeByID(ctx context.Context, attributeID entry.AttributeID) (*entry.AttributeType, error)
 
 	AttributeTypesUpsertAttributeType(ctx context.Context, attributeType *entry.AttributeType) error
 	AttributeTypesUpsertAttributeTypes(ctx context.Context, attributeTypes []*entry.AttributeType) error
