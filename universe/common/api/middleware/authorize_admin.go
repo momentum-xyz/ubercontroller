@@ -21,11 +21,10 @@ func AuthorizeAdmin(log *zap.SugaredLogger, db database.DB) gin.HandlerFunc {
 			return
 		}
 
-		// TODO: validate token instead
 		userID, err := api.GetUserIDFromContext(c)
 		if err != nil {
 			err = errors.WithMessage(err, "Middleware: AuthorizeAdmin: failed to get user id from context")
-			api.AbortRequest(c, http.StatusBadRequest, "failed_to_get_user_id", err, log)
+			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_user_id", err, log)
 			return
 		}
 
