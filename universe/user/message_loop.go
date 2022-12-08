@@ -4,12 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/momentum-xyz/posbus-protocol/posbus"
-	"github.com/momentum-xyz/ubercontroller/types/entry"
-	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/pkg/errors"
 
+	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 func (u *User) OnMessage(msg *posbus.Message) error {
@@ -179,37 +178,10 @@ func (u *User) LockObject(msg *posbus.SetObjectLockState) error {
 func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 	targetID := m.Target()
 	if targetID == u.GetID() {
-		return errors.New("You can't high-five yourself!")
-	}
-
-	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
-		if current == nil {
-			current = entry.NewAttributePayload(nil, nil)
-		}
-		if current.Value == nil {
-			current.Value = entry.NewAttributeValue()
-		}
-
-		// increment value of high five counter by 1
-		(*current.Value)[universe.Attributes.User.HighFive.Key] = utils.GetFromAnyMap(
-			*current.Value, universe.Attributes.User.HighFive.Key, uint(0),
-		) + 1
-
-		return current, nil
-	}
-
-	if _, err := universe.GetNode().UpsertUserUserAttribute(
-		entry.NewUserUserAttributeID(
-			entry.NewAttributeID(
-				universe.GetSystemPluginID(), universe.Attributes.User.HighFive.Name,
-			),
-			u.GetID(), targetID), modifyFn,
-	); err != nil {
-		return errors.New("Could not upsert high-five user user attribute")
+		return errors.New("high-five yourself not permitted")
 	}
 
 	world := u.GetWorld()
-
 	target, ok := world.GetUser(targetID, false)
 	if !ok {
 		u.Send(
@@ -217,7 +189,7 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 				posbus.DestinationReact, posbus.NotificationTextMessage, 0, "Target user not found",
 			).WebsocketMessage(),
 		)
-		return errors.Errorf("Target user not found; uuid: %v", targetID)
+		return errors.Errorf("failed to get target: %s", targetID)
 	}
 
 	var uName string
@@ -242,7 +214,7 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 	}
 	high5Data, err := json.Marshal(&high5Msg)
 	if err != nil {
-		return errors.WithMessage(err, "Failed to marshal high5 data")
+		return errors.WithMessage(err, "failed to marshal high5 message")
 	}
 
 	u.Send(
@@ -257,7 +229,7 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 	effect.SetEffect(0, effectsEmitterID, u.GetPosition(), target.GetPosition(), 1001)
 	u.GetWorld().Send(effect.WebsocketMessage(), false)
 
-	go u.SendHighFiveStats(&target)
+	go u.SendHighFiveStats(target)
 
 	return nil
 }

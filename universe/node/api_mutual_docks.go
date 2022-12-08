@@ -2,6 +2,7 @@ package node
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -102,6 +103,31 @@ func (n *Node) apiUsersMutualDocks(c *gin.Context) {
 	bulbBID, err := n.addDockingBulb(worldB, dockStationType.GetID(), userB, userA)
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiUsersMutualDocks: failed to addDockingBulb for userB")
+		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, n.log)
+		return
+	}
+
+	userSpaces := make([]*entry.UserSpace, 2)
+
+	userSpaces[0] = &entry.UserSpace{
+		SpaceID:   bulbAID,
+		UserID:    userB.UserID,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Value:     map[string]any{"role": "admin"},
+	}
+
+	userSpaces[1] = &entry.UserSpace{
+		SpaceID:   bulbBID,
+		UserID:    userA.UserID,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Value:     map[string]any{"role": "admin"},
+	}
+
+	err = n.db.UserSpacesUpsertUserSpaces(n.ctx, userSpaces)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiUsersMutualDocks: failed to UserSpacesUpsertUserSpaces")
 		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, n.log)
 		return
 	}

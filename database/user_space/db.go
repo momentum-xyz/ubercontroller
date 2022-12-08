@@ -2,8 +2,9 @@ package user_spaces
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/utils/modify"
 	"sync"
+
+	"github.com/momentum-xyz/ubercontroller/utils/modify"
 
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/google/uuid"
@@ -31,7 +32,7 @@ const (
 											(user_id, space_id, value, created_at, updated_at)
 										VALUES
 											($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-										ON CONFLICT (user_id, space_id, value)
+										ON CONFLICT (user_id, space_id)
 										DO UPDATE SET
 											value = $3;`
 )
