@@ -44,7 +44,7 @@ async function main() {
     const wsProvider = new WsProvider(url);
     const api = await ApiPromise.create({provider: wsProvider});
 
-    const collectionId = 0
+    const collectionId = 3
     // https://github.com/Phala-Network/khala-parachain/blob/bdd2daada48536e74800afd9d8bcbfb44b240bcb/scripts/js/pw/util/fetch.js#L54
     const r = await api.query.uniques.account.entries(WALLET, collectionId);
 
