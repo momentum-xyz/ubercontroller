@@ -236,6 +236,8 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 
 	effect := posbus.NewTriggerTransitionalBridgingEffectsOnPositionMsg(1)
 
+	u.log.Info("worldsettings: --> ", world.GetSettings())
+
 	effectsEmitterID := world.GetSettings().Spaces["effects_emitter"]
 	effect.SetEffect(0, effectsEmitterID, u.GetPosition(), target.GetPosition(), 1001)
 	u.GetWorld().Send(effect.WebsocketMessage(), false)
