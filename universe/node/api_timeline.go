@@ -352,9 +352,9 @@ func (n *Node) apiNewsFeed(c *gin.Context) {
 }
 
 func (n *Node) getAllEvents() ([]*Event, error) {
-	attributes, err := n.db.SpaceAttributesGetSpaceAttributesByPluginIDAndAttributeName(n.ctx, universe.GetSystemPluginID(), "events")
+	attributes, err := n.db.SpaceAttributesGetSpaceAttributesByPluginIDAndName(n.ctx, universe.GetSystemPluginID(), "events")
 	if err != nil {
-		return nil, errors.WithMessage(err, "Node: getAllEvents: failed to SpaceAttributesGetSpaceAttributesByPluginIDAndAttributeName")
+		return nil, errors.WithMessage(err, "Node: getAllEvents: failed to SpaceAttributesGetSpaceAttributesByPluginIDAndName")
 	}
 
 	events := make([]*Event, 0)

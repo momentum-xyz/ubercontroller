@@ -185,6 +185,7 @@ func (n *Node) apiGetSpace(c *gin.Context) {
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/spaces/{space_id} [delete]
 func (n *Node) apiRemoveSpace(c *gin.Context) {
+	// TODO: move to separate method for reuse
 	spaceID, err := uuid.Parse(c.Param("spaceID"))
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiRemoveSpace: failed to parse space id")
@@ -218,11 +219,39 @@ func (n *Node) apiRemoveSpace(c *gin.Context) {
 		return
 	}
 
+	if err := space.Stop(); err != nil {
+		n.log.Error(errors.WithMessagef(err, "Node: apiRemoveSpace: failed to stop space: %s", spaceID))
+	}
+	space.SetEnabled(false)
+
+	// also stop all children
 	go func() {
-		if err := space.Stop(); err != nil {
-			n.log.Error(errors.WithMessagef(err, "Node: apiRemoveSpace: failed to stop space: %s", spaceID))
+		// TODO: optimize!!!
+		var removeChildren func(space universe.Space)
+		removeChildren = func(space universe.Space) {
+			for childID, child := range space.GetSpaces(false) {
+				// prevent "RemoveStaticObjectsMsg" spam
+				child.SetEnabled(false)
+
+				if _, err := space.RemoveSpace(child, false, false); err != nil {
+					n.log.Error(
+						errors.WithMessagef(
+							err, "Node: apiRemoveSpace: failed to remove space child: %s", childID,
+						),
+					)
+				}
+
+				if err := child.Stop(); err != nil {
+					n.log.Error(
+						errors.WithMessagef(
+							err, "Node: apiRemoveSpace: failed to stop space child: %s", childID,
+						),
+					)
+				}
+
+				removeChildren(child)
+			}
 		}
-		space.SetEnabled(false)
 	}()
 
 	c.JSON(http.StatusOK, nil)

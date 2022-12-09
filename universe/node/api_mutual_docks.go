@@ -3,6 +3,7 @@ package node
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/pkg/errors"
 	"net/http"
 
@@ -221,8 +222,6 @@ func (n *Node) apiUsersRemoveMutualDocks(c *gin.Context) {
 		return
 	}
 
-	// TODO: find and remove docking bulbs
-
 	userSpaces := []*entry.UserSpace{
 		{
 			SpaceID: worldA.GetID(),
@@ -242,10 +241,50 @@ func (n *Node) apiUsersRemoveMutualDocks(c *gin.Context) {
 		}
 	}
 
+	bulbsA := n.findDockingBulbsByTargetWorldID(worldA, userB.UserID)
+	bulbsB := n.findDockingBulbsByTargetWorldID(worldB, userA.UserID)
+	bulbs := make(map[uuid.UUID]universe.Space, len(bulbsA)+len(bulbsB))
+	for _, bulb := range bulbs {
+		parent := bulb.GetParent()
+
+		if _, err := parent.RemoveSpace(bulb, false, true); err != nil {
+			n.log.Error(
+				errors.WithMessagef(
+					err, "Node: apiUsersRemoveMutualDocks: failed to remove bulb: %s", bulb.GetID(),
+				),
+			)
+		}
+
+		if err := parent.UpdateChildrenPosition(true); err != nil {
+			n.log.Error(
+				errors.WithMessagef(
+					err, "Node: apiUsersRemoveMutualDocks: failed to update children position: %s", parent.GetID(),
+				),
+			)
+		}
+
+		if err := bulb.Stop(); err != nil {
+			n.log.Error(
+				errors.WithMessagef(
+					err, "Node: apiUsersRemoveMutualDocks: failed to stop bulb: %s", bulb.GetID(),
+				),
+			)
+		}
+
+		bulb.SetEnabled(false)
+	}
+
 	c.JSON(http.StatusAccepted, nil)
 }
 
 func (n *Node) addDockingBulb(world universe.World, dockStationTypeID uuid.UUID, fromUser *entry.User, toUser *entry.User) (uuid.UUID, error) {
+	bulbs := n.findDockingBulbsByTargetWorldID(world, toUser.UserID)
+	if len(bulbs) > 0 {
+		for spaceID, _ := range bulbs {
+			return spaceID, nil
+		}
+	}
+
 	dockStation := n.getDockStation(world, dockStationTypeID)
 
 	bulbSpaceID := uuid.New()
@@ -321,4 +360,25 @@ func (n *Node) getDockStation(world universe.World, dockStationTypeID uuid.UUID)
 	}
 
 	return nil
+}
+
+func (n *Node) findDockingBulbsByTargetWorldID(world universe.World, targetWorldID uuid.UUID) map[uuid.UUID]universe.Space {
+	targetWorld := targetWorldID.String()
+	attributeID := entry.NewAttributeID(universe.GetSystemPluginID(), "teleport")
+
+	predicateFn := func(spaceID uuid.UUID, space universe.Space) bool {
+		value, ok := space.GetSpaceAttributeValue(attributeID)
+		if !ok || value == nil {
+			return false
+		}
+
+		worldID := utils.GetFromAnyMap(*value, "DestinationWorldID", "")
+		if worldID != targetWorld {
+			return false
+		}
+
+		return true
+	}
+
+	return world.FilterAllSpaces(predicateFn)
 }

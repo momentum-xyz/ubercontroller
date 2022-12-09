@@ -200,9 +200,10 @@ type NodeAttributesDB interface {
 }
 
 type SpaceAttributesDB interface {
-	GetSpaceIDsByAttributeTeleportValue(ctx context.Context, pluginID uuid.UUID, targetWorldID uuid.UUID) ([]uuid.UUID, error)
 	SpaceAttributesGetSpaceAttributes(ctx context.Context) ([]*entry.SpaceAttribute, error)
-	SpaceAttributesGetSpaceAttributesByPluginIDAndAttributeName(ctx context.Context, pluginID uuid.UUID, attributeName string) ([]*entry.SpaceAttribute, error)
+	SpaceAttributesGetSpaceAttributesByPluginIDAndName(
+		ctx context.Context, pluginID uuid.UUID, name string,
+	) ([]*entry.SpaceAttribute, error)
 	SpaceAttributesGetSpaceAttributeByID(
 		ctx context.Context, spaceAttributeID entry.SpaceAttributeID,
 	) (*entry.SpaceAttribute, error)
