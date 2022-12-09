@@ -481,7 +481,7 @@ func (s *Space) unityAutoOnSpaceAttributeChanged(
 
 	//dirty hack to set auto_render_hash value without triggering processing again
 	// TODO: fix it properly later
-	if hash != nil || hash.Hash != "" {
+	if hash != nil && hash.Hash != "" {
 		s.spaceAttributes.Mu.Lock()
 
 		(*value)["auto_render_hash"] = hash.Hash
