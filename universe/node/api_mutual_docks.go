@@ -110,7 +110,7 @@ func (n *Node) apiUsersMutualDocks(c *gin.Context) {
 	userSpaces := make([]*entry.UserSpace, 2)
 
 	userSpaces[0] = &entry.UserSpace{
-		SpaceID:   bulbAID,
+		SpaceID:   userA.UserID,
 		UserID:    userB.UserID,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -118,7 +118,7 @@ func (n *Node) apiUsersMutualDocks(c *gin.Context) {
 	}
 
 	userSpaces[1] = &entry.UserSpace{
-		SpaceID:   bulbBID,
+		SpaceID:   userB.UserID,
 		UserID:    userA.UserID,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
