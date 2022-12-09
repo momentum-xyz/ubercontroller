@@ -1,12 +1,10 @@
 package node
 
 import (
-	"net/http"
-	"time"
-
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"net/http"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -107,22 +105,17 @@ func (n *Node) apiUsersCreateMutualDocks(c *gin.Context) {
 		return
 	}
 
-	userSpaces := make([]*entry.UserSpace, 2)
-
-	userSpaces[0] = &entry.UserSpace{
-		SpaceID:   userA.UserID,
-		UserID:    userB.UserID,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-		Value:     map[string]any{"role": "admin"},
-	}
-
-	userSpaces[1] = &entry.UserSpace{
-		SpaceID:   userB.UserID,
-		UserID:    userA.UserID,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-		Value:     map[string]any{"role": "admin"},
+	userSpaces := []*entry.UserSpace{
+		{
+			SpaceID: worldA.GetID(),
+			UserID:  userB.UserID,
+			Value:   map[string]any{"role": "admin"},
+		},
+		{
+			SpaceID: worldB.GetID(),
+			UserID:  userA.UserID,
+			Value:   map[string]any{"role": "admin"},
+		},
 	}
 
 	err = n.db.UserSpacesUpsertUserSpaces(n.ctx, userSpaces)
@@ -233,18 +226,20 @@ func (n *Node) apiUsersRemoveMutualDocks(c *gin.Context) {
 	userSpaces := []*entry.UserSpace{
 		{
 			SpaceID: worldA.GetID(),
-			UserID:  userA.UserID,
+			UserID:  userB.UserID,
 		},
 		{
 			SpaceID: worldB.GetID(),
-			UserID:  userB.UserID,
+			UserID:  userA.UserID,
 		},
 	}
 
-	if err := n.db.UserSpaceRemoveUserSpaces(n.ctx, userSpaces); err != nil {
-		err = errors.New("Node: apiUsersRemoveMutualDocks: failed to remove userSpaces")
-		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
-		return
+	for i := range userSpaces {
+		if err := n.db.UserSpaceRemoveUserSpace(n.ctx, userSpaces[i]); err != nil {
+			err := errors.WithMessage(err, "Node: apiUsersRemoveMutualDocks: failed to remove userSpace")
+			api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+			return
+		}
 	}
 
 	c.JSON(http.StatusAccepted, nil)

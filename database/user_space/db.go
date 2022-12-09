@@ -28,7 +28,7 @@ const (
 
 	updateUserSpacesValueQuery = `UPDATE user_space SET value = $3 WHERE user_id = $1 AND space_id = $2;`
 
-	removeUserSpacesQuery = `DELETE FROM user_space WHERE user_id = ANY($1) AND space_id = ANY($2);`
+	removeUserSpaceByIDQuery = `DELETE FROM user_space WHERE user_id = $1 AND space_id = $2;`
 
 	upsertUserSpaceQuery = `INSERT INTO user_space
 											(user_id, space_id, value, created_at, updated_at)
@@ -172,16 +172,8 @@ func (db *DB) UserSpacesUpsertUserSpaces(ctx context.Context, userSpaces []*entr
 	return errs.ErrorOrNil()
 }
 
-// TODO: FIX THIS!!!
-func (db *DB) UserSpaceRemoveUserSpaces(ctx context.Context, userSpaces []*entry.UserSpace) error {
-	userIDs := make([]uuid.UUID, len(userSpaces))
-	spaceIDs := make([]uuid.UUID, len(userSpaces))
-	for i := range userSpaces {
-		userIDs[i] = userSpaces[i].UserID
-		spaceIDs[i] = userSpaces[i].SpaceID
-	}
-
-	if _, err := db.conn.Exec(ctx, removeUserSpacesQuery, userIDs, spaceIDs); err != nil {
+func (db *DB) UserSpaceRemoveUserSpace(ctx context.Context, userSpaces *entry.UserSpace) error {
+	if _, err := db.conn.Exec(ctx, removeUserSpaceByIDQuery, userSpaces.UserID, userSpaces.SpaceID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 
