@@ -174,6 +174,8 @@ func (n *Node) apiUsersRemoveMutualDocks(c *gin.Context) {
 		return
 	}
 
+	n.log.Infof("Node: apiUsersRemoveMutualDocks: get wallets: A: %s, B: %s", inBody.WalletA, inBody.WalletB)
+
 	userA, err := n.db.UsersGetUserByWallet(n.ctx, inBody.WalletA)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiUsersRemoveMutualDocks: failed to UsersGetUserByWallet")
@@ -241,9 +243,14 @@ func (n *Node) apiUsersRemoveMutualDocks(c *gin.Context) {
 		}
 	}
 
+	n.log.Infof("Node: apiUsersRemoveMutualDocks: userSpaces removed: %d", len(userSpaces))
+
 	bulbsA := n.findDockingBulbsByTargetWorldID(worldA, userB.UserID)
 	bulbsB := n.findDockingBulbsByTargetWorldID(worldB, userA.UserID)
 	bulbs := make(map[uuid.UUID]universe.Space, len(bulbsA)+len(bulbsB))
+
+	n.log.Infof("Node: apiUsersRemoveMutualDocks: found %d bulbs", len(bulbs))
+
 	for _, bulb := range bulbs {
 		parent := bulb.GetParent()
 
