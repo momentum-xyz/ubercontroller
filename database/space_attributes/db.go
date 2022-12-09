@@ -15,6 +15,8 @@ import (
 )
 
 const (
+	getSpaceIDByAttributeTeleport = `SELECT space_id FROM space_attribute WHERE plugin_id = $1 AND value ->> 'DestinationWorldID' = $2`
+
 	getSpaceAttributesQuery                           = `SELECT * FROM space_attribute;`
 	getSpaceAttributeByIDQuery                        = `SELECT * FROM space_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3;`
 	getSpaceAttributesQueryBySpaceIDQuery             = `SELECT * FROM space_attribute WHERE space_id = $1;`
@@ -54,6 +56,16 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 		conn:   conn,
 		common: commonDB,
 	}
+}
+
+func (db *DB) GetSpaceIDsByAttributeTeleportValue(ctx context.Context, pluginID uuid.UUID, targetWorldID uuid.UUID) ([]uuid.UUID, error) {
+	var spaceIDs []uuid.UUID
+	err := pgxscan.Select(ctx, db.conn, &spaceIDs, getSpaceIDByAttributeTeleport, pluginID, targetWorldID.String())
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+
+	return spaceIDs, nil
 }
 
 func (db *DB) SpaceAttributesGetSpaceAttributes(ctx context.Context) ([]*entry.SpaceAttribute, error) {
