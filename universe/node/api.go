@@ -59,7 +59,8 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		verifiedUsers := verified.Group("/users")
 		{
 			verifiedUsers.GET("/me", n.apiUsersGetMe)
-			verifiedUsers.POST("/mutual-docks", n.apiUsersMutualDocks)
+			verifiedUsers.POST("/mutual-docks", n.apiUsersCreateMutualDocks)
+			verifiedUsers.DELETE("/mutual-docks", n.apiUsersRemoveMutualDocks)
 
 			verifiedUser := verifiedUsers.Group("/:userID")
 			{
@@ -82,6 +83,8 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 			space := verifiedSpaces.Group("/:spaceID")
 			{
+				space.POST("/")
+
 				authorizedAdmin := space.Group("", middleware.AuthorizeAdmin(n.log, n.db))
 				{
 					authorizedAdmin.POST("/options/sub", n.apiSpacesSetSpaceSubOption)

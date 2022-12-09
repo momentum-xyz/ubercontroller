@@ -210,6 +210,13 @@ type SpaceAttributesDB interface {
 	SpaceAttributesUpsertSpaceAttribute(ctx context.Context, spaceAttribute *entry.SpaceAttribute) error
 	SpaceAttributesUpsertSpaceAttributes(ctx context.Context, spaceAttributes []*entry.SpaceAttribute) error
 
+	SpaceAttributesUpdateSpaceAttributeValue(
+		ctx context.Context, spaceAttributeID entry.SpaceAttributeID, value *entry.AttributeValue,
+	) error
+	SpaceAttributesUpdateSpaceAttributeOptions(
+		ctx context.Context, spaceAttributeID entry.SpaceAttributeID, options *entry.AttributeOptions,
+	) error
+
 	SpaceAttributesRemoveSpaceAttributeByName(ctx context.Context, name string) error
 	SpaceAttributesRemoveSpaceAttributesByNames(ctx context.Context, names []string) error
 	SpaceAttributesRemoveSpaceAttributesByPluginID(ctx context.Context, pluginID uuid.UUID) error
@@ -220,13 +227,6 @@ type SpaceAttributesDB interface {
 	SpaceAttributesRemoveSpaceAttributeByID(ctx context.Context, spaceAttributeID entry.SpaceAttributeID) error
 	SpaceAttributesRemoveSpaceAttributeByPluginIDAndSpaceID(
 		ctx context.Context, pluginID uuid.UUID, spaceID uuid.UUID,
-	) error
-
-	SpaceAttributesUpdateSpaceAttributeValue(
-		ctx context.Context, spaceAttributeID entry.SpaceAttributeID, value *entry.AttributeValue,
-	) error
-	SpaceAttributesUpdateSpaceAttributeOptions(
-		ctx context.Context, spaceAttributeID entry.SpaceAttributeID, options *entry.AttributeOptions,
 	) error
 }
 
@@ -386,6 +386,13 @@ type UserUserAttributesDB interface {
 		ctx context.Context, userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
 	) (*entry.UserUserAttribute, error)
 
+	UserUserAttributesUpdateUserUserAttributeValue(
+		ctx context.Context, userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributeValue],
+	) (*entry.AttributeValue, error)
+	UserUserAttributesUpdateUserUserAttributeOptions(
+		ctx context.Context, userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributeOptions],
+	) (*entry.AttributeOptions, error)
+
 	UserUserAttributesRemoveUserUserAttributeByName(ctx context.Context, name string) error
 	UserUserAttributesRemoveUserUserAttributesByNames(ctx context.Context, names []string) error
 	UserUserAttributesRemoveUserUserAttributesByPluginID(ctx context.Context, pluginID uuid.UUID) error
@@ -435,13 +442,6 @@ type UserUserAttributesDB interface {
 	UserUserAttributesRemoveUserUserAttributeByID(
 		ctx context.Context, userUserAttributeID entry.UserUserAttributeID,
 	) error
-
-	UserUserAttributesUpdateUserUserAttributeValue(
-		ctx context.Context, userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributeValue],
-	) (*entry.AttributeValue, error)
-	UserUserAttributesUpdateUserUserAttributeOptions(
-		ctx context.Context, userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributeOptions],
-	) (*entry.AttributeOptions, error)
 }
 
 type UserSpaceDB interface {
@@ -449,13 +449,18 @@ type UserSpaceDB interface {
 
 	UserSpaceGetUserSpacesByUserID(ctx context.Context, userID uuid.UUID) ([]*entry.UserSpace, error)
 	UserSpaceGetUserSpacesBySpaceID(ctx context.Context, spaceID uuid.UUID) ([]*entry.UserSpace, error)
-	UserSpaceGetUserSpaceByUserAndSpaceIDs(ctx context.Context, userSpaceID entry.UserSpaceID) (*entry.UserSpace, error)
+	UserSpaceGetUserSpaceByID(ctx context.Context, userSpaceID entry.UserSpaceID) (*entry.UserSpace, error)
 
-	UserSpaceGetValueByUserAndSpaceIDs(ctx context.Context, userSpaceID entry.UserSpaceID) (*entry.UserSpaceValue, error)
+	UserSpaceGetValueByID(ctx context.Context, userSpaceID entry.UserSpaceID) (*entry.UserSpaceValue, error)
 
 	UserSpaceGetIndirectAdmins(ctx context.Context, spaceID uuid.UUID) ([]*uuid.UUID, error)
 
-	UserSpaceUpdateValueByUserAndSpaceIDs(ctx context.Context, userSpaceID entry.UserSpaceID, modifyFn modify.Fn[entry.UserSpaceValue]) (*entry.UserSpaceValue, error)
-
+	UserSpacesUpsertUserSpace(ctx context.Context, userSpace *entry.UserSpace) error
 	UserSpacesUpsertUserSpaces(ctx context.Context, userSpaces []*entry.UserSpace) error
+
+	UserSpaceUpdateValueByID(
+		ctx context.Context, userSpaceID entry.UserSpaceID, modifyFn modify.Fn[entry.UserSpaceValue],
+	) (*entry.UserSpaceValue, error)
+
+	UserSpaceRemoveUserSpaces(ctx context.Context, userSpaces []*entry.UserSpace) error
 }

@@ -28,6 +28,8 @@ const (
 
 	updateUserSpacesValueQuery = `UPDATE user_space SET value = $3 WHERE user_id = $1 AND space_id = $2;`
 
+	removeUserSpacesQuery = `DELETE FROM user_space WHERE user_id = ANY($1) AND space_id = ANY($2);`
+
 	upsertUserSpaceQuery = `INSERT INTO user_space
 											(user_id, space_id, value, created_at, updated_at)
 										VALUES
@@ -68,7 +70,7 @@ func (db *DB) UserSpaceGetUserSpacesBySpaceID(ctx context.Context, spaceID uuid.
 	return userSpaces, nil
 }
 
-func (db *DB) UserSpaceGetUserSpaceByUserAndSpaceIDs(ctx context.Context, userSpaceID entry.UserSpaceID) (*entry.UserSpace, error) {
+func (db *DB) UserSpaceGetUserSpaceByID(ctx context.Context, userSpaceID entry.UserSpaceID) (*entry.UserSpace, error) {
 	var userSpace *entry.UserSpace
 	if err := pgxscan.Select(
 		ctx, db.conn, &userSpace, getUserSpacesBySpaceIDAndUserIDQuery, userSpaceID.UserID, userSpaceID.SpaceID,
@@ -106,12 +108,12 @@ func (db *DB) UserSpaceGetIndirectAdmins(ctx context.Context, spaceID uuid.UUID)
 	return userIDs, nil
 }
 
-func (db *DB) UserSpaceGetValueByUserAndSpaceIDs(ctx context.Context, userSpaceID entry.UserSpaceID) (*entry.UserSpaceValue, error) {
+func (db *DB) UserSpaceGetValueByID(ctx context.Context, userSpaceID entry.UserSpaceID) (*entry.UserSpaceValue, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (db *DB) UserSpaceUpdateValueByUserAndSpaceIDs(ctx context.Context, userSpaceID entry.UserSpaceID, modifyFn modify.Fn[entry.UserSpaceValue]) (*entry.UserSpaceValue, error) {
+func (db *DB) UserSpaceUpdateValueByID(ctx context.Context, userSpaceID entry.UserSpaceID, modifyFn modify.Fn[entry.UserSpaceValue]) (*entry.UserSpaceValue, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
@@ -168,4 +170,20 @@ func (db *DB) UserSpacesUpsertUserSpaces(ctx context.Context, userSpaces []*entr
 	}
 
 	return errs.ErrorOrNil()
+}
+
+// TODO: FIX THIS!!!
+func (db *DB) UserSpaceRemoveUserSpaces(ctx context.Context, userSpaces []*entry.UserSpace) error {
+	userIDs := make([]uuid.UUID, len(userSpaces))
+	spaceIDs := make([]uuid.UUID, len(userSpaces))
+	for i := range userSpaces {
+		userIDs[i] = userSpaces[i].UserID
+		spaceIDs[i] = userSpaces[i].SpaceID
+	}
+
+	if _, err := db.conn.Exec(ctx, removeUserSpacesQuery, userIDs, spaceIDs); err != nil {
+		return errors.WithMessage(err, "failed to exec db")
+	}
+
+	return nil
 }
