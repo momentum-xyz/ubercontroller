@@ -233,18 +233,20 @@ func (n *Node) apiUsersRemoveMutualDocks(c *gin.Context) {
 	userSpaces := []*entry.UserSpace{
 		{
 			SpaceID: worldA.GetID(),
-			UserID:  userA.UserID,
+			UserID:  userB.UserID,
 		},
 		{
 			SpaceID: worldB.GetID(),
-			UserID:  userB.UserID,
+			UserID:  userA.UserID,
 		},
 	}
 
-	if err := n.db.UserSpaceRemoveUserSpaces(n.ctx, userSpaces); err != nil {
-		err = errors.New("Node: apiUsersRemoveMutualDocks: failed to remove userSpaces")
-		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
-		return
+	for i := range userSpaces {
+		if err := n.db.UserSpaceRemoveUserSpace(n.ctx, userSpaces[i]); err != nil {
+			err := errors.WithMessage(err, "Node: apiUsersRemoveMutualDocks: failed to remove userSpace")
+			api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+			return
+		}
 	}
 
 	c.JSON(http.StatusAccepted, nil)
