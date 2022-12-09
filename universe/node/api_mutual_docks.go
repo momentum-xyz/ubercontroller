@@ -248,6 +248,12 @@ func (n *Node) apiUsersRemoveMutualDocks(c *gin.Context) {
 	bulbsA := n.findDockingBulbsByTargetWorldID(worldA, userB.UserID)
 	bulbsB := n.findDockingBulbsByTargetWorldID(worldB, userA.UserID)
 	bulbs := make(map[uuid.UUID]universe.Space, len(bulbsA)+len(bulbsB))
+	for bulbID, bulb := range bulbsA {
+		bulbs[bulbID] = bulb
+	}
+	for bulbID, bulb := range bulbsB {
+		bulbs[bulbID] = bulb
+	}
 
 	n.log.Infof("Node: apiUsersRemoveMutualDocks: found %d bulbs", len(bulbs))
 
