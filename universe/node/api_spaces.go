@@ -278,6 +278,11 @@ func (n *Node) addSpaceFromTemplate(spaceTemplate *SpaceTemplate) (uuid.UUID, er
 	space.SetEnabled(true)
 
 	// adding attributes
+	// Give a space a name and a default image texture.
+	// TODO: get from some world level config:
+	imgPluginID := uuid.MustParse("ff40fbf0-8c22-437d-b27a-0258f99130fe")
+	imgAttributeName := "state"
+	imgDefault := "53e9a2811a7a6cd93011a6df7c23edc7"
 	spaceTemplate.SpaceAttributes = append(
 		spaceTemplate.SpaceAttributes,
 		&Attribute{
@@ -285,6 +290,14 @@ func (n *Node) addSpaceFromTemplate(spaceTemplate *SpaceTemplate) (uuid.UUID, er
 			AttributePayload: entry.AttributePayload{
 				Value: &entry.AttributeValue{
 					universe.Attributes.Space.Name.Key: spaceTemplate.SpaceName,
+				},
+			},
+		},
+		&Attribute{
+			AttributeID: entry.NewAttributeID(imgPluginID, imgAttributeName),
+			AttributePayload: entry.AttributePayload{
+				Value: &entry.AttributeValue{
+					"render_hash": imgDefault,
 				},
 			},
 		},
