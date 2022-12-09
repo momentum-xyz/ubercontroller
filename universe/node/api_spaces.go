@@ -117,10 +117,11 @@ func (n *Node) apiCreateSpace(c *gin.Context) {
 			if parentWorld != nil {
 				user, ok := parentWorld.GetUser(userID, true)
 				if ok {
-					fmt.Println("User rotation: %v", user.GetRotation())
-					distance := float32(10)
+					fmt.Printf("User rotation: %v", user.GetRotation())
+					//distance := float32(10)
 					position = &cmath.SpacePosition{
-						Location: cmath.Add(user.GetPosition(), cmath.MultiplyN(user.GetRotation(), distance)),
+						// TODO: recalc based on euler angles, not lookat: Location: cmath.Add(user.GetPosition(), cmath.MultiplyN(user.GetRotation(), distance)),
+						Location: user.GetPosition(),
 						Rotation: cmath.Vec3{},
 						Scale:    cmath.Vec3{X: 1, Y: 1, Z: 1},
 					}
