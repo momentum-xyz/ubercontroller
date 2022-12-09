@@ -220,9 +220,6 @@ type Space interface {
 	SetPosition(position *cmath.SpacePosition, updateDB bool) error
 	SetActualPosition(pos cmath.SpacePosition, theta float64) error
 
-	//GetRotation() *cmath.Vec3
-	//SetRotation(rotation *cmath.Vec3, updateDB bool) error
-
 	GetOptions() *entry.SpaceOptions
 	GetEffectiveOptions() *entry.SpaceOptions
 	SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool) (*entry.SpaceOptions, error)
