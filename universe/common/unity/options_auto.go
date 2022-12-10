@@ -36,7 +36,7 @@ const (
 
 // TODO: requre optimization to not do it every time we touch attribute
 func GetOptionAutoOption(
-	options *entry.AttributeOptions, attributeID entry.AttributeID,
+	attributeID entry.AttributeID, options *entry.AttributeOptions,
 ) (*entry.UnityAutoAttributeOption, error) {
 	if options == nil {
 		return nil, nil

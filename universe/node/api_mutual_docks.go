@@ -12,6 +12,8 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
 )
 
+// TODO: reimplement
+
 // @Summary Create mutual docks for teleport if users staked to each other
 // @Schemes
 // @Description After users has been made mutual staking this EP will add mutual teleport docks to user's Odysseys

@@ -316,25 +316,27 @@ func (s *Space) RemoveSpaceAttributes(attributeIDs []entry.AttributeID, updateDB
 }
 
 func (s *Space) loadSpaceAttributes() error {
-	entries, err := s.db.SpaceAttributesGetSpaceAttributesBySpaceID(s.ctx, s.id)
+	entries, err := s.db.SpaceAttributesGetSpaceAttributesBySpaceID(s.ctx, s.GetID())
 	if err != nil {
 		return errors.WithMessage(err, "failed to get space attributes")
 	}
 
 	for _, instance := range entries {
-		options, ok := s.GetSpaceAttributeEffectiveOptions(instance.AttributeID)
-		if ok {
-			autoOption, err := unity.GetOptionAutoOption(options, instance.AttributeID)
-			if err == nil {
-				s.UpdateAutoTextureMap(autoOption, instance.Value)
-			}
-		}
-
 		if _, err := s.UpsertSpaceAttribute(
 			instance.AttributeID, modify.MergeWith(instance.AttributePayload), false,
 		); err != nil {
 			return errors.WithMessagef(err, "failed to upsert space attribute: %+v", instance.AttributeID)
 		}
+
+		effectiveOptions, ok := s.GetSpaceAttributeEffectiveOptions(instance.AttributeID)
+		if !ok {
+			continue
+		}
+		autoOption, err := unity.GetOptionAutoOption(instance.AttributeID, effectiveOptions)
+		if err != nil {
+			continue
+		}
+		s.UpdateAutoTextureMap(autoOption, instance.Value)
 	}
 
 	return nil
@@ -461,8 +463,8 @@ func (s *Space) unityAutoOnSpaceAttributeChanged(
 	value *entry.AttributeValue,
 	effectiveOptions *entry.AttributeOptions,
 ) error {
-	s.log.Infof("attribute Unuty Auto processing for %+v %+v", s.id, attributeID)
-	autoOption, err := unity.GetOptionAutoOption(effectiveOptions, attributeID)
+	s.log.Infof("attribute Unuty Auto processing for %+v %+v", s.GetID(), attributeID)
+	autoOption, err := unity.GetOptionAutoOption(attributeID, effectiveOptions)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to get auto option: %+v", attributeID)
 	}
@@ -470,30 +472,32 @@ func (s *Space) unityAutoOnSpaceAttributeChanged(
 		return nil
 	}
 
-	s.log.Infof("unity-auto stage3 for %+v %+v", s.id, attributeID)
+	s.log.Infof("unity-auto stage3 for %+v %+v", s.GetID(), attributeID)
 
 	hash, err := unity.PrerenderAutoValue(s.ctx, autoOption, value)
 	if err != nil {
 		return errors.WithMessagef(err, "prerendering error: %+v", attributeID)
 	}
 
-	s.log.Infof("unity-auto stage4 for %+v %+v %+v", s.id, attributeID, hash)
+	s.log.Infof("unity-auto stage4 for %+v %+v %+v", s.GetID(), attributeID, hash)
 
 	//dirty hack to set auto_render_hash value without triggering processing again
 	// TODO: fix it properly later
 	if hash != nil && hash.Hash != "" {
-		s.spaceAttributes.Mu.Lock()
+		return func() error {
+			s.spaceAttributes.Mu.Lock()
+			defer s.spaceAttributes.Mu.Unlock()
 
-		(*value)["auto_render_hash"] = hash.Hash
+			(*value)["auto_render_hash"] = hash.Hash
 
-		if err := s.db.SpaceAttributesUpdateSpaceAttributeValue(
-			s.ctx, entry.NewSpaceAttributeID(attributeID, s.GetID()), value,
-		); err != nil {
-			s.spaceAttributes.Mu.Unlock()
-			return errors.WithMessage(err, "failed to update db")
-		}
-		s.spaceAttributes.Mu.Unlock()
-		return nil
+			if err := s.db.SpaceAttributesUpdateSpaceAttributeValue(
+				s.ctx, entry.NewSpaceAttributeID(attributeID, s.GetID()), value,
+			); err != nil {
+				return errors.WithMessage(err, "failed to update db")
+			}
+
+			return nil
+		}()
 	}
 	s.SendUnityAutoAttributeMessage(
 		autoOption, value, func(m *websocket.PreparedMessage) error { return s.GetWorld().Send(m, false) },
@@ -514,12 +518,12 @@ func (s *Space) SendUnityAutoAttributeMessage(
 }
 
 func (s *Space) UpdateAutoTextureMap(
-	option *entry.UnityAutoAttributeOption,
-	value *entry.AttributeValue,
+	option *entry.UnityAutoAttributeOption, value *entry.AttributeValue,
 ) *websocket.PreparedMessage {
 	if option == nil {
 		return nil
 	}
+
 	var msg *websocket.PreparedMessage
 	switch option.SlotType {
 	case entry.UnitySlotTypeNumber:
@@ -532,7 +536,7 @@ func (s *Space) UpdateAutoTextureMap(
 			return nil
 		}
 		sendMap := map[string]int32{option.SlotName: int32(val)}
-		msg = message.GetBuilder().SetObjectAttributes(s.id, sendMap)
+		msg = message.GetBuilder().SetObjectAttributes(s.GetID(), sendMap)
 	case entry.UnitySlotTypeString:
 		v, ok := (*value)[option.ValueField]
 		if !ok {
@@ -544,7 +548,7 @@ func (s *Space) UpdateAutoTextureMap(
 		}
 
 		sendMap := map[string]string{option.SlotName: val}
-		msg = message.GetBuilder().SetObjectStrings(s.id, sendMap)
+		msg = message.GetBuilder().SetObjectStrings(s.GetID(), sendMap)
 	case entry.UnitySlotTypeTexture:
 		valField := "auto_render_hash"
 		if option.ContentType == "image" {
@@ -562,12 +566,13 @@ func (s *Space) UpdateAutoTextureMap(
 		s.renderTextureMap.Store(option.SlotName, val)
 		func() {
 			s.renderTextureMap.Mu.RLock()
-			s.textMsg.Store(message.GetBuilder().SetObjectTextures(s.id, s.renderTextureMap.Data))
-			s.renderTextureMap.Mu.RUnlock()
+			defer s.renderTextureMap.Mu.RUnlock()
+
+			s.textMsg.Store(message.GetBuilder().SetObjectTextures(s.GetID(), s.renderTextureMap.Data))
 		}()
 
 		sendMap := map[string]string{option.SlotName: val}
-		msg = message.GetBuilder().SetObjectTextures(s.id, sendMap)
+		msg = message.GetBuilder().SetObjectTextures(s.GetID(), sendMap)
 
 	}
 	return msg

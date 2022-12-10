@@ -58,9 +58,6 @@ func NewUser(id uuid.UUID, db database.DB) *User {
 }
 
 func (u *User) GetID() uuid.UUID {
-	u.mu.RLock()
-	defer u.mu.RUnlock()
-
 	return u.id
 }
 
@@ -128,11 +125,12 @@ func (u *User) Initialize(ctx context.Context) error {
 	if log == nil {
 		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
 	}
+
 	u.ctx = ctx
 	u.log = log
 	u.bufferSends.Store(true)
 	u.numSendsQueued.Store(chanIsClosed)
-	u.posMsgBuffer = message.NewSendPosBuffer(u.id)
+	u.posMsgBuffer = message.NewSendPosBuffer(u.GetID())
 	u.pos = (*cmath.Vec3)(unsafe.Add(unsafe.Pointer(&u.posMsgBuffer[0]), 16))
 	u.rotation = (*cmath.Vec3)(unsafe.Add(unsafe.Pointer(&u.posMsgBuffer[0]), 16+3*4))
 
@@ -148,7 +146,7 @@ func (u *User) SetUserType(userType universe.UserType, updateDB bool) error {
 	defer u.mu.Unlock()
 
 	if updateDB {
-		if err := u.db.UsersUpdateUserUserTypeID(u.ctx, u.id, userType.GetID()); err != nil {
+		if err := u.db.UsersUpdateUserUserTypeID(u.ctx, u.GetID(), userType.GetID()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}

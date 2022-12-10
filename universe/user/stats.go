@@ -19,7 +19,7 @@ func (u *User) AddInfluxTags(prefix string, p *write.Point) *write.Point {
 	p.AddTag(prefix+"User Type UUID", userTypeId.String())
 	p.AddTag(prefix+"User Type", userType)
 
-	p.AddTag(prefix+"User", utils.AnonymizeUUID(u.id))
+	p.AddTag(prefix+"User", utils.AnonymizeUUID(u.GetID()))
 
 	return p
 }

@@ -11,7 +11,7 @@ func (s *Space) AddSpaceTags(prefix string, p *write.Point) *write.Point {
 	if prefix != "" {
 		prefix += " "
 	}
-	p.AddTag(prefix+"Space UUID", s.id.String())
+	p.AddTag(prefix+"Space UUID", s.GetID().String())
 	p.AddTag(prefix+"Space Name", s.GetName())
 	p.AddTag(prefix+"Space Type", s.spaceType.GetName())
 	p.AddTag(prefix+"Space Type UUID", s.spaceType.GetID().String())

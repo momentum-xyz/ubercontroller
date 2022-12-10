@@ -226,7 +226,7 @@ func (n *Node) apiRemoveSpace(c *gin.Context) {
 
 	// also stop all children
 	go func() {
-		// TODO: optimize!!!
+		// TODO: fix this bloody stuff!!!
 		var removeChildren func(space universe.Space)
 		removeChildren = func(space universe.Space) {
 			for childID, child := range space.GetSpaces(false) {

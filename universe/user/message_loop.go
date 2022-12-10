@@ -17,7 +17,6 @@ func (u *User) OnMessage(msg *posbus.Message) error {
 		if err := u.UpdatePosition(msg.AsSendPos()); err != nil {
 			return errors.WithMessage(err, "failed to handle: send position")
 		}
-		return nil
 	case posbus.MsgTypeFlatBufferMessage:
 		switch msg.AsFlatBufferMessage().MsgType() {
 		default:
@@ -29,35 +28,31 @@ func (u *User) OnMessage(msg *posbus.Message) error {
 		if err := u.InteractionHandler(msg.AsTriggerInteraction()); err != nil {
 			return errors.WithMessage(err, "failed to handle: interaction")
 		}
-		return nil
 	case posbus.MsgTypeRelayToController:
 		if err := u.RelayToControllerHandler(msg.AsRelayToController()); err != nil {
 			return errors.WithMessage(err, "failed to handle: relay to controller")
 		}
-		return nil
 	case posbus.MsgTypeSwitchWorld:
 		if err := u.Teleport(msg.AsSwitchWorld()); err != nil {
 			return errors.WithMessage(err, "failed to handle: teleport")
 		}
-		return nil
 	case posbus.MsgTypeSignal:
 		if err := u.SignalsHandler(msg.AsSignal().Signal()); err != nil {
 			return errors.WithMessage(err, "failed to handle: signal")
 		}
-		return nil
 	case posbus.MsgTypeSetStaticObjectPosition:
 		if err := u.UpdateSpacePosition(msg.AsSetStaticObjectPosition()); err != nil {
 			return errors.WithMessage(err, "failed to update space position")
 		}
-		return nil
 	case posbus.MsgTypeSetObjectLockState:
 		if err := u.LockObject(msg.AsSetObjectLockState()); err != nil {
 			return errors.WithMessage(err, "failed to set object lock state")
 		}
-		return nil
+	default:
+		return errors.Errorf("unknown message: %d", msg.Type())
 	}
 
-	return errors.Errorf("unknown message: %d", msg.Type())
+	return nil
 }
 
 func (u *User) UpdateSpacePosition(msg *posbus.SetStaticObjectPosition) error {
