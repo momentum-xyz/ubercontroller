@@ -273,45 +273,61 @@ func (n *Node) Stop() error {
 func (n *Node) Load() error {
 	n.log.Infof("Loading node %s...", n.GetID())
 
-	// first stage
 	group, _ := errgroup.WithContext(n.ctx)
-	group.Go(n.assets2d.Load)
-	group.Go(n.assets3d.Load)
-	group.Go(n.userTypes.Load)
-	group.Go(n.attributeTypes.Load)
-	if err := group.Wait(); err != nil {
-		return errors.WithMessage(err, "failed to load basic data")
-	}
+	// main loading thread
+	group.Go(func() error {
+		// first stage
+		group, _ := errgroup.WithContext(n.ctx)
+		group.Go(n.assets2d.Load)
+		group.Go(n.assets3d.Load)
+		group.Go(n.userTypes.Load)
+		group.Go(n.attributeTypes.Load)
+		if err := group.Wait(); err != nil {
+			return errors.WithMessage(err, "failed to load basic data")
+		}
 
-	// second stage
-	group, _ = errgroup.WithContext(n.ctx)
-	group.Go(n.spaceTypes.Load)
-	group.Go(n.plugins.Load)
-	if err := group.Wait(); err != nil {
-		return errors.WithMessage(err, "failed to load additional data")
-	}
+		// second stage
+		group, _ = errgroup.WithContext(n.ctx)
+		group.Go(n.spaceTypes.Load)
+		group.Go(n.plugins.Load)
+		if err := group.Wait(); err != nil {
+			return errors.WithMessage(err, "failed to load additional data")
+		}
 
-	// third stage
-	group, _ = errgroup.WithContext(n.ctx)
-	group.Go(
-		func() error {
-			nodeEntry, err := n.db.NodesGetNode(n.ctx)
-			if err != nil {
-				return errors.WithMessage(err, "failed to get node")
-			}
-			if err := n.LoadFromEntry(nodeEntry.Space, false); err != nil {
-				return errors.WithMessage(err, "failed to load node from entry")
-			}
+		// third stage
+		group, _ = errgroup.WithContext(n.ctx)
+		group.Go(
+			func() error {
+				nodeEntry, err := n.db.NodesGetNode(n.ctx)
+				if err != nil {
+					return errors.WithMessage(err, "failed to get node")
+				}
+				if err := n.LoadFromEntry(nodeEntry.Space, false); err != nil {
+					return errors.WithMessage(err, "failed to load node from entry")
+				}
 
-			if err := n.loadNodeAttributes(); err != nil {
-				return errors.WithMessage(err, "failed to load node attributes")
-			}
+				if err := n.loadNodeAttributes(); err != nil {
+					return errors.WithMessage(err, "failed to load node attributes")
+				}
 
-			return nil
-		},
-	)
-	group.Go(n.worlds.Load)
-	group.Go(n.chatService.Load) // TODO: move to "background" stage
+				return nil
+			},
+		)
+		group.Go(n.worlds.Load)
+		if err := group.Wait(); err != nil {
+			return errors.WithMessage(err, "failed to load space tree")
+		}
+
+		return nil
+	})
+	// background loading thread
+	group.Go(func() error {
+		if err := n.chatService.Load(); err != nil {
+			return errors.WithMessage(err, "failed to load chat service")
+		}
+
+		return nil
+	})
 	if err := group.Wait(); err != nil {
 		return errors.WithMessage(err, "failed to load universe")
 	}
