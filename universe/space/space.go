@@ -444,18 +444,25 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 				return errors.WithMessagef(err, "failed to get spaces by parent id: %s", s.GetID())
 			}
 
+			group, _ := errgroup.WithContext(s.ctx)
 			for i := range entries {
-				space, err := s.CreateSpace(entries[i].SpaceID)
-				if err != nil {
-					return errors.WithMessagef(err, "failed to create new space: %s", entries[i].SpaceID)
-				}
-				if err := space.LoadFromEntry(entries[i], recursive); err != nil {
-					return errors.WithMessagef(err, "failed to load space from entry: %s", entries[i].SpaceID)
-				}
-				s.Children.Store(entries[i].SpaceID, space)
-			}
+				childEntry := entries[i]
 
-			return nil
+				group.Go(func() error {
+					child, err := s.CreateSpace(childEntry.SpaceID)
+					if err != nil {
+						return errors.WithMessagef(err, "failed to create new space: %s", childEntry.SpaceID)
+					}
+					if err := child.LoadFromEntry(childEntry, recursive); err != nil {
+						return errors.WithMessagef(err, "failed to load space from entry: %s", childEntry.SpaceID)
+					}
+
+					s.Children.Store(childEntry.SpaceID, child)
+
+					return nil
+				})
+			}
+			return group.Wait()
 		},
 	)
 	return group.Wait()

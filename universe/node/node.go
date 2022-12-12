@@ -303,7 +303,11 @@ func (n *Node) Load() error {
 				return errors.WithMessage(err, "failed to load node from entry")
 			}
 
-			return n.loadNodeAttributes()
+			if err := n.loadNodeAttributes(); err != nil {
+				return errors.WithMessage(err, "failed to load node attributes")
+			}
+
+			return nil
 		},
 	)
 	group.Go(n.worlds.Load)

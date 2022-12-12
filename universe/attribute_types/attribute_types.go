@@ -2,7 +2,6 @@ package attribute_types
 
 import (
 	"context"
-
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -173,19 +172,22 @@ func (a *AttributeTypes) Load() error {
 	}
 
 	for i := range entries {
-		attributeType, err := a.CreateAttributeType(entries[i].AttributeTypeID)
+		typeEntry := entries[i]
+
+		attributeType, err := a.CreateAttributeType(typeEntry.AttributeTypeID)
 		if err != nil {
-			return errors.WithMessagef(err, "failed to create new attribute type: %s", entries[i].AttributeTypeID)
+			return errors.WithMessagef(err, "failed to create new attribute type: %s", typeEntry.AttributeTypeID)
 		}
-		if err := attributeType.LoadFromEntry(entries[i]); err != nil {
-			return errors.WithMessagef(err, "failed to load attribute type from entry: %s", entries[i].AttributeTypeID)
+		if err := attributeType.LoadFromEntry(typeEntry); err != nil {
+			return errors.WithMessagef(err, "failed to load attribute type from entry: %s", typeEntry.AttributeTypeID)
 		}
-		a.attributeTypes.Store(entries[i].AttributeTypeID, attributeType)
+
+		a.attributeTypes.Store(typeEntry.AttributeTypeID, attributeType)
 	}
 
 	universe.GetNode().AddAPIRegister(a)
 
-	a.log.Info("Attribute types loaded")
+	a.log.Infof("Attribute types loaded: %d", a.attributeTypes.Len())
 
 	return nil
 }

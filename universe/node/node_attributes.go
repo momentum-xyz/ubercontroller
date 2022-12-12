@@ -2,11 +2,10 @@ package node
 
 import (
 	"github.com/hashicorp/go-multierror"
-	"github.com/pkg/errors"
-
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
+	"github.com/pkg/errors"
 )
 
 func (n *Node) UpsertNodeAttribute(
@@ -241,18 +240,24 @@ func (n *Node) RemoveNodeAttributes(attributeIDs []entry.AttributeID, updateDB b
 }
 
 func (n *Node) loadNodeAttributes() error {
+	n.log.Infof("Loading node attributes: %s...", n.GetID())
+
 	entries, err := n.db.NodeAttributesGetNodeAttributes(n.ctx)
 	if err != nil {
 		return errors.WithMessage(err, "failed to get node attributes")
 	}
 
-	for _, instance := range entries {
+	for i := range entries {
+		entry := entries[i]
+
 		if _, err := n.UpsertNodeAttribute(
-			instance.AttributeID, modify.MergeWith(instance.AttributePayload), false,
+			entry.AttributeID, modify.MergeWith(entry.AttributePayload), false,
 		); err != nil {
-			return errors.WithMessagef(err, "failed to upsert node attribute: %+v", instance.NodeAttributeID)
+			return errors.WithMessagef(err, "failed to upsert node attribute: %+v", entry.NodeAttributeID)
 		}
 	}
+
+	n.log.Infof("Node attributes loaded: %s: %d", n.GetID(), n.nodeAttributes.Len())
 
 	return nil
 }

@@ -108,8 +108,8 @@ func (a *Asset2d) GetEntry() *entry.Asset2d {
 }
 
 func (a *Asset2d) LoadFromEntry(entry *entry.Asset2d) error {
-	if entry.Asset2dID != a.entry.Asset2dID {
-		return errors.Errorf("asset 2d ids mismatch: %s != %s", entry.Asset2dID, a.entry.Asset2dID)
+	if entry.Asset2dID != a.GetID() {
+		return errors.Errorf("asset 2d ids mismatch: %s != %s", entry.Asset2dID, a.GetID())
 	}
 
 	a.entry = entry

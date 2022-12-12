@@ -253,20 +253,20 @@ func (s *SpaceType) LoadFromEntry(entry *entry.SpaceType) error {
 	if entry.Asset2dID != nil {
 		asset2d, ok := node.GetAssets2d().GetAsset2d(*entry.Asset2dID)
 		if !ok {
-			return errors.Errorf("asset 2d not found: %s", *entry.Asset2dID)
+			return errors.Errorf("asset 2d not found: %s", entry.Asset2dID)
 		}
 		if err := s.SetAsset2d(asset2d, false); err != nil {
-			return errors.WithMessagef(err, "failed to set asset 2d: %s", *entry.Asset2dID)
+			return errors.WithMessagef(err, "failed to set asset 2d: %s", entry.Asset2dID)
 		}
 	}
 
 	if entry.Asset3dID != nil {
 		asset3d, ok := node.GetAssets3d().GetAsset3d(*entry.Asset3dID)
 		if !ok {
-			return errors.Errorf("asset 3d not found: %s", *entry.Asset3dID)
+			return errors.Errorf("asset 3d not found: %s", entry.Asset3dID)
 		}
 		if err := s.SetAsset3d(asset3d, false); err != nil {
-			return errors.WithMessagef(err, "failed to set asset 3d: %s", *entry.Asset3dID)
+			return errors.WithMessagef(err, "failed to set asset 3d: %s", entry.Asset3dID)
 		}
 	}
 

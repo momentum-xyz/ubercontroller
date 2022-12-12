@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types"
@@ -168,20 +169,31 @@ func (s *SpaceTypes) Load() error {
 		return errors.WithMessage(err, "failed to get space types")
 	}
 
+	group, _ := errgroup.WithContext(s.ctx)
 	for i := range entries {
-		spaceType, err := s.CreateSpaceType(entries[i].SpaceTypeID)
-		if err != nil {
-			return errors.WithMessagef(err, "failed to create new space type: %s", entries[i].SpaceTypeID)
-		}
-		if err := spaceType.LoadFromEntry(entries[i]); err != nil {
-			return errors.WithMessagef(err, "failed to load space type from entry: %s", entries[i].SpaceTypeID)
-		}
-		s.spaceTypes.Store(entries[i].SpaceTypeID, spaceType)
+		typeEntry := entries[i]
+
+		group.Go(func() error {
+			spaceType, err := s.CreateSpaceType(typeEntry.SpaceTypeID)
+			if err != nil {
+				return errors.WithMessagef(err, "failed to create new space type: %s", typeEntry.SpaceTypeID)
+			}
+			if err := spaceType.LoadFromEntry(typeEntry); err != nil {
+				return errors.WithMessagef(err, "failed to load space type from entry: %s", typeEntry.SpaceTypeID)
+			}
+
+			s.spaceTypes.Store(typeEntry.SpaceTypeID, spaceType)
+
+			return nil
+		})
+	}
+	if err := group.Wait(); err != nil {
+		return err
 	}
 
 	universe.GetNode().AddAPIRegister(s)
 
-	s.log.Info("Space types loaded")
+	s.log.Infof("Space types loaded: %d", s.spaceTypes.Len())
 
 	return nil
 }

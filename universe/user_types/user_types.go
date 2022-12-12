@@ -2,7 +2,6 @@ package user_types
 
 import (
 	"context"
-
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -32,114 +31,114 @@ func NewUserTypes(db database.DB) *UserTypes {
 	}
 }
 
-func (ut *UserTypes) Initialize(ctx context.Context) error {
+func (u *UserTypes) Initialize(ctx context.Context) error {
 	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
 	if log == nil {
 		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
 	}
 
-	ut.ctx = ctx
-	ut.log = log
+	u.ctx = ctx
+	u.log = log
 
 	return nil
 }
 
-func (ut *UserTypes) CreateUserType(userTypeID uuid.UUID) (universe.UserType, error) {
-	userType := user_type.NewUserType(userTypeID, ut.db)
+func (u *UserTypes) CreateUserType(userTypeID uuid.UUID) (universe.UserType, error) {
+	userType := user_type.NewUserType(userTypeID, u.db)
 
-	if err := userType.Initialize(ut.ctx); err != nil {
+	if err := userType.Initialize(u.ctx); err != nil {
 		return nil, errors.WithMessagef(err, "failed to initialize user type: %s", userTypeID)
 	}
-	if err := ut.AddUserType(userType, false); err != nil {
+	if err := u.AddUserType(userType, false); err != nil {
 		return nil, errors.WithMessagef(err, "failed to add user type: %s", userTypeID)
 	}
 
 	return userType, nil
 }
 
-func (ut *UserTypes) FilterUserTypes(predicateFn universe.UserTypesFilterPredicateFn) map[uuid.UUID]universe.UserType {
-	return ut.userTypes.Filter(predicateFn)
+func (u *UserTypes) FilterUserTypes(predicateFn universe.UserTypesFilterPredicateFn) map[uuid.UUID]universe.UserType {
+	return u.userTypes.Filter(predicateFn)
 }
 
-func (ut *UserTypes) GetUserType(userTypeID uuid.UUID) (universe.UserType, bool) {
-	userType, ok := ut.userTypes.Load(userTypeID)
+func (u *UserTypes) GetUserType(userTypeID uuid.UUID) (universe.UserType, bool) {
+	userType, ok := u.userTypes.Load(userTypeID)
 	return userType, ok
 }
 
-func (ut *UserTypes) GetUserTypes() map[uuid.UUID]universe.UserType {
-	ut.userTypes.Mu.RLock()
-	defer ut.userTypes.Mu.RUnlock()
+func (u *UserTypes) GetUserTypes() map[uuid.UUID]universe.UserType {
+	u.userTypes.Mu.RLock()
+	defer u.userTypes.Mu.RUnlock()
 
-	userTypes := make(map[uuid.UUID]universe.UserType, len(ut.userTypes.Data))
+	userTypes := make(map[uuid.UUID]universe.UserType, len(u.userTypes.Data))
 
-	for id, userType := range ut.userTypes.Data {
+	for id, userType := range u.userTypes.Data {
 		userTypes[id] = userType
 	}
 
 	return userTypes
 }
 
-func (ut *UserTypes) AddUserType(userType universe.UserType, updateDB bool) error {
-	ut.userTypes.Mu.Lock()
-	defer ut.userTypes.Mu.Unlock()
+func (u *UserTypes) AddUserType(userType universe.UserType, updateDB bool) error {
+	u.userTypes.Mu.Lock()
+	defer u.userTypes.Mu.Unlock()
 
 	if updateDB {
-		if err := ut.db.UserTypesUpsertUserType(ut.ctx, userType.GetEntry()); err != nil {
+		if err := u.db.UserTypesUpsertUserType(u.ctx, userType.GetEntry()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
 
-	ut.userTypes.Data[userType.GetID()] = userType
+	u.userTypes.Data[userType.GetID()] = userType
 
 	return nil
 }
 
-func (ut *UserTypes) AddUserTypes(userTypes []universe.UserType, updateDB bool) error {
-	ut.userTypes.Mu.Lock()
-	defer ut.userTypes.Mu.Unlock()
+func (u *UserTypes) AddUserTypes(userTypes []universe.UserType, updateDB bool) error {
+	u.userTypes.Mu.Lock()
+	defer u.userTypes.Mu.Unlock()
 
 	if updateDB {
 		entries := make([]*entry.UserType, len(userTypes))
 		for i := range userTypes {
 			entries[i] = userTypes[i].GetEntry()
 		}
-		if err := ut.db.UserTypesUpsertUserTypes(ut.ctx, entries); err != nil {
+		if err := u.db.UserTypesUpsertUserTypes(u.ctx, entries); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
 
 	for i := range userTypes {
-		ut.userTypes.Data[userTypes[i].GetID()] = userTypes[i]
+		u.userTypes.Data[userTypes[i].GetID()] = userTypes[i]
 	}
 
 	return nil
 }
 
-func (ut *UserTypes) RemoveUserType(userType universe.UserType, updateDB bool) error {
-	ut.userTypes.Mu.Lock()
-	defer ut.userTypes.Mu.Unlock()
+func (u *UserTypes) RemoveUserType(userType universe.UserType, updateDB bool) error {
+	u.userTypes.Mu.Lock()
+	defer u.userTypes.Mu.Unlock()
 
-	if _, ok := ut.userTypes.Data[userType.GetID()]; !ok {
+	if _, ok := u.userTypes.Data[userType.GetID()]; !ok {
 		return errors.Errorf("user type not found: %s", userType.GetID())
 	}
 
 	if updateDB {
-		if err := ut.db.UserTypesRemoveUserTypeByID(ut.ctx, userType.GetID()); err != nil {
+		if err := u.db.UserTypesRemoveUserTypeByID(u.ctx, userType.GetID()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
 
-	delete(ut.userTypes.Data, userType.GetID())
+	delete(u.userTypes.Data, userType.GetID())
 
 	return nil
 }
 
-func (ut *UserTypes) RemoveUserTypes(userTypes []universe.UserType, updateDB bool) error {
-	ut.userTypes.Mu.Lock()
-	defer ut.userTypes.Mu.Unlock()
+func (u *UserTypes) RemoveUserTypes(userTypes []universe.UserType, updateDB bool) error {
+	u.userTypes.Mu.Lock()
+	defer u.userTypes.Mu.Unlock()
 
 	for i := range userTypes {
-		if _, ok := ut.userTypes.Data[userTypes[i].GetID()]; !ok {
+		if _, ok := u.userTypes.Data[userTypes[i].GetID()]; !ok {
 			return errors.Errorf("user type not found: %s", userTypes[i].GetID())
 		}
 	}
@@ -149,60 +148,63 @@ func (ut *UserTypes) RemoveUserTypes(userTypes []universe.UserType, updateDB boo
 		for i := range userTypes {
 			ids[i] = userTypes[i].GetID()
 		}
-		if err := ut.db.UserTypesRemoveUserTypesByIDs(ut.ctx, ids); err != nil {
+		if err := u.db.UserTypesRemoveUserTypesByIDs(u.ctx, ids); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
 
 	for i := range userTypes {
-		delete(ut.userTypes.Data, userTypes[i].GetID())
+		delete(u.userTypes.Data, userTypes[i].GetID())
 	}
 
 	return nil
 }
 
-func (ut *UserTypes) Load() error {
-	ut.log.Info("Loading user types...")
+func (u *UserTypes) Load() error {
+	u.log.Info("Loading user types...")
 
-	entries, err := ut.db.UserTypesGetUserTypes(ut.ctx)
+	entries, err := u.db.UserTypesGetUserTypes(u.ctx)
 	if err != nil {
 		return errors.WithMessage(err, "failed to get user types")
 	}
 
 	for i := range entries {
-		userType, err := ut.CreateUserType(entries[i].UserTypeID)
+		typeEntry := entries[i]
+
+		userType, err := u.CreateUserType(typeEntry.UserTypeID)
 		if err != nil {
-			return errors.WithMessagef(err, "failed to create new user type: %s", entries[i].UserTypeID)
+			return errors.WithMessagef(err, "failed to create new user type: %s", typeEntry.UserTypeID)
 		}
-		if err := userType.LoadFromEntry(entries[i]); err != nil {
-			return errors.WithMessagef(err, "failed to load user type from entry: %s", entries[i].UserTypeID)
+		if err := userType.LoadFromEntry(typeEntry); err != nil {
+			return errors.WithMessagef(err, "failed to load user type from entry: %s", typeEntry.UserTypeID)
 		}
-		ut.userTypes.Store(entries[i].UserTypeID, userType)
+
+		u.userTypes.Store(typeEntry.UserTypeID, userType)
 	}
 
-	universe.GetNode().AddAPIRegister(ut)
+	universe.GetNode().AddAPIRegister(u)
 
-	ut.log.Info("User types loaded")
+	u.log.Infof("User types loaded: %d", u.userTypes.Len())
 
 	return nil
 }
 
-func (ut *UserTypes) Save() error {
-	ut.log.Info("Saving spate types...")
+func (u *UserTypes) Save() error {
+	u.log.Info("Saving spate types...")
 
-	ut.userTypes.Mu.RLock()
-	defer ut.userTypes.Mu.RUnlock()
+	u.userTypes.Mu.RLock()
+	defer u.userTypes.Mu.RUnlock()
 
-	entries := make([]*entry.UserType, 0, len(ut.userTypes.Data))
-	for _, UserType := range ut.userTypes.Data {
+	entries := make([]*entry.UserType, 0, len(u.userTypes.Data))
+	for _, UserType := range u.userTypes.Data {
 		entries = append(entries, UserType.GetEntry())
 	}
 
-	if err := ut.db.UserTypesUpsertUserTypes(ut.ctx, entries); err != nil {
+	if err := u.db.UserTypesUpsertUserTypes(u.ctx, entries); err != nil {
 		return errors.WithMessage(err, "failed to upsert user types")
 	}
 
-	ut.log.Info("User types saved")
+	u.log.Info("User types saved")
 
 	return nil
 }

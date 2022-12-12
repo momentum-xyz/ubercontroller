@@ -3,9 +3,6 @@ package assets_2d
 import (
 	"context"
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
-	"go.uber.org/zap"
-
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -13,6 +10,8 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/asset_2d"
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
 )
 
 var _ universe.Assets2d = (*Assets2d)(nil)
@@ -169,19 +168,22 @@ func (a *Assets2d) Load() error {
 	}
 
 	for i := range entries {
-		asset2d, err := a.CreateAsset2d(entries[i].Asset2dID)
+		assetEntry := entries[i]
+
+		asset2d, err := a.CreateAsset2d(assetEntry.Asset2dID)
 		if err != nil {
-			return errors.WithMessagef(err, "failed to create new asset 2d: %s", entries[i].Asset2dID)
+			return errors.WithMessagef(err, "failed to create new asset 2d: %s", assetEntry.Asset2dID)
 		}
-		if err := asset2d.LoadFromEntry(entries[i]); err != nil {
-			return errors.WithMessagef(err, "failed to load asset 2d from entry: %s", entries[i].Asset2dID)
+		if err := asset2d.LoadFromEntry(assetEntry); err != nil {
+			return errors.WithMessagef(err, "failed to load asset 2d from entry: %s", assetEntry.Asset2dID)
 		}
-		a.assets.Store(entries[i].Asset2dID, asset2d)
+
+		a.assets.Store(assetEntry.Asset2dID, asset2d)
 	}
 
 	universe.GetNode().AddAPIRegister(a)
 
-	a.log.Info("Assets 2d loaded")
+	a.log.Infof("Assets 2d loaded: %d", a.assets.Len())
 
 	return nil
 }

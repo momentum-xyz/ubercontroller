@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"context"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -117,20 +118,31 @@ func (p *Plugins) Load() error {
 		return errors.WithMessage(err, "failed to get plugins")
 	}
 
+	group, _ := errgroup.WithContext(p.ctx)
 	for i := range entries {
-		plugin, err := p.CreatePlugin(entries[i].PluginID)
-		if err != nil {
-			return errors.WithMessagef(err, "failed to create new plugin: %s", entries[i].PluginID)
-		}
-		if err := plugin.LoadFromEntry(entries[i]); err != nil {
-			return errors.WithMessagef(err, "failed to load plugin from entry: %s", entries[i].PluginID)
-		}
-		p.plugins.Store(entries[i].PluginID, plugin)
+		pluginEntry := entries[i]
+
+		group.Go(func() error {
+			plugin, err := p.CreatePlugin(pluginEntry.PluginID)
+			if err != nil {
+				return errors.WithMessagef(err, "failed to create new plugin: %s", pluginEntry.PluginID)
+			}
+			if err := plugin.LoadFromEntry(pluginEntry); err != nil {
+				return errors.WithMessagef(err, "failed to load plugin from entry: %s", pluginEntry.PluginID)
+			}
+
+			p.plugins.Store(pluginEntry.PluginID, plugin)
+
+			return nil
+		})
+	}
+	if err := group.Wait(); err != nil {
+		return err
 	}
 
 	universe.GetNode().AddAPIRegister(p)
 
-	p.log.Info("Plugins loaded")
+	p.log.Infof("Plugins loaded: %d", p.plugins.Len())
 
 	return nil
 }

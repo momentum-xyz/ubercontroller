@@ -245,7 +245,7 @@ func (w *Worlds) Load() error {
 	worldsCount := len(worldIDs)
 
 	// modify batchSize when database consumption per world loading will be changed
-	batchSize := int(w.cfg.Postgres.MAXCONNS / 2)
+	batchSize := len(worldIDs) // int(w.cfg.Postgres.MAXCONNS / 2)
 	for len(worldIDs) > 0 {
 		batch := worldIDs
 		if len(worldIDs) > batchSize {
@@ -271,7 +271,6 @@ func (w *Worlds) loadBatch(worldIDs []uuid.UUID) error {
 	w.log.Info("Loading worlds batch...")
 
 	group, _ := errgroup.WithContext(w.ctx)
-
 	for i := range worldIDs {
 		worldID := worldIDs[i]
 
@@ -283,17 +282,17 @@ func (w *Worlds) loadBatch(worldIDs []uuid.UUID) error {
 			if err := world.Load(); err != nil {
 				return errors.WithMessagef(err, "failed to load world: %s", worldID)
 			}
+
 			w.worlds.Store(worldID, world)
 
 			return nil
 		})
 	}
-
 	if err := group.Wait(); err != nil {
 		return err
 	}
 
-	w.log.Infof("Worlds batch loaded: %d", len(worldIDs))
+	w.log.Infof("Worlds batch loaded: %d", w.worlds.Len())
 
 	return nil
 }

@@ -2,7 +2,6 @@ package assets_3d
 
 import (
 	"context"
-
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -201,19 +200,22 @@ func (a *Assets3d) Load() error {
 	}
 
 	for i := range entries {
-		asset3d, err := a.CreateAsset3d(entries[i].Asset3dID)
+		assetEntry := entries[i]
+
+		asset3d, err := a.CreateAsset3d(assetEntry.Asset3dID)
 		if err != nil {
-			return errors.WithMessagef(err, "failed to create new asset 3d: %s", entries[i].Asset3dID)
+			return errors.WithMessagef(err, "failed to create new asset 3d: %s", assetEntry.Asset3dID)
 		}
-		if err := asset3d.LoadFromEntry(entries[i]); err != nil {
-			return errors.WithMessagef(err, "failed to load asset 3d from entry: %s", entries[i].Asset3dID)
+		if err := asset3d.LoadFromEntry(assetEntry); err != nil {
+			return errors.WithMessagef(err, "failed to load asset 3d from entry: %s", assetEntry.Asset3dID)
 		}
-		a.assets.Store(entries[i].Asset3dID, asset3d)
+
+		a.assets.Store(assetEntry.Asset3dID, asset3d)
 	}
 
 	universe.GetNode().AddAPIRegister(a)
 
-	a.log.Info("Assets 3d loaded")
+	a.log.Infof("Assets 3d loaded: %d", a.assets.Len())
 
 	return nil
 }

@@ -73,7 +73,9 @@ func (s *StreamChat) Load() error {
 	if err := s.updateSettings(); err != nil {
 		return err
 	}
+
 	universe.GetNode().AddAPIRegister(s)
+
 	return nil
 }
 

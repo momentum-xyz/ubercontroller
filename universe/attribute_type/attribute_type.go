@@ -125,11 +125,9 @@ func (a *AttributeType) GetEntry() *entry.AttributeType {
 }
 
 func (a *AttributeType) LoadFromEntry(entry *entry.AttributeType) error {
-	if entry.AttributeTypeID != a.id {
-		return errors.Errorf("attribute type ids mismatch: %s != %s", entry.AttributeTypeID, a.id)
+	if entry.AttributeTypeID != a.GetID() {
+		return errors.Errorf("attribute type ids mismatch: %s != %s", entry.AttributeTypeID, a.GetID())
 	}
-
-	a.id = entry.AttributeTypeID
 
 	if err := a.SetDescription(entry.Description, false); err != nil {
 		return errors.WithMessage(err, "failed to set description")

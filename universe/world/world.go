@@ -188,7 +188,7 @@ func (w *World) broadcastPositions() {
 }
 
 func (w *World) Load() error {
-	w.log.Infof("Loading world: %s", w.GetID())
+	w.log.Infof("Loading world: %s...", w.GetID())
 
 	entry, err := w.db.SpacesGetSpaceByID(w.ctx, w.GetID())
 	if err != nil {

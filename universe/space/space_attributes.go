@@ -5,6 +5,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/momentum-xyz/ubercontroller/universe/common/unity"
 	"github.com/pkg/errors"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/message"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -321,23 +322,35 @@ func (s *Space) loadSpaceAttributes() error {
 		return errors.WithMessage(err, "failed to get space attributes")
 	}
 
-	for _, instance := range entries {
-		if _, err := s.UpsertSpaceAttribute(
-			instance.AttributeID, modify.MergeWith(instance.AttributePayload), false,
-		); err != nil {
-			return errors.WithMessagef(err, "failed to upsert space attribute: %+v", instance.AttributeID)
-		}
+	group, _ := errgroup.WithContext(s.ctx)
+	for i := range entries {
+		entry := entries[i]
 
-		effectiveOptions, ok := s.GetSpaceAttributeEffectiveOptions(instance.AttributeID)
-		if !ok {
-			continue
-		}
-		autoOption, err := unity.GetOptionAutoOption(instance.AttributeID, effectiveOptions)
-		if err != nil {
-			continue
-		}
-		s.UpdateAutoTextureMap(autoOption, instance.Value)
+		group.Go(func() error {
+			if _, err := s.UpsertSpaceAttribute(
+				entry.AttributeID, modify.MergeWith(entry.AttributePayload), false,
+			); err != nil {
+				return errors.WithMessagef(err, "failed to upsert space attribute: %+v", entry.AttributeID)
+			}
+
+			effectiveOptions, ok := s.GetSpaceAttributeEffectiveOptions(entry.AttributeID)
+			if !ok {
+				return nil
+			}
+			autoOption, err := unity.GetOptionAutoOption(entry.AttributeID, effectiveOptions)
+			if err != nil {
+				return errors.WithMessagef(err, "failed to get option auto option: %+v", entry)
+			}
+			s.UpdateAutoTextureMap(autoOption, entry.Value)
+
+			return nil
+		})
 	}
+	if err := group.Wait(); err != nil {
+		return err
+	}
+
+	s.log.Debugf("Space attributes loaded: %s: %d", s.GetID(), s.spaceAttributes.Len())
 
 	return nil
 }
