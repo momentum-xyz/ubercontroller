@@ -101,7 +101,7 @@ func (s *Space) GetSpaceAttributesOptions(recursive bool) map[entry.SpaceAttribu
 	for attributeID, payload := range s.spaceAttributes.Data {
 		spaceAttributeID := entry.NewSpaceAttributeID(attributeID, s.GetID())
 		if payload == nil {
-			options[spaceAttributeID] = payload.Options
+			options[spaceAttributeID] = nil
 			continue
 		}
 		options[spaceAttributeID] = payload.Options

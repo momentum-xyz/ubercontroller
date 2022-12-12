@@ -144,9 +144,16 @@ func (db *DB) UserAttributesUpsertUserAttribute(
 		return nil, errors.WithMessage(err, "failed to modify attribute payload")
 	}
 
+	var value *entry.AttributeValue
+	var options *entry.AttributeOptions
+	if payload != nil {
+		value = payload.Value
+		options = payload.Options
+	}
+
 	if _, err := db.conn.Exec(
 		ctx, upsertUserAttributeQuery,
-		userAttributeID.PluginID, userAttributeID.Name, userAttributeID.UserID, payload.Value, payload.Options,
+		userAttributeID.PluginID, userAttributeID.Name, userAttributeID.UserID, value, options,
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to exec db")
 	}

@@ -189,10 +189,17 @@ func (db *DB) SpaceUserAttributesUpsertSpaceUserAttribute(
 		return nil, errors.WithMessage(err, "failed to modify payload")
 	}
 
+	var value *entry.AttributeValue
+	var options *entry.AttributeOptions
+	if payload != nil {
+		value = payload.Value
+		options = payload.Options
+	}
+
 	if _, err := db.conn.Exec(
 		ctx, upsertSpaceUserAttributeQuery, spaceUserAttributeID.PluginID, spaceUserAttributeID.Name,
 		spaceUserAttributeID.SpaceID, spaceUserAttributeID.UserID,
-		payload.Value, payload.Options,
+		value, options,
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to exec db")
 	}
