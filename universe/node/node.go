@@ -213,9 +213,13 @@ func (n *Node) AddSpaceToAllSpaces(space universe.Space) error {
 		return errors.Errorf("space has nil world")
 	}
 
+	if err := world.AddSpaceToAllSpaces(space); err != nil {
+		return errors.WithMessage(err, "failed to add space to world all spaces")
+	}
+
 	n.spaceIDToWorld.Store(space.GetID(), world)
 
-	return world.AddSpaceToAllSpaces(space)
+	return nil
 }
 
 func (n *Node) RemoveSpaceFromAllSpaces(space universe.Space) (bool, error) {
