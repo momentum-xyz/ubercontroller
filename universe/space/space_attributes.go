@@ -298,6 +298,7 @@ func (s *Space) RemoveSpaceAttribute(attributeID entry.AttributeID, updateDB boo
 // TODO: optimize
 func (s *Space) RemoveSpaceAttributes(attributeIDs []entry.AttributeID, updateDB bool) (bool, error) {
 	res := true
+
 	var errs *multierror.Error
 	for i := range attributeIDs {
 		removed, err := s.RemoveSpaceAttribute(attributeIDs[i], updateDB)
@@ -311,6 +312,7 @@ func (s *Space) RemoveSpaceAttributes(attributeIDs []entry.AttributeID, updateDB
 			res = false
 		}
 	}
+
 	return res, errs.ErrorOrNil()
 }
 

@@ -200,35 +200,30 @@ func (w *Worlds) Run() error {
 	w.worlds.Mu.RLock()
 	defer w.worlds.Mu.RUnlock()
 
+	var errs *multierror.Error
 	for _, world := range w.worlds.Data {
 		if err := world.Run(); err != nil {
-			w.log.Error(errors.WithMessagef(err, "Worlds: Run: failed to run world: %s", world.GetID()))
+			errs = multierror.Append(errs, errors.WithMessagef(err, "failed to run world: %s", world.GetID()))
 		}
 		world.SetEnabled(true)
 	}
 
-	return nil
+	return errs.ErrorOrNil()
 }
 
 func (w *Worlds) Stop() error {
 	w.worlds.Mu.RLock()
 	defer w.worlds.Mu.RUnlock()
 
-	group, _ := errgroup.WithContext(w.ctx)
-
+	var errs *multierror.Error
 	for _, world := range w.worlds.Data {
-		world := world
-
-		group.Go(func() error {
-			if err := world.Stop(); err != nil {
-				return errors.WithMessagef(err, "failed to stop world: %s", world.GetID())
-			}
-			world.SetEnabled(false)
-			return nil
-		})
+		if err := world.Stop(); err != nil {
+			errs = multierror.Append(errs, errors.WithMessagef(err, "failed to stop world: %s", world.GetID()))
+		}
+		world.SetEnabled(false)
 	}
 
-	return group.Wait()
+	return errs.ErrorOrNil()
 }
 
 func (w *Worlds) Load() error {

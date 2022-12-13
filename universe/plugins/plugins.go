@@ -63,8 +63,7 @@ func (p *Plugins) FilterPlugins(predicateFn universe.PluginsFilterPredicateFn) m
 }
 
 func (p *Plugins) GetPlugin(pluginID uuid.UUID) (universe.Plugin, bool) {
-	plugin, ok := p.plugins.Load(pluginID)
-	return plugin, ok
+	return p.plugins.Load(pluginID)
 }
 
 func (p *Plugins) GetPlugins() map[uuid.UUID]universe.Plugin {
@@ -130,8 +129,6 @@ func (p *Plugins) Load() error {
 			if err := plugin.LoadFromEntry(pluginEntry); err != nil {
 				return errors.WithMessagef(err, "failed to load plugin from entry: %s", pluginEntry.PluginID)
 			}
-
-			p.plugins.Store(pluginEntry.PluginID, plugin)
 
 			return nil
 		})

@@ -260,8 +260,8 @@ func removeChildren(space universe.Space) error {
 // RemoveSpaces return true in first value if all spaces with space ids was removed.
 func (s *Space) RemoveSpaces(spaces []universe.Space, recursive, updateDB bool) (bool, error) {
 	// TODO: optimize
-
 	res := true
+
 	var errs *multierror.Error
 	for i := range spaces {
 		removed, err := s.RemoveSpace(spaces[i], recursive, updateDB)
@@ -272,5 +272,6 @@ func (s *Space) RemoveSpaces(spaces []universe.Space, recursive, updateDB bool) 
 			res = false
 		}
 	}
+
 	return res, errs.ErrorOrNil()
 }

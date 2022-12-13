@@ -224,6 +224,7 @@ func (n *Node) RemoveNodeAttribute(attributeID entry.AttributeID, updateDB bool)
 
 func (n *Node) RemoveNodeAttributes(attributeIDs []entry.AttributeID, updateDB bool) (bool, error) {
 	res := true
+
 	var errs *multierror.Error
 	for i := range attributeIDs {
 		removed, err := n.RemoveNodeAttribute(attributeIDs[i], updateDB)
@@ -236,6 +237,7 @@ func (n *Node) RemoveNodeAttributes(attributeIDs []entry.AttributeID, updateDB b
 			res = false
 		}
 	}
+
 	return res, errs.ErrorOrNil()
 }
 
