@@ -3,16 +3,14 @@ package space
 import (
 	"github.com/gorilla/websocket"
 	"github.com/hashicorp/go-multierror"
-	"github.com/momentum-xyz/ubercontroller/universe/common/unity"
-	"github.com/pkg/errors"
-	"golang.org/x/sync/errgroup"
-
 	"github.com/momentum-xyz/ubercontroller/pkg/message"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/common/posbus"
+	"github.com/momentum-xyz/ubercontroller/universe/common/unity"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
+	"github.com/pkg/errors"
 )
 
 func (s *Space) GetSpaceAttributeValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool) {
@@ -322,32 +320,24 @@ func (s *Space) loadSpaceAttributes() error {
 		return errors.WithMessage(err, "failed to get space attributes")
 	}
 
-	group, _ := errgroup.WithContext(s.ctx)
 	for i := range entries {
 		entry := entries[i]
 
-		group.Go(func() error {
-			if _, err := s.UpsertSpaceAttribute(
-				entry.AttributeID, modify.MergeWith(entry.AttributePayload), false,
-			); err != nil {
-				return errors.WithMessagef(err, "failed to upsert space attribute: %+v", entry.AttributeID)
-			}
+		if _, err := s.UpsertSpaceAttribute(
+			entry.AttributeID, modify.MergeWith(entry.AttributePayload), false,
+		); err != nil {
+			return errors.WithMessagef(err, "failed to upsert space attribute: %+v", entry.AttributeID)
+		}
 
-			effectiveOptions, ok := s.GetSpaceAttributeEffectiveOptions(entry.AttributeID)
-			if !ok {
-				return nil
-			}
-			autoOption, err := unity.GetOptionAutoOption(entry.AttributeID, effectiveOptions)
-			if err != nil {
-				return errors.WithMessagef(err, "failed to get option auto option: %+v", entry)
-			}
-			s.UpdateAutoTextureMap(autoOption, entry.Value)
-
+		effectiveOptions, ok := s.GetSpaceAttributeEffectiveOptions(entry.AttributeID)
+		if !ok {
 			return nil
-		})
-	}
-	if err := group.Wait(); err != nil {
-		return err
+		}
+		autoOption, err := unity.GetOptionAutoOption(entry.AttributeID, effectiveOptions)
+		if err != nil {
+			return errors.WithMessagef(err, "failed to get option auto option: %+v", entry)
+		}
+		s.UpdateAutoTextureMap(autoOption, entry.Value)
 	}
 
 	s.log.Debugf("Space attributes loaded: %s: %d", s.GetID(), s.spaceAttributes.Len())

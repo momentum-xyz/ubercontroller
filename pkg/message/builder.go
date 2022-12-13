@@ -166,7 +166,6 @@ func (mb *Builder) MsgObjectDefinition(obj ObjectDefinition) *websocket.Prepared
 	builder := mb.GetBuilder()
 	defer func() {
 		mb.ReleaseBuilder(builder)
-		log.Debug("Builder: MsgObjectDefinition")
 	}()
 
 	objName := builder.CreateString(obj.Name)

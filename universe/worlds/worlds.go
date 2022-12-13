@@ -109,7 +109,6 @@ func (w *Worlds) AddWorlds(worlds []universe.World, updateDB bool) error {
 
 	if updateDB {
 		group, _ := errgroup.WithContext(w.ctx)
-
 		for i := range worlds {
 			world := worlds[i]
 
@@ -120,7 +119,6 @@ func (w *Worlds) AddWorlds(worlds []universe.World, updateDB bool) error {
 				return nil
 			})
 		}
-
 		if err := group.Wait(); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
@@ -169,7 +167,6 @@ func (w *Worlds) RemoveWorlds(worlds []universe.World, updateDB bool) error {
 
 	if updateDB {
 		group, _ := errgroup.WithContext(w.ctx)
-
 		for i := range worlds {
 			world := worlds[i]
 
@@ -187,7 +184,6 @@ func (w *Worlds) RemoveWorlds(worlds []universe.World, updateDB bool) error {
 				return nil
 			})
 		}
-
 		if err := group.Wait(); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
@@ -282,8 +278,6 @@ func (w *Worlds) loadBatch(worldIDs []uuid.UUID) error {
 			if err := world.Load(); err != nil {
 				return errors.WithMessagef(err, "failed to load world: %s", worldID)
 			}
-
-			w.worlds.Store(worldID, world)
 
 			return nil
 		})

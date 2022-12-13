@@ -50,7 +50,7 @@ type Node struct {
 	attributeTypes      universe.AttributeTypes
 	plugins             universe.Plugins
 	nodeAttributes      *generic.SyncMap[entry.AttributeID, *entry.AttributePayload]
-	spaceIDToWorldID    *generic.SyncMap[uuid.UUID, uuid.UUID]
+	spaceIDToWorld      *generic.SyncMap[uuid.UUID, universe.World] // TODO: introduce GC for lost worlds and spaces
 	influx              influx_api.WriteAPIBlocking
 	pluginController    *mplugin.PluginController
 	corePluginInterface *mplugin.PluginInterface
@@ -69,17 +69,17 @@ func NewNode(
 	attributeTypes universe.AttributeTypes,
 ) *Node {
 	return &Node{
-		Space:            space.NewSpace(id, db, nil),
-		db:               db,
-		worlds:           worlds,
-		assets2d:         assets2D,
-		assets3d:         assets3D,
-		plugins:          plugins,
-		spaceTypes:       spaceTypes,
-		userTypes:        userTypes,
-		attributeTypes:   attributeTypes,
-		nodeAttributes:   generic.NewSyncMap[entry.AttributeID, *entry.AttributePayload](0),
-		spaceIDToWorldID: generic.NewSyncMap[uuid.UUID, uuid.UUID](0),
+		Space:          space.NewSpace(id, db, nil),
+		db:             db,
+		worlds:         worlds,
+		assets2d:       assets2D,
+		assets3d:       assets3D,
+		plugins:        plugins,
+		spaceTypes:     spaceTypes,
+		userTypes:      userTypes,
+		attributeTypes: attributeTypes,
+		nodeAttributes: generic.NewSyncMap[entry.AttributeID, *entry.AttributePayload](0),
+		spaceIDToWorld: generic.NewSyncMap[uuid.UUID, universe.World](0),
 	}
 }
 
@@ -195,14 +195,11 @@ func (n *Node) GetSpaceFromAllSpaces(spaceID uuid.UUID) (universe.Space, bool) {
 		return n, true
 	}
 
-	worldID, ok := n.spaceIDToWorldID.Load(spaceID)
+	world, ok := n.spaceIDToWorld.Load(spaceID)
 	if !ok {
 		return nil, false
 	}
-	world, ok := n.GetWorlds().GetWorld(worldID)
-	if !ok {
-		return nil, false
-	}
+
 	return world.GetSpaceFromAllSpaces(spaceID)
 }
 
@@ -211,8 +208,14 @@ func (n *Node) AddSpaceToAllSpaces(space universe.Space) error {
 		return errors.Errorf("not permitted for node")
 	}
 
-	n.spaceIDToWorldID.Store(space.GetID(), space.GetWorld().GetID())
-	return nil
+	world := space.GetWorld()
+	if world == nil {
+		return errors.Errorf("space has nil world")
+	}
+
+	n.spaceIDToWorld.Store(space.GetID(), world)
+
+	return world.AddSpaceToAllSpaces(space)
 }
 
 func (n *Node) RemoveSpaceFromAllSpaces(space universe.Space) (bool, error) {
@@ -220,13 +223,13 @@ func (n *Node) RemoveSpaceFromAllSpaces(space universe.Space) (bool, error) {
 		return false, errors.Errorf("not permitted for node")
 	}
 
-	n.spaceIDToWorldID.Mu.Lock()
-	defer n.spaceIDToWorldID.Mu.Unlock()
+	n.spaceIDToWorld.Mu.Lock()
+	defer n.spaceIDToWorld.Mu.Unlock()
 
-	if _, ok := n.spaceIDToWorldID.Data[space.GetID()]; ok {
-		delete(n.spaceIDToWorldID.Data, space.GetID())
+	if world, ok := n.spaceIDToWorld.Data[space.GetID()]; ok {
+		delete(n.spaceIDToWorld.Data, space.GetID())
 
-		return true, nil
+		return world.RemoveSpaceFromAllSpaces(space)
 	}
 
 	return false, nil
@@ -315,19 +318,13 @@ func (n *Node) Load() error {
 		)
 		group.Go(n.worlds.Load)
 		if err := group.Wait(); err != nil {
-			return errors.WithMessage(err, "failed to load space tree")
+			return errors.WithMessage(err, "failed to load universe tree")
 		}
 
 		return nil
 	})
 	// background loading thread
-	group.Go(func() error {
-		if err := n.chatService.Load(); err != nil {
-			return errors.WithMessage(err, "failed to load chat service")
-		}
-
-		return nil
-	})
+	group.Go(n.chatService.Load)
 	if err := group.Wait(); err != nil {
 		return errors.WithMessage(err, "failed to load universe")
 	}

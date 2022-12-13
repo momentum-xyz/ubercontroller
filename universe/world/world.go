@@ -87,7 +87,7 @@ func (w *World) Initialize(ctx context.Context) error {
 		return errors.WithMessage(err, "failed to initialize calendar")
 	}
 
-	return w.AddSpaceToAllSpaces(w.Space)
+	return universe.GetNode().AddSpaceToAllSpaces(w.Space)
 }
 
 func (w *World) GetSettings() *universe.WorldSettings {
@@ -313,8 +313,13 @@ func (w *World) GetSpaceFromAllSpaces(spaceID uuid.UUID) (universe.Space, bool) 
 }
 
 func (w *World) AddSpaceToAllSpaces(space universe.Space) error {
+	if space.GetWorld().GetID() != w.GetID() {
+		return errors.Errorf("worlds mismatch: %s != %s", space.GetWorld().GetID(), w.GetID())
+	}
+
 	w.allSpaces.Store(space.GetID(), space)
-	return universe.GetNode().AddSpaceToAllSpaces(space)
+
+	return nil
 }
 
 func (w *World) RemoveSpaceFromAllSpaces(space universe.Space) (bool, error) {
@@ -324,7 +329,7 @@ func (w *World) RemoveSpaceFromAllSpaces(space universe.Space) (bool, error) {
 	if _, ok := w.allSpaces.Data[space.GetID()]; ok {
 		delete(w.allSpaces.Data, space.GetID())
 
-		return universe.GetNode().RemoveSpaceFromAllSpaces(space)
+		return true, nil
 	}
 
 	return false, nil
