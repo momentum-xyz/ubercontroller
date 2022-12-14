@@ -79,6 +79,7 @@ func (iot *IOTWorker) Run() {
 			err = iot.AcceptMessage(message)
 			if err != nil {
 				iot.log.Error(err)
+				break
 			}
 			//}
 		}
@@ -135,7 +136,8 @@ func (iot *IOTWorker) AcceptMessage(message []byte) error {
 	var msg IOTMessage
 	err := json.Unmarshal(message, &msg)
 	if err != nil {
-		return err
+		iot.log.Infoln(err)
+		return nil
 	}
 	iot.log.Infof("received message %+v\n", msg)
 	return nil
