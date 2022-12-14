@@ -3,11 +3,14 @@ package iot
 import (
 	"context"
 	"encoding/json"
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/momentum-xyz/ubercontroller/types"
+	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"reflect"
 	"time"
 )
 
@@ -34,10 +37,12 @@ type IOTMessage struct {
 }
 
 type IOTWorker struct {
-	ws   *websocket.Conn
-	ctx  context.Context
-	log  *zap.SugaredLogger
-	send chan *websocket.PreparedMessage
+	ws    *websocket.Conn
+	ctx   context.Context
+	log   *zap.SugaredLogger
+	send  chan *websocket.PreparedMessage
+	world universe.World
+	cubey universe.Space
 }
 
 func NewIOTWorker(ws *websocket.Conn, ctx context.Context) *IOTWorker {
@@ -51,7 +56,9 @@ func NewIOTWorker(ws *websocket.Conn, ctx context.Context) *IOTWorker {
 	iw.ctx = ctx
 	iw.log = log
 	iw.send = make(chan *websocket.PreparedMessage, 10)
-
+	iw.world, _ = universe.GetNode().GetWorlds().GetWorld(uuid.MustParse("4ecdc743-150e-466a-983f-011e0aa2f116"))
+	iw.cubey, _ = iw.world.GetSpace(uuid.MustParse("15d34d4a-b2fe-4ea4-3c5d-b36684c0d50f"), true)
+	iw.log.Infof("w: %+v, s:%+v\n", iw.world, iw.cubey)
 	return &iw
 }
 
@@ -142,5 +149,19 @@ func (iot *IOTWorker) AcceptMessage(message []byte) error {
 		return nil
 	}
 	iot.log.Infof("received message %+v\n", msg)
+
+	if msg.Type == "sensor" {
+		switch msg.What {
+		case "gyro":
+			{
+				iot.log.Infof("received: %+v\n", reflect.ValueOf(msg.Data).Type())
+			}
+		case "light":
+			{
+				iot.log.Infof("received: %+v\n", reflect.ValueOf(msg.Data).Type())
+			}
+
+		}
+	}
 	return nil
 }
