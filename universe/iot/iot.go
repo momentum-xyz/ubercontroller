@@ -70,6 +70,7 @@ func (iot *IOTWorker) Run() {
 		for {
 			mt, message, err := iot.ws.ReadMessage()
 			if err != nil {
+				iot.log.Infof("ReadMessageError: %+v\n", err)
 				break
 			}
 			mt = mt
