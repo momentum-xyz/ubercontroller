@@ -22,6 +22,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 	r.GET("/version", n.apiGetVersion)
 	r.GET("/health", n.apiHealthCheck)
 	r.GET("/posbus", n.apiPosBusHandler)
+	r.GET("/iot", n.apiIOTHandler)
 
 	vx := r.Group(fmt.Sprintf("/api/v%d", ubercontroller.APIMajorVersion))
 	{
