@@ -31,7 +31,7 @@ func MapDecode(input, output interface{}) error {
 			stringToTimeHookFunc(),
 			mapToStringHookFunc(),
 		),
-		Result: &output,
+		Result: output,
 	}
 
 	decoder, err := mapstructure.NewDecoder(config)

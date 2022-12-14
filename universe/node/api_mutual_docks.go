@@ -3,6 +3,7 @@ package node
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/momentum-xyz/ubercontroller/universe/common/helper"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/pkg/errors"
 	"net/http"
@@ -260,33 +261,9 @@ func (n *Node) apiUsersRemoveMutualDocks(c *gin.Context) {
 	n.log.Infof("Node: apiUsersRemoveMutualDocks: found %d bulbs", len(bulbs))
 
 	for _, bulb := range bulbs {
-		parent := bulb.GetParent()
-
-		if _, err := parent.RemoveSpace(bulb, false, true); err != nil {
-			n.log.Error(
-				errors.WithMessagef(
-					err, "Node: apiUsersRemoveMutualDocks: failed to remove bulb: %s", bulb.GetID(),
-				),
-			)
+		if err := helper.RemoveSpaceFromParent(bulb.GetParent(), bulb, true); err != nil {
+			n.log.Error(errors.WithMessagef(err, "failed to remove space from parent: %s", bulb.GetID()))
 		}
-
-		if err := parent.UpdateChildrenPosition(true); err != nil {
-			n.log.Error(
-				errors.WithMessagef(
-					err, "Node: apiUsersRemoveMutualDocks: failed to update children position: %s", parent.GetID(),
-				),
-			)
-		}
-
-		if err := bulb.Stop(); err != nil {
-			n.log.Error(
-				errors.WithMessagef(
-					err, "Node: apiUsersRemoveMutualDocks: failed to stop bulb: %s", bulb.GetID(),
-				),
-			)
-		}
-
-		bulb.SetEnabled(false)
 	}
 
 	c.JSON(http.StatusAccepted, nil)
@@ -325,25 +302,26 @@ func (n *Node) createAndAddBulbSpace(spaceID uuid.UUID, dock universe.Space, fro
 		return errors.Errorf("failed to get space type: %s", bulbSpaceTypeName)
 	}
 
-	spaceTemplate := SpaceTemplate{
+	spaceTemplate := helper.SpaceTemplate{
 		SpaceID:     &spaceID,
 		SpaceName:   toUserName,
 		SpaceTypeID: spaceType.GetID(),
 		ParentID:    dock.GetID(),
 		OwnerID:     &fromUser.UserID,
-		SpaceAttributes: []*Attribute{
-			{
-				AttributeID: entry.NewAttributeID(universe.GetSystemPluginID(), "teleport"),
-				AttributePayload: entry.AttributePayload{
-					Value: &entry.AttributeValue{
+		SpaceAttributes: []*entry.Attribute{
+			entry.NewAttribute(
+				entry.NewAttributeID(universe.GetSystemPluginID(), "teleport"),
+				entry.NewAttributePayload(
+					&entry.AttributeValue{
 						"DestinationWorldID": toUser.UserID.String(),
 					},
-				},
-			},
+					nil,
+				),
+			),
 		},
 	}
 
-	if _, err := n.addSpaceFromTemplate(&spaceTemplate); err != nil {
+	if _, err := helper.AddSpaceFromTemplate(&spaceTemplate, true); err != nil {
 		return errors.WithMessagef(err, "failed to add space from template: %+v", spaceTemplate)
 	}
 

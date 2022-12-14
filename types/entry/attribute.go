@@ -28,8 +28,8 @@ const (
 type AttributeID AttributeTypeID
 
 type Attribute struct {
-	AttributeID
-	*AttributePayload
+	AttributeID       `json:",squash"`
+	*AttributePayload `json:",squash"` // won't work, see "node.SpaceTemplateFromMap()"
 }
 
 type AttributePayload struct {
@@ -43,6 +43,13 @@ type PosBusAutoAttributeOption struct {
 	SendTo PosBusDestinationType            `json:"send_to" db:"send_to"`
 	Scope  []PosBusAutoScopeAttributeOption `json:"scope" db:"scope"`
 	Topic  string                           `json:"topic" db:"topic"`
+}
+
+func NewAttribute(attributeID AttributeID, payload *AttributePayload) *Attribute {
+	return &Attribute{
+		AttributeID:      attributeID,
+		AttributePayload: payload,
+	}
 }
 
 func NewAttributeID(pluginID uuid.UUID, name string) AttributeID {
