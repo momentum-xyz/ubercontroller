@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils"
@@ -154,12 +155,18 @@ func (iot *IOTWorker) AcceptMessage(message []byte) error {
 		switch msg.What {
 		case "gyro":
 			{
-				iot.log.Infof("received: %+v\n", reflect.ValueOf(msg.Data).Type())
-				opos := iot.cubey.GetActualPosition()
+				iot.log.Infof("received: %+v %+v\n", reflect.ValueOf(msg.Data).Type(), msg.Data)
+				var irot cmath.Vec3
+				err := json.Unmarshal([]byte(msg.Data.(string)), &irot)
+				if err != nil {
+					iot.log.Infof("irot: %+v\n", irot)
+					opos := iot.cubey.GetActualPosition()
+					iot.cubey.SetPosition(opos, true)
+				}
 				//rot := opos.Rotation
 
 				//rot.Plus()
-				iot.cubey.SetPosition(opos, true)
+
 			}
 		case "light":
 			{
