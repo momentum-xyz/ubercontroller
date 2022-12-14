@@ -58,7 +58,7 @@ func NewIOTWorker(ws *websocket.Conn, ctx context.Context) *IOTWorker {
 	iw.send = make(chan *websocket.PreparedMessage, 10)
 	iw.world, _ = universe.GetNode().GetWorlds().GetWorld(uuid.MustParse("4ecdc743-150e-466a-983f-011e0aa2f116"))
 	iw.cubey, _ = iw.world.GetSpace(uuid.MustParse("12741349-98a6-4c56-847d-86c4af4fc38f"), true)
-	iw.log.Infof("w: %+v, s:%+v\n", iw.world, iw.cubey)
+	//iw.log.Infof("w: %+v, s:%+v\n", iw.world, iw.cubey)
 	return &iw
 }
 
@@ -155,6 +155,11 @@ func (iot *IOTWorker) AcceptMessage(message []byte) error {
 		case "gyro":
 			{
 				iot.log.Infof("received: %+v\n", reflect.ValueOf(msg.Data).Type())
+				opos := iot.cubey.GetActualPosition()
+				//rot := opos.Rotation
+
+				//rot.Plus()
+				iot.cubey.SetPosition(opos, true)
 			}
 		case "light":
 			{
