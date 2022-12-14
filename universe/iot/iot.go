@@ -72,14 +72,15 @@ func (iot *IOTWorker) Run() {
 			if err != nil {
 				break
 			}
-			if mt != websocket.BinaryMessage {
-				iot.log.Infoln("error: wrong incoming message type")
-			} else {
-				err := iot.AcceptMessage(message)
-				if err != nil {
-					iot.log.Error(err)
-				}
+			mt = mt
+			//if mt != websocket.BinaryMessage {
+			//	iot.log.Infoln("error: wrong incoming message type")
+			//} else {
+			err = iot.AcceptMessage(message)
+			if err != nil {
+				iot.log.Error(err)
 			}
+			//}
 		}
 		iot.ws.Close()
 		iot.log.Infoln("End of read")
