@@ -57,7 +57,7 @@ func NewIOTWorker(ws *websocket.Conn, ctx context.Context) *IOTWorker {
 	iw.log = log
 	iw.send = make(chan *websocket.PreparedMessage, 10)
 	iw.world, _ = universe.GetNode().GetWorlds().GetWorld(uuid.MustParse("4ecdc743-150e-466a-983f-011e0aa2f116"))
-	iw.cubey, _ = iw.world.GetSpace(uuid.MustParse("15d34d4a-b2fe-4ea4-3c5d-b36684c0d50f"), true)
+	iw.cubey, _ = iw.world.GetSpace(uuid.MustParse("12741349-98a6-4c56-847d-86c4af4fc38f"), true)
 	iw.log.Infof("w: %+v, s:%+v\n", iw.world, iw.cubey)
 	return &iw
 }
