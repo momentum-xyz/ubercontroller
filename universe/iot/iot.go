@@ -73,7 +73,7 @@ func (iot *IOTWorker) Run() {
 	iot.ws.SetReadLimit(inMessageSizeLimit)
 	iot.ws.SetReadDeadline(time.Now().Add(pongWait))
 	iot.ws.SetPongHandler(func(string) error { iot.ws.SetReadDeadline(time.Now().Add(pongWait)); return nil })
-
+	ack, _ := websocket.NewPreparedMessage(websocket.TextMessage, []byte("ACK"))
 	go func() {
 		for {
 			mt, message, err := iot.ws.ReadMessage()
@@ -81,6 +81,7 @@ func (iot *IOTWorker) Run() {
 				iot.log.Infof("ReadMessageError: %+v\n", err)
 				break
 			}
+			iot.PushMessage(ack, true)
 			mt = mt
 			//if mt != websocket.BinaryMessage {
 			//	iot.log.Infoln("error: wrong incoming message type")
