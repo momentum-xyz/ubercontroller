@@ -28,8 +28,8 @@ const (
 type AttributeID AttributeTypeID
 
 type Attribute struct {
-	AttributeID       `json:",squash"`
-	*AttributePayload `json:",squash"` // won't work, see "node.SpaceTemplateFromMap()"
+	AttributeID
+	*AttributePayload
 }
 
 type AttributePayload struct {

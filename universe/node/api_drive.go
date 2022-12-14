@@ -160,15 +160,15 @@ func (n *Node) createWorld(ownerID uuid.UUID, name string) error {
 		return errors.Errorf("failed to get world template attribute value")
 	}
 
-	worldTemplate, err := helper.SpaceTemplateFromMap(*templateValue)
-	if err != nil {
-		return errors.WithMessage(err, "failed to get space template from map")
+	var worldTemplate helper.SpaceTemplate
+	if err := utils.MapDecode(*templateValue, &worldTemplate); err != nil {
+		return errors.WithMessage(err, "failed to decode world template")
 	}
 	worldTemplate.SpaceID = &ownerID // User's world (aka Odyssey) should be equal to user ID
 	worldTemplate.SpaceName = name
 	worldTemplate.OwnerID = &ownerID
 
-	if _, err := helper.AddWorldFromTemplate(worldTemplate, true); err != nil {
+	if _, err := helper.AddWorldFromTemplate(&worldTemplate, true); err != nil {
 		return errors.WithMessagef(err, "failed to add world from template: %+v", worldTemplate)
 	}
 
