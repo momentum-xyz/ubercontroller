@@ -109,7 +109,6 @@ func (w *Worlds) AddWorlds(worlds []universe.World, updateDB bool) error {
 
 	if updateDB {
 		group, _ := errgroup.WithContext(w.ctx)
-
 		for i := range worlds {
 			world := worlds[i]
 
@@ -120,7 +119,6 @@ func (w *Worlds) AddWorlds(worlds []universe.World, updateDB bool) error {
 				return nil
 			})
 		}
-
 		if err := group.Wait(); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
@@ -169,7 +167,6 @@ func (w *Worlds) RemoveWorlds(worlds []universe.World, updateDB bool) error {
 
 	if updateDB {
 		group, _ := errgroup.WithContext(w.ctx)
-
 		for i := range worlds {
 			world := worlds[i]
 
@@ -187,7 +184,6 @@ func (w *Worlds) RemoveWorlds(worlds []universe.World, updateDB bool) error {
 				return nil
 			})
 		}
-
 		if err := group.Wait(); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
@@ -204,35 +200,30 @@ func (w *Worlds) Run() error {
 	w.worlds.Mu.RLock()
 	defer w.worlds.Mu.RUnlock()
 
+	var errs *multierror.Error
 	for _, world := range w.worlds.Data {
 		if err := world.Run(); err != nil {
-			w.log.Error(errors.WithMessagef(err, "Worlds: Run: failed to run world: %s", world.GetID()))
+			errs = multierror.Append(errs, errors.WithMessagef(err, "failed to run world: %s", world.GetID()))
 		}
 		world.SetEnabled(true)
 	}
 
-	return nil
+	return errs.ErrorOrNil()
 }
 
 func (w *Worlds) Stop() error {
 	w.worlds.Mu.RLock()
 	defer w.worlds.Mu.RUnlock()
 
-	group, _ := errgroup.WithContext(w.ctx)
-
+	var errs *multierror.Error
 	for _, world := range w.worlds.Data {
-		world := world
-
-		group.Go(func() error {
-			if err := world.Stop(); err != nil {
-				return errors.WithMessagef(err, "failed to stop world: %s", world.GetID())
-			}
-			world.SetEnabled(false)
-			return nil
-		})
+		if err := world.Stop(); err != nil {
+			errs = multierror.Append(errs, errors.WithMessagef(err, "failed to stop world: %s", world.GetID()))
+		}
+		world.SetEnabled(false)
 	}
 
-	return group.Wait()
+	return errs.ErrorOrNil()
 }
 
 func (w *Worlds) Load() error {
@@ -282,8 +273,6 @@ func (w *Worlds) loadBatch(worldIDs []uuid.UUID) error {
 			if err := world.Load(); err != nil {
 				return errors.WithMessagef(err, "failed to load world: %s", worldID)
 			}
-
-			w.worlds.Store(worldID, world)
 
 			return nil
 		})

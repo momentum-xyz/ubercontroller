@@ -222,37 +222,8 @@ func (n *Node) apiRemoveSpace(c *gin.Context) {
 	if err := space.Stop(); err != nil {
 		n.log.Error(errors.WithMessagef(err, "Node: apiRemoveSpace: failed to stop space: %s", spaceID))
 	}
+
 	space.SetEnabled(false)
-
-	// also stop all children
-	go func() {
-		// TODO: fix this bloody stuff!!!
-		var removeChildren func(space universe.Space)
-		removeChildren = func(space universe.Space) {
-			for childID, child := range space.GetSpaces(false) {
-				// prevent "RemoveStaticObjectsMsg" spam
-				child.SetEnabled(false)
-
-				if _, err := space.RemoveSpace(child, false, false); err != nil {
-					n.log.Error(
-						errors.WithMessagef(
-							err, "Node: apiRemoveSpace: failed to remove space child: %s", childID,
-						),
-					)
-				}
-
-				if err := child.Stop(); err != nil {
-					n.log.Error(
-						errors.WithMessagef(
-							err, "Node: apiRemoveSpace: failed to stop space child: %s", childID,
-						),
-					)
-				}
-
-				removeChildren(child)
-			}
-		}
-	}()
 
 	c.JSON(http.StatusOK, nil)
 }

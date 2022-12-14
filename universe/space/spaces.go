@@ -23,11 +23,6 @@ func (s *Space) CreateSpace(spaceID uuid.UUID) (universe.Space, error) {
 	if err := s.AddSpace(space, false); err != nil {
 		return nil, errors.WithMessagef(err, "failed to add space %s to space: %s", spaceID, s.GetID())
 	}
-	if err := space.GetWorld().AddSpaceToAllSpaces(space); err != nil {
-		return nil, errors.WithMessagef(
-			err, "failed to add space %s to world %s all spaces", spaceID, space.GetWorld().GetID(),
-		)
-	}
 
 	return space, nil
 }
@@ -120,7 +115,7 @@ func (s *Space) AddSpace(space universe.Space, updateDB bool) error {
 
 	s.Children.Data[space.GetID()] = space
 
-	return nil
+	return universe.GetNode().AddSpaceToAllSpaces(space)
 }
 
 // TODO: think about rollaback on error
@@ -153,8 +148,13 @@ func (s *Space) AddSpaces(spaces []universe.Space, updateDB bool) error {
 		}
 	}
 
+	node := universe.GetNode()
 	for i := range spaces {
 		s.Children.Data[spaces[i].GetID()] = spaces[i]
+
+		if err := node.AddSpaceToAllSpaces(spaces[i]); err != nil {
+			return errors.WithMessagef(err, "failed to add space to all spaces: %s", spaces[i].GetID())
+		}
 	}
 
 	return nil
@@ -162,45 +162,13 @@ func (s *Space) AddSpaces(spaces []universe.Space, updateDB bool) error {
 
 // TODO: think about rollback on error
 func (s *Space) RemoveSpace(space universe.Space, recursive, updateDB bool) (bool, error) {
-	spaceWorld := space.GetWorld()
-
-	s.Children.Mu.Lock()
-	if spaceWorld.GetID() != s.GetWorld().GetID() {
-		s.Children.Mu.Unlock()
-		return false, errors.Errorf("worlds mismatch: %s != %s", spaceWorld.GetID(), s.GetWorld().GetID())
+	removed, err := s.removeSpace(space, updateDB)
+	if err != nil {
+		return false, err
 	}
-
-	if _, ok := s.Children.Data[space.GetID()]; ok {
-		defer s.Children.Mu.Unlock()
-
-		if err := space.SetParent(nil, false); err != nil {
-			return false, errors.WithMessagef(err, "failed to set parent nil to space: %s", space.GetID())
-		}
-
-		if updateDB {
-			if err := s.db.SpacesRemoveSpaceByID(s.ctx, space.GetID()); err != nil {
-				return false, errors.WithMessage(err, "failed to update db")
-			}
-		}
-
-		delete(s.Children.Data, space.GetID())
-
-		if _, err := spaceWorld.RemoveSpaceFromAllSpaces(space); err != nil {
-			return false, errors.WithMessagef(err, "failed to remove space from world all spaces: %s", space.GetID())
-		}
-
-		// we need it to avoid spam while removing children
-		if space.GetEnabled() {
-			go func() {
-				removeMsg := posbus.NewRemoveStaticObjectsMsg(1)
-				removeMsg.SetObject(0, space.GetID())
-				spaceWorld.Send(removeMsg.WebsocketMessage(), true)
-			}()
-		}
-
+	if removed {
 		return true, nil
 	}
-	s.Children.Mu.Unlock()
 
 	if !recursive {
 		return false, nil
@@ -222,10 +190,78 @@ func (s *Space) RemoveSpace(space universe.Space, recursive, updateDB bool) (boo
 	return false, nil
 }
 
+func (s *Space) removeSpace(space universe.Space, updateDB bool) (bool, error) {
+	if space.GetWorld().GetID() != s.GetWorld().GetID() {
+		return false, errors.Errorf("worlds mismatch: %s != %s", space.GetWorld().GetID(), s.GetWorld().GetID())
+	}
+
+	s.Children.Mu.Lock()
+	defer s.Children.Mu.Unlock()
+
+	if _, ok := s.Children.Data[space.GetID()]; !ok {
+		return false, nil
+	}
+
+	if err := space.SetParent(nil, false); err != nil {
+		return false, errors.WithMessagef(err, "failed to set parent nil to space: %s", space.GetID())
+	}
+
+	if updateDB {
+		if err := s.db.SpacesRemoveSpaceByID(s.ctx, space.GetID()); err != nil {
+			return false, errors.WithMessage(err, "failed to update db")
+		}
+	}
+
+	delete(s.Children.Data, space.GetID())
+
+	if _, err := universe.GetNode().RemoveSpaceFromAllSpaces(space); err != nil {
+		return false, errors.WithMessagef(err, "failed to remove space from all spaces: %s", space.GetID())
+	}
+
+	// we need it to avoid spam while removing children
+	if space.GetEnabled() {
+		go func() {
+			removeMsg := posbus.NewRemoveStaticObjectsMsg(1)
+			removeMsg.SetObject(0, space.GetID())
+			space.GetWorld().Send(removeMsg.WebsocketMessage(), true)
+		}()
+	}
+
+	go func() {
+		if err := removeChildren(space); err != nil {
+			s.log.Errorf("Space: removeSpace: failed to remove children: %s", space.GetID())
+		}
+	}()
+
+	return true, nil
+}
+
+func removeChildren(space universe.Space) error {
+	var errs *multierror.Error
+	for _, child := range space.GetSpaces(false) {
+		// prevent spam while removing
+		child.SetEnabled(false)
+
+		if _, err := space.RemoveSpace(child, false, false); err != nil {
+			errs = multierror.Append(
+				errs, errors.WithMessagef(err, "Space: removeChildren: failed to remove child: %s", child.GetID()),
+			)
+		}
+
+		if err := child.Stop(); err != nil {
+			errs = multierror.Append(
+				errs, errors.WithMessagef(err, "Space: removeChildren: failed to stop child: %s", child.GetID()))
+		}
+	}
+
+	return errs.ErrorOrNil()
+}
+
 // RemoveSpaces return true in first value if all spaces with space ids was removed.
-// TODO: optimize
 func (s *Space) RemoveSpaces(spaces []universe.Space, recursive, updateDB bool) (bool, error) {
+	// TODO: optimize
 	res := true
+
 	var errs *multierror.Error
 	for i := range spaces {
 		removed, err := s.RemoveSpace(spaces[i], recursive, updateDB)
@@ -236,5 +272,6 @@ func (s *Space) RemoveSpaces(spaces []universe.Space, recursive, updateDB bool) 
 			res = false
 		}
 	}
+
 	return res, errs.ErrorOrNil()
 }

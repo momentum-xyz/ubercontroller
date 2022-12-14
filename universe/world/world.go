@@ -79,15 +79,15 @@ func (w *World) Initialize(ctx context.Context) error {
 	w.ctx, w.cancel = context.WithCancel(ctx)
 	w.log = log
 
-	if err := w.Space.Initialize(ctx); err != nil {
-		return errors.WithMessage(err, "failed to initialize space")
-	}
-
 	if err := w.calendar.Initialize(ctx); err != nil {
 		return errors.WithMessage(err, "failed to initialize calendar")
 	}
 
-	return w.AddSpaceToAllSpaces(w.Space)
+	if err := w.Space.Initialize(ctx); err != nil {
+		return errors.WithMessage(err, "failed to initialize space")
+	}
+
+	return universe.GetNode().AddSpaceToAllSpaces(w.Space)
 }
 
 func (w *World) GetSettings() *universe.WorldSettings {
@@ -104,14 +104,20 @@ func (w *World) AddToCounter() int64 {
 
 func (w *World) Run() error {
 	go func() {
-		go w.runSpaces()
+		go func() {
+			if err := w.runSpaces(); err != nil {
+				w.log.Error(errors.WithMessagef(err, "World: Run: failed to run spaces: %s", w.GetID()))
+			}
+		}()
 		go w.calendar.Run()
 		ticker := time.NewTicker(500 * time.Millisecond)
 
 		defer func() {
 			w.calendar.Stop()
 			ticker.Stop()
-			w.stopSpaces()
+			if err := w.stopSpaces(); err != nil {
+				w.log.Error(errors.WithMessagef(err, "World: Run: failed to stop spaces: %s", w.GetID()))
+			}
 		}()
 
 		for {
@@ -142,14 +148,15 @@ func (w *World) runSpaces() error {
 	w.allSpaces.Mu.RLock()
 	defer w.allSpaces.Mu.RUnlock()
 
+	var errs *multierror.Error
 	for _, space := range w.allSpaces.Data {
 		if err := space.Run(); err != nil {
-			w.log.Error(errors.WithMessagef(err, "World: runSpaces: failed to run space: %s", space.GetID()))
+			errs = multierror.Append(errs, errors.WithMessagef(err, "failed to run space: %s", space.GetID()))
 		}
 		space.SetEnabled(true)
 	}
 
-	return nil
+	return errs.ErrorOrNil()
 }
 
 // TODO: optimize
@@ -313,8 +320,13 @@ func (w *World) GetSpaceFromAllSpaces(spaceID uuid.UUID) (universe.Space, bool) 
 }
 
 func (w *World) AddSpaceToAllSpaces(space universe.Space) error {
+	if space.GetWorld().GetID() != w.GetID() {
+		return errors.Errorf("worlds mismatch: %s != %s", space.GetWorld().GetID(), w.GetID())
+	}
+
 	w.allSpaces.Store(space.GetID(), space)
-	return universe.GetNode().AddSpaceToAllSpaces(space)
+
+	return nil
 }
 
 func (w *World) RemoveSpaceFromAllSpaces(space universe.Space) (bool, error) {
@@ -324,7 +336,7 @@ func (w *World) RemoveSpaceFromAllSpaces(space universe.Space) (bool, error) {
 	if _, ok := w.allSpaces.Data[space.GetID()]; ok {
 		delete(w.allSpaces.Data, space.GetID())
 
-		return universe.GetNode().RemoveSpaceFromAllSpaces(space)
+		return true, nil
 	}
 
 	return false, nil
