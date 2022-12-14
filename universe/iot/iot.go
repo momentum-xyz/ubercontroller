@@ -162,6 +162,8 @@ func (iot *IOTWorker) AcceptMessage(message []byte) error {
 					iot.log.Infof("irot: %+v\n", irot)
 					opos := iot.cubey.GetActualPosition()
 					iot.cubey.SetPosition(opos, true)
+				} else {
+					iot.log.Infoln(err)
 				}
 				//rot := opos.Rotation
 
