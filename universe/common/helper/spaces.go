@@ -168,10 +168,11 @@ func AddSpaceFromTemplate(spaceTemplate *SpaceTemplate, updateDB bool) (uuid.UUI
 	return *spaceID, nil
 }
 
-func RemoveSpaceFromParent(parent, space universe.Space, updateDB bool) error {
+func RemoveSpaceFromParent(parent, space universe.Space, updateDB bool) (bool, error) {
 	var errs *multierror.Error
 
-	if _, err := parent.RemoveSpace(space, false, updateDB); err != nil {
+	removed, err := parent.RemoveSpace(space, true, updateDB)
+	if err != nil {
 		errs = multierror.Append(
 			errs, errors.WithMessagef(err, "failed to remove space from parent: %s", parent.GetID()),
 		)
@@ -189,7 +190,7 @@ func RemoveSpaceFromParent(parent, space universe.Space, updateDB bool) error {
 
 	space.SetEnabled(false)
 
-	return nil
+	return removed, errs.ErrorOrNil()
 }
 
 func SpaceTemplateFromMap(m map[string]any) (*SpaceTemplate, error) {

@@ -261,7 +261,7 @@ func (n *Node) apiUsersRemoveMutualDocks(c *gin.Context) {
 	n.log.Infof("Node: apiUsersRemoveMutualDocks: found %d bulbs", len(bulbs))
 
 	for _, bulb := range bulbs {
-		if err := helper.RemoveSpaceFromParent(bulb.GetParent(), bulb, true); err != nil {
+		if _, err := helper.RemoveSpaceFromParent(bulb.GetParent(), bulb, true); err != nil {
 			n.log.Error(errors.WithMessagef(err, "failed to remove space from parent: %s", bulb.GetID()))
 		}
 	}
