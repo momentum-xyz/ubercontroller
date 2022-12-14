@@ -158,12 +158,14 @@ func (iot *IOTWorker) AcceptMessage(message []byte) error {
 				iot.log.Infof("received: %+v %+v\n", reflect.ValueOf(msg.Data).Type(), msg.Data)
 				var irot cmath.Vec3
 				err := json.Unmarshal([]byte(msg.Data.(string)), &irot)
-				if err != nil {
+				if err == nil {
 					iot.log.Infof("irot: %+v\n", irot)
 					opos := iot.cubey.GetActualPosition()
+					irot.X *= 50
+					irot.Y *= 50
+					irot.Z *= 50
+					opos.Rotation.Plus(irot)
 					iot.cubey.SetPosition(opos, true)
-				} else {
-					iot.log.Infoln(err)
 				}
 				//rot := opos.Rotation
 
