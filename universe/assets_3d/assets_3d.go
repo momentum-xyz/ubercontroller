@@ -2,6 +2,7 @@ package assets_3d
 
 import (
 	"context"
+
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -164,6 +165,25 @@ func (a *Assets3d) RemoveAssets3d(assets3d []universe.Asset3d, updateDB bool) er
 	for i := range assets3d {
 		delete(a.assets.Data, assets3d[i].GetID())
 	}
+
+	return nil
+}
+
+func (a *Assets3d) RemoveAsset3dByID(asset3dID uuid.UUID, updateDB bool) error {
+	a.assets.Mu.Lock()
+	defer a.assets.Mu.Unlock()
+
+	if _, ok := a.assets.Data[asset3dID]; !ok {
+		return errors.Errorf("asset 3d not found: %s", asset3dID.String())
+	}
+
+	if updateDB {
+		if err := a.db.Assets3dRemoveAssetByID(a.ctx, asset3dID); err != nil {
+			return errors.Errorf("failed to update db")
+		}
+	}
+
+	delete(a.assets.Data, asset3dID)
 
 	return nil
 }
