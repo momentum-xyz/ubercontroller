@@ -316,31 +316,34 @@ func (n *Node) apiUpdateSpace(c *gin.Context) {
 		}
 	}
 
-	attributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name)
-	spaceNameAttribute, ok := n.GetSpaceAttributeValue(entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name))
-	if !ok || spaceNameAttribute == nil {
-		err := errors.New("Node: apiUpdateSpace: failed to get space name attribute")
-		api.AbortRequest(c, http.StatusNotFound, "space_asset_3d", err, n.log)
-		return
-	}
-
-	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
-		if current == nil || current.Value == nil {
-			return nil, nil
+	if inBody.SpaceName != "" {
+		attributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name)
+		spaceNameAttribute, ok := n.GetSpaceAttributeValue(entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name))
+		if !ok || spaceNameAttribute == nil {
+			// TODO: create it
+			err := errors.New("Node: apiUpdateSpace: failed to get space name attribute")
+			api.AbortRequest(c, http.StatusNotFound, "space_name", err, n.log)
+			return
 		}
 
-		updateMap := *current.Value
+		modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
+			if current == nil || current.Value == nil {
+				return nil, nil
+			}
 
-		updateMap[universe.Attributes.Space.Name.Key] = inBody.SpaceName
+			updateMap := *current.Value
 
-		return current, nil
-	}
+			updateMap[universe.Attributes.Space.Name.Key] = inBody.SpaceName
 
-	_, err = n.UpsertSpaceAttribute(attributeID, modifyFn, true)
-	if err != nil {
-		err = errors.WithMessage(err, "Node: apiUpdateSpace: failed to update space name attribute")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert_space_attribute", err, n.log)
-		return
+			return current, nil
+		}
+
+		_, err = n.UpsertSpaceAttribute(attributeID, modifyFn, true)
+		if err != nil {
+			err = errors.WithMessage(err, "Node: apiUpdateSpace: failed to update space name attribute")
+			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert_space_attribute", err, n.log)
+			return
+		}
 	}
 
 	// TODO: output full space data
