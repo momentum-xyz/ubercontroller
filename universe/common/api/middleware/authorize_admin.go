@@ -46,7 +46,7 @@ func AuthorizeAdmin(log *zap.SugaredLogger, db database.DB) gin.HandlerFunc {
 		}
 
 		if !isAdmin {
-			err := errors.WithMessage(err, "Middleware: AuthorizeAdmin: user is not admin")
+			err := errors.New("Middleware: AuthorizeAdmin: user is not admin")
 			api.AbortRequest(c, http.StatusForbidden, "not_admin", err, log)
 			return
 		}
