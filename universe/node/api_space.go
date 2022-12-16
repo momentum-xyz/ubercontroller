@@ -239,7 +239,7 @@ func (n *Node) apiRemoveSpace(c *gin.Context) {
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{space_id} [delete]
+// @Router /api/v4/spaces/{space_id} [patch]
 func (n *Node) apiUpdateSpace(c *gin.Context) {
 	spaceID, err := uuid.Parse(c.Param("spaceID"))
 	if err != nil {
@@ -344,6 +344,12 @@ func (n *Node) apiUpdateSpace(c *gin.Context) {
 			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert_space_attribute", err, n.log)
 			return
 		}
+	}
+
+	if err := space.Update(false); err != nil {
+		err = errors.WithMessage(err, "Node: apiUpdateSpace: failed to update space")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_space_update", err, n.log)
+		return
 	}
 
 	// TODO: output full space data
