@@ -368,30 +368,17 @@ func (a *Assets3d) apiGetAssets3dMeta(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// @Summary Delete an asset3d by its id
+// @Summary Delete a 3d asset by its id
 // @Schemes
 // @Description Deletes 3d asset by its id
 // @Tags assets3d
 // @Accept json
 // @Produce json
-// @Param body body assets_3d.apiRemoveAsset3dByID.InBody true "body params"
 // @Success 200 {object} nil
-// @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
 // @Router /api/v4/assets-3d/{asset3d_id} [delete]
 func (a *Assets3d) apiRemoveAsset3dByID(c *gin.Context) {
-	type InBody struct {
-		Asset3dID string `form:"asset3d_id" binding:"required"`
-	}
-	var inBody InBody
-
-	if err := c.ShouldBindJSON(&inBody); err != nil {
-		err = errors.WithMessage(err, "Assets3d: apiRemoveAsset3dByID: failed to bind json")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, a.log)
-		return
-	}
-
-	uid, err := uuid.Parse(inBody.Asset3dID)
+	uid, err := uuid.Parse(c.Param("asset3dID"))
 	if err != nil {
 		err = errors.WithMessage(err, "Assets3d: apiRemoveAsset3dByID: failed to parse uuid")
 		api.AbortRequest(c, http.StatusInternalServerError, "invalid_uuid_parse", err, a.log)
