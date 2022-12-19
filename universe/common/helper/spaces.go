@@ -145,7 +145,8 @@ func AddSpaceFromTemplate(spaceTemplate *SpaceTemplate, updateDB bool) (uuid.UUI
 			entry.NewAttributePayload(
 				&entry.AttributeValue{
 					"render_hash": imgDefault,
-				}, nil,
+				},
+				nil,
 			),
 		),
 	)

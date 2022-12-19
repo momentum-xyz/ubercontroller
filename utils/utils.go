@@ -44,7 +44,7 @@ func MapDecode(input, output interface{}) error {
 	return decoder.Decode(input)
 }
 
-// handleNilAnonymousNestedStruct needs to fix "unsupported type for squash: ptr" mapstructure error
+// handleNilAnonymousNestedStruct needed to fix "unsupported type for squash: ptr" mapstructure error
 func handleNilAnonymousNestedStruct() mapstructure.DecodeHookFunc {
 	return func(from reflect.Value, to reflect.Value) (interface{}, error) {
 		if to.Kind() != reflect.Struct {

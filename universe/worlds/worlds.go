@@ -236,7 +236,7 @@ func (w *Worlds) Load() error {
 	worldsCount := len(worldIDs)
 
 	// modify batchSize when database consumption per world loading will be changed
-	batchSize := len(worldIDs) // int(w.cfg.Postgres.MAXCONNS / 2)
+	batchSize := int(w.cfg.Postgres.MAXCONNS)
 	for len(worldIDs) > 0 {
 		batch := worldIDs
 		if len(worldIDs) > batchSize {
