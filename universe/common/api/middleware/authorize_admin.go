@@ -23,26 +23,16 @@ func AuthorizeAdmin(log *zap.SugaredLogger, db database.DB) gin.HandlerFunc {
 
 		userID, err := api.GetUserIDFromContext(c)
 		if err != nil {
-			err = errors.WithMessage(err, "Middleware: AuthorizeAdmin: failed to get user id from context")
+			err := errors.WithMessage(err, "Middleware: AuthorizeAdmin: failed to get user id from context")
 			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_user_id", err, log)
 			return
 		}
 
-		userIDs, err := db.UserSpaceGetIndirectAdmins(c, spaceID)
+		isAdmin, err := db.UserSpaceCheckIsIndirectAdmin(c, userID, spaceID)
 		if err != nil {
-			err := errors.WithMessage(err, "Middleware: AuthorizeAdmin: failed to get user space entry")
-			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_user_space_entry", err, log)
+			err := errors.WithMessage(err, "Middleware: AuthorizeAdmin: failed to check is indirect admin")
+			api.AbortRequest(c, http.StatusInternalServerError, "check_failed", err, log)
 			return
-		}
-
-		// TODO: optimize
-		isAdmin := false
-		for _, uID := range userIDs {
-			if uID != nil {
-				if *uID == userID {
-					isAdmin = true
-				}
-			}
 		}
 
 		if !isAdmin {
