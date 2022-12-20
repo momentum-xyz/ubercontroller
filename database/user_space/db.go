@@ -111,7 +111,8 @@ func (db *DB) UserSpaceGetIndirectAdmins(ctx context.Context, spaceID uuid.UUID)
 
 func (db *DB) UserSpaceCheckIsIndirectAdmin(ctx context.Context, userID, spaceID uuid.UUID) (bool, error) {
 	var isIndirectAdmin bool
-	if err := pgxscan.Get(ctx, db.conn, &isIndirectAdmin, checkIsIndirectAdminQuery, userID, spaceID); err != nil {
+	if err := db.conn.QueryRow(ctx, checkIsIndirectAdminQuery, userID, spaceID).
+		Scan(&isIndirectAdmin); err != nil {
 		return false, errors.WithMessage(err, "failed to query db")
 	}
 	return isIndirectAdmin, nil
