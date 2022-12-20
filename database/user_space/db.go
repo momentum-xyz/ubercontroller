@@ -21,10 +21,11 @@ const (
 	getUserSpacesQuery                   = `SELECT * FROM user_space;`
 	getUserSpacesBySpaceIDQuery          = `SELECT * FROM user_space WHERE space_id = $1;`
 	getUserSpacesByUserIDQuery           = `SELECT * FROM user_space WHERE user_id = $1;`
-	getUserSpacesBySpaceIDAndUserIDQuery = `SELECT * FROM user_space WHERE user_id = $1 AND space_id = $2;`
+	getUserSpacesByUserIDAndSpaceIDQuery = `SELECT * FROM user_space WHERE user_id = $1 AND space_id = $2;`
 	getUserSpaceValueByIDQuery           = `SELECT value FROM user_space WHERE user_id = $1 AND space_id = $2;`
 
 	getUserSpaceIndirectAdmins = `SELECT GetIndirectSpaceAdmins($1);`
+	checkIsIndirectAdminQuery  = `SELECT EXISTS(SELECT 1 FROM (SELECT GetIndirectSpaceAdmins($2) AS user_id) AS t WHERE user_id = $1);`
 
 	updateUserSpacesValueQuery = `UPDATE user_space SET value = $3 WHERE user_id = $1 AND space_id = $2;`
 
@@ -73,7 +74,7 @@ func (db *DB) UserSpaceGetUserSpacesBySpaceID(ctx context.Context, spaceID uuid.
 func (db *DB) UserSpaceGetUserSpaceByID(ctx context.Context, userSpaceID entry.UserSpaceID) (*entry.UserSpace, error) {
 	var userSpace *entry.UserSpace
 	if err := pgxscan.Select(
-		ctx, db.conn, &userSpace, getUserSpacesBySpaceIDAndUserIDQuery, userSpaceID.UserID, userSpaceID.SpaceID,
+		ctx, db.conn, &userSpace, getUserSpacesByUserIDAndSpaceIDQuery, userSpaceID.UserID, userSpaceID.SpaceID,
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
@@ -106,6 +107,14 @@ func (db *DB) UserSpaceGetIndirectAdmins(ctx context.Context, spaceID uuid.UUID)
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return userIDs, nil
+}
+
+func (db *DB) UserSpaceCheckIsIndirectAdmin(ctx context.Context, userID, spaceID uuid.UUID) (bool, error) {
+	var isIndirectAdmin bool
+	if err := pgxscan.Get(ctx, db.conn, &isIndirectAdmin, checkIsIndirectAdminQuery, userID, spaceID); err != nil {
+		return false, errors.WithMessage(err, "failed to query db")
+	}
+	return isIndirectAdmin, nil
 }
 
 func (db *DB) UserSpaceGetValueByID(ctx context.Context, userSpaceID entry.UserSpaceID) (*entry.UserSpaceValue, error) {
