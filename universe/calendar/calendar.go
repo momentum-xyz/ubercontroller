@@ -32,8 +32,6 @@ type Event struct {
 	EventID string     `json:"eventId"`
 }
 
-var pluginID = uuid.MustParse("f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0")
-var attributeName = "events"
 var log = logger.L()
 
 func NewCalendar(w universe.World) *Calendar {
@@ -141,7 +139,7 @@ func findNextEvents(events []Event) []Event {
 }
 
 func getAllEvents(spaces map[uuid.UUID]universe.Space) []Event {
-	attributeID := entry.NewAttributeID(pluginID, attributeName)
+	attributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Events.Name)
 
 	//a := c.world.GetSpaceAttributesValue(true)
 
@@ -186,7 +184,7 @@ func (*Calendar) Stop() error {
 }
 
 func (c *Calendar) OnAttributeUpsert(attributeID entry.AttributeID, value any) {
-	if attributeID.PluginID == pluginID && attributeID.Name == attributeName {
+	if attributeID.PluginID == universe.GetSystemPluginID() && attributeID.Name == universe.Attributes.Space.Events.Name {
 		go c.update()
 	}
 }

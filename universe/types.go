@@ -2,6 +2,7 @@ package universe
 
 import (
 	"github.com/google/uuid"
+
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 )
 
@@ -34,6 +35,7 @@ var (
 			Name          Attribute
 			Description   Attribute
 			NewsFeedItems Attribute
+			Events        Attribute
 		}
 		Kusama struct {
 			User struct {
@@ -82,6 +84,7 @@ var (
 			Name          Attribute
 			Description   Attribute
 			NewsFeedItems Attribute
+			Events        Attribute
 		}{
 			Name: Attribute{
 				Name: "name",
@@ -93,6 +96,10 @@ var (
 			NewsFeedItems: Attribute{
 				Name: "news_feed",
 				Key:  "items",
+			},
+			Events: Attribute{
+				Name: "events",
+				Key:  "",
 			},
 		},
 		Kusama: struct {
