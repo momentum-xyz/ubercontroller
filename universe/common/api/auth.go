@@ -62,6 +62,18 @@ func GenerateChallenge(wallet string) (string, error) {
 	), nil
 }
 
+func GetJWTSecret() ([]byte, error) {
+	jwtSecret, ok := universe.GetNode().GetNodeAttributeValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.JWTKey.Name),
+	)
+	if !ok || jwtSecret == nil {
+		return nil, errors.New("failed to get jwt secret")
+	}
+	secret := utils.GetFromAnyMap(*jwtSecret, "secret", "")
+
+	return []byte(secret), nil
+}
+
 func VerifyPolkadotSignature(wallet, challenge, signature string) (bool, error) {
 	pub, err := schnorrkel.NewPublicKeyFromHex(wallet)
 	if err != nil {
@@ -84,7 +96,7 @@ func VerifyPolkadotSignature(wallet, challenge, signature string) (bool, error) 
 
 // CreateJWTToken saves a jwt token with the given userID as subject
 // and signed with the given secret
-func CreateJWTToken(userID uuid.UUID, secret []byte) (string, error) {
+func CreateJWTToken(userID uuid.UUID) (string, error) {
 	claims := jwt.StandardClaims{
 		IssuedAt:  time.Now().Unix(),
 		ExpiresAt: time.Now().Add(4 * time.Hour).Unix(),
@@ -92,9 +104,13 @@ func CreateJWTToken(userID uuid.UUID, secret []byte) (string, error) {
 		Subject:   userID.String(),
 	}
 
-	jwt := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	newJwt := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	secret, err := GetJWTSecret()
+	if err != nil {
+		return "", errors.WithMessage(err, "failed to get jwt secret")
+	}
 
-	signedString, err := jwt.SignedString(secret)
+	signedString, err := newJwt.SignedString(secret)
 	if err != nil {
 		return "", errors.WithMessage(err, "failed to sign token")
 	}
@@ -103,13 +119,10 @@ func CreateJWTToken(userID uuid.UUID, secret []byte) (string, error) {
 }
 
 func ValidateJWT(signedString string) (*jwt.Token, error) {
-	jwtSecret, ok := universe.GetNode().GetNodeAttributeValue(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.JWTKey.Name),
-	)
-	if !ok || jwtSecret == nil {
-		return nil, errors.New("failed to get jwt secret")
+	secret, err := GetJWTSecret()
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to get jwt secret")
 	}
-	secret := utils.GetFromAnyMap(*jwtSecret, "secret", "")
 
 	return jwt.Parse(signedString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
