@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"fmt"
+
 	"strings"
 	"time"
 
@@ -10,8 +11,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
-	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/pkg/errors"
+
+	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 func GetTokenFromRequest(c *gin.Context) string {
@@ -98,16 +102,19 @@ func CreateJWTToken(userID uuid.UUID, secret []byte) (string, error) {
 	return signedString, nil
 }
 
-func ValidateJWT(signedString string, secret []byte) (*jwt.Token, error) {
-	parser := new(jwt.Parser)
-	token, _, err := parser.ParseUnverified(signedString, jwt.MapClaims{})
-	return token, err
-	/* TODO:
+func ValidateJWT(signedString string) (*jwt.Token, error) {
+	jwtSecret, ok := universe.GetNode().GetNodeAttributeValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.JWTKey.Name),
+	)
+	if !ok || jwtSecret == nil {
+		return nil, errors.New("failed to get jwt secret")
+	}
+	secret := utils.GetFromAnyMap(*jwtSecret, "secret", "")
+
 	return jwt.Parse(signedString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Invalid token %v", token.Header["alg"])
 		}
 		return secret, nil
 	})
-	*/
 }

@@ -79,17 +79,8 @@ func (n *Node) apiUsersGetById(c *gin.Context) {
 	c.JSON(http.StatusOK, userDTO)
 }
 
-func (n *Node) apiParseJWT(c *gin.Context, token string) (jwt.Token, int, error) {
-	// get jwt secret to sign token
-	jwtKeyAttribute, ok := n.GetNodeAttributeValue(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.JWTKey.Name),
-	)
-	if !ok {
-		return jwt.Token{}, http.StatusInternalServerError, errors.New("failed to get jwt_key")
-	}
-	secret := utils.GetFromAnyMap(*jwtKeyAttribute, universe.Attributes.Node.JWTKey.Key, "")
-
-	parsedAccessToken, err := api.ValidateJWT(token, []byte(secret))
+func (n *Node) apiParseJWT(token string) (jwt.Token, int, error) {
+	parsedAccessToken, err := api.ValidateJWT(token)
 	if err != nil {
 		return jwt.Token{}, http.StatusForbidden, errors.WithMessage(err, "failed to verify access token")
 	}
