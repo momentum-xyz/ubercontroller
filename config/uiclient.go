@@ -1,8 +1,9 @@
 package config
 
 type UIClient struct {
-	FrontendURL                   string `yaml:"frontend_url" json:"-" envconfig:"FRONTEND_URL"`
 	AgoraAppID                    string `yaml:"agora_app_id" json:"AGORA_APP_ID" envconfig:"AGORA_APP_ID"`
+	FrontendURL                   string `yaml:"frontend_url" json:"-" envconfig:"FRONTEND_URL"`
+	KusamaWsServer                string `yaml:"kusama_ws_server" json:"KUSAMA_WS_SERVER" envconfig:"KUSAMA_WS_SERVER"`
 	UnityClientStreamingAssetsURL string `yaml:"unity_client_streaming_assets_url" json:"UNITY_CLIENT_STREAMING_ASSETS_URL" envconfig:"UNITY_CLIENT_STREAMING_ASSETS_URL"`
 	UnityClientCompanyName        string `yaml:"unity_client_company_name" json:"UNITY_CLIENT_COMPANY_NAME" envconfig:"UNITY_CLIENT_COMPANY_NAME"`
 	UnityClientProductName        string `yaml:"unity_client_product_name" json:"UNITY_CLIENT_PRODUCT_NAME" envconfig:"UNITY_CLIENT_PRODUCT_NAME"`
