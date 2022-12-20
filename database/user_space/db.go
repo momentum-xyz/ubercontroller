@@ -23,9 +23,16 @@ const (
 	getUserSpacesByUserIDQuery           = `SELECT * FROM user_space WHERE user_id = $1;`
 	getUserSpacesByUserIDAndSpaceIDQuery = `SELECT * FROM user_space WHERE user_id = $1 AND space_id = $2;`
 	getUserSpaceValueByIDQuery           = `SELECT value FROM user_space WHERE user_id = $1 AND space_id = $2;`
+	getUserSpaceIndirectAdmins           = `SELECT GetIndirectSpaceAdmins($1);`
 
-	getUserSpaceIndirectAdmins = `SELECT GetIndirectSpaceAdmins($1);`
-	checkIsIndirectAdminQuery  = `SELECT EXISTS(SELECT 1 FROM (SELECT GetIndirectSpaceAdmins($2) AS user_id) AS t WHERE user_id = $1);`
+	checkIsIndirectAdminQuery = `WITH space_admins AS (
+									SELECT GetIndirectSpaceAdmins($2) AS user_id
+								)
+								SELECT EXISTS(
+									SELECT 1
+									FROM space_admins
+    								WHERE user_id = $1
+    							) AS user_is_admin;`
 
 	updateUserSpacesValueQuery = `UPDATE user_space SET value = $3 WHERE user_id = $1 AND space_id = $2;`
 
