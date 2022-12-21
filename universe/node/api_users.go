@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
@@ -77,20 +76,6 @@ func (n *Node) apiUsersGetById(c *gin.Context) {
 	userDTO := api.ToUserDTO(userEntry, true)
 
 	c.JSON(http.StatusOK, userDTO)
-}
-
-func (n *Node) apiParseJWT(token string) (jwt.Token, int, error) {
-	secret, err := api.GetJWTSecret()
-	if err != nil {
-		return jwt.Token{}, http.StatusForbidden, errors.WithMessage(err, "failed to get jwt secret")
-	}
-
-	parsedAccessToken, err := api.ValidateJWTWithSecret(token, secret)
-	if err != nil {
-		return jwt.Token{}, http.StatusForbidden, errors.WithMessage(err, "failed to verify access token")
-	}
-
-	return *parsedAccessToken, http.StatusOK, nil
 }
 
 func (n *Node) apiCreateGuestUserByName(ctx context.Context, name string) (*entry.User, error) {
