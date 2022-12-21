@@ -43,7 +43,24 @@ func (n *Node) apiUsersGetMe(c *gin.Context) {
 		return
 	}
 
-	userDTO := api.ToUserDTO(userEntry, true)
+	userTypeAttributeValue, ok := n.GetNodeAttributeValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.GuestUserType.Name),
+	)
+	if !ok || userTypeAttributeValue == nil {
+		err := errors.New("Node: apiUsersGetMe: failed to get user type attribute value")
+		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, n.log)
+		return
+	}
+
+	guestUserType := utils.GetFromAnyMap(*userTypeAttributeValue, universe.Attributes.Node.GuestUserType.Key, "")
+	guestUserTypeID, err := uuid.Parse(guestUserType)
+	if err != nil {
+		err := errors.New("Node: apiUsersGetMe: failed to parse guest user type id")
+		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, n.log)
+		return
+	}
+
+	userDTO := api.ToUserDTO(userEntry, guestUserTypeID, true)
 
 	c.JSON(http.StatusOK, userDTO)
 }
@@ -74,7 +91,24 @@ func (n *Node) apiUsersGetById(c *gin.Context) {
 		return
 	}
 
-	userDTO := api.ToUserDTO(userEntry, true)
+	userTypeAttributeValue, ok := n.GetNodeAttributeValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.GuestUserType.Name),
+	)
+	if !ok || userTypeAttributeValue == nil {
+		err := errors.New("Node: apiUsersGetById: failed to get user type attribute value")
+		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, n.log)
+		return
+	}
+
+	guestUserType := utils.GetFromAnyMap(*userTypeAttributeValue, universe.Attributes.Node.GuestUserType.Key, "")
+	guestUserTypeID, err := uuid.Parse(guestUserType)
+	if err != nil {
+		err := errors.New("Node: apiUsersGetById: failed to parse guest user type id")
+		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, n.log)
+		return
+	}
+
+	userDTO := api.ToUserDTO(userEntry, guestUserTypeID, true)
 
 	c.JSON(http.StatusOK, userDTO)
 }

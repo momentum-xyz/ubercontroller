@@ -56,21 +56,24 @@ func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
 		return
 	}
 
-	userTypes, err := w.db.UserTypesGetUserTypes(c)
-	if err != nil {
-		err := errors.WithMessage(err, "Worlds: apiGetOnlineUsers: failed to UserTypesGetUserTypes")
+	userTypeAttributeValue, ok := universe.GetNode().GetNodeAttributeValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.GuestUserType.Name),
+	)
+	if !ok || userTypeAttributeValue == nil {
+		err := errors.New("Worlds: apiGetOnlineUsers: failed to get user type attribute value")
 		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, w.log)
 		return
 	}
 
-	registeredUserTypeID := uuid.Nil
-	for _, userType := range userTypes {
-		if userType.UserTypeName == "User" {
-			registeredUserTypeID = userType.UserTypeID
-		}
+	guestUserType := utils.GetFromAnyMap(*userTypeAttributeValue, universe.Attributes.Node.GuestUserType.Key, "")
+	guestUserTypeID, err := uuid.Parse(guestUserType)
+	if err != nil {
+		err := errors.New("Worlds: apiGetOnlineUsers: failed to parse guest user type id")
+		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, w.log)
+		return
 	}
 
-	userDTOs := api.ToUserDTOs(userEntries, registeredUserTypeID, false)
+	userDTOs := api.ToUserDTOs(userEntries, guestUserTypeID, false)
 
 	c.JSON(http.StatusOK, userDTOs)
 }
