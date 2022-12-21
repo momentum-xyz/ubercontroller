@@ -80,7 +80,12 @@ func (n *Node) apiUsersGetById(c *gin.Context) {
 }
 
 func (n *Node) apiParseJWT(token string) (jwt.Token, int, error) {
-	parsedAccessToken, err := api.ValidateJWT(token)
+	secret, err := api.GetJWTSecret()
+	if err != nil {
+		return jwt.Token{}, http.StatusForbidden, errors.WithMessage(err, "failed to get jwt secret")
+	}
+
+	parsedAccessToken, err := api.ValidateJWTWithSecret(token, secret)
 	if err != nil {
 		return jwt.Token{}, http.StatusForbidden, errors.WithMessage(err, "failed to verify access token")
 	}

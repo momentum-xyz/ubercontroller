@@ -62,18 +62,6 @@ func GenerateChallenge(wallet string) (string, error) {
 	), nil
 }
 
-func GetJWTSecret() ([]byte, error) {
-	jwtSecret, ok := universe.GetNode().GetNodeAttributeValue(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.JWTKey.Name),
-	)
-	if !ok || jwtSecret == nil {
-		return nil, errors.New("failed to get jwt secret")
-	}
-	secret := utils.GetFromAnyMap(*jwtSecret, "secret", "")
-
-	return []byte(secret), nil
-}
-
 func VerifyPolkadotSignature(wallet, challenge, signature string) (bool, error) {
 	pub, err := schnorrkel.NewPublicKeyFromHex(wallet)
 	if err != nil {
@@ -118,12 +106,19 @@ func CreateJWTToken(userID uuid.UUID) (string, error) {
 	return signedString, nil
 }
 
-func ValidateJWT(signedString string) (*jwt.Token, error) {
-	secret, err := GetJWTSecret()
-	if err != nil {
-		return nil, errors.WithMessage(err, "failed to get jwt secret")
+func GetJWTSecret() ([]byte, error) {
+	jwtSecret, ok := universe.GetNode().GetNodeAttributeValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.JWTKey.Name),
+	)
+	if !ok || jwtSecret == nil {
+		return nil, errors.New("failed to get jwt secret")
 	}
+	secret := utils.GetFromAnyMap(*jwtSecret, universe.Attributes.Node.JWTKey.Key, "")
 
+	return []byte(secret), nil
+}
+
+func ValidateJWTWithSecret(signedString string, secret []byte) (*jwt.Token, error) {
 	return jwt.Parse(signedString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Invalid token %v", token.Header["alg"])
