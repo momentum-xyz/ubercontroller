@@ -3,7 +3,6 @@ package api
 import (
 	"bytes"
 	"fmt"
-
 	"strings"
 	"time"
 
@@ -11,11 +10,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
-
-	"github.com/momentum-xyz/ubercontroller/types/entry"
-	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/pkg/errors"
 )
 
 func GetTokenFromRequest(c *gin.Context) string {
@@ -84,7 +80,7 @@ func VerifyPolkadotSignature(wallet, challenge, signature string) (bool, error) 
 
 // CreateJWTToken saves a jwt token with the given userID as subject
 // and signed with the given secret
-func CreateJWTToken(userID uuid.UUID) (string, error) {
+func CreateJWTToken(userID uuid.UUID, secret []byte) (string, error) {
 	claims := jwt.StandardClaims{
 		IssuedAt:  time.Now().Unix(),
 		ExpiresAt: time.Now().Add(4 * time.Hour).Unix(),
@@ -92,13 +88,9 @@ func CreateJWTToken(userID uuid.UUID) (string, error) {
 		Subject:   userID.String(),
 	}
 
-	newJwt := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	secret, err := GetJWTSecret()
-	if err != nil {
-		return "", errors.WithMessage(err, "failed to get jwt secret")
-	}
+	jwt := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	signedString, err := newJwt.SignedString(secret)
+	signedString, err := jwt.SignedString(secret)
 	if err != nil {
 		return "", errors.WithMessage(err, "failed to sign token")
 	}
@@ -106,23 +98,16 @@ func CreateJWTToken(userID uuid.UUID) (string, error) {
 	return signedString, nil
 }
 
-func GetJWTSecret() ([]byte, error) {
-	jwtSecret, ok := universe.GetNode().GetNodeAttributeValue(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.JWTKey.Name),
-	)
-	if !ok || jwtSecret == nil {
-		return nil, errors.New("failed to get jwt secret")
-	}
-	secret := utils.GetFromAnyMap(*jwtSecret, universe.Attributes.Node.JWTKey.Key, "")
-
-	return []byte(secret), nil
-}
-
-func ValidateJWTWithSecret(signedString string, secret []byte) (*jwt.Token, error) {
+func ValidateJWT(signedString string, secret []byte) (*jwt.Token, error) {
+	parser := new(jwt.Parser)
+	token, _, err := parser.ParseUnverified(signedString, jwt.MapClaims{})
+	return token, err
+	/* TODO:
 	return jwt.Parse(signedString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Invalid token %v", token.Header["alg"])
 		}
 		return secret, nil
 	})
+	*/
 }
