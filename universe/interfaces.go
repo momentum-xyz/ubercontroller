@@ -164,8 +164,6 @@ type Node interface {
 	AddAPIRegister(register APIRegister)
 
 	WriteInfluxPoint(point *influxWrite.Point) error
-
-	GetGuestUserTypeID() (uuid.UUID, error)
 }
 
 type Worlds interface {

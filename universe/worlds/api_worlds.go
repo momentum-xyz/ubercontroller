@@ -13,6 +13,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
+	"github.com/momentum-xyz/ubercontroller/universe/common/helper"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
@@ -56,7 +57,7 @@ func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
 		return
 	}
 
-	guestUserTypeID, err := universe.GetNode().GetGuestUserTypeID()
+	guestUserTypeID, err := helper.GetGuestUserTypeID()
 	if err != nil {
 		err := errors.New("Worlds: apiGetOnlineUsers: failed to GetGuestUserType")
 		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, w.log)
