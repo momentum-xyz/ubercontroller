@@ -1,11 +1,15 @@
 package node
 
 import (
+	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
+	"github.com/pkg/errors"
+
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
-	"github.com/pkg/errors"
 )
 
 func (n *Node) UpsertNodeAttribute(
@@ -46,6 +50,25 @@ func (n *Node) GetNodeAttributeValue(attributeID entry.AttributeID) (*entry.Attr
 		return nil, true
 	}
 	return payload.Value, true
+}
+
+func (n *Node) GetGuestUserTypeID() (uuid.UUID, error) {
+	userTypeAttributeValue, ok := n.GetNodeAttributeValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.GuestUserType.Name),
+	)
+	if !ok || userTypeAttributeValue == nil {
+		err := errors.New("failed to get user type attribute value")
+		return uuid.Nil, err
+	}
+
+	guestUserType := utils.GetFromAnyMap(*userTypeAttributeValue, universe.Attributes.Node.GuestUserType.Key, "")
+	guestUserTypeID, err := uuid.Parse(guestUserType)
+	if err != nil {
+		err := errors.New("failed to parse guest user type id")
+		return uuid.Nil, err
+	}
+
+	return guestUserTypeID, err
 }
 
 func (n *Node) GetNodeAttributeOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool) {

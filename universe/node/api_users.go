@@ -43,19 +43,9 @@ func (n *Node) apiUsersGetMe(c *gin.Context) {
 		return
 	}
 
-	userTypeAttributeValue, ok := n.GetNodeAttributeValue(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.GuestUserType.Name),
-	)
-	if !ok || userTypeAttributeValue == nil {
-		err := errors.New("Node: apiUsersGetMe: failed to get user type attribute value")
-		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, n.log)
-		return
-	}
-
-	guestUserType := utils.GetFromAnyMap(*userTypeAttributeValue, universe.Attributes.Node.GuestUserType.Key, "")
-	guestUserTypeID, err := uuid.Parse(guestUserType)
+	guestUserTypeID, err := n.GetGuestUserTypeID()
 	if err != nil {
-		err := errors.New("Node: apiUsersGetMe: failed to parse guest user type id")
+		err := errors.New("Node: apiUsersGetMe: failed to GetGuestUserTypeID")
 		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, n.log)
 		return
 	}
@@ -91,19 +81,9 @@ func (n *Node) apiUsersGetById(c *gin.Context) {
 		return
 	}
 
-	userTypeAttributeValue, ok := n.GetNodeAttributeValue(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.GuestUserType.Name),
-	)
-	if !ok || userTypeAttributeValue == nil {
-		err := errors.New("Node: apiUsersGetById: failed to get user type attribute value")
-		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, n.log)
-		return
-	}
-
-	guestUserType := utils.GetFromAnyMap(*userTypeAttributeValue, universe.Attributes.Node.GuestUserType.Key, "")
-	guestUserTypeID, err := uuid.Parse(guestUserType)
+	guestUserTypeID, err := n.GetGuestUserTypeID()
 	if err != nil {
-		err := errors.New("Node: apiUsersGetById: failed to parse guest user type id")
+		err := errors.New("Node: apiUsersGetById: failed to GetGuestUserTypeID")
 		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, n.log)
 		return
 	}
@@ -139,19 +119,11 @@ func (n *Node) apiCreateGuestUserByName(ctx context.Context, name string) (*entr
 		},
 	}
 
-	userTypeAttributeValue, ok := n.GetNodeAttributeValue(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.GuestUserType.Name),
-	)
-	if !ok || userTypeAttributeValue == nil {
-		return nil, errors.Errorf("failed to get user type attribute value")
+	guestUserTypeID, err := n.GetGuestUserTypeID()
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to GetGuestUserTypeID")
 	}
 
-	// user is always guest
-	guestUserType := utils.GetFromAnyMap(*userTypeAttributeValue, universe.Attributes.Node.GuestUserType.Key, "")
-	guestUserTypeID, err := uuid.Parse(guestUserType)
-	if err != nil {
-		return nil, errors.Errorf("failed to parse guest user type id")
-	}
 	ue.UserTypeID = &guestUserTypeID
 
 	err = n.db.UsersUpsertUser(ctx, ue)

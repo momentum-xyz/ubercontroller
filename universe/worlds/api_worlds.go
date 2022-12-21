@@ -56,19 +56,9 @@ func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
 		return
 	}
 
-	userTypeAttributeValue, ok := universe.GetNode().GetNodeAttributeValue(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.GuestUserType.Name),
-	)
-	if !ok || userTypeAttributeValue == nil {
-		err := errors.New("Worlds: apiGetOnlineUsers: failed to get user type attribute value")
-		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, w.log)
-		return
-	}
-
-	guestUserType := utils.GetFromAnyMap(*userTypeAttributeValue, universe.Attributes.Node.GuestUserType.Key, "")
-	guestUserTypeID, err := uuid.Parse(guestUserType)
+	guestUserTypeID, err := universe.GetNode().GetGuestUserTypeID()
 	if err != nil {
-		err := errors.New("Worlds: apiGetOnlineUsers: failed to parse guest user type id")
+		err := errors.New("Worlds: apiGetOnlineUsers: failed to GetGuestUserType")
 		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, w.log)
 		return
 	}
