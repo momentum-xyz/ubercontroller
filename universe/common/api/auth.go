@@ -87,7 +87,7 @@ func VerifyPolkadotSignature(wallet, challenge, signature string) (bool, error) 
 func CreateJWTToken(userID uuid.UUID) (string, error) {
 	claims := jwt.StandardClaims{
 		IssuedAt:  time.Now().Unix(),
-		ExpiresAt: time.Now().Add(4 * time.Hour).Unix(),
+		ExpiresAt: time.Now().Add(7 * 24 * time.Hour).Unix(),
 		Issuer:    "ubercontroller",
 		Subject:   userID.String(),
 	}

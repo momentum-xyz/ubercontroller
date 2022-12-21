@@ -11,14 +11,20 @@ import (
 )
 
 func VerifyUser(log *zap.SugaredLogger) gin.HandlerFunc {
-	secret, err := api.GetJWTSecret()
-	if err != nil {
-		err = errors.WithMessage(err, "Middleware: VerifyUser: failed to fetch jwt secret")
-		log.Error(err)
-		return nil
-	}
+	var secret []byte
 
 	return func(c *gin.Context) {
+		if secret == nil {
+			jwtSecret, err := api.GetJWTSecret()
+			if err != nil {
+				err = errors.WithMessage(err, "Middleware: VerifyUser: failed to fetch jwt secret")
+				api.AbortRequest(c, http.StatusForbidden, "failed_to_verify_access_token", err, log)
+				return
+			}
+
+			secret = jwtSecret
+		}
+
 		token, err := api.ValidateJWTWithSecret(api.GetTokenFromRequest(c), secret)
 		if err != nil {
 			err = errors.WithMessage(err, "Middleware: VerifyUser: failed to verify token")
