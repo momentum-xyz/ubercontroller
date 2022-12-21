@@ -166,19 +166,7 @@ func (n *Node) apiGenToken(c *gin.Context) {
 		return
 	}
 
-	// get jwt secret to sign token
-	jwtKeyAttributeValue, ok := n.GetNodeAttributeValue(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.JWTKey.Name),
-	)
-	if !ok || jwtKeyAttributeValue == nil {
-		err := errors.New("Node: apiGenToken: failed to get jwt_key_attribute")
-		api.AbortRequest(c, http.StatusInternalServerError, "no_jwt_key", err, n.log)
-		return
-	}
-
-	secret := utils.GetFromAnyMap(*jwtKeyAttributeValue, universe.Attributes.Node.JWTKey.Key, "")
-
-	token, err := api.CreateJWTToken(userEntry.UserID, []byte(secret))
+	token, err := api.CreateJWTToken(userEntry.UserID)
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiGenToken: failed create token for user")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_create_token", err, n.log)
@@ -225,19 +213,7 @@ func (n *Node) apiGuestToken(c *gin.Context) {
 		return
 	}
 
-	// get jwt secret to sign token
-	jwtKeyAttributeValue, ok := n.GetNodeAttributeValue(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.JWTKey.Name),
-	)
-	if !ok || jwtKeyAttributeValue == nil {
-		err := errors.New("Node: apiGuestToken: failed to get jwt_key_attribute")
-		api.AbortRequest(c, http.StatusInternalServerError, "no_jwt_key", err, n.log)
-		return
-	}
-
-	secret := utils.GetFromAnyMap(*jwtKeyAttributeValue, universe.Attributes.Node.JWTKey.Key, "")
-
-	token, err := api.CreateJWTToken(userEntry.UserID, []byte(secret))
+	token, err := api.CreateJWTToken(userEntry.UserID)
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiGuestToken: failed create token for user")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_create_token", err, n.log)
