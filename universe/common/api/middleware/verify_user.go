@@ -10,9 +10,8 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
 )
 
-var secret *[]byte = nil
-
 func VerifyUser(log *zap.SugaredLogger) gin.HandlerFunc {
+	var secret []byte = nil
 	if secret == nil {
 		jwtSecret, err := api.GetJWTSecret()
 		if err != nil {
@@ -21,11 +20,11 @@ func VerifyUser(log *zap.SugaredLogger) gin.HandlerFunc {
 			return nil
 		}
 
-		secret = &jwtSecret
+		secret = jwtSecret
 	}
 
 	return func(c *gin.Context) {
-		token, err := api.ValidateJWTWithSecret(api.GetTokenFromRequest(c), *secret)
+		token, err := api.ValidateJWTWithSecret(api.GetTokenFromRequest(c), secret)
 		if err != nil {
 			err = errors.WithMessage(err, "Middleware: VerifyUser: failed to verify token")
 			api.AbortRequest(c, http.StatusForbidden, "failed_to_verify_access_token", err, log)
