@@ -18,7 +18,7 @@ func VerifyUser(log *zap.SugaredLogger) gin.HandlerFunc {
 			jwtSecret, err := api.GetJWTSecret()
 			if err != nil {
 				err = errors.WithMessage(err, "Middleware: VerifyUser: failed to fetch jwt secret")
-				api.AbortRequest(c, http.StatusForbidden, "failed_to_verify_access_token", err, log)
+				api.AbortRequest(c, http.StatusInternalServerError, "failed_to_verify_access_token", err, log)
 				return
 			}
 
@@ -28,7 +28,7 @@ func VerifyUser(log *zap.SugaredLogger) gin.HandlerFunc {
 		token, err := api.ValidateJWTWithSecret(api.GetTokenFromRequest(c), secret)
 		if err != nil {
 			err = errors.WithMessage(err, "Middleware: VerifyUser: failed to verify token")
-			api.AbortRequest(c, http.StatusForbidden, "failed_to_verify_access_token", err, log)
+			api.AbortRequest(c, http.StatusUnauthorized, "failed_to_verify_access_token", err, log)
 			return
 		}
 		c.Set(api.TokenContextKey, *token)
