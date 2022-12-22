@@ -96,11 +96,12 @@ func (db *DB) UserAttributesGetUserAttributeValueByID(
 	ctx context.Context, userAttributeID entry.UserAttributeID,
 ) (*entry.AttributeValue, error) {
 	var value entry.AttributeValue
-
-	if err := pgxscan.Get(
-		ctx, db.conn, &value, getUserAttributeValueByIDQuery,
-		userAttributeID.PluginID, userAttributeID.Name, userAttributeID.UserID,
-	); err != nil {
+	err := db.conn.QueryRow(ctx,
+		getUserAttributeValueByIDQuery,
+		userAttributeID.PluginID,
+		userAttributeID.Name,
+		userAttributeID.UserID).Scan(&value)
+	if err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 
