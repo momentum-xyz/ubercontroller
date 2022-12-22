@@ -95,16 +95,25 @@ func (db *DB) UserAttributesGetUserAttributeByID(
 func (db *DB) UserAttributesGetUserAttributeValueByID(
 	ctx context.Context, userAttributeID entry.UserAttributeID,
 ) (*entry.AttributeValue, error) {
-	var value entry.AttributeValue
+	var result map[string]entry.AttributeValue
 
 	if err := pgxscan.Get(
-		ctx, db.conn, &value, getUserAttributeValueByIDQuery,
+		ctx, db.conn, &result, getUserAttributeValueByIDQuery,
 		userAttributeID.PluginID, userAttributeID.Name, userAttributeID.UserID,
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 
-	return &value, nil
+	attributeValue, ok := result["value"]
+	if !ok {
+		return nil, errors.New("failed to find 'value' column in DB result")
+	}
+
+	if attributeValue == nil {
+		return nil, errors.New("attributeValue is nil")
+	}
+
+	return &attributeValue, nil
 }
 
 func (db *DB) UserAttributesGetUserAttributeOptionsByID(
