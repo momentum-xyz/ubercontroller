@@ -525,7 +525,7 @@ func (s *Space) SendUnityAutoAttributeMessage(
 func (s *Space) UpdateAutoTextureMap(
 	option *entry.UnityAutoAttributeOption, value *entry.AttributeValue,
 ) *websocket.PreparedMessage {
-	if option == nil {
+	if option == nil || value == nil {
 		return nil
 	}
 

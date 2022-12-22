@@ -304,7 +304,7 @@ func (n *Node) createAndAddBulbSpace(spaceID uuid.UUID, dock universe.Space, fro
 
 	spaceTemplate := helper.SpaceTemplate{
 		SpaceID:     &spaceID,
-		SpaceName:   toUserName,
+		SpaceName:   &toUserName,
 		SpaceTypeID: spaceType.GetID(),
 		ParentID:    dock.GetID(),
 		OwnerID:     &fromUser.UserID,

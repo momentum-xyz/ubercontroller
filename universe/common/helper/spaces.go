@@ -13,7 +13,7 @@ import (
 
 type SpaceTemplate struct {
 	SpaceID         *uuid.UUID           `json:"space_id"`
-	SpaceName       string               `json:"space_name"`
+	SpaceName       *string              `json:"space_name"`
 	SpaceTypeID     uuid.UUID            `json:"space_type_id"`
 	ParentID        uuid.UUID            `json:"parent_id"`
 	OwnerID         *uuid.UUID           `json:"owner_id"`
@@ -60,11 +60,15 @@ func AddSpaceFromTemplate(spaceTemplate *SpaceTemplate, updateDB bool) (uuid.UUI
 
 	spaceID := spaceTemplate.SpaceID
 	ownerID := spaceTemplate.OwnerID
+	spaceName := spaceTemplate.SpaceName
 	if spaceID == nil {
 		spaceID = utils.GetPTR(uuid.New())
 	}
 	if ownerID == nil {
 		ownerID = utils.GetPTR(parent.GetOwnerID())
+	}
+	if spaceName == nil {
+		spaceName = utils.GetPTR(spaceID.String())
 	}
 
 	// creating
@@ -79,11 +83,6 @@ func AddSpaceFromTemplate(spaceTemplate *SpaceTemplate, updateDB bool) (uuid.UUI
 	if err := space.SetSpaceType(spaceType, false); err != nil {
 		return uuid.Nil, errors.WithMessagef(err, "failed to set space type: %s", spaceTemplate.SpaceTypeID)
 	}
-	if spaceTemplate.Position != nil {
-		if err := space.SetPosition(spaceTemplate.Position, false); err != nil {
-			return uuid.Nil, errors.WithMessagef(err, "failed to set position: %+v", spaceTemplate.Position)
-		}
-	}
 	if asset2d != nil {
 		if err := space.SetAsset2D(asset2d, false); err != nil {
 			return uuid.Nil, errors.WithMessagef(err, "failed to set asset 2d: %s", spaceTemplate.Asset2dID)
@@ -92,6 +91,11 @@ func AddSpaceFromTemplate(spaceTemplate *SpaceTemplate, updateDB bool) (uuid.UUI
 	if asset3d != nil {
 		if err := space.SetAsset3D(asset3d, false); err != nil {
 			return uuid.Nil, errors.WithMessagef(err, "failed to set asset 3d: %s", spaceTemplate.Asset3dID)
+		}
+	}
+	if spaceTemplate.Position != nil {
+		if err := space.SetPosition(spaceTemplate.Position, false); err != nil {
+			return uuid.Nil, errors.WithMessagef(err, "failed to set position: %+v", spaceTemplate.Position)
 		}
 	}
 
@@ -103,11 +107,11 @@ func AddSpaceFromTemplate(spaceTemplate *SpaceTemplate, updateDB bool) (uuid.UUI
 	}
 
 	// running
-	if err := parent.UpdateChildrenPosition(true); err != nil {
-		return uuid.Nil, errors.WithMessage(err, "failed to update children position")
-	}
 	if err := space.Run(); err != nil {
 		return uuid.Nil, errors.WithMessage(err, "failed to run space")
+	}
+	if err := parent.UpdateChildrenPosition(true); err != nil {
+		return uuid.Nil, errors.WithMessage(err, "failed to update children position")
 	}
 
 	// adding children
@@ -124,27 +128,24 @@ func AddSpaceFromTemplate(spaceTemplate *SpaceTemplate, updateDB bool) (uuid.UUI
 	space.SetEnabled(true)
 
 	// adding attributes
-	// Give a space a name and a default image texture.
-	// TODO: get from some world level config:
-	imgPluginID := uuid.MustParse("ff40fbf0-8c22-437d-b27a-0258f99130fe")
-	imgAttributeName := "state"
-	imgDefault := "53e9a2811a7a6cd93011a6df7c23edc7"
 	spaceTemplate.SpaceAttributes = append(
 		spaceTemplate.SpaceAttributes,
 		entry.NewAttribute(
 			entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name),
 			entry.NewAttributePayload(
 				&entry.AttributeValue{
-					universe.Attributes.Space.Name.Key: spaceTemplate.SpaceName,
+					universe.Attributes.Space.Name.Key: spaceName,
 				},
 				nil,
 			),
 		),
+		// TODO: refactor needed!
+		// should be added as part of "SpaceTemplate.SpaceAttributes" by function caller
 		entry.NewAttribute(
-			entry.NewAttributeID(imgPluginID, imgAttributeName),
+			entry.NewAttributeID(uuid.MustParse("ff40fbf0-8c22-437d-b27a-0258f99130fe"), "state"),
 			entry.NewAttributePayload(
 				&entry.AttributeValue{
-					"render_hash": imgDefault,
+					"render_hash": "53e9a2811a7a6cd93011a6df7c23edc7",
 				},
 				nil,
 			),
@@ -178,18 +179,11 @@ func RemoveSpaceFromParent(parent, space universe.Space, updateDB bool) (bool, e
 			errs, errors.WithMessagef(err, "failed to remove space from parent: %s", parent.GetID()),
 		)
 	}
-
 	if err := parent.UpdateChildrenPosition(true); err != nil {
 		errs = multierror.Append(
 			errs, errors.WithMessagef(err, "failed to update children position: %s", parent.GetID()),
 		)
 	}
-
-	if err := space.Stop(); err != nil {
-		errs = multierror.Append(errs, errors.WithMessagef(err, "failed to stop space"))
-	}
-
-	space.SetEnabled(false)
 
 	return removed, errs.ErrorOrNil()
 }
