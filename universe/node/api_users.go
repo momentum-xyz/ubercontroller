@@ -12,6 +12,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
+	"github.com/momentum-xyz/ubercontroller/universe/common/helper"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
@@ -43,7 +44,14 @@ func (n *Node) apiUsersGetMe(c *gin.Context) {
 		return
 	}
 
-	userDTO := api.ToUserDTO(userEntry, true)
+	guestUserTypeID, err := helper.GetGuestUserTypeID()
+	if err != nil {
+		err := errors.New("Node: apiUsersGetMe: failed to GetGuestUserTypeID")
+		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, n.log)
+		return
+	}
+
+	userDTO := api.ToUserDTO(userEntry, guestUserTypeID, true)
 
 	c.JSON(http.StatusOK, userDTO)
 }
@@ -74,7 +82,14 @@ func (n *Node) apiUsersGetById(c *gin.Context) {
 		return
 	}
 
-	userDTO := api.ToUserDTO(userEntry, true)
+	guestUserTypeID, err := helper.GetGuestUserTypeID()
+	if err != nil {
+		err := errors.New("Node: apiUsersGetById: failed to GetGuestUserTypeID")
+		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, n.log)
+		return
+	}
+
+	userDTO := api.ToUserDTO(userEntry, guestUserTypeID, true)
 
 	c.JSON(http.StatusOK, userDTO)
 }
@@ -105,19 +120,11 @@ func (n *Node) apiCreateGuestUserByName(ctx context.Context, name string) (*entr
 		},
 	}
 
-	userTypeAttributeValue, ok := n.GetNodeAttributeValue(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.GuestUserType.Name),
-	)
-	if !ok || userTypeAttributeValue == nil {
-		return nil, errors.Errorf("failed to get user type attribute value")
+	guestUserTypeID, err := helper.GetGuestUserTypeID()
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to GetGuestUserTypeID")
 	}
 
-	// user is always guest
-	guestUserType := utils.GetFromAnyMap(*userTypeAttributeValue, universe.Attributes.Node.GuestUserType.Key, "")
-	guestUserTypeID, err := uuid.Parse(guestUserType)
-	if err != nil {
-		return nil, errors.Errorf("failed to parse guest user type id")
-	}
 	ue.UserTypeID = &guestUserTypeID
 
 	err = n.db.UsersUpsertUser(ctx, ue)

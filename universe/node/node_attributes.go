@@ -2,10 +2,11 @@ package node
 
 import (
 	"github.com/hashicorp/go-multierror"
+	"github.com/pkg/errors"
+
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
-	"github.com/pkg/errors"
 )
 
 func (n *Node) UpsertNodeAttribute(

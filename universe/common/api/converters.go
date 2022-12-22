@@ -11,7 +11,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
-func ToUserDTO(userEntry *entry.User, includeWallet bool) *dto.User {
+func ToUserDTO(userEntry *entry.User, guestUserTypeID uuid.UUID, includeWallet bool) *dto.User {
 	profileEntry := userEntry.Profile
 
 	userDTO := dto.User{
@@ -23,9 +23,13 @@ func ToUserDTO(userEntry *entry.User, includeWallet bool) *dto.User {
 			ProfileLink: profileEntry.ProfileLink,
 		},
 		CreatedAt: userEntry.CreatedAt.Format(time.RFC3339),
+		IsGuest:   false,
 	}
 	if userEntry.UserTypeID != nil {
 		userDTO.UserTypeID = userEntry.UserTypeID.String()
+		if *userEntry.UserTypeID == guestUserTypeID {
+			userDTO.IsGuest = true
+		}
 	}
 	if userEntry.UpdatedAt != nil {
 		userDTO.UpdatedAt = utils.GetPTR(userEntry.UpdatedAt.Format(time.RFC3339))
@@ -60,16 +64,10 @@ func ToUserDTO(userEntry *entry.User, includeWallet bool) *dto.User {
 	return &userDTO
 }
 
-func ToUserDTOs(userEntries []*entry.User, registeredUserTypeID uuid.UUID, includeWallet bool) []*dto.User {
-	str := registeredUserTypeID.String()
+func ToUserDTOs(userEntries []*entry.User, guestUserTypeID uuid.UUID, includeWallet bool) []*dto.User {
 	userDTOs := make([]*dto.User, len(userEntries))
 	for i := range userEntries {
-		userDTOs[i] = ToUserDTO(userEntries[i], includeWallet)
-		if userDTOs[i].UserTypeID == str {
-			userDTOs[i].IsGuest = false
-		} else {
-			userDTOs[i].IsGuest = true
-		}
+		userDTOs[i] = ToUserDTO(userEntries[i], guestUserTypeID, includeWallet)
 	}
 	return userDTOs
 }
