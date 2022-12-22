@@ -3,7 +3,6 @@ package space
 import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
-	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -219,36 +218,6 @@ func (s *Space) DoRemoveSpace(space universe.Space, updateDB bool) (bool, error)
 			return false, errors.WithMessage(err, "failed to update db")
 		}
 	}
-
-	// we need it to avoid spam while removing children
-	if space.GetEnabled() {
-		go func() {
-			removeMsg := posbus.NewRemoveStaticObjectsMsg(1)
-			removeMsg.SetObject(0, space.GetID())
-			if err := space.GetWorld().Send(removeMsg.WebsocketMessage(), true); err != nil {
-				s.log.Warn(
-					errors.WithMessagef(err, "Space: DoRemoveSpace: failed to send remove message: %s", space.GetID()),
-				)
-			}
-		}()
-	}
-
-	if err := space.Stop(); err != nil {
-		return false, errors.WithMessage(err, "failed to stop space")
-	}
-
-	space.SetEnabled(false)
-
-	go func() {
-		for _, child := range space.GetSpaces(false) {
-			// prevent spam while removing
-			child.SetEnabled(false)
-
-			if _, err := space.RemoveSpace(child, false, false); err != nil {
-				s.log.Error(errors.WithMessagef(err, "Space: DoRemoveSpace: failed to remove child: %s", child.GetID()))
-			}
-		}
-	}()
 
 	return universe.GetNode().RemoveSpaceFromAllSpaces(space)
 }

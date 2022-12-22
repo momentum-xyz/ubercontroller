@@ -3,9 +3,11 @@ package helper
 import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
+	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/universe/common"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 	"github.com/pkg/errors"
@@ -171,19 +173,59 @@ func AddSpaceFromTemplate(spaceTemplate *SpaceTemplate, updateDB bool) (uuid.UUI
 }
 
 func RemoveSpaceFromParent(parent, space universe.Space, updateDB bool) (bool, error) {
-	var errs *multierror.Error
+	if parent == nil {
+		return false, errors.Errorf("parent is nil")
+	}
 
+	var errs *multierror.Error
 	removed, err := parent.RemoveSpace(space, true, updateDB)
 	if err != nil {
 		errs = multierror.Append(
 			errs, errors.WithMessagef(err, "failed to remove space from parent: %s", parent.GetID()),
 		)
 	}
+
 	if err := parent.UpdateChildrenPosition(true); err != nil {
 		errs = multierror.Append(
 			errs, errors.WithMessagef(err, "failed to update children position: %s", parent.GetID()),
 		)
 	}
+
+	// we need it to avoid spam while removing children
+	if space.GetEnabled() {
+		go func() {
+			removeMsg := posbus.NewRemoveStaticObjectsMsg(1)
+			removeMsg.SetObject(0, space.GetID())
+			if err := space.GetWorld().Send(removeMsg.WebsocketMessage(), true); err != nil {
+				common.GetLogger().Warn(
+					errors.WithMessagef(
+						err, "Helper: RemoveSpaceFromParent: failed to send remove message: %s", space.GetID(),
+					),
+				)
+			}
+		}()
+	}
+
+	if err := space.Stop(); err != nil {
+		errs = multierror.Append(errs, errors.WithMessage(err, "failed to stop space"))
+	}
+
+	space.SetEnabled(false)
+
+	go func() {
+		for _, child := range space.GetSpaces(false) {
+			// prevent spam while removing
+			child.SetEnabled(false)
+
+			if _, err := RemoveSpaceFromParent(space, child, false); err != nil {
+				common.GetLogger().Error(
+					errors.WithMessagef(
+						err, "Helper: RemoveSpaceFromParent: failed to remove child from space: %s", child.GetID(),
+					),
+				)
+			}
+		}
+	}()
 
 	return removed, errs.ErrorOrNil()
 }
