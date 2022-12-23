@@ -97,9 +97,12 @@ func (db *DB) SpaceAttributesGetSpaceAttributesBySpaceID(
 	if spaceID.String() == "0e347f9e-bba9-48c1-a3f9-4258ca230481" {
 		fmt.Println("*** Node space found")
 		for k, v := range spaceAttributes {
-			fmt.Println("*** ", k, v.SpaceID.String(), v.PluginID.String(), v.Name)
+			if v.Name == "news_feed" {
+				fmt.Println("*** ", k, v.SpaceID.String(), v.PluginID.String(), "...", v.Value)
+			} else {
+				fmt.Println("*** ", k, v.SpaceID.String(), v.PluginID.String(), v.Name, v.Value)
+			}
 		}
-		fmt.Println("*** spaceAttributes len=", len(spaceAttributes))
 	}
 	return spaceAttributes, nil
 }

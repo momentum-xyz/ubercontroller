@@ -64,6 +64,17 @@ func (s *Space) GetSpaceAttributeEffectiveOptions(attributeID entry.AttributeID)
 }
 
 func (s *Space) GetSpaceAttributePayload(attributeID entry.AttributeID) (*entry.AttributePayload, bool) {
+	if s.id.String() == "0e347f9e-bba9-48c1-a3f9-4258ca230481" {
+		fmt.Println("***> GetSpaceAttributePayload", attributeID.PluginID.String(), attributeID.Name)
+
+		for k, v := range s.spaceAttributes.Data {
+			if k.Name == "news_feed" {
+				fmt.Println("***> ", k.PluginID.String(), k.Name, "...", v.Options)
+			} else {
+				fmt.Println("***> ", k.PluginID.String(), k.Name, v.Value, v.Options)
+			}
+		}
+	}
 	return s.spaceAttributes.Load(attributeID)
 }
 
@@ -334,19 +345,12 @@ func (s *Space) RemoveSpaceAttributes(attributeIDs []entry.AttributeID, updateDB
 
 func (s *Space) loadSpaceAttributes() error {
 	entries, err := s.db.SpaceAttributesGetSpaceAttributesBySpaceID(s.ctx, s.GetID())
-	if s.GetID().String() == "0e347f9e-bba9-48c1-a3f9-4258ca230481" {
-		fmt.Println("***>>>> loadSpaceAttributes entries len=", len(entries))
-	}
 	if err != nil {
 		return errors.WithMessage(err, "failed to get space attributes")
 	}
 
 	for i := range entries {
 		entry := entries[i]
-
-		if s.GetID().String() == "0e347f9e-bba9-48c1-a3f9-4258ca230481" {
-			fmt.Println("***>>>> loadSpaceAttributes entry=", entry.PluginID, entry.Name)
-		}
 
 		if _, err := s.UpsertSpaceAttribute(
 			entry.AttributeID, modify.MergeWith(entry.AttributePayload), false,
