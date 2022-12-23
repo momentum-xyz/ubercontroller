@@ -160,7 +160,7 @@ func (n *Node) createWorld(ownerID uuid.UUID, name string) error {
 		return errors.Errorf("failed to get world template attribute value")
 	}
 
-	var worldTemplate helper.SpaceTemplate
+	var worldTemplate helper.WorldTemplate
 	if err := utils.MapDecode(*templateValue, &worldTemplate); err != nil {
 		return errors.WithMessage(err, "failed to decode world template")
 	}

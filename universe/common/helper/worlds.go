@@ -9,7 +9,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-func AddWorldFromTemplate(worldTemplate *SpaceTemplate, updateDB bool) (uuid.UUID, error) {
+type WorldTemplate struct {
+	SpaceTemplate
+}
+
+func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (uuid.UUID, error) {
 	node := universe.GetNode()
 
 	// loading
