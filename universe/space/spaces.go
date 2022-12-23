@@ -3,7 +3,6 @@ package space
 import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
-	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -217,19 +216,6 @@ func (s *Space) DoRemoveSpace(space universe.Space, updateDB bool) (bool, error)
 	if updateDB {
 		if err := s.db.SpacesRemoveSpaceByID(s.ctx, space.GetID()); err != nil {
 			return false, errors.WithMessage(err, "failed to update db")
-		}
-	}
-
-	// we need this check to avoid spam while removing children
-	if space.GetEnabled() {
-		removeMsg := posbus.NewRemoveStaticObjectsMsg(1)
-		removeMsg.SetObject(0, space.GetID())
-		if err := space.GetWorld().Send(removeMsg.WebsocketMessage(), true); err != nil {
-			s.log.Warn(
-				errors.WithMessagef(
-					err, "Helper: RemoveSpaceFromParent: failed to send remove message: %s", space.GetID(),
-				),
-			)
 		}
 	}
 

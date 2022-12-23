@@ -2,7 +2,6 @@ package world
 
 import (
 	"github.com/gorilla/websocket"
-	"github.com/hashicorp/go-multierror"
 	"time"
 
 	"github.com/google/uuid"
@@ -83,19 +82,8 @@ func (w *World) Send(msg *websocket.PreparedMessage, recursive bool) error {
 	//    in this case we can skip message for whole parts of the world, but deadlocks check required
 	// 2. we can go through all spaces using "allSpaces" cache and call "Send(msg, false)"
 	//    in this case we can skip message only for particular space
-	w.allSpaces.Mu.RLock()
-	defer w.allSpaces.Mu.RUnlock()
-
-	var errs *multierror.Error
-	for _, space := range w.allSpaces.Data {
-		if err := space.Send(msg, false); err != nil {
-			errs = multierror.Append(
-				errs, errors.WithMessagef(err, "failed to send message to space: %s", space.GetID()),
-			)
-		}
-	}
-
-	return errs.ErrorOrNil()
+	// 3. we can use "world.Space.Send(msg, false)" because "world.Space" has all world's users inside
+	return w.Space.Send(msg, false)
 }
 
 func (w *World) GetUserSpawnPosition(userID uuid.UUID) cmath.Vec3 {
