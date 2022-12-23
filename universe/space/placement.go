@@ -105,6 +105,7 @@ func (s *Space) SetPosition(position *cmath.SpacePosition, updateDB bool) error 
 	s.position = position
 	if s.position != nil {
 		s.actualPosition.Store(s.position)
+
 		if s.enabled.Load() {
 			go func() {
 				s.UpdateSpawnMessage()

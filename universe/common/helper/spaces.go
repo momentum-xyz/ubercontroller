@@ -166,14 +166,12 @@ func RemoveSpaceFromParent(parent, space universe.Space, updateDB bool) (bool, e
 		return false, errors.Errorf("parent is nil")
 	}
 
-	var errs *multierror.Error
 	removed, err := parent.RemoveSpace(space, true, updateDB)
 	if err != nil {
-		errs = multierror.Append(
-			errs, errors.WithMessagef(err, "failed to remove space from parent: %s", parent.GetID()),
-		)
+		return false, errors.WithMessagef(err, "failed to remove space from parent: %s", parent.GetID())
 	}
 
+	var errs *multierror.Error
 	if err := parent.UpdateChildrenPosition(true); err != nil {
 		errs = multierror.Append(
 			errs, errors.WithMessagef(err, "failed to update children position: %s", parent.GetID()),
