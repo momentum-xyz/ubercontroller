@@ -78,9 +78,9 @@ func (w *World) RemoveUser(user universe.User, updateDB bool) error {
 
 func (w *World) Send(msg *websocket.PreparedMessage, recursive bool) error {
 	// DECIDE: how we want to do it?
-	// Right now we're checking if space is disabled, then we skipp message sending in the spase (just return nil)
-	// 1. we can go through all children recursively starting from root and call "Send(msg, true)"
-	//    in this case we can skip message for whole parts of the world
+	// Right now we're checking, if space is disabled we skipp message sending in the space (just return nil)
+	// 1. we can go through all children recursively starting from "world.Space" and call "Send(msg, true)"
+	//    in this case we can skip message for whole parts of the world, but deadlocks check required
 	// 2. we can go through all spaces using "allSpaces" cache and call "Send(msg, false)"
 	//    in this case we can skip message only for particular space
 	w.allSpaces.Mu.RLock()
