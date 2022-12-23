@@ -37,11 +37,7 @@ func (n *Node) UpsertNodeAttribute(
 	n.nodeAttributes.Data[attributeID] = payload
 
 	if n.GetID().String() == "0e347f9e-bba9-48c1-a3f9-4258ca230481" {
-		if attributeID.Name == "news_feed" {
-			fmt.Println("***>>> UpsertNodeAttribute ", attributeID.PluginID.String(), attributeID.Name, "...")
-		} else {
-			fmt.Println("***>>> UpsertNodeAttribute ", attributeID.PluginID.String(), attributeID.Name, payload)
-		}
+		fmt.Println("***>>> UpsertNodeAttribute ", attributeID.PluginID.String(), attributeID.Name)
 	}
 
 	return nodeAttribute, nil
