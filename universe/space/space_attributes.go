@@ -1,8 +1,12 @@
 package space
 
 import (
+	"fmt"
+
 	"github.com/gorilla/websocket"
 	"github.com/hashicorp/go-multierror"
+	"github.com/pkg/errors"
+
 	"github.com/momentum-xyz/ubercontroller/pkg/message"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -10,7 +14,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/common/unity"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
-	"github.com/pkg/errors"
 )
 
 func (s *Space) GetSpaceAttributeValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool) {
@@ -61,6 +64,13 @@ func (s *Space) GetSpaceAttributeEffectiveOptions(attributeID entry.AttributeID)
 }
 
 func (s *Space) GetSpaceAttributePayload(attributeID entry.AttributeID) (*entry.AttributePayload, bool) {
+	if s.id.String() == "0e347f9e-bba9-48c1-a3f9-4258ca230481" {
+		fmt.Println("*** GetSpaceAttributePayload", attributeID.PluginID.String(), attributeID.Name)
+
+		for k, v := range s.spaceAttributes.Data {
+			fmt.Println("*** ", k.PluginID.String(), k.Name, v.Value, v.Options)
+		}
+	}
 	return s.spaceAttributes.Load(attributeID)
 }
 
