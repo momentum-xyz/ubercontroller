@@ -356,7 +356,7 @@ func (s *Space) loadSpaceAttributes() error {
 
 		effectiveOptions, ok := s.GetSpaceAttributeEffectiveOptions(entry.AttributeID)
 		if !ok {
-			return nil
+			continue
 		}
 		autoOption, err := unity.GetOptionAutoOption(entry.AttributeID, effectiveOptions)
 		if err != nil {
