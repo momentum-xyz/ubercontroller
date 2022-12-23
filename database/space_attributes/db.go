@@ -2,7 +2,6 @@ package space_attributes
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/google/uuid"
@@ -93,12 +92,6 @@ func (db *DB) SpaceAttributesGetSpaceAttributesBySpaceID(
 	var spaceAttributes []*entry.SpaceAttribute
 	if err := pgxscan.Select(ctx, db.conn, &spaceAttributes, getSpaceAttributesQueryBySpaceIDQuery, spaceID); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
-	}
-	if spaceID.String() == "0e347f9e-bba9-48c1-a3f9-4258ca230481" {
-		fmt.Println("*** Node space found")
-		for k, v := range spaceAttributes {
-			fmt.Println("*** ", k, v.SpaceID.String(), v.PluginID.String(), v.Name, v.Value)
-		}
 	}
 	return spaceAttributes, nil
 }
