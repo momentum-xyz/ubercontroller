@@ -200,14 +200,7 @@ func (n *Node) apiRemoveSpace(c *gin.Context) {
 		return
 	}
 
-	parent := space.GetParent()
-	if parent == nil {
-		err := errors.Errorf("Node: apiRemoveSpace: empty parent: %s", spaceID)
-		api.AbortRequest(c, http.StatusInternalServerError, "empty_parent", err, n.log)
-		return
-	}
-
-	if _, err := helper.RemoveSpaceFromParent(parent, space, true); err != nil {
+	if _, err := helper.RemoveSpaceFromParent(space.GetParent(), space, true); err != nil {
 		err := errors.WithMessage(err, "Node: apiRemoveSpace: failed to remove space from parent")
 		api.AbortRequest(c, http.StatusInternalServerError, "remove_failed", err, n.log)
 		return

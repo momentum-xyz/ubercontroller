@@ -80,7 +80,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 		verifiedSpaces := verified.Group("/spaces")
 		{
-			// TODO: if was created only for tests, fix or remove
+			// TODO: it was created only for tests, fix or remove
 			verifiedSpaces.POST("/template", n.apiSpacesCreateSpaceFromTemplate)
 
 			verifiedSpaces.POST("", n.apiSpacesCreateSpace)

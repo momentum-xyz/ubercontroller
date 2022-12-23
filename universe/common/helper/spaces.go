@@ -1,6 +1,7 @@
 package helper
 
 import (
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
 	"github.com/momentum-xyz/posbus-protocol/posbus"
@@ -217,4 +218,32 @@ func RemoveSpaceFromParent(parent, space universe.Space, updateDB bool) (bool, e
 	}()
 
 	return removed, errs.ErrorOrNil()
+}
+
+func CalcSpaceSpawnPosition(parentID, userID uuid.UUID) (*cmath.SpacePosition, error) {
+	parent, ok := universe.GetNode().GetSpaceFromAllSpaces(parentID)
+	if !ok {
+		return nil, errors.Errorf("space parent not found: %s", parentID)
+	}
+
+	var position *cmath.SpacePosition
+	effectiveOptions := parent.GetEffectiveOptions()
+	if effectiveOptions == nil || len(effectiveOptions.ChildPlacements) == 0 {
+		world := parent.GetWorld()
+		if world != nil {
+			user, ok := world.GetUser(userID, true)
+			if ok {
+				fmt.Printf("User rotation: %v", user.GetRotation())
+				//distance := float32(10)
+				position = &cmath.SpacePosition{
+					// TODO: recalc based on euler angles, not lookat: Location: cmath.Add(user.GetPosition(), cmath.MultiplyN(user.GetRotation(), distance)),
+					Location: user.GetPosition(),
+					Rotation: cmath.Vec3{},
+					Scale:    cmath.Vec3{X: 1, Y: 1, Z: 1},
+				}
+			}
+		}
+	}
+
+	return position, nil
 }

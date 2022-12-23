@@ -1,7 +1,6 @@
 package node
 
 import (
-	"fmt"
 	"github.com/momentum-xyz/ubercontroller/universe/common/helper"
 	"net/http"
 
@@ -26,12 +25,14 @@ import (
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/spaces [post]
 func (n *Node) apiSpacesCreateSpace(c *gin.Context) {
+	// TODO: use "helper.SpaceTemplate" alternative here to have ability to create composite objects
+	// QUESTION: can we automatically clone "helper.SpaceTemplate" definition and add validation tags to it?
 	type InBody struct {
 		SpaceName   string               `json:"space_name" binding:"required"`
 		ParentID    string               `json:"parent_id" binding:"required"`
 		SpaceTypeID string               `json:"space_type_id" binding:"required"`
-		Asset2dID   string               `json:"asset_2d_id"`
-		Asset3dID   string               `json:"asset_3d_id"`
+		Asset2dID   *string              `json:"asset_2d_id"`
+		Asset3dID   *string              `json:"asset_3d_id"`
 		Position    *cmath.SpacePosition `json:"position"`
 	}
 	var inBody InBody
@@ -69,31 +70,13 @@ func (n *Node) apiSpacesCreateSpace(c *gin.Context) {
 		return
 	}
 
-	// TODO: fix this bloody stuff
 	position := inBody.Position
 	if position == nil {
-		parent, ok := n.GetSpaceFromAllSpaces(parentID)
-		if !ok {
-			err := errors.Errorf("Node: apiSpacesCreateSpace: parent space not found")
-			api.AbortRequest(c, http.StatusBadRequest, "parent_not_found", err, n.log)
+		position, err = helper.CalcSpaceSpawnPosition(parentID, userID)
+		if err != nil {
+			err := errors.WithMessage(err, "Node: apiSpacesCreateSpace: failed to calc space spawn position")
+			api.AbortRequest(c, http.StatusBadRequest, "calc_spawn_position_failed", err, n.log)
 			return
-		}
-		options := parent.GetOptions()
-		if options == nil || len(options.ChildPlacements) == 0 {
-			parentWorld := parent.GetWorld()
-			if parentWorld != nil {
-				user, ok := parentWorld.GetUser(userID, true)
-				if ok {
-					fmt.Printf("User rotation: %v", user.GetRotation())
-					//distance := float32(10)
-					position = &cmath.SpacePosition{
-						// TODO: recalc based on euler angles, not lookat: Location: cmath.Add(user.GetPosition(), cmath.MultiplyN(user.GetRotation(), distance)),
-						Location: user.GetPosition(),
-						Rotation: cmath.Vec3{},
-						Scale:    cmath.Vec3{X: 1, Y: 1, Z: 1},
-					}
-				}
-			}
 		}
 	}
 
@@ -104,10 +87,9 @@ func (n *Node) apiSpacesCreateSpace(c *gin.Context) {
 		return
 	}
 
-	// TODO: should be available for admin or owner of parent
 	var asset2dID *uuid.UUID
-	if inBody.Asset2dID != "" {
-		assetID, err := uuid.Parse(inBody.Asset2dID)
+	if inBody.Asset2dID != nil {
+		assetID, err := uuid.Parse(*inBody.Asset2dID)
 		if err != nil {
 			err := errors.WithMessage(err, "Node: apiSpacesCreateSpace: failed to parse asset 2d id")
 			api.AbortRequest(c, http.StatusBadRequest, "invalid_asset_2d_id", err, n.log)
@@ -116,10 +98,9 @@ func (n *Node) apiSpacesCreateSpace(c *gin.Context) {
 		asset2dID = &assetID
 	}
 
-	// TODO: should be available for admin or owner of parent
 	var asset3dID *uuid.UUID
-	if inBody.Asset3dID != "" {
-		assetID, err := uuid.Parse(inBody.Asset3dID)
+	if inBody.Asset3dID != nil {
+		assetID, err := uuid.Parse(*inBody.Asset3dID)
 		if err != nil {
 			err := errors.WithMessage(err, "Node: apiSpacesCreateSpace: failed to parse asset 3d id")
 			api.AbortRequest(c, http.StatusBadRequest, "invalid_asset_3d_id", err, n.log)
@@ -155,6 +136,7 @@ func (n *Node) apiSpacesCreateSpace(c *gin.Context) {
 	c.JSON(http.StatusCreated, out)
 }
 
+// TODO: it was created only for tests, fix or remove
 func (n *Node) apiSpacesCreateSpaceFromTemplate(c *gin.Context) {
 	var template helper.SpaceTemplate
 
