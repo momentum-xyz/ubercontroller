@@ -116,7 +116,7 @@ func (db *DB) UserSpaceGetIndirectAdmins(ctx context.Context, spaceID uuid.UUID)
 	return userIDs, nil
 }
 
-func (db *DB) UserSpaceCheckIsIndirectAdmin(ctx context.Context, userID, spaceID uuid.UUID) (bool, error) {
+func (db *DB) UserSpaceCheckIsUserIndirectSpaceAdmin(ctx context.Context, userID, spaceID uuid.UUID) (bool, error) {
 	var isIndirectAdmin bool
 	if err := db.conn.QueryRow(ctx, checkIsIndirectAdminQuery, userID, spaceID).
 		Scan(&isIndirectAdmin); err != nil {

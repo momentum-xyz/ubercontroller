@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/universe/common"
 	"os"
 	"os/signal"
 	"syscall"
@@ -43,7 +44,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/assets_2d"
 	"github.com/momentum-xyz/ubercontroller/universe/assets_3d"
 	"github.com/momentum-xyz/ubercontroller/universe/attribute_types"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api"
 	"github.com/momentum-xyz/ubercontroller/universe/node"
 	"github.com/momentum-xyz/ubercontroller/universe/plugins"
 	"github.com/momentum-xyz/ubercontroller/universe/space_types"
@@ -74,11 +74,12 @@ func run(ctx context.Context) error {
 	message.InitBuilder(20, 1024*32)
 	if err := universe.InitializeIDs(
 		uuid.MustParse("f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0"),
-		uuid.MustParse("86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8")); err != nil {
+		uuid.MustParse("86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8"),
+	); err != nil {
 		return errors.WithMessage(err, "failed to initialize universe")
 	}
-	if err := api.Initialize(ctx); err != nil {
-		return errors.WithMessage(err, "failed to initialize api")
+	if err := common.Initialize(ctx); err != nil {
+		return errors.WithMessage(err, "failed to initialize common package")
 	}
 
 	pool, err := createDBConnection(ctx, &cfg.Postgres)

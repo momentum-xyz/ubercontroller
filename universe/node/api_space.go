@@ -2,6 +2,7 @@ package node
 
 import (
 	"fmt"
+	"github.com/momentum-xyz/ubercontroller/universe/common/helper"
 	"net/http"
 	"time"
 
@@ -185,7 +186,6 @@ func (n *Node) apiGetSpace(c *gin.Context) {
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/spaces/{space_id} [delete]
 func (n *Node) apiRemoveSpace(c *gin.Context) {
-	// TODO: move to separate method for reuse
 	spaceID, err := uuid.Parse(c.Param("spaceID"))
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiRemoveSpace: failed to parse space id")
@@ -207,23 +207,11 @@ func (n *Node) apiRemoveSpace(c *gin.Context) {
 		return
 	}
 
-	if _, err := parent.RemoveSpace(space, false, true); err != nil {
-		err := errors.WithMessagef(err, "Node: apiRemoveSpace: failed to remove space: %s", spaceID)
-		api.AbortRequest(c, http.StatusInternalServerError, "remove_space_failed", err, n.log)
+	if _, err := helper.RemoveSpaceFromParent(parent, space, true); err != nil {
+		err := errors.WithMessage(err, "Node: apiRemoveSpace: failed to remove space from parent")
+		api.AbortRequest(c, http.StatusInternalServerError, "remove_failed", err, n.log)
 		return
 	}
-
-	if err := parent.UpdateChildrenPosition(true); err != nil {
-		err := errors.WithMessage(err, "Node: apiRemoveSpace: failed to update children position")
-		api.AbortRequest(c, http.StatusInternalServerError, "update_children_position_failed", err, n.log)
-		return
-	}
-
-	if err := space.Stop(); err != nil {
-		n.log.Error(errors.WithMessagef(err, "Node: apiRemoveSpace: failed to stop space: %s", spaceID))
-	}
-
-	space.SetEnabled(false)
 
 	c.JSON(http.StatusOK, nil)
 }

@@ -19,13 +19,13 @@ import (
 // @Tags spaces
 // @Accept json
 // @Produce json
-// @Param body body node.apiCreateSpace.InBody true "body params"
-// @Success 201 {object} node.apiCreateSpace.Out
+// @Param body body node.apiSpacesCreateSpace.InBody true "body params"
+// @Success 201 {object} node.apiSpacesCreateSpace.Out
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/spaces [post]
-func (n *Node) apiCreateSpace(c *gin.Context) {
+func (n *Node) apiSpacesCreateSpace(c *gin.Context) {
 	type InBody struct {
 		SpaceName   string               `json:"space_name" binding:"required"`
 		ParentID    string               `json:"parent_id" binding:"required"`
@@ -37,44 +37,22 @@ func (n *Node) apiCreateSpace(c *gin.Context) {
 	var inBody InBody
 
 	if err := c.ShouldBindJSON(&inBody); err != nil {
-		err = errors.WithMessage(err, "Node: apiCreateSpace: failed to bind json")
+		err = errors.WithMessage(err, "Node: apiSpacesCreateSpace: failed to bind json")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
 		return
 	}
 
 	parentID, err := uuid.Parse(inBody.ParentID)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiCreateSpace: failed to parse parent id")
+		err := errors.WithMessage(err, "Node: apiSpacesCreateSpace: failed to parse parent id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_parent_id", err, n.log)
 		return
 	}
 
 	userID, err := api.GetUserIDFromContext(c)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiCreateSpace: failed to get user id")
+		err := errors.WithMessage(err, "Node: apiSpacesCreateSpace: failed to get user id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
-		return
-	}
-
-	// is admin check
-	userIDs, err := n.db.UserSpaceGetIndirectAdmins(c, parentID)
-	if err != nil {
-		err := errors.WithMessage(err, "Node: apiCreateSpace: failed to get user space entry for parent space")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_user_space_entry", err, log)
-		return
-	}
-
-	isAdmin := false
-
-	for _, uID := range userIDs {
-		if uID != nil && *uID == userID {
-			isAdmin = true
-		}
-	}
-
-	if !isAdmin {
-		err := errors.Errorf("Node: apiCreateSpace: user does not have the permissions to create a new space")
-		api.AbortRequest(c, http.StatusUnauthorized, "unauthorized_create_space", err, n.log)
 		return
 	}
 
@@ -83,7 +61,7 @@ func (n *Node) apiCreateSpace(c *gin.Context) {
 	if position == nil {
 		parent, ok := n.GetSpaceFromAllSpaces(parentID)
 		if !ok {
-			err := errors.Errorf("Node: apiCreateSpace: parent space not found")
+			err := errors.Errorf("Node: apiSpacesCreateSpace: parent space not found")
 			api.AbortRequest(c, http.StatusBadRequest, "parent_not_found", err, n.log)
 			return
 		}
@@ -108,7 +86,7 @@ func (n *Node) apiCreateSpace(c *gin.Context) {
 
 	spaceTypeID, err := uuid.Parse(inBody.SpaceTypeID)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiCreateSpace: failed to parse space type id")
+		err := errors.WithMessage(err, "Node: apiSpacesCreateSpace: failed to parse space type id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_type_id", err, n.log)
 		return
 	}
@@ -118,7 +96,7 @@ func (n *Node) apiCreateSpace(c *gin.Context) {
 	if inBody.Asset2dID != "" {
 		assetID, err := uuid.Parse(inBody.Asset2dID)
 		if err != nil {
-			err := errors.WithMessage(err, "Node: apiCreateSpace: failed to parse asset 2d id")
+			err := errors.WithMessage(err, "Node: apiSpacesCreateSpace: failed to parse asset 2d id")
 			api.AbortRequest(c, http.StatusBadRequest, "invalid_asset_2d_id", err, n.log)
 			return
 		}
@@ -130,7 +108,7 @@ func (n *Node) apiCreateSpace(c *gin.Context) {
 	if inBody.Asset3dID != "" {
 		assetID, err := uuid.Parse(inBody.Asset3dID)
 		if err != nil {
-			err := errors.WithMessage(err, "Node: apiCreateSpace: failed to parse asset 3d id")
+			err := errors.WithMessage(err, "Node: apiSpacesCreateSpace: failed to parse asset 3d id")
 			api.AbortRequest(c, http.StatusBadRequest, "invalid_asset_3d_id", err, n.log)
 			return
 		}
@@ -138,7 +116,7 @@ func (n *Node) apiCreateSpace(c *gin.Context) {
 	}
 
 	spaceTemplate := helper.SpaceTemplate{
-		SpaceName:   inBody.SpaceName,
+		SpaceName:   &inBody.SpaceName,
 		SpaceTypeID: spaceTypeID,
 		ParentID:    parentID,
 		OwnerID:     &userID,
@@ -149,7 +127,7 @@ func (n *Node) apiCreateSpace(c *gin.Context) {
 
 	spaceID, err := helper.AddSpaceFromTemplate(&spaceTemplate, true)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiCreateSpace: failed to add space from template")
+		err := errors.WithMessage(err, "Node: apiSpacesCreateSpace: failed to add space from template")
 		api.AbortRequest(c, http.StatusInternalServerError, "add_space_failed", err, n.log)
 		return
 	}
@@ -162,4 +140,27 @@ func (n *Node) apiCreateSpace(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, out)
+}
+
+func (n *Node) apiSpacesCreateSpaceFromTemplate(c *gin.Context) {
+	var template helper.SpaceTemplate
+
+	if err := c.ShouldBindJSON(&template); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	spaceID, err := helper.AddSpaceFromTemplate(&template, true)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"space_id": spaceID,
+	})
 }

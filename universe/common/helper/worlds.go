@@ -9,7 +9,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-func AddWorldFromTemplate(worldTemplate *SpaceTemplate, updateDB bool) (uuid.UUID, error) {
+type WorldTemplate struct {
+	SpaceTemplate
+}
+
+func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (uuid.UUID, error) {
 	node := universe.GetNode()
 
 	// loading
@@ -21,6 +25,10 @@ func AddWorldFromTemplate(worldTemplate *SpaceTemplate, updateDB bool) (uuid.UUI
 	worldID := worldTemplate.SpaceID
 	if worldID == nil {
 		worldID = utils.GetPTR(uuid.New())
+	}
+	worldName := worldTemplate.SpaceName
+	if worldName == nil {
+		worldName = utils.GetPTR(worldID.String())
 	}
 
 	// creating
@@ -35,6 +43,7 @@ func AddWorldFromTemplate(worldTemplate *SpaceTemplate, updateDB bool) (uuid.UUI
 	if err := world.SetSpaceType(worldSpaceType, false); err != nil {
 		return uuid.Nil, errors.WithMessagef(err, "failed to set space type: %s", worldTemplate.SpaceTypeID)
 	}
+	// TODO: find a better way how to deal with it
 	if err := world.SetParent(node, false); err != nil {
 		return uuid.Nil, errors.WithMessagef(err, "failed to set parent: %s", node.GetID())
 	}
@@ -73,30 +82,28 @@ func AddWorldFromTemplate(worldTemplate *SpaceTemplate, updateDB bool) (uuid.UUI
 	// adding attributes
 	worldTemplate.SpaceAttributes = append(
 		worldTemplate.SpaceAttributes,
-		[]*entry.Attribute{
-			entry.NewAttribute(
-				entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name),
-				entry.NewAttributePayload(
-					&entry.AttributeValue{
-						universe.Attributes.Space.Name.Key: worldTemplate.SpaceName,
-					},
-					nil,
-				),
+		entry.NewAttribute(
+			entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name),
+			entry.NewAttributePayload(
+				&entry.AttributeValue{
+					universe.Attributes.Space.Name.Key: worldName,
+				},
+				nil,
 			),
-			entry.NewAttribute(
-				entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.World.Settings.Name),
-				entry.NewAttributePayload(
-					&entry.AttributeValue{
-						"kind":        "basic",
-						"spaces":      spaceLabelToID,
-						"attributes":  map[string]any{},
-						"space_types": map[string]any{},
-						"effects":     map[string]any{},
-					},
-					nil,
-				),
+		),
+		entry.NewAttribute(
+			entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.World.Settings.Name),
+			entry.NewAttributePayload(
+				&entry.AttributeValue{
+					"kind":        "basic",
+					"spaces":      spaceLabelToID,
+					"attributes":  map[string]any{},
+					"space_types": map[string]any{},
+					"effects":     map[string]any{},
+				},
+				nil,
 			),
-		}...,
+		),
 	)
 
 	for i := range worldTemplate.SpaceAttributes {
