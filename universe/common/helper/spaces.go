@@ -136,18 +136,7 @@ func AddSpaceFromTemplate(spaceTemplate *SpaceTemplate, updateDB bool) (uuid.UUI
 			entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name),
 			entry.NewAttributePayload(
 				&entry.AttributeValue{
-					universe.Attributes.Space.Name.Key: spaceName,
-				},
-				nil,
-			),
-		),
-		// TODO: refactor needed!
-		// should be added as part of "SpaceTemplate.SpaceAttributes" by function caller
-		entry.NewAttribute(
-			entry.NewAttributeID(uuid.MustParse("ff40fbf0-8c22-437d-b27a-0258f99130fe"), "state"),
-			entry.NewAttributePayload(
-				&entry.AttributeValue{
-					"render_hash": "53e9a2811a7a6cd93011a6df7c23edc7",
+					universe.Attributes.Space.Name.Key: *spaceName,
 				},
 				nil,
 			),

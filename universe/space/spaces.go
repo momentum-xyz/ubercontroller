@@ -161,11 +161,11 @@ func (s *Space) AddSpaces(spaces []universe.Space, updateDB bool) error {
 
 // TODO: think about rollback on error
 func (s *Space) RemoveSpace(space universe.Space, recursive, updateDB bool) (bool, error) {
-	removed, err := func() (bool, error) {
-		if space.GetWorld().GetID() != s.GetWorld().GetID() {
-			return false, errors.Errorf("worlds mismatch: %s != %s", space.GetWorld().GetID(), s.GetWorld().GetID())
-		}
+	if space.GetWorld().GetID() != s.GetWorld().GetID() {
+		return false, errors.Errorf("worlds mismatch: %s != %s", space.GetWorld().GetID(), s.GetWorld().GetID())
+	}
 
+	removed, err := func() (bool, error) {
 		s.Children.Mu.Lock()
 		defer s.Children.Mu.Unlock()
 

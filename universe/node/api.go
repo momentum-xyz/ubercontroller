@@ -80,13 +80,10 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 		verifiedSpaces := verified.Group("/spaces")
 		{
-			spacesAdmin := verifiedSpaces.Group("", middleware.AuthorizeAdmin(n.log, n.db))
-			{
-				// TODO: if was created only for tests, fix or remove
-				spacesAdmin.POST("/template", n.apiSpacesCreateSpaceFromTemplate)
+			// TODO: if was created only for tests, fix or remove
+			verifiedSpaces.POST("/template", n.apiSpacesCreateSpaceFromTemplate)
 
-				spacesAdmin.POST("", n.apiSpacesCreateSpace)
-			}
+			verifiedSpaces.POST("", n.apiSpacesCreateSpace)
 
 			space := verifiedSpaces.Group("/:spaceID")
 			{
