@@ -163,9 +163,6 @@ func (s *Space) GetSpaceAttributesPayload(recursive bool) map[entry.SpaceAttribu
 func (s *Space) UpsertSpaceAttribute(
 	attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
 ) (*entry.SpaceAttribute, error) {
-	if s.id.String() == "0e347f9e-bba9-48c1-a3f9-4258ca230481" {
-		fmt.Println("***>> UpsertSpaceAttribute call for:", attributeID.PluginID.String(), attributeID.Name)
-	}
 	s.spaceAttributes.Mu.Lock()
 	defer s.spaceAttributes.Mu.Unlock()
 
@@ -176,9 +173,6 @@ func (s *Space) UpsertSpaceAttribute(
 
 	payload, err := modifyFn(payload)
 	if err != nil {
-		if s.id.String() == "0e347f9e-bba9-48c1-a3f9-4258ca230481" {
-			fmt.Println("***>> UpsertSpaceAttribute error: failed to modify attribute payload")
-		}
 		return nil, errors.WithMessage(err, "failed to modify attribute payload")
 	}
 
