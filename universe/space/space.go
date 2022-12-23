@@ -358,6 +358,7 @@ func (s *Space) Run() error {
 				if message == nil {
 					return
 				}
+
 				s.performBroadcast(message)
 			case <-s.ctx.Done():
 				s.Stop()

@@ -3,10 +3,10 @@ package space
 import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"github.com/hashicorp/go-multierror"
+	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/pkg/errors"
 	"github.com/zakaria-chahboun/cute"
-
-	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
 func (s *Space) GetUser(userID uuid.UUID, recursive bool) (universe.User, bool) {
@@ -110,21 +110,29 @@ func (s *Space) Send(msg *websocket.PreparedMessage, recursive bool) error {
 		cute.Printf("Space: Send", "%+v", errors.WithStack(errors.Errorf("empty message received")))
 		return nil
 	}
+
 	if s.numSendsQueued.Add(1) < 0 {
 		return nil
 	}
 	s.broadcastPipeline <- msg
 
-	if recursive {
-		s.Children.Mu.RLock()
-		defer s.Children.Mu.RUnlock()
+	if !recursive {
+		return nil
+	}
 
-		for _, space := range s.Children.Data {
-			space.Send(msg, recursive)
+	s.Children.Mu.RLock()
+	defer s.Children.Mu.RUnlock()
+
+	var errs *multierror.Error
+	for _, child := range s.Children.Data {
+		if err := child.Send(msg, recursive); err != nil {
+			errs = multierror.Append(
+				errs, errors.WithMessagef(err, "failed to send message to child: %s", child.GetID()),
+			)
 		}
 	}
 
-	return nil
+	return errs.ErrorOrNil()
 }
 
 func (s *Space) performBroadcast(message *websocket.PreparedMessage) {
