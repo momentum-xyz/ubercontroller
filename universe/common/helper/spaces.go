@@ -201,6 +201,8 @@ func RemoveSpaceFromParent(parent, space universe.Space, updateDB bool) (bool, e
 
 	space.SetEnabled(false)
 
+	common.GetLogger().Infof("Helper: RemoveSpaceFromParent: space removed: %s", space.GetID())
+
 	go func() {
 		for _, child := range space.GetSpaces(false) {
 			// prevent spam while removing
