@@ -301,10 +301,9 @@ type User interface {
 }
 
 // TODO: check!!!
-// looks like our maps are not fully protected all the time,
-// bacause, for example, I securely got "Value" from different parts of code
-// and then write some data into it (as always - directly) simultaneousely with reading from it from another place,
-// in this case we have to get panic
+// looks like our maps (Value/Options) are not fully protected all the time, bacause,
+// for example, I securely got "Value" from attribute and then read some data from it (as always - directly)
+// simultaneousely with writing from another place, in this case we might have a panic
 type Attributes[K comparable] interface {
 	GetPayload(attributeID K) (*entry.AttributePayload, bool)
 	GetValue(attributeID K) (*entry.AttributeValue, bool)
