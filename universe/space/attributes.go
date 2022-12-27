@@ -309,6 +309,10 @@ func (s *Space) loadSpaceAttributes() error {
 
 		effectiveOptions, ok := attributes.GetEffectiveOptions(entry.AttributeID)
 		if !ok {
+			// QUESTION: why our "attribute_type.attribute_name" is not a foreign key in database?
+			s.log.Warnf(
+				"Space: loadSpaceAttributes: failed to get attribute effective options: %+v", entry.SpaceAttributeID,
+			)
 			continue
 		}
 		autoOption, err := unity.GetOptionAutoOption(entry.AttributeID, effectiveOptions)
@@ -318,7 +322,7 @@ func (s *Space) loadSpaceAttributes() error {
 		s.UpdateAutoTextureMap(autoOption, entry.Value)
 	}
 
-	s.log.Debugf("Space attributes loaded: %s: %d", s.GetID(), s.Attributes.Len())
+	s.log.Debugf("Space attributes loaded: %s: %d", s.GetID(), s.GetSpaceAttributes().Len())
 
 	return nil
 }
