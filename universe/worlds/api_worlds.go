@@ -189,27 +189,14 @@ func (w *Worlds) apiWorldsGetChildrenOptions(spaces map[uuid.UUID]universe.Space
 }
 
 func (w *Worlds) apiWorldsResolveNameDescription(space universe.Space) (spaceName string, spaceDescription string, err error) {
-	var name string
 	var description string
-
-	nameAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name)
-	nameValue, ok := space.GetSpaceAttributeValue(nameAttributeID)
-	if !ok {
-		return "", "", errors.Errorf("invalid nameValue: %T", nameAttributeID)
-	}
-
-	if nameValue != nil {
-		name = utils.GetFromAnyMap(*nameValue, universe.Attributes.Space.Name.Key, "")
-	}
-
-	descriptionAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Description.Name)
-	descriptionValue, _ := space.GetSpaceAttributeValue(descriptionAttributeID)
-
+	descriptionAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Space.Description.Name)
+	descriptionValue, _ := space.GetSpaceAttributes().GetValue(descriptionAttributeID)
 	if descriptionValue != nil {
-		description = utils.GetFromAnyMap(*descriptionValue, universe.Attributes.Space.Description.Name, "")
+		description = utils.GetFromAnyMap(*descriptionValue, universe.ReservedAttributes.Space.Description.Name, "")
 	}
 
-	return name, description, nil
+	return space.GetName(), description, nil
 }
 
 // @Summary Search spaces

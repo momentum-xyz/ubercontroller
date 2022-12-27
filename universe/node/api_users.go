@@ -144,13 +144,13 @@ func (n *Node) apiCreateUserFromWalletMeta(ctx context.Context, walletMeta *Wall
 	}
 
 	userTypeAttributeValue, ok := n.GetNodeAttributeValue(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.NormalUserType.Name),
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Node.NormalUserType.Name),
 	)
 	if !ok || userTypeAttributeValue == nil {
 		return nil, errors.Errorf("failed to get user type attribute value")
 	}
 
-	normUserType := utils.GetFromAnyMap(*userTypeAttributeValue, universe.Attributes.Node.NormalUserType.Key, "")
+	normUserType := utils.GetFromAnyMap(*userTypeAttributeValue, universe.ReservedAttributes.Node.NormalUserType.Key, "")
 	normUserTypeID, err := uuid.Parse(normUserType)
 	if err != nil {
 		return nil, errors.Errorf("failed to parse normal user type id")
@@ -166,12 +166,12 @@ func (n *Node) apiCreateUserFromWalletMeta(ctx context.Context, walletMeta *Wall
 	// adding wallet to user attributes
 	userAttributeID := entry.NewUserAttributeID(
 		entry.NewAttributeID(
-			universe.GetKusamaPluginID(), universe.Attributes.Kusama.User.Wallet.Name,
+			universe.GetKusamaPluginID(), universe.ReservedAttributes.Kusama.User.Wallet.Name,
 		),
 		userEntry.UserID,
 	)
 
-	walletAddressKey := universe.Attributes.Kusama.User.Wallet.Key
+	walletAddressKey := universe.ReservedAttributes.Kusama.User.Wallet.Key
 	newPayload := entry.NewAttributePayload(
 		&entry.AttributeValue{
 			walletAddressKey: []any{walletMeta.Wallet},

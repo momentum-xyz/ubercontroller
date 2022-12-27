@@ -229,8 +229,8 @@ func (w *World) Update(recursive bool) error {
 }
 
 func (w *World) UpdateWorldSettings() error {
-	value, ok := w.GetSpaceAttributeValue(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.World.Settings.Name),
+	value, ok := w.GetSpaceAttributes().GetValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.World.Settings.Name),
 	)
 	if !ok || value == nil {
 		return errors.Errorf("space attribute not found")
@@ -247,9 +247,9 @@ func (w *World) UpdateWorldSettings() error {
 }
 
 func (w *World) UpdateWorldMetadata() error {
-	meta, ok := w.GetSpaceAttributeValue(
+	meta, ok := w.GetSpaceAttributes().GetValue(
 		entry.NewAttributeID(
-			uuid.UUID(w.corePluginInterface.GetId()), universe.Attributes.World.Meta.Name,
+			uuid.UUID(w.corePluginInterface.GetId()), universe.ReservedAttributes.World.Meta.Name,
 		),
 	)
 

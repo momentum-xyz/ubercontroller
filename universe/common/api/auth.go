@@ -108,12 +108,12 @@ func CreateJWTToken(userID uuid.UUID) (string, error) {
 
 func GetJWTSecret() ([]byte, error) {
 	jwtSecret, ok := universe.GetNode().GetNodeAttributeValue(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.JWTKey.Name),
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Node.JWTKey.Name),
 	)
 	if !ok || jwtSecret == nil {
 		return nil, errors.New("failed to get jwt secret")
 	}
-	secret := utils.GetFromAnyMap(*jwtSecret, universe.Attributes.Node.JWTKey.Key, "")
+	secret := utils.GetFromAnyMap(*jwtSecret, universe.ReservedAttributes.Node.JWTKey.Key, "")
 
 	return []byte(secret), nil
 }

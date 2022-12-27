@@ -46,7 +46,8 @@ type Space struct {
 	spaceType        universe.SpaceType
 	effectiveOptions *entry.SpaceOptions
 
-	spaceAttributes *generic.SyncMap[entry.AttributeID, *entry.AttributePayload]
+	// WARNING: the Space sharing the same mutex ("mu") with it
+	Attributes *Attributes
 
 	spawnMsg          atomic.Pointer[websocket.PreparedMessage]
 	attributesMsg     *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
@@ -64,25 +65,22 @@ type Space struct {
 }
 
 func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
-	return &Space{
+	space := &Space{
 		id:               id,
 		db:               db,
 		Users:            generic.NewSyncMap[uuid.UUID, universe.User](0),
 		Children:         generic.NewSyncMap[uuid.UUID, universe.Space](0),
-		spaceAttributes:  generic.NewSyncMap[entry.AttributeID, *entry.AttributePayload](0),
 		attributesMsg:    generic.NewSyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]](0),
 		renderTextureMap: generic.NewSyncMap[string, string](0),
 		world:            world,
 	}
+	space.Attributes = NewAttributes(space)
+
+	return space
 }
 
 func (s *Space) GetID() uuid.UUID {
 	return s.id
-}
-
-// todo: implement this via spaceAttributes
-func (s *Space) GetName() string {
-	return "unknown"
 }
 
 func (s *Space) GetEnabled() bool {
@@ -91,6 +89,36 @@ func (s *Space) GetEnabled() bool {
 
 func (s *Space) SetEnabled(enabled bool) {
 	s.enabled.Store(enabled)
+}
+
+func (s *Space) GetName() string {
+	name := "unknown"
+	value, ok := s.GetSpaceAttributes().GetValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Space.Name.Name),
+	)
+	if !ok || value == nil {
+		return name
+	}
+	return utils.GetFromAnyMap(*value, universe.ReservedAttributes.Space.Name.Key, name)
+}
+
+func (s *Space) SetName(name string, updateDB bool) error {
+	if _, err := s.GetSpaceAttributes().Upsert(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Space.Name.Name),
+		modify.MergeWith(entry.NewAttributePayload(
+			&entry.AttributeValue{
+				universe.ReservedAttributes.Space.Name.Key: name,
+			},
+			nil),
+		), updateDB,
+	); err != nil {
+		return errors.WithMessage(err, "failed to upsert space attribute")
+	}
+	return nil
+}
+
+func (s *Space) GetSpaceAttributes() universe.Attributes[entry.AttributeID] {
+	return s.Attributes
 }
 
 func (s *Space) Initialize(ctx context.Context) error {
@@ -513,16 +541,6 @@ func (s *Space) UpdateSpawnMessage() error {
 		return errors.Errorf("world is empty")
 	}
 
-	name := " "
-	v, ok := s.GetSpaceAttributeValue(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name),
-	)
-	if ok && v != nil {
-		name = utils.GetFromAnyMap(*v, universe.Attributes.Space.Name.Key, "")
-	} else {
-		s.log.Warnf("Space: UpdateSpawnMessage: empty space name attribute value: %s", s.GetID())
-	}
-
 	parentID := uuid.Nil
 	parent := s.GetParent()
 	if parent != nil {
@@ -559,7 +577,7 @@ func (s *Space) UpdateSpawnMessage() error {
 			ParentID:         parentID,
 			AssetType:        asset3dID,
 			AssetFormat:      assetFormat,
-			Name:             name,
+			Name:             s.GetName(),
 			Position:         *s.GetActualPosition(),
 			Editable:         *utils.GetFromAny(opts.Editable, truePtr),
 			TetheredToParent: true,
@@ -579,14 +597,17 @@ func (s *Space) GetSpawnMessage() *websocket.PreparedMessage {
 func (s *Space) SendSpawnMessage(sendFn func(*websocket.PreparedMessage) error, recursive bool) {
 	sendFn(s.spawnMsg.Load())
 	//time.Sleep(time.Millisecond * 100)
-	if recursive {
-		s.Children.Mu.RLock()
-		defer s.Children.Mu.RUnlock()
-
-		for _, space := range s.Children.Data {
-			space.SendSpawnMessage(sendFn, recursive)
-		}
+	if !recursive {
+		return
 	}
+
+	s.Children.Mu.RLock()
+	defer s.Children.Mu.RUnlock()
+
+	for _, space := range s.Children.Data {
+		space.SendSpawnMessage(sendFn, recursive)
+	}
+
 }
 
 func (s *Space) SendTextures(sendFn func(*websocket.PreparedMessage) error, recursive bool) {

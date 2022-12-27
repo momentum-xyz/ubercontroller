@@ -277,6 +277,7 @@ func (n *Node) Stop() error {
 	return nil
 }
 
+// TODO: investigate how to load with limited database connection pool
 func (n *Node) Load() error {
 	n.log.Infof("Loading node %s...", n.GetID())
 

@@ -360,7 +360,7 @@ func (n *Node) findDockingBulbsByTargetWorldID(world universe.World, targetWorld
 	attributeID := entry.NewAttributeID(universe.GetSystemPluginID(), "teleport")
 
 	predicateFn := func(spaceID uuid.UUID, space universe.Space) bool {
-		value, ok := space.GetSpaceAttributeValue(attributeID)
+		value, ok := space.GetSpaceAttributes().GetValue(attributeID)
 		if !ok || value == nil {
 			return false
 		}

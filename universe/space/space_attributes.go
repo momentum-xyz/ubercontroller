@@ -1,20 +1,42 @@
 package space
 
 import (
-	"github.com/gorilla/websocket"
-	"github.com/hashicorp/go-multierror"
-	"github.com/momentum-xyz/ubercontroller/pkg/message"
+	"github.com/pkg/errors"
+
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/common/posbus"
 	"github.com/momentum-xyz/ubercontroller/universe/common/unity"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
-	"github.com/pkg/errors"
 )
 
-func (s *Space) GetSpaceAttributeValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool) {
-	payload, ok := s.GetSpaceAttributePayload(attributeID)
+var _ universe.Attributes[entry.AttributeID] = (*Attributes)(nil)
+
+type Attributes struct {
+	space      *Space
+	attributes map[entry.AttributeID]*entry.AttributePayload
+}
+
+func NewAttributes(space *Space) *Attributes {
+	return &Attributes{
+		space:      space,
+		attributes: make(map[entry.AttributeID]*entry.AttributePayload),
+	}
+}
+
+func (a *Attributes) GetPayload(attributeID entry.AttributeID) (*entry.AttributePayload, bool) {
+	a.space.mu.RLock()
+	defer a.space.mu.RUnlock()
+
+	if payload, ok := a.attributes[attributeID]; ok {
+		return payload, true
+	}
+
+	return nil, false
+}
+
+func (a *Attributes) GetValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool) {
+	payload, ok := a.GetPayload(attributeID)
 	if !ok {
 		return nil, false
 	}
@@ -24,8 +46,8 @@ func (s *Space) GetSpaceAttributeValue(attributeID entry.AttributeID) (*entry.At
 	return payload.Value, true
 }
 
-func (s *Space) GetSpaceAttributeOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool) {
-	payload, ok := s.GetSpaceAttributePayload(attributeID)
+func (a *Attributes) GetOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool) {
+	payload, ok := a.GetPayload(attributeID)
 	if !ok {
 		return nil, false
 	}
@@ -35,23 +57,25 @@ func (s *Space) GetSpaceAttributeOptions(attributeID entry.AttributeID) (*entry.
 	return payload.Options, true
 }
 
-func (s *Space) GetSpaceAttributeEffectiveOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool) {
+func (a *Attributes) GetEffectiveOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool) {
 	attributeType, ok := universe.GetNode().GetAttributeTypes().GetAttributeType(entry.AttributeTypeID(attributeID))
 	if !ok {
 		return nil, false
 	}
 	attributeTypeOptions := attributeType.GetOptions()
 
-	attributeOptions, ok := s.GetSpaceAttributeOptions(attributeID)
+	attributeOptions, ok := a.GetOptions(attributeID)
 	if !ok {
 		return nil, false
 	}
 
 	effectiveOptions, err := merge.Auto(attributeOptions, attributeTypeOptions)
 	if err != nil {
-		s.log.Error(
+		a.space.log.Error(
 			errors.WithMessagef(
-				err, "Space: GetSpaceAttributeEffectiveOptions: failed to merge options: %+v", attributeID,
+				err,
+				"Space: Attributes: GetEffectiveOptions: failed to merge options: %s: %+v",
+				a.space.GetID(), attributeID,
 			),
 		)
 		return nil, false
@@ -60,137 +84,47 @@ func (s *Space) GetSpaceAttributeEffectiveOptions(attributeID entry.AttributeID)
 	return effectiveOptions, true
 }
 
-func (s *Space) GetSpaceAttributePayload(attributeID entry.AttributeID) (*entry.AttributePayload, bool) {
-	return s.spaceAttributes.Load(attributeID)
-}
-
-func (s *Space) GetSpaceAttributesValue(recursive bool) map[entry.SpaceAttributeID]*entry.AttributeValue {
-	s.spaceAttributes.Mu.RLock()
-	values := make(map[entry.SpaceAttributeID]*entry.AttributeValue, len(s.spaceAttributes.Data))
-	for attributeID, payload := range s.spaceAttributes.Data {
-		spaceAttributeID := entry.NewSpaceAttributeID(attributeID, s.GetID())
-		if payload == nil {
-			values[spaceAttributeID] = nil
-			continue
-		}
-		values[spaceAttributeID] = payload.Value
-	}
-	s.spaceAttributes.Mu.RUnlock()
-
-	if !recursive {
-		return values
-	}
-
-	s.Children.Mu.RLock()
-	defer s.Children.Mu.RUnlock()
-
-	for _, child := range s.Children.Data {
-		for spaceAttributeID, value := range child.GetSpaceAttributesValue(recursive) {
-			values[spaceAttributeID] = value
-		}
-	}
-
-	return values
-}
-
-func (s *Space) GetSpaceAttributesOptions(recursive bool) map[entry.SpaceAttributeID]*entry.AttributeOptions {
-	s.spaceAttributes.Mu.RLock()
-	options := make(map[entry.SpaceAttributeID]*entry.AttributeOptions, len(s.spaceAttributes.Data))
-	for attributeID, payload := range s.spaceAttributes.Data {
-		spaceAttributeID := entry.NewSpaceAttributeID(attributeID, s.GetID())
-		if payload == nil {
-			options[spaceAttributeID] = nil
-			continue
-		}
-		options[spaceAttributeID] = payload.Options
-	}
-	s.spaceAttributes.Mu.RUnlock()
-
-	if !recursive {
-		return options
-	}
-
-	s.Children.Mu.RLock()
-	defer s.Children.Mu.RUnlock()
-
-	for _, child := range s.Children.Data {
-		for spaceAttributeID, opt := range child.GetSpaceAttributesOptions(recursive) {
-			options[spaceAttributeID] = opt
-		}
-	}
-
-	return options
-}
-
-func (s *Space) GetSpaceAttributesPayload(recursive bool) map[entry.SpaceAttributeID]*entry.AttributePayload {
-	s.spaceAttributes.Mu.RLock()
-	payloads := make(map[entry.SpaceAttributeID]*entry.AttributePayload, len(s.spaceAttributes.Data))
-	for attributeID, payload := range s.spaceAttributes.Data {
-		payloads[entry.NewSpaceAttributeID(attributeID, s.GetID())] = payload
-	}
-	s.spaceAttributes.Mu.RUnlock()
-
-	if !recursive {
-		return payloads
-	}
-
-	s.Children.Mu.RLock()
-	defer s.Children.Mu.RUnlock()
-
-	for _, child := range s.Children.Data {
-		for spaceAttributeID, payload := range child.GetSpaceAttributesPayload(recursive) {
-			payloads[spaceAttributeID] = payload
-		}
-	}
-
-	return payloads
-}
-
-func (s *Space) UpsertSpaceAttribute(
+func (a *Attributes) Upsert(
 	attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
-) (*entry.SpaceAttribute, error) {
-	s.spaceAttributes.Mu.Lock()
-	defer s.spaceAttributes.Mu.Unlock()
+) (*entry.AttributePayload, error) {
+	a.space.mu.Lock()
+	defer a.space.mu.Unlock()
 
-	payload, ok := s.spaceAttributes.Data[attributeID]
-	if !ok {
-		payload = nil
-	}
-
-	payload, err := modifyFn(payload)
+	payload, err := modifyFn(a.attributes[attributeID])
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to modify attribute payload")
+		return nil, errors.WithMessagef(err, "failed to modify payload")
 	}
 
-	spaceAttribute := entry.NewSpaceAttribute(entry.NewSpaceAttributeID(attributeID, s.GetID()), payload)
 	if updateDB {
-		if err := s.db.SpaceAttributesUpsertSpaceAttribute(s.ctx, spaceAttribute); err != nil {
-			return nil, errors.WithMessage(err, "failed to upsert space attribute")
+		if err := a.space.db.SpaceAttributesUpsertSpaceAttribute(
+			a.space.ctx, entry.NewSpaceAttribute(entry.NewSpaceAttributeID(attributeID, a.space.GetID()), payload),
+		); err != nil {
+			return nil, errors.WithMessagef(err, "failed to upsert space attribute")
 		}
 	}
 
-	s.spaceAttributes.Data[attributeID] = payload
+	a.attributes[attributeID] = payload
 
-	var value *entry.AttributeValue
-	if payload != nil {
-		value = payload.Value
-	}
-	if s.GetEnabled() {
-		go s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
+	if a.space.GetEnabled() {
+		var value *entry.AttributeValue
+		if payload != nil {
+			value = payload.Value
+		}
+		go a.space.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
 	}
 
-	return spaceAttribute, nil
+	return payload, nil
 }
 
-func (s *Space) UpdateSpaceAttributeValue(
+func (a *Attributes) UpdateValue(
 	attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool,
 ) (*entry.AttributeValue, error) {
-	s.spaceAttributes.Mu.Lock()
-	defer s.spaceAttributes.Mu.Unlock()
+	a.space.mu.Lock()
+	defer a.space.mu.Unlock()
 
-	payload, ok := s.spaceAttributes.Data[attributeID]
+	payload, ok := a.attributes[attributeID]
 	if !ok {
-		return nil, errors.Errorf("space attribute not found")
+		return nil, errors.Errorf("attribute not found")
 	}
 	if payload == nil {
 		payload = entry.NewAttributePayload(nil, nil)
@@ -198,34 +132,36 @@ func (s *Space) UpdateSpaceAttributeValue(
 
 	value, err := modifyFn(payload.Value)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to modify value")
+		return nil, errors.WithMessagef(err, "failed to modify value")
 	}
 
 	if updateDB {
-		if err := s.db.SpaceAttributesUpdateSpaceAttributeValue(
-			s.ctx, entry.NewSpaceAttributeID(attributeID, s.GetID()), value,
+		if err := a.space.db.SpaceAttributesUpdateSpaceAttributeValue(
+			a.space.ctx, entry.NewSpaceAttributeID(attributeID, a.space.GetID()), value,
 		); err != nil {
-			return nil, errors.WithMessage(err, "failed to update db")
+			return nil, errors.WithMessagef(err, "failed to update space attribute value")
 		}
 	}
 
 	payload.Value = value
-	s.spaceAttributes.Data[attributeID] = payload
+	a.attributes[attributeID] = payload
 
-	go s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
+	if a.space.GetEnabled() {
+		go a.space.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
+	}
 
 	return value, nil
 }
 
-func (s *Space) UpdateSpaceAttributeOptions(
+func (a *Attributes) UpdateOptions(
 	attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool,
 ) (*entry.AttributeOptions, error) {
-	s.spaceAttributes.Mu.Lock()
-	defer s.spaceAttributes.Mu.Unlock()
+	a.space.mu.Lock()
+	defer a.space.mu.Unlock()
 
-	payload, ok := s.spaceAttributes.Data[attributeID]
+	payload, ok := a.attributes[attributeID]
 	if !ok {
-		return nil, errors.Errorf("space attribute not found")
+		return nil, errors.Errorf("attribute not found")
 	}
 	if payload == nil {
 		payload = entry.NewAttributePayload(nil, nil)
@@ -233,128 +169,76 @@ func (s *Space) UpdateSpaceAttributeOptions(
 
 	options, err := modifyFn(payload.Options)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to modify options")
+		return nil, errors.WithMessagef(err, "failed to modify options")
 	}
 
 	if updateDB {
-		if err := s.db.SpaceAttributesUpdateSpaceAttributeOptions(
-			s.ctx, entry.NewSpaceAttributeID(attributeID, s.GetID()), options,
+		if err := a.space.db.SpaceAttributesUpdateSpaceAttributeOptions(
+			a.space.ctx, entry.NewSpaceAttributeID(attributeID, a.space.GetID()), options,
 		); err != nil {
-			return nil, errors.WithMessage(err, "failed to update db")
+			return nil, errors.WithMessagef(err, "failed to update space attribute options")
 		}
 	}
 
 	payload.Options = options
-	s.spaceAttributes.Data[attributeID] = payload
+	a.attributes[attributeID] = payload
 
-	var value *entry.AttributeValue
-	if payload != nil {
-		value = payload.Value
-	}
-	if s.GetEnabled() {
-		go s.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
+	if a.space.GetEnabled() {
+		var value *entry.AttributeValue
+		if payload != nil {
+			value = payload.Value
+		}
+		go a.space.onSpaceAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
 	}
 
 	return options, nil
 }
 
-func (s *Space) RemoveSpaceAttribute(attributeID entry.AttributeID, updateDB bool) (bool, error) {
-	if _, ok := s.spaceAttributes.Load(attributeID); !ok {
+func (a *Attributes) Remove(attributeID entry.AttributeID, updateDB bool) (bool, error) {
+	effectiveOptions, ok := a.GetEffectiveOptions(attributeID)
+	if !ok {
 		return false, nil
 	}
 
-	attributeEffectiveOptions, attributeEffectiveOptionsOK := s.GetSpaceAttributeEffectiveOptions(attributeID)
+	a.space.mu.Lock()
+	defer a.space.mu.Unlock()
 
-	s.spaceAttributes.Mu.Lock()
-	defer s.spaceAttributes.Mu.Unlock()
+	if _, ok := a.attributes[attributeID]; !ok {
+		return false, nil
+	}
 
 	if updateDB {
-		if err := s.db.SpaceAttributesRemoveSpaceAttributeByID(
-			s.ctx, entry.NewSpaceAttributeID(attributeID, s.GetID()),
+		if err := a.space.db.SpaceAttributesRemoveSpaceAttributeByID(
+			a.space.ctx, entry.NewSpaceAttributeID(attributeID, a.space.GetID()),
 		); err != nil {
-			return false, errors.WithMessage(err, "failed to update db")
+			return false, errors.WithMessagef(err, "failed to remove space attribute")
 		}
 	}
 
-	delete(s.spaceAttributes.Data, attributeID)
+	delete(a.attributes, attributeID)
 
-	if s.GetEnabled() {
-		go func() {
-			if !attributeEffectiveOptionsOK {
-				s.log.Error(
-					errors.Errorf(
-						"Space: RemoveSpaceAttribute: failed to get space attribute effective options",
-					),
-				)
-				return
-			}
-			s.onSpaceAttributeChanged(universe.RemovedAttributeChangeType, attributeID, nil, attributeEffectiveOptions)
-		}()
+	if a.space.GetEnabled() {
+		go a.space.onSpaceAttributeChanged(universe.RemovedAttributeChangeType, attributeID, nil, effectiveOptions)
 	}
 
 	return true, nil
 }
 
-// TODO: optimize
-func (s *Space) RemoveSpaceAttributes(attributeIDs []entry.AttributeID, updateDB bool) (bool, error) {
-	res := true
+func (a *Attributes) Len() int {
+	a.space.mu.RLock()
+	defer a.space.mu.RUnlock()
 
-	var errs *multierror.Error
-	for i := range attributeIDs {
-		removed, err := s.RemoveSpaceAttribute(attributeIDs[i], updateDB)
-		if err != nil {
-			errs = multierror.Append(
-				errs,
-				errors.WithMessagef(err, "failed to remove space attribute: %+v", attributeIDs[i]),
-			)
-		}
-		if !removed {
-			res = false
-		}
-	}
-
-	return res, errs.ErrorOrNil()
-}
-
-func (s *Space) loadSpaceAttributes() error {
-	entries, err := s.db.SpaceAttributesGetSpaceAttributesBySpaceID(s.ctx, s.GetID())
-	if err != nil {
-		return errors.WithMessage(err, "failed to get space attributes")
-	}
-
-	for i := range entries {
-		entry := entries[i]
-
-		if _, err := s.UpsertSpaceAttribute(
-			entry.AttributeID, modify.MergeWith(entry.AttributePayload), false,
-		); err != nil {
-			return errors.WithMessagef(err, "failed to upsert space attribute: %+v", entry.AttributeID)
-		}
-
-		effectiveOptions, ok := s.GetSpaceAttributeEffectiveOptions(entry.AttributeID)
-		if !ok {
-			continue
-		}
-		autoOption, err := unity.GetOptionAutoOption(entry.AttributeID, effectiveOptions)
-		if err != nil {
-			return errors.WithMessagef(err, "failed to get option auto option: %+v", entry)
-		}
-		s.UpdateAutoTextureMap(autoOption, entry.Value)
-	}
-
-	s.log.Debugf("Space attributes loaded: %s: %d", s.GetID(), s.spaceAttributes.Len())
-
-	return nil
+	return len(a.attributes)
 }
 
 func (s *Space) onSpaceAttributeChanged(
-	changeType universe.AttributeChangeType, attributeID entry.AttributeID, value *entry.AttributeValue,
-	effectiveOptions *entry.AttributeOptions,
+	changeType universe.AttributeChangeType, attributeID entry.AttributeID,
+	value *entry.AttributeValue, effectiveOptions *entry.AttributeOptions,
 ) {
 	go s.calendarOnSpaceAttributeChanged(changeType, attributeID, value, effectiveOptions)
 
 	if effectiveOptions == nil {
-		options, ok := s.GetSpaceAttributeEffectiveOptions(attributeID)
+		options, ok := s.GetSpaceAttributes().GetEffectiveOptions(attributeID)
 		if !ok {
 			s.log.Error(
 				errors.Errorf(
@@ -370,7 +254,8 @@ func (s *Space) onSpaceAttributeChanged(
 		if err := s.posBusAutoOnSpaceAttributeChanged(changeType, attributeID, value, effectiveOptions); err != nil {
 			s.log.Error(
 				errors.WithMessagef(
-					err, "Space: onSpaceAttributeChanged: failed to handle pos bus auto: %+v", attributeID,
+					err, "Space: onSpaceAttributeChanged: failed to handle posbus auto: %s: %+v",
+					s.GetID(), attributeID,
 				),
 			)
 		}
@@ -380,65 +265,12 @@ func (s *Space) onSpaceAttributeChanged(
 		if err := s.unityAutoOnSpaceAttributeChanged(changeType, attributeID, value, effectiveOptions); err != nil {
 			s.log.Error(
 				errors.WithMessagef(
-					err, "Space: onSpaceAttributeChanged: failed to handle unity auto: %+v", attributeID,
+					err, "Space: onSpaceAttributeChanged: failed to handle unity auto: %s: %+v",
+					s.GetID(), attributeID,
 				),
 			)
 		}
 	}()
-}
-
-func (s *Space) posBusAutoOnSpaceAttributeChanged(
-	changeType universe.AttributeChangeType, attributeID entry.AttributeID, value *entry.AttributeValue,
-	effectiveOptions *entry.AttributeOptions,
-) error {
-	autoOption, err := posbus.GetOptionAutoOption(effectiveOptions)
-	if err != nil {
-		return errors.WithMessagef(err, "failed to get auto option: %+v", attributeID)
-	}
-	autoMessage, err := posbus.GetOptionAutoMessage(autoOption, changeType, attributeID, value)
-	if err != nil {
-		return errors.WithMessagef(err, "failed to get auto message: %+v", attributeID)
-	}
-	if autoMessage == nil {
-		return nil
-	}
-
-	var errs *multierror.Error
-	for i := range autoOption.Scope {
-		switch autoOption.Scope[i] {
-		case entry.WorldPosBusAutoScopeAttributeOption:
-			world := s.GetWorld()
-			if world == nil {
-				errs = multierror.Append(
-					err, errors.Errorf("failed to get world: %s", autoOption.Scope[i]),
-				)
-				continue
-			}
-			if err := world.Send(autoMessage, true); err != nil {
-				errs = multierror.Append(
-					errs, errors.WithMessagef(
-						err, "failed to send message: %s", autoOption.Scope[i],
-					),
-				)
-			}
-		case entry.SpacePosBusAutoScopeAttributeOption:
-			if err := s.Send(autoMessage, false); err != nil {
-				errs = multierror.Append(
-					errs, errors.WithMessagef(
-						err, "failed to send message: %s", autoOption.Scope[i],
-					),
-				)
-			}
-		default:
-			errs = multierror.Append(
-				errs, errors.Errorf(
-					"scope type in not supported: %s", autoOption.Scope[i],
-				),
-			)
-		}
-	}
-
-	return errs.ErrorOrNil()
 }
 
 func (s *Space) calendarOnSpaceAttributeChanged(
@@ -462,123 +294,34 @@ func (s *Space) calendarOnSpaceAttributeChanged(
 	return nil
 }
 
-func (s *Space) unityAutoOnSpaceAttributeChanged(
-	changeType universe.AttributeChangeType,
-	attributeID entry.AttributeID,
-	value *entry.AttributeValue,
-	effectiveOptions *entry.AttributeOptions,
-) error {
-	s.log.Infof("attribute Unuty Auto processing for %+v %+v", s.GetID(), attributeID)
-	autoOption, err := unity.GetOptionAutoOption(attributeID, effectiveOptions)
+func (s *Space) loadSpaceAttributes() error {
+	entries, err := s.db.SpaceAttributesGetSpaceAttributesBySpaceID(s.ctx, s.GetID())
 	if err != nil {
-		return errors.WithMessagef(err, "failed to get auto option: %+v", attributeID)
-	}
-	if autoOption == nil {
-		return nil
+		return errors.WithMessage(err, "failed to get space attributes")
 	}
 
-	s.log.Infof("unity-auto stage3 for %+v %+v", s.GetID(), attributeID)
+	attributes := s.GetSpaceAttributes()
+	for i := range entries {
+		entry := entries[i]
 
-	hash, err := unity.PrerenderAutoValue(s.ctx, autoOption, value)
-	if err != nil {
-		return errors.WithMessagef(err, "prerendering error: %+v", attributeID)
+		if _, err := attributes.Upsert(
+			entry.AttributeID, modify.MergeWith(entry.AttributePayload), false,
+		); err != nil {
+			return errors.WithMessagef(err, "failed to upsert space attribute: %+v", entry.AttributeID)
+		}
+
+		effectiveOptions, ok := attributes.GetEffectiveOptions(entry.AttributeID)
+		if !ok {
+			continue
+		}
+		autoOption, err := unity.GetOptionAutoOption(entry.AttributeID, effectiveOptions)
+		if err != nil {
+			return errors.WithMessagef(err, "failed to get option auto option: %+v", entry)
+		}
+		s.UpdateAutoTextureMap(autoOption, entry.Value)
 	}
 
-	s.log.Infof("unity-auto stage4 for %+v %+v %+v", s.GetID(), attributeID, hash)
+	s.log.Debugf("Space attributes loaded: %s: %d", s.GetID(), s.Attributes.Len())
 
-	//dirty hack to set auto_render_hash value without triggering processing again
-	// TODO: fix it properly later
-	if hash != nil && hash.Hash != "" {
-		return func() error {
-			s.spaceAttributes.Mu.Lock()
-			defer s.spaceAttributes.Mu.Unlock()
-
-			(*value)["auto_render_hash"] = hash.Hash
-
-			if err := s.db.SpaceAttributesUpdateSpaceAttributeValue(
-				s.ctx, entry.NewSpaceAttributeID(attributeID, s.GetID()), value,
-			); err != nil {
-				return errors.WithMessage(err, "failed to update db")
-			}
-
-			return nil
-		}()
-	}
-	s.SendUnityAutoAttributeMessage(
-		autoOption, value, func(m *websocket.PreparedMessage) error { return s.GetWorld().Send(m, false) },
-	)
 	return nil
-}
-
-func (s *Space) SendUnityAutoAttributeMessage(
-	option *entry.UnityAutoAttributeOption,
-	value *entry.AttributeValue,
-	send func(*websocket.PreparedMessage) error,
-) {
-	msg := s.UpdateAutoTextureMap(option, value)
-	if msg != nil {
-		send(msg)
-	}
-	return
-}
-
-func (s *Space) UpdateAutoTextureMap(
-	option *entry.UnityAutoAttributeOption, value *entry.AttributeValue,
-) *websocket.PreparedMessage {
-	if option == nil || value == nil {
-		return nil
-	}
-
-	var msg *websocket.PreparedMessage
-	switch option.SlotType {
-	case entry.UnitySlotTypeNumber:
-		v, ok := (*value)[option.ValueField]
-		if !ok {
-			return nil
-		}
-		val, ok := v.(int)
-		if !ok {
-			return nil
-		}
-		sendMap := map[string]int32{option.SlotName: int32(val)}
-		msg = message.GetBuilder().SetObjectAttributes(s.GetID(), sendMap)
-	case entry.UnitySlotTypeString:
-		v, ok := (*value)[option.ValueField]
-		if !ok {
-			return nil
-		}
-		val, ok := v.(string)
-		if !ok {
-			return nil
-		}
-
-		sendMap := map[string]string{option.SlotName: val}
-		msg = message.GetBuilder().SetObjectStrings(s.GetID(), sendMap)
-	case entry.UnitySlotTypeTexture:
-		valField := "auto_render_hash"
-		if option.ContentType == "image" {
-			valField = "render_hash"
-		}
-		v, ok := (*value)[valField]
-		if !ok {
-			return nil
-		}
-		val, ok := v.(string)
-		if !ok {
-			return nil
-		}
-
-		s.renderTextureMap.Store(option.SlotName, val)
-		func() {
-			s.renderTextureMap.Mu.RLock()
-			defer s.renderTextureMap.Mu.RUnlock()
-
-			s.textMsg.Store(message.GetBuilder().SetObjectTextures(s.GetID(), s.renderTextureMap.Data))
-		}()
-
-		sendMap := map[string]string{option.SlotName: val}
-		msg = message.GetBuilder().SetObjectTextures(s.GetID(), sendMap)
-
-	}
-	return msg
 }

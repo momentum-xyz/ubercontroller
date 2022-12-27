@@ -34,8 +34,8 @@ func (u *User) SendHighFiveStats(target universe.User) error {
 		}
 
 		// increment value of high five counter by 1
-		(*current.Value)[universe.Attributes.User.HighFive.Key] = utils.GetFromAnyMap(
-			*current.Value, universe.Attributes.User.HighFive.Key, float64(0),
+		(*current.Value)[universe.ReservedAttributes.User.HighFive.Key] = utils.GetFromAnyMap(
+			*current.Value, universe.ReservedAttributes.User.HighFive.Key, float64(0),
 		) + 1
 
 		return current, nil
@@ -44,7 +44,7 @@ func (u *User) SendHighFiveStats(target universe.User) error {
 	if _, err := universe.GetNode().UpsertUserUserAttribute(
 		entry.NewUserUserAttributeID(
 			entry.NewAttributeID(
-				universe.GetSystemPluginID(), universe.Attributes.User.HighFive.Name,
+				universe.GetSystemPluginID(), universe.ReservedAttributes.User.HighFive.Name,
 			),
 			u.GetID(), target.GetID(),
 		), modifyFn,

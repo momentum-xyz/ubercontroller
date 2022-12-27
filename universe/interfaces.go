@@ -2,7 +2,6 @@ package universe
 
 import (
 	"context"
-
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
@@ -209,6 +208,9 @@ type Space interface {
 
 	GetWorld() World
 
+	GetName() string
+	SetName(name string, updateDB bool) error
+
 	GetParent() Space
 	SetParent(parent Space, updateDB bool) error
 
@@ -233,10 +235,13 @@ type Space interface {
 	GetSpaceType() SpaceType
 	SetSpaceType(spaceType SpaceType, updateDB bool) error
 
+	GetSpaceAttributes() Attributes[entry.AttributeID]
+
 	GetEntry() *entry.Space
 	LoadFromEntry(entry *entry.Space, recursive bool) error
 
 	Update(recursive bool) error
+	UpdateChildrenPosition(recursive bool) error
 
 	FilterSpaces(predicateFn SpacesFilterPredicateFn, recursive bool) map[uuid.UUID]Space
 	GetSpace(spaceID uuid.UUID, recursive bool) (Space, bool)
@@ -255,33 +260,8 @@ type Space interface {
 
 	SendSpawnMessage(sendFn func(msg *websocket.PreparedMessage) error, recursive bool)
 	SendAttributes(sendFn func(*websocket.PreparedMessage), recursive bool)
-
-	GetSpaceAttributePayload(attributeID entry.AttributeID) (*entry.AttributePayload, bool)
-	GetSpaceAttributeValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool)
-	GetSpaceAttributeOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool)
-	GetSpaceAttributeEffectiveOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool)
-
-	GetSpaceAttributesPayload(recursive bool) map[entry.SpaceAttributeID]*entry.AttributePayload
-	GetSpaceAttributesValue(recursive bool) map[entry.SpaceAttributeID]*entry.AttributeValue
-	GetSpaceAttributesOptions(recursive bool) map[entry.SpaceAttributeID]*entry.AttributeOptions
-
-	UpsertSpaceAttribute(
-		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
-	) (*entry.SpaceAttribute, error)
-
-	UpdateSpaceAttributeValue(
-		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool,
-	) (*entry.AttributeValue, error)
-	UpdateSpaceAttributeOptions(
-		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool,
-	) (*entry.AttributeOptions, error)
-
-	RemoveSpaceAttribute(attributeID entry.AttributeID, updateDB bool) (bool, error)
-	RemoveSpaceAttributes(attributeIDs []entry.AttributeID, updateDB bool) (bool, error)
-
-	UpdateChildrenPosition(recursive bool) error
-
 	SendTextures(sendFn func(msg *websocket.PreparedMessage) error, recursive bool)
+
 	LockUnityObject(user User, state uint32) bool
 }
 
@@ -318,6 +298,27 @@ type User interface {
 	ReleaseSendBuffer()
 
 	GetProfile() *entry.UserProfile
+}
+
+// TODO: check!!!
+// looks like our maps are not fully protected all the time,
+// bacause, for example, I securely got "Value" from different parts of code
+// and then write some data into it (as always - directly) simultaneousely with reading from it from another place,
+// in this case we have to get panic
+type Attributes[K comparable] interface {
+	GetPayload(attributeID K) (*entry.AttributePayload, bool)
+	GetValue(attributeID K) (*entry.AttributeValue, bool)
+	GetOptions(attributeID K) (*entry.AttributeOptions, bool)
+	GetEffectiveOptions(attributeID K) (*entry.AttributeOptions, bool)
+
+	Upsert(attributeID K, modifyFn modify.Fn[entry.AttributePayload], updateDB bool) (*entry.AttributePayload, error)
+
+	UpdateValue(attributeID K, modifyFn modify.Fn[entry.AttributeValue], updateDB bool) (*entry.AttributeValue, error)
+	UpdateOptions(attributeID K, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool) (*entry.AttributeOptions, error)
+
+	Remove(attributeID K, updateDB bool) (bool, error)
+
+	Len() int
 }
 
 type Assets2d interface {

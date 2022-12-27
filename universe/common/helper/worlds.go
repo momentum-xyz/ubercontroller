@@ -80,19 +80,14 @@ func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (uuid.UUI
 	world.SetEnabled(true)
 
 	// adding attributes
+	if err := world.SetName(*worldName, true); err != nil {
+		return uuid.Nil, errors.WithMessage(err, "failed to set world name")
+	}
+
 	worldTemplate.SpaceAttributes = append(
 		worldTemplate.SpaceAttributes,
 		entry.NewAttribute(
-			entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name),
-			entry.NewAttributePayload(
-				&entry.AttributeValue{
-					universe.Attributes.Space.Name.Key: worldName,
-				},
-				nil,
-			),
-		),
-		entry.NewAttribute(
-			entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.World.Settings.Name),
+			entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.World.Settings.Name),
 			entry.NewAttributePayload(
 				&entry.AttributeValue{
 					"kind":        "basic",
@@ -107,7 +102,7 @@ func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (uuid.UUI
 	)
 
 	for i := range worldTemplate.SpaceAttributes {
-		if _, err := world.UpsertSpaceAttribute(
+		if _, err := world.GetSpaceAttributes().Upsert(
 			worldTemplate.SpaceAttributes[i].AttributeID,
 			modify.MergeWith(worldTemplate.SpaceAttributes[i].AttributePayload),
 			updateDB,

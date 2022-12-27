@@ -114,35 +114,30 @@ func PrerenderAutoValue(
 
 	switch renderKind {
 	case RenderKindVideo:
-		{
-			payload, err := json.Marshal(
-				map[string]any{
-					"url": valueString,
-				},
-			)
-			if err != nil {
-				return nil, errors.WithMessage(err, "Failed to marshal preRenderHash")
-			}
+		payload, err := json.Marshal(
+			map[string]any{
+				"url": valueString,
+			},
+		)
+		if err != nil {
+			return nil, errors.WithMessage(err, "Failed to marshal preRenderHash")
+		}
 
-			hash, err = renderVideo(ctx, payload)
-			if err != nil {
-				return nil, err
-			}
+		hash, err = renderVideo(ctx, payload)
+		if err != nil {
+			return nil, err
 		}
 	case RenderKindText:
-		{
-			if option.TextRenderTemplate == "" {
-				return nil, nil
-			}
-
-			payload := []byte(strings.Replace(option.TextRenderTemplate, "%TEXT%", valueString, -1))
-
-			hash, err = renderFrame(ctx, payload)
-			if err != nil {
-				return nil, err
-			}
+		if option.TextRenderTemplate == "" {
+			return nil, nil
 		}
 
+		payload := []byte(strings.Replace(option.TextRenderTemplate, "%TEXT%", valueString, -1))
+
+		hash, err = renderFrame(ctx, payload)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return hash, nil
 }
