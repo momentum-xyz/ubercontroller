@@ -83,10 +83,6 @@ func NewNode(
 	}
 }
 
-func (n *Node) GetName() string {
-	return n.name
-}
-
 func (n *Node) Initialize(ctx context.Context) error {
 	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
 	if log == nil {
