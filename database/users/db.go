@@ -80,14 +80,13 @@ func (db *DB) UsersGetUserByWallet(ctx context.Context, wallet string) (*entry.U
 }
 
 func (db *DB) UsersGetUserProfileByUserID(ctx context.Context, userID uuid.UUID) (*entry.UserProfile, error) {
-	// TODO: figure out why we need this
-	profile := struct {
-		Profile *entry.UserProfile `db:"profile"`
-	}{}
-	if err := pgxscan.Get(ctx, db.conn, &profile, getUserProfileByUserIDQuery, userID); err != nil {
+	var profile entry.UserProfile
+	err := db.conn.QueryRow(ctx,
+		getUserProfileByUserIDQuery, userID).Scan(&profile)
+	if err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
-	return profile.Profile, nil
+	return &profile, nil
 }
 
 func (db *DB) UsersUpsertUser(ctx context.Context, user *entry.User) error {
