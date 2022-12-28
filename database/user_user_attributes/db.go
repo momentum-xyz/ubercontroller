@@ -120,11 +120,13 @@ func (db *DB) UserUserAttributesGetUserUserAttributeOptionsByID(
 	ctx context.Context, userUserAttributeID entry.UserUserAttributeID,
 ) (*entry.AttributeOptions, error) {
 	var options entry.AttributeOptions
-	if err := pgxscan.Get(
-		ctx, db.conn, &options, getUserUserAttributeOptionsQuery,
-		userUserAttributeID.PluginID, userUserAttributeID.Name,
-		userUserAttributeID.SourceUserID, userUserAttributeID.TargetUserID,
-	); err != nil {
+	err := db.conn.QueryRow(ctx,
+		getUserUserAttributeOptionsQuery,
+		userUserAttributeID.PluginID,
+		userUserAttributeID.Name,
+		userUserAttributeID.SourceUserID,
+		userUserAttributeID.TargetUserID).Scan(&options)
+	if err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return &options, nil
