@@ -154,7 +154,7 @@ func (n *Node) apiDriveTest(c *gin.Context) {
 
 func (n *Node) createWorld(ownerID uuid.UUID, name string) error {
 	templateValue, ok := n.GetNodeAttributeValue(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.WorldTemplate.Name),
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Node.WorldTemplate.Name),
 	)
 	if !ok || templateValue == nil {
 		return errors.Errorf("failed to get world template attribute value")

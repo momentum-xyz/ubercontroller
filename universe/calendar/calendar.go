@@ -87,7 +87,8 @@ func (c *Calendar) tick(eventID string) error {
 	m := posbus.NewRelayToReactMsg(topic, data).WebsocketMessage()
 	c.world.Send(m, false)
 
-	c.update()
+	go c.update()
+
 	return nil
 }
 
@@ -139,7 +140,7 @@ func findNextEvents(events []Event) []Event {
 }
 
 func getAllEvents(spaces map[uuid.UUID]universe.Space) []Event {
-	attributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Events.Name)
+	attributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Space.Events.Name)
 
 	//a := c.world.GetSpaceAttributesValue(true)
 
@@ -148,7 +149,7 @@ func getAllEvents(spaces map[uuid.UUID]universe.Space) []Event {
 	for spaceID, _ := range spaces {
 		space := spaces[spaceID]
 
-		attributeValue, ok := space.GetSpaceAttributeValue(attributeID)
+		attributeValue, ok := space.GetSpaceAttributes().GetValue(attributeID)
 		if !ok {
 			continue
 		}
@@ -184,7 +185,7 @@ func (*Calendar) Stop() error {
 }
 
 func (c *Calendar) OnAttributeUpsert(attributeID entry.AttributeID, value any) {
-	if attributeID.PluginID == universe.GetSystemPluginID() && attributeID.Name == universe.Attributes.Space.Events.Name {
+	if attributeID.PluginID == universe.GetSystemPluginID() && attributeID.Name == universe.ReservedAttributes.Space.Events.Name {
 		go c.update()
 	}
 }

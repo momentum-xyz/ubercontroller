@@ -40,7 +40,6 @@ type World struct {
 	metaMsg             atomic.Pointer[websocket.PreparedMessage]
 	metaData            Metadata
 	settings            atomic.Pointer[universe.WorldSettings]
-	counter             atomic.Int64
 	allSpaces           *generic.SyncMap[uuid.UUID, universe.Space]
 	calendar            *calendar.Calendar
 }
@@ -52,7 +51,6 @@ func NewWorld(id uuid.UUID, db database.DB) *World {
 	}
 	world.Space = space.NewSpace(id, db, world)
 	world.settings.Store(&universe.WorldSettings{})
-	world.counter.Store(0)
 	world.pluginController = mplugin.NewPluginController(id)
 	//world.corePluginInstance, _ = world.pluginController.AddPlugin(world.GetID(), world.corePluginInitFunc)
 	world.pluginController.AddPlugin(universe.GetSystemPluginID(), world.corePluginInitFunc)
@@ -62,6 +60,10 @@ func NewWorld(id uuid.UUID, db database.DB) *World {
 
 func (w *World) GetID() uuid.UUID {
 	return w.Space.GetID()
+}
+
+func (w *World) ToSpace() universe.Space {
+	return w.Space
 }
 
 func (w *World) corePluginInitFunc(pi mplugin.PluginInterface) (mplugin.PluginInstance, error) {
@@ -83,11 +85,7 @@ func (w *World) Initialize(ctx context.Context) error {
 		return errors.WithMessage(err, "failed to initialize calendar")
 	}
 
-	if err := w.Space.Initialize(ctx); err != nil {
-		return errors.WithMessage(err, "failed to initialize space")
-	}
-
-	return universe.GetNode().AddSpaceToAllSpaces(w.Space)
+	return w.Space.Initialize(ctx)
 }
 
 func (w *World) GetSettings() *universe.WorldSettings {
@@ -96,10 +94,6 @@ func (w *World) GetSettings() *universe.WorldSettings {
 
 func (w *World) GetCalendar() universe.Calendar {
 	return w.calendar
-}
-
-func (w *World) AddToCounter() int64 {
-	return w.counter.Add(1)
 }
 
 func (w *World) Run() error {
@@ -229,8 +223,8 @@ func (w *World) Update(recursive bool) error {
 }
 
 func (w *World) UpdateWorldSettings() error {
-	value, ok := w.GetSpaceAttributeValue(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.World.Settings.Name),
+	value, ok := w.GetSpaceAttributes().GetValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.World.Settings.Name),
 	)
 	if !ok || value == nil {
 		return errors.Errorf("space attribute not found")
@@ -247,9 +241,9 @@ func (w *World) UpdateWorldSettings() error {
 }
 
 func (w *World) UpdateWorldMetadata() error {
-	meta, ok := w.GetSpaceAttributeValue(
+	meta, ok := w.GetSpaceAttributes().GetValue(
 		entry.NewAttributeID(
-			uuid.UUID(w.corePluginInterface.GetId()), universe.Attributes.World.Meta.Name,
+			uuid.UUID(w.corePluginInterface.GetId()), universe.ReservedAttributes.World.Meta.Name,
 		),
 	)
 

@@ -83,10 +83,6 @@ func NewNode(
 	}
 }
 
-func (n *Node) GetName() string {
-	return n.name
-}
-
 func (n *Node) Initialize(ctx context.Context) error {
 	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
 	if log == nil {
@@ -131,6 +127,10 @@ func (n *Node) CreateSpace(spaceID uuid.UUID) (universe.Space, error) {
 
 func (n *Node) SetParent(parent universe.Space, updateDB bool) error {
 	return errors.Errorf("not permitted for node")
+}
+
+func (n *Node) ToSpace() universe.Space {
+	return n.Space
 }
 
 func (n *Node) GetWorlds() universe.Worlds {
@@ -277,6 +277,7 @@ func (n *Node) Stop() error {
 	return nil
 }
 
+// TODO: investigate how to load with limited database connection pool
 func (n *Node) Load() error {
 	n.log.Infof("Loading node %s...", n.GetID())
 

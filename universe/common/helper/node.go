@@ -11,14 +11,14 @@ import (
 
 func GetGuestUserTypeID() (uuid.UUID, error) {
 	userTypeAttributeValue, ok := universe.GetNode().GetNodeAttributeValue(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Node.GuestUserType.Name),
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Node.GuestUserType.Name),
 	)
 	if !ok || userTypeAttributeValue == nil {
 		err := errors.New("failed to get user type attribute value")
 		return uuid.Nil, err
 	}
 
-	guestUserType := utils.GetFromAnyMap(*userTypeAttributeValue, universe.Attributes.Node.GuestUserType.Key, "")
+	guestUserType := utils.GetFromAnyMap(*userTypeAttributeValue, universe.ReservedAttributes.Node.GuestUserType.Key, "")
 	guestUserTypeID, err := uuid.Parse(guestUserType)
 	if err != nil {
 		err := errors.New("failed to parse guest user type id")

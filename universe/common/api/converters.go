@@ -46,13 +46,13 @@ func ToUserDTO(userEntry *entry.User, guestUserTypeID uuid.UUID, includeWallet b
 		walletValue, ok := universe.GetNode().GetUserAttributeValue(
 			entry.NewUserAttributeID(
 				entry.NewAttributeID(
-					universe.GetKusamaPluginID(), universe.Attributes.Kusama.User.Wallet.Name,
+					universe.GetKusamaPluginID(), universe.ReservedAttributes.Kusama.User.Wallet.Name,
 				),
 				userEntry.UserID,
 			),
 		)
 		if ok && walletValue != nil {
-			wallets := utils.GetFromAnyMap(*walletValue, universe.Attributes.Kusama.User.Wallet.Key, []any(nil))
+			wallets := utils.GetFromAnyMap(*walletValue, universe.ReservedAttributes.Kusama.User.Wallet.Key, []any(nil))
 			if len(wallets) > 0 {
 				wallet = utils.GetPTR(utils.GetFromAny(wallets[0], ""))
 			}
