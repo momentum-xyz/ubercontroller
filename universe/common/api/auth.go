@@ -107,7 +107,7 @@ func CreateJWTToken(userID uuid.UUID) (string, error) {
 }
 
 func GetJWTSecret() ([]byte, error) {
-	jwtSecret, ok := universe.GetNode().GetNodeAttributeValue(
+	jwtSecret, ok := universe.GetNode().GetNodeAttributes().GetValue(
 		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Node.JWTKey.Name),
 	)
 	if !ok || jwtSecret == nil {

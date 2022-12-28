@@ -10,11 +10,11 @@ import (
 )
 
 func GetGuestUserTypeID() (uuid.UUID, error) {
-	userTypeAttributeValue, ok := universe.GetNode().GetNodeAttributeValue(
+	userTypeAttributeValue, ok := universe.GetNode().GetNodeAttributes().GetValue(
 		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Node.GuestUserType.Name),
 	)
 	if !ok || userTypeAttributeValue == nil {
-		err := errors.New("failed to get user type attribute value")
+		err := errors.New("failed to get guest user type attribute value")
 		return uuid.Nil, err
 	}
 
@@ -26,4 +26,21 @@ func GetGuestUserTypeID() (uuid.UUID, error) {
 	}
 
 	return guestUserTypeID, err
+}
+
+func GetNormalUserTypeID() (uuid.UUID, error) {
+	userTypeAttributeValue, ok := universe.GetNode().GetNodeAttributes().GetValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Node.NormalUserType.Name),
+	)
+	if !ok || userTypeAttributeValue == nil {
+		return uuid.Nil, errors.Errorf("failed to get normal user type attribute value")
+	}
+
+	normUserType := utils.GetFromAnyMap(*userTypeAttributeValue, universe.ReservedAttributes.Node.NormalUserType.Key, "")
+	normUserTypeID, err := uuid.Parse(normUserType)
+	if err != nil {
+		return uuid.Nil, errors.Errorf("failed to parse normal user type id")
+	}
+
+	return normUserTypeID, nil
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	influx_api "github.com/influxdata/influxdb-client-go/v2/api"
 	"github.com/pkg/errors"
+	"github.com/sasha-s/go-deadlock"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/sync/errgroup"
@@ -20,14 +21,12 @@ import (
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/mplugin"
-	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/space"
 	"github.com/momentum-xyz/ubercontroller/universe/streamchat"
-	"github.com/momentum-xyz/ubercontroller/universe/user"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
@@ -35,26 +34,33 @@ var _ universe.Node = (*Node)(nil)
 
 type Node struct {
 	*space.Space
-	name                string
-	cfg                 *config.Config
-	ctx                 context.Context
-	log                 *zap.SugaredLogger
-	db                  database.DB
-	router              *gin.Engine
-	httpServer          *http.Server
-	worlds              universe.Worlds
-	assets2d            universe.Assets2d
-	assets3d            universe.Assets3d
-	spaceTypes          universe.SpaceTypes
-	userTypes           universe.UserTypes
-	attributeTypes      universe.AttributeTypes
-	plugins             universe.Plugins
-	nodeAttributes      *generic.SyncMap[entry.AttributeID, *entry.AttributePayload]
-	spaceIDToWorld      *generic.SyncMap[uuid.UUID, universe.World] // TODO: introduce GC for lost worlds and spaces
-	influx              influx_api.WriteAPIBlocking
+	cfg        *config.Config
+	ctx        context.Context
+	log        *zap.SugaredLogger
+	db         database.DB
+	router     *gin.Engine
+	httpServer *http.Server
+
+	//mu             sync.RWMutex
+	mu             deadlock.RWMutex
+	nodeAttributes *nodeAttributes // WARNING: the Node is sharing the same mutex ("mu") with it
+
+	worlds         universe.Worlds
+	assets2d       universe.Assets2d
+	assets3d       universe.Assets3d
+	spaceTypes     universe.SpaceTypes
+	userTypes      universe.UserTypes
+	attributeTypes universe.AttributeTypes
+	plugins        universe.Plugins
+
+	spaceIDToWorld *generic.SyncMap[uuid.UUID, universe.World] // TODO: introduce GC for lost Worlds and Spaces
+
+	chatService *streamchat.StreamChat
+
 	pluginController    *mplugin.PluginController
 	corePluginInterface *mplugin.PluginInterface
-	chatService         *streamchat.StreamChat
+
+	influx influx_api.WriteAPIBlocking
 }
 
 func NewNode(
@@ -68,7 +74,7 @@ func NewNode(
 	userTypes universe.UserTypes,
 	attributeTypes universe.AttributeTypes,
 ) *Node {
-	return &Node{
+	node := &Node{
 		Space:          space.NewSpace(id, db, nil),
 		db:             db,
 		worlds:         worlds,
@@ -78,9 +84,11 @@ func NewNode(
 		spaceTypes:     spaceTypes,
 		userTypes:      userTypes,
 		attributeTypes: attributeTypes,
-		nodeAttributes: generic.NewSyncMap[entry.AttributeID, *entry.AttributePayload](0),
 		spaceIDToWorld: generic.NewSyncMap[uuid.UUID, universe.World](0),
 	}
+	node.nodeAttributes = newNodeAttributes(node)
+
+	return node
 }
 
 func (n *Node) Initialize(ctx context.Context) error {
@@ -121,16 +129,12 @@ func (n *Node) Initialize(ctx context.Context) error {
 	return n.Space.Initialize(ctx)
 }
 
-func (n *Node) CreateSpace(spaceID uuid.UUID) (universe.Space, error) {
-	return nil, errors.Errorf("not permitted for node")
-}
-
-func (n *Node) SetParent(parent universe.Space, updateDB bool) error {
-	return errors.Errorf("not permitted for node")
-}
-
 func (n *Node) ToSpace() universe.Space {
 	return n.Space
+}
+
+func (n *Node) GetNodeAttributes() universe.Attributes[entry.AttributeID] {
+	return n.nodeAttributes
 }
 
 func (n *Node) GetWorlds() universe.Worlds {
@@ -159,84 +163,6 @@ func (n *Node) GetSpaceTypes() universe.SpaceTypes {
 
 func (n *Node) GetUserTypes() universe.UserTypes {
 	return n.userTypes
-}
-
-func (n *Node) GetAllSpaces() map[uuid.UUID]universe.Space {
-	spaces := map[uuid.UUID]universe.Space{
-		n.GetID(): n,
-	}
-
-	for _, world := range n.GetWorlds().GetWorlds() {
-		for spaceID, space := range world.GetAllSpaces() {
-			spaces[spaceID] = space
-		}
-	}
-
-	return spaces
-}
-
-func (n *Node) FilterAllSpaces(predicateFn universe.SpacesFilterPredicateFn) map[uuid.UUID]universe.Space {
-	spaces := make(map[uuid.UUID]universe.Space)
-	if predicateFn(n.GetID(), n) {
-		spaces[n.GetID()] = n
-	}
-
-	for _, world := range n.GetWorlds().GetWorlds() {
-		for spaceID, space := range world.FilterAllSpaces(predicateFn) {
-			spaces[spaceID] = space
-		}
-	}
-
-	return spaces
-}
-
-func (n *Node) GetSpaceFromAllSpaces(spaceID uuid.UUID) (universe.Space, bool) {
-	if spaceID == n.GetID() {
-		return n, true
-	}
-
-	world, ok := n.spaceIDToWorld.Load(spaceID)
-	if !ok {
-		return nil, false
-	}
-
-	return world.GetSpaceFromAllSpaces(spaceID)
-}
-
-func (n *Node) AddSpaceToAllSpaces(space universe.Space) error {
-	if space.GetID() == n.GetID() {
-		return errors.Errorf("not permitted for node")
-	}
-
-	world := space.GetWorld()
-	if world == nil {
-		return errors.Errorf("space has nil world")
-	}
-
-	if err := world.AddSpaceToAllSpaces(space); err != nil {
-		return errors.WithMessage(err, "failed to add space to world all spaces")
-	}
-
-	n.spaceIDToWorld.Store(space.GetID(), world)
-
-	return nil
-}
-
-func (n *Node) RemoveSpaceFromAllSpaces(space universe.Space) (bool, error) {
-	if space.GetID() == n.GetID() {
-		return false, errors.Errorf("not permitted for node")
-	}
-
-	n.spaceIDToWorld.Mu.Lock()
-	defer n.spaceIDToWorld.Mu.Unlock()
-
-	if world, ok := n.spaceIDToWorld.Data[space.GetID()]; ok {
-		delete(n.spaceIDToWorld.Data, space.GetID())
-
-		return world.RemoveSpaceFromAllSpaces(space)
-	}
-
-	return false, nil
 }
 
 func (n *Node) AddAPIRegister(register universe.APIRegister) {
@@ -397,29 +323,4 @@ func (n *Node) Save() error {
 	n.log.Infof("Node saved: %s", n.GetID())
 
 	return errs.ErrorOrNil()
-}
-
-func (n *Node) detectSpawnWorld(userId uuid.UUID) universe.World {
-	// TODO: implement. Temporary, just first world from the list
-	wid := uuid.MustParse("d83670c7-a120-47a4-892d-f9ec75604f74")
-	if world, ok := n.worlds.GetWorld(wid); ok != false {
-		return world
-	}
-	return nil
-}
-
-func (n *Node) LoadUser(userID uuid.UUID) (universe.User, error) {
-	user := user.NewUser(userID, n.db)
-	if err := user.Initialize(n.ctx); err != nil {
-		return nil, errors.WithMessagef(err, "failed to initialize user: %s", userID)
-	}
-
-	if err := user.Load(); err != nil {
-		return nil, errors.WithMessagef(err, "failed to load user: %s", userID)
-	}
-
-	fmt.Printf("%+v\n", user.GetPosition())
-	user.SetPosition(cmath.Vec3{X: 50, Y: 50, Z: 150})
-	fmt.Printf("%+v\n", user.GetPosition())
-	return user, nil
 }
