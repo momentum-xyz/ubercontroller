@@ -102,10 +102,13 @@ func (db *DB) SpaceUserAttributesGetSpaceUserAttributeValueByID(
 	ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
 ) (*entry.AttributeValue, error) {
 	var value entry.AttributeValue
-	if err := pgxscan.Get(ctx, db.conn, &value, getSpaceUserAttributeValueByIDQuery,
-		spaceUserAttributeID.PluginID, spaceUserAttributeID.Name,
-		spaceUserAttributeID.SpaceID, spaceUserAttributeID.UserID,
-	); err != nil {
+	err := db.conn.QueryRow(ctx,
+		getSpaceUserAttributeValueByIDQuery,
+		spaceUserAttributeID.PluginID,
+		spaceUserAttributeID.Name,
+		spaceUserAttributeID.SpaceID,
+		spaceUserAttributeID.UserID).Scan(&value)
+	if err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return &value, nil
@@ -115,10 +118,13 @@ func (db *DB) SpaceUserAttributesGetSpaceUserAttributeOptionsByID(
 	ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
 ) (*entry.AttributeOptions, error) {
 	var options entry.AttributeOptions
-	if err := pgxscan.Get(ctx, db.conn, &options, getSpaceUserAttributeOptionsByIDQuery,
-		spaceUserAttributeID.PluginID, spaceUserAttributeID.Name,
-		spaceUserAttributeID.SpaceID, spaceUserAttributeID.UserID,
-	); err != nil {
+	err := db.conn.QueryRow(ctx,
+		getSpaceUserAttributeOptionsByIDQuery,
+		spaceUserAttributeID.PluginID,
+		spaceUserAttributeID.Name,
+		spaceUserAttributeID.SpaceID,
+		spaceUserAttributeID.UserID).Scan(&options)
+	if err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return &options, nil
