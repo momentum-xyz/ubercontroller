@@ -89,10 +89,11 @@ func (db *DB) NodeAttributesGetNodeAttributeOptionsByAttributeID(
 	ctx context.Context, attributeID entry.AttributeID,
 ) (*entry.AttributeOptions, error) {
 	var options entry.AttributeOptions
-	if err := pgxscan.Get(
-		ctx, db.conn, &options, getNodeAttributeOptionsByPluginIDAndName,
-		attributeID.PluginID, attributeID.Name,
-	); err != nil {
+	err := db.conn.QueryRow(ctx,
+		getNodeAttributeOptionsByPluginIDAndName,
+		attributeID.PluginID,
+		attributeID.Name).Scan(&options)
+	if err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return &options, nil
