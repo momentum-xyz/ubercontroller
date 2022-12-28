@@ -129,6 +129,10 @@ func (n *Node) SetParent(parent universe.Space, updateDB bool) error {
 	return errors.Errorf("not permitted for node")
 }
 
+func (n *Node) ToSpace() universe.Space {
+	return n.Space
+}
+
 func (n *Node) GetWorlds() universe.Worlds {
 	return n.worlds
 }

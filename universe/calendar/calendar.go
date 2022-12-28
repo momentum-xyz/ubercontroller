@@ -87,7 +87,8 @@ func (c *Calendar) tick(eventID string) error {
 	m := posbus.NewRelayToReactMsg(topic, data).WebsocketMessage()
 	c.world.Send(m, false)
 
-	c.update()
+	go c.update()
+
 	return nil
 }
 

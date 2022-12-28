@@ -73,6 +73,8 @@ type Node interface {
 	APIRegister
 	SpaceCacher
 
+	ToSpace() Space
+
 	GetWorlds() Worlds
 	GetAssets2d() Assets2d
 	GetAssets3d() Assets3d
@@ -187,14 +189,13 @@ type World interface {
 	LoadSaver
 	SpaceCacher
 
+	ToSpace() Space
+
 	GetSettings() *WorldSettings
 
-	WriteInfluxPoint(point *influxWrite.Point) error
-
-	// QUESTION: do we still need this?
-	AddToCounter() int64
-
 	GetCalendar() Calendar
+
+	WriteInfluxPoint(point *influxWrite.Point) error
 }
 
 type Space interface {
@@ -276,10 +277,18 @@ type User interface {
 	GetSpace() Space
 	SetSpace(space Space)
 
-	Update() error
-
 	GetUserType() UserType
 	SetUserType(userType UserType, updateDB bool) error
+
+	GetProfile() *entry.UserProfile
+
+	GetPosition() cmath.Vec3
+	GetRotation() cmath.Vec3
+	SetPosition(position cmath.Vec3)
+
+	GetPosBuffer() []byte
+
+	Update() error
 
 	GetSessionID() uuid.UUID
 	SetConnection(sessionID uuid.UUID, socketConnection *websocket.Conn) error
@@ -287,23 +296,11 @@ type User interface {
 	Send(message *websocket.PreparedMessage) error
 	SendDirectly(message *websocket.PreparedMessage) error
 
-	SetPosition(position cmath.Vec3)
-	GetPosition() cmath.Vec3
-	GetRotation() cmath.Vec3
-
-	AddInfluxTags(prefix string, point *influxWrite.Point) *influxWrite.Point
-
-	GetPosBuffer() []byte
-
 	ReleaseSendBuffer()
 
-	GetProfile() *entry.UserProfile
+	AddInfluxTags(prefix string, point *influxWrite.Point) *influxWrite.Point
 }
 
-// TODO: check!!!
-// looks like our maps (Value/Options) are not fully protected all the time, bacause,
-// for example, I securely got "Value" from attribute and then read some data from it (as always - directly)
-// simultaneousely with writing from another place, in this case we might have a panic
 type Attributes[K comparable] interface {
 	GetPayload(attributeID K) (*entry.AttributePayload, bool)
 	GetValue(attributeID K) (*entry.AttributeValue, bool)
