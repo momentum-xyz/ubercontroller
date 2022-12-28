@@ -2,7 +2,6 @@ package universe
 
 import (
 	"context"
-
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
@@ -73,6 +72,8 @@ type Node interface {
 	LoadSaver
 	APIRegister
 	SpaceCacher
+
+	ToSpace() Space
 
 	GetWorlds() Worlds
 	GetAssets2d() Assets2d
@@ -188,14 +189,13 @@ type World interface {
 	LoadSaver
 	SpaceCacher
 
+	ToSpace() Space
+
 	GetSettings() *WorldSettings
 
-	WriteInfluxPoint(point *influxWrite.Point) error
-
-	// QUESTION: do we still need this?
-	AddToCounter() int64
-
 	GetCalendar() Calendar
+
+	WriteInfluxPoint(point *influxWrite.Point) error
 }
 
 type Space interface {
@@ -208,6 +208,9 @@ type Space interface {
 	CreateSpace(spaceID uuid.UUID) (Space, error)
 
 	GetWorld() World
+
+	GetName() string
+	SetName(name string, updateDB bool) error
 
 	GetParent() Space
 	SetParent(parent Space, updateDB bool) error
@@ -233,10 +236,13 @@ type Space interface {
 	GetSpaceType() SpaceType
 	SetSpaceType(spaceType SpaceType, updateDB bool) error
 
+	GetSpaceAttributes() Attributes[entry.AttributeID]
+
 	GetEntry() *entry.Space
 	LoadFromEntry(entry *entry.Space, recursive bool) error
 
 	Update(recursive bool) error
+	UpdateChildrenPosition(recursive bool) error
 
 	FilterSpaces(predicateFn SpacesFilterPredicateFn, recursive bool) map[uuid.UUID]Space
 	GetSpace(spaceID uuid.UUID, recursive bool) (Space, bool)
@@ -255,33 +261,8 @@ type Space interface {
 
 	SendSpawnMessage(sendFn func(msg *websocket.PreparedMessage) error, recursive bool)
 	SendAttributes(sendFn func(*websocket.PreparedMessage), recursive bool)
-
-	GetSpaceAttributePayload(attributeID entry.AttributeID) (*entry.AttributePayload, bool)
-	GetSpaceAttributeValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool)
-	GetSpaceAttributeOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool)
-	GetSpaceAttributeEffectiveOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool)
-
-	GetSpaceAttributesPayload(recursive bool) map[entry.SpaceAttributeID]*entry.AttributePayload
-	GetSpaceAttributesValue(recursive bool) map[entry.SpaceAttributeID]*entry.AttributeValue
-	GetSpaceAttributesOptions(recursive bool) map[entry.SpaceAttributeID]*entry.AttributeOptions
-
-	UpsertSpaceAttribute(
-		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
-	) (*entry.SpaceAttribute, error)
-
-	UpdateSpaceAttributeValue(
-		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool,
-	) (*entry.AttributeValue, error)
-	UpdateSpaceAttributeOptions(
-		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool,
-	) (*entry.AttributeOptions, error)
-
-	RemoveSpaceAttribute(attributeID entry.AttributeID, updateDB bool) (bool, error)
-	RemoveSpaceAttributes(attributeIDs []entry.AttributeID, updateDB bool) (bool, error)
-
-	UpdateChildrenPosition(recursive bool) error
-
 	SendTextures(sendFn func(msg *websocket.PreparedMessage) error, recursive bool)
+
 	LockUnityObject(user User, state uint32) bool
 }
 
@@ -296,10 +277,18 @@ type User interface {
 	GetSpace() Space
 	SetSpace(space Space)
 
-	Update() error
-
 	GetUserType() UserType
 	SetUserType(userType UserType, updateDB bool) error
+
+	GetProfile() *entry.UserProfile
+
+	GetPosition() cmath.Vec3
+	GetRotation() cmath.Vec3
+	SetPosition(position cmath.Vec3)
+
+	GetPosBuffer() []byte
+
+	Update() error
 
 	GetSessionID() uuid.UUID
 	SetConnection(sessionID uuid.UUID, socketConnection *websocket.Conn) error
@@ -307,17 +296,25 @@ type User interface {
 	Send(message *websocket.PreparedMessage) error
 	SendDirectly(message *websocket.PreparedMessage) error
 
-	SetPosition(position cmath.Vec3)
-	GetPosition() cmath.Vec3
-	GetRotation() cmath.Vec3
-
-	AddInfluxTags(prefix string, point *influxWrite.Point) *influxWrite.Point
-
-	GetPosBuffer() []byte
-
 	ReleaseSendBuffer()
 
-	GetProfile() *entry.UserProfile
+	AddInfluxTags(prefix string, point *influxWrite.Point) *influxWrite.Point
+}
+
+type Attributes[K comparable] interface {
+	GetPayload(attributeID K) (*entry.AttributePayload, bool)
+	GetValue(attributeID K) (*entry.AttributeValue, bool)
+	GetOptions(attributeID K) (*entry.AttributeOptions, bool)
+	GetEffectiveOptions(attributeID K) (*entry.AttributeOptions, bool)
+
+	Upsert(attributeID K, modifyFn modify.Fn[entry.AttributePayload], updateDB bool) (*entry.AttributePayload, error)
+
+	UpdateValue(attributeID K, modifyFn modify.Fn[entry.AttributeValue], updateDB bool) (*entry.AttributeValue, error)
+	UpdateOptions(attributeID K, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool) (*entry.AttributeOptions, error)
+
+	Remove(attributeID K, updateDB bool) (bool, error)
+
+	Len() int
 }
 
 type Assets2d interface {

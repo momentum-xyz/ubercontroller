@@ -32,9 +32,8 @@ type AttributeType struct {
 
 func NewAttributeType(id entry.AttributeTypeID, db database.DB) *AttributeType {
 	return &AttributeType{
-		db:      db,
-		id:      id,
-		options: entry.NewAttributeOptions(),
+		db: db,
+		id: id,
 	}
 }
 

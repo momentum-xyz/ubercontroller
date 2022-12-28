@@ -232,14 +232,14 @@ func (n *Node) apiUpdateSpace(c *gin.Context) {
 	// not supporting 're-parenting' and changing type'. Have to delete and recreate for that.
 	// Update/edit the positioning is done through unity edit mode.
 	type InBody struct {
-		Asset2dID string `json:"asset_2d_id"`
 		SpaceName string `json:"space_name"`
+		Asset2dID string `json:"asset_2d_id"`
 		Asset3dID string `json:"asset_3d_id"`
 	}
 	var inBody InBody
 
 	if err := c.ShouldBindJSON(&inBody); err != nil {
-		err = errors.WithMessage(err, "Node: apiUpdateSpace: failed to bind json")
+		err := errors.WithMessage(err, "Node: apiUpdateSpace: failed to bind json")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
 		return
 	}
@@ -266,10 +266,10 @@ func (n *Node) apiUpdateSpace(c *gin.Context) {
 			return
 		}
 	}
-	if inBody.Asset2dID != "" {
+	if asset2d != nil {
 		if err := space.SetAsset2D(asset2d, true); err != nil {
-			err := errors.Errorf("Node: apiUpdateSpace: failed to update 2d asset: %s", asset2d)
-			api.AbortRequest(c, http.StatusNotFound, "space_asset_2d", err, n.log)
+			err := errors.Errorf("Node: apiUpdateSpace: failed to update 2d asset: %s", asset2d.GetID())
+			api.AbortRequest(c, http.StatusInternalServerError, "space_asset_2d", err, n.log)
 			return
 		}
 	}
@@ -289,40 +289,18 @@ func (n *Node) apiUpdateSpace(c *gin.Context) {
 			return
 		}
 	}
-	if inBody.Asset3dID != "" {
+	if asset3d != nil {
 		if err := space.SetAsset3D(asset3d, true); err != nil {
-			err := errors.Errorf("Node: apiUpdateSpace: failed to update 3d asset: %s", asset3d)
-			api.AbortRequest(c, http.StatusNotFound, "space_asset_3d", err, n.log)
+			err := errors.Errorf("Node: apiUpdateSpace: failed to update 3d asset: %s", asset3d.GetID())
+			api.AbortRequest(c, http.StatusInternalServerError, "space_asset_3d", err, n.log)
 			return
 		}
 	}
 
 	if inBody.SpaceName != "" {
-		attributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name)
-		spaceNameAttribute, ok := n.GetSpaceAttributeValue(entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name))
-		if !ok || spaceNameAttribute == nil {
-			// TODO: create it
-			err := errors.New("Node: apiUpdateSpace: failed to get space name attribute")
-			api.AbortRequest(c, http.StatusNotFound, "space_name", err, n.log)
-			return
-		}
-
-		modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
-			if current == nil || current.Value == nil {
-				return nil, nil
-			}
-
-			updateMap := *current.Value
-
-			updateMap[universe.Attributes.Space.Name.Key] = inBody.SpaceName
-
-			return current, nil
-		}
-
-		_, err = n.UpsertSpaceAttribute(attributeID, modifyFn, true)
-		if err != nil {
-			err = errors.WithMessage(err, "Node: apiUpdateSpace: failed to update space name attribute")
-			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert_space_attribute", err, n.log)
+		if err := space.SetName(inBody.SpaceName, true); err != nil {
+			err := errors.WithMessagef(err, "Node: apiUpdateSpace: failed to set space name: %s", inBody.SpaceName)
+			api.AbortRequest(c, http.StatusInternalServerError, "space_name", err, n.log)
 			return
 		}
 	}

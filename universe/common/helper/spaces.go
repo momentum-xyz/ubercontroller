@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
-	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -131,21 +130,12 @@ func AddSpaceFromTemplate(spaceTemplate *SpaceTemplate, updateDB bool) (uuid.UUI
 	space.SetEnabled(true)
 
 	// adding attributes
-	spaceTemplate.SpaceAttributes = append(
-		spaceTemplate.SpaceAttributes,
-		entry.NewAttribute(
-			entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.Name.Name),
-			entry.NewAttributePayload(
-				&entry.AttributeValue{
-					universe.Attributes.Space.Name.Key: *spaceName,
-				},
-				nil,
-			),
-		),
-	)
+	if err := space.SetName(*spaceName, true); err != nil {
+		return uuid.Nil, errors.WithMessage(err, "failed to set space name")
+	}
 
 	for i := range spaceTemplate.SpaceAttributes {
-		if _, err := space.UpsertSpaceAttribute(
+		if _, err := space.GetSpaceAttributes().Upsert(
 			spaceTemplate.SpaceAttributes[i].AttributeID,
 			modify.MergeWith(spaceTemplate.SpaceAttributes[i].AttributePayload),
 			updateDB,
@@ -178,22 +168,6 @@ func RemoveSpaceFromParent(parent, space universe.Space, updateDB bool) (bool, e
 			errs, errors.WithMessagef(err, "failed to update children position: %s", parent.GetID()),
 		)
 	}
-
-	// we need this check to avoid spam while removing children
-	if space.GetEnabled() {
-		go func() {
-			removeMsg := posbus.NewRemoveStaticObjectsMsg(1)
-			removeMsg.SetObject(0, space.GetID())
-			if err := space.GetWorld().Send(removeMsg.WebsocketMessage(), true); err != nil {
-				common.GetLogger().Warn(
-					errors.WithMessagef(
-						err, "Helper: RemoveSpaceFromParent: failed to send remove message: %s", space.GetID(),
-					),
-				)
-			}
-		}()
-	}
-
 	if err := space.Stop(); err != nil {
 		errs = multierror.Append(errs, errors.WithMessage(err, "failed to stop space"))
 	}

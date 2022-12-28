@@ -2,7 +2,7 @@ package node
 
 import (
 	"net/http"
-	
+
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
@@ -44,7 +44,7 @@ func (n *Node) apiNewsFeedAddItem(c *gin.Context) {
 			current.Value = entry.NewAttributeValue()
 		}
 
-		items := utils.GetFromAnyMap(*current.Value, universe.Attributes.Space.NewsFeedItems.Key, []any(nil))
+		items := utils.GetFromAnyMap(*current.Value, universe.ReservedAttributes.Space.NewsFeedItems.Key, []any(nil))
 
 		items = append(inBody.Items, items...)
 
@@ -52,14 +52,14 @@ func (n *Node) apiNewsFeedAddItem(c *gin.Context) {
 			items = items[:newsFeedLimit]
 		}
 
-		(*current.Value)[universe.Attributes.Space.NewsFeedItems.Key] = items
+		(*current.Value)[universe.ReservedAttributes.Space.NewsFeedItems.Key] = items
 
 		return current, nil
 	}
 
-	if _, err := n.UpsertSpaceAttribute(
+	if _, err := n.GetSpaceAttributes().Upsert(
 		entry.NewAttributeID(
-			universe.GetSystemPluginID(), universe.Attributes.Space.NewsFeedItems.Name,
+			universe.GetSystemPluginID(), universe.ReservedAttributes.Space.NewsFeedItems.Name,
 		), modifyFn, true,
 	); err != nil {
 		err := errors.WithMessage(err, "Node: apiNewsFeedAddItem: failed to upsert node space attribute")
@@ -80,8 +80,8 @@ func (n *Node) apiNewsFeedAddItem(c *gin.Context) {
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/newsfeed [get]
 func (n *Node) apiNewsFeedGetAll(c *gin.Context) {
-	value, ok := n.GetSpaceAttributeValue(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.Attributes.Space.NewsFeedItems.Name),
+	value, ok := n.GetSpaceAttributes().GetValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Space.NewsFeedItems.Name),
 	)
 	if !ok || value == nil {
 		err := errors.Errorf("Node: apiNewsFeedGetAll: failed to get node space attribute value")
@@ -93,7 +93,7 @@ func (n *Node) apiNewsFeedGetAll(c *gin.Context) {
 		Items []any `json:"items"`
 	}
 	out := Out{
-		Items: utils.GetFromAnyMap(*value, universe.Attributes.Space.NewsFeedItems.Key, []any(nil)),
+		Items: utils.GetFromAnyMap(*value, universe.ReservedAttributes.Space.NewsFeedItems.Key, []any(nil)),
 	}
 
 	c.JSON(http.StatusOK, out)

@@ -71,7 +71,7 @@ func (n *Node) apiGetSpaceAttributesSubsCount(c *gin.Context) {
 	}
 
 	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
-	attrValue, ok := space.GetSpaceAttributeValue(attributeID)
+	attrValue, ok := space.GetSpaceAttributes().GetValue(attributeID)
 	if !ok {
 		err := errors.Errorf("Node: apiGetSpaceAttributesValue: space attribute value not found: %s", attributeID)
 		api.AbortRequest(c, http.StatusNotFound, "attribute_not_found", err, n.log)
@@ -137,7 +137,7 @@ func (n *Node) apiGetSpaceAttributesValue(c *gin.Context) {
 	}
 
 	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
-	out, ok := space.GetSpaceAttributeValue(attributeID)
+	out, ok := space.GetSpaceAttributes().GetValue(attributeID)
 	if !ok {
 		err := errors.Errorf("Node: apiGetSpaceAttributesValue: space attribute value not found: %s", attributeID)
 		api.AbortRequest(c, http.StatusNotFound, "attribute_not_found", err, n.log)
@@ -196,20 +196,17 @@ func (n *Node) apiGetSpaceWithChildrenAttributeValues(c *gin.Context) {
 	}
 
 	spaces := rootSpace.GetSpaces(true)
-	spaceAttributes := make(dto.SpaceAttributeValues, len(spaces))
-
 	spaces[rootSpace.GetID()] = rootSpace
 
+	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
+	spaceAttributes := make(dto.SpaceAttributeValues, len(spaces))
 	for _, space := range spaces {
-		attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
-		attributeValue, ok := space.GetSpaceAttributeValue(attributeID)
-		if !ok {
+		attributeValue, ok := space.GetSpaceAttributes().GetValue(attributeID)
+		if !ok || attributeValue == nil {
 			continue
 		}
 
-		if attributeValue != nil {
-			spaceAttributes[space.GetID()] = attributeValue
-		}
+		spaceAttributes[space.GetID()] = attributeValue
 	}
 
 	c.JSON(http.StatusOK, spaceAttributes)
@@ -287,14 +284,14 @@ func (n *Node) apiSetSpaceAttributesValue(c *gin.Context) {
 		return current, nil
 	}
 
-	spaceAttribute, err := space.UpsertSpaceAttribute(attributeID, modifyFn, true)
+	payload, err := space.GetSpaceAttributes().Upsert(attributeID, modifyFn, true)
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiSetSpaceAttributesValue: failed to upsert space attribute")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert", err, n.log)
 		return
 	}
 
-	c.JSON(http.StatusAccepted, spaceAttribute.Value)
+	c.JSON(http.StatusAccepted, payload.Value)
 }
 
 // @Summary Get space sub attributes
@@ -347,7 +344,7 @@ func (n *Node) apiGetSpaceAttributeSubValue(c *gin.Context) {
 	}
 
 	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
-	attributeValue, ok := space.GetSpaceAttributeValue(attributeID)
+	attributeValue, ok := space.GetSpaceAttributes().GetValue(attributeID)
 	if !ok {
 		err := errors.Errorf("Node: apiGetSpaceAttributeSubValue: attribute value not found: %s", attributeID)
 		api.AbortRequest(c, http.StatusNotFound, "attribute_value_not_found", err, n.log)
@@ -440,7 +437,7 @@ func (n *Node) apiSetSpaceAttributeSubValue(c *gin.Context) {
 		return current, nil
 	}
 
-	spaceAttribute, err := space.UpsertSpaceAttribute(attributeID, modifyFn, true)
+	payload, err := space.GetSpaceAttributes().Upsert(attributeID, modifyFn, true)
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiSetSpaceAttributeSubValue: failed to upsert space attribute")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert", err, n.log)
@@ -448,7 +445,7 @@ func (n *Node) apiSetSpaceAttributeSubValue(c *gin.Context) {
 	}
 
 	out := dto.SpaceSubAttributes{
-		inBody.SubAttributeKey: (*spaceAttribute.Value)[inBody.SubAttributeKey],
+		inBody.SubAttributeKey: (*payload.Value)[inBody.SubAttributeKey],
 	}
 
 	c.JSON(http.StatusAccepted, out)
@@ -515,7 +512,7 @@ func (n *Node) apiRemoveSpaceAttributeSubValue(c *gin.Context) {
 		return current, nil
 	}
 
-	if _, err := space.UpdateSpaceAttributeValue(attributeID, modifyFn, true); err != nil {
+	if _, err := space.GetSpaceAttributes().UpdateValue(attributeID, modifyFn, true); err != nil {
 		err = errors.WithMessage(err, "Node: apiRemoveSpaceAttributeSubValue: failed to update space attribute")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_update", err, n.log)
 		return
@@ -572,7 +569,7 @@ func (n *Node) apiRemoveSpaceAttributeValue(c *gin.Context) {
 	}
 
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
-	if _, err := space.UpdateSpaceAttributeValue(
+	if _, err := space.GetSpaceAttributes().UpdateValue(
 		attributeID, modify.ReplaceWith[entry.AttributeValue](nil), true,
 	); err != nil {
 		err = errors.WithMessage(err, "Node: apiRemoveSpaceAttributeValue: failed to update space attribute")

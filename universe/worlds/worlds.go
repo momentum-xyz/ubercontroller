@@ -100,7 +100,7 @@ func (w *Worlds) AddWorld(world universe.World, updateDB bool) error {
 
 	w.worlds.Data[world.GetID()] = world
 
-	return nil
+	return universe.GetNode().AddSpaceToAllSpaces(world.ToSpace())
 }
 
 func (w *Worlds) AddWorlds(worlds []universe.World, updateDB bool) error {

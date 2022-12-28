@@ -44,13 +44,16 @@ func (n *Node) apiGenChallenge(c *gin.Context) {
 		return
 	}
 
-	challengesKey := universe.Attributes.Kusama.Challenges.Key
+	challengesKey := universe.ReservedAttributes.Kusama.Challenges.Key
 	modifyFn := func(current *entry.AttributeValue) (*entry.AttributeValue, error) {
 		if current == nil {
 			current = entry.NewAttributeValue()
 		}
 
-		challenges := utils.GetFromAnyMap(*current, challengesKey, make(map[string]any))
+		challenges := utils.GetFromAnyMap(*current, challengesKey, map[string]any(nil))
+		if challenges == nil {
+			challenges = make(map[string]any)
+		}
 		challenges[inQuery.Wallet] = challenge
 
 		// store challenges because we don't know where we got it from
@@ -60,7 +63,7 @@ func (n *Node) apiGenChallenge(c *gin.Context) {
 	}
 
 	if _, err := n.UpdateNodeAttributeValue(
-		entry.NewAttributeID(universe.GetKusamaPluginID(), universe.Attributes.Kusama.Challenges.Name),
+		entry.NewAttributeID(universe.GetKusamaPluginID(), universe.ReservedAttributes.Kusama.Challenges.Name),
 		modifyFn, true,
 	); err != nil {
 		err := errors.WithMessage(err, "Node: apiGenChallenge: failed to update node attribute value")
@@ -104,7 +107,7 @@ func (n *Node) apiGenToken(c *gin.Context) {
 		return
 	}
 
-	attributeID := entry.NewAttributeID(universe.GetKusamaPluginID(), universe.Attributes.Kusama.Challenges.Name)
+	attributeID := entry.NewAttributeID(universe.GetKusamaPluginID(), universe.ReservedAttributes.Kusama.Challenges.Name)
 
 	challengesAttributeValue, ok := n.GetNodeAttributeValue(attributeID)
 	if !ok || challengesAttributeValue == nil {
@@ -115,7 +118,7 @@ func (n *Node) apiGenToken(c *gin.Context) {
 
 	var challenge string
 	if store := utils.GetFromAnyMap(
-		*challengesAttributeValue, universe.Attributes.Kusama.Challenges.Key, (map[string]any)(nil),
+		*challengesAttributeValue, universe.ReservedAttributes.Kusama.Challenges.Key, (map[string]any)(nil),
 	); store != nil {
 		challenge = utils.GetFromAnyMap(store, inBody.Wallet, "")
 	}
@@ -143,7 +146,7 @@ func (n *Node) apiGenToken(c *gin.Context) {
 			return current, nil
 		}
 
-		challenges := utils.GetFromAnyMap(*current, universe.Attributes.Kusama.Challenges.Key, (map[string]any)(nil))
+		challenges := utils.GetFromAnyMap(*current, universe.ReservedAttributes.Kusama.Challenges.Key, (map[string]any)(nil))
 		if challenges == nil {
 			return current, nil
 		}
