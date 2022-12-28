@@ -102,10 +102,13 @@ func (db *DB) SpaceUserAttributesGetSpaceUserAttributeValueByID(
 	ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
 ) (*entry.AttributeValue, error) {
 	var value entry.AttributeValue
-	if err := pgxscan.Get(ctx, db.conn, &value, getSpaceUserAttributeValueByIDQuery,
-		spaceUserAttributeID.PluginID, spaceUserAttributeID.Name,
-		spaceUserAttributeID.SpaceID, spaceUserAttributeID.UserID,
-	); err != nil {
+	err := db.conn.QueryRow(ctx,
+		getSpaceUserAttributeValueByIDQuery,
+		spaceUserAttributeID.PluginID,
+		spaceUserAttributeID.Name,
+		spaceUserAttributeID.SpaceID,
+		spaceUserAttributeID.UserID).Scan(&value)
+	if err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return &value, nil
