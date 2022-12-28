@@ -45,9 +45,7 @@ type Space struct {
 	asset3d          universe.Asset3d
 	spaceType        universe.SpaceType
 	effectiveOptions *entry.SpaceOptions
-
-	// WARNING: the Space sharing the same mutex ("mu") with it
-	Attributes *Attributes
+	spaceAttributes  *spaceAttributes // WARNING: the Space is sharing the same mutex ("mu") with it
 
 	spawnMsg          atomic.Pointer[websocket.PreparedMessage]
 	attributesMsg     *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
@@ -74,7 +72,7 @@ func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
 		renderTextureMap: generic.NewSyncMap[string, string](0),
 		world:            world,
 	}
-	space.Attributes = NewAttributes(space)
+	space.spaceAttributes = newSpaceAttributes(space)
 
 	return space
 }
@@ -118,7 +116,7 @@ func (s *Space) SetName(name string, updateDB bool) error {
 }
 
 func (s *Space) GetSpaceAttributes() universe.Attributes[entry.AttributeID] {
-	return s.Attributes
+	return s.spaceAttributes
 }
 
 func (s *Space) Initialize(ctx context.Context) error {

@@ -57,8 +57,8 @@ type APIRegister interface {
 
 type SpaceCacher interface {
 	GetAllSpaces() map[uuid.UUID]Space
-	FilterAllSpaces(predicateFn SpacesFilterPredicateFn) map[uuid.UUID]Space
 	GetSpaceFromAllSpaces(spaceID uuid.UUID) (Space, bool)
+	FilterAllSpaces(predicateFn SpacesFilterPredicateFn) map[uuid.UUID]Space
 	AddSpaceToAllSpaces(space Space) error
 	RemoveSpaceFromAllSpaces(space Space) (bool, error)
 }
@@ -83,28 +83,7 @@ type Node interface {
 	GetAttributeTypes() AttributeTypes
 	GetPlugins() Plugins
 
-	GetNodeAttributePayload(attributeID entry.AttributeID) (*entry.AttributePayload, bool)
-	GetNodeAttributeValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool)
-	GetNodeAttributeOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool)
-	GetNodeAttributeEffectiveOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool)
-
-	GetNodeAttributesPayload() map[entry.NodeAttributeID]*entry.AttributePayload
-	GetNodeAttributesValue() map[entry.NodeAttributeID]*entry.AttributeValue
-	GetNodeAttributesOptions() map[entry.NodeAttributeID]*entry.AttributeOptions
-
-	UpsertNodeAttribute(
-		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
-	) (*entry.NodeAttribute, error)
-
-	UpdateNodeAttributeValue(
-		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool,
-	) (*entry.AttributeValue, error)
-	UpdateNodeAttributeOptions(
-		attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool,
-	) (*entry.AttributeOptions, error)
-
-	RemoveNodeAttribute(attributeID entry.AttributeID, updateDB bool) (bool, error)
-	RemoveNodeAttributes(attributeIDs []entry.AttributeID, updateDB bool) (bool, error)
+	GetNodeAttributes() Attributes[entry.AttributeID]
 
 	GetUserAttributePayload(userAttributeID entry.UserAttributeID) (*entry.AttributePayload, bool)
 	GetUserAttributeValue(userAttributeID entry.UserAttributeID) (*entry.AttributeValue, bool)
@@ -175,9 +154,9 @@ type Worlds interface {
 
 	CreateWorld(worldID uuid.UUID) (World, error)
 
-	FilterWorlds(predicateFn WorldsFilterPredicateFn) map[uuid.UUID]World
 	GetWorld(worldID uuid.UUID) (World, bool)
 	GetWorlds() map[uuid.UUID]World
+	FilterWorlds(predicateFn WorldsFilterPredicateFn) map[uuid.UUID]World
 	AddWorld(world World, updateDB bool) error
 	AddWorlds(worlds []World, updateDB bool) error
 	RemoveWorld(world World, updateDB bool) error
@@ -244,9 +223,9 @@ type Space interface {
 	Update(recursive bool) error
 	UpdateChildrenPosition(recursive bool) error
 
-	FilterSpaces(predicateFn SpacesFilterPredicateFn, recursive bool) map[uuid.UUID]Space
 	GetSpace(spaceID uuid.UUID, recursive bool) (Space, bool)
 	GetSpaces(recursive bool) map[uuid.UUID]Space
+	FilterSpaces(predicateFn SpacesFilterPredicateFn, recursive bool) map[uuid.UUID]Space
 	AddSpace(space Space, updateDB bool) error
 	AddSpaces(spaces []Space, updateDB bool) error
 	RemoveSpace(space Space, recursive, updateDB bool) (bool, error)
@@ -324,9 +303,9 @@ type Assets2d interface {
 
 	CreateAsset2d(asset2dID uuid.UUID) (Asset2d, error)
 
-	FilterAssets2d(predicateFn Assets2dFilterPredicateFn) map[uuid.UUID]Asset2d
 	GetAsset2d(asset2dID uuid.UUID) (Asset2d, bool)
 	GetAssets2d() map[uuid.UUID]Asset2d
+	FilterAssets2d(predicateFn Assets2dFilterPredicateFn) map[uuid.UUID]Asset2d
 	AddAsset2d(asset2d Asset2d, updateDB bool) error
 	AddAssets2d(assets2d []Asset2d, updateDB bool) error
 	RemoveAsset2d(asset2d Asset2d, updateDB bool) error
@@ -353,10 +332,9 @@ type Assets3d interface {
 	APIRegister
 
 	CreateAsset3d(asset3dID uuid.UUID) (Asset3d, error)
-
-	FilterAssets3d(predicateFn Assets3dFilterPredicateFn) map[uuid.UUID]Asset3d
 	GetAsset3d(asset3dID uuid.UUID) (Asset3d, bool)
 	GetAssets3d() map[uuid.UUID]Asset3d
+	FilterAssets3d(predicateFn Assets3dFilterPredicateFn) map[uuid.UUID]Asset3d
 	AddAsset3d(asset3d Asset3d, updateDB bool) error
 	AddAssets3d(assets3d []Asset3d, updateDB bool) error
 	RemoveAsset3d(asset3d Asset3d, updateDB bool) error
@@ -386,9 +364,9 @@ type Plugins interface {
 
 	CreatePlugin(pluginID uuid.UUID) (Plugin, error)
 
-	FilterPlugins(predicateFn PluginsFilterPredicateFn) map[uuid.UUID]Plugin
 	GetPlugin(pluginID uuid.UUID) (Plugin, bool)
 	GetPlugins() map[uuid.UUID]Plugin
+	FilterPlugins(predicateFn PluginsFilterPredicateFn) map[uuid.UUID]Plugin
 	AddPlugin(plugin Plugin, updateDB bool) error
 	AddPlugins(plugins []Plugin, updateDB bool) error
 	RemovePlugin(plugin Plugin, updateDB bool) error
@@ -416,9 +394,9 @@ type AttributeTypes interface {
 
 	CreateAttributeType(attributeTypeID entry.AttributeTypeID) (AttributeType, error)
 
-	FilterAttributeTypes(predicateFn AttributeTypesFilterPredicateFn) map[entry.AttributeTypeID]AttributeType
 	GetAttributeType(attributeTypeID entry.AttributeTypeID) (AttributeType, bool)
 	GetAttributeTypes() map[entry.AttributeTypeID]AttributeType
+	FilterAttributeTypes(predicateFn AttributeTypesFilterPredicateFn) map[entry.AttributeTypeID]AttributeType
 	AddAttributeType(attributeType AttributeType, updateDB bool) error
 	AddAttributeTypes(attributeTypes []AttributeType, updateDB bool) error
 	RemoveAttributeType(attributeType AttributeType, updateDB bool) error
@@ -449,9 +427,9 @@ type SpaceTypes interface {
 
 	CreateSpaceType(spaceTypeID uuid.UUID) (SpaceType, error)
 
-	FilterSpaceTypes(predicateFn SpaceTypesFilterPredicateFn) map[uuid.UUID]SpaceType
 	GetSpaceType(spaceTypeID uuid.UUID) (SpaceType, bool)
 	GetSpaceTypes() map[uuid.UUID]SpaceType
+	FilterSpaceTypes(predicateFn SpaceTypesFilterPredicateFn) map[uuid.UUID]SpaceType
 	AddSpaceType(spaceType SpaceType, updateDB bool) error
 	AddSpaceTypes(spaceTypes []SpaceType, updateDB bool) error
 	RemoveSpaceType(spaceType SpaceType, updateDB bool) error
@@ -491,9 +469,9 @@ type UserTypes interface {
 
 	CreateUserType(userTypeID uuid.UUID) (UserType, error)
 
-	FilterUserTypes(predicateFn UserTypesFilterPredicateFn) map[uuid.UUID]UserType
 	GetUserType(userTypeID uuid.UUID) (UserType, bool)
 	GetUserTypes() map[uuid.UUID]UserType
+	FilterUserTypes(predicateFn UserTypesFilterPredicateFn) map[uuid.UUID]UserType
 	AddUserType(spaceType UserType, updateDB bool) error
 	AddUserTypes(spaceTypes []UserType, updateDB bool) error
 	RemoveUserType(spaceType UserType, updateDB bool) error

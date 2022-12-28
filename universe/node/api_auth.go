@@ -62,7 +62,7 @@ func (n *Node) apiGenChallenge(c *gin.Context) {
 		return current, nil
 	}
 
-	if _, err := n.UpdateNodeAttributeValue(
+	if _, err := n.GetNodeAttributes().UpdateValue(
 		entry.NewAttributeID(universe.GetKusamaPluginID(), universe.ReservedAttributes.Kusama.Challenges.Name),
 		modifyFn, true,
 	); err != nil {
@@ -109,7 +109,7 @@ func (n *Node) apiGenToken(c *gin.Context) {
 
 	attributeID := entry.NewAttributeID(universe.GetKusamaPluginID(), universe.ReservedAttributes.Kusama.Challenges.Name)
 
-	challengesAttributeValue, ok := n.GetNodeAttributeValue(attributeID)
+	challengesAttributeValue, ok := n.GetNodeAttributes().GetValue(attributeID)
 	if !ok || challengesAttributeValue == nil {
 		err := errors.Errorf("Node: apiGenToken: node attribute not found")
 		api.AbortRequest(c, http.StatusInternalServerError, "attribute_not_found", err, n.log)
@@ -156,7 +156,7 @@ func (n *Node) apiGenToken(c *gin.Context) {
 		return current, nil
 	}
 
-	if _, err := n.UpdateNodeAttributeValue(attributeID, modifyFn, true); err != nil {
+	if _, err := n.GetNodeAttributes().UpdateValue(attributeID, modifyFn, true); err != nil {
 		err := errors.WithMessage(err, "Node: apiGenToken: failed to update node attribute value")
 		api.AbortRequest(c, http.StatusInternalServerError, "attribute_update_failed", err, n.log)
 		return

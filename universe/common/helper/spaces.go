@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
+	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -163,15 +164,22 @@ func RemoveSpaceFromParent(parent, space universe.Space, updateDB bool) (bool, e
 	}
 
 	var errs *multierror.Error
+	if space.GetEnabled() { // we need this check to avoid spam while removing children
+		removeMsg := posbus.NewRemoveStaticObjectsMsg(1)
+		removeMsg.SetObject(0, space.GetID())
+		if err := space.GetWorld().Send(removeMsg.WebsocketMessage(), true); err != nil {
+			errs = multierror.Append(errs, errors.WithMessage(err, "failed to send remove message"))
+		}
+	}
 	if err := parent.UpdateChildrenPosition(true); err != nil {
 		errs = multierror.Append(
 			errs, errors.WithMessagef(err, "failed to update children position: %s", parent.GetID()),
 		)
 	}
+
 	if err := space.Stop(); err != nil {
 		errs = multierror.Append(errs, errors.WithMessage(err, "failed to stop space"))
 	}
-
 	space.SetEnabled(false)
 
 	common.GetLogger().Infof("Helper: RemoveSpaceFromParent: space removed: %s", space.GetID())

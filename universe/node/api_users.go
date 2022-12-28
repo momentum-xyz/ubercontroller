@@ -12,7 +12,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
 	"github.com/momentum-xyz/ubercontroller/universe/common/helper"
-	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
@@ -143,17 +142,9 @@ func (n *Node) apiCreateUserFromWalletMeta(ctx context.Context, walletMeta *Wall
 		},
 	}
 
-	userTypeAttributeValue, ok := n.GetNodeAttributeValue(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Node.NormalUserType.Name),
-	)
-	if !ok || userTypeAttributeValue == nil {
-		return nil, errors.Errorf("failed to get user type attribute value")
-	}
-
-	normUserType := utils.GetFromAnyMap(*userTypeAttributeValue, universe.ReservedAttributes.Node.NormalUserType.Key, "")
-	normUserTypeID, err := uuid.Parse(normUserType)
+	normUserTypeID, err := helper.GetNormalUserTypeID()
 	if err != nil {
-		return nil, errors.Errorf("failed to parse normal user type id")
+		return nil, errors.Errorf("failed to get normal user type id")
 	}
 	userEntry.UserTypeID = &normUserTypeID
 

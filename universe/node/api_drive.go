@@ -153,7 +153,7 @@ func (n *Node) apiDriveTest(c *gin.Context) {
 }
 
 func (n *Node) createWorld(ownerID uuid.UUID, name string) error {
-	templateValue, ok := n.GetNodeAttributeValue(
+	templateValue, ok := n.GetNodeAttributes().GetValue(
 		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Node.WorldTemplate.Name),
 	)
 	if !ok || templateValue == nil {
