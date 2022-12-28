@@ -258,7 +258,7 @@ type SpaceUserAttributesDB interface {
 	SpaceUserAttributesUpsertSpaceUserAttribute(
 		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
 		modifyFn modify.Fn[entry.AttributePayload],
-	) (*entry.SpaceUserAttribute, error)
+	) (*entry.AttributePayload, error)
 
 	SpaceUserAttributesUpdateSpaceUserAttributeOptions(
 		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
@@ -323,6 +323,9 @@ type UserAttributesDB interface {
 	UserAttributesGetUserAttributeByID(
 		ctx context.Context, userAttributeID entry.UserAttributeID,
 	) (*entry.UserAttribute, error)
+	UserAttributesGetUserAttributePayloadByID(
+		ctx context.Context, userAttributeID entry.UserAttributeID,
+	) (*entry.AttributePayload, error)
 	UserAttributesGetUserAttributeValueByID(
 		ctx context.Context, userAttributeID entry.UserAttributeID,
 	) (*entry.AttributeValue, error)
@@ -330,9 +333,11 @@ type UserAttributesDB interface {
 		ctx context.Context, userAttributeID entry.UserAttributeID,
 	) (*entry.AttributeOptions, error)
 
+	UserAttributesGetUserAttributesCount(ctx context.Context) (int, error)
+
 	UserAttributesUpsertUserAttribute(
 		ctx context.Context, userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
-	) (*entry.UserAttribute, error)
+	) (*entry.AttributePayload, error)
 
 	UserAttributesUpdateUserAttributeValue(
 		ctx context.Context, userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributeValue],
@@ -385,7 +390,7 @@ type UserUserAttributesDB interface {
 
 	UserUserAttributesUpsertUserUserAttribute(
 		ctx context.Context, userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
-	) (*entry.UserUserAttribute, error)
+	) (*entry.AttributePayload, error)
 
 	UserUserAttributesUpdateUserUserAttributeValue(
 		ctx context.Context, userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributeValue],

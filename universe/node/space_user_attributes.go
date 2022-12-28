@@ -64,8 +64,8 @@ func (n *Node) GetSpaceUserAttributeEffectiveOptions(
 
 func (n *Node) UpsertSpaceUserAttribute(
 	spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
-) (*entry.SpaceUserAttribute, error) {
-	spaceUserAttribute, err := n.db.SpaceUserAttributesUpsertSpaceUserAttribute(n.ctx, spaceUserAttributeID, modifyFn)
+) (*entry.AttributePayload, error) {
+	payload, err := n.db.SpaceUserAttributesUpsertSpaceUserAttribute(n.ctx, spaceUserAttributeID, modifyFn)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to upsert space user attribute")
 	}
@@ -73,14 +73,14 @@ func (n *Node) UpsertSpaceUserAttribute(
 	if n.GetEnabled() {
 		go func() {
 			var value *entry.AttributeValue
-			if spaceUserAttribute.AttributePayload != nil {
-				value = spaceUserAttribute.AttributePayload.Value
+			if payload != nil {
+				value = payload.Value
 			}
 			n.onSpaceUserAttributeChanged(universe.ChangedAttributeChangeType, spaceUserAttributeID, value, nil)
 		}()
 	}
 
-	return spaceUserAttribute, nil
+	return payload, nil
 }
 
 func (n *Node) UpdateSpaceUserAttributeValue(

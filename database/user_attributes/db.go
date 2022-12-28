@@ -19,8 +19,11 @@ const (
 	getUserAttributesQuery           = `SELECT * FROM user_attribute;`
 	getUserAttributesQueryByUserID   = `SELECT * FROM user_attribute WHERE user_id = $1;`
 	getUserAttributeByIDQuery        = `SELECT * FROM user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
+	getUserAttributePayloadByIDQuery = `SELECT value, options FROM user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
 	getUserAttributeValueByIDQuery   = `SELECT value FROM user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
 	getUserAttributeOptionsByIDQuery = `SELECT options FROM user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
+
+	getUserAttributesCountQuery = `SELECT COUNT(*) FROM user_attribute;`
 
 	removeUserAttributeByIDQuery                 = `DELETE FROM user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
 	removeUserAttributesByNameQuery              = `DELETE FROM user_attribute WHERE attribute_name = $1;`
@@ -92,6 +95,18 @@ func (db *DB) UserAttributesGetUserAttributeByID(
 	return &attribute, nil
 }
 
+func (db *DB) UserAttributesGetUserAttributePayloadByID(
+	ctx context.Context, userAttributeID entry.UserAttributeID,
+) (*entry.AttributePayload, error) {
+	var payload entry.AttributePayload
+	if err := pgxscan.Get(ctx, db.conn, &payload,
+		getUserAttributePayloadByIDQuery, userAttributeID.PluginID, userAttributeID.Name, userAttributeID.UserID,
+	); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return &payload, nil
+}
+
 func (db *DB) UserAttributesGetUserAttributeValueByID(
 	ctx context.Context, userAttributeID entry.UserAttributeID,
 ) (*entry.AttributeValue, error) {
@@ -125,21 +140,25 @@ func (db *DB) UserAttributesGetUserAttributeOptionsByID(
 	return &options, nil
 }
 
-// TODO: we really need to think about it
+func (db *DB) UserAttributesGetUserAttributesCount(ctx context.Context) (int, error) {
+	var count int
+	if err := db.conn.QueryRow(ctx, getUserAttributesCountQuery).Scan(&count); err != nil {
+		return 0, errors.WithMessage(err, "failed to query db")
+	}
+	return count, nil
+}
+
 func (db *DB) UserAttributesUpsertUserAttribute(
 	ctx context.Context, userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
-) (*entry.UserAttribute, error) {
+) (*entry.AttributePayload, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
-	var payload *entry.AttributePayload
-	attribute, err := db.UserAttributesGetUserAttributeByID(ctx, userAttributeID)
+	payload, err := db.UserAttributesGetUserAttributePayloadByID(ctx, userAttributeID)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
-			return nil, errors.WithMessage(err, "failed to get attribute by id")
+			return nil, errors.WithMessage(err, "failed to get attribute payload by id")
 		}
-	} else {
-		payload = attribute.AttributePayload
 	}
 
 	payload, err = modifyFn(payload)
@@ -161,7 +180,7 @@ func (db *DB) UserAttributesUpsertUserAttribute(
 		return nil, errors.WithMessage(err, "failed to exec db")
 	}
 
-	return entry.NewUserAttribute(userAttributeID, payload), nil
+	return payload, nil
 }
 
 func (db *DB) UserAttributesRemoveUserAttributeByName(ctx context.Context, name string) error {

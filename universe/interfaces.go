@@ -84,24 +84,7 @@ type Node interface {
 	GetPlugins() Plugins
 
 	GetNodeAttributes() Attributes[entry.AttributeID]
-
-	GetUserAttributePayload(userAttributeID entry.UserAttributeID) (*entry.AttributePayload, bool)
-	GetUserAttributeValue(userAttributeID entry.UserAttributeID) (*entry.AttributeValue, bool)
-	GetUserAttributeOptions(userAttributeID entry.UserAttributeID) (*entry.AttributeOptions, bool)
-	GetUserAttributeEffectiveOptions(userAttributeID entry.UserAttributeID) (*entry.AttributeOptions, bool)
-
-	UpsertUserAttribute(
-		userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
-	) (*entry.UserAttribute, error)
-
-	UpdateUserAttributeValue(
-		userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributeValue],
-	) (*entry.AttributeValue, error)
-	UpdateUserAttributeOptions(
-		userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributeOptions],
-	) (*entry.AttributeOptions, error)
-
-	RemoveUserAttribute(userAttributeID entry.UserAttributeID) (bool, error)
+	GetUserAttributes() Attributes[entry.UserAttributeID] // ignores "updateDB" flag
 
 	GetSpaceUserAttributePayload(spaceUserAttributeID entry.SpaceUserAttributeID) (*entry.AttributePayload, bool)
 	GetSpaceUserAttributeValue(spaceUserAttributeID entry.SpaceUserAttributeID) (*entry.AttributeValue, bool)
@@ -112,7 +95,7 @@ type Node interface {
 
 	UpsertSpaceUserAttribute(
 		spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
-	) (*entry.SpaceUserAttribute, error)
+	) (*entry.AttributePayload, error)
 
 	UpdateSpaceUserAttributeValue(
 		spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributeValue],
@@ -130,7 +113,7 @@ type Node interface {
 
 	UpsertUserUserAttribute(
 		userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
-	) (*entry.UserUserAttribute, error)
+	) (*entry.AttributePayload, error)
 
 	UpdateUserUserAttributeValue(
 		userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributeValue],

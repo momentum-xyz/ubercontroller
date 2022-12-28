@@ -44,6 +44,7 @@ type Node struct {
 	//mu             sync.RWMutex
 	mu             deadlock.RWMutex
 	nodeAttributes *nodeAttributes // WARNING: the Node is sharing the same mutex ("mu") with it
+	userAttributes *userAttributes
 
 	worlds         universe.Worlds
 	assets2d       universe.Assets2d
@@ -87,6 +88,7 @@ func NewNode(
 		spaceIDToWorld: generic.NewSyncMap[uuid.UUID, universe.World](0),
 	}
 	node.nodeAttributes = newNodeAttributes(node)
+	node.userAttributes = newUserAttributes(node)
 
 	return node
 }
@@ -135,6 +137,10 @@ func (n *Node) ToSpace() universe.Space {
 
 func (n *Node) GetNodeAttributes() universe.Attributes[entry.AttributeID] {
 	return n.nodeAttributes
+}
+
+func (n *Node) GetUserAttributes() universe.Attributes[entry.UserAttributeID] {
+	return n.userAttributes
 }
 
 func (n *Node) GetWorlds() universe.Worlds {

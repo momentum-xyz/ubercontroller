@@ -43,7 +43,7 @@ func ToUserDTO(userEntry *entry.User, guestUserTypeID uuid.UUID, includeWallet b
 	if includeWallet {
 		var wallet *string
 
-		walletValue, ok := universe.GetNode().GetUserAttributeValue(
+		walletValue, ok := universe.GetNode().GetUserAttributes().GetValue(
 			entry.NewUserAttributeID(
 				entry.NewAttributeID(
 					universe.GetKusamaPluginID(), universe.ReservedAttributes.Kusama.User.Wallet.Name,

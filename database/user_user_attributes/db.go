@@ -170,7 +170,7 @@ func (db *DB) UserUserAttributesGetUserUserAttributesBySourceUserIDAndTargetUser
 
 func (db *DB) UserUserAttributesUpsertUserUserAttribute(
 	ctx context.Context, userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
-) (*entry.UserUserAttribute, error) {
+) (*entry.AttributePayload, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
@@ -204,7 +204,7 @@ func (db *DB) UserUserAttributesUpsertUserUserAttribute(
 		return nil, errors.WithMessage(err, "failed to exec db")
 	}
 
-	return entry.NewUserUserAttribute(userUserAttributeID, payload), nil
+	return payload, nil
 }
 
 func (db *DB) UserUserAttributesRemoveUserUserAttributeByName(ctx context.Context, name string) error {

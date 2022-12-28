@@ -176,7 +176,7 @@ func (db *DB) SpaceUserAttributesGetSpaceUserAttributesByPluginIDAndNameAndSpace
 
 func (db *DB) SpaceUserAttributesUpsertSpaceUserAttribute(
 	ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
-) (*entry.SpaceUserAttribute, error) {
+) (*entry.AttributePayload, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
@@ -210,7 +210,7 @@ func (db *DB) SpaceUserAttributesUpsertSpaceUserAttribute(
 		return nil, errors.WithMessage(err, "failed to exec db")
 	}
 
-	return entry.NewSpaceUserAttribute(spaceUserAttributeID, payload), nil
+	return payload, nil
 }
 
 func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeByName(ctx context.Context, name string) error {

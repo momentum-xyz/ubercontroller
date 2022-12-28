@@ -63,8 +63,8 @@ func (n *Node) GetUserUserAttributeEffectiveOptions(userUserAttributeID entry.Us
 
 func (n *Node) UpsertUserUserAttribute(
 	userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
-) (*entry.UserUserAttribute, error) {
-	userUserAttribute, err := n.db.UserUserAttributesUpsertUserUserAttribute(n.ctx, userUserAttributeID, modifyFn)
+) (*entry.AttributePayload, error) {
+	payload, err := n.db.UserUserAttributesUpsertUserUserAttribute(n.ctx, userUserAttributeID, modifyFn)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to upsert user user attribute")
 	}
@@ -72,14 +72,14 @@ func (n *Node) UpsertUserUserAttribute(
 	if n.GetEnabled() {
 		go func() {
 			var value *entry.AttributeValue
-			if userUserAttribute.AttributePayload != nil {
-				value = userUserAttribute.AttributePayload.Value
+			if payload != nil {
+				value = payload.Value
 			}
 			n.onUserUserAttributeChanged(universe.ChangedAttributeChangeType, userUserAttributeID, value, nil)
 		}()
 	}
 
-	return userUserAttribute, nil
+	return payload, nil
 }
 
 func (n *Node) onUserUserAttributeChanged(

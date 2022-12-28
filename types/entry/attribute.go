@@ -62,17 +62,17 @@ type AttributeValue map[string]any
 type AttributeOptions map[string]any
 
 type PosBusAutoAttributeOption struct {
-	SendTo PosBusDestinationType            `json:"send_to" db:"send_to"`
-	Scope  []PosBusAutoScopeAttributeOption `json:"scope" db:"scope"`
-	Topic  string                           `json:"topic" db:"topic"`
+	SendTo PosBusDestinationType            `db:"send_to" json:"send_to"`
+	Scope  []PosBusAutoScopeAttributeOption `db:"scope" json:"scope"`
+	Topic  string                           `db:"topic" json:"topic"`
 }
 
 type UnityAutoAttributeOption struct {
-	SlotType           UnitySlotType    `json:"slot_type" db:"slot_type" mapstructure:"slot_type"`
-	SlotName           string           `json:"slot_name" db:"slot_name" mapstructure:"slot_name"`
-	ValueField         string           `json:"value_field" db:"value_field" mapstructure:"value_field"`
-	ContentType        UnityContentType `json:"content_type" db:"content_type" mapstructure:"content_type"`
-	TextRenderTemplate string           `json:"text_render_template" db:"text_render_template" mapstructure:"text_render_template"`
+	SlotType           UnitySlotType    `db:"slot_type" json:"slot_type"`
+	SlotName           string           `db:"slot_name" json:"slot_name"`
+	ValueField         string           `db:"value_field" json:"value_field"`
+	ContentType        UnityContentType `db:"content_type" json:"content_type"`
+	TextRenderTemplate string           `db:"text_render_template" json:"text_render_template"`
 }
 
 func NewAttribute(attributeID AttributeID, payload *AttributePayload) *Attribute {

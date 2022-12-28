@@ -1,57 +1,65 @@
 package node
 
 import (
-	"github.com/hashicorp/go-multierror"
-	"github.com/jackc/pgx/v4"
+	"github.com/pkg/errors"
+
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/common/posbus"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
-	"github.com/pkg/errors"
 )
 
-func (n *Node) GetUserAttributePayload(userAttributeID entry.UserAttributeID) (*entry.AttributePayload, bool) {
-	userAttribute, err := n.db.UserAttributesGetUserAttributeByID(n.ctx, userAttributeID)
+type userAttributes struct {
+	node *Node
+}
+
+func newUserAttributes(node *Node) *userAttributes {
+	return &userAttributes{
+		node: node,
+	}
+}
+
+func (ua *userAttributes) GetPayload(userAttributeID entry.UserAttributeID) (*entry.AttributePayload, bool) {
+	payload, err := ua.node.db.UserAttributesGetUserAttributePayloadByID(ua.node.ctx, userAttributeID)
 	if err != nil {
 		return nil, false
 	}
-	return userAttribute.AttributePayload, true
+	return payload, true
 }
 
-func (n *Node) GetUserAttributeValue(userAttributeID entry.UserAttributeID) (*entry.AttributeValue, bool) {
-	value, err := n.db.UserAttributesGetUserAttributeValueByID(n.ctx, userAttributeID)
+func (ua *userAttributes) GetValue(userAttributeID entry.UserAttributeID) (*entry.AttributeValue, bool) {
+	value, err := ua.node.db.UserAttributesGetUserAttributeValueByID(ua.node.ctx, userAttributeID)
 	if err != nil {
 		return nil, false
 	}
 	return value, true
 }
 
-func (n *Node) GetUserAttributeOptions(userAttributeID entry.UserAttributeID) (*entry.AttributeOptions, bool) {
-	options, err := n.db.UserAttributesGetUserAttributeOptionsByID(n.ctx, userAttributeID)
+func (ua *userAttributes) GetOptions(userAttributeID entry.UserAttributeID) (*entry.AttributeOptions, bool) {
+	options, err := ua.node.db.UserAttributesGetUserAttributeOptionsByID(ua.node.ctx, userAttributeID)
 	if err != nil {
 		return nil, false
 	}
 	return options, true
 }
 
-func (n *Node) GetUserAttributeEffectiveOptions(userAttributeID entry.UserAttributeID) (*entry.AttributeOptions, bool) {
-	attributeType, ok := n.GetAttributeTypes().GetAttributeType(entry.AttributeTypeID(userAttributeID.AttributeID))
+func (ua *userAttributes) GetEffectiveOptions(userAttributeID entry.UserAttributeID) (*entry.AttributeOptions, bool) {
+	attributeType, ok := ua.node.GetAttributeTypes().GetAttributeType(entry.AttributeTypeID(userAttributeID.AttributeID))
 	if !ok {
 		return nil, false
 	}
 	attributeTypeOptions := attributeType.GetOptions()
 
-	attributeOptions, ok := n.GetUserAttributeOptions(userAttributeID)
+	attributeOptions, ok := ua.node.GetUserAttributes().GetOptions(userAttributeID)
 	if !ok {
 		return nil, false
 	}
 
 	effectiveOptions, err := merge.Auto(attributeOptions, attributeTypeOptions)
 	if err != nil {
-		n.log.Error(
+		ua.node.log.Error(
 			errors.WithMessagef(
-				err, "Node: GetUserAttributeEffectiveOptions: failed to merge options: %+v", userAttributeID,
+				err, "User attributes: GetEffectiveOptions: failed to merge options: %+v", userAttributeID,
 			),
 		)
 		return nil, false
@@ -60,93 +68,90 @@ func (n *Node) GetUserAttributeEffectiveOptions(userAttributeID entry.UserAttrib
 	return effectiveOptions, true
 }
 
-func (n *Node) UpsertUserAttribute(
-	userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
-) (*entry.UserAttribute, error) {
-	userAttribute, err := n.db.UserAttributesUpsertUserAttribute(n.ctx, userAttributeID, modifyFn)
+func (ua *userAttributes) Upsert(
+	userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
+) (*entry.AttributePayload, error) {
+	payload, err := ua.node.db.UserAttributesUpsertUserAttribute(ua.node.ctx, userAttributeID, modifyFn)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to upsert user attribute")
 	}
 
-	if n.GetEnabled() {
+	if ua.node.GetEnabled() {
 		go func() {
 			var value *entry.AttributeValue
-			if userAttribute.AttributePayload != nil {
-				value = userAttribute.AttributePayload.Value
+			if payload != nil {
+				value = payload.Value
 			}
-			n.onUserAttributeChanged(universe.ChangedAttributeChangeType, userAttributeID, value, nil)
+			ua.node.onUserAttributeChanged(universe.ChangedAttributeChangeType, userAttributeID, value, nil)
 		}()
 	}
 
-	return userAttribute, nil
+	return payload, nil
 }
 
-func (n *Node) UpdateUserAttributeValue(
-	userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributeValue],
+func (ua *userAttributes) UpdateValue(
+	userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool,
 ) (*entry.AttributeValue, error) {
-	value, err := n.db.UserAttributesUpdateUserAttributeValue(n.ctx, userAttributeID, modifyFn)
+	value, err := ua.node.db.UserAttributesUpdateUserAttributeValue(ua.node.ctx, userAttributeID, modifyFn)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to update user attribute value")
 	}
 
-	if n.GetEnabled() {
-		go n.onUserAttributeChanged(universe.ChangedAttributeChangeType, userAttributeID, value, nil)
+	if ua.node.GetEnabled() {
+		go ua.node.onUserAttributeChanged(universe.ChangedAttributeChangeType, userAttributeID, value, nil)
 	}
 
 	return value, nil
 }
 
-func (n *Node) UpdateUserAttributeOptions(
-	userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributeOptions],
+func (ua *userAttributes) UpdateOptions(
+	userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool,
 ) (*entry.AttributeOptions, error) {
-	options, err := n.db.UserAttributesUpdateUserAttributeOptions(n.ctx, userAttributeID, modifyFn)
+	options, err := ua.node.db.UserAttributesUpdateUserAttributeOptions(ua.node.ctx, userAttributeID, modifyFn)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to update user attribute options")
 	}
 
-	if n.GetEnabled() {
+	if ua.node.GetEnabled() {
 		go func() {
-			value, ok := n.GetUserAttributeValue(userAttributeID)
+			value, ok := ua.node.GetUserAttributes().GetValue(userAttributeID)
 			if !ok {
-				n.log.Error(
-					errors.Errorf(
-						"Node: UpdateUserAttributeOptions: failed to get user attribute value: %+v", userAttributeID,
-					),
+				ua.node.log.Errorf(
+					"User attributes: UpdateOptions: failed to get user attribute value: %+v", userAttributeID,
 				)
 				return
 			}
-			n.onUserAttributeChanged(universe.ChangedAttributeChangeType, userAttributeID, value, nil)
+			ua.node.onUserAttributeChanged(universe.ChangedAttributeChangeType, userAttributeID, value, nil)
 		}()
 	}
 
 	return options, nil
 }
 
-func (n *Node) RemoveUserAttribute(userAttributeID entry.UserAttributeID) (bool, error) {
-	attributeEffectiveOptions, attributeEffectiveOptionsOK := n.GetUserAttributeEffectiveOptions(userAttributeID)
-
-	if err := n.db.UserAttributesRemoveUserAttributeByID(n.ctx, userAttributeID); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return false, nil
-		}
-		return false, errors.WithMessage(err, "failed to remove user attribute")
+func (ua *userAttributes) Remove(userAttributeID entry.UserAttributeID, updateDB bool) (bool, error) {
+	effectiveOptions, ok := ua.node.GetUserAttributes().GetEffectiveOptions(userAttributeID)
+	if !ok {
+		return false, nil
 	}
 
-	if n.GetEnabled() {
-		go func() {
-			if !attributeEffectiveOptionsOK {
-				n.log.Error(
-					errors.Errorf(
-						"Node: RemoveUserAttribute: failed to get user attribute effective options",
-					),
-				)
-				return
-			}
-			n.onUserAttributeChanged(universe.RemovedAttributeChangeType, userAttributeID, nil, attributeEffectiveOptions)
-		}()
+	if err := ua.node.db.UserAttributesRemoveUserAttributeByID(ua.node.ctx, userAttributeID); err != nil {
+		return false, errors.WithMessage(err, "failed to remove user attribute by id")
+	}
+
+	if ua.node.GetEnabled() {
+		go ua.node.onUserAttributeChanged(universe.RemovedAttributeChangeType, userAttributeID, nil, effectiveOptions)
 	}
 
 	return true, nil
+}
+
+func (ua *userAttributes) Len() int {
+	count, err := ua.node.db.UserAttributesGetUserAttributesCount(ua.node.ctx)
+	if err != nil {
+		ua.node.log.Error(errors.WithMessage(err, "User attributes: Len: failed to get user attributes count"))
+		return 0
+	}
+	return count
 }
 
 func (n *Node) onUserAttributeChanged(
@@ -154,13 +159,11 @@ func (n *Node) onUserAttributeChanged(
 	effectiveOptions *entry.AttributeOptions,
 ) {
 	if effectiveOptions == nil {
-		options, ok := n.GetUserAttributeEffectiveOptions(userAttributeID)
+		options, ok := n.GetUserAttributes().GetEffectiveOptions(userAttributeID)
 		if !ok {
-			n.log.Error(
-				errors.Errorf(
-					"Node: onUserAttributeChanged: failed to get user attribute effective options: %+v",
-					userAttributeID,
-				),
+			n.log.Errorf(
+				"Node: onUserAttributeChanged: failed to get user attribute effective options: %+v",
+				userAttributeID,
 			)
 			return
 		}
@@ -171,74 +174,9 @@ func (n *Node) onUserAttributeChanged(
 		if err := n.posBusAutoOnUserAttributeChanged(changeType, userAttributeID, value, effectiveOptions); err != nil {
 			n.log.Error(
 				errors.WithMessagef(
-					err, "Node: onUserAttributeChanged: failed to handle pos bus auto: %+v", userAttributeID,
+					err, "Node: onUserAttributeChanged: failed to handle posbus auto: %+v", userAttributeID,
 				),
 			)
 		}
 	}()
-}
-
-func (n *Node) posBusAutoOnUserAttributeChanged(
-	changeType universe.AttributeChangeType, userAttributeID entry.UserAttributeID, value *entry.AttributeValue,
-	effectiveOptions *entry.AttributeOptions,
-) error {
-	autoOption, err := posbus.GetOptionAutoOption(effectiveOptions)
-	if err != nil {
-		return errors.WithMessagef(err, "failed to get auto option: %+v", userAttributeID)
-	}
-	autoMessage, err := posbus.GetOptionAutoMessage(autoOption, changeType, userAttributeID.AttributeID, value)
-	if err != nil {
-		return errors.WithMessagef(err, "failed to get auto message: %+v", userAttributeID)
-	}
-	if autoMessage == nil {
-		return nil
-	}
-
-	var users []universe.User
-	for _, world := range n.GetWorlds().GetWorlds() {
-		if user, ok := world.GetUser(userAttributeID.UserID, true); ok {
-			users = append(users, user)
-		}
-	}
-
-	var errs *multierror.Error
-	for i := range autoOption.Scope {
-		switch autoOption.Scope[i] {
-		case entry.WorldPosBusAutoScopeAttributeOption:
-			for i := range users {
-				world := users[i].GetWorld()
-				if world == nil {
-					errs = multierror.Append(
-						errs, errors.Errorf("failed to get world: %s", autoOption.Scope[i]),
-					)
-					continue
-				}
-				if err := world.Send(autoMessage, true); err != nil {
-					errs = multierror.Append(
-						errs, errors.WithMessagef(
-							err, "failed to send message: %s", autoOption.Scope[i],
-						),
-					)
-				}
-			}
-		case entry.UserPosBusAutoScopeAttributeOption:
-			for i := range users {
-				if err := users[i].Send(autoMessage); err != nil {
-					errs = multierror.Append(
-						errs, errors.WithMessagef(
-							err, "failed to send message: %s", autoOption.Scope[i],
-						),
-					)
-				}
-			}
-		default:
-			errs = multierror.Append(
-				errs, errors.Errorf(
-					"scope type in not supported: %s", autoOption.Scope[i],
-				),
-			)
-		}
-	}
-
-	return errs.ErrorOrNil()
 }
