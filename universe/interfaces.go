@@ -84,27 +84,8 @@ type Node interface {
 	GetPlugins() Plugins
 
 	GetNodeAttributes() Attributes[entry.AttributeID]
-	GetUserAttributes() Attributes[entry.UserAttributeID] // ignores "updateDB" flag
-
-	GetSpaceUserAttributePayload(spaceUserAttributeID entry.SpaceUserAttributeID) (*entry.AttributePayload, bool)
-	GetSpaceUserAttributeValue(spaceUserAttributeID entry.SpaceUserAttributeID) (*entry.AttributeValue, bool)
-	GetSpaceUserAttributeOptions(spaceUserAttributeID entry.SpaceUserAttributeID) (*entry.AttributeOptions, bool)
-	GetSpaceUserAttributeEffectiveOptions(spaceUserAttributeID entry.SpaceUserAttributeID) (
-		*entry.AttributeOptions, bool,
-	)
-
-	UpsertSpaceUserAttribute(
-		spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
-	) (*entry.AttributePayload, error)
-
-	UpdateSpaceUserAttributeValue(
-		spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributeValue],
-	) (*entry.AttributeValue, error)
-	UpdateSpaceUserAttributeOptions(
-		spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributeOptions],
-	) (*entry.AttributeOptions, error)
-
-	RemoveSpaceUserAttribute(spaceUserAttributeID entry.SpaceUserAttributeID) (bool, error)
+	GetUserAttributes() Attributes[entry.UserAttributeID]           // ignores "updateDB" flag
+	GetSpaceUserAttributes() Attributes[entry.SpaceUserAttributeID] // ignores "updateDB" flag
 
 	GetUserUserAttributePayload(userUserAttributeID entry.UserUserAttributeID) (*entry.AttributePayload, bool)
 	GetUserUserAttributeValue(userUserAttributeID entry.UserUserAttributeID) (*entry.AttributeValue, bool)

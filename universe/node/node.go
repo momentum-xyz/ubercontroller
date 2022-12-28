@@ -42,9 +42,10 @@ type Node struct {
 	httpServer *http.Server
 
 	//mu             sync.RWMutex
-	mu             deadlock.RWMutex
-	nodeAttributes *nodeAttributes // WARNING: the Node is sharing the same mutex ("mu") with it
-	userAttributes *userAttributes
+	mu                  deadlock.RWMutex
+	nodeAttributes      *nodeAttributes // WARNING: the Node is sharing the same mutex ("mu") with it
+	userAttributes      *userAttributes
+	spaceUserAttributes *spaceUserAttributes
 
 	worlds         universe.Worlds
 	assets2d       universe.Assets2d
@@ -89,6 +90,7 @@ func NewNode(
 	}
 	node.nodeAttributes = newNodeAttributes(node)
 	node.userAttributes = newUserAttributes(node)
+	node.spaceUserAttributes = newSpaceUserAttributes(node)
 
 	return node
 }
@@ -141,6 +143,10 @@ func (n *Node) GetNodeAttributes() universe.Attributes[entry.AttributeID] {
 
 func (n *Node) GetUserAttributes() universe.Attributes[entry.UserAttributeID] {
 	return n.userAttributes
+}
+
+func (n *Node) GetSpaceUserAttributes() universe.Attributes[entry.SpaceUserAttributeID] {
+	return n.spaceUserAttributes
 }
 
 func (n *Node) GetWorlds() universe.Worlds {

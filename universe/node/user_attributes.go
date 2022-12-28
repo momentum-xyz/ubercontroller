@@ -1,6 +1,7 @@
 package node
 
 import (
+	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -50,7 +51,7 @@ func (ua *userAttributes) GetEffectiveOptions(userAttributeID entry.UserAttribut
 	}
 	attributeTypeOptions := attributeType.GetOptions()
 
-	attributeOptions, ok := ua.node.GetUserAttributes().GetOptions(userAttributeID)
+	attributeOptions, ok := ua.GetOptions(userAttributeID)
 	if !ok {
 		return nil, false
 	}
@@ -114,7 +115,7 @@ func (ua *userAttributes) UpdateOptions(
 
 	if ua.node.GetEnabled() {
 		go func() {
-			value, ok := ua.node.GetUserAttributes().GetValue(userAttributeID)
+			value, ok := ua.GetValue(userAttributeID)
 			if !ok {
 				ua.node.log.Errorf(
 					"User attributes: UpdateOptions: failed to get user attribute value: %+v", userAttributeID,
@@ -129,12 +130,15 @@ func (ua *userAttributes) UpdateOptions(
 }
 
 func (ua *userAttributes) Remove(userAttributeID entry.UserAttributeID, updateDB bool) (bool, error) {
-	effectiveOptions, ok := ua.node.GetUserAttributes().GetEffectiveOptions(userAttributeID)
+	effectiveOptions, ok := ua.GetEffectiveOptions(userAttributeID)
 	if !ok {
 		return false, nil
 	}
 
 	if err := ua.node.db.UserAttributesRemoveUserAttributeByID(ua.node.ctx, userAttributeID); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, nil
+		}
 		return false, errors.WithMessage(err, "failed to remove user attribute by id")
 	}
 
@@ -151,7 +155,7 @@ func (ua *userAttributes) Len() int {
 		ua.node.log.Error(errors.WithMessage(err, "User attributes: Len: failed to get user attributes count"))
 		return 0
 	}
-	return count
+	return int(count)
 }
 
 func (n *Node) onUserAttributeChanged(

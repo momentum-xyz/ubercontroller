@@ -140,9 +140,10 @@ func (db *DB) UserAttributesGetUserAttributeOptionsByID(
 	return &options, nil
 }
 
-func (db *DB) UserAttributesGetUserAttributesCount(ctx context.Context) (int, error) {
-	var count int
-	if err := db.conn.QueryRow(ctx, getUserAttributesCountQuery).Scan(&count); err != nil {
+func (db *DB) UserAttributesGetUserAttributesCount(ctx context.Context) (int64, error) {
+	var count int64
+	if err := db.conn.QueryRow(ctx, getUserAttributesCountQuery).
+		Scan(&count); err != nil {
 		return 0, errors.WithMessage(err, "failed to query db")
 	}
 	return count, nil
@@ -184,22 +185,34 @@ func (db *DB) UserAttributesUpsertUserAttribute(
 }
 
 func (db *DB) UserAttributesRemoveUserAttributeByName(ctx context.Context, name string) error {
-	if _, err := db.conn.Exec(ctx, removeUserAttributesByNameQuery, name); err != nil {
+	res, err := db.conn.Exec(ctx, removeUserAttributesByNameQuery, name)
+	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }
 
 func (db *DB) UserAttributesRemoveUserAttributesByNames(ctx context.Context, names []string) error {
-	if _, err := db.conn.Exec(ctx, removeUserAttributesByNamesQuery, names); err != nil {
+	res, err := db.conn.Exec(ctx, removeUserAttributesByNamesQuery, names)
+	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }
 
 func (db *DB) UserAttributesRemoveUserAttributesByPluginID(ctx context.Context, pluginID uuid.UUID) error {
-	if _, err := db.conn.Exec(ctx, removeUserAttributesByPluginIDQuery, pluginID); err != nil {
+	res, err := db.conn.Exec(ctx, removeUserAttributesByPluginIDQuery, pluginID)
+	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }
@@ -207,17 +220,23 @@ func (db *DB) UserAttributesRemoveUserAttributesByPluginID(ctx context.Context, 
 func (db *DB) UserAttributesRemoveUserAttributeByAttributeID(
 	ctx context.Context, attributeID entry.AttributeID,
 ) error {
-	if _, err := db.conn.Exec(
-		ctx, removeUserAttributesByPluginIDAndNameQuery, attributeID.PluginID, attributeID.Name,
-	); err != nil {
+	res, err := db.conn.Exec(ctx, removeUserAttributesByPluginIDAndNameQuery, attributeID.PluginID, attributeID.Name)
+	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }
 
 func (db *DB) UserAttributesRemoveUserAttributeByUserID(ctx context.Context, userID uuid.UUID) error {
-	if _, err := db.conn.Exec(ctx, removeUserAttributesByUserIDQuery, userID); err != nil {
+	res, err := db.conn.Exec(ctx, removeUserAttributesByUserIDQuery, userID)
+	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }
@@ -225,10 +244,12 @@ func (db *DB) UserAttributesRemoveUserAttributeByUserID(ctx context.Context, use
 func (db *DB) UserAttributesRemoveUserAttributeByNameAndUserID(
 	ctx context.Context, name string, userID uuid.UUID,
 ) error {
-	if _, err := db.conn.Exec(
-		ctx, removeUserAttributeByNameAndUserIDQuery, name, userID,
-	); err != nil {
+	res, err := db.conn.Exec(ctx, removeUserAttributeByNameAndUserIDQuery, name, userID)
+	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }
@@ -236,10 +257,12 @@ func (db *DB) UserAttributesRemoveUserAttributeByNameAndUserID(
 func (db *DB) UserAttributesRemoveUserAttributeByNamesAndUserID(
 	ctx context.Context, names []string, userID uuid.UUID,
 ) error {
-	if _, err := db.conn.Exec(
-		ctx, removeUserAttributesByNamesAndUserIDQuery, names, userID,
-	); err != nil {
+	res, err := db.conn.Exec(ctx, removeUserAttributesByNamesAndUserIDQuery, names, userID)
+	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }
@@ -247,10 +270,12 @@ func (db *DB) UserAttributesRemoveUserAttributeByNamesAndUserID(
 func (db *DB) UserAttributesRemoveUserAttributeByPluginIDAndUserID(
 	ctx context.Context, pluginID uuid.UUID, userID uuid.UUID,
 ) error {
-	if _, err := db.conn.Exec(
-		ctx, removeUserAttributesByPluginIDAndUserIDQuery, pluginID, userID,
-	); err != nil {
+	res, err := db.conn.Exec(ctx, removeUserAttributesByPluginIDAndUserIDQuery, pluginID, userID)
+	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }
@@ -258,11 +283,15 @@ func (db *DB) UserAttributesRemoveUserAttributeByPluginIDAndUserID(
 func (db *DB) UserAttributesRemoveUserAttributeByID(
 	ctx context.Context, userAttributeID entry.UserAttributeID,
 ) error {
-	if _, err := db.conn.Exec(
+	res, err := db.conn.Exec(
 		ctx, removeUserAttributeByIDQuery,
 		userAttributeID.PluginID, userAttributeID.Name, userAttributeID.UserID,
-	); err != nil {
+	)
+	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }

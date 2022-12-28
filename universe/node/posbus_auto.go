@@ -73,3 +73,74 @@ func (n *Node) posBusAutoOnUserAttributeChanged(
 
 	return errs.ErrorOrNil()
 }
+
+func (n *Node) posBusAutoOnSpaceUserAttributeChanged(
+	changeType universe.AttributeChangeType, spaceUserAttributeID entry.SpaceUserAttributeID, value *entry.AttributeValue,
+	effectiveOptions *entry.AttributeOptions,
+) error {
+	autoOption, err := posbus.GetOptionAutoOption(effectiveOptions)
+	if err != nil {
+		return errors.WithMessagef(err, "failed to get auto option: %+v", spaceUserAttributeID)
+	}
+	autoMessage, err := posbus.GetOptionAutoMessage(autoOption, changeType, spaceUserAttributeID.AttributeID, value)
+	if err != nil {
+		return errors.WithMessagef(err, "failed to get auto message: %+v", spaceUserAttributeID)
+	}
+	if autoMessage == nil {
+		return nil
+	}
+
+	space, ok := n.GetSpaceFromAllSpaces(spaceUserAttributeID.SpaceID)
+	if !ok {
+		return errors.Errorf("space not found: %s", spaceUserAttributeID.SpaceID)
+	}
+
+	var errs *multierror.Error
+	for i := range autoOption.Scope {
+		switch autoOption.Scope[i] {
+		case entry.WorldPosBusAutoScopeAttributeOption:
+			world := space.GetWorld()
+			if world == nil {
+				errs = multierror.Append(
+					errs, errors.Errorf("failed to get space world: %s", autoOption.Scope[i]),
+				)
+				continue
+			}
+			if err := world.Send(autoMessage, true); err != nil {
+				errs = multierror.Append(
+					errs, errors.WithMessagef(
+						err, "failed to send message: %s", autoOption.Scope[i],
+					),
+				)
+			}
+		case entry.SpacePosBusAutoScopeAttributeOption:
+			if err := space.Send(autoMessage, false); err != nil {
+				errs = multierror.Append(
+					errs, errors.WithMessagef(
+						err, "failed to send message: %s", autoOption.Scope[i],
+					),
+				)
+			}
+		case entry.UserPosBusAutoScopeAttributeOption:
+			user, ok := space.GetUser(spaceUserAttributeID.UserID, false)
+			if !ok {
+				continue
+			}
+			if err := user.Send(autoMessage); err != nil {
+				errs = multierror.Append(
+					errs, errors.WithMessagef(
+						err, "failed to send message: %s", autoOption.Scope[i],
+					),
+				)
+			}
+		default:
+			errs = multierror.Append(
+				errs, errors.Errorf(
+					"scope type in not supported: %s", autoOption.Scope[i],
+				),
+			)
+		}
+	}
+
+	return errs.ErrorOrNil()
+}

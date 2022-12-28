@@ -18,12 +18,15 @@ import (
 const (
 	getSpaceUserAttributesQuery                            = `SELECT * FROM space_user_attribute;`
 	getSpaceUserAttributeByIDQuery                         = `SELECT * FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3 AND user_id = $4;`
+	getSpaceUserAttributePayloadQuery                      = `SELECT value, options FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3 AND user_id = $4;`
 	getSpaceUserAttributeValueByIDQuery                    = `SELECT value FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3 AND user_id = $4;`
 	getSpaceUserAttributeOptionsByIDQuery                  = `SELECT options FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3 AND user_id = $4;`
 	getSpaceUserAttributesBySpaceIDQuery                   = `SELECT * FROM space_user_attribute WHERE space_id = $1;`
 	getSpaceUserAttributesByUserIDQuery                    = `SELECT * FROM space_user_attribute WHERE user_id = $1;`
 	getSpaceUserAttributesBySpaceIDAndUserIDQuery          = `SELECT * FROM space_user_attribute WHERE space_id = $1 AND user_id = $2;`
 	getSpaceUserAttributesByPluginIDAndNameAndSpaceIDQuery = `SELECT * FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3;`
+
+	getSpaceUserAttributesCountQuery = `SELECT COUNT(*) FROM space_user_attribute;`
 
 	removeSpaceUserAttributeByNameQuery             = `DELETE FROM space_user_attribute WHERE attribute_name = $1;`
 	removeSpaceUserAttributesByNamesQuery           = `DELETE FROM space_user_attribute WHERE attribute_name = ANY($1);`
@@ -96,6 +99,19 @@ func (db *DB) SpaceUserAttributesGetSpaceUserAttributeByID(
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return &attribute, nil
+}
+
+func (db *DB) SpaceUserAttributesGetSpaceUserAttributePayloadByID(
+	ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
+) (*entry.AttributePayload, error) {
+	var payload entry.AttributePayload
+	if err := pgxscan.Get(ctx, db.conn, &payload, getSpaceUserAttributePayloadQuery,
+		spaceUserAttributeID.PluginID, spaceUserAttributeID.Name,
+		spaceUserAttributeID.SpaceID, spaceUserAttributeID.UserID,
+	); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return &payload, nil
 }
 
 func (db *DB) SpaceUserAttributesGetSpaceUserAttributeValueByID(
@@ -174,20 +190,26 @@ func (db *DB) SpaceUserAttributesGetSpaceUserAttributesByPluginIDAndNameAndSpace
 	return attributes, nil
 }
 
+func (db *DB) SpaceUserAttributesGetSpaceUserAttributesCount(ctx context.Context) (int64, error) {
+	var count int64
+	if err := db.conn.QueryRow(ctx, getSpaceUserAttributesCountQuery).
+		Scan(&count); err != nil {
+		return 0, errors.WithMessage(err, "failed to query db")
+	}
+	return count, nil
+}
+
 func (db *DB) SpaceUserAttributesUpsertSpaceUserAttribute(
 	ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
 ) (*entry.AttributePayload, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
-	var payload *entry.AttributePayload
-	attribute, err := db.SpaceUserAttributesGetSpaceUserAttributeByID(ctx, spaceUserAttributeID)
+	payload, err := db.SpaceUserAttributesGetSpaceUserAttributePayloadByID(ctx, spaceUserAttributeID)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
-			return nil, errors.WithMessage(err, "failed to get attribute by id")
+			return nil, errors.WithMessage(err, "failed to get attribute payload by id")
 		}
-	} else {
-		payload = attribute.AttributePayload
 	}
 
 	payload, err = modifyFn(payload)
@@ -214,22 +236,34 @@ func (db *DB) SpaceUserAttributesUpsertSpaceUserAttribute(
 }
 
 func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeByName(ctx context.Context, name string) error {
-	if _, err := db.conn.Exec(ctx, removeSpaceUserAttributeByNameQuery, name); err != nil {
+	res, err := db.conn.Exec(ctx, removeSpaceUserAttributeByNameQuery, name)
+	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }
 
 func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributesByNames(ctx context.Context, names []string) error {
-	if _, err := db.conn.Exec(ctx, removeSpaceUserAttributesByNamesQuery, names); err != nil {
+	res, err := db.conn.Exec(ctx, removeSpaceUserAttributesByNamesQuery, names)
+	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }
 
 func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributesByPluginID(ctx context.Context, pluginID uuid.UUID) error {
-	if _, err := db.conn.Exec(ctx, removeSpaceUserAttributesByPluginIDQuery, pluginID); err != nil {
+	res, err := db.conn.Exec(ctx, removeSpaceUserAttributesByPluginIDQuery, pluginID)
+	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }
@@ -237,10 +271,12 @@ func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributesByPluginID(ctx context
 func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeByAttributeID(
 	ctx context.Context, attributeID entry.AttributeID,
 ) error {
-	if _, err := db.conn.Exec(
-		ctx, removeSpaceUserAttributeByPluginIDAndNameQuery, attributeID.PluginID, attributeID.Name,
-	); err != nil {
+	res, err := db.conn.Exec(ctx, removeSpaceUserAttributeByPluginIDAndNameQuery, attributeID.PluginID, attributeID.Name)
+	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }
@@ -248,10 +284,12 @@ func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeByAttributeID(
 func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeBySpaceID(
 	ctx context.Context, spaceID uuid.UUID,
 ) error {
-	if _, err := db.conn.Exec(
-		ctx, removeSpaceUserAttributesBySpaceIDQuery, spaceID,
-	); err != nil {
+	res, err := db.conn.Exec(ctx, removeSpaceUserAttributesBySpaceIDQuery, spaceID)
+	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }
@@ -259,10 +297,12 @@ func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeBySpaceID(
 func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeByNameAndSpaceID(
 	ctx context.Context, name string, spaceID uuid.UUID,
 ) error {
-	if _, err := db.conn.Exec(
-		ctx, removeSpaceUserAttributeByNameAndSpaceIDQuery, name, spaceID,
-	); err != nil {
+	res, err := db.conn.Exec(ctx, removeSpaceUserAttributeByNameAndSpaceIDQuery, name, spaceID)
+	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }
@@ -270,10 +310,12 @@ func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeByNameAndSpaceID(
 func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeByNamesAndSpaceID(
 	ctx context.Context, names []string, spaceID uuid.UUID,
 ) error {
-	if _, err := db.conn.Exec(
-		ctx, removeSpaceUserAttributesByNamesAndSpaceIDQuery, names, spaceID,
-	); err != nil {
+	res, err := db.conn.Exec(ctx, removeSpaceUserAttributesByNamesAndSpaceIDQuery, names, spaceID)
+	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }
@@ -281,10 +323,12 @@ func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeByNamesAndSpaceID(
 func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeByUserID(
 	ctx context.Context, userID uuid.UUID,
 ) error {
-	if _, err := db.conn.Exec(
-		ctx, removeSpaceUserAttributesByUserIDQuery, userID,
-	); err != nil {
+	res, err := db.conn.Exec(ctx, removeSpaceUserAttributesByUserIDQuery, userID)
+	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }
@@ -292,10 +336,12 @@ func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeByUserID(
 func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeByNameAndUserID(
 	ctx context.Context, name string, userID uuid.UUID,
 ) error {
-	if _, err := db.conn.Exec(
-		ctx, removeSpaceUserAttributeByNameAndUserIDQuery, name, userID,
-	); err != nil {
+	res, err := db.conn.Exec(ctx, removeSpaceUserAttributeByNameAndUserIDQuery, name, userID)
+	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }
@@ -303,10 +349,12 @@ func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeByNameAndUserID(
 func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeByNamesAndUserID(
 	ctx context.Context, names []string, userID uuid.UUID,
 ) error {
-	if _, err := db.conn.Exec(
-		ctx, removeSpaceUserAttributesByNamesAndUserIDQuery, names, userID,
-	); err != nil {
+	res, err := db.conn.Exec(ctx, removeSpaceUserAttributesByNamesAndUserIDQuery, names, userID)
+	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }
@@ -314,10 +362,12 @@ func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeByNamesAndUserID(
 func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeBySpaceIDAndUserID(
 	ctx context.Context, spaceID uuid.UUID, userID uuid.UUID,
 ) error {
-	if _, err := db.conn.Exec(
-		ctx, removeSpaceUserAttributesBySpaceIDAndUserIDQuery, spaceID, userID,
-	); err != nil {
+	res, err := db.conn.Exec(ctx, removeSpaceUserAttributesBySpaceIDAndUserIDQuery, spaceID, userID)
+	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }
@@ -325,10 +375,12 @@ func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeBySpaceIDAndUserID(
 func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeByNameAndSpaceIDAndUserID(
 	ctx context.Context, name string, spaceID uuid.UUID, userID uuid.UUID,
 ) error {
-	if _, err := db.conn.Exec(
-		ctx, removeSpaceUserAttributeByNameAndSpaceIDAndUserIDQuery, name, spaceID, userID,
-	); err != nil {
+	res, err := db.conn.Exec(ctx, removeSpaceUserAttributeByNameAndSpaceIDAndUserIDQuery, name, spaceID, userID)
+	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }
@@ -336,10 +388,12 @@ func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeByNameAndSpaceIDAndUser
 func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeByNamesAndSpaceIDAndUserID(
 	ctx context.Context, names []string, spaceID uuid.UUID, userID uuid.UUID,
 ) error {
-	if _, err := db.conn.Exec(
-		ctx, removeSpaceUserAttributesByNamesAndSpaceIDAndUserIDQuery, names, spaceID, userID,
-	); err != nil {
+	res, err := db.conn.Exec(ctx, removeSpaceUserAttributesByNamesAndSpaceIDAndUserIDQuery, names, spaceID, userID)
+	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }
@@ -347,10 +401,12 @@ func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeByNamesAndSpaceIDAndUse
 func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeByPluginIDAndSpaceID(
 	ctx context.Context, pluginID uuid.UUID, spaceID uuid.UUID,
 ) error {
-	if _, err := db.conn.Exec(
-		ctx, removeSpaceUserAttributesByPluginIDAndSpaceIDQuery, pluginID, spaceID,
-	); err != nil {
+	res, err := db.conn.Exec(ctx, removeSpaceUserAttributesByPluginIDAndSpaceIDQuery, pluginID, spaceID)
+	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }
@@ -358,11 +414,15 @@ func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeByPluginIDAndSpaceID(
 func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeBySpaceAttributeID(
 	ctx context.Context, spaceAttributeID entry.SpaceAttributeID,
 ) error {
-	if _, err := db.conn.Exec(
+	res, err := db.conn.Exec(
 		ctx, removeSpaceUserAttributesByPluginIDAndNameAndSpaceIDQuery,
 		spaceAttributeID.PluginID, spaceAttributeID.Name, spaceAttributeID.SpaceID,
-	); err != nil {
+	)
+	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }
@@ -370,10 +430,14 @@ func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeBySpaceAttributeID(
 func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeByPluginIDAndUserID(
 	ctx context.Context, pluginID uuid.UUID, userID uuid.UUID,
 ) error {
-	if _, err := db.conn.Exec(
+	res, err := db.conn.Exec(
 		ctx, removeSpaceUserAttributesByPluginIDAndUserIDQuery, pluginID, userID,
-	); err != nil {
+	)
+	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }
@@ -381,21 +445,27 @@ func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeByPluginIDAndUserID(
 func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeByUserAttributeID(
 	ctx context.Context, userAttributeID entry.UserAttributeID,
 ) error {
-	if _, err := db.conn.Exec(
+	res, err := db.conn.Exec(
 		ctx, removeSpaceUserAttributesByPluginIDAndNameAndUserIDQuery,
 		userAttributeID.PluginID, userAttributeID.Name, userAttributeID.UserID,
-	); err != nil {
+	)
+	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }
 func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeByPluginIDAndSpaceIDAndUserID(
 	ctx context.Context, pluginID uuid.UUID, spaceID uuid.UUID, userID uuid.UUID,
 ) error {
-	if _, err := db.conn.Exec(
-		ctx, removeSpaceUserAttributesByPluginIDAndSpaceIDAndUserIDQuery, pluginID, spaceID, userID,
-	); err != nil {
+	res, err := db.conn.Exec(ctx, removeSpaceUserAttributesByPluginIDAndSpaceIDAndUserIDQuery, pluginID, spaceID, userID)
+	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }
@@ -403,11 +473,15 @@ func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeByPluginIDAndSpaceIDAnd
 func (db *DB) SpaceUserAttributesRemoveSpaceUserAttributeByID(
 	ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
 ) error {
-	if _, err := db.conn.Exec(
+	res, err := db.conn.Exec(
 		ctx, removeSpaceUserAttributesByPluginIDAndNameAndSpaceIDAndUserIDQuery,
 		spaceUserAttributeID.PluginID, spaceUserAttributeID.Name, spaceUserAttributeID.SpaceID, spaceUserAttributeID.UserID,
-	); err != nil {
+	)
+	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }

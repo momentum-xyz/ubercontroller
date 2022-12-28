@@ -236,6 +236,9 @@ type SpaceUserAttributesDB interface {
 	SpaceUserAttributesGetSpaceUserAttributeByID(
 		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
 	) (*entry.SpaceUserAttribute, error)
+	SpaceUserAttributesGetSpaceUserAttributePayloadByID(
+		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
+	) (*entry.AttributePayload, error)
 	SpaceUserAttributesGetSpaceUserAttributeValueByID(
 		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
 	) (*entry.AttributeValue, error)
@@ -254,6 +257,8 @@ type SpaceUserAttributesDB interface {
 	SpaceUserAttributesGetSpaceUserAttributesByPluginIDAndNameAndSpaceID(
 		ctx context.Context, pluginID uuid.UUID, name string, spaceID uuid.UUID,
 	) ([]*entry.SpaceUserAttribute, error)
+
+	SpaceUserAttributesGetSpaceUserAttributesCount(ctx context.Context) (int64, error)
 
 	SpaceUserAttributesUpsertSpaceUserAttribute(
 		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
@@ -333,7 +338,7 @@ type UserAttributesDB interface {
 		ctx context.Context, userAttributeID entry.UserAttributeID,
 	) (*entry.AttributeOptions, error)
 
-	UserAttributesGetUserAttributesCount(ctx context.Context) (int, error)
+	UserAttributesGetUserAttributesCount(ctx context.Context) (int64, error)
 
 	UserAttributesUpsertUserAttribute(
 		ctx context.Context, userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
