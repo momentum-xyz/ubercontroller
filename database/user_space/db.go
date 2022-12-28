@@ -92,9 +92,11 @@ func (db *DB) UserSpaceGetUserSpaceValueByID(
 	ctx context.Context, userSpaceID entry.UserSpaceID,
 ) (*entry.UserSpaceValue, error) {
 	var value entry.UserSpaceValue
-	if err := pgxscan.Get(ctx, db.conn, &value, getUserSpaceValueByIDQuery,
-		userSpaceID.UserID, userSpaceID.SpaceID,
-	); err != nil {
+	err := db.conn.QueryRow(ctx,
+		getUserSpaceValueByIDQuery,
+		userSpaceID.UserID,
+		userSpaceID.SpaceID).Scan(&value)
+	if err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return &value, nil
