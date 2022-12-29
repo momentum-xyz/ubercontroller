@@ -100,10 +100,6 @@ func (s *Space) SendToUser(userID uuid.UUID, msg *websocket.PreparedMessage, rec
 }
 
 func (s *Space) Send(msg *websocket.PreparedMessage, recursive bool) error {
-	if !s.GetEnabled() {
-		return nil
-	}
-
 	if msg == nil {
 		cute.SetTitleColor(cute.BrightRed)
 		cute.SetMessageColor(cute.Red)
@@ -111,11 +107,13 @@ func (s *Space) Send(msg *websocket.PreparedMessage, recursive bool) error {
 		return nil
 	}
 
-	if s.numSendsQueued.Add(1) < 0 {
-		return nil
+	if s.GetEnabled() {
+		if s.numSendsQueued.Add(1) < 0 {
+			return nil
+		}
+		s.broadcastPipeline <- msg
 	}
-	s.broadcastPipeline <- msg
-
+	
 	if !recursive {
 		return nil
 	}
