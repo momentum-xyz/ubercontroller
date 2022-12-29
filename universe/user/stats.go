@@ -41,13 +41,13 @@ func (u *User) SendHighFiveStats(target universe.User) error {
 		return current, nil
 	}
 
-	if _, err := universe.GetNode().UpsertUserUserAttribute(
+	if _, err := universe.GetNode().GetUserUserAttributes().Upsert(
 		entry.NewUserUserAttributeID(
 			entry.NewAttributeID(
 				universe.GetSystemPluginID(), universe.ReservedAttributes.User.HighFive.Name,
 			),
 			u.GetID(), target.GetID(),
-		), modifyFn,
+		), modifyFn, true,
 	); err != nil {
 		return errors.New("failed to upsert high-five user user attribute")
 	}

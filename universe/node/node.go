@@ -45,6 +45,7 @@ type Node struct {
 	mu                  deadlock.RWMutex
 	nodeAttributes      *nodeAttributes // WARNING: the Node is sharing the same mutex ("mu") with it
 	userAttributes      *userAttributes
+	userUserAttributes  *userUserAttributes
 	spaceUserAttributes *spaceUserAttributes
 
 	worlds         universe.Worlds
@@ -90,6 +91,7 @@ func NewNode(
 	}
 	node.nodeAttributes = newNodeAttributes(node)
 	node.userAttributes = newUserAttributes(node)
+	node.userUserAttributes = newUserUserAttributes(node)
 	node.spaceUserAttributes = newSpaceUserAttributes(node)
 
 	return node
@@ -143,6 +145,10 @@ func (n *Node) GetNodeAttributes() universe.Attributes[entry.AttributeID] {
 
 func (n *Node) GetUserAttributes() universe.Attributes[entry.UserAttributeID] {
 	return n.userAttributes
+}
+
+func (n *Node) GetUserUserAttributes() universe.Attributes[entry.UserUserAttributeID] {
+	return n.userUserAttributes
 }
 
 func (n *Node) GetSpaceUserAttributes() universe.Attributes[entry.SpaceUserAttributeID] {

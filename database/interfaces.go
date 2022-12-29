@@ -377,6 +377,9 @@ type UserUserAttributesDB interface {
 	UserUserAttributesGetUserUserAttributeByID(
 		ctx context.Context, userUserAttributeID entry.UserUserAttributeID,
 	) (*entry.UserUserAttribute, error)
+	UserUserAttributesGetUserUserAttributePayloadByID(
+		ctx context.Context, userUserAttributeID entry.UserUserAttributeID,
+	) (*entry.AttributePayload, error)
 	UserUserAttributesGetUserUserAttributeValueByID(
 		ctx context.Context, userUserAttributeID entry.UserUserAttributeID,
 	) (*entry.AttributeValue, error)
@@ -392,6 +395,8 @@ type UserUserAttributesDB interface {
 	UserUserAttributesGetUserUserAttributesBySourceUserIDAndTargetUserID(
 		ctx context.Context, sourceUserID uuid.UUID, targetUserID uuid.UUID,
 	) ([]*entry.UserUserAttribute, error)
+
+	UserUserAttributesGetUserUserAttributesCount(ctx context.Context) (int64, error)
 
 	UserUserAttributesUpsertUserUserAttribute(
 		ctx context.Context, userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributePayload],

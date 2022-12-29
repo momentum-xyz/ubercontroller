@@ -32,7 +32,7 @@ func (n *Node) apiSetUserUserSubAttributeValue(c *gin.Context) {
 	inBody := InBody{}
 
 	if err := c.ShouldBindJSON(&inBody); err != nil {
-		err = errors.WithMessage(err, "Node: apiSetUserUserSubAttributeValue: failed to bind json")
+		err := errors.WithMessage(err, "Node: apiSetUserUserSubAttributeValue: failed to bind json")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
 		return
 	}
@@ -82,9 +82,9 @@ func (n *Node) apiSetUserUserSubAttributeValue(c *gin.Context) {
 		return current, nil
 	}
 
-	userUserAttribute, err := n.UpsertUserUserAttribute(userUserAttributeID, modifyFn)
+	userUserAttribute, err := n.GetUserUserAttributes().Upsert(userUserAttributeID, modifyFn, true)
 	if err != nil {
-		err = errors.WithMessage(err, "Node: apiSetUserUserSubAttributeValue: failed to upsert user user attribute")
+		err := errors.WithMessage(err, "Node: apiSetUserUserSubAttributeValue: failed to upsert user user attribute")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert", err, n.log)
 		return
 	}

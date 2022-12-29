@@ -85,25 +85,8 @@ type Node interface {
 
 	GetNodeAttributes() Attributes[entry.AttributeID]
 	GetUserAttributes() Attributes[entry.UserAttributeID]           // ignores "updateDB" flag
+	GetUserUserAttributes() Attributes[entry.UserUserAttributeID]   // ignores "updateDB" flag
 	GetSpaceUserAttributes() Attributes[entry.SpaceUserAttributeID] // ignores "updateDB" flag
-
-	GetUserUserAttributePayload(userUserAttributeID entry.UserUserAttributeID) (*entry.AttributePayload, bool)
-	GetUserUserAttributeValue(userUserAttributeID entry.UserUserAttributeID) (*entry.AttributeValue, bool)
-	GetUserUserAttributeOptions(userUserAttributeID entry.UserUserAttributeID) (*entry.AttributeOptions, bool)
-	GetUserUserAttributeEffectiveOptions(userUserAttributeID entry.UserUserAttributeID) (*entry.AttributeOptions, bool)
-
-	UpsertUserUserAttribute(
-		userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
-	) (*entry.AttributePayload, error)
-
-	UpdateUserUserAttributeValue(
-		userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributeValue],
-	) (*entry.AttributeValue, error)
-	UpdateUserUserAttributeOptions(
-		userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributeOptions],
-	) (*entry.AttributeOptions, error)
-
-	RemoveUserUserAttribute(userUserAttributeID entry.UserUserAttributeID) (bool, error)
 
 	AddAPIRegister(register APIRegister)
 
@@ -117,7 +100,6 @@ type Worlds interface {
 	APIRegister
 
 	CreateWorld(worldID uuid.UUID) (World, error)
-
 	GetWorld(worldID uuid.UUID) (World, bool)
 	GetWorlds() map[uuid.UUID]World
 	FilterWorlds(predicateFn WorldsFilterPredicateFn) map[uuid.UUID]World
@@ -147,8 +129,6 @@ type Space interface {
 	Initializer
 	RunStopper
 	DropCacher
-
-	CreateSpace(spaceID uuid.UUID) (Space, error)
 
 	GetWorld() World
 
@@ -187,6 +167,7 @@ type Space interface {
 	Update(recursive bool) error
 	UpdateChildrenPosition(recursive bool) error
 
+	CreateSpace(spaceID uuid.UUID) (Space, error)
 	GetSpace(spaceID uuid.UUID, recursive bool) (Space, bool)
 	GetSpaces(recursive bool) map[uuid.UUID]Space
 	FilterSpaces(predicateFn SpacesFilterPredicateFn, recursive bool) map[uuid.UUID]Space
@@ -266,7 +247,6 @@ type Assets2d interface {
 	APIRegister
 
 	CreateAsset2d(asset2dID uuid.UUID) (Asset2d, error)
-
 	GetAsset2d(asset2dID uuid.UUID) (Asset2d, bool)
 	GetAssets2d() map[uuid.UUID]Asset2d
 	FilterAssets2d(predicateFn Assets2dFilterPredicateFn) map[uuid.UUID]Asset2d
@@ -327,7 +307,6 @@ type Plugins interface {
 	APIRegister
 
 	CreatePlugin(pluginID uuid.UUID) (Plugin, error)
-
 	GetPlugin(pluginID uuid.UUID) (Plugin, bool)
 	GetPlugins() map[uuid.UUID]Plugin
 	FilterPlugins(predicateFn PluginsFilterPredicateFn) map[uuid.UUID]Plugin
@@ -357,7 +336,6 @@ type AttributeTypes interface {
 	APIRegister
 
 	CreateAttributeType(attributeTypeID entry.AttributeTypeID) (AttributeType, error)
-
 	GetAttributeType(attributeTypeID entry.AttributeTypeID) (AttributeType, bool)
 	GetAttributeTypes() map[entry.AttributeTypeID]AttributeType
 	FilterAttributeTypes(predicateFn AttributeTypesFilterPredicateFn) map[entry.AttributeTypeID]AttributeType
@@ -390,7 +368,6 @@ type SpaceTypes interface {
 	APIRegister
 
 	CreateSpaceType(spaceTypeID uuid.UUID) (SpaceType, error)
-
 	GetSpaceType(spaceTypeID uuid.UUID) (SpaceType, bool)
 	GetSpaceTypes() map[uuid.UUID]SpaceType
 	FilterSpaceTypes(predicateFn SpaceTypesFilterPredicateFn) map[uuid.UUID]SpaceType
@@ -432,7 +409,6 @@ type UserTypes interface {
 	APIRegister
 
 	CreateUserType(userTypeID uuid.UUID) (UserType, error)
-
 	GetUserType(userTypeID uuid.UUID) (UserType, bool)
 	GetUserTypes() map[uuid.UUID]UserType
 	FilterUserTypes(predicateFn UserTypesFilterPredicateFn) map[uuid.UUID]UserType
