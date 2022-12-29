@@ -289,9 +289,9 @@ func (n *Node) mint(jobID uuid.UUID, wallet string, meta NFTMeta, blockHash stri
 		Username: data.Name,
 		Avatar:   data.Image,
 	}
-	_, err = n.apiCreateUserFromWalletMeta(n.ctx, &wm)
+	_, err = n.createUserFromWalletMeta(n.ctx, &wm)
 	if err != nil {
-		err = errors.WithMessage(err, "failed to apiCreateUserFromWalletMeta")
+		err = errors.WithMessage(err, "failed to createUserFromWalletMeta")
 		{
 			item.Status = StatusFailed
 			item.Error = err

@@ -65,24 +65,24 @@ func (n *Node) apiUsersGetMe(c *gin.Context) {
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/users/{user_id} [get]
-func (n *Node) apiUsersGetById(c *gin.Context) {
+func (n *Node) apiUsersGetByID(c *gin.Context) {
 	userID, err := uuid.Parse(c.Param("userID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiUsersGetById: failed to parse user id")
+		err := errors.WithMessage(err, "Node: apiUsersGetByID: failed to parse user id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
 		return
 	}
 
 	userEntry, err := n.db.UsersGetUserByID(c, userID)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiUsersGetById: user not found")
+		err := errors.WithMessage(err, "Node: apiUsersGetByID: user not found")
 		api.AbortRequest(c, http.StatusNotFound, "user_not_found", err, n.log)
 		return
 	}
 
 	guestUserTypeID, err := helper.GetGuestUserTypeID()
 	if err != nil {
-		err := errors.New("Node: apiUsersGetById: failed to GetGuestUserTypeID")
+		err := errors.New("Node: apiUsersGetByID: failed to GetGuestUserTypeID")
 		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, n.log)
 		return
 	}
@@ -125,7 +125,7 @@ func (n *Node) apiGetOrCreateUserFromWallet(ctx context.Context, wallet string) 
 		return nil, http.StatusForbidden, errors.WithMessage(err, "failed to get wallet meta")
 	}
 
-	userEntry, err = n.apiCreateUserFromWalletMeta(ctx, walletMeta)
+	userEntry, err = n.createUserFromWalletMeta(ctx, walletMeta)
 	if err != nil {
 		return nil, http.StatusInternalServerError, errors.WithMessage(err, "failed to create user from wallet meta")
 	}
@@ -133,7 +133,7 @@ func (n *Node) apiGetOrCreateUserFromWallet(ctx context.Context, wallet string) 
 	return userEntry, 0, nil
 }
 
-func (n *Node) apiCreateUserFromWalletMeta(ctx context.Context, walletMeta *WalletMeta) (*entry.User, error) {
+func (n *Node) createUserFromWalletMeta(ctx context.Context, walletMeta *WalletMeta) (*entry.User, error) {
 	userEntry := &entry.User{
 		UserID: walletMeta.UserID,
 		Profile: &entry.UserProfile{
@@ -152,7 +152,7 @@ func (n *Node) apiCreateUserFromWalletMeta(ctx context.Context, walletMeta *Wall
 		return nil, errors.WithMessagef(err, "failed to upsert user: %s", userEntry.UserID)
 	}
 
-	n.log.Infof("Node: apiCreateUserFromWalletMeta: user created: %s", userEntry.UserID)
+	n.log.Infof("Node: createUserFromWalletMeta: user created: %s", userEntry.UserID)
 
 	// adding wallet to user attributes
 	userAttributeID := entry.NewUserAttributeID(

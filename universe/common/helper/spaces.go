@@ -171,6 +171,7 @@ func RemoveSpaceFromParent(parent, space universe.Space, updateDB bool) (bool, e
 			errs = multierror.Append(errs, errors.WithMessage(err, "failed to send remove message"))
 		}
 	}
+
 	if err := parent.UpdateChildrenPosition(true); err != nil {
 		errs = multierror.Append(
 			errs, errors.WithMessagef(err, "failed to update children position: %s", parent.GetID()),

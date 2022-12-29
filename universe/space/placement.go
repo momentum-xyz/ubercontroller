@@ -165,9 +165,11 @@ func (s *Space) UpdateChildrenPosition(recursive bool) error {
 				s.log.Errorf("Space: UpdatePosition: failed to update position: %s", k)
 			}
 
-			if recursive {
-				child.UpdateChildrenPosition(recursive)
+			if !recursive {
+				continue
 			}
+
+			child.UpdateChildrenPosition(recursive)
 		}
 	}
 	//fmt.Println("pls10", s.GetID())

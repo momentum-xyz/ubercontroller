@@ -65,7 +65,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 			verifiedUser := verifiedUsers.Group("/:userID")
 			{
-				verifiedUser.GET("", n.apiUsersGetById)
+				verifiedUser.GET("", n.apiUsersGetByID)
 			}
 			attributes := verifiedUsers.Group("/attributes")
 			{
@@ -135,11 +135,6 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		{
 			newsfeed.POST("", n.apiNewsFeedAddItem)
 			newsfeed.GET("", n.apiNewsFeedGetAll)
-		}
-
-		notifications := vx.Group("/notifications")
-		{
-			notifications.GET("", n.apiNotifications)
 		}
 	}
 }
