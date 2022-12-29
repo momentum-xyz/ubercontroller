@@ -183,7 +183,12 @@ func (db *DB) UserSpacesUpsertUserSpaces(ctx context.Context, userSpaces []*entr
 	for i := 0; i < batch.Len(); i++ {
 		if _, err := batchRes.Exec(); err != nil {
 			errs = multierror.Append(
-				errs, errors.WithMessagef(err, "failed to exec db for: %s", userSpaces[i].UserID),
+				errs,
+				errors.WithMessagef(
+					err,
+					"failed to exec db for user id: %s, space id: %s",
+					userSpaces[i].UserID, userSpaces[i].SpaceID,
+				),
 			)
 		}
 	}
@@ -197,4 +202,30 @@ func (db *DB) UserSpaceRemoveUserSpace(ctx context.Context, userSpaces *entry.Us
 	}
 
 	return nil
+}
+
+func (db *DB) UserSpaceRemoveUserSpaces(ctx context.Context, userSpaces []*entry.UserSpace) error {
+	batch := &pgx.Batch{}
+	for _, userSpace := range userSpaces {
+		batch.Queue(removeUserSpaceByIDQuery, userSpace.UserID, userSpace.SpaceID)
+	}
+
+	batchRes := db.conn.SendBatch(ctx, batch)
+	defer batchRes.Close()
+
+	var errs *multierror.Error
+	for i := 0; i < batch.Len(); i++ {
+		if _, err := batchRes.Exec(); err != nil {
+			errs = multierror.Append(
+				errs,
+				errors.WithMessagef(
+					err,
+					"failed to exec db for user id: %s, space id: %s",
+					userSpaces[i].UserID, userSpaces[i].SpaceID,
+				),
+			)
+		}
+	}
+
+	return errs.ErrorOrNil()
 }

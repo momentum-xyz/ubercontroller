@@ -478,4 +478,5 @@ type UserSpaceDB interface {
 	) (*entry.UserSpaceValue, error)
 
 	UserSpaceRemoveUserSpace(ctx context.Context, userSpace *entry.UserSpace) error
+	UserSpaceRemoveUserSpaces(ctx context.Context, userSpaces []*entry.UserSpace) error
 }
