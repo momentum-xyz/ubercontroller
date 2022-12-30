@@ -40,14 +40,16 @@ type ReservedAttribute struct {
 var (
 	ReservedAttributes = struct {
 		Node struct {
-			GuestUserType  ReservedAttribute
-			NormalUserType ReservedAttribute
-			WorldTemplate  ReservedAttribute
-			JWTKey         ReservedAttribute
+			GuestUserType   ReservedAttribute
+			NormalUserType  ReservedAttribute
+			PortalSpaceType ReservedAttribute
+			WorldTemplate   ReservedAttribute
+			JWTKey          ReservedAttribute
 		}
 		World struct {
-			Meta     ReservedAttribute
-			Settings ReservedAttribute
+			Meta                ReservedAttribute
+			Settings            ReservedAttribute
+			TeleportDestination ReservedAttribute
 		}
 		Space struct {
 			Name          ReservedAttribute
@@ -66,10 +68,11 @@ var (
 		}
 	}{
 		Node: struct {
-			GuestUserType  ReservedAttribute
-			NormalUserType ReservedAttribute
-			WorldTemplate  ReservedAttribute
-			JWTKey         ReservedAttribute
+			GuestUserType   ReservedAttribute
+			NormalUserType  ReservedAttribute
+			PortalSpaceType ReservedAttribute
+			WorldTemplate   ReservedAttribute
+			JWTKey          ReservedAttribute
 		}{
 			GuestUserType: ReservedAttribute{
 				Name: "node_settings",
@@ -78,6 +81,10 @@ var (
 			NormalUserType: ReservedAttribute{
 				Name: "node_settings",
 				Key:  "normal_user_type",
+			},
+			PortalSpaceType: ReservedAttribute{
+				Name: "node_settings",
+				Key:  "docking_hub_space_type",
 			},
 			WorldTemplate: ReservedAttribute{
 				Name: "world_template",
@@ -88,14 +95,19 @@ var (
 			},
 		},
 		World: struct {
-			Meta     ReservedAttribute
-			Settings ReservedAttribute
+			Meta                ReservedAttribute
+			Settings            ReservedAttribute
+			TeleportDestination ReservedAttribute
 		}{
 			Meta: ReservedAttribute{
 				Name: "world_meta",
 			},
 			Settings: ReservedAttribute{
 				Name: "world_settings",
+			},
+			TeleportDestination: ReservedAttribute{
+				Name: "teleport",
+				Key:  "DestinationWorldID",
 			},
 		},
 		Space: struct {

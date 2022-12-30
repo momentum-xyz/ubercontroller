@@ -20,9 +20,10 @@ const (
 	getUsersByIDsQuery   = `SELECT * FROM "user" WHERE user_id = ANY($1);`
 	getUserByWalletQuery = `SELECT * FROM "user"
          						WHERE user_id = (SELECT user_id FROM user_attribute
-         						                                WHERE plugin_id = '86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8'
-         						                                  AND attribute_name = 'wallet'
-         						                                  AND value->'wallet' ? $1);`
+         						                    /* Kusama plugin id */
+         						                	WHERE plugin_id = '86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8'
+         						                    AND attribute_name = 'wallet'
+         						                    AND value->'wallet' ? $1);`
 	getUserProfileByUserIDQuery = `SELECT profile FROM "user" WHERE user_id = $1;`
 
 	removeUserByIDQuery   = `DELETE FROM "user" WHERE user_id = $1;`
