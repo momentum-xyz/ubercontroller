@@ -225,18 +225,18 @@ type User interface {
 	AddInfluxTags(prefix string, point *influxWrite.Point) *influxWrite.Point
 }
 
-type Attributes[K comparable] interface {
-	GetPayload(attributeID K) (*entry.AttributePayload, bool)
-	GetValue(attributeID K) (*entry.AttributeValue, bool)
-	GetOptions(attributeID K) (*entry.AttributeOptions, bool)
-	GetEffectiveOptions(attributeID K) (*entry.AttributeOptions, bool)
+type Attributes[ID comparable] interface {
+	GetPayload(attributeID ID) (*entry.AttributePayload, bool)
+	GetValue(attributeID ID) (*entry.AttributeValue, bool)
+	GetOptions(attributeID ID) (*entry.AttributeOptions, bool)
+	GetEffectiveOptions(attributeID ID) (*entry.AttributeOptions, bool)
 
-	Upsert(attributeID K, modifyFn modify.Fn[entry.AttributePayload], updateDB bool) (*entry.AttributePayload, error)
+	Upsert(attributeID ID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool) (*entry.AttributePayload, error)
 
-	UpdateValue(attributeID K, modifyFn modify.Fn[entry.AttributeValue], updateDB bool) (*entry.AttributeValue, error)
-	UpdateOptions(attributeID K, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool) (*entry.AttributeOptions, error)
+	UpdateValue(attributeID ID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool) (*entry.AttributeValue, error)
+	UpdateOptions(attributeID ID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool) (*entry.AttributeOptions, error)
 
-	Remove(attributeID K, updateDB bool) (bool, error)
+	Remove(attributeID ID, updateDB bool) (bool, error)
 
 	Len() int
 }
