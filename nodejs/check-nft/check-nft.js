@@ -6,10 +6,13 @@ const out = {
 
 let ApiModule
 let UtilCryptoModule
+let UtilModule
+
 
 try {
     ApiModule = require('@polkadot/api');
     UtilCryptoModule = require('@polkadot/util-crypto');
+    UtilModule = require('@polkadot/util');
 } catch (e) {
     exitWithError(e.toString())
 }
@@ -17,6 +20,20 @@ try {
 const {ApiPromise, WsProvider, Keyring} = ApiModule
 const {decodeAddress, encodeAddress} = UtilCryptoModule
 
+
+function itemMetadataToString(itemMetadata) {
+    const codecData = itemMetadata?.unwrapOr(null)?.data;
+    if (!codecData) {
+      return null;
+    }
+    // it seems to be Parity SCALE codec with some "compact" length prefix
+    // we need to remove it to get raw data
+    const [, rawData] = UtilModule.compactStripLength(codecData?.toU8a?.());
+  
+    const data = UtilModule.u8aToString(rawData);
+  
+    return data;
+  };
 
 async function main() {
 
@@ -67,7 +84,7 @@ async function main() {
 
     const r2 = await api.query.uniques.instanceMetadataOf(collectionId, itemId);
 
-    const meta = r2.toHuman()
+    const meta = itemMetadataToString(r2)
 
     if (meta === null) {
         exitWithError(`No metadata for itemID=${itemId} collectionID=${collectionId} wallet=${WALLET}`)
@@ -76,7 +93,7 @@ async function main() {
     let data
 
     try {
-        data = JSON.parse(meta.data)
+        data = JSON.parse(meta)
     } catch (e) {
         exitWithError(`Can not parse to JSON metadata for itemID=${itemId} collectionID=${collectionId} wallet=${WALLET}`)
     }
