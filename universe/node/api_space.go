@@ -97,9 +97,9 @@ func (n *Node) apiGenAgoraToken(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// @Summary Get space
+// @Summary Get space by ID
 // @Schemes
-// @Description Returns a space info based on query
+// @Description Returns a space info based on ID and query
 // @Tags spaces
 // @Accept json
 // @Produce json
@@ -173,9 +173,9 @@ func (n *Node) apiGetSpace(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// @Summary Delete space
+// @Summary Delete a space by ID
 // @Schemes
-// @Description Deletes a space
+// @Description Deletes a space by ID
 // @Tags spaces
 // @Accept json
 // @Produce json
@@ -209,8 +209,8 @@ func (n *Node) apiRemoveSpace(c *gin.Context) {
 	c.JSON(http.StatusOK, nil)
 }
 
-// @Summary Update space
-// @Description Updates a space
+// @Summary Update a space by ID
+// @Description Updates a space by ID, 're-parenting' not supported, returns updated space ID.
 // @Tags spaces
 // @Accept json
 // @Produce json
@@ -322,9 +322,9 @@ func (n *Node) apiUpdateSpace(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// @Summary Set space sub option
+// @Summary Set space sub option by space ID
 // @Schemes
-// @Description Sets a space sub option
+// @Description Sets a space sub option by space ID, returns appended space option
 // @Tags spaces
 // @Accept json
 // @Produce json
@@ -388,9 +388,9 @@ func (n *Node) apiSpacesSetSpaceSubOption(c *gin.Context) {
 	c.JSON(http.StatusAccepted, out)
 }
 
-// @Summary Delete space sub option
+// @Summary Delete space sub option by space ID
 // @Schemes
-// @Description Deletes a space sub option
+// @Description Deletes a space sub option by space ID
 // @Tags spaces
 // @Accept json
 // @Produce json
@@ -446,9 +446,9 @@ func (n *Node) apiSpacesRemoveSpaceSubOption(c *gin.Context) {
 	c.JSON(http.StatusOK, nil)
 }
 
-// @Summary Get space options
+// @Summary Get space options by space ID
 // @Schemes
-// @Description Returns a space options based on query
+// @Description Returns a space options based on space ID and query
 // @Tags spaces
 // @Accept json
 // @Produce json

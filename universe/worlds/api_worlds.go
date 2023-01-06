@@ -28,7 +28,7 @@ import (
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/worlds/{world_id}/online-users [get]
+// @Router /api/v4/worlds/{space_id}/online-users [get]
 func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
 	worldID, err := uuid.Parse(c.Param("spaceID"))
 	if err != nil {

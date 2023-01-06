@@ -24,7 +24,7 @@ import (
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/worlds/{world_id}/fly-to-me [post]
+// @Router /api/v4/worlds/{space_id}/fly-to-me [post]
 func (w *Worlds) apiWorldsFlyToMe(c *gin.Context) {
 	spaceID, err := uuid.Parse(c.Param("spaceID"))
 	if err != nil {
