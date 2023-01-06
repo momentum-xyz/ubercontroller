@@ -412,7 +412,6 @@ func (n *Node) getWalletMetadata(wallet string) (*WalletMeta, error) {
 // @Tags drive
 // @Accept json
 // @Produce json
-// @Param query query node.apiResolveNode.InQuery true "query params"
 // @Success 200 {object} node.apiResolveNode.Out
 // @Failure 400 {object} api.HTTPError
 // @Router /api/v4/drive/resolve-node [get]
