@@ -417,22 +417,9 @@ func (n *Node) getWalletMetadata(wallet string) (*WalletMeta, error) {
 // @Failure 400 {object} api.HTTPError
 // @Router /api/v4/drive/resolve-node [get]
 func (n *Node) apiResolveNode(c *gin.Context) {
-
-	type InQuery struct {
-		Object string `form:"object_id" binding:"required"`
-	}
-
 	type Out struct {
 		Domain string    `json:"domain"`
 		NodeID uuid.UUID `json:"node_id"`
-	}
-
-	var inQuery InQuery
-
-	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		err := errors.WithMessage(err, "Node: apiResolveNode: failed to bind query")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
-		return
 	}
 
 	u, _ := url.Parse(n.cfg.UIClient.FrontendURL)
