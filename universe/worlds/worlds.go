@@ -89,14 +89,13 @@ func (w *Worlds) GetWorlds() map[uuid.UUID]universe.World {
 }
 
 func (w *Worlds) AddWorld(world universe.World, updateDB bool) error {
-	node := universe.GetNode()
-
 	w.worlds.Mu.Lock()
 	defer w.worlds.Mu.Unlock()
 
-	if err := world.SetParent(node, updateDB); err != nil {
-		return errors.WithMessagef(err, "failed to set parent %s to world %s", node.GetID(), world.GetID())
-	}
+	// TODO: uncomment when Unity will be ready
+	//if err := world.SetParent(node, updateDB); err != nil {
+	//	return errors.WithMessagef(err, "failed to set parent %s to world %s", node.GetID(), world.GetID())
+	//}
 
 	if updateDB {
 		if err := world.Save(); err != nil {
@@ -106,7 +105,7 @@ func (w *Worlds) AddWorld(world universe.World, updateDB bool) error {
 
 	w.worlds.Data[world.GetID()] = world
 
-	return node.AddSpaceToAllSpaces(world.ToSpace())
+	return universe.GetNode().AddSpaceToAllSpaces(world.ToSpace())
 }
 
 func (w *Worlds) AddWorlds(worlds []universe.World, updateDB bool) error {
@@ -137,6 +136,7 @@ func (w *Worlds) AddWorlds(worlds []universe.World, updateDB bool) error {
 	return nil
 }
 
+// TODO: introduce "helper.RemoveWorld()" method and fix this one
 func (w *Worlds) RemoveWorld(world universe.World, updateDB bool) error {
 	w.worlds.Mu.Lock()
 	defer w.worlds.Mu.Unlock()
@@ -161,6 +161,7 @@ func (w *Worlds) RemoveWorld(world universe.World, updateDB bool) error {
 	return nil
 }
 
+// TODO: introduce "helper.RemoveWorld()" method and fix this one
 func (w *Worlds) RemoveWorlds(worlds []universe.World, updateDB bool) error {
 	w.worlds.Mu.Lock()
 	defer w.worlds.Mu.Unlock()

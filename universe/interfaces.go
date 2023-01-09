@@ -251,16 +251,19 @@ type SpaceAttributes interface {
 	Len() int
 }
 
+// UserAttributes ignores "updateDB" flag
 type UserAttributes interface {
-	Attributes[entry.UserAttributeID] // ignores "updateDB" flag
+	Attributes[entry.UserAttributeID]
 }
 
+// UserUserAttributes ignores "updateDB" flag
 type UserUserAttributes interface {
-	Attributes[entry.UserUserAttributeID] // ignores "updateDB" flag
+	Attributes[entry.UserUserAttributeID]
 }
 
+// SpaceUserAttributes ignores "updateDB" flag
 type SpaceUserAttributes interface {
-	Attributes[entry.SpaceUserAttributeID] // ignores "updateDB" flag
+	Attributes[entry.SpaceUserAttributeID]
 }
 
 type Assets2d interface {
