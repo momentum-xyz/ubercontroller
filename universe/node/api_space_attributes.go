@@ -21,26 +21,14 @@ import (
 // @Accept json
 // @Produce json
 // @Param space_id path string true "Space ID"
-// @Param query query node.apiGetSpaceAttributesValue.InQuery true "query params"
+// @Param plugin_id path string true "Plugin ID"
+// @Param attribute_name path string true "Attribute Name"
 // @Success 200 {object} entry.AttributeValue
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{space_id}/attributes [get]
+// @Router /api/v4/spaces/{space_id}/attributes/{plugin_id}/{attribute_name} [get]
 func (n *Node) apiGetSpaceAttributesValue(c *gin.Context) {
-	type InQuery struct {
-		PluginID      string `form:"plugin_id" binding:"required"`
-		AttributeName string `form:"attribute_name" binding:"required"`
-	}
-
-	inQuery := InQuery{}
-
-	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		err := errors.WithMessage(err, "Node: apiGetSpaceAttributesValue: failed to bind query")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
-		return
-	}
-
 	spaceID, err := uuid.Parse(c.Param("spaceID"))
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetSpaceAttributesValue: failed to parse space id")
@@ -48,10 +36,17 @@ func (n *Node) apiGetSpaceAttributesValue(c *gin.Context) {
 		return
 	}
 
-	pluginID, err := uuid.Parse(inQuery.PluginID)
+	pluginID, err := uuid.Parse(c.Param("pluginID"))
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetSpaceAttributesValue: failed to parse plugin id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
+		return
+	}
+
+	attributeName := c.Param("attributeName")
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetSpaceAttributesValue: failed to get attribute name from path parameters")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_attribute_name", err, n.log)
 		return
 	}
 
@@ -62,7 +57,7 @@ func (n *Node) apiGetSpaceAttributesValue(c *gin.Context) {
 		return
 	}
 
-	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
+	attributeID := entry.NewAttributeID(pluginID, attributeName)
 	out, ok := space.GetSpaceAttributes().GetValue(attributeID)
 	if !ok {
 		err := errors.Errorf("Node: apiGetSpaceAttributesValue: space attribute value not found: %s", attributeID)
@@ -80,26 +75,14 @@ func (n *Node) apiGetSpaceAttributesValue(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param space_id path string true "Space ID"
-// @Param query query node.apiGetSpaceWithChildrenAttributeValues.InQuery true "query params"
+// @Param plugin_id path string true "Plugin ID"
+// @Param attribute_name path string true "Attribute Name"
 // @Success 200 {object} dto.SpaceAttributeValues
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{space_id}/attributes-with-children [get]
+// @Router /api/v4/spaces/{space_id}/attributes-with-children/{plugin_id}/{attribute_name} [get]
 func (n *Node) apiGetSpaceWithChildrenAttributeValues(c *gin.Context) {
-	type InQuery struct {
-		PluginID      string `form:"plugin_id" binding:"required"`
-		AttributeName string `form:"attribute_name" binding:"required"`
-	}
-
-	inQuery := InQuery{}
-
-	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		err := errors.WithMessage(err, "Node: apiGetSpaceWithChildrenAttributeValues: failed to bind query")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
-		return
-	}
-
 	spaceID, err := uuid.Parse(c.Param("spaceID"))
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetSpaceWithChildrenAttributeValues: failed to parse space id")
@@ -107,10 +90,17 @@ func (n *Node) apiGetSpaceWithChildrenAttributeValues(c *gin.Context) {
 		return
 	}
 
-	pluginID, err := uuid.Parse(inQuery.PluginID)
+	pluginID, err := uuid.Parse(c.Param("pluginID"))
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetSpaceWithChildrenAttributeValues: failed to parse plugin id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
+		return
+	}
+
+	attributeName := c.Param("attributeName")
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetSpaceWithChildrenAttributeValues: failed to get attribute name from path parameters")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_attribute_name", err, n.log)
 		return
 	}
 
@@ -124,7 +114,7 @@ func (n *Node) apiGetSpaceWithChildrenAttributeValues(c *gin.Context) {
 	spaces := rootSpace.GetSpaces(true)
 	spaces[rootSpace.GetID()] = rootSpace
 
-	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
+	attributeID := entry.NewAttributeID(pluginID, attributeName)
 	spaceAttributes := make(dto.SpaceAttributeValues, len(spaces))
 	for _, space := range spaces {
 		attributeValue, ok := space.GetSpaceAttributes().GetValue(attributeID)
@@ -227,38 +217,40 @@ func (n *Node) apiSetSpaceAttributesValue(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param space_id path string true "Space ID"
-// @Param query query node.apiGetSpaceAttributeSubValue.InQuery true "query params"
+// @Param plugin_id path string true "Plugin ID"
+// @Param attribute_name path string true "Attribute Name"
+// @Param sub_attribute_key path string true "Sub Attribute Key"
 // @Success 200 {object} dto.SpaceSubAttributes
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{space_id}/attributes/sub [get]
+// @Router /api/v4/spaces/{space_id}/attributes/{plugin_id}/{attribute_name}/sub/{sub_attribute_key} [get]
 func (n *Node) apiGetSpaceAttributeSubValue(c *gin.Context) {
-	type InQuery struct {
-		PluginID        string `form:"plugin_id" binding:"required"`
-		AttributeName   string `form:"attribute_name" binding:"required"`
-		SubAttributeKey string `form:"sub_attribute_key" binding:"required"`
-	}
-
-	inQuery := InQuery{}
-
-	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		err := errors.WithMessage(err, "Node: apiGetSpaceAttributeSubValue: failed to bind query")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
-		return
-	}
-
 	spaceID, err := uuid.Parse(c.Param("spaceID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiGetSpaceSubAttributes: failed to parse space id")
+		err := errors.WithMessage(err, "Node: apiGetSpaceAttributeSubValue: failed to parse space id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, n.log)
 		return
 	}
 
-	pluginID, err := uuid.Parse(inQuery.PluginID)
+	pluginID, err := uuid.Parse(c.Param("pluginID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiGetSpaceSubAttributes: failed to parse plugin id")
+		err := errors.WithMessage(err, "Node: apiGetSpaceAttributeSubValue: failed to parse plugin id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
+		return
+	}
+
+	attributeName := c.Param("attributeName")
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetSpaceAttributeSubValue: failed to get attribute name from path parameters")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_attribute_name", err, n.log)
+		return
+	}
+
+	subAttributeKey := c.Param("subAttributeKey")
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetSpaceAttributeSubValue: failed to get sub-attribute key from path parameters")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_sub_attribute_key", err, n.log)
 		return
 	}
 
@@ -269,7 +261,7 @@ func (n *Node) apiGetSpaceAttributeSubValue(c *gin.Context) {
 		return
 	}
 
-	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
+	attributeID := entry.NewAttributeID(pluginID, attributeName)
 	attributeValue, ok := space.GetSpaceAttributes().GetValue(attributeID)
 	if !ok {
 		err := errors.Errorf("Node: apiGetSpaceAttributeSubValue: attribute value not found: %s", attributeID)
@@ -284,7 +276,7 @@ func (n *Node) apiGetSpaceAttributeSubValue(c *gin.Context) {
 	}
 
 	out := dto.SpaceSubAttributes{
-		inQuery.SubAttributeKey: (*attributeValue)[inQuery.SubAttributeKey],
+		subAttributeKey: (*attributeValue)[subAttributeKey],
 	}
 
 	c.JSON(http.StatusOK, out)
