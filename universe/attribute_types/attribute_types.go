@@ -172,17 +172,13 @@ func (a *AttributeTypes) Load() error {
 	}
 
 	for i := range entries {
-		typeEntry := entries[i]
-
-		attributeType, err := a.CreateAttributeType(typeEntry.AttributeTypeID)
+		attributeType, err := a.CreateAttributeType(entries[i].AttributeTypeID)
 		if err != nil {
-			return errors.WithMessagef(err, "failed to create new attribute type: %s", typeEntry.AttributeTypeID)
+			return errors.WithMessagef(err, "failed to create new attribute type: %s", entries[i].AttributeTypeID)
 		}
-		if err := attributeType.LoadFromEntry(typeEntry); err != nil {
-			return errors.WithMessagef(err, "failed to load attribute type from entry: %s", typeEntry.AttributeTypeID)
+		if err := attributeType.LoadFromEntry(entries[i]); err != nil {
+			return errors.WithMessagef(err, "failed to load attribute type from entry: %s", entries[i].AttributeTypeID)
 		}
-
-		a.attributeTypes.Store(typeEntry.AttributeTypeID, attributeType)
 	}
 
 	universe.GetNode().AddAPIRegister(a)

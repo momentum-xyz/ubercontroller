@@ -168,14 +168,12 @@ func (s *SpaceTypes) Load() error {
 	}
 
 	for i := range entries {
-		typeEntry := entries[i]
-
-		spaceType, err := s.CreateSpaceType(typeEntry.SpaceTypeID)
+		spaceType, err := s.CreateSpaceType(entries[i].SpaceTypeID)
 		if err != nil {
-			return errors.WithMessagef(err, "failed to create new space type: %s", typeEntry.SpaceTypeID)
+			return errors.WithMessagef(err, "failed to create new space type: %s", entries[i].SpaceTypeID)
 		}
-		if err := spaceType.LoadFromEntry(typeEntry); err != nil {
-			return errors.WithMessagef(err, "failed to load space type from entry: %s", typeEntry.SpaceTypeID)
+		if err := spaceType.LoadFromEntry(entries[i]); err != nil {
+			return errors.WithMessagef(err, "failed to load space type from entry: %s", entries[i].SpaceTypeID)
 		}
 	}
 

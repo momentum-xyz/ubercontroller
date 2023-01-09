@@ -35,7 +35,6 @@ func (x *Config) Init() {
 	x.UIClient.Init()
 	x.Influx.Init()
 	x.Streamchat.Init()
-
 }
 
 func defConfig() *Config {

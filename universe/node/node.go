@@ -22,7 +22,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/mplugin"
 	"github.com/momentum-xyz/ubercontroller/types"
-	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/space"
@@ -139,19 +138,19 @@ func (n *Node) ToSpace() universe.Space {
 	return n.Space
 }
 
-func (n *Node) GetNodeAttributes() universe.Attributes[entry.AttributeID] {
+func (n *Node) GetNodeAttributes() universe.NodeAttributes {
 	return n.nodeAttributes
 }
 
-func (n *Node) GetUserAttributes() universe.Attributes[entry.UserAttributeID] {
+func (n *Node) GetUserAttributes() universe.UserAttributes {
 	return n.userAttributes
 }
 
-func (n *Node) GetUserUserAttributes() universe.Attributes[entry.UserUserAttributeID] {
+func (n *Node) GetUserUserAttributes() universe.UserUserAttributes {
 	return n.userUserAttributes
 }
 
-func (n *Node) GetSpaceUserAttributes() universe.Attributes[entry.SpaceUserAttributeID] {
+func (n *Node) GetSpaceUserAttributes() universe.SpaceUserAttributes {
 	return n.spaceUserAttributes
 }
 

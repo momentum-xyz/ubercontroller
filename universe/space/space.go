@@ -115,7 +115,7 @@ func (s *Space) SetName(name string, updateDB bool) error {
 	return nil
 }
 
-func (s *Space) GetSpaceAttributes() universe.Attributes[entry.AttributeID] {
+func (s *Space) GetSpaceAttributes() universe.SpaceAttributes {
 	return s.spaceAttributes
 }
 
@@ -472,14 +472,12 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 			}
 
 			for i := range entries {
-				childEntry := entries[i]
-
-				child, err := s.CreateSpace(childEntry.SpaceID)
+				child, err := s.CreateSpace(entries[i].SpaceID)
 				if err != nil {
-					return errors.WithMessagef(err, "failed to create new space: %s", childEntry.SpaceID)
+					return errors.WithMessagef(err, "failed to create new space: %s", entries[i].SpaceID)
 				}
-				if err := child.LoadFromEntry(childEntry, recursive); err != nil {
-					return errors.WithMessagef(err, "failed to load space from entry: %s", childEntry.SpaceID)
+				if err := child.LoadFromEntry(entries[i], recursive); err != nil {
+					return errors.WithMessagef(err, "failed to load space from entry: %s", entries[i].SpaceID)
 				}
 			}
 

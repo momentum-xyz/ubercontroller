@@ -31,7 +31,6 @@ func (x *Postgres) Init() {
 }
 
 func (x *Postgres) GenConfig(log *zap.Logger) (*pgxpool.Config, error) {
-
 	connString := fmt.Sprintf("postgres://%s:%s@%s:%d/%s",
 		x.USERNAME, x.PASSWORD, x.HOST, x.PORT, x.DATABASE)
 	if x.MAXCONNS > 0 {

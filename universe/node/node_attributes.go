@@ -197,17 +197,16 @@ func (n *Node) loadNodeAttributes() error {
 		return errors.WithMessage(err, "failed to get node attributes")
 	}
 
+	attributes := n.GetNodeAttributes()
 	for i := range entries {
-		entry := entries[i]
-
-		if _, err := n.GetNodeAttributes().Upsert(
-			entry.AttributeID, modify.MergeWith(entry.AttributePayload), false,
+		if _, err := attributes.Upsert(
+			entries[i].AttributeID, modify.MergeWith(entries[i].AttributePayload), false,
 		); err != nil {
-			return errors.WithMessagef(err, "failed to upsert node attribute: %+v", entry.NodeAttributeID)
+			return errors.WithMessagef(err, "failed to upsert node attribute: %+v", entries[i].NodeAttributeID)
 		}
 	}
 
-	n.log.Infof("Node attributes loaded: %s: %d", n.GetID(), n.nodeAttributes.Len())
+	n.log.Infof("Node attributes loaded: %s: %d", n.GetID(), attributes.Len())
 
 	return nil
 }

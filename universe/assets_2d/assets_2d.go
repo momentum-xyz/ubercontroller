@@ -168,17 +168,13 @@ func (a *Assets2d) Load() error {
 	}
 
 	for i := range entries {
-		assetEntry := entries[i]
-
-		asset2d, err := a.CreateAsset2d(assetEntry.Asset2dID)
+		asset2d, err := a.CreateAsset2d(entries[i].Asset2dID)
 		if err != nil {
-			return errors.WithMessagef(err, "failed to create new asset 2d: %s", assetEntry.Asset2dID)
+			return errors.WithMessagef(err, "failed to create new asset 2d: %s", entries[i].Asset2dID)
 		}
-		if err := asset2d.LoadFromEntry(assetEntry); err != nil {
-			return errors.WithMessagef(err, "failed to load asset 2d from entry: %s", assetEntry.Asset2dID)
+		if err := asset2d.LoadFromEntry(entries[i]); err != nil {
+			return errors.WithMessagef(err, "failed to load asset 2d from entry: %s", entries[i].Asset2dID)
 		}
-
-		a.assets.Store(assetEntry.Asset2dID, asset2d)
 	}
 
 	universe.GetNode().AddAPIRegister(a)

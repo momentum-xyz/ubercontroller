@@ -83,10 +83,10 @@ type Node interface {
 	GetAttributeTypes() AttributeTypes
 	GetPlugins() Plugins
 
-	GetNodeAttributes() Attributes[entry.AttributeID]
-	GetUserAttributes() Attributes[entry.UserAttributeID]           // ignores "updateDB" flag
-	GetUserUserAttributes() Attributes[entry.UserUserAttributeID]   // ignores "updateDB" flag
-	GetSpaceUserAttributes() Attributes[entry.SpaceUserAttributeID] // ignores "updateDB" flag
+	GetNodeAttributes() NodeAttributes
+	GetUserAttributes() UserAttributes
+	GetUserUserAttributes() UserUserAttributes
+	GetSpaceUserAttributes() SpaceUserAttributes
 
 	AddAPIRegister(register APIRegister)
 
@@ -159,7 +159,7 @@ type Space interface {
 	GetSpaceType() SpaceType
 	SetSpaceType(spaceType SpaceType, updateDB bool) error
 
-	GetSpaceAttributes() Attributes[entry.AttributeID]
+	GetSpaceAttributes() SpaceAttributes
 
 	GetEntry() *entry.Space
 	LoadFromEntry(entry *entry.Space, recursive bool) error
@@ -237,8 +237,30 @@ type Attributes[ID comparable] interface {
 	UpdateOptions(attributeID ID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool) (*entry.AttributeOptions, error)
 
 	Remove(attributeID ID, updateDB bool) (bool, error)
+}
+
+type NodeAttributes interface {
+	Attributes[entry.AttributeID]
 
 	Len() int
+}
+
+type SpaceAttributes interface {
+	Attributes[entry.AttributeID]
+
+	Len() int
+}
+
+type UserAttributes interface {
+	Attributes[entry.UserAttributeID] // ignores "updateDB" flag
+}
+
+type UserUserAttributes interface {
+	Attributes[entry.UserUserAttributeID] // ignores "updateDB" flag
+}
+
+type SpaceUserAttributes interface {
+	Attributes[entry.SpaceUserAttributeID] // ignores "updateDB" flag
 }
 
 type Assets2d interface {
