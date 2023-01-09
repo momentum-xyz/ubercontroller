@@ -95,6 +95,27 @@ func (w *World) GetCalendar() universe.Calendar {
 	return w.calendar
 }
 
+func (w *World) SetParent(parent universe.Space, updateDB bool) error {
+	if parent == nil {
+		return errors.Errorf("parent is nil")
+	} else if parent.GetID() != universe.GetNode().GetID() {
+		return errors.Errorf("parent is not the node")
+	}
+
+	w.Space.Mu.Lock()
+	defer w.Space.Mu.Unlock()
+
+	if updateDB {
+		if err := w.db.SpacesUpdateSpaceParentID(w.ctx, w.GetID(), parent.GetID()); err != nil {
+			return errors.WithMessage(err, "failed to update db")
+		}
+	}
+
+	w.Space.Parent = parent
+
+	return nil
+}
+
 func (w *World) Run() error {
 	go func() {
 		go func() {
@@ -289,17 +310,4 @@ func (w *World) Save() error {
 	w.log.Infof("World saved: %s", w.GetID())
 
 	return nil
-}
-
-func (w *World) GetAllSpaces() map[uuid.UUID]universe.Space {
-	w.allSpaces.Mu.RLock()
-	defer w.allSpaces.Mu.RUnlock()
-
-	spaces := make(map[uuid.UUID]universe.Space, len(w.allSpaces.Data))
-
-	for id, space := range w.allSpaces.Data {
-		spaces[id] = space
-	}
-
-	return spaces
 }

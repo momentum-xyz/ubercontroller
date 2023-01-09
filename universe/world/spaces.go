@@ -7,6 +7,19 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
+func (w *World) GetAllSpaces() map[uuid.UUID]universe.Space {
+	w.allSpaces.Mu.RLock()
+	defer w.allSpaces.Mu.RUnlock()
+
+	spaces := make(map[uuid.UUID]universe.Space, len(w.allSpaces.Data))
+
+	for id, space := range w.allSpaces.Data {
+		spaces[id] = space
+	}
+
+	return spaces
+}
+
 func (w *World) FilterAllSpaces(predicateFn universe.SpacesFilterPredicateFn) map[uuid.UUID]universe.Space {
 	return w.allSpaces.Filter(predicateFn)
 }

@@ -25,8 +25,8 @@ func newSpaceAttributes(space *Space) *spaceAttributes {
 }
 
 func (sa *spaceAttributes) GetPayload(attributeID entry.AttributeID) (*entry.AttributePayload, bool) {
-	sa.space.mu.RLock()
-	defer sa.space.mu.RUnlock()
+	sa.space.Mu.RLock()
+	defer sa.space.Mu.RUnlock()
 
 	if payload, ok := sa.data[attributeID]; ok {
 		return payload, true
@@ -35,8 +35,8 @@ func (sa *spaceAttributes) GetPayload(attributeID entry.AttributeID) (*entry.Att
 }
 
 func (sa *spaceAttributes) GetValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool) {
-	sa.space.mu.RLock()
-	defer sa.space.mu.RUnlock()
+	sa.space.Mu.RLock()
+	defer sa.space.Mu.RUnlock()
 
 	if payload, ok := sa.data[attributeID]; ok && payload != nil {
 		return payload.Value, true
@@ -45,8 +45,8 @@ func (sa *spaceAttributes) GetValue(attributeID entry.AttributeID) (*entry.Attri
 }
 
 func (sa *spaceAttributes) GetOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool) {
-	sa.space.mu.RLock()
-	defer sa.space.mu.RUnlock()
+	sa.space.Mu.RLock()
+	defer sa.space.Mu.RUnlock()
 
 	if payload, ok := sa.data[attributeID]; ok && payload != nil {
 		return payload.Options, true
@@ -84,8 +84,8 @@ func (sa *spaceAttributes) GetEffectiveOptions(attributeID entry.AttributeID) (*
 func (sa *spaceAttributes) Upsert(
 	attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
 ) (*entry.AttributePayload, error) {
-	sa.space.mu.Lock()
-	defer sa.space.mu.Unlock()
+	sa.space.Mu.Lock()
+	defer sa.space.Mu.Unlock()
 
 	payload, err := modifyFn(sa.data[attributeID])
 	if err != nil {
@@ -116,8 +116,8 @@ func (sa *spaceAttributes) Upsert(
 func (sa *spaceAttributes) UpdateValue(
 	attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool,
 ) (*entry.AttributeValue, error) {
-	sa.space.mu.Lock()
-	defer sa.space.mu.Unlock()
+	sa.space.Mu.Lock()
+	defer sa.space.Mu.Unlock()
 
 	payload, ok := sa.data[attributeID]
 	if !ok {
@@ -153,8 +153,8 @@ func (sa *spaceAttributes) UpdateValue(
 func (sa *spaceAttributes) UpdateOptions(
 	attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool,
 ) (*entry.AttributeOptions, error) {
-	sa.space.mu.Lock()
-	defer sa.space.mu.Unlock()
+	sa.space.Mu.Lock()
+	defer sa.space.Mu.Unlock()
 
 	payload, ok := sa.data[attributeID]
 	if !ok {
@@ -197,8 +197,8 @@ func (sa *spaceAttributes) Remove(attributeID entry.AttributeID, updateDB bool) 
 		return false, nil
 	}
 
-	sa.space.mu.Lock()
-	defer sa.space.mu.Unlock()
+	sa.space.Mu.Lock()
+	defer sa.space.Mu.Unlock()
 
 	if _, ok := sa.data[attributeID]; !ok {
 		return false, nil
@@ -222,8 +222,8 @@ func (sa *spaceAttributes) Remove(attributeID entry.AttributeID, updateDB bool) 
 }
 
 func (sa *spaceAttributes) Len() int {
-	sa.space.mu.RLock()
-	defer sa.space.mu.RUnlock()
+	sa.space.Mu.RLock()
+	defer sa.space.Mu.RUnlock()
 
 	return len(sa.data)
 }

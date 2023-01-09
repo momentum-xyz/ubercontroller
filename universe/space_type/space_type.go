@@ -74,7 +74,7 @@ func (s *SpaceType) SetName(name string, updateDB bool) error {
 	defer s.mu.Unlock()
 
 	if updateDB {
-		if err := s.db.SpaceTypesUpdateSpaceTypeName(s.ctx, s.id, name); err != nil {
+		if err := s.db.SpaceTypesUpdateSpaceTypeName(s.ctx, s.GetID(), name); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -96,7 +96,7 @@ func (s *SpaceType) SetCategoryName(categoryName string, updateDB bool) error {
 	defer s.mu.Unlock()
 
 	if updateDB {
-		if err := s.db.SpaceTypesUpdateSpaceTypeCategoryName(s.ctx, s.id, categoryName); err != nil {
+		if err := s.db.SpaceTypesUpdateSpaceTypeCategoryName(s.ctx, s.GetID(), categoryName); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -118,7 +118,7 @@ func (s *SpaceType) SetDescription(description *string, updateDB bool) error {
 	defer s.mu.Unlock()
 
 	if updateDB {
-		if err := s.db.SpaceTypesUpdateSpaceTypeDescription(s.ctx, s.id, description); err != nil {
+		if err := s.db.SpaceTypesUpdateSpaceTypeDescription(s.ctx, s.GetID(), description); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -180,21 +180,28 @@ func (s *SpaceType) GetOptions() *entry.SpaceOptions {
 }
 
 func (s *SpaceType) SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool) (*entry.SpaceOptions, error) {
-	s.mu.Lock()
-	options, err := modifyFn(s.options)
-	if err != nil {
-		return nil, errors.WithMessage(err, "failed to modify options")
-	}
+	options, err := func() (*entry.SpaceOptions, error) {
+		s.mu.Lock()
+		defer s.mu.Unlock()
 
-	if updateDB {
-		if err := s.db.SpaceTypesUpdateSpaceTypeOptions(s.ctx, s.id, options); err != nil {
-			s.mu.Unlock()
-			return nil, errors.WithMessage(err, "failed to update db")
+		options, err := modifyFn(s.options)
+		if err != nil {
+			return nil, errors.WithMessage(err, "failed to modify options")
 		}
-	}
 
-	s.options = options
-	s.mu.Unlock()
+		if updateDB {
+			if err := s.db.SpaceTypesUpdateSpaceTypeOptions(s.ctx, s.GetID(), options); err != nil {
+				return nil, errors.WithMessage(err, "failed to update db")
+			}
+		}
+
+		s.options = options
+
+		return options, nil
+	}()
+	if err != nil {
+		return nil, err
+	}
 
 	for _, space := range universe.GetNode().GetAllSpaces() {
 		spaceType := space.GetSpaceType()

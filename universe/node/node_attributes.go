@@ -21,8 +21,8 @@ func newNodeAttributes(node *Node) *nodeAttributes {
 }
 
 func (na *nodeAttributes) GetPayload(attributeID entry.AttributeID) (*entry.AttributePayload, bool) {
-	na.node.mu.RLock()
-	defer na.node.mu.RUnlock()
+	na.node.Mu.RLock()
+	defer na.node.Mu.RUnlock()
 
 	if payload, ok := na.data[attributeID]; ok {
 		return payload, true
@@ -31,8 +31,8 @@ func (na *nodeAttributes) GetPayload(attributeID entry.AttributeID) (*entry.Attr
 }
 
 func (na *nodeAttributes) GetValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool) {
-	na.node.mu.RLock()
-	defer na.node.mu.RUnlock()
+	na.node.Mu.RLock()
+	defer na.node.Mu.RUnlock()
 
 	if payload, ok := na.data[attributeID]; ok && payload != nil {
 		return payload.Value, true
@@ -41,8 +41,8 @@ func (na *nodeAttributes) GetValue(attributeID entry.AttributeID) (*entry.Attrib
 }
 
 func (na *nodeAttributes) GetOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool) {
-	na.node.mu.RLock()
-	defer na.node.mu.RUnlock()
+	na.node.Mu.RLock()
+	defer na.node.Mu.RUnlock()
 
 	if payload, ok := na.data[attributeID]; ok && payload != nil {
 		return payload.Options, true
@@ -80,8 +80,8 @@ func (na *nodeAttributes) GetEffectiveOptions(attributeID entry.AttributeID) (*e
 func (na *nodeAttributes) Upsert(
 	attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
 ) (*entry.AttributePayload, error) {
-	na.node.mu.Lock()
-	defer na.node.mu.Unlock()
+	na.node.Mu.Lock()
+	defer na.node.Mu.Unlock()
 
 	payload, err := modifyFn(na.data[attributeID])
 	if err != nil {
@@ -104,8 +104,8 @@ func (na *nodeAttributes) Upsert(
 func (na *nodeAttributes) UpdateValue(
 	attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool,
 ) (*entry.AttributeValue, error) {
-	na.node.mu.Lock()
-	defer na.node.mu.Unlock()
+	na.node.Mu.Lock()
+	defer na.node.Mu.Unlock()
 
 	payload, ok := na.data[attributeID]
 	if !ok {
@@ -135,8 +135,8 @@ func (na *nodeAttributes) UpdateValue(
 func (na *nodeAttributes) UpdateOptions(
 	attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool,
 ) (*entry.AttributeOptions, error) {
-	na.node.mu.Lock()
-	defer na.node.mu.Unlock()
+	na.node.Mu.Lock()
+	defer na.node.Mu.Unlock()
 
 	payload, ok := na.data[attributeID]
 	if !ok {
@@ -164,8 +164,8 @@ func (na *nodeAttributes) UpdateOptions(
 }
 
 func (na *nodeAttributes) Remove(attributeID entry.AttributeID, updateDB bool) (bool, error) {
-	na.node.mu.Lock()
-	defer na.node.mu.Unlock()
+	na.node.Mu.Lock()
+	defer na.node.Mu.Unlock()
 
 	if _, ok := na.data[attributeID]; !ok {
 		return false, nil
@@ -183,8 +183,8 @@ func (na *nodeAttributes) Remove(attributeID entry.AttributeID, updateDB bool) (
 }
 
 func (na *nodeAttributes) Len() int {
-	na.node.mu.RLock()
-	defer na.node.mu.RUnlock()
+	na.node.Mu.RLock()
+	defer na.node.Mu.RUnlock()
 
 	return len(na.data)
 }

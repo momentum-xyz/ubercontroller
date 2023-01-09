@@ -37,8 +37,8 @@ func (s *Space) unityAutoOnSpaceAttributeChanged(
 	// TODO: fix it properly later
 	if hash != nil && hash.Hash != "" {
 		return func() error {
-			s.spaceAttributes.space.mu.Lock()
-			defer s.spaceAttributes.space.mu.Unlock()
+			s.spaceAttributes.space.Mu.Lock()
+			defer s.spaceAttributes.space.Mu.Unlock()
 
 			(*value)["auto_render_hash"] = hash.Hash
 

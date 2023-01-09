@@ -13,7 +13,6 @@ import (
 	"github.com/hashicorp/go-multierror"
 	influx_api "github.com/influxdata/influxdb-client-go/v2/api"
 	"github.com/pkg/errors"
-	"github.com/sasha-s/go-deadlock"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/sync/errgroup"
@@ -40,9 +39,7 @@ type Node struct {
 	router     *gin.Engine
 	httpServer *http.Server
 
-	//mu             sync.RWMutex
-	mu                  deadlock.RWMutex
-	nodeAttributes      *nodeAttributes // WARNING: the Node is sharing the same mutex ("mu") with it
+	nodeAttributes      *nodeAttributes // WARNING: the Node is sharing the same mutex ("Mu") with it
 	userAttributes      *userAttributes
 	userUserAttributes  *userUserAttributes
 	spaceUserAttributes *spaceUserAttributes
