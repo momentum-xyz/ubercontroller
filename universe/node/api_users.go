@@ -35,7 +35,7 @@ func (n *Node) apiUsersGetMe(c *gin.Context) {
 		return
 	}
 
-	userEntry, err := n.db.UsersGetUserByID(c, userID)
+	userEntry, err := n.db.GetUsersDB().GetUserByID(c, userID)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiUsersGetMe: user not found")
 		api.AbortRequest(c, http.StatusNotFound, "user_not_found", err, n.log)
@@ -73,7 +73,7 @@ func (n *Node) apiUsersGetByID(c *gin.Context) {
 		return
 	}
 
-	userEntry, err := n.db.UsersGetUserByID(c, userID)
+	userEntry, err := n.db.GetUsersDB().GetUserByID(c, userID)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiUsersGetByID: user not found")
 		api.AbortRequest(c, http.StatusNotFound, "user_not_found", err, n.log)
@@ -107,7 +107,7 @@ func (n *Node) apiCreateGuestUserByName(ctx context.Context, name string) (*entr
 
 	ue.UserTypeID = &guestUserTypeID
 
-	err = n.db.UsersUpsertUser(ctx, ue)
+	err = n.db.GetUsersDB().UpsertUser(ctx, ue)
 
 	n.log.Infof("Node: apiCreateGuestUserByName: guest created: %s", ue.UserID)
 
@@ -115,7 +115,7 @@ func (n *Node) apiCreateGuestUserByName(ctx context.Context, name string) (*entr
 }
 
 func (n *Node) apiGetOrCreateUserFromWallet(ctx context.Context, wallet string) (*entry.User, int, error) {
-	userEntry, err := n.db.UsersGetUserByWallet(ctx, wallet)
+	userEntry, err := n.db.GetUsersDB().GetUserByWallet(ctx, wallet)
 	if err == nil {
 		return userEntry, 0, nil
 	}
@@ -148,7 +148,7 @@ func (n *Node) createUserFromWalletMeta(ctx context.Context, walletMeta *WalletM
 	}
 	userEntry.UserTypeID = &normUserTypeID
 
-	if err := n.db.UsersUpsertUser(ctx, userEntry); err != nil {
+	if err := n.db.GetUsersDB().UpsertUser(ctx, userEntry); err != nil {
 		return nil, errors.WithMessagef(err, "failed to upsert user: %s", userEntry.UserID)
 	}
 

@@ -29,6 +29,10 @@ type DB struct {
 	database.UserUserAttributesDB
 }
 
+func (DB *DB) GetUsersDB() database.UsersDB {
+	return DB.UsersDB
+}
+
 func NewDB(
 	conn *pgxpool.Pool,
 	common database.CommonDB,

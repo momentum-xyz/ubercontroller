@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 
 	"github.com/google/uuid"
@@ -15,7 +16,7 @@ type DB interface {
 	NodesDB
 	WorldsDB
 	SpacesDB
-	UsersDB
+	GetUsersDB() UsersDB
 	Assets2dDB
 	Assets3dDB
 	PluginsDB
@@ -63,20 +64,20 @@ type SpacesDB interface {
 }
 
 type UsersDB interface {
-	UsersGetUserByID(ctx context.Context, userID uuid.UUID) (*entry.User, error)
-	UsersGetUsersByIDs(ctx context.Context, userIDs []uuid.UUID) ([]*entry.User, error)
-	UsersGetUserByWallet(ctx context.Context, wallet string) (*entry.User, error)
-	UsersGetUserProfileByUserID(ctx context.Context, userID uuid.UUID) (*entry.UserProfile, error)
+	GetUserByID(ctx context.Context, userID uuid.UUID) (*entry.User, error)
+	GetUsersByIDs(ctx context.Context, userIDs []uuid.UUID) ([]*entry.User, error)
+	GetUserByWallet(ctx context.Context, wallet string) (*entry.User, error)
+	GetUserProfileByUserID(ctx context.Context, userID uuid.UUID) (*entry.UserProfile, error)
 
-	UsersUpsertUser(ctx context.Context, user *entry.User) error
-	UsersUpsertUsers(ctx context.Context, user []*entry.User) error
+	UpsertUser(ctx context.Context, user *entry.User) error
+	UpsertUsers(ctx context.Context, user []*entry.User) error
 
-	UsersUpdateUserUserTypeID(ctx context.Context, userID, userTypeID uuid.UUID) error
-	UsersUpdateUserOptions(ctx context.Context, userID uuid.UUID, options *entry.UserOptions) error
-	UsersUpdateUserProfile(ctx context.Context, userID uuid.UUID, profile *entry.UserProfile) error
+	UpdateUserUserTypeID(ctx context.Context, userID, userTypeID uuid.UUID) error
+	UpdateUserOptions(ctx context.Context, userID uuid.UUID, options *entry.UserOptions) error
+	UpdateUserProfile(ctx context.Context, userID uuid.UUID, profile *entry.UserProfile) error
 
-	UsersRemoveUsersByIDs(ctx context.Context, userID []uuid.UUID) error
-	UsersRemoveUserByID(ctx context.Context, userID uuid.UUID) error
+	RemoveUsersByIDs(ctx context.Context, userID []uuid.UUID) error
+	RemoveUserByID(ctx context.Context, userID uuid.UUID) error
 }
 
 type Assets2dDB interface {

@@ -48,7 +48,7 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 		return
 	}
 
-	userProfile, err := n.db.UsersGetUserProfileByUserID(c, userID)
+	userProfile, err := n.db.GetUsersDB().GetUserProfileByUserID(c, userID)
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiProfileUpdate: failed to get user profile by user id")
 		api.AbortRequest(c, http.StatusNotFound, "not_found", err, n.log)
@@ -78,7 +78,7 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 
 	userProfile.OnBoarded = utils.GetPTR(true)
 
-	if err := n.db.UsersUpdateUserProfile(c, userID, userProfile); err != nil {
+	if err := n.db.GetUsersDB().UpdateUserProfile(c, userID, userProfile); err != nil {
 		err = errors.WithMessage(err, "failed to update user profile")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_update_user_profile", err, n.log)
 		return
