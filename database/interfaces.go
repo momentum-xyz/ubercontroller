@@ -12,7 +12,7 @@ import (
 
 type DB interface {
 	CommonDB
-	NodesDB
+	GetNodesDB() NodesDB
 	GetWorldsDB() WorldsDB
 	GetSpacesDB() SpacesDB
 	GetUsersDB() UsersDB
@@ -34,7 +34,7 @@ type CommonDB interface {
 }
 
 type NodesDB interface {
-	NodesGetNode(ctx context.Context) (*entry.Node, error)
+	GetNode(ctx context.Context) (*entry.Node, error)
 }
 
 type WorldsDB interface {

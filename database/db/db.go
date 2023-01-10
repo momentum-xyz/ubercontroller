@@ -29,6 +29,10 @@ type DB struct {
 	database.UserUserAttributesDB
 }
 
+func (DB *DB) GetNodesDB() database.NodesDB {
+	return DB.NodesDB
+}
+
 func (DB *DB) GetWorldsDB() database.WorldsDB {
 	return DB.WorldsDB
 }

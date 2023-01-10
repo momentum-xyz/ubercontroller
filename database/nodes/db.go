@@ -29,7 +29,7 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 	}
 }
 
-func (db *DB) NodesGetNode(ctx context.Context) (*entry.Node, error) {
+func (db *DB) GetNode(ctx context.Context) (*entry.Node, error) {
 	var node entry.Node
 	if err := pgxscan.Get(ctx, db.conn, &node, getNodeQuery); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
