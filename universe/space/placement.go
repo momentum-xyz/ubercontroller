@@ -1,13 +1,16 @@
 package space
 
 import (
+	"sort"
+
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
+
 	"github.com/momentum-xyz/posbus-protocol/posbus"
+
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/pkg/position_algo"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
-	"github.com/pkg/errors"
-	"sort"
 )
 
 // TODO: Rewrite
@@ -96,7 +99,7 @@ func (s *Space) SetPosition(position *cmath.SpacePosition, updateDB bool) error 
 	defer s.Mu.Unlock()
 
 	if updateDB {
-		if err := s.db.SpacesUpdateSpacePosition(s.ctx, s.GetID(), position); err != nil {
+		if err := s.db.GetSpacesDB().UpdateSpacePosition(s.ctx, s.GetID(), position); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}

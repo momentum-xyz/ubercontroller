@@ -106,7 +106,7 @@ func (w *World) SetParent(parent universe.Space, updateDB bool) error {
 	defer w.Space.Mu.Unlock()
 
 	if updateDB {
-		if err := w.db.SpacesUpdateSpaceParentID(w.ctx, w.GetID(), parent.GetID()); err != nil {
+		if err := w.db.GetSpacesDB().UpdateSpaceParentID(w.ctx, w.GetID(), parent.GetID()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -211,7 +211,7 @@ func (w *World) broadcastPositions() {
 func (w *World) Load() error {
 	w.log.Infof("Loading world: %s...", w.GetID())
 
-	entry, err := w.db.SpacesGetSpaceByID(w.ctx, w.GetID())
+	entry, err := w.db.GetSpacesDB().GetSpaceByID(w.ctx, w.GetID())
 	if err != nil {
 		return errors.WithMessage(err, "failed to get space by id")
 	}
@@ -303,7 +303,7 @@ func (w *World) Save() error {
 		entries = append(entries, space.GetEntry())
 	}
 
-	if err := w.db.SpacesUpsertSpaces(w.ctx, entries); err != nil {
+	if err := w.db.GetSpacesDB().UpsertSpaces(w.ctx, entries); err != nil {
 		return errors.WithMessage(err, "failed to upsert spaces")
 	}
 

@@ -33,6 +33,10 @@ func (DB *DB) GetUsersDB() database.UsersDB {
 	return DB.UsersDB
 }
 
+func (DB *DB) GetSpacesDB() database.SpacesDB {
+	return DB.SpacesDB
+}
+
 func NewDB(
 	conn *pgxpool.Pool,
 	common database.CommonDB,
