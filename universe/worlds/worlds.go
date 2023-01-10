@@ -237,7 +237,7 @@ func (w *Worlds) Stop() error {
 func (w *Worlds) Load() error {
 	w.log.Info("Loading worlds...")
 
-	worldIDs, err := w.db.WorldsGetWorldIDs(w.ctx)
+	worldIDs, err := w.db.GetWorldsDB().GetWorldIDs(w.ctx)
 	if err != nil {
 		return errors.WithMessage(err, "failed to get world ids from db")
 	}

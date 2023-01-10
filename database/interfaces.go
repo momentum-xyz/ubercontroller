@@ -13,7 +13,7 @@ import (
 type DB interface {
 	CommonDB
 	NodesDB
-	WorldsDB
+	GetWorldsDB() WorldsDB
 	GetSpacesDB() SpacesDB
 	GetUsersDB() UsersDB
 	Assets2dDB
@@ -38,8 +38,8 @@ type NodesDB interface {
 }
 
 type WorldsDB interface {
-	WorldsGetWorldIDs(ctx context.Context) ([]uuid.UUID, error)
-	WorldsGetWorlds(ctx context.Context) ([]*entry.Space, error)
+	GetWorldIDs(ctx context.Context) ([]uuid.UUID, error)
+	GetWorlds(ctx context.Context) ([]*entry.Space, error)
 }
 
 type SpacesDB interface {

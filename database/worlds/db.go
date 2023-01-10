@@ -35,7 +35,7 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB, spacesDB database.Spa
 	}
 }
 
-func (db *DB) WorldsGetWorldIDs(ctx context.Context) ([]uuid.UUID, error) {
+func (db *DB) GetWorldIDs(ctx context.Context) ([]uuid.UUID, error) {
 	var ids []uuid.UUID
 	if err := pgxscan.Select(ctx, db.conn, &ids, getWorldIDsQuery); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
@@ -43,7 +43,7 @@ func (db *DB) WorldsGetWorldIDs(ctx context.Context) ([]uuid.UUID, error) {
 	return ids, nil
 }
 
-func (db *DB) WorldsGetWorlds(ctx context.Context) ([]*entry.Space, error) {
+func (db *DB) GetWorlds(ctx context.Context) ([]*entry.Space, error) {
 	var worlds []*entry.Space
 	if err := pgxscan.Select(ctx, db.conn, &worlds, getWorldsQuery); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
