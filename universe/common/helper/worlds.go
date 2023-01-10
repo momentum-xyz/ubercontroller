@@ -43,10 +43,6 @@ func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (uuid.UUI
 	if err := world.SetSpaceType(worldSpaceType, false); err != nil {
 		return uuid.Nil, errors.WithMessagef(err, "failed to set space type: %s", worldTemplate.SpaceTypeID)
 	}
-	// TODO: move it to "Worlds.AddWorld()" when Unity will be ready
-	if err := world.SetParent(node, false); err != nil {
-		return uuid.Nil, errors.WithMessagef(err, "failed to set parent: %s", node.GetID())
-	}
 
 	// saving in database
 	if updateDB {

@@ -229,6 +229,7 @@ func (n *Node) apiUpdateSpace(c *gin.Context) {
 		return
 	}
 
+	// TODO: ask @cnaize about it
 	// not supporting 're-parenting' and changing type'. Have to delete and recreate for that.
 	// Update/edit the positioning is done through unity edit mode.
 	type InBody struct {
