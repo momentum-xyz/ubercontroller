@@ -65,6 +65,10 @@ func (DB *DB) GetUserTypesDB() database.UserTypesDB {
 	return DB.UserTypesDB
 }
 
+func (DB *DB) GetAttributeTypesDB() database.AttributeTypesDB {
+	return DB.AttributeTypesDB
+}
+
 func NewDB(
 	conn *pgxpool.Pool,
 	common database.CommonDB,

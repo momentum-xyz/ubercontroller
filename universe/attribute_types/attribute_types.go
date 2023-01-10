@@ -2,6 +2,7 @@ package attribute_types
 
 import (
 	"context"
+
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -84,7 +85,7 @@ func (a *AttributeTypes) AddAttributeType(attributeType universe.AttributeType, 
 	defer a.attributeTypes.Mu.Unlock()
 
 	if updateDB {
-		if err := a.db.AttributeTypesUpsertAttributeType(a.ctx, attributeType.GetEntry()); err != nil {
+		if err := a.db.GetAttributeTypesDB().UpsertAttributeType(a.ctx, attributeType.GetEntry()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -103,7 +104,7 @@ func (a *AttributeTypes) AddAttributeTypes(attributeTypes []universe.AttributeTy
 		for i := range attributeTypes {
 			entries[i] = attributeTypes[i].GetEntry()
 		}
-		if err := a.db.AttributeTypesUpsertAttributeTypes(a.ctx, entries); err != nil {
+		if err := a.db.GetAttributeTypesDB().UpsertAttributeTypes(a.ctx, entries); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -125,7 +126,7 @@ func (a *AttributeTypes) RemoveAttributeType(attributeType universe.AttributeTyp
 	}
 
 	if updateDB {
-		if err := a.db.AttributeTypesRemoveAttributeTypeByID(a.ctx, attributeType.GetID()); err != nil {
+		if err := a.db.GetAttributeTypesDB().RemoveAttributeTypeByID(a.ctx, attributeType.GetID()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -151,7 +152,7 @@ func (a *AttributeTypes) RemoveAttributeTypes(attributeTypes []universe.Attribut
 		for i := range attributeTypes {
 			ids[i] = attributeTypes[i].GetID()
 		}
-		if err := a.db.AttributeTypesRemoveAttributeTypesByIDs(a.ctx, ids); err != nil {
+		if err := a.db.GetAttributeTypesDB().RemoveAttributeTypesByIDs(a.ctx, ids); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -166,7 +167,7 @@ func (a *AttributeTypes) RemoveAttributeTypes(attributeTypes []universe.Attribut
 func (a *AttributeTypes) Load() error {
 	a.log.Info("Loading attribute types...")
 
-	entries, err := a.db.AttributeTypesGetAttributeTypes(a.ctx)
+	entries, err := a.db.GetAttributeTypesDB().GetAttributeTypes(a.ctx)
 	if err != nil {
 		return errors.WithMessage(err, "failed to get attribute types")
 	}
@@ -199,7 +200,7 @@ func (a *AttributeTypes) Save() error {
 		entries = append(entries, attributeType.GetEntry())
 	}
 
-	if err := a.db.AttributeTypesUpsertAttributeTypes(a.ctx, entries); err != nil {
+	if err := a.db.GetAttributeTypesDB().UpsertAttributeTypes(a.ctx, entries); err != nil {
 		return errors.WithMessage(err, "failed to upsert attribute types")
 	}
 

@@ -21,7 +21,7 @@ type DB interface {
 	GetPluginsDB() PluginsDB
 	GetSpaceTypesDB() SpaceTypesDB
 	GetUserTypesDB() UserTypesDB
-	AttributeTypesDB
+	GetAttributeTypesDB() AttributeTypesDB
 	NodeAttributesDB
 	SpaceAttributesDB
 	SpaceUserAttributesDB
@@ -150,24 +150,24 @@ type UserTypesDB interface {
 }
 
 type AttributeTypesDB interface {
-	AttributeTypesGetAttributeTypes(ctx context.Context) ([]*entry.AttributeType, error)
+	GetAttributeTypes(ctx context.Context) ([]*entry.AttributeType, error)
 
-	AttributeTypesUpsertAttributeType(ctx context.Context, attributeType *entry.AttributeType) error
-	AttributeTypesUpsertAttributeTypes(ctx context.Context, attributeTypes []*entry.AttributeType) error
+	UpsertAttributeType(ctx context.Context, attributeType *entry.AttributeType) error
+	UpsertAttributeTypes(ctx context.Context, attributeTypes []*entry.AttributeType) error
 
-	AttributeTypesUpdateAttributeTypeName(ctx context.Context, attributeTypeID entry.AttributeTypeID, name string) error
-	AttributeTypesUpdateAttributeTypeDescription(
+	UpdateAttributeTypeName(ctx context.Context, attributeTypeID entry.AttributeTypeID, name string) error
+	UpdateAttributeTypeDescription(
 		ctx context.Context, attributeTypeID entry.AttributeTypeID, description *string,
 	) error
-	AttributeTypesUpdateAttributeTypeOptions(
+	UpdateAttributeTypeOptions(
 		ctx context.Context, attributeTypeID entry.AttributeTypeID, options *entry.AttributeOptions,
 	) error
 
-	AttributeTypesRemoveAttributeTypeByName(ctx context.Context, name string) error
-	AttributeTypesRemoveAttributeTypesByNames(ctx context.Context, names []string) error
-	AttributeTypesRemoveAttributeTypesByPluginID(ctx context.Context, pluginID uuid.UUID) error
-	AttributeTypesRemoveAttributeTypeByID(ctx context.Context, attributeTypeID entry.AttributeTypeID) error
-	AttributeTypesRemoveAttributeTypesByIDs(ctx context.Context, attributeTypeIDs []entry.AttributeTypeID) error
+	RemoveAttributeTypeByName(ctx context.Context, name string) error
+	RemoveAttributeTypesByNames(ctx context.Context, names []string) error
+	RemoveAttributeTypesByPluginID(ctx context.Context, pluginID uuid.UUID) error
+	RemoveAttributeTypeByID(ctx context.Context, attributeTypeID entry.AttributeTypeID) error
+	RemoveAttributeTypesByIDs(ctx context.Context, attributeTypeIDs []entry.AttributeTypeID) error
 }
 
 type NodeAttributesDB interface {

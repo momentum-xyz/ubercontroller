@@ -50,7 +50,7 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 	}
 }
 
-func (db *DB) AttributeTypesGetAttributeTypes(ctx context.Context) ([]*entry.AttributeType, error) {
+func (db *DB) GetAttributeTypes(ctx context.Context) ([]*entry.AttributeType, error) {
 	var attributeTypes []*entry.AttributeType
 	if err := pgxscan.Select(ctx, db.conn, &attributeTypes, getAttributeTypesQuery); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
@@ -58,7 +58,7 @@ func (db *DB) AttributeTypesGetAttributeTypes(ctx context.Context) ([]*entry.Att
 	return attributeTypes, nil
 }
 
-func (db *DB) AttributeTypesUpsertAttributeType(ctx context.Context, attributeType *entry.AttributeType) error {
+func (db *DB) UpsertAttributeType(ctx context.Context, attributeType *entry.AttributeType) error {
 	if _, err := db.conn.Exec(
 		ctx, upsertAttributeTypeQuery,
 		attributeType.PluginID, attributeType.Name, attributeType.Description, attributeType.Options,
@@ -68,7 +68,7 @@ func (db *DB) AttributeTypesUpsertAttributeType(ctx context.Context, attributeTy
 	return nil
 }
 
-func (db *DB) AttributeTypesUpsertAttributeTypes(ctx context.Context, attributeTypes []*entry.AttributeType) error {
+func (db *DB) UpsertAttributeTypes(ctx context.Context, attributeTypes []*entry.AttributeType) error {
 	batch := &pgx.Batch{}
 	for _, attributeType := range attributeTypes {
 		batch.Queue(
@@ -92,28 +92,28 @@ func (db *DB) AttributeTypesUpsertAttributeTypes(ctx context.Context, attributeT
 	return errs.ErrorOrNil()
 }
 
-func (db *DB) AttributeTypesRemoveAttributeTypeByName(ctx context.Context, name string) error {
+func (db *DB) RemoveAttributeTypeByName(ctx context.Context, name string) error {
 	if _, err := db.conn.Exec(ctx, removeAttributeTypeByNameQuery, name); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) AttributeTypesRemoveAttributeTypesByNames(ctx context.Context, names []string) error {
+func (db *DB) RemoveAttributeTypesByNames(ctx context.Context, names []string) error {
 	if _, err := db.conn.Exec(ctx, removeAttributeTypesByNamesQuery, names); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) AttributeTypesRemoveAttributeTypesByPluginID(ctx context.Context, pluginID uuid.UUID) error {
+func (db *DB) RemoveAttributeTypesByPluginID(ctx context.Context, pluginID uuid.UUID) error {
 	if _, err := db.conn.Exec(ctx, removeAttributeTypesByPluginIDQuery, pluginID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) AttributeTypesRemoveAttributeTypeByID(ctx context.Context, attributeTypeID entry.AttributeTypeID) error {
+func (db *DB) RemoveAttributeTypeByID(ctx context.Context, attributeTypeID entry.AttributeTypeID) error {
 	if _, err := db.conn.Exec(
 		ctx, removeAttributeTypeByPluginIDAndNameQuery, attributeTypeID.PluginID, attributeTypeID.Name,
 	); err != nil {
@@ -122,7 +122,7 @@ func (db *DB) AttributeTypesRemoveAttributeTypeByID(ctx context.Context, attribu
 	return nil
 }
 
-func (db *DB) AttributeTypesRemoveAttributeTypesByIDs(ctx context.Context, attributeTypeIDs []entry.AttributeTypeID) error {
+func (db *DB) RemoveAttributeTypesByIDs(ctx context.Context, attributeTypeIDs []entry.AttributeTypeID) error {
 	batch := &pgx.Batch{}
 	for _, attributeTypeID := range attributeTypeIDs {
 		batch.Queue(
@@ -146,7 +146,7 @@ func (db *DB) AttributeTypesRemoveAttributeTypesByIDs(ctx context.Context, attri
 	return errs.ErrorOrNil()
 }
 
-func (db *DB) AttributeTypesUpdateAttributeTypeName(
+func (db *DB) UpdateAttributeTypeName(
 	ctx context.Context, attributeTypeID entry.AttributeTypeID, name string,
 ) error {
 	if _, err := db.conn.Exec(
@@ -157,7 +157,7 @@ func (db *DB) AttributeTypesUpdateAttributeTypeName(
 	return nil
 }
 
-func (db *DB) AttributeTypesUpdateAttributeTypeOptions(
+func (db *DB) UpdateAttributeTypeOptions(
 	ctx context.Context, attributeTypeID entry.AttributeTypeID, options *entry.AttributeOptions,
 ) error {
 	if _, err := db.conn.Exec(
@@ -168,7 +168,7 @@ func (db *DB) AttributeTypesUpdateAttributeTypeOptions(
 	return nil
 }
 
-func (db *DB) AttributeTypesUpdateAttributeTypeDescription(
+func (db *DB) UpdateAttributeTypeDescription(
 	ctx context.Context, attributeTypeID entry.AttributeTypeID, description *string,
 ) error {
 	if _, err := db.conn.Exec(
