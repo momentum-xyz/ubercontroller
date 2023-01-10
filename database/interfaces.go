@@ -20,7 +20,7 @@ type DB interface {
 	GetAssets3dDB() Assets3dDB
 	GetPluginsDB() PluginsDB
 	GetSpaceTypesDB() SpaceTypesDB
-	UserTypesDB
+	GetUserTypesDB() UserTypesDB
 	AttributeTypesDB
 	NodeAttributesDB
 	SpaceAttributesDB
@@ -136,17 +136,17 @@ type SpaceTypesDB interface {
 }
 
 type UserTypesDB interface {
-	UserTypesGetUserTypes(ctx context.Context) ([]*entry.UserType, error)
+	GetUserTypes(ctx context.Context) ([]*entry.UserType, error)
 
-	UserTypesUpsertUserType(ctx context.Context, userType *entry.UserType) error
-	UserTypesUpsertUserTypes(ctx context.Context, userTypes []*entry.UserType) error
+	UpsertUserType(ctx context.Context, userType *entry.UserType) error
+	UpsertUserTypes(ctx context.Context, userTypes []*entry.UserType) error
 
-	UserTypesUpdateUserTypeName(ctx context.Context, userTypeID uuid.UUID, name string) error
-	UserTypesUpdateUserTypeDescription(ctx context.Context, userTypeID uuid.UUID, description *string) error
-	UserTypesUpdateUserTypeOptions(ctx context.Context, userTypeID uuid.UUID, options *entry.UserOptions) error
+	UpdateUserTypeName(ctx context.Context, userTypeID uuid.UUID, name string) error
+	UpdateUserTypeDescription(ctx context.Context, userTypeID uuid.UUID, description *string) error
+	UpdateUserTypeOptions(ctx context.Context, userTypeID uuid.UUID, options *entry.UserOptions) error
 
-	UserTypesRemoveUserTypeByID(ctx context.Context, userTypeID uuid.UUID) error
-	UserTypesRemoveUserTypesByIDs(ctx context.Context, userTypeIDs []uuid.UUID) error
+	RemoveUserTypeByID(ctx context.Context, userTypeID uuid.UUID) error
+	RemoveUserTypesByIDs(ctx context.Context, userTypeIDs []uuid.UUID) error
 }
 
 type AttributeTypesDB interface {

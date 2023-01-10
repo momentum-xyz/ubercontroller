@@ -67,7 +67,7 @@ func (u *UserType) SetName(name string, updateDB bool) error {
 	defer u.mu.Unlock()
 
 	if updateDB {
-		if err := u.db.UserTypesUpdateUserTypeName(u.ctx, u.GetID(), name); err != nil {
+		if err := u.db.GetUserTypesDB().UpdateUserTypeName(u.ctx, u.GetID(), name); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -89,7 +89,7 @@ func (u *UserType) SetDescription(description *string, updateDB bool) error {
 	defer u.mu.Unlock()
 
 	if updateDB {
-		if err := u.db.UserTypesUpdateUserTypeDescription(u.ctx, u.GetID(), description); err != nil {
+		if err := u.db.GetUserTypesDB().UpdateUserTypeDescription(u.ctx, u.GetID(), description); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -114,7 +114,7 @@ func (u *UserType) SetOptions(modifyFn modify.Fn[entry.UserOptions], updateDB bo
 	}
 
 	if updateDB {
-		if err := u.db.UserTypesUpdateUserTypeOptions(u.ctx, u.GetID(), options); err != nil {
+		if err := u.db.GetUserTypesDB().UpdateUserTypeOptions(u.ctx, u.GetID(), options); err != nil {
 			u.mu.Unlock()
 			return nil, errors.WithMessage(err, "failed to update db")
 		}

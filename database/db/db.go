@@ -61,6 +61,10 @@ func (DB *DB) GetSpaceTypesDB() database.SpaceTypesDB {
 	return DB.SpaceTypesDB
 }
 
+func (DB *DB) GetUserTypesDB() database.UserTypesDB {
+	return DB.UserTypesDB
+}
+
 func NewDB(
 	conn *pgxpool.Pool,
 	common database.CommonDB,

@@ -45,7 +45,7 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 	}
 }
 
-func (db *DB) UserTypesGetUserTypes(ctx context.Context) ([]*entry.UserType, error) {
+func (db *DB) GetUserTypes(ctx context.Context) ([]*entry.UserType, error) {
 	var userTypes []*entry.UserType
 	if err := pgxscan.Select(ctx, db.conn, &userTypes, getUserTypesQuery); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
@@ -53,7 +53,7 @@ func (db *DB) UserTypesGetUserTypes(ctx context.Context) ([]*entry.UserType, err
 	return userTypes, nil
 }
 
-func (db *DB) UserTypesUpsertUserType(ctx context.Context, userType *entry.UserType) error {
+func (db *DB) UpsertUserType(ctx context.Context, userType *entry.UserType) error {
 	if _, err := db.conn.Exec(
 		ctx, upsertUserTypeQuery, userType.UserTypeID, userType.UserTypeName,
 		userType.Description, userType.Options,
@@ -63,7 +63,7 @@ func (db *DB) UserTypesUpsertUserType(ctx context.Context, userType *entry.UserT
 	return nil
 }
 
-func (db *DB) UserTypesUpsertUserTypes(ctx context.Context, userTypes []*entry.UserType) error {
+func (db *DB) UpsertUserTypes(ctx context.Context, userTypes []*entry.UserType) error {
 	batch := &pgx.Batch{}
 	for _, userType := range userTypes {
 		batch.Queue(
@@ -87,28 +87,28 @@ func (db *DB) UserTypesUpsertUserTypes(ctx context.Context, userTypes []*entry.U
 	return errs.ErrorOrNil()
 }
 
-func (db *DB) UserTypesRemoveUserTypeByID(ctx context.Context, userTypeID uuid.UUID) error {
+func (db *DB) RemoveUserTypeByID(ctx context.Context, userTypeID uuid.UUID) error {
 	if _, err := db.conn.Exec(ctx, removeUserTypeByIDQuery, userTypeID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) UserTypesRemoveUserTypesByIDs(ctx context.Context, userTypeIDs []uuid.UUID) error {
+func (db *DB) RemoveUserTypesByIDs(ctx context.Context, userTypeIDs []uuid.UUID) error {
 	if _, err := db.conn.Exec(ctx, removeUserTypesByIDsQuery, userTypeIDs); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) UserTypesUpdateUserTypeName(ctx context.Context, userTypeID uuid.UUID, name string) error {
+func (db *DB) UpdateUserTypeName(ctx context.Context, userTypeID uuid.UUID, name string) error {
 	if _, err := db.conn.Exec(ctx, updateUserTypeNameQuery, userTypeID, name); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) UserTypesUpdateUserTypeDescription(
+func (db *DB) UpdateUserTypeDescription(
 	ctx context.Context, userTypeID uuid.UUID, description *string,
 ) error {
 	if _, err := db.conn.Exec(ctx, updateUserTypeDescriptionQuery, userTypeID, description); err != nil {
@@ -117,7 +117,7 @@ func (db *DB) UserTypesUpdateUserTypeDescription(
 	return nil
 }
 
-func (db *DB) UserTypesUpdateUserTypeOptions(
+func (db *DB) UpdateUserTypeOptions(
 	ctx context.Context, userTypeID uuid.UUID, options *entry.UserOptions,
 ) error {
 	if _, err := db.conn.Exec(ctx, updateUserTypeOptionsQuery, userTypeID, options); err != nil {
