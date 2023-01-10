@@ -140,7 +140,7 @@ func (s *SpaceType) SetAsset2d(asset2d universe.Asset2d, updateDB bool) error {
 	defer s.mu.Unlock()
 
 	if updateDB {
-		if err := s.db.Assets2dUpsertAsset(s.ctx, asset2d.GetEntry()); err != nil {
+		if err := s.db.GetAssets2dDB().UpsertAsset(s.ctx, asset2d.GetEntry()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}

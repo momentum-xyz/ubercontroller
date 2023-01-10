@@ -16,7 +16,7 @@ type DB interface {
 	GetWorldsDB() WorldsDB
 	GetSpacesDB() SpacesDB
 	GetUsersDB() UsersDB
-	Assets2dDB
+	GetAssets2dDB() Assets2dDB
 	Assets3dDB
 	PluginsDB
 	SpaceTypesDB
@@ -80,16 +80,16 @@ type UsersDB interface {
 }
 
 type Assets2dDB interface {
-	Assets2dGetAssets(ctx context.Context) ([]*entry.Asset2d, error)
+	GetAssets(ctx context.Context) ([]*entry.Asset2d, error)
 
-	Assets2dUpsertAsset(ctx context.Context, asset2d *entry.Asset2d) error
-	Assets2dUpsertAssets(ctx context.Context, assets2d []*entry.Asset2d) error
+	UpsertAsset(ctx context.Context, asset2d *entry.Asset2d) error
+	UpsertAssets(ctx context.Context, assets2d []*entry.Asset2d) error
 
-	Assets2dUpdateAssetMeta(ctx context.Context, asset2dID uuid.UUID, meta *entry.Asset2dMeta) error
-	Assets2dUpdateAssetOptions(ctx context.Context, asset2dID uuid.UUID, options *entry.Asset2dOptions) error
+	UpdateAssetMeta(ctx context.Context, asset2dID uuid.UUID, meta *entry.Asset2dMeta) error
+	UpdateAssetOptions(ctx context.Context, asset2dID uuid.UUID, options *entry.Asset2dOptions) error
 
-	Assets2dRemoveAssetByID(ctx context.Context, asset2dID uuid.UUID) error
-	Assets2dRemoveAssetsByIDs(ctx context.Context, asset2dIDs []uuid.UUID) error
+	RemoveAssetByID(ctx context.Context, asset2dID uuid.UUID) error
+	RemoveAssetsByIDs(ctx context.Context, asset2dIDs []uuid.UUID) error
 }
 
 type Assets3dDB interface {

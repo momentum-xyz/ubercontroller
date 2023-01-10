@@ -63,7 +63,7 @@ func (a *Asset2d) SetMeta(meta *entry.Asset2dMeta, updateDB bool) error {
 	defer a.mu.Unlock()
 
 	if updateDB {
-		if err := a.db.Assets2dUpdateAssetMeta(a.ctx, a.entry.Asset2dID, meta); err != nil {
+		if err := a.db.GetAssets2dDB().UpdateAssetMeta(a.ctx, a.entry.Asset2dID, meta); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -90,7 +90,7 @@ func (a *Asset2d) SetOptions(modifyFn modify.Fn[entry.Asset2dOptions], updateDB 
 	}
 
 	if updateDB {
-		if err := a.db.Assets2dUpdateAssetOptions(a.ctx, a.entry.Asset2dID, options); err != nil {
+		if err := a.db.GetAssets2dDB().UpdateAssetOptions(a.ctx, a.entry.Asset2dID, options); err != nil {
 			return nil, errors.WithMessage(err, "failed to update db")
 		}
 	}
