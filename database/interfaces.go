@@ -19,7 +19,7 @@ type DB interface {
 	GetAssets2dDB() Assets2dDB
 	GetAssets3dDB() Assets3dDB
 	GetPluginsDB() PluginsDB
-	SpaceTypesDB
+	GetSpaceTypesDB() SpaceTypesDB
 	UserTypesDB
 	AttributeTypesDB
 	NodeAttributesDB
@@ -121,18 +121,18 @@ type PluginsDB interface {
 }
 
 type SpaceTypesDB interface {
-	SpaceTypesGetSpaceTypes(ctx context.Context) ([]*entry.SpaceType, error)
+	GetSpaceTypes(ctx context.Context) ([]*entry.SpaceType, error)
 
-	SpaceTypesUpsertSpaceType(ctx context.Context, spaceType *entry.SpaceType) error
-	SpaceTypesUpsertSpaceTypes(ctx context.Context, spaceTypes []*entry.SpaceType) error
+	UpsertSpaceType(ctx context.Context, spaceType *entry.SpaceType) error
+	UpsertSpaceTypes(ctx context.Context, spaceTypes []*entry.SpaceType) error
 
-	SpaceTypesUpdateSpaceTypeName(ctx context.Context, spaceTypeID uuid.UUID, name string) error
-	SpaceTypesUpdateSpaceTypeCategoryName(ctx context.Context, spaceTypeID uuid.UUID, categoryName string) error
-	SpaceTypesUpdateSpaceTypeDescription(ctx context.Context, spaceTypeID uuid.UUID, description *string) error
-	SpaceTypesUpdateSpaceTypeOptions(ctx context.Context, spaceTypeID uuid.UUID, options *entry.SpaceOptions) error
+	UpdateSpaceTypeName(ctx context.Context, spaceTypeID uuid.UUID, name string) error
+	UpdateSpaceTypeCategoryName(ctx context.Context, spaceTypeID uuid.UUID, categoryName string) error
+	UpdateSpaceTypeDescription(ctx context.Context, spaceTypeID uuid.UUID, description *string) error
+	UpdateSpaceTypeOptions(ctx context.Context, spaceTypeID uuid.UUID, options *entry.SpaceOptions) error
 
-	SpaceTypesRemoveSpaceTypeByID(ctx context.Context, spaceTypeID uuid.UUID) error
-	SpaceTypesRemoveSpaceTypesByIDs(ctx context.Context, spaceTypeIDs []uuid.UUID) error
+	RemoveSpaceTypeByID(ctx context.Context, spaceTypeID uuid.UUID) error
+	RemoveSpaceTypesByIDs(ctx context.Context, spaceTypeIDs []uuid.UUID) error
 }
 
 type UserTypesDB interface {

@@ -50,7 +50,7 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 	}
 }
 
-func (db *DB) SpaceTypesGetSpaceTypes(ctx context.Context) ([]*entry.SpaceType, error) {
+func (db *DB) GetSpaceTypes(ctx context.Context) ([]*entry.SpaceType, error) {
 	var spaceTypes []*entry.SpaceType
 	if err := pgxscan.Select(ctx, db.conn, &spaceTypes, getSpaceTypesQuery); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
@@ -58,7 +58,7 @@ func (db *DB) SpaceTypesGetSpaceTypes(ctx context.Context) ([]*entry.SpaceType, 
 	return spaceTypes, nil
 }
 
-func (db *DB) SpaceTypesUpsertSpaceType(ctx context.Context, spaceType *entry.SpaceType) error {
+func (db *DB) UpsertSpaceType(ctx context.Context, spaceType *entry.SpaceType) error {
 	if _, err := db.conn.Exec(ctx, upsertSpaceTypeQuery, spaceType.SpaceTypeID, spaceType.Asset2dID, spaceType.Asset3dID,
 		spaceType.SpaceTypeName, spaceType.CategoryName, spaceType.Description, spaceType.Options); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
@@ -66,7 +66,7 @@ func (db *DB) SpaceTypesUpsertSpaceType(ctx context.Context, spaceType *entry.Sp
 	return nil
 }
 
-func (db *DB) SpaceTypesUpsertSpaceTypes(ctx context.Context, spaceTypes []*entry.SpaceType) error {
+func (db *DB) UpsertSpaceTypes(ctx context.Context, spaceTypes []*entry.SpaceType) error {
 	batch := &pgx.Batch{}
 	for _, spaceType := range spaceTypes {
 		batch.Queue(upsertSpaceTypeQuery, spaceType.SpaceTypeID, spaceType.Asset2dID, spaceType.Asset3dID,
@@ -86,42 +86,42 @@ func (db *DB) SpaceTypesUpsertSpaceTypes(ctx context.Context, spaceTypes []*entr
 	return errs.ErrorOrNil()
 }
 
-func (db *DB) SpaceTypesRemoveSpaceTypeByID(ctx context.Context, spaceTypeID uuid.UUID) error {
+func (db *DB) RemoveSpaceTypeByID(ctx context.Context, spaceTypeID uuid.UUID) error {
 	if _, err := db.conn.Exec(ctx, removeSpaceTypeByIDQuery, spaceTypeID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) SpaceTypesRemoveSpaceTypesByIDs(ctx context.Context, spaceTypeIDs []uuid.UUID) error {
+func (db *DB) RemoveSpaceTypesByIDs(ctx context.Context, spaceTypeIDs []uuid.UUID) error {
 	if _, err := db.conn.Exec(ctx, removeSpaceTypesByIDsQuery, spaceTypeIDs); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) SpaceTypesUpdateSpaceTypeName(ctx context.Context, spaceTypeID uuid.UUID, name string) error {
+func (db *DB) UpdateSpaceTypeName(ctx context.Context, spaceTypeID uuid.UUID, name string) error {
 	if _, err := db.conn.Exec(ctx, updateSpaceTypeNameQuery, spaceTypeID, name); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) SpaceTypesUpdateSpaceTypeCategoryName(ctx context.Context, spaceTypeID uuid.UUID, categoryName string) error {
+func (db *DB) UpdateSpaceTypeCategoryName(ctx context.Context, spaceTypeID uuid.UUID, categoryName string) error {
 	if _, err := db.conn.Exec(ctx, updateSpaceTypeCategoryNameQuery, spaceTypeID, categoryName); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) SpaceTypesUpdateSpaceTypeDescription(ctx context.Context, spaceTypeID uuid.UUID, description *string) error {
+func (db *DB) UpdateSpaceTypeDescription(ctx context.Context, spaceTypeID uuid.UUID, description *string) error {
 	if _, err := db.conn.Exec(ctx, updateSpaceTypeDescriptionQuery, spaceTypeID, description); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) SpaceTypesUpdateSpaceTypeOptions(ctx context.Context, spaceTypeID uuid.UUID, options *entry.SpaceOptions) error {
+func (db *DB) UpdateSpaceTypeOptions(ctx context.Context, spaceTypeID uuid.UUID, options *entry.SpaceOptions) error {
 	if _, err := db.conn.Exec(ctx, updateSpaceTypeOptionsQuery, spaceTypeID, options); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}

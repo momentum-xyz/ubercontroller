@@ -74,7 +74,7 @@ func (s *SpaceType) SetName(name string, updateDB bool) error {
 	defer s.mu.Unlock()
 
 	if updateDB {
-		if err := s.db.SpaceTypesUpdateSpaceTypeName(s.ctx, s.GetID(), name); err != nil {
+		if err := s.db.GetSpaceTypesDB().UpdateSpaceTypeName(s.ctx, s.GetID(), name); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -96,7 +96,7 @@ func (s *SpaceType) SetCategoryName(categoryName string, updateDB bool) error {
 	defer s.mu.Unlock()
 
 	if updateDB {
-		if err := s.db.SpaceTypesUpdateSpaceTypeCategoryName(s.ctx, s.GetID(), categoryName); err != nil {
+		if err := s.db.GetSpaceTypesDB().UpdateSpaceTypeCategoryName(s.ctx, s.GetID(), categoryName); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -118,7 +118,7 @@ func (s *SpaceType) SetDescription(description *string, updateDB bool) error {
 	defer s.mu.Unlock()
 
 	if updateDB {
-		if err := s.db.SpaceTypesUpdateSpaceTypeDescription(s.ctx, s.GetID(), description); err != nil {
+		if err := s.db.GetSpaceTypesDB().UpdateSpaceTypeDescription(s.ctx, s.GetID(), description); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -190,7 +190,7 @@ func (s *SpaceType) SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB 
 		}
 
 		if updateDB {
-			if err := s.db.SpaceTypesUpdateSpaceTypeOptions(s.ctx, s.GetID(), options); err != nil {
+			if err := s.db.GetSpaceTypesDB().UpdateSpaceTypeOptions(s.ctx, s.GetID(), options); err != nil {
 				return nil, errors.WithMessage(err, "failed to update db")
 			}
 		}

@@ -2,7 +2,11 @@ package space_types
 
 import (
 	"context"
+
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
+
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -10,8 +14,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/space_type"
 	"github.com/momentum-xyz/ubercontroller/utils"
-	"github.com/pkg/errors"
-	"go.uber.org/zap"
 )
 
 var _ universe.SpaceTypes = (*SpaceTypes)(nil)
@@ -82,7 +84,7 @@ func (s *SpaceTypes) AddSpaceType(spaceType universe.SpaceType, updateDB bool) e
 	defer s.spaceTypes.Mu.Unlock()
 
 	if updateDB {
-		if err := s.db.SpaceTypesUpsertSpaceType(s.ctx, spaceType.GetEntry()); err != nil {
+		if err := s.db.GetSpaceTypesDB().UpsertSpaceType(s.ctx, spaceType.GetEntry()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -101,7 +103,7 @@ func (s *SpaceTypes) AddSpaceTypes(spaceTypes []universe.SpaceType, updateDB boo
 		for i := range spaceTypes {
 			entries[i] = spaceTypes[i].GetEntry()
 		}
-		if err := s.db.SpaceTypesUpsertSpaceTypes(s.ctx, entries); err != nil {
+		if err := s.db.GetSpaceTypesDB().UpsertSpaceTypes(s.ctx, entries); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -122,7 +124,7 @@ func (s *SpaceTypes) RemoveSpaceType(spaceType universe.SpaceType, updateDB bool
 	}
 
 	if updateDB {
-		if err := s.db.SpaceTypesRemoveSpaceTypeByID(s.ctx, spaceType.GetID()); err != nil {
+		if err := s.db.GetSpaceTypesDB().RemoveSpaceTypeByID(s.ctx, spaceType.GetID()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -147,7 +149,7 @@ func (s *SpaceTypes) RemoveSpaceTypes(spaceTypes []universe.SpaceType, updateDB 
 		for i := range spaceTypes {
 			ids[i] = spaceTypes[i].GetID()
 		}
-		if err := s.db.SpaceTypesRemoveSpaceTypesByIDs(s.ctx, ids); err != nil {
+		if err := s.db.GetSpaceTypesDB().RemoveSpaceTypesByIDs(s.ctx, ids); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -162,7 +164,7 @@ func (s *SpaceTypes) RemoveSpaceTypes(spaceTypes []universe.SpaceType, updateDB 
 func (s *SpaceTypes) Load() error {
 	s.log.Info("Loading space types...")
 
-	entries, err := s.db.SpaceTypesGetSpaceTypes(s.ctx)
+	entries, err := s.db.GetSpaceTypesDB().GetSpaceTypes(s.ctx)
 	if err != nil {
 		return errors.WithMessage(err, "failed to get space types")
 	}
@@ -195,7 +197,7 @@ func (s *SpaceTypes) Save() error {
 		entries = append(entries, spaceType.GetEntry())
 	}
 
-	if err := s.db.SpaceTypesUpsertSpaceTypes(s.ctx, entries); err != nil {
+	if err := s.db.GetSpaceTypesDB().UpsertSpaceTypes(s.ctx, entries); err != nil {
 		return errors.WithMessage(err, "failed to upsert space types")
 	}
 
