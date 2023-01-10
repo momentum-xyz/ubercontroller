@@ -162,7 +162,7 @@ func (s *SpaceType) SetAsset3d(asset3d universe.Asset3d, updateDB bool) error {
 	defer s.mu.Unlock()
 
 	if updateDB {
-		if err := s.db.Assets3dUpsertAsset(s.ctx, asset3d.GetEntry()); err != nil {
+		if err := s.db.GetAssets3dDB().UpsertAsset(s.ctx, asset3d.GetEntry()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}

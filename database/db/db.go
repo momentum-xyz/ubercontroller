@@ -49,6 +49,10 @@ func (DB *DB) GetAssets2dDB() database.Assets2dDB {
 	return DB.Assets2dDB
 }
 
+func (DB *DB) GetAssets3dDB() database.Assets3dDB {
+	return DB.Assets3dDB
+}
+
 func NewDB(
 	conn *pgxpool.Pool,
 	common database.CommonDB,

@@ -17,7 +17,7 @@ type DB interface {
 	GetSpacesDB() SpacesDB
 	GetUsersDB() UsersDB
 	GetAssets2dDB() Assets2dDB
-	Assets3dDB
+	GetAssets3dDB() Assets3dDB
 	PluginsDB
 	SpaceTypesDB
 	UserTypesDB
@@ -93,16 +93,16 @@ type Assets2dDB interface {
 }
 
 type Assets3dDB interface {
-	Assets3dGetAssets(ctx context.Context) ([]*entry.Asset3d, error)
+	GetAssets(ctx context.Context) ([]*entry.Asset3d, error)
 
-	Assets3dUpsertAsset(ctx context.Context, asset3d *entry.Asset3d) error
-	Assets3dUpsertAssets(ctx context.Context, assets3d []*entry.Asset3d) error
+	UpsertAsset(ctx context.Context, asset3d *entry.Asset3d) error
+	UpsertAssets(ctx context.Context, assets3d []*entry.Asset3d) error
 
-	Assets3dUpdateAssetMeta(ctx context.Context, asset3dID uuid.UUID, meta *entry.Asset3dMeta) error
-	Assets3dUpdateAssetOptions(ctx context.Context, asset3dID uuid.UUID, options *entry.Asset3dOptions) error
+	UpdateAssetMeta(ctx context.Context, asset3dID uuid.UUID, meta *entry.Asset3dMeta) error
+	UpdateAssetOptions(ctx context.Context, asset3dID uuid.UUID, options *entry.Asset3dOptions) error
 
-	Assets3dRemoveAssetByID(ctx context.Context, asset3dID uuid.UUID) error
-	Assets3dRemoveAssetsByIDs(ctx context.Context, asset3dIDs []uuid.UUID) error
+	RemoveAssetByID(ctx context.Context, asset3dID uuid.UUID) error
+	RemoveAssetsByIDs(ctx context.Context, asset3dIDs []uuid.UUID) error
 }
 
 type PluginsDB interface {

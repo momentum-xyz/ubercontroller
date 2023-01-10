@@ -67,7 +67,7 @@ func (a *Asset3d) SetMeta(meta *entry.Asset3dMeta, updateDB bool) error {
 	defer a.mu.Unlock()
 
 	if updateDB {
-		if err := a.db.Assets3dUpdateAssetMeta(a.ctx, a.entry.Asset3dID, meta); err != nil {
+		if err := a.db.GetAssets3dDB().UpdateAssetMeta(a.ctx, a.entry.Asset3dID, meta); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -94,7 +94,7 @@ func (a *Asset3d) SetOptions(modifyFn modify.Fn[entry.Asset3dOptions], updateDB 
 	}
 
 	if updateDB {
-		if err := a.db.Assets3dUpdateAssetOptions(a.ctx, a.entry.Asset3dID, options); err != nil {
+		if err := a.db.GetAssets3dDB().UpdateAssetOptions(a.ctx, a.entry.Asset3dID, options); err != nil {
 			return nil, errors.WithMessage(err, "failed to update db")
 		}
 	}
