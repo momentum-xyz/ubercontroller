@@ -2,7 +2,13 @@ package plugin
 
 import (
 	"context"
+	"plugin"
+	"sync"
+
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
+
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/mplugin"
 	"github.com/momentum-xyz/ubercontroller/types"
@@ -10,10 +16,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
-	"github.com/pkg/errors"
-	"go.uber.org/zap"
-	"plugin"
-	"sync"
 )
 
 var _ universe.Plugin = (*Plugin)(nil)
@@ -68,7 +70,7 @@ func (p *Plugin) SetMeta(meta *entry.PluginMeta, updateDB bool) error {
 	defer p.mu.Unlock()
 
 	if updateDB {
-		if err := p.db.PluginsUpdatePluginMeta(p.ctx, p.id, meta); err != nil {
+		if err := p.db.GetPluginsDB().UpdatePluginMeta(p.ctx, p.id, meta); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -95,7 +97,7 @@ func (p *Plugin) SetOptions(modifyFn modify.Fn[entry.PluginOptions], updateDB bo
 	}
 
 	if updateDB {
-		if err := p.db.PluginsUpdatePluginOptions(p.ctx, p.id, options); err != nil {
+		if err := p.db.GetPluginsDB().UpdatePluginOptions(p.ctx, p.id, options); err != nil {
 			return nil, errors.WithMessage(err, "failed to update db")
 		}
 	}

@@ -46,7 +46,7 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 	}
 }
 
-func (db *DB) PluginsGetPlugins(ctx context.Context) ([]*entry.Plugin, error) {
+func (db *DB) GetPlugins(ctx context.Context) ([]*entry.Plugin, error) {
 	var plugins []*entry.Plugin
 	if err := pgxscan.Select(ctx, db.conn, &plugins, getPluginsQuery); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
@@ -54,7 +54,7 @@ func (db *DB) PluginsGetPlugins(ctx context.Context) ([]*entry.Plugin, error) {
 	return plugins, nil
 }
 
-func (db *DB) PluginsUpsertPlugin(ctx context.Context, plugin *entry.Plugin) error {
+func (db *DB) UpsertPlugin(ctx context.Context, plugin *entry.Plugin) error {
 	if _, err := db.conn.Exec(
 		ctx, upsertPluginQuery, plugin.PluginID, plugin.Meta, plugin.Options,
 	); err != nil {
@@ -63,7 +63,7 @@ func (db *DB) PluginsUpsertPlugin(ctx context.Context, plugin *entry.Plugin) err
 	return nil
 }
 
-func (db *DB) PluginsUpsertPlugins(ctx context.Context, plugins []*entry.Plugin) error {
+func (db *DB) UpsertPlugins(ctx context.Context, plugins []*entry.Plugin) error {
 	batch := &pgx.Batch{}
 	for _, plugin := range plugins {
 		batch.Queue(
@@ -86,28 +86,28 @@ func (db *DB) PluginsUpsertPlugins(ctx context.Context, plugins []*entry.Plugin)
 	return errs.ErrorOrNil()
 }
 
-func (db *DB) PluginsRemovePluginByID(ctx context.Context, PluginID uuid.UUID) error {
+func (db *DB) RemovePluginByID(ctx context.Context, PluginID uuid.UUID) error {
 	if _, err := db.conn.Exec(ctx, removePluginByIDQuery, PluginID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) PluginsRemovePluginsByIDs(ctx context.Context, PluginIDs []uuid.UUID) error {
+func (db *DB) RemovePluginsByIDs(ctx context.Context, PluginIDs []uuid.UUID) error {
 	if _, err := db.conn.Exec(ctx, removePluginsByIDsQuery, PluginIDs); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) PluginsUpdatePluginMeta(ctx context.Context, pluginID uuid.UUID, meta *entry.PluginMeta) error {
+func (db *DB) UpdatePluginMeta(ctx context.Context, pluginID uuid.UUID, meta *entry.PluginMeta) error {
 	if _, err := db.conn.Exec(ctx, updatePluginMetaQuery, pluginID, meta); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) PluginsUpdatePluginOptions(
+func (db *DB) UpdatePluginOptions(
 	ctx context.Context, pluginID uuid.UUID, options *entry.PluginOptions,
 ) error {
 	if _, err := db.conn.Exec(ctx, updatePluginOptionsQuery, pluginID, options); err != nil {

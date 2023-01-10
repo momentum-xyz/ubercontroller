@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"context"
+
 	"golang.org/x/sync/errgroup"
 
 	"github.com/google/uuid"
@@ -84,7 +85,7 @@ func (p *Plugins) AddPlugin(plugin universe.Plugin, updateDB bool) error {
 	defer p.plugins.Mu.Unlock()
 
 	if updateDB {
-		if err := p.db.PluginsUpsertPlugin(p.ctx, plugin.GetEntry()); err != nil {
+		if err := p.db.GetPluginsDB().UpsertPlugin(p.ctx, plugin.GetEntry()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -112,7 +113,7 @@ func (p *Plugins) RemovePlugins(plugins []universe.Plugin, updateDB bool) error 
 func (p *Plugins) Load() error {
 	p.log.Info("Loading plugins...")
 
-	entries, err := p.db.PluginsGetPlugins(p.ctx)
+	entries, err := p.db.GetPluginsDB().GetPlugins(p.ctx)
 	if err != nil {
 		return errors.WithMessage(err, "failed to get plugins")
 	}
@@ -155,7 +156,7 @@ func (p *Plugins) Save() error {
 		entries = append(entries, plugin.GetEntry())
 	}
 
-	if err := p.db.PluginsUpsertPlugins(p.ctx, entries); err != nil {
+	if err := p.db.GetPluginsDB().UpsertPlugins(p.ctx, entries); err != nil {
 		return errors.WithMessage(err, "failed to upsert plugins")
 	}
 

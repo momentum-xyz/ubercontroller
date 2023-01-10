@@ -18,7 +18,7 @@ type DB interface {
 	GetUsersDB() UsersDB
 	GetAssets2dDB() Assets2dDB
 	GetAssets3dDB() Assets3dDB
-	PluginsDB
+	GetPluginsDB() PluginsDB
 	SpaceTypesDB
 	UserTypesDB
 	AttributeTypesDB
@@ -106,18 +106,18 @@ type Assets3dDB interface {
 }
 
 type PluginsDB interface {
-	PluginsGetPlugins(ctx context.Context) ([]*entry.Plugin, error)
+	GetPlugins(ctx context.Context) ([]*entry.Plugin, error)
 
-	PluginsUpsertPlugin(ctx context.Context, plugin *entry.Plugin) error
-	PluginsUpsertPlugins(ctx context.Context, plugins []*entry.Plugin) error
+	UpsertPlugin(ctx context.Context, plugin *entry.Plugin) error
+	UpsertPlugins(ctx context.Context, plugins []*entry.Plugin) error
 
-	PluginsUpdatePluginMeta(ctx context.Context, pluginID uuid.UUID, meta *entry.PluginMeta) error
-	PluginsUpdatePluginOptions(
+	UpdatePluginMeta(ctx context.Context, pluginID uuid.UUID, meta *entry.PluginMeta) error
+	UpdatePluginOptions(
 		ctx context.Context, pluginID uuid.UUID, options *entry.PluginOptions,
 	) error
 
-	PluginsRemovePluginByID(ctx context.Context, pluginID uuid.UUID) error
-	PluginsRemovePluginsByIDs(ctx context.Context, pluginIDs []uuid.UUID) error
+	RemovePluginByID(ctx context.Context, pluginID uuid.UUID) error
+	RemovePluginsByIDs(ctx context.Context, pluginIDs []uuid.UUID) error
 }
 
 type SpaceTypesDB interface {
