@@ -171,7 +171,7 @@ func (n *Node) createUserFromWalletMeta(ctx context.Context, walletMeta *WalletM
 	)
 
 	walletAddressKeyPath := ".Value." + walletAddressKey
-	if _, err := n.db.UserAttributesUpsertUserAttribute(
+	if _, err := n.db.GetUserAttributesDB().UpsertUserAttribute(
 		n.ctx, userAttributeID,
 		modify.MergeWith(
 			newPayload,

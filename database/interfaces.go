@@ -25,7 +25,7 @@ type DB interface {
 	GetNodeAttributesDB() NodeAttributesDB
 	GetSpaceAttributesDB() SpaceAttributesDB
 	GetSpaceUserAttributesDB() SpaceUserAttributesDB
-	UserAttributesDB
+	GetUserAttributesDB() UserAttributesDB
 	UserUserAttributesDB
 	UserSpaceDB
 }
@@ -323,51 +323,51 @@ type SpaceUserAttributesDB interface {
 }
 
 type UserAttributesDB interface {
-	UserAttributesGetUserAttributes(ctx context.Context) ([]*entry.UserAttribute, error)
-	UserAttributesGetUserAttributesByUserID(ctx context.Context, userID uuid.UUID) ([]*entry.UserAttribute, error)
-	UserAttributesGetUserAttributeByID(
+	GetUserAttributes(ctx context.Context) ([]*entry.UserAttribute, error)
+	GetUserAttributesByUserID(ctx context.Context, userID uuid.UUID) ([]*entry.UserAttribute, error)
+	GetUserAttributeByID(
 		ctx context.Context, userAttributeID entry.UserAttributeID,
 	) (*entry.UserAttribute, error)
-	UserAttributesGetUserAttributePayloadByID(
+	GetUserAttributePayloadByID(
 		ctx context.Context, userAttributeID entry.UserAttributeID,
 	) (*entry.AttributePayload, error)
-	UserAttributesGetUserAttributeValueByID(
+	GetUserAttributeValueByID(
 		ctx context.Context, userAttributeID entry.UserAttributeID,
 	) (*entry.AttributeValue, error)
-	UserAttributesGetUserAttributeOptionsByID(
+	GetUserAttributeOptionsByID(
 		ctx context.Context, userAttributeID entry.UserAttributeID,
 	) (*entry.AttributeOptions, error)
 
-	UserAttributesGetUserAttributesCount(ctx context.Context) (int64, error)
+	GetUserAttributesCount(ctx context.Context) (int64, error)
 
-	UserAttributesUpsertUserAttribute(
+	UpsertUserAttribute(
 		ctx context.Context, userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
 	) (*entry.AttributePayload, error)
 
-	UserAttributesUpdateUserAttributeValue(
+	UpdateUserAttributeValue(
 		ctx context.Context, userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributeValue],
 	) (*entry.AttributeValue, error)
-	UserAttributesUpdateUserAttributeOptions(
+	UpdateUserAttributeOptions(
 		ctx context.Context, userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributeOptions],
 	) (*entry.AttributeOptions, error)
 
-	UserAttributesRemoveUserAttributeByID(
+	RemoveUserAttributeByID(
 		ctx context.Context, userAttributeID entry.UserAttributeID,
 	) error
-	UserAttributesRemoveUserAttributeByName(ctx context.Context, name string) error
-	UserAttributesRemoveUserAttributesByNames(ctx context.Context, names []string) error
-	UserAttributesRemoveUserAttributesByPluginID(ctx context.Context, pluginID uuid.UUID) error
-	UserAttributesRemoveUserAttributeByAttributeID(
+	RemoveUserAttributeByName(ctx context.Context, name string) error
+	RemoveUserAttributesByNames(ctx context.Context, names []string) error
+	RemoveUserAttributesByPluginID(ctx context.Context, pluginID uuid.UUID) error
+	RemoveUserAttributeByAttributeID(
 		ctx context.Context, attributeID entry.AttributeID,
 	) error
-	UserAttributesRemoveUserAttributeByUserID(ctx context.Context, userID uuid.UUID) error
-	UserAttributesRemoveUserAttributeByNameAndUserID(
+	RemoveUserAttributeByUserID(ctx context.Context, userID uuid.UUID) error
+	RemoveUserAttributeByNameAndUserID(
 		ctx context.Context, name string, userID uuid.UUID,
 	) error
-	UserAttributesRemoveUserAttributeByNamesAndUserID(
+	RemoveUserAttributeByNamesAndUserID(
 		ctx context.Context, names []string, userID uuid.UUID,
 	) error
-	UserAttributesRemoveUserAttributeByPluginIDAndUserID(
+	RemoveUserAttributeByPluginIDAndUserID(
 		ctx context.Context, pluginID uuid.UUID, userID uuid.UUID,
 	) error
 }

@@ -62,7 +62,7 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 	}
 }
 
-func (db *DB) UserAttributesGetUserAttributes(ctx context.Context) ([]*entry.UserAttribute, error) {
+func (db *DB) GetUserAttributes(ctx context.Context) ([]*entry.UserAttribute, error) {
 	var attributes []*entry.UserAttribute
 	if err := pgxscan.Select(ctx, db.conn, &attributes, getUserAttributesQuery); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
@@ -70,7 +70,7 @@ func (db *DB) UserAttributesGetUserAttributes(ctx context.Context) ([]*entry.Use
 	return attributes, nil
 }
 
-func (db *DB) UserAttributesGetUserAttributesByUserID(
+func (db *DB) GetUserAttributesByUserID(
 	ctx context.Context, userID uuid.UUID,
 ) ([]*entry.UserAttribute, error) {
 	var attributes []*entry.UserAttribute
@@ -80,7 +80,7 @@ func (db *DB) UserAttributesGetUserAttributesByUserID(
 	return attributes, nil
 }
 
-func (db *DB) UserAttributesGetUserAttributeByID(
+func (db *DB) GetUserAttributeByID(
 	ctx context.Context, userAttributeID entry.UserAttributeID,
 ) (*entry.UserAttribute, error) {
 	var attribute entry.UserAttribute
@@ -95,7 +95,7 @@ func (db *DB) UserAttributesGetUserAttributeByID(
 	return &attribute, nil
 }
 
-func (db *DB) UserAttributesGetUserAttributePayloadByID(
+func (db *DB) GetUserAttributePayloadByID(
 	ctx context.Context, userAttributeID entry.UserAttributeID,
 ) (*entry.AttributePayload, error) {
 	var payload entry.AttributePayload
@@ -107,7 +107,7 @@ func (db *DB) UserAttributesGetUserAttributePayloadByID(
 	return &payload, nil
 }
 
-func (db *DB) UserAttributesGetUserAttributeValueByID(
+func (db *DB) GetUserAttributeValueByID(
 	ctx context.Context, userAttributeID entry.UserAttributeID,
 ) (*entry.AttributeValue, error) {
 	var value entry.AttributeValue
@@ -123,7 +123,7 @@ func (db *DB) UserAttributesGetUserAttributeValueByID(
 	return &value, nil
 }
 
-func (db *DB) UserAttributesGetUserAttributeOptionsByID(
+func (db *DB) GetUserAttributeOptionsByID(
 	ctx context.Context, userAttributeID entry.UserAttributeID,
 ) (*entry.AttributeOptions, error) {
 	var options entry.AttributeOptions
@@ -140,7 +140,7 @@ func (db *DB) UserAttributesGetUserAttributeOptionsByID(
 	return &options, nil
 }
 
-func (db *DB) UserAttributesGetUserAttributesCount(ctx context.Context) (int64, error) {
+func (db *DB) GetUserAttributesCount(ctx context.Context) (int64, error) {
 	var count int64
 	if err := db.conn.QueryRow(ctx, getUserAttributesCountQuery).
 		Scan(&count); err != nil {
@@ -149,13 +149,13 @@ func (db *DB) UserAttributesGetUserAttributesCount(ctx context.Context) (int64, 
 	return count, nil
 }
 
-func (db *DB) UserAttributesUpsertUserAttribute(
+func (db *DB) UpsertUserAttribute(
 	ctx context.Context, userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
 ) (*entry.AttributePayload, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
-	payload, err := db.UserAttributesGetUserAttributePayloadByID(ctx, userAttributeID)
+	payload, err := db.GetUserAttributePayloadByID(ctx, userAttributeID)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
 			return nil, errors.WithMessage(err, "failed to get attribute payload by id")
@@ -184,7 +184,7 @@ func (db *DB) UserAttributesUpsertUserAttribute(
 	return payload, nil
 }
 
-func (db *DB) UserAttributesRemoveUserAttributeByName(ctx context.Context, name string) error {
+func (db *DB) RemoveUserAttributeByName(ctx context.Context, name string) error {
 	res, err := db.conn.Exec(ctx, removeUserAttributesByNameQuery, name)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
@@ -195,7 +195,7 @@ func (db *DB) UserAttributesRemoveUserAttributeByName(ctx context.Context, name 
 	return nil
 }
 
-func (db *DB) UserAttributesRemoveUserAttributesByNames(ctx context.Context, names []string) error {
+func (db *DB) RemoveUserAttributesByNames(ctx context.Context, names []string) error {
 	res, err := db.conn.Exec(ctx, removeUserAttributesByNamesQuery, names)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
@@ -206,7 +206,7 @@ func (db *DB) UserAttributesRemoveUserAttributesByNames(ctx context.Context, nam
 	return nil
 }
 
-func (db *DB) UserAttributesRemoveUserAttributesByPluginID(ctx context.Context, pluginID uuid.UUID) error {
+func (db *DB) RemoveUserAttributesByPluginID(ctx context.Context, pluginID uuid.UUID) error {
 	res, err := db.conn.Exec(ctx, removeUserAttributesByPluginIDQuery, pluginID)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
@@ -217,7 +217,7 @@ func (db *DB) UserAttributesRemoveUserAttributesByPluginID(ctx context.Context, 
 	return nil
 }
 
-func (db *DB) UserAttributesRemoveUserAttributeByAttributeID(
+func (db *DB) RemoveUserAttributeByAttributeID(
 	ctx context.Context, attributeID entry.AttributeID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeUserAttributesByPluginIDAndNameQuery, attributeID.PluginID, attributeID.Name)
@@ -230,7 +230,7 @@ func (db *DB) UserAttributesRemoveUserAttributeByAttributeID(
 	return nil
 }
 
-func (db *DB) UserAttributesRemoveUserAttributeByUserID(ctx context.Context, userID uuid.UUID) error {
+func (db *DB) RemoveUserAttributeByUserID(ctx context.Context, userID uuid.UUID) error {
 	res, err := db.conn.Exec(ctx, removeUserAttributesByUserIDQuery, userID)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
@@ -241,7 +241,7 @@ func (db *DB) UserAttributesRemoveUserAttributeByUserID(ctx context.Context, use
 	return nil
 }
 
-func (db *DB) UserAttributesRemoveUserAttributeByNameAndUserID(
+func (db *DB) RemoveUserAttributeByNameAndUserID(
 	ctx context.Context, name string, userID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeUserAttributeByNameAndUserIDQuery, name, userID)
@@ -254,7 +254,7 @@ func (db *DB) UserAttributesRemoveUserAttributeByNameAndUserID(
 	return nil
 }
 
-func (db *DB) UserAttributesRemoveUserAttributeByNamesAndUserID(
+func (db *DB) RemoveUserAttributeByNamesAndUserID(
 	ctx context.Context, names []string, userID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeUserAttributesByNamesAndUserIDQuery, names, userID)
@@ -267,7 +267,7 @@ func (db *DB) UserAttributesRemoveUserAttributeByNamesAndUserID(
 	return nil
 }
 
-func (db *DB) UserAttributesRemoveUserAttributeByPluginIDAndUserID(
+func (db *DB) RemoveUserAttributeByPluginIDAndUserID(
 	ctx context.Context, pluginID uuid.UUID, userID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeUserAttributesByPluginIDAndUserIDQuery, pluginID, userID)
@@ -280,7 +280,7 @@ func (db *DB) UserAttributesRemoveUserAttributeByPluginIDAndUserID(
 	return nil
 }
 
-func (db *DB) UserAttributesRemoveUserAttributeByID(
+func (db *DB) RemoveUserAttributeByID(
 	ctx context.Context, userAttributeID entry.UserAttributeID,
 ) error {
 	res, err := db.conn.Exec(
@@ -296,13 +296,13 @@ func (db *DB) UserAttributesRemoveUserAttributeByID(
 	return nil
 }
 
-func (db *DB) UserAttributesUpdateUserAttributeValue(
+func (db *DB) UpdateUserAttributeValue(
 	ctx context.Context, userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributeValue],
 ) (*entry.AttributeValue, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
-	value, err := db.UserAttributesGetUserAttributeValueByID(ctx, userAttributeID)
+	value, err := db.GetUserAttributeValueByID(ctx, userAttributeID)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to get value by id")
 	}
@@ -321,13 +321,13 @@ func (db *DB) UserAttributesUpdateUserAttributeValue(
 	return value, nil
 }
 
-func (db *DB) UserAttributesUpdateUserAttributeOptions(
+func (db *DB) UpdateUserAttributeOptions(
 	ctx context.Context, userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributeOptions],
 ) (*entry.AttributeOptions, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
-	options, err := db.UserAttributesGetUserAttributeOptionsByID(ctx, userAttributeID)
+	options, err := db.GetUserAttributeOptionsByID(ctx, userAttributeID)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to get options by id")
 	}

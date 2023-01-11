@@ -153,7 +153,7 @@ func (sua *spaceUserAttributes) Remove(spaceUserAttributeID entry.SpaceUserAttri
 }
 
 func (sua *spaceUserAttributes) Len() int {
-	count, err := sua.node.db.UserAttributesGetUserAttributesCount(sua.node.ctx)
+	count, err := sua.node.db.GetUserAttributesDB().GetUserAttributesCount(sua.node.ctx)
 	if err != nil {
 		sua.node.log.Error(
 			errors.WithMessage(err, "Space user attributes: Len: failed to get space user attributes count"),
