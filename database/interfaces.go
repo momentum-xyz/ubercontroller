@@ -24,7 +24,7 @@ type DB interface {
 	GetAttributeTypesDB() AttributeTypesDB
 	GetNodeAttributesDB() NodeAttributesDB
 	GetSpaceAttributesDB() SpaceAttributesDB
-	SpaceUserAttributesDB
+	GetSpaceUserAttributesDB() SpaceUserAttributesDB
 	UserAttributesDB
 	UserUserAttributesDB
 	UserSpaceDB
@@ -232,92 +232,92 @@ type SpaceAttributesDB interface {
 }
 
 type SpaceUserAttributesDB interface {
-	SpaceUserAttributesGetSpaceUserAttributes(ctx context.Context) ([]*entry.SpaceUserAttribute, error)
-	SpaceUserAttributesGetSpaceUserAttributeByID(
+	GetSpaceUserAttributes(ctx context.Context) ([]*entry.SpaceUserAttribute, error)
+	GetSpaceUserAttributeByID(
 		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
 	) (*entry.SpaceUserAttribute, error)
-	SpaceUserAttributesGetSpaceUserAttributePayloadByID(
+	GetSpaceUserAttributePayloadByID(
 		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
 	) (*entry.AttributePayload, error)
-	SpaceUserAttributesGetSpaceUserAttributeValueByID(
+	GetSpaceUserAttributeValueByID(
 		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
 	) (*entry.AttributeValue, error)
-	SpaceUserAttributesGetSpaceUserAttributeOptionsByID(
+	GetSpaceUserAttributeOptionsByID(
 		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
 	) (*entry.AttributeOptions, error)
-	SpaceUserAttributesGetSpaceUserAttributesBySpaceID(
+	GetSpaceUserAttributesBySpaceID(
 		ctx context.Context, spaceID uuid.UUID,
 	) ([]*entry.SpaceUserAttribute, error)
-	SpaceUserAttributesGetSpaceUserAttributesByUserID(
+	GetSpaceUserAttributesByUserID(
 		ctx context.Context, userID uuid.UUID,
 	) ([]*entry.SpaceUserAttribute, error)
-	SpaceUserAttributesGetSpaceUserAttributesBySpaceIDAndUserID(
+	GetSpaceUserAttributesBySpaceIDAndUserID(
 		ctx context.Context, spaceID uuid.UUID, userID uuid.UUID,
 	) ([]*entry.SpaceUserAttribute, error)
-	SpaceUserAttributesGetSpaceUserAttributesByPluginIDAndNameAndSpaceID(
+	GetSpaceUserAttributesByPluginIDAndNameAndSpaceID(
 		ctx context.Context, pluginID uuid.UUID, name string, spaceID uuid.UUID,
 	) ([]*entry.SpaceUserAttribute, error)
 
-	SpaceUserAttributesGetSpaceUserAttributesCount(ctx context.Context) (int64, error)
+	GetSpaceUserAttributesCount(ctx context.Context) (int64, error)
 
-	SpaceUserAttributesUpsertSpaceUserAttribute(
+	UpsertSpaceUserAttribute(
 		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
 		modifyFn modify.Fn[entry.AttributePayload],
 	) (*entry.AttributePayload, error)
 
-	SpaceUserAttributesUpdateSpaceUserAttributeOptions(
+	UpdateSpaceUserAttributeOptions(
 		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
 		modifyFn modify.Fn[entry.AttributeOptions],
 	) (*entry.AttributeOptions, error)
-	SpaceUserAttributesUpdateSpaceUserAttributeValue(
+	UpdateSpaceUserAttributeValue(
 		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributeValue],
 	) (*entry.AttributeValue, error)
 
-	SpaceUserAttributesRemoveSpaceUserAttributeByID(
+	RemoveSpaceUserAttributeByID(
 		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
 	) error
-	SpaceUserAttributesRemoveSpaceUserAttributeByName(ctx context.Context, name string) error
-	SpaceUserAttributesRemoveSpaceUserAttributesByNames(ctx context.Context, names []string) error
-	SpaceUserAttributesRemoveSpaceUserAttributesByPluginID(ctx context.Context, pluginID uuid.UUID) error
-	SpaceUserAttributesRemoveSpaceUserAttributeByAttributeID(
+	RemoveSpaceUserAttributeByName(ctx context.Context, name string) error
+	RemoveSpaceUserAttributesByNames(ctx context.Context, names []string) error
+	RemoveSpaceUserAttributesByPluginID(ctx context.Context, pluginID uuid.UUID) error
+	RemoveSpaceUserAttributeByAttributeID(
 		ctx context.Context, attributeID entry.AttributeID,
 	) error
-	SpaceUserAttributesRemoveSpaceUserAttributeBySpaceID(ctx context.Context, spaceID uuid.UUID) error
-	SpaceUserAttributesRemoveSpaceUserAttributeByNameAndSpaceID(
+	RemoveSpaceUserAttributeBySpaceID(ctx context.Context, spaceID uuid.UUID) error
+	RemoveSpaceUserAttributeByNameAndSpaceID(
 		ctx context.Context, name string, spaceID uuid.UUID,
 	) error
-	SpaceUserAttributesRemoveSpaceUserAttributeByNamesAndSpaceID(
+	RemoveSpaceUserAttributeByNamesAndSpaceID(
 		ctx context.Context, names []string, spaceID uuid.UUID,
 	) error
-	SpaceUserAttributesRemoveSpaceUserAttributeByUserID(ctx context.Context, userID uuid.UUID) error
-	SpaceUserAttributesRemoveSpaceUserAttributeByNameAndUserID(
+	RemoveSpaceUserAttributeByUserID(ctx context.Context, userID uuid.UUID) error
+	RemoveSpaceUserAttributeByNameAndUserID(
 		ctx context.Context, name string, userID uuid.UUID,
 	) error
-	SpaceUserAttributesRemoveSpaceUserAttributeByNamesAndUserID(
+	RemoveSpaceUserAttributeByNamesAndUserID(
 		ctx context.Context, names []string, userID uuid.UUID,
 	) error
-	SpaceUserAttributesRemoveSpaceUserAttributeBySpaceIDAndUserID(
+	RemoveSpaceUserAttributeBySpaceIDAndUserID(
 		ctx context.Context, spaceID uuid.UUID, userID uuid.UUID,
 	) error
-	SpaceUserAttributesRemoveSpaceUserAttributeByNameAndSpaceIDAndUserID(
+	RemoveSpaceUserAttributeByNameAndSpaceIDAndUserID(
 		ctx context.Context, name string, spaceID uuid.UUID, userID uuid.UUID,
 	) error
-	SpaceUserAttributesRemoveSpaceUserAttributeByNamesAndSpaceIDAndUserID(
+	RemoveSpaceUserAttributeByNamesAndSpaceIDAndUserID(
 		ctx context.Context, names []string, spaceID uuid.UUID, userID uuid.UUID,
 	) error
-	SpaceUserAttributesRemoveSpaceUserAttributeByPluginIDAndSpaceID(
+	RemoveSpaceUserAttributeByPluginIDAndSpaceID(
 		ctx context.Context, pluginID uuid.UUID, spaceID uuid.UUID,
 	) error
-	SpaceUserAttributesRemoveSpaceUserAttributeBySpaceAttributeID(
+	RemoveSpaceUserAttributeBySpaceAttributeID(
 		ctx context.Context, spaceAttributeID entry.SpaceAttributeID,
 	) error
-	SpaceUserAttributesRemoveSpaceUserAttributeByPluginIDAndUserID(
+	RemoveSpaceUserAttributeByPluginIDAndUserID(
 		ctx context.Context, pluginID uuid.UUID, userID uuid.UUID,
 	) error
-	SpaceUserAttributesRemoveSpaceUserAttributeByUserAttributeID(
+	RemoveSpaceUserAttributeByUserAttributeID(
 		ctx context.Context, userAttributeID entry.UserAttributeID,
 	) error
-	SpaceUserAttributesRemoveSpaceUserAttributeByPluginIDAndSpaceIDAndUserID(
+	RemoveSpaceUserAttributeByPluginIDAndSpaceIDAndUserID(
 		ctx context.Context, pluginID uuid.UUID, spaceID uuid.UUID, userID uuid.UUID,
 	) error
 }
