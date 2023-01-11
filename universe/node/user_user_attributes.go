@@ -21,7 +21,7 @@ func newUserUserAttributes(node *Node) *userUserAttributes {
 }
 
 func (uua *userUserAttributes) GetPayload(userUserAttributeID entry.UserUserAttributeID) (*entry.AttributePayload, bool) {
-	payload, err := uua.node.db.UserUserAttributesGetUserUserAttributePayloadByID(uua.node.ctx, userUserAttributeID)
+	payload, err := uua.node.db.GetUserUserAttributesDB().GetUserUserAttributePayloadByID(uua.node.ctx, userUserAttributeID)
 	if err != nil {
 		return nil, false
 	}
@@ -29,7 +29,7 @@ func (uua *userUserAttributes) GetPayload(userUserAttributeID entry.UserUserAttr
 }
 
 func (uua *userUserAttributes) GetValue(userUserAttributeID entry.UserUserAttributeID) (*entry.AttributeValue, bool) {
-	value, err := uua.node.db.UserUserAttributesGetUserUserAttributeValueByID(uua.node.ctx, userUserAttributeID)
+	value, err := uua.node.db.GetUserUserAttributesDB().GetUserUserAttributeValueByID(uua.node.ctx, userUserAttributeID)
 	if err != nil {
 		return nil, false
 	}
@@ -37,7 +37,7 @@ func (uua *userUserAttributes) GetValue(userUserAttributeID entry.UserUserAttrib
 }
 
 func (uua *userUserAttributes) GetOptions(userUserAttributeID entry.UserUserAttributeID) (*entry.AttributeOptions, bool) {
-	options, err := uua.node.db.UserUserAttributesGetUserUserAttributeOptionsByID(uua.node.ctx, userUserAttributeID)
+	options, err := uua.node.db.GetUserUserAttributesDB().GetUserUserAttributeOptionsByID(uua.node.ctx, userUserAttributeID)
 	if err != nil {
 		return nil, false
 	}
@@ -74,7 +74,7 @@ func (uua *userUserAttributes) GetEffectiveOptions(
 func (uua *userUserAttributes) Upsert(
 	userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
 ) (*entry.AttributePayload, error) {
-	payload, err := uua.node.db.UserUserAttributesUpsertUserUserAttribute(uua.node.ctx, userUserAttributeID, modifyFn)
+	payload, err := uua.node.db.GetUserUserAttributesDB().UpsertUserUserAttribute(uua.node.ctx, userUserAttributeID, modifyFn)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to upsert user user attribute")
 	}
@@ -95,7 +95,7 @@ func (uua *userUserAttributes) Upsert(
 func (uua *userUserAttributes) UpdateValue(
 	userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool,
 ) (*entry.AttributeValue, error) {
-	value, err := uua.node.db.UserUserAttributesUpdateUserUserAttributeValue(uua.node.ctx, userUserAttributeID, modifyFn)
+	value, err := uua.node.db.GetUserUserAttributesDB().UpdateUserUserAttributeValue(uua.node.ctx, userUserAttributeID, modifyFn)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to update user user attribute value")
 	}
@@ -110,7 +110,7 @@ func (uua *userUserAttributes) UpdateValue(
 func (uua *userUserAttributes) UpdateOptions(
 	userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool,
 ) (*entry.AttributeOptions, error) {
-	options, err := uua.node.db.UserUserAttributesUpdateUserUserAttributeOptions(uua.node.ctx, userUserAttributeID, modifyFn)
+	options, err := uua.node.db.GetUserUserAttributesDB().UpdateUserUserAttributeOptions(uua.node.ctx, userUserAttributeID, modifyFn)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to update user user attribute options")
 	}
@@ -138,7 +138,7 @@ func (uua *userUserAttributes) Remove(userUserAttributeID entry.UserUserAttribut
 		return false, nil
 	}
 
-	if err := uua.node.db.UserUserAttributesRemoveUserUserAttributeByID(uua.node.ctx, userUserAttributeID); err != nil {
+	if err := uua.node.db.GetUserUserAttributesDB().RemoveUserUserAttributeByID(uua.node.ctx, userUserAttributeID); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return false, nil
 		}
@@ -153,7 +153,7 @@ func (uua *userUserAttributes) Remove(userUserAttributeID entry.UserUserAttribut
 }
 
 func (uua *userUserAttributes) Len() int {
-	count, err := uua.node.db.UserUserAttributesGetUserUserAttributesCount(uua.node.ctx)
+	count, err := uua.node.db.GetUserUserAttributesDB().GetUserUserAttributesCount(uua.node.ctx)
 	if err != nil {
 		uua.node.log.Error(errors.WithMessage(err, "User user attributes: Len: failed to get user user attributes count"))
 		return 0
