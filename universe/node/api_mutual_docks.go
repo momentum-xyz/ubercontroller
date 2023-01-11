@@ -110,7 +110,7 @@ func (n *Node) apiUsersCreateMutualDocks(c *gin.Context) {
 		},
 	}
 
-	if err := n.db.UserSpacesUpsertUserSpaces(n.ctx, permissions); err != nil {
+	if err := n.db.GetUserSpaceDB().UpsertUserSpaces(n.ctx, permissions); err != nil {
 		err := errors.WithMessage(err, "Node: apiUsersCreateMutualDocks: failed to upsert user spaces")
 		api.AbortRequest(c, http.StatusInternalServerError, "upsert_user_spaces_failed", err, n.log)
 		return
@@ -195,7 +195,7 @@ func (n *Node) apiUsersRemoveMutualDocks(c *gin.Context) {
 		},
 	}
 
-	if err := n.db.UserSpaceRemoveUserSpaces(n.ctx, permissions); err != nil {
+	if err := n.db.GetUserSpaceDB().RemoveUserSpaces(n.ctx, permissions); err != nil {
 		err := errors.WithMessage(err, "Node: apiUsersRemoveMutualDocks: failed to remove user spaces")
 		api.AbortRequest(c, http.StatusInternalServerError, "user_spaces_remove_failed", err, n.log)
 		return

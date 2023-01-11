@@ -27,7 +27,7 @@ type DB interface {
 	GetSpaceUserAttributesDB() SpaceUserAttributesDB
 	GetUserAttributesDB() UserAttributesDB
 	GetUserUserAttributesDB() UserUserAttributesDB
-	UserSpaceDB
+	GetUserSpaceDB() UserSpaceDB
 }
 
 type CommonDB interface {
@@ -461,22 +461,22 @@ type UserUserAttributesDB interface {
 }
 
 type UserSpaceDB interface {
-	UserSpaceGetUserSpaces(ctx context.Context) ([]*entry.UserSpace, error)
-	UserSpaceGetUserSpaceByID(ctx context.Context, userSpaceID entry.UserSpaceID) (*entry.UserSpace, error)
-	UserSpaceGetUserSpacesByUserID(ctx context.Context, userID uuid.UUID) ([]*entry.UserSpace, error)
-	UserSpaceGetUserSpacesBySpaceID(ctx context.Context, spaceID uuid.UUID) ([]*entry.UserSpace, error)
-	UserSpaceGetValueByID(ctx context.Context, userSpaceID entry.UserSpaceID) (*entry.UserSpaceValue, error)
+	GetUserSpaces(ctx context.Context) ([]*entry.UserSpace, error)
+	GetUserSpaceByID(ctx context.Context, userSpaceID entry.UserSpaceID) (*entry.UserSpace, error)
+	GetUserSpacesByUserID(ctx context.Context, userID uuid.UUID) ([]*entry.UserSpace, error)
+	GetUserSpacesBySpaceID(ctx context.Context, spaceID uuid.UUID) ([]*entry.UserSpace, error)
+	GetValueByID(ctx context.Context, userSpaceID entry.UserSpaceID) (*entry.UserSpaceValue, error)
 
-	UserSpaceGetSpaceIndirectAdmins(ctx context.Context, spaceID uuid.UUID) ([]*uuid.UUID, error)
-	UserSpaceCheckIsUserIndirectSpaceAdmin(ctx context.Context, userID, spaceID uuid.UUID) (bool, error)
+	GetSpaceIndirectAdmins(ctx context.Context, spaceID uuid.UUID) ([]*uuid.UUID, error)
+	CheckIsUserIndirectSpaceAdmin(ctx context.Context, userID, spaceID uuid.UUID) (bool, error)
 
-	UserSpacesUpsertUserSpace(ctx context.Context, userSpace *entry.UserSpace) error
-	UserSpacesUpsertUserSpaces(ctx context.Context, userSpaces []*entry.UserSpace) error
+	UpsertUserSpace(ctx context.Context, userSpace *entry.UserSpace) error
+	UpsertUserSpaces(ctx context.Context, userSpaces []*entry.UserSpace) error
 
-	UserSpaceUpdateValueByID(
+	UpdateValueByID(
 		ctx context.Context, userSpaceID entry.UserSpaceID, modifyFn modify.Fn[entry.UserSpaceValue],
 	) (*entry.UserSpaceValue, error)
 
-	UserSpaceRemoveUserSpace(ctx context.Context, userSpace *entry.UserSpace) error
-	UserSpaceRemoveUserSpaces(ctx context.Context, userSpaces []*entry.UserSpace) error
+	RemoveUserSpace(ctx context.Context, userSpace *entry.UserSpace) error
+	RemoveUserSpaces(ctx context.Context, userSpaces []*entry.UserSpace) error
 }
