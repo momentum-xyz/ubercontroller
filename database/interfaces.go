@@ -11,7 +11,7 @@ import (
 )
 
 type DB interface {
-	CommonDB
+	GetCommonDB() CommonDB
 	GetNodesDB() NodesDB
 	GetWorldsDB() WorldsDB
 	GetSpacesDB() SpacesDB
