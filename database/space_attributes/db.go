@@ -56,7 +56,7 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 	}
 }
 
-func (db *DB) SpaceAttributesGetSpaceAttributes(ctx context.Context) ([]*entry.SpaceAttribute, error) {
+func (db *DB) GetSpaceAttributes(ctx context.Context) ([]*entry.SpaceAttribute, error) {
 	var spaceAttribute []*entry.SpaceAttribute
 	if err := pgxscan.Select(ctx, db.conn, &spaceAttribute, getSpaceAttributesQuery); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
@@ -64,7 +64,7 @@ func (db *DB) SpaceAttributesGetSpaceAttributes(ctx context.Context) ([]*entry.S
 	return spaceAttribute, nil
 }
 
-func (db *DB) SpaceAttributesGetSpaceAttributesByPluginIDAndName(ctx context.Context, pluginID uuid.UUID, attributeName string) ([]*entry.SpaceAttribute, error) {
+func (db *DB) GetSpaceAttributesByPluginIDAndName(ctx context.Context, pluginID uuid.UUID, attributeName string) ([]*entry.SpaceAttribute, error) {
 	var spaceAttribute []*entry.SpaceAttribute
 	err := pgxscan.Select(ctx, db.conn, &spaceAttribute, getSpaceAttributesByPluginIDAndAttributeNameQuery, pluginID, attributeName)
 	if err != nil {
@@ -73,7 +73,7 @@ func (db *DB) SpaceAttributesGetSpaceAttributesByPluginIDAndName(ctx context.Con
 	return spaceAttribute, nil
 }
 
-func (db *DB) SpaceAttributesGetSpaceAttributeByID(
+func (db *DB) GetSpaceAttributeByID(
 	ctx context.Context, spaceAttributeID entry.SpaceAttributeID,
 ) (*entry.SpaceAttribute, error) {
 	var spaceAttribute entry.SpaceAttribute
@@ -86,7 +86,7 @@ func (db *DB) SpaceAttributesGetSpaceAttributeByID(
 	return &spaceAttribute, nil
 }
 
-func (db *DB) SpaceAttributesGetSpaceAttributesBySpaceID(
+func (db *DB) GetSpaceAttributesBySpaceID(
 	ctx context.Context, spaceID uuid.UUID,
 ) ([]*entry.SpaceAttribute, error) {
 	var spaceAttributes []*entry.SpaceAttribute
@@ -96,7 +96,7 @@ func (db *DB) SpaceAttributesGetSpaceAttributesBySpaceID(
 	return spaceAttributes, nil
 }
 
-func (db *DB) SpaceAttributesUpsertSpaceAttribute(ctx context.Context, spaceAttribute *entry.SpaceAttribute) error {
+func (db *DB) UpsertSpaceAttribute(ctx context.Context, spaceAttribute *entry.SpaceAttribute) error {
 	if _, err := db.conn.Exec(
 		ctx, upsertSpaceAttributeQuery, spaceAttribute.PluginID, spaceAttribute.Name, spaceAttribute.SpaceID,
 		spaceAttribute.Value, spaceAttribute.Options,
@@ -106,7 +106,7 @@ func (db *DB) SpaceAttributesUpsertSpaceAttribute(ctx context.Context, spaceAttr
 	return nil
 }
 
-func (db *DB) SpaceAttributesUpsertSpaceAttributes(ctx context.Context, spaceAttributes []*entry.SpaceAttribute) error {
+func (db *DB) UpsertSpaceAttributes(ctx context.Context, spaceAttributes []*entry.SpaceAttribute) error {
 	batch := &pgx.Batch{}
 	for _, spaceAttribute := range spaceAttributes {
 		batch.Queue(
@@ -130,28 +130,28 @@ func (db *DB) SpaceAttributesUpsertSpaceAttributes(ctx context.Context, spaceAtt
 	return errs.ErrorOrNil()
 }
 
-func (db *DB) SpaceAttributesRemoveSpaceAttributeByName(ctx context.Context, name string) error {
+func (db *DB) RemoveSpaceAttributeByName(ctx context.Context, name string) error {
 	if _, err := db.conn.Exec(ctx, removeSpaceAttributeByNameQuery, name); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) SpaceAttributesRemoveSpaceAttributesByNames(ctx context.Context, names []string) error {
+func (db *DB) RemoveSpaceAttributesByNames(ctx context.Context, names []string) error {
 	if _, err := db.conn.Exec(ctx, removeSpaceAttributesByNamesQuery, names); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) SpaceAttributesRemoveSpaceAttributesByPluginID(ctx context.Context, pluginID uuid.UUID) error {
+func (db *DB) RemoveSpaceAttributesByPluginID(ctx context.Context, pluginID uuid.UUID) error {
 	if _, err := db.conn.Exec(ctx, removeSpaceAttributesByPluginIDQuery, pluginID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) SpaceAttributesRemoveSpaceAttributeByAttributeID(
+func (db *DB) RemoveSpaceAttributeByAttributeID(
 	ctx context.Context, attributeID entry.AttributeID,
 ) error {
 	if _, err := db.conn.Exec(
@@ -162,7 +162,7 @@ func (db *DB) SpaceAttributesRemoveSpaceAttributeByAttributeID(
 	return nil
 }
 
-func (db *DB) SpaceAttributesRemoveSpaceAttributeBySpaceID(
+func (db *DB) RemoveSpaceAttributeBySpaceID(
 	ctx context.Context, spaceID uuid.UUID,
 ) error {
 	if _, err := db.conn.Exec(
@@ -173,7 +173,7 @@ func (db *DB) SpaceAttributesRemoveSpaceAttributeBySpaceID(
 	return nil
 }
 
-func (db *DB) SpaceAttributesRemoveSpaceAttributeByNameAndSpaceID(
+func (db *DB) RemoveSpaceAttributeByNameAndSpaceID(
 	ctx context.Context, name string, spaceID uuid.UUID,
 ) error {
 	if _, err := db.conn.Exec(
@@ -184,7 +184,7 @@ func (db *DB) SpaceAttributesRemoveSpaceAttributeByNameAndSpaceID(
 	return nil
 }
 
-func (db *DB) SpaceAttributesRemoveSpaceAttributeByNamesAndSpaceID(
+func (db *DB) RemoveSpaceAttributeByNamesAndSpaceID(
 	ctx context.Context, names []string, spaceID uuid.UUID,
 ) error {
 	if _, err := db.conn.Exec(
@@ -195,7 +195,7 @@ func (db *DB) SpaceAttributesRemoveSpaceAttributeByNamesAndSpaceID(
 	return nil
 }
 
-func (db *DB) SpaceAttributesRemoveSpaceAttributeByPluginIDAndSpaceID(
+func (db *DB) RemoveSpaceAttributeByPluginIDAndSpaceID(
 	ctx context.Context, pluginID uuid.UUID, spaceID uuid.UUID,
 ) error {
 	if _, err := db.conn.Exec(
@@ -206,7 +206,7 @@ func (db *DB) SpaceAttributesRemoveSpaceAttributeByPluginIDAndSpaceID(
 	return nil
 }
 
-func (db *DB) SpaceAttributesRemoveSpaceAttributeByID(
+func (db *DB) RemoveSpaceAttributeByID(
 	ctx context.Context, spaceAttributeID entry.SpaceAttributeID,
 ) error {
 	if _, err := db.conn.Exec(
@@ -218,7 +218,7 @@ func (db *DB) SpaceAttributesRemoveSpaceAttributeByID(
 	return nil
 }
 
-func (db *DB) SpaceAttributesUpdateSpaceAttributeValue(
+func (db *DB) UpdateSpaceAttributeValue(
 	ctx context.Context, spaceAttributeID entry.SpaceAttributeID, value *entry.AttributeValue,
 ) error {
 	if _, err := db.conn.Exec(
@@ -230,7 +230,7 @@ func (db *DB) SpaceAttributesUpdateSpaceAttributeValue(
 	return nil
 }
 
-func (db *DB) SpaceAttributesUpdateSpaceAttributeOptions(
+func (db *DB) UpdateSpaceAttributeOptions(
 	ctx context.Context, spaceAttributeID entry.SpaceAttributeID, options *entry.AttributeOptions,
 ) error {
 	if _, err := db.conn.Exec(

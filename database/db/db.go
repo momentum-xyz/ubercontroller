@@ -73,6 +73,10 @@ func (DB *DB) GetNodeAttributesDB() database.NodeAttributesDB {
 	return DB.NodeAttributesDB
 }
 
+func (DB *DB) GetSpaceAttributesDB() database.SpaceAttributesDB {
+	return DB.SpaceAttributesDB
+}
+
 func NewDB(
 	conn *pgxpool.Pool,
 	common database.CommonDB,
