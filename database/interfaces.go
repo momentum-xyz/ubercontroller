@@ -22,7 +22,7 @@ type DB interface {
 	GetSpaceTypesDB() SpaceTypesDB
 	GetUserTypesDB() UserTypesDB
 	GetAttributeTypesDB() AttributeTypesDB
-	NodeAttributesDB
+	GetNodeAttributesDB() NodeAttributesDB
 	SpaceAttributesDB
 	SpaceUserAttributesDB
 	UserAttributesDB
@@ -171,31 +171,31 @@ type AttributeTypesDB interface {
 }
 
 type NodeAttributesDB interface {
-	NodeAttributesGetNodeAttributes(ctx context.Context) ([]*entry.NodeAttribute, error)
-	NodeAttributesGetNodeAttributeByAttributeID(
+	GetNodeAttributes(ctx context.Context) ([]*entry.NodeAttribute, error)
+	GetNodeAttributeByAttributeID(
 		ctx context.Context, attributeID entry.AttributeID,
 	) (*entry.NodeAttribute, error)
-	NodeAttributesGetNodeAttributeValueByAttributeID(
+	GetNodeAttributeValueByAttributeID(
 		ctx context.Context, attributeID entry.AttributeID,
 	) (*entry.AttributeValue, error)
-	NodeAttributesGetNodeAttributeOptionsByAttributeID(
+	GetNodeAttributeOptionsByAttributeID(
 		ctx context.Context, attributeID entry.AttributeID,
 	) (*entry.AttributeOptions, error)
 
-	NodeAttributesUpsertNodeAttribute(ctx context.Context, nodeAttribute *entry.NodeAttribute) error
-	NodeAttributesUpsertNodeAttributes(ctx context.Context, nodeAttributes []*entry.NodeAttribute) error
+	UpsertNodeAttribute(ctx context.Context, nodeAttribute *entry.NodeAttribute) error
+	UpsertNodeAttributes(ctx context.Context, nodeAttributes []*entry.NodeAttribute) error
 
-	NodeAttributesUpdateNodeAttributeValue(
+	UpdateNodeAttributeValue(
 		ctx context.Context, attributeID entry.AttributeID, value *entry.AttributeValue,
 	) error
-	NodeAttributesUpdateNodeAttributeOptions(
+	UpdateNodeAttributeOptions(
 		ctx context.Context, attributeID entry.AttributeID, options *entry.AttributeOptions,
 	) error
 
-	NodeAttributesRemoveNodeAttributeByName(ctx context.Context, name string) error
-	NodeAttributesRemoveNodeAttributesByNames(ctx context.Context, names []string) error
-	NodeAttributesRemoveNodeAttributeByAttributeID(ctx context.Context, attributeID entry.AttributeID) error
-	NodeAttributesRemoveNodeAttributesByPluginID(ctx context.Context, pluginID uuid.UUID) error
+	RemoveNodeAttributeByName(ctx context.Context, name string) error
+	RemoveNodeAttributesByNames(ctx context.Context, names []string) error
+	RemoveNodeAttributeByAttributeID(ctx context.Context, attributeID entry.AttributeID) error
+	RemoveNodeAttributesByPluginID(ctx context.Context, pluginID uuid.UUID) error
 }
 
 type SpaceAttributesDB interface {
