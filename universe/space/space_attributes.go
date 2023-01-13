@@ -93,7 +93,7 @@ func (sa *spaceAttributes) Upsert(
 	}
 
 	if updateDB {
-		if err := sa.space.db.SpaceAttributesUpsertSpaceAttribute(
+		if err := sa.space.db.GetSpaceAttributesDB().UpsertSpaceAttribute(
 			sa.space.ctx, entry.NewSpaceAttribute(entry.NewSpaceAttributeID(attributeID, sa.space.GetID()), payload),
 		); err != nil {
 			return nil, errors.WithMessagef(err, "failed to upsert space attribute")
@@ -133,7 +133,7 @@ func (sa *spaceAttributes) UpdateValue(
 	}
 
 	if updateDB {
-		if err := sa.space.db.SpaceAttributesUpdateSpaceAttributeValue(
+		if err := sa.space.db.GetSpaceAttributesDB().UpdateSpaceAttributeValue(
 			sa.space.ctx, entry.NewSpaceAttributeID(attributeID, sa.space.GetID()), value,
 		); err != nil {
 			return nil, errors.WithMessagef(err, "failed to update space attribute value")
@@ -170,7 +170,7 @@ func (sa *spaceAttributes) UpdateOptions(
 	}
 
 	if updateDB {
-		if err := sa.space.db.SpaceAttributesUpdateSpaceAttributeOptions(
+		if err := sa.space.db.GetSpaceAttributesDB().UpdateSpaceAttributeOptions(
 			sa.space.ctx, entry.NewSpaceAttributeID(attributeID, sa.space.GetID()), options,
 		); err != nil {
 			return nil, errors.WithMessagef(err, "failed to update space attribute options")
@@ -205,7 +205,7 @@ func (sa *spaceAttributes) Remove(attributeID entry.AttributeID, updateDB bool) 
 	}
 
 	if updateDB {
-		if err := sa.space.db.SpaceAttributesRemoveSpaceAttributeByID(
+		if err := sa.space.db.GetSpaceAttributesDB().RemoveSpaceAttributeByID(
 			sa.space.ctx, entry.NewSpaceAttributeID(attributeID, sa.space.GetID()),
 		); err != nil {
 			return false, errors.WithMessagef(err, "failed to remove space attribute")
@@ -293,7 +293,7 @@ func (s *Space) calendarOnSpaceAttributeChanged(
 }
 
 func (s *Space) loadSpaceAttributes() error {
-	entries, err := s.db.SpaceAttributesGetSpaceAttributesBySpaceID(s.ctx, s.GetID())
+	entries, err := s.db.GetSpaceAttributesDB().GetSpaceAttributesBySpaceID(s.ctx, s.GetID())
 	if err != nil {
 		return errors.WithMessage(err, "failed to get space attributes")
 	}

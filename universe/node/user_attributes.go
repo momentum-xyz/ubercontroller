@@ -21,7 +21,7 @@ func newUserAttributes(node *Node) *userAttributes {
 }
 
 func (ua *userAttributes) GetPayload(userAttributeID entry.UserAttributeID) (*entry.AttributePayload, bool) {
-	payload, err := ua.node.db.UserAttributesGetUserAttributePayloadByID(ua.node.ctx, userAttributeID)
+	payload, err := ua.node.db.GetUserAttributesDB().GetUserAttributePayloadByID(ua.node.ctx, userAttributeID)
 	if err != nil {
 		return nil, false
 	}
@@ -29,7 +29,7 @@ func (ua *userAttributes) GetPayload(userAttributeID entry.UserAttributeID) (*en
 }
 
 func (ua *userAttributes) GetValue(userAttributeID entry.UserAttributeID) (*entry.AttributeValue, bool) {
-	value, err := ua.node.db.UserAttributesGetUserAttributeValueByID(ua.node.ctx, userAttributeID)
+	value, err := ua.node.db.GetUserAttributesDB().GetUserAttributeValueByID(ua.node.ctx, userAttributeID)
 	if err != nil {
 		return nil, false
 	}
@@ -37,7 +37,7 @@ func (ua *userAttributes) GetValue(userAttributeID entry.UserAttributeID) (*entr
 }
 
 func (ua *userAttributes) GetOptions(userAttributeID entry.UserAttributeID) (*entry.AttributeOptions, bool) {
-	options, err := ua.node.db.UserAttributesGetUserAttributeOptionsByID(ua.node.ctx, userAttributeID)
+	options, err := ua.node.db.GetUserAttributesDB().GetUserAttributeOptionsByID(ua.node.ctx, userAttributeID)
 	if err != nil {
 		return nil, false
 	}
@@ -72,7 +72,7 @@ func (ua *userAttributes) GetEffectiveOptions(userAttributeID entry.UserAttribut
 func (ua *userAttributes) Upsert(
 	userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
 ) (*entry.AttributePayload, error) {
-	payload, err := ua.node.db.UserAttributesUpsertUserAttribute(ua.node.ctx, userAttributeID, modifyFn)
+	payload, err := ua.node.db.GetUserAttributesDB().UpsertUserAttribute(ua.node.ctx, userAttributeID, modifyFn)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to upsert user attribute")
 	}
@@ -93,7 +93,7 @@ func (ua *userAttributes) Upsert(
 func (ua *userAttributes) UpdateValue(
 	userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool,
 ) (*entry.AttributeValue, error) {
-	value, err := ua.node.db.UserAttributesUpdateUserAttributeValue(ua.node.ctx, userAttributeID, modifyFn)
+	value, err := ua.node.db.GetUserAttributesDB().UpdateUserAttributeValue(ua.node.ctx, userAttributeID, modifyFn)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to update user attribute value")
 	}
@@ -108,7 +108,7 @@ func (ua *userAttributes) UpdateValue(
 func (ua *userAttributes) UpdateOptions(
 	userAttributeID entry.UserAttributeID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool,
 ) (*entry.AttributeOptions, error) {
-	options, err := ua.node.db.UserAttributesUpdateUserAttributeOptions(ua.node.ctx, userAttributeID, modifyFn)
+	options, err := ua.node.db.GetUserAttributesDB().UpdateUserAttributeOptions(ua.node.ctx, userAttributeID, modifyFn)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to update user attribute options")
 	}
@@ -135,7 +135,7 @@ func (ua *userAttributes) Remove(userAttributeID entry.UserAttributeID, updateDB
 		return false, nil
 	}
 
-	if err := ua.node.db.UserAttributesRemoveUserAttributeByID(ua.node.ctx, userAttributeID); err != nil {
+	if err := ua.node.db.GetUserAttributesDB().RemoveUserAttributeByID(ua.node.ctx, userAttributeID); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return false, nil
 		}
@@ -150,7 +150,7 @@ func (ua *userAttributes) Remove(userAttributeID entry.UserAttributeID, updateDB
 }
 
 func (ua *userAttributes) Len() int {
-	count, err := ua.node.db.UserAttributesGetUserAttributesCount(ua.node.ctx)
+	count, err := ua.node.db.GetUserAttributesDB().GetUserAttributesCount(ua.node.ctx)
 	if err != nil {
 		ua.node.log.Error(errors.WithMessage(err, "User attributes: Len: failed to get user attributes count"))
 		return 0

@@ -50,7 +50,7 @@ func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
 		userIDs = append(userIDs, userID)
 	}
 
-	userEntries, err := w.db.UsersGetUsersByIDs(c, userIDs)
+	userEntries, err := w.db.GetUsersDB().GetUsersByIDs(c, userIDs)
 	if err != nil {
 		err := errors.WithMessage(err, "Worlds: apiGetOnlineUsers: failed to get users")
 		api.AbortRequest(c, http.StatusInternalServerError, "get_users_failed", err, w.log)
@@ -327,7 +327,7 @@ func (w *Worlds) apiWorldsTeleportUser(c *gin.Context) {
 		return
 	}
 
-	userEntry, err := w.db.UsersGetUserByID(c, userID)
+	userEntry, err := w.db.GetUsersDB().GetUserByID(c, userID)
 	if err != nil {
 		err = errors.WithMessage(err, "Worlds: apiWorldsTeleportUser: failed to get user by id")
 		api.AbortRequest(c, http.StatusNotFound, "user_not_found", err, w.log)

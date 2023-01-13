@@ -146,7 +146,7 @@ func (u *User) SetUserType(userType universe.UserType, updateDB bool) error {
 	defer u.mu.Unlock()
 
 	if updateDB {
-		if err := u.db.UsersUpdateUserUserTypeID(u.ctx, u.GetID(), userType.GetID()); err != nil {
+		if err := u.db.GetUsersDB().UpdateUserUserTypeID(u.ctx, u.GetID(), userType.GetID()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -178,7 +178,7 @@ func (u *User) Update() error {
 func (u *User) Load() error {
 	u.log.Infof("Loading user: %s", u.GetID())
 
-	entry, err := u.db.UsersGetUserByID(u.ctx, u.GetID())
+	entry, err := u.db.GetUsersDB().GetUserByID(u.ctx, u.GetID())
 	if err != nil {
 		return errors.WithMessage(err, "failed to get user by id")
 	}

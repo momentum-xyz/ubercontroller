@@ -1,12 +1,14 @@
 package node
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
+
 	"github.com/momentum-xyz/ubercontroller/universe/common/helper"
 	"github.com/momentum-xyz/ubercontroller/utils"
-	"github.com/pkg/errors"
-	"net/http"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -38,14 +40,14 @@ func (n *Node) apiUsersCreateMutualDocks(c *gin.Context) {
 		return
 	}
 
-	userA, err := n.db.UsersGetUserByWallet(c, inBody.WalletA)
+	userA, err := n.db.GetUsersDB().GetUserByWallet(c, inBody.WalletA)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiUsersCreateMutualDocks: failed to get user A by wallet")
 		api.AbortRequest(c, http.StatusNotFound, "user_a_not_found", err, n.log)
 		return
 	}
 
-	userB, err := n.db.UsersGetUserByWallet(c, inBody.WalletB)
+	userB, err := n.db.GetUsersDB().GetUserByWallet(c, inBody.WalletB)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiUsersCreateMutualDocks: failed to get user B by wallet")
 		api.AbortRequest(c, http.StatusNotFound, "user_b_not_found", err, n.log)
@@ -108,7 +110,7 @@ func (n *Node) apiUsersCreateMutualDocks(c *gin.Context) {
 		},
 	}
 
-	if err := n.db.UserSpacesUpsertUserSpaces(n.ctx, permissions); err != nil {
+	if err := n.db.GetUserSpaceDB().UpsertUserSpaces(n.ctx, permissions); err != nil {
 		err := errors.WithMessage(err, "Node: apiUsersCreateMutualDocks: failed to upsert user spaces")
 		api.AbortRequest(c, http.StatusInternalServerError, "upsert_user_spaces_failed", err, n.log)
 		return
@@ -142,14 +144,14 @@ func (n *Node) apiUsersRemoveMutualDocks(c *gin.Context) {
 		return
 	}
 
-	userA, err := n.db.UsersGetUserByWallet(c, inBody.WalletA)
+	userA, err := n.db.GetUsersDB().GetUserByWallet(c, inBody.WalletA)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiUsersRemoveMutualDocks: failed to get user A by wallet")
 		api.AbortRequest(c, http.StatusNotFound, "user_a_not_found", err, n.log)
 		return
 	}
 
-	userB, err := n.db.UsersGetUserByWallet(c, inBody.WalletB)
+	userB, err := n.db.GetUsersDB().GetUserByWallet(c, inBody.WalletB)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiUsersRemoveMutualDocks: failed to get user B by wallet")
 		api.AbortRequest(c, http.StatusNotFound, "user_b_not_found", err, n.log)
@@ -193,7 +195,7 @@ func (n *Node) apiUsersRemoveMutualDocks(c *gin.Context) {
 		},
 	}
 
-	if err := n.db.UserSpaceRemoveUserSpaces(n.ctx, permissions); err != nil {
+	if err := n.db.GetUserSpaceDB().RemoveUserSpaces(n.ctx, permissions); err != nil {
 		err := errors.WithMessage(err, "Node: apiUsersRemoveMutualDocks: failed to remove user spaces")
 		api.AbortRequest(c, http.StatusInternalServerError, "user_spaces_remove_failed", err, n.log)
 		return

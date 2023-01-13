@@ -246,7 +246,7 @@ func (n *Node) Load() error {
 		group, _ = errgroup.WithContext(n.ctx)
 		group.Go(
 			func() error {
-				nodeEntry, err := n.db.NodesGetNode(n.ctx)
+				nodeEntry, err := n.db.GetNodesDB().GetNode(n.ctx)
 				if err != nil {
 					return errors.WithMessage(err, "failed to get node")
 				}

@@ -56,7 +56,7 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 	}
 }
 
-func (db *DB) UsersGetUserByID(ctx context.Context, userID uuid.UUID) (*entry.User, error) {
+func (db *DB) GetUserByID(ctx context.Context, userID uuid.UUID) (*entry.User, error) {
 	var user entry.User
 	if err := pgxscan.Get(ctx, db.conn, &user, getUserByIDQuery, userID); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
@@ -64,7 +64,7 @@ func (db *DB) UsersGetUserByID(ctx context.Context, userID uuid.UUID) (*entry.Us
 	return &user, nil
 }
 
-func (db *DB) UsersGetUsersByIDs(ctx context.Context, userIDs []uuid.UUID) ([]*entry.User, error) {
+func (db *DB) GetUsersByIDs(ctx context.Context, userIDs []uuid.UUID) ([]*entry.User, error) {
 	var users []*entry.User
 	if err := pgxscan.Select(ctx, db.conn, &users, getUsersByIDsQuery, userIDs); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
@@ -72,7 +72,7 @@ func (db *DB) UsersGetUsersByIDs(ctx context.Context, userIDs []uuid.UUID) ([]*e
 	return users, nil
 }
 
-func (db *DB) UsersGetUserByWallet(ctx context.Context, wallet string) (*entry.User, error) {
+func (db *DB) GetUserByWallet(ctx context.Context, wallet string) (*entry.User, error) {
 	var user entry.User
 	if err := pgxscan.Get(ctx, db.conn, &user, getUserByWalletQuery, wallet); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
@@ -80,7 +80,7 @@ func (db *DB) UsersGetUserByWallet(ctx context.Context, wallet string) (*entry.U
 	return &user, nil
 }
 
-func (db *DB) UsersGetUserProfileByUserID(ctx context.Context, userID uuid.UUID) (*entry.UserProfile, error) {
+func (db *DB) GetUserProfileByUserID(ctx context.Context, userID uuid.UUID) (*entry.UserProfile, error) {
 	var profile entry.UserProfile
 	err := db.conn.QueryRow(ctx,
 		getUserProfileByUserIDQuery, userID).Scan(&profile)
@@ -90,7 +90,7 @@ func (db *DB) UsersGetUserProfileByUserID(ctx context.Context, userID uuid.UUID)
 	return &profile, nil
 }
 
-func (db *DB) UsersUpsertUser(ctx context.Context, user *entry.User) error {
+func (db *DB) UpsertUser(ctx context.Context, user *entry.User) error {
 	if _, err := db.conn.Exec(
 		ctx, upsertUserQuery,
 		user.UserID, user.UserTypeID, user.Profile, user.Options,
@@ -101,7 +101,7 @@ func (db *DB) UsersUpsertUser(ctx context.Context, user *entry.User) error {
 
 }
 
-func (db *DB) UsersUpsertUsers(ctx context.Context, users []*entry.User) error {
+func (db *DB) UpsertUsers(ctx context.Context, users []*entry.User) error {
 	batch := &pgx.Batch{}
 	for _, user := range users {
 		batch.Queue(
@@ -123,35 +123,35 @@ func (db *DB) UsersUpsertUsers(ctx context.Context, users []*entry.User) error {
 
 }
 
-func (db *DB) UsersRemoveUsersByIDs(ctx context.Context, userIDs []uuid.UUID) error {
+func (db *DB) RemoveUsersByIDs(ctx context.Context, userIDs []uuid.UUID) error {
 	if _, err := db.conn.Exec(ctx, removeUsersByIDsQuery, userIDs); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) UsersRemoveUserByID(ctx context.Context, userID uuid.UUID) error {
+func (db *DB) RemoveUserByID(ctx context.Context, userID uuid.UUID) error {
 	if _, err := db.conn.Exec(ctx, removeUserByIDQuery, userID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 
 }
-func (db *DB) UsersUpdateUserUserTypeID(ctx context.Context, userID uuid.UUID, userTypeID uuid.UUID) error {
+func (db *DB) UpdateUserUserTypeID(ctx context.Context, userID uuid.UUID, userTypeID uuid.UUID) error {
 	if _, err := db.conn.Exec(ctx, updateUserUserTypeIDQuery, userID, userTypeID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) UsersUpdateUserOptions(ctx context.Context, userID uuid.UUID, options *entry.UserOptions) error {
+func (db *DB) UpdateUserOptions(ctx context.Context, userID uuid.UUID, options *entry.UserOptions) error {
 	if _, err := db.conn.Exec(ctx, updateUserOptionsQuery, userID, options); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) UsersUpdateUserProfile(ctx context.Context, userID uuid.UUID, profile *entry.UserProfile) error {
+func (db *DB) UpdateUserProfile(ctx context.Context, userID uuid.UUID, profile *entry.UserProfile) error {
 	if _, err := db.conn.Exec(ctx, updateUserProfileQuery, userID, profile); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}

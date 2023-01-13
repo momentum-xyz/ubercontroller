@@ -2,6 +2,7 @@ package user_types
 
 import (
 	"context"
+
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -83,7 +84,7 @@ func (u *UserTypes) AddUserType(userType universe.UserType, updateDB bool) error
 	defer u.userTypes.Mu.Unlock()
 
 	if updateDB {
-		if err := u.db.UserTypesUpsertUserType(u.ctx, userType.GetEntry()); err != nil {
+		if err := u.db.GetUserTypesDB().UpsertUserType(u.ctx, userType.GetEntry()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -102,7 +103,7 @@ func (u *UserTypes) AddUserTypes(userTypes []universe.UserType, updateDB bool) e
 		for i := range userTypes {
 			entries[i] = userTypes[i].GetEntry()
 		}
-		if err := u.db.UserTypesUpsertUserTypes(u.ctx, entries); err != nil {
+		if err := u.db.GetUserTypesDB().UpsertUserTypes(u.ctx, entries); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -123,7 +124,7 @@ func (u *UserTypes) RemoveUserType(userType universe.UserType, updateDB bool) er
 	}
 
 	if updateDB {
-		if err := u.db.UserTypesRemoveUserTypeByID(u.ctx, userType.GetID()); err != nil {
+		if err := u.db.GetUserTypesDB().RemoveUserTypeByID(u.ctx, userType.GetID()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -148,7 +149,7 @@ func (u *UserTypes) RemoveUserTypes(userTypes []universe.UserType, updateDB bool
 		for i := range userTypes {
 			ids[i] = userTypes[i].GetID()
 		}
-		if err := u.db.UserTypesRemoveUserTypesByIDs(u.ctx, ids); err != nil {
+		if err := u.db.GetUserTypesDB().RemoveUserTypesByIDs(u.ctx, ids); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -163,7 +164,7 @@ func (u *UserTypes) RemoveUserTypes(userTypes []universe.UserType, updateDB bool
 func (u *UserTypes) Load() error {
 	u.log.Info("Loading user types...")
 
-	entries, err := u.db.UserTypesGetUserTypes(u.ctx)
+	entries, err := u.db.GetUserTypesDB().GetUserTypes(u.ctx)
 	if err != nil {
 		return errors.WithMessage(err, "failed to get user types")
 	}
@@ -196,7 +197,7 @@ func (u *UserTypes) Save() error {
 		entries = append(entries, UserType.GetEntry())
 	}
 
-	if err := u.db.UserTypesUpsertUserTypes(u.ctx, entries); err != nil {
+	if err := u.db.GetUserTypesDB().UpsertUserTypes(u.ctx, entries); err != nil {
 		return errors.WithMessage(err, "failed to upsert user types")
 	}
 

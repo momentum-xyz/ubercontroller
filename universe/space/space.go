@@ -164,7 +164,7 @@ func (s *Space) SetParent(parent universe.Space, updateDB bool) error {
 		if parent == nil {
 			return errors.Errorf("parent is nil")
 		}
-		if err := s.db.SpacesUpdateSpaceParentID(s.ctx, s.GetID(), parent.GetID()); err != nil {
+		if err := s.db.GetSpacesDB().UpdateSpaceParentID(s.ctx, s.GetID(), parent.GetID()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -186,7 +186,7 @@ func (s *Space) SetOwnerID(ownerID uuid.UUID, updateDB bool) error {
 	defer s.Mu.Unlock()
 
 	if updateDB {
-		if err := s.db.SpacesUpdateSpaceOwnerID(s.ctx, s.GetID(), ownerID); err != nil {
+		if err := s.db.GetSpacesDB().UpdateSpaceOwnerID(s.ctx, s.GetID(), ownerID); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -212,7 +212,7 @@ func (s *Space) SetAsset2D(asset2d universe.Asset2d, updateDB bool) error {
 		if asset2d != nil {
 			asset2dID = utils.GetPTR(asset2d.GetID())
 		}
-		if err := s.db.SpacesUpdateSpaceAsset2dID(s.ctx, s.GetID(), asset2dID); err != nil {
+		if err := s.db.GetSpacesDB().UpdateSpaceAsset2dID(s.ctx, s.GetID(), asset2dID); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -238,7 +238,7 @@ func (s *Space) SetAsset3D(asset3d universe.Asset3d, updateDB bool) error {
 		if asset3d != nil {
 			asset3dID = utils.GetPTR(asset3d.GetID())
 		}
-		if err := s.db.SpacesUpdateSpaceAsset3dID(s.ctx, s.GetID(), asset3dID); err != nil {
+		if err := s.db.GetSpacesDB().UpdateSpaceAsset3dID(s.ctx, s.GetID(), asset3dID); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -264,7 +264,7 @@ func (s *Space) SetSpaceType(spaceType universe.SpaceType, updateDB bool) error 
 	defer s.Mu.Unlock()
 
 	if updateDB {
-		if err := s.db.SpacesUpdateSpaceSpaceTypeID(s.ctx, s.GetID(), spaceType.GetID()); err != nil {
+		if err := s.db.GetSpacesDB().UpdateSpaceSpaceTypeID(s.ctx, s.GetID(), spaceType.GetID()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -292,7 +292,7 @@ func (s *Space) SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool
 	}
 
 	if updateDB {
-		if err := s.db.SpacesUpdateSpaceOptions(s.ctx, s.GetID(), options); err != nil {
+		if err := s.db.GetSpacesDB().UpdateSpaceOptions(s.ctx, s.GetID(), options); err != nil {
 			return nil, errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -463,7 +463,7 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 				return nil
 			}
 
-			entries, err := s.db.SpacesGetSpacesByParentID(s.ctx, s.GetID())
+			entries, err := s.db.GetSpacesDB().GetSpacesByParentID(s.ctx, s.GetID())
 			if err != nil {
 				return errors.WithMessagef(err, "failed to get spaces by parent id: %s", s.GetID())
 			}

@@ -2,8 +2,9 @@ package attribute_type
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/universe"
 	"sync"
+
+	"github.com/momentum-xyz/ubercontroller/universe"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -87,7 +88,7 @@ func (a *AttributeType) SetOptions(
 	}
 
 	if updateDB {
-		if err := a.db.AttributeTypesUpdateAttributeTypeOptions(a.ctx, a.id, options); err != nil {
+		if err := a.db.GetAttributeTypesDB().UpdateAttributeTypeOptions(a.ctx, a.id, options); err != nil {
 			return nil, errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -102,7 +103,7 @@ func (a *AttributeType) SetDescription(description *string, updateDB bool) error
 	defer a.mu.Unlock()
 
 	if updateDB {
-		if err := a.db.AttributeTypesUpdateAttributeTypeDescription(a.ctx, a.id, description); err != nil {
+		if err := a.db.GetAttributeTypesDB().UpdateAttributeTypeDescription(a.ctx, a.id, description); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}

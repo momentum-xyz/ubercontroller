@@ -488,7 +488,7 @@ func (n *Node) apiGetSpaceAllUsersAttributeValuesList(c *gin.Context) {
 		return
 	}
 
-	sua, err := n.db.SpaceUserAttributesGetSpaceUserAttributesByPluginIDAndNameAndSpaceID(
+	sua, err := n.db.GetSpaceUserAttributesDB().GetSpaceUserAttributesByPluginIDAndNameAndSpaceID(
 		n.ctx, pluginID, inQuery.AttributeName, spaceID,
 	)
 	if err != nil {

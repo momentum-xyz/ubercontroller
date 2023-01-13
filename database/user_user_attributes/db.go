@@ -81,7 +81,7 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 	}
 }
 
-func (db *DB) UserUserAttributesGetUserUserAttributes(ctx context.Context) ([]*entry.UserUserAttribute, error) {
+func (db *DB) GetUserUserAttributes(ctx context.Context) ([]*entry.UserUserAttribute, error) {
 	var attributes []*entry.UserUserAttribute
 	if err := pgxscan.Select(ctx, db.conn, &attributes, getUserUserAttributesQuery); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
@@ -89,7 +89,7 @@ func (db *DB) UserUserAttributesGetUserUserAttributes(ctx context.Context) ([]*e
 	return attributes, nil
 }
 
-func (db *DB) UserUserAttributesGetUserUserAttributeByID(
+func (db *DB) GetUserUserAttributeByID(
 	ctx context.Context, userUserAttributeID entry.UserUserAttributeID,
 ) (*entry.UserUserAttribute, error) {
 	var attribute entry.UserUserAttribute
@@ -103,7 +103,7 @@ func (db *DB) UserUserAttributesGetUserUserAttributeByID(
 	return &attribute, nil
 }
 
-func (db *DB) UserUserAttributesGetUserUserAttributePayloadByID(
+func (db *DB) GetUserUserAttributePayloadByID(
 	ctx context.Context, userUserAttributeID entry.UserUserAttributeID,
 ) (*entry.AttributePayload, error) {
 	var payload entry.AttributePayload
@@ -119,7 +119,7 @@ func (db *DB) UserUserAttributesGetUserUserAttributePayloadByID(
 	return &payload, nil
 }
 
-func (db *DB) UserUserAttributesGetUserUserAttributeValueByID(
+func (db *DB) GetUserUserAttributeValueByID(
 	ctx context.Context, userUserAttributeID entry.UserUserAttributeID,
 ) (*entry.AttributeValue, error) {
 	var value entry.AttributeValue
@@ -135,7 +135,7 @@ func (db *DB) UserUserAttributesGetUserUserAttributeValueByID(
 	return &value, nil
 }
 
-func (db *DB) UserUserAttributesGetUserUserAttributeOptionsByID(
+func (db *DB) GetUserUserAttributeOptionsByID(
 	ctx context.Context, userUserAttributeID entry.UserUserAttributeID,
 ) (*entry.AttributeOptions, error) {
 	var options entry.AttributeOptions
@@ -151,7 +151,7 @@ func (db *DB) UserUserAttributesGetUserUserAttributeOptionsByID(
 	return &options, nil
 }
 
-func (db *DB) UserUserAttributesGetUserUserAttributesBySourceUserID(
+func (db *DB) GetUserUserAttributesBySourceUserID(
 	ctx context.Context, sourceUserID uuid.UUID,
 ) ([]*entry.UserUserAttribute, error) {
 	var attributes []*entry.UserUserAttribute
@@ -163,7 +163,7 @@ func (db *DB) UserUserAttributesGetUserUserAttributesBySourceUserID(
 	return attributes, nil
 }
 
-func (db *DB) UserUserAttributesGetUserUserAttributesByTargetUserID(
+func (db *DB) GetUserUserAttributesByTargetUserID(
 	ctx context.Context, targetUserID uuid.UUID,
 ) ([]*entry.UserUserAttribute, error) {
 	var attributes []*entry.UserUserAttribute
@@ -175,7 +175,7 @@ func (db *DB) UserUserAttributesGetUserUserAttributesByTargetUserID(
 	return attributes, nil
 }
 
-func (db *DB) UserUserAttributesGetUserUserAttributesBySourceUserIDAndTargetUserID(
+func (db *DB) GetUserUserAttributesBySourceUserIDAndTargetUserID(
 	ctx context.Context, sourceUserID uuid.UUID, targetUserID uuid.UUID,
 ) ([]*entry.UserUserAttribute, error) {
 	var attributes []*entry.UserUserAttribute
@@ -187,7 +187,7 @@ func (db *DB) UserUserAttributesGetUserUserAttributesBySourceUserIDAndTargetUser
 	return attributes, nil
 }
 
-func (db *DB) UserUserAttributesGetUserUserAttributesCount(ctx context.Context) (int64, error) {
+func (db *DB) GetUserUserAttributesCount(ctx context.Context) (int64, error) {
 	var count int64
 	if err := db.conn.QueryRow(ctx, getUserUserAttributesCountQuery).
 		Scan(&count); err != nil {
@@ -196,13 +196,13 @@ func (db *DB) UserUserAttributesGetUserUserAttributesCount(ctx context.Context) 
 	return count, nil
 }
 
-func (db *DB) UserUserAttributesUpsertUserUserAttribute(
+func (db *DB) UpsertUserUserAttribute(
 	ctx context.Context, userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
 ) (*entry.AttributePayload, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
-	payload, err := db.UserUserAttributesGetUserUserAttributePayloadByID(ctx, userUserAttributeID)
+	payload, err := db.GetUserUserAttributePayloadByID(ctx, userUserAttributeID)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
 			return nil, errors.WithMessage(err, "failed to get attribute payload by id")
@@ -232,7 +232,7 @@ func (db *DB) UserUserAttributesUpsertUserUserAttribute(
 	return payload, nil
 }
 
-func (db *DB) UserUserAttributesRemoveUserUserAttributeByName(ctx context.Context, name string) error {
+func (db *DB) RemoveUserUserAttributeByName(ctx context.Context, name string) error {
 	res, err := db.conn.Exec(ctx, removeUserUserAttributeByNameQuery, name)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
@@ -243,7 +243,7 @@ func (db *DB) UserUserAttributesRemoveUserUserAttributeByName(ctx context.Contex
 	return nil
 }
 
-func (db *DB) UserUserAttributesRemoveUserUserAttributesByNames(ctx context.Context, names []string) error {
+func (db *DB) RemoveUserUserAttributesByNames(ctx context.Context, names []string) error {
 	res, err := db.conn.Exec(ctx, removeUserUserAttributesByNamesQuery, names)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
@@ -254,7 +254,7 @@ func (db *DB) UserUserAttributesRemoveUserUserAttributesByNames(ctx context.Cont
 	return nil
 }
 
-func (db *DB) UserUserAttributesRemoveUserUserAttributesByPluginID(ctx context.Context, pluginID uuid.UUID) error {
+func (db *DB) RemoveUserUserAttributesByPluginID(ctx context.Context, pluginID uuid.UUID) error {
 	res, err := db.conn.Exec(ctx, removeUserUserAttributesByPluginIDQuery, pluginID)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
@@ -265,7 +265,7 @@ func (db *DB) UserUserAttributesRemoveUserUserAttributesByPluginID(ctx context.C
 	return nil
 }
 
-func (db *DB) UserUserAttributesRemoveUserUserAttributeByAttributeID(ctx context.Context, attributeID entry.AttributeID) error {
+func (db *DB) RemoveUserUserAttributeByAttributeID(ctx context.Context, attributeID entry.AttributeID) error {
 	res, err := db.conn.Exec(ctx, removeUserUserAttributeByPluginIDAndNameQuery, attributeID.PluginID, attributeID.Name)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
@@ -276,7 +276,7 @@ func (db *DB) UserUserAttributesRemoveUserUserAttributeByAttributeID(ctx context
 	return nil
 }
 
-func (db *DB) UserUserAttributesRemoveUserUserAttributeBySourceUserID(ctx context.Context, sourceUserID uuid.UUID) error {
+func (db *DB) RemoveUserUserAttributeBySourceUserID(ctx context.Context, sourceUserID uuid.UUID) error {
 	res, err := db.conn.Exec(ctx, removeUserUserAttributesBySourceUserIDQuery, sourceUserID)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
@@ -287,7 +287,7 @@ func (db *DB) UserUserAttributesRemoveUserUserAttributeBySourceUserID(ctx contex
 	return nil
 }
 
-func (db *DB) UserUserAttributesRemoveUserUserAttributeByNameAndSourceUserID(
+func (db *DB) RemoveUserUserAttributeByNameAndSourceUserID(
 	ctx context.Context, name string, sourceUserID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeUserUserAttributeByNameAndSourceUserIDQuery, name, sourceUserID)
@@ -300,7 +300,7 @@ func (db *DB) UserUserAttributesRemoveUserUserAttributeByNameAndSourceUserID(
 	return nil
 }
 
-func (db *DB) UserUserAttributesRemoveUserUserAttributeByNamesAndSourceUserID(
+func (db *DB) RemoveUserUserAttributeByNamesAndSourceUserID(
 	ctx context.Context, names []string, sourceUserID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeUserUserAttributesByNamesAndSourceUserIDQuery, names, sourceUserID)
@@ -313,7 +313,7 @@ func (db *DB) UserUserAttributesRemoveUserUserAttributeByNamesAndSourceUserID(
 	return nil
 }
 
-func (db *DB) UserUserAttributesRemoveUserUserAttributeByTargetUserID(ctx context.Context, targetUserID uuid.UUID) error {
+func (db *DB) RemoveUserUserAttributeByTargetUserID(ctx context.Context, targetUserID uuid.UUID) error {
 	res, err := db.conn.Exec(ctx, removeUserUserAttributesByTargetUserIDQuery, targetUserID)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
@@ -324,7 +324,7 @@ func (db *DB) UserUserAttributesRemoveUserUserAttributeByTargetUserID(ctx contex
 	return nil
 }
 
-func (db *DB) UserUserAttributesRemoveUserUserAttributeByNameAndTargetUserID(
+func (db *DB) RemoveUserUserAttributeByNameAndTargetUserID(
 	ctx context.Context, name string, targetUserID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeUserUserAttributeByNameAndTargetUserIDQuery, name, targetUserID)
@@ -337,7 +337,7 @@ func (db *DB) UserUserAttributesRemoveUserUserAttributeByNameAndTargetUserID(
 	return nil
 }
 
-func (db *DB) UserUserAttributesRemoveUserUserAttributeByNamesAndTargetUserID(
+func (db *DB) RemoveUserUserAttributeByNamesAndTargetUserID(
 	ctx context.Context, names []string, targetUserID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeUserUserAttributesByNamesAndTargetUserIDQuery, names, targetUserID)
@@ -350,7 +350,7 @@ func (db *DB) UserUserAttributesRemoveUserUserAttributeByNamesAndTargetUserID(
 	return nil
 }
 
-func (db *DB) UserUserAttributesRemoveUserUserAttributeBySourceUserIDAndTargetUserID(
+func (db *DB) RemoveUserUserAttributeBySourceUserIDAndTargetUserID(
 	ctx context.Context, sourceUserID uuid.UUID, targetUserID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeUserUserAttributesBySourceUserIDAndTargetUserIDQuery, sourceUserID, targetUserID)
@@ -363,7 +363,7 @@ func (db *DB) UserUserAttributesRemoveUserUserAttributeBySourceUserIDAndTargetUs
 	return nil
 }
 
-func (db *DB) UserUserAttributesRemoveUserUserAttributeByNameAndSourceUserIDAndTargetUserID(
+func (db *DB) RemoveUserUserAttributeByNameAndSourceUserIDAndTargetUserID(
 	ctx context.Context, name string, sourceUserID uuid.UUID, targetUserID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(
@@ -378,7 +378,7 @@ func (db *DB) UserUserAttributesRemoveUserUserAttributeByNameAndSourceUserIDAndT
 	return nil
 }
 
-func (db *DB) UserUserAttributesRemoveUserUserAttributeByNamesAndSourceUserIDAndTargetUserID(
+func (db *DB) RemoveUserUserAttributeByNamesAndSourceUserIDAndTargetUserID(
 	ctx context.Context, names []string, sourceUserID uuid.UUID, targetUserID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(
@@ -393,7 +393,7 @@ func (db *DB) UserUserAttributesRemoveUserUserAttributeByNamesAndSourceUserIDAnd
 	return nil
 }
 
-func (db *DB) UserUserAttributesRemoveUserUserAttributeByPluginIDAndSourceUserID(
+func (db *DB) RemoveUserUserAttributeByPluginIDAndSourceUserID(
 	ctx context.Context, pluginID uuid.UUID, sourceUserID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeUserUserAttributesByPluginIDAndSourceUserIDQuery, pluginID, sourceUserID)
@@ -406,7 +406,7 @@ func (db *DB) UserUserAttributesRemoveUserUserAttributeByPluginIDAndSourceUserID
 	return nil
 }
 
-func (db *DB) UserUserAttributesRemoveUserUserAttributeBySourceUserAttributeID(
+func (db *DB) RemoveUserUserAttributeBySourceUserAttributeID(
 	ctx context.Context, sourceUserAttributeID entry.UserAttributeID,
 ) error {
 	res, err := db.conn.Exec(
@@ -422,7 +422,7 @@ func (db *DB) UserUserAttributesRemoveUserUserAttributeBySourceUserAttributeID(
 	return nil
 }
 
-func (db *DB) UserUserAttributesRemoveUserUserAttributeByPluginIDAndTargetUserID(
+func (db *DB) RemoveUserUserAttributeByPluginIDAndTargetUserID(
 	ctx context.Context, pluginID uuid.UUID, targetUserID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeUserUserAttributesByPluginIDAndTargetUserIDQuery, pluginID, targetUserID)
@@ -435,7 +435,7 @@ func (db *DB) UserUserAttributesRemoveUserUserAttributeByPluginIDAndTargetUserID
 	return nil
 }
 
-func (db *DB) UserUserAttributesRemoveUserUserAttributeByTargetUserAttributeID(
+func (db *DB) RemoveUserUserAttributeByTargetUserAttributeID(
 	ctx context.Context, targetUserAttributeID entry.UserAttributeID,
 ) error {
 	res, err := db.conn.Exec(
@@ -450,7 +450,7 @@ func (db *DB) UserUserAttributesRemoveUserUserAttributeByTargetUserAttributeID(
 	}
 	return nil
 }
-func (db *DB) UserUserAttributesRemoveUserUserAttributeByPluginIDAndSourceUserIDAndTargetUserID(
+func (db *DB) RemoveUserUserAttributeByPluginIDAndSourceUserIDAndTargetUserID(
 	ctx context.Context, pluginId uuid.UUID, sourceUserID uuid.UUID, targetUserID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(
@@ -465,7 +465,7 @@ func (db *DB) UserUserAttributesRemoveUserUserAttributeByPluginIDAndSourceUserID
 	return nil
 }
 
-func (db *DB) UserUserAttributesRemoveUserUserAttributeByID(
+func (db *DB) RemoveUserUserAttributeByID(
 	ctx context.Context, userUserAttributeID entry.UserUserAttributeID,
 ) error {
 	res, err := db.conn.Exec(
@@ -482,13 +482,13 @@ func (db *DB) UserUserAttributesRemoveUserUserAttributeByID(
 	return nil
 }
 
-func (db *DB) UserUserAttributesUpdateUserUserAttributeValue(
+func (db *DB) UpdateUserUserAttributeValue(
 	ctx context.Context, userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributeValue],
 ) (*entry.AttributeValue, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
-	value, err := db.UserUserAttributesGetUserUserAttributeValueByID(ctx, userUserAttributeID)
+	value, err := db.GetUserUserAttributeValueByID(ctx, userUserAttributeID)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to get value by id")
 	}
@@ -510,13 +510,13 @@ func (db *DB) UserUserAttributesUpdateUserUserAttributeValue(
 	return value, nil
 }
 
-func (db *DB) UserUserAttributesUpdateUserUserAttributeOptions(
+func (db *DB) UpdateUserUserAttributeOptions(
 	ctx context.Context, userUserAttributeID entry.UserUserAttributeID, modifyFn modify.Fn[entry.AttributeOptions],
 ) (*entry.AttributeOptions, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
-	options, err := db.UserUserAttributesGetUserUserAttributeOptionsByID(ctx, userUserAttributeID)
+	options, err := db.GetUserUserAttributeOptionsByID(ctx, userUserAttributeID)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to get options by id")
 	}

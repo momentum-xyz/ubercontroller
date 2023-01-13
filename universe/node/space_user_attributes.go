@@ -2,11 +2,12 @@ package node
 
 import (
 	"github.com/jackc/pgx/v4"
+	"github.com/pkg/errors"
+
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
-	"github.com/pkg/errors"
 )
 
 type spaceUserAttributes struct {
@@ -20,7 +21,7 @@ func newSpaceUserAttributes(node *Node) *spaceUserAttributes {
 }
 
 func (sua *spaceUserAttributes) GetPayload(spaceUserAttributeID entry.SpaceUserAttributeID) (*entry.AttributePayload, bool) {
-	payload, err := sua.node.db.SpaceUserAttributesGetSpaceUserAttributePayloadByID(sua.node.ctx, spaceUserAttributeID)
+	payload, err := sua.node.db.GetSpaceUserAttributesDB().GetSpaceUserAttributePayloadByID(sua.node.ctx, spaceUserAttributeID)
 	if err != nil {
 		return nil, false
 	}
@@ -28,7 +29,7 @@ func (sua *spaceUserAttributes) GetPayload(spaceUserAttributeID entry.SpaceUserA
 }
 
 func (sua *spaceUserAttributes) GetValue(spaceUserAttributeID entry.SpaceUserAttributeID) (*entry.AttributeValue, bool) {
-	value, err := sua.node.db.SpaceUserAttributesGetSpaceUserAttributeValueByID(sua.node.ctx, spaceUserAttributeID)
+	value, err := sua.node.db.GetSpaceUserAttributesDB().GetSpaceUserAttributeValueByID(sua.node.ctx, spaceUserAttributeID)
 	if err != nil {
 		return nil, false
 	}
@@ -36,7 +37,7 @@ func (sua *spaceUserAttributes) GetValue(spaceUserAttributeID entry.SpaceUserAtt
 }
 
 func (sua *spaceUserAttributes) GetOptions(spaceUserAttributeID entry.SpaceUserAttributeID) (*entry.AttributeOptions, bool) {
-	options, err := sua.node.db.SpaceUserAttributesGetSpaceUserAttributeOptionsByID(sua.node.ctx, spaceUserAttributeID)
+	options, err := sua.node.db.GetSpaceUserAttributesDB().GetSpaceUserAttributeOptionsByID(sua.node.ctx, spaceUserAttributeID)
 	if err != nil {
 		return nil, false
 	}
@@ -73,7 +74,7 @@ func (sua *spaceUserAttributes) GetEffectiveOptions(
 func (sua *spaceUserAttributes) Upsert(
 	spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
 ) (*entry.AttributePayload, error) {
-	payload, err := sua.node.db.SpaceUserAttributesUpsertSpaceUserAttribute(sua.node.ctx, spaceUserAttributeID, modifyFn)
+	payload, err := sua.node.db.GetSpaceUserAttributesDB().UpsertSpaceUserAttribute(sua.node.ctx, spaceUserAttributeID, modifyFn)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to upsert space user attribute")
 	}
@@ -94,7 +95,7 @@ func (sua *spaceUserAttributes) Upsert(
 func (sua *spaceUserAttributes) UpdateValue(
 	spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool,
 ) (*entry.AttributeValue, error) {
-	value, err := sua.node.db.SpaceUserAttributesUpdateSpaceUserAttributeValue(sua.node.ctx, spaceUserAttributeID, modifyFn)
+	value, err := sua.node.db.GetSpaceUserAttributesDB().UpdateSpaceUserAttributeValue(sua.node.ctx, spaceUserAttributeID, modifyFn)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to update space user attribute value")
 	}
@@ -109,7 +110,7 @@ func (sua *spaceUserAttributes) UpdateValue(
 func (sua *spaceUserAttributes) UpdateOptions(
 	spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool,
 ) (*entry.AttributeOptions, error) {
-	options, err := sua.node.db.SpaceUserAttributesUpdateSpaceUserAttributeOptions(sua.node.ctx, spaceUserAttributeID, modifyFn)
+	options, err := sua.node.db.GetSpaceUserAttributesDB().UpdateSpaceUserAttributeOptions(sua.node.ctx, spaceUserAttributeID, modifyFn)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to update space user attribute options")
 	}
@@ -137,7 +138,7 @@ func (sua *spaceUserAttributes) Remove(spaceUserAttributeID entry.SpaceUserAttri
 		return false, nil
 	}
 
-	if err := sua.node.db.SpaceUserAttributesRemoveSpaceUserAttributeByID(sua.node.ctx, spaceUserAttributeID); err != nil {
+	if err := sua.node.db.GetSpaceUserAttributesDB().RemoveSpaceUserAttributeByID(sua.node.ctx, spaceUserAttributeID); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return false, nil
 		}
@@ -152,7 +153,7 @@ func (sua *spaceUserAttributes) Remove(spaceUserAttributeID entry.SpaceUserAttri
 }
 
 func (sua *spaceUserAttributes) Len() int {
-	count, err := sua.node.db.UserAttributesGetUserAttributesCount(sua.node.ctx)
+	count, err := sua.node.db.GetUserAttributesDB().GetUserAttributesCount(sua.node.ctx)
 	if err != nil {
 		sua.node.log.Error(
 			errors.WithMessage(err, "Space user attributes: Len: failed to get space user attributes count"),
