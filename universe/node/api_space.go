@@ -200,9 +200,16 @@ func (n *Node) apiRemoveSpace(c *gin.Context) {
 		return
 	}
 
-	if _, err := helper.RemoveSpaceFromParent(space.GetParent(), space, true); err != nil {
+	removed, err := helper.RemoveSpaceFromParent(space.GetParent(), space, true)
+	if err != nil {
 		err := errors.WithMessage(err, "Node: apiRemoveSpace: failed to remove space from parent")
 		api.AbortRequest(c, http.StatusInternalServerError, "remove_failed", err, n.log)
+		return
+	}
+
+	if !removed {
+		err := errors.Errorf("Node: apiRemoveSpace: space not found in parent")
+		api.AbortRequest(c, http.StatusNotFound, "space_not_found_in_parent", err, n.log)
 		return
 	}
 
