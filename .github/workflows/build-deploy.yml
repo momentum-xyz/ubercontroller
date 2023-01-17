@@ -15,7 +15,7 @@ jobs:
     runs-on: self-hosted  # ubuntu-latest
     steps:
       - id: build
-        uses: momentum-xyz/docker-build-action@662e60f1c7a9324d4b636249302c828165681d2e
+        uses: momentum-xyz/docker-build-action@ea21d97ce38d0b131c54f45cc2deb9e7ac84828c  # v6.0.3
         with:
           registry-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
           registry-user: ${{ secrets.REGISTRY_USERNAME }}
@@ -31,7 +31,7 @@ jobs:
     concurrency: dev-deploy-${{ github.ref }}
     steps:
       - id: deploy-dev
-        uses: momentum-xyz/deploy-action@v1
+        uses: momentum-xyz/deploy-action@2234fcebf5b59abe7f7f812d275abb547886ab14  # v1.1.0
         with:
           version: ${{ env.VERSION }}
           k8s-credentials: ${{ secrets[secrets.REF_K8S_DEV2] }}
@@ -45,7 +45,7 @@ jobs:
     steps:
       - id: deploy-ops
         name: Dispatch to Operations
-        uses: peter-evans/repository-dispatch@v1
+        uses: peter-evans/repository-dispatch@26b39ed245ab8f31526069329e112ab2fb224588  # v2.1.1
         with:
           token: ${{ secrets.ODYSSEY_OPERATIONS }}
           repository: momentum-xyz/Operations
