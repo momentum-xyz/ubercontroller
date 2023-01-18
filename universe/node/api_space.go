@@ -329,16 +329,16 @@ func (n *Node) apiUpdateSpace(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param space_id path string true "Space ID"
+// @Param sub_option_key path string true "Sub Option Key"
 // @Param body body node.apiSpacesSetSpaceSubOption.Body true "body params"
 // @Success 202 {object} dto.SpaceSubOptions
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{space_id}/options/sub [post]
+// @Router /api/v4/spaces/{space_id}/options/sub/{sub_option_key} [post]
 func (n *Node) apiSpacesSetSpaceSubOption(c *gin.Context) {
 	type Body struct {
-		SubOptionKey   string `json:"sub_option_key" binding:"required"`
-		SubOptionValue any    `json:"sub_option_value" binding:"required"`
+		SubOptionValue any `json:"sub_option_value" binding:"required"`
 	}
 
 	var inBody Body
@@ -352,6 +352,13 @@ func (n *Node) apiSpacesSetSpaceSubOption(c *gin.Context) {
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiSpacesSetSpaceSubOption: failed to parse space id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, n.log)
+		return
+	}
+
+	subOptionKey := c.Param("subOptionKey")
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSpacesSetSpaceSubOption: failed to get sub option key from path parameters")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_sub_option_key", err, n.log)
 		return
 	}
 
@@ -370,7 +377,7 @@ func (n *Node) apiSpacesSetSpaceSubOption(c *gin.Context) {
 			current.Subs = make(map[string]any)
 		}
 
-		current.Subs[inBody.SubOptionKey] = inBody.SubOptionValue
+		current.Subs[subOptionKey] = inBody.SubOptionValue
 
 		return current, nil
 	}
@@ -382,7 +389,7 @@ func (n *Node) apiSpacesSetSpaceSubOption(c *gin.Context) {
 	}
 
 	out := dto.SpaceSubOptions{
-		inBody.SubOptionKey: inBody.SubOptionValue,
+		subOptionKey: inBody.SubOptionValue,
 	}
 
 	c.JSON(http.StatusAccepted, out)
@@ -395,28 +402,25 @@ func (n *Node) apiSpacesSetSpaceSubOption(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param space_id path string true "Space ID"
+// @Param sub_option_key path string true "Sub Option Key"
 // @Param body body node.apiSpacesRemoveSpaceSubOption.Body true "body params"
 // @Success 200 {object} nil
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{space_id}/options/sub [delete]
+// @Router /api/v4/spaces/{space_id}/options/sub/{sub_option_key} [delete]
 func (n *Node) apiSpacesRemoveSpaceSubOption(c *gin.Context) {
-	type Body struct {
-		SubOptionKey string `json:"sub_option_key" binding:"required"`
-	}
-
-	var inBody Body
-	if err := c.ShouldBindJSON(&inBody); err != nil {
-		err = errors.WithMessage(err, "Node: apiSpacesRemoveSpaceSubOption: failed to bind json")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
-		return
-	}
-
 	spaceID, err := uuid.Parse(c.Param("spaceID"))
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiSpacesRemoveSpaceSubOption: failed to parse space id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, n.log)
+		return
+	}
+
+	subOptionKey := c.Param("subOptionKey")
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSpacesRemoveSpaceSubOption: failed to get sub option key from path parameters")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_sub_option_key", err, n.log)
 		return
 	}
 
@@ -432,7 +436,7 @@ func (n *Node) apiSpacesRemoveSpaceSubOption(c *gin.Context) {
 			return current, nil
 		}
 
-		delete(current.Subs, inBody.SubOptionKey)
+		delete(current.Subs, subOptionKey)
 
 		return current, nil
 	}
@@ -504,16 +508,16 @@ func (n *Node) apiSpacesGetSpaceOptions(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param space_id path string true "Space ID"
+// @Param sub_option_key path string true "Sub Option Key"
 // @Param query query node.apiSpacesGetSpaceSubOptions.InQuery true "query params"
 // @Success 200 {object} dto.SpaceSubOptions
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{space_id}/options/sub [get]
+// @Router /api/v4/spaces/{space_id}/options/sub/{sub_option_key} [get]
 func (n *Node) apiSpacesGetSpaceSubOptions(c *gin.Context) {
 	type InQuery struct {
-		Effective    bool   `form:"effective"`
-		SubOptionKey string `form:"sub_option_key" binding:"required"`
+		Effective bool `form:"effective"`
 	}
 	inQuery := InQuery{
 		Effective: true,
@@ -529,6 +533,13 @@ func (n *Node) apiSpacesGetSpaceSubOptions(c *gin.Context) {
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiSpacesGetSpaceSubOptions: failed to parse space id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, n.log)
+		return
+	}
+
+	subOptionKey := c.Param("subOptionKey")
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSpacesGetSpaceSubOptions: failed to get sub option key from path parameters")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_sub_option_key", err, n.log)
 		return
 	}
 
@@ -559,7 +570,7 @@ func (n *Node) apiSpacesGetSpaceSubOptions(c *gin.Context) {
 	}
 
 	out := dto.SpaceSubOptions{
-		inQuery.SubOptionKey: options.Subs[inQuery.SubOptionKey],
+		subOptionKey: options.Subs[subOptionKey],
 	}
 
 	c.JSON(http.StatusOK, out)

@@ -120,21 +120,28 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 					}
 				}
 
-				spaceAdmin := space.Group("", middleware.AuthorizeAdmin(n.log, n.db))
-				{
-					spaceAdmin.POST("/options/sub", n.apiSpacesSetSpaceSubOption)
-					spaceAdmin.DELETE("/options/sub", n.apiSpacesRemoveSpaceSubOption)
+				space.GET("/options", n.apiSpacesGetSpaceOptions)
 
-					spaceAdmin.DELETE("", n.apiRemoveSpace)
-					spaceAdmin.PATCH("", n.apiUpdateSpace)
+				spaceSubOptions := space.Group("/options/sub/:subOptionKey")
+				{
+					spaceSubOptions.GET("", n.apiSpacesGetSpaceSubOptions)
+
+					spaceSubOptionsAdmin := spaceSubOptions.Group("", middleware.AuthorizeAdmin(n.log, n.db))
+					{
+						spaceSubOptionsAdmin.POST("/options/sub/:subOptionKey", n.apiSpacesSetSpaceSubOption)
+						spaceSubOptionsAdmin.DELETE("/options/sub/:subOptionKey", n.apiSpacesRemoveSpaceSubOption)
+					}
 				}
 
 				space.POST("/agora/token", n.apiGenAgoraToken)
 
-				space.GET("", n.apiGetSpace)
+				spaceControlAdmin := space.Group("", middleware.AuthorizeAdmin(n.log, n.db))
+				{
+					spaceControlAdmin.DELETE("", n.apiRemoveSpace)
+					spaceControlAdmin.PATCH("", n.apiUpdateSpace)
+				}
 
-				space.GET("/options", n.apiSpacesGetSpaceOptions)
-				space.GET("/options/sub", n.apiSpacesGetSpaceSubOptions)
+				space.GET("", n.apiGetSpace)
 			}
 		}
 

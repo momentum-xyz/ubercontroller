@@ -406,18 +406,6 @@ func (n *Node) apiSetSpaceAttributeSubValue(c *gin.Context) {
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/spaces/{space_id}/attributes/{plugin_id}/{attribute_name}/sub/{sub_attribute_key} [delete]
 func (n *Node) apiRemoveSpaceAttributeSubValue(c *gin.Context) {
-	type Body struct {
-		SubAttributeKey string `json:"sub_attribute_key" binding:"required"`
-	}
-
-	inBody := Body{}
-
-	if err := c.ShouldBindJSON(&inBody); err != nil {
-		err = errors.WithMessage(err, "Node: apiRemoveSpaceAttributeSubValue: failed to bind json")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
-		return
-	}
-
 	spaceID, err := uuid.Parse(c.Param("spaceID"))
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiRemoveSpaceAttributeSubValue: failed to parse space id")
@@ -439,6 +427,13 @@ func (n *Node) apiRemoveSpaceAttributeSubValue(c *gin.Context) {
 		return
 	}
 
+	subAttributeKey := c.Param("subAttributeKey")
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiRemoveSpaceAttributeSubValue: failed to get sub-attribute key from path parameters")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_sub_attribute_key", err, n.log)
+		return
+	}
+
 	space, ok := n.GetSpaceFromAllSpaces(spaceID)
 	if !ok {
 		err := errors.Errorf("Node: apiRemoveSpaceAttributeSubValue: space not found: %s", spaceID)
@@ -453,7 +448,7 @@ func (n *Node) apiRemoveSpaceAttributeSubValue(c *gin.Context) {
 			return current, nil
 		}
 
-		delete(*current, inBody.SubAttributeKey)
+		delete(*current, subAttributeKey)
 
 		return current, nil
 	}
