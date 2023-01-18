@@ -16,17 +16,19 @@ import (
 // @Tags users
 // @Accept json
 // @Produce json
+// @Param user_id path string true "User ID"
+// @Param target_id path string true "Target ID"
+// @Param plugin_id path string true "Plugin ID"
+// @Param attribute_name path string true "Attribute Name"
+// @Param sub_attribute_key path string true "Sub Attribute Key"
 // @Param body body node.apiSetUserUserSubAttributeValue.InBody true "body params"
 // @Success 200 {object} entry.AttributeValue
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
-// @Router /api/v4/users/attributes/sub/{user_id}/{target_id} [post]
+// @Router /api/v4/users/attributes/{user_id}/{target_id}/{plugin_id}/{attribute_name}/sub/{sub_attribute_key} [post]
 func (n *Node) apiSetUserUserSubAttributeValue(c *gin.Context) {
 	type InBody struct {
-		PluginID          string `json:"plugin_id" binding:"required"`
-		AttributeName     string `json:"attribute_name" binding:"required"`
-		SubAttributeKey   string `json:"sub_attribute_key" binding:"required"`
-		SubAttributeValue any    `json:"sub_attribute_value" binding:"required"`
+		SubAttributeValue any `json:"sub_attribute_value" binding:"required"`
 	}
 
 	inBody := InBody{}
@@ -51,20 +53,34 @@ func (n *Node) apiSetUserUserSubAttributeValue(c *gin.Context) {
 		return
 	}
 
-	pluginID, err := uuid.Parse(inBody.PluginID)
+	pluginID, err := uuid.Parse(c.Param("pluginID"))
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiSetUserUserSubAttributeValue: failed to parse plugin id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
 		return
 	}
 
-	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
+	attributeName := c.Param("attributeName")
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSetUserUserSubAttributeValue: failed to get attribute name from path parameters")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_attribute_name", err, n.log)
+		return
+	}
+
+	subAttributeKey := c.Param("subAttributeKey")
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSetUserUserSubAttributeValue: failed to get sub-attribute key from path parameters")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_sub_attribute_key", err, n.log)
+		return
+	}
+
+	attributeID := entry.NewAttributeID(pluginID, attributeName)
 	userUserAttributeID := entry.NewUserUserAttributeID(attributeID, userID, targetID)
 
 	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
 		newValue := func() *entry.AttributeValue {
 			value := entry.NewAttributeValue()
-			(*value)[inBody.SubAttributeKey] = inBody.SubAttributeValue
+			(*value)[subAttributeKey] = inBody.SubAttributeValue
 			return value
 		}
 
@@ -77,7 +93,7 @@ func (n *Node) apiSetUserUserSubAttributeValue(c *gin.Context) {
 			return current, nil
 		}
 
-		(*current.Value)[inBody.SubAttributeKey] = inBody.SubAttributeValue
+		(*current.Value)[subAttributeKey] = inBody.SubAttributeValue
 
 		return current, nil
 	}

@@ -470,7 +470,7 @@ func (n *Node) apiRemoveSpaceAttributeSubValue(c *gin.Context) {
 // @Produce json
 // @Param space_id path string true "Space ID"
 // @Param plugin_id path string true "Plugin ID"
-// @Param attribute_name path string true "Attribute Namw"
+// @Param attribute_name path string true "Attribute Name"
 // @Param body body node.apiRemoveSpaceAttributeValue.Body true "body params"
 // @Success 200 {object} nil
 // @Failure 500 {object} api.HTTPError

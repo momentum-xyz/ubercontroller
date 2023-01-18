@@ -69,9 +69,12 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 				verifiedUser.GET("", n.apiUsersGetByID)
 			}
 
-			attributes := verifiedUsers.Group("/attributes")
+			userAttr := verifiedUsers.Group("/attributes/:userID/:targetID/:pluginID/:attributeName")
 			{
-				attributes.POST("/sub/:userID/:targetID", n.apiSetUserUserSubAttributeValue)
+				userSubAttributes := userAttr.Group("/sub/:subAttributeKey")
+				{
+					userSubAttributes.POST("", n.apiSetUserUserSubAttributeValue)
+				}
 			}
 		}
 
