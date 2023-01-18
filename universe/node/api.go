@@ -68,6 +68,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 			{
 				verifiedUser.GET("", n.apiUsersGetByID)
 			}
+
 			attributes := verifiedUsers.Group("/attributes")
 			{
 				attributes.POST("/sub/:userID/:targetID", n.apiSetUserUserSubAttributeValue)
@@ -105,6 +106,20 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 					}
 				}
 
+				spaceUserAttr := space.Group("/:userID/attributes/:pluginID/:attributeName")
+				{
+					spaceUserAttr.GET("", n.apiGetSpaceUserAttributesValue)
+					spaceUserAttr.POST("", n.apiSetSpaceUserAttributesValue)
+					spaceUserAttr.DELETE("", n.apiRemoveSpaceUserAttributeValue)
+
+					spaceUserSubAttributes := spaceUserAttr.Group("/sub/:subAttributeKey")
+					{
+						spaceUserSubAttributes.GET("", n.apiGetSpaceUserAttributeSubValue)
+						spaceUserSubAttributes.POST("", n.apiSetSpaceUserAttributeSubValue)
+						spaceUserSubAttributes.DELETE("", n.apiRemoveSpaceUserAttributeSubValue)
+					}
+				}
+
 				spaceAdmin := space.Group("", middleware.AuthorizeAdmin(n.log, n.db))
 				{
 					spaceAdmin.POST("/options/sub", n.apiSpacesSetSpaceSubOption)
@@ -120,19 +135,6 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 				space.GET("/options", n.apiSpacesGetSpaceOptions)
 				space.GET("/options/sub", n.apiSpacesGetSpaceSubOptions)
-			}
-
-			spaceUser := verifiedSpaces.Group("/:spaceID/:userID")
-			{
-				spaceUser.POST("/attributes", n.apiSetSpaceUserAttributesValue)
-				spaceUser.DELETE("/attributes", n.apiRemoveSpaceUserAttributeValue)
-
-				spaceUser.POST("/attributes/sub", n.apiSetSpaceUserAttributeSubValue)
-				spaceUser.DELETE("/attributes/sub", n.apiRemoveSpaceUserAttributeSubValue)
-
-				spaceUser.GET("/attributes", n.apiGetSpaceUserAttributesValue)
-
-				spaceUser.GET("/attributes/sub", n.apiGetSpaceUserAttributeSubValue)
 			}
 		}
 
