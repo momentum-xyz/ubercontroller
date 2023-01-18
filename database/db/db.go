@@ -29,6 +29,74 @@ type DB struct {
 	database.UserUserAttributesDB
 }
 
+func (DB *DB) GetCommonDB() database.CommonDB {
+	return DB.CommonDB
+}
+
+func (DB *DB) GetNodesDB() database.NodesDB {
+	return DB.NodesDB
+}
+
+func (DB *DB) GetWorldsDB() database.WorldsDB {
+	return DB.WorldsDB
+}
+
+func (DB *DB) GetSpacesDB() database.SpacesDB {
+	return DB.SpacesDB
+}
+
+func (DB *DB) GetUsersDB() database.UsersDB {
+	return DB.UsersDB
+}
+
+func (DB *DB) GetAssets2dDB() database.Assets2dDB {
+	return DB.Assets2dDB
+}
+
+func (DB *DB) GetAssets3dDB() database.Assets3dDB {
+	return DB.Assets3dDB
+}
+
+func (DB *DB) GetPluginsDB() database.PluginsDB {
+	return DB.PluginsDB
+}
+
+func (DB *DB) GetSpaceTypesDB() database.SpaceTypesDB {
+	return DB.SpaceTypesDB
+}
+
+func (DB *DB) GetUserTypesDB() database.UserTypesDB {
+	return DB.UserTypesDB
+}
+
+func (DB *DB) GetAttributeTypesDB() database.AttributeTypesDB {
+	return DB.AttributeTypesDB
+}
+
+func (DB *DB) GetNodeAttributesDB() database.NodeAttributesDB {
+	return DB.NodeAttributesDB
+}
+
+func (DB *DB) GetSpaceAttributesDB() database.SpaceAttributesDB {
+	return DB.SpaceAttributesDB
+}
+
+func (DB *DB) GetSpaceUserAttributesDB() database.SpaceUserAttributesDB {
+	return DB.SpaceUserAttributesDB
+}
+
+func (DB *DB) GetUserAttributesDB() database.UserAttributesDB {
+	return DB.UserAttributesDB
+}
+
+func (DB *DB) GetUserUserAttributesDB() database.UserUserAttributesDB {
+	return DB.UserUserAttributesDB
+}
+
+func (DB *DB) GetUserSpaceDB() database.UserSpaceDB {
+	return DB.UserSpaceDB
+}
+
 func NewDB(
 	conn *pgxpool.Pool,
 	common database.CommonDB,

@@ -107,7 +107,7 @@ func (s *Space) AddSpace(space universe.Space, updateDB bool) error {
 	}
 
 	if updateDB {
-		if err := s.db.SpacesUpsertSpace(s.ctx, space.GetEntry()); err != nil {
+		if err := s.db.GetSpacesDB().UpsertSpace(s.ctx, space.GetEntry()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -142,7 +142,7 @@ func (s *Space) AddSpaces(spaces []universe.Space, updateDB bool) error {
 		for i := range spaces {
 			entries[i] = spaces[i].GetEntry()
 		}
-		if err := s.db.SpacesUpsertSpaces(s.ctx, entries); err != nil {
+		if err := s.db.GetSpacesDB().UpsertSpaces(s.ctx, entries); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -214,7 +214,7 @@ func (s *Space) DoRemoveSpace(space universe.Space, updateDB bool) (bool, error)
 	}
 
 	if updateDB {
-		if err := s.db.SpacesRemoveSpaceByID(s.ctx, space.GetID()); err != nil {
+		if err := s.db.GetSpacesDB().RemoveSpaceByID(s.ctx, space.GetID()); err != nil {
 			return false, errors.WithMessage(err, "failed to update db")
 		}
 	}

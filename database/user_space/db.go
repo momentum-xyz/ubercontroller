@@ -62,7 +62,7 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 	}
 }
 
-func (db *DB) UserSpaceGetUserSpacesByUserID(ctx context.Context, userID uuid.UUID) ([]*entry.UserSpace, error) {
+func (db *DB) GetUserSpacesByUserID(ctx context.Context, userID uuid.UUID) ([]*entry.UserSpace, error) {
 	var userSpaces []*entry.UserSpace
 	if err := pgxscan.Select(ctx, db.conn, &userSpaces, getUserSpacesByUserIDQuery, userID); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
@@ -70,7 +70,7 @@ func (db *DB) UserSpaceGetUserSpacesByUserID(ctx context.Context, userID uuid.UU
 	return userSpaces, nil
 }
 
-func (db *DB) UserSpaceGetUserSpacesBySpaceID(ctx context.Context, spaceID uuid.UUID) ([]*entry.UserSpace, error) {
+func (db *DB) GetUserSpacesBySpaceID(ctx context.Context, spaceID uuid.UUID) ([]*entry.UserSpace, error) {
 	var userSpaces []*entry.UserSpace
 	if err := pgxscan.Select(ctx, db.conn, &userSpaces, getUserSpacesBySpaceIDQuery, spaceID); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
@@ -78,7 +78,7 @@ func (db *DB) UserSpaceGetUserSpacesBySpaceID(ctx context.Context, spaceID uuid.
 	return userSpaces, nil
 }
 
-func (db *DB) UserSpaceGetUserSpaceByID(ctx context.Context, userSpaceID entry.UserSpaceID) (*entry.UserSpace, error) {
+func (db *DB) GetUserSpaceByID(ctx context.Context, userSpaceID entry.UserSpaceID) (*entry.UserSpace, error) {
 	var userSpace *entry.UserSpace
 	if err := pgxscan.Select(
 		ctx, db.conn, &userSpace, getUserSpacesByUserIDAndSpaceIDQuery, userSpaceID.UserID, userSpaceID.SpaceID,
@@ -102,7 +102,7 @@ func (db *DB) UserSpaceGetUserSpaceValueByID(
 	return &value, nil
 }
 
-func (db *DB) UserSpaceGetUserSpaces(ctx context.Context) ([]*entry.UserSpace, error) {
+func (db *DB) GetUserSpaces(ctx context.Context) ([]*entry.UserSpace, error) {
 	var userSpaces []*entry.UserSpace
 	if err := pgxscan.Select(ctx, db.conn, &userSpaces, getUserSpacesQuery); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
@@ -110,7 +110,7 @@ func (db *DB) UserSpaceGetUserSpaces(ctx context.Context) ([]*entry.UserSpace, e
 	return userSpaces, nil
 }
 
-func (db *DB) UserSpaceGetSpaceIndirectAdmins(ctx context.Context, spaceID uuid.UUID) ([]*uuid.UUID, error) {
+func (db *DB) GetSpaceIndirectAdmins(ctx context.Context, spaceID uuid.UUID) ([]*uuid.UUID, error) {
 	var userIDs []*uuid.UUID
 	if err := pgxscan.Select(ctx, db.conn, &userIDs, getUserSpaceIndirectAdmins, spaceID); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
@@ -118,7 +118,7 @@ func (db *DB) UserSpaceGetSpaceIndirectAdmins(ctx context.Context, spaceID uuid.
 	return userIDs, nil
 }
 
-func (db *DB) UserSpaceCheckIsUserIndirectSpaceAdmin(ctx context.Context, userID, spaceID uuid.UUID) (bool, error) {
+func (db *DB) CheckIsUserIndirectSpaceAdmin(ctx context.Context, userID, spaceID uuid.UUID) (bool, error) {
 	var isIndirectAdmin bool
 	if err := db.conn.QueryRow(ctx, checkIsIndirectAdminQuery, userID, spaceID).
 		Scan(&isIndirectAdmin); err != nil {
@@ -127,12 +127,12 @@ func (db *DB) UserSpaceCheckIsUserIndirectSpaceAdmin(ctx context.Context, userID
 	return isIndirectAdmin, nil
 }
 
-func (db *DB) UserSpaceGetValueByID(ctx context.Context, userSpaceID entry.UserSpaceID) (*entry.UserSpaceValue, error) {
+func (db *DB) GetValueByID(ctx context.Context, userSpaceID entry.UserSpaceID) (*entry.UserSpaceValue, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (db *DB) UserSpaceUpdateValueByID(ctx context.Context, userSpaceID entry.UserSpaceID, modifyFn modify.Fn[entry.UserSpaceValue]) (*entry.UserSpaceValue, error) {
+func (db *DB) UpdateValueByID(ctx context.Context, userSpaceID entry.UserSpaceID, modifyFn modify.Fn[entry.UserSpaceValue]) (*entry.UserSpaceValue, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
@@ -157,7 +157,7 @@ func (db *DB) UserSpaceUpdateValueByID(ctx context.Context, userSpaceID entry.Us
 	return value, nil
 }
 
-func (db *DB) UserSpacesUpsertUserSpace(ctx context.Context, userSpace *entry.UserSpace) error {
+func (db *DB) UpsertUserSpace(ctx context.Context, userSpace *entry.UserSpace) error {
 	if _, err := db.conn.Exec(
 		ctx, upsertUserSpaceQuery, userSpace.SpaceID, userSpace.UserID,
 		userSpace.Value,
@@ -167,7 +167,7 @@ func (db *DB) UserSpacesUpsertUserSpace(ctx context.Context, userSpace *entry.Us
 	return nil
 }
 
-func (db *DB) UserSpacesUpsertUserSpaces(ctx context.Context, userSpaces []*entry.UserSpace) error {
+func (db *DB) UpsertUserSpaces(ctx context.Context, userSpaces []*entry.UserSpace) error {
 	batch := &pgx.Batch{}
 	for _, userSpace := range userSpaces {
 		batch.Queue(
@@ -196,7 +196,7 @@ func (db *DB) UserSpacesUpsertUserSpaces(ctx context.Context, userSpaces []*entr
 	return errs.ErrorOrNil()
 }
 
-func (db *DB) UserSpaceRemoveUserSpace(ctx context.Context, userSpaces *entry.UserSpace) error {
+func (db *DB) RemoveUserSpace(ctx context.Context, userSpaces *entry.UserSpace) error {
 	if _, err := db.conn.Exec(ctx, removeUserSpaceByIDQuery, userSpaces.UserID, userSpaces.SpaceID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
@@ -204,7 +204,7 @@ func (db *DB) UserSpaceRemoveUserSpace(ctx context.Context, userSpaces *entry.Us
 	return nil
 }
 
-func (db *DB) UserSpaceRemoveUserSpaces(ctx context.Context, userSpaces []*entry.UserSpace) error {
+func (db *DB) RemoveUserSpaces(ctx context.Context, userSpaces []*entry.UserSpace) error {
 	batch := &pgx.Batch{}
 	for _, userSpace := range userSpaces {
 		batch.Queue(removeUserSpaceByIDQuery, userSpace.UserID, userSpace.SpaceID)

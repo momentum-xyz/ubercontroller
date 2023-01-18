@@ -2,11 +2,12 @@ package main
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/universe/common"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/momentum-xyz/ubercontroller/universe/common"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -134,7 +135,7 @@ func createNode(ctx context.Context, db database.DB) (universe.Node, error) {
 	userTypes := user_types.NewUserTypes(db)
 	attributeTypes := attribute_types.NewAttributeTypes(db)
 
-	nodeEntry, err := db.NodesGetNode(ctx)
+	nodeEntry, err := db.GetNodesDB().GetNode(ctx)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to get node")
 	}

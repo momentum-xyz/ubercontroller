@@ -89,7 +89,7 @@ func (na *nodeAttributes) Upsert(
 	}
 
 	if updateDB {
-		if err := na.node.db.NodeAttributesUpsertNodeAttribute(
+		if err := na.node.db.GetNodeAttributesDB().UpsertNodeAttribute(
 			na.node.ctx, entry.NewNodeAttribute(entry.NewNodeAttributeID(attributeID), payload),
 		); err != nil {
 			return nil, errors.WithMessagef(err, "failed to upsert node attribute")
@@ -121,7 +121,7 @@ func (na *nodeAttributes) UpdateValue(
 	}
 
 	if updateDB {
-		if err := na.node.db.NodeAttributesUpdateNodeAttributeValue(na.node.ctx, attributeID, value); err != nil {
+		if err := na.node.db.GetNodeAttributesDB().UpdateNodeAttributeValue(na.node.ctx, attributeID, value); err != nil {
 			return nil, errors.WithMessagef(err, "failed to update node attribute value")
 		}
 	}
@@ -152,7 +152,7 @@ func (na *nodeAttributes) UpdateOptions(
 	}
 
 	if updateDB {
-		if err := na.node.db.NodeAttributesUpdateNodeAttributeOptions(na.node.ctx, attributeID, options); err != nil {
+		if err := na.node.db.GetNodeAttributesDB().UpdateNodeAttributeOptions(na.node.ctx, attributeID, options); err != nil {
 			return nil, errors.WithMessagef(err, "failed to update node attribute options")
 		}
 	}
@@ -172,7 +172,7 @@ func (na *nodeAttributes) Remove(attributeID entry.AttributeID, updateDB bool) (
 	}
 
 	if updateDB {
-		if err := na.node.db.NodeAttributesRemoveNodeAttributeByAttributeID(na.node.ctx, attributeID); err != nil {
+		if err := na.node.db.GetNodeAttributesDB().RemoveNodeAttributeByAttributeID(na.node.ctx, attributeID); err != nil {
 			return false, errors.WithMessagef(err, "failed to remove space attribute")
 		}
 	}
@@ -192,7 +192,7 @@ func (na *nodeAttributes) Len() int {
 func (n *Node) loadNodeAttributes() error {
 	n.log.Infof("Loading node attributes: %s...", n.GetID())
 
-	entries, err := n.db.NodeAttributesGetNodeAttributes(n.ctx)
+	entries, err := n.db.GetNodeAttributesDB().GetNodeAttributes(n.ctx)
 	if err != nil {
 		return errors.WithMessage(err, "failed to get node attributes")
 	}

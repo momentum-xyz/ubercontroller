@@ -8,7 +8,7 @@ import (
 )
 
 func (n *Node) GetUserSpaceValue(userSpaceID entry.UserSpaceID) (*entry.UserSpaceValue, bool) {
-	value, err := n.db.UserSpaceGetValueByID(n.ctx, userSpaceID)
+	value, err := n.db.GetUserSpaceDB().GetValueByID(n.ctx, userSpaceID)
 	if err != nil {
 		return nil, false
 	}
@@ -18,7 +18,7 @@ func (n *Node) GetUserSpaceValue(userSpaceID entry.UserSpaceID) (*entry.UserSpac
 func (n *Node) UpdateUserSpaceValue(
 	userSpaceID entry.UserSpaceID, modifyFn modify.Fn[entry.UserSpaceValue],
 ) (*entry.UserSpaceValue, error) {
-	value, err := n.db.UserSpaceUpdateValueByID(n.ctx, userSpaceID, modifyFn)
+	value, err := n.db.GetUserSpaceDB().UpdateValueByID(n.ctx, userSpaceID, modifyFn)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to update space user attribute value")
 	}

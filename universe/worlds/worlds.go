@@ -2,7 +2,6 @@ package worlds
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/config"
 	"sync"
 
 	"github.com/google/uuid"
@@ -11,6 +10,7 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
@@ -137,6 +137,7 @@ func (w *Worlds) AddWorlds(worlds []universe.World, updateDB bool) error {
 	return nil
 }
 
+// TODO: introduce "helper.RemoveWorld()" method and fix this one
 func (w *Worlds) RemoveWorld(world universe.World, updateDB bool) error {
 	w.worlds.Mu.Lock()
 	defer w.worlds.Mu.Unlock()
@@ -151,7 +152,7 @@ func (w *Worlds) RemoveWorld(world universe.World, updateDB bool) error {
 		for _, space := range spaces {
 			ids = append(ids, space.GetID())
 		}
-		if err := w.db.SpacesRemoveSpacesByIDs(w.ctx, ids); err != nil {
+		if err := w.db.GetSpacesDB().RemoveSpacesByIDs(w.ctx, ids); err != nil {
 			return errors.WithMessage(err, "failed to remove spaces by ids")
 		}
 	}
@@ -161,6 +162,7 @@ func (w *Worlds) RemoveWorld(world universe.World, updateDB bool) error {
 	return nil
 }
 
+// TODO: introduce "helper.RemoveWorld()" method and fix this one
 func (w *Worlds) RemoveWorlds(worlds []universe.World, updateDB bool) error {
 	w.worlds.Mu.Lock()
 	defer w.worlds.Mu.Unlock()
@@ -183,7 +185,7 @@ func (w *Worlds) RemoveWorlds(worlds []universe.World, updateDB bool) error {
 					ids = append(ids, spaces[i].GetID())
 				}
 
-				if err := w.db.SpacesRemoveSpacesByIDs(w.ctx, ids); err != nil {
+				if err := w.db.GetSpacesDB().RemoveSpacesByIDs(w.ctx, ids); err != nil {
 					return errors.WithMessagef(err, "failed to remove spaces by ids: %s", world.GetID())
 				}
 
@@ -235,7 +237,7 @@ func (w *Worlds) Stop() error {
 func (w *Worlds) Load() error {
 	w.log.Info("Loading worlds...")
 
-	worldIDs, err := w.db.WorldsGetWorldIDs(w.ctx)
+	worldIDs, err := w.db.GetWorldsDB().GetWorldIDs(w.ctx)
 	if err != nil {
 		return errors.WithMessage(err, "failed to get world ids from db")
 	}

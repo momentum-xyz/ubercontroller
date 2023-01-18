@@ -46,7 +46,7 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 	}
 }
 
-func (db *DB) Assets2dGetAssets(ctx context.Context) ([]*entry.Asset2d, error) {
+func (db *DB) GetAssets(ctx context.Context) ([]*entry.Asset2d, error) {
 	var assets []*entry.Asset2d
 	if err := pgxscan.Select(ctx, db.conn, &assets, getAssetsQuery); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
@@ -54,14 +54,14 @@ func (db *DB) Assets2dGetAssets(ctx context.Context) ([]*entry.Asset2d, error) {
 	return assets, nil
 }
 
-func (db *DB) Assets2dUpsertAsset(ctx context.Context, asset2d *entry.Asset2d) error {
+func (db *DB) UpsertAsset(ctx context.Context, asset2d *entry.Asset2d) error {
 	if _, err := db.conn.Exec(ctx, upsertAssetQuery, asset2d.Asset2dID, asset2d.Meta, asset2d.Options); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) Assets2dUpsertAssets(ctx context.Context, assets2d []*entry.Asset2d) error {
+func (db *DB) UpsertAssets(ctx context.Context, assets2d []*entry.Asset2d) error {
 	batch := &pgx.Batch{}
 	for _, asset := range assets2d {
 		batch.Queue(upsertAssetQuery, asset.Asset2dID, asset.Meta, asset.Options)
@@ -82,28 +82,28 @@ func (db *DB) Assets2dUpsertAssets(ctx context.Context, assets2d []*entry.Asset2
 	return errs.ErrorOrNil()
 }
 
-func (db *DB) Assets2dRemoveAssetByID(ctx context.Context, asset2dID uuid.UUID) error {
+func (db *DB) RemoveAssetByID(ctx context.Context, asset2dID uuid.UUID) error {
 	if _, err := db.conn.Exec(ctx, removeAssetByIDQuery, asset2dID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) Assets2dRemoveAssetsByIDs(ctx context.Context, asset2dIDs []uuid.UUID) error {
+func (db *DB) RemoveAssetsByIDs(ctx context.Context, asset2dIDs []uuid.UUID) error {
 	if _, err := db.conn.Exec(ctx, removeAssetsByIDsQuery, asset2dIDs); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) Assets2dUpdateAssetMeta(ctx context.Context, asset2dID uuid.UUID, meta *entry.Asset2dMeta) error {
+func (db *DB) UpdateAssetMeta(ctx context.Context, asset2dID uuid.UUID, meta *entry.Asset2dMeta) error {
 	if _, err := db.conn.Exec(ctx, updateAssetMetaQuery, asset2dID, meta); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) Assets2dUpdateAssetOptions(ctx context.Context, asset2dID uuid.UUID, asset2dOptions *entry.Asset2dOptions) error {
+func (db *DB) UpdateAssetOptions(ctx context.Context, asset2dID uuid.UUID, asset2dOptions *entry.Asset2dOptions) error {
 	if _, err := db.conn.Exec(ctx, updateAssetOptionsQuery, asset2dID, asset2dOptions); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}

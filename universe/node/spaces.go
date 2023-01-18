@@ -17,7 +17,7 @@ func (n *Node) SetParent(parent universe.Space, updateDB bool) error {
 
 func (n *Node) GetAllSpaces() map[uuid.UUID]universe.Space {
 	spaces := map[uuid.UUID]universe.Space{
-		n.GetID(): n,
+		n.GetID(): n.ToSpace(),
 	}
 
 	for _, world := range n.GetWorlds().GetWorlds() {
@@ -31,8 +31,8 @@ func (n *Node) GetAllSpaces() map[uuid.UUID]universe.Space {
 
 func (n *Node) FilterAllSpaces(predicateFn universe.SpacesFilterPredicateFn) map[uuid.UUID]universe.Space {
 	spaces := make(map[uuid.UUID]universe.Space)
-	if predicateFn(n.GetID(), n) {
-		spaces[n.GetID()] = n
+	if predicateFn(n.GetID(), n.ToSpace()) {
+		spaces[n.GetID()] = n.ToSpace()
 	}
 
 	for _, world := range n.GetWorlds().GetWorlds() {
@@ -46,7 +46,7 @@ func (n *Node) FilterAllSpaces(predicateFn universe.SpacesFilterPredicateFn) map
 
 func (n *Node) GetSpaceFromAllSpaces(spaceID uuid.UUID) (universe.Space, bool) {
 	if spaceID == n.GetID() {
-		return n, true
+		return n.ToSpace(), true
 	}
 
 	world, ok := n.spaceIDToWorld.Load(spaceID)

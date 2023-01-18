@@ -162,6 +162,9 @@ func RemoveSpaceFromParent(parent, space universe.Space, updateDB bool) (bool, e
 	if err != nil {
 		return false, errors.WithMessagef(err, "failed to remove space from parent: %s", parent.GetID())
 	}
+	if !removed {
+		return false, nil
+	}
 
 	var errs *multierror.Error
 	if space.GetEnabled() { // we need this check to avoid spam while removing children

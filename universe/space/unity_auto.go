@@ -2,11 +2,12 @@ package space
 
 import (
 	"github.com/gorilla/websocket"
+	"github.com/pkg/errors"
+
 	"github.com/momentum-xyz/ubercontroller/pkg/message"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/common/unity"
-	"github.com/pkg/errors"
 )
 
 func (s *Space) unityAutoOnSpaceAttributeChanged(
@@ -42,7 +43,7 @@ func (s *Space) unityAutoOnSpaceAttributeChanged(
 
 			(*value)["auto_render_hash"] = hash.Hash
 
-			if err := s.db.SpaceAttributesUpdateSpaceAttributeValue(
+			if err := s.db.GetSpaceAttributesDB().UpdateSpaceAttributeValue(
 				s.ctx, entry.NewSpaceAttributeID(attributeID, s.GetID()), value,
 			); err != nil {
 				return errors.WithMessage(err, "failed to update db")

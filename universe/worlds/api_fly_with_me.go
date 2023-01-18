@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/posbus-protocol/posbus"
+
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
 )
@@ -54,7 +55,7 @@ func (w *Worlds) apiWorldsFlyToMe(c *gin.Context) {
 		return
 	}
 
-	userProfile, err := w.db.UsersGetUserProfileByUserID(c, user.GetID())
+	userProfile, err := w.db.GetUsersDB().GetUserProfileByUserID(c, user.GetID())
 	if err != nil {
 		err = errors.WithMessage(err, "Worlds: apiWorldsFlyToMe: failed to get user profile by user id")
 		api.AbortRequest(c, http.StatusNotFound, "profile_not_found", err, w.log)

@@ -2,10 +2,12 @@ package node
 
 import (
 	"net/http"
+	"net/url"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/momentum-xyz/ubercontroller/config"
+	"github.com/momentum-xyz/ubercontroller/universe/common/api"
 )
 
 // @Summary Config for UI client
@@ -30,15 +32,25 @@ func (n *Node) apiGetUIClientConfig(c *gin.Context) {
 		BackendEndpointURL      string `json:"BACKEND_ENDPOINT_URL"`
 	}
 
-	unityClientURL := n.cfg.UIClient.FrontendURL + "/unity"
+	var unityClientURLString string
+	if n.cfg.UIClient.UnityClientURL != "" {
+		unityClientURLString = n.cfg.UIClient.UnityClientURL
+	} else {
+		unityClientURLString = n.cfg.UIClient.FrontendURL + "/unity"
+	}
+	unityClientURL, err := url.Parse(unityClientURLString)
+	if err != nil {
+		api.AbortRequest(c, http.StatusInternalServerError, "invalid_configuration", err, n.log)
+		return
+	}
 	out := Response{
 		UIClient:                n.cfg.UIClient,
 		NodeID:                  n.GetID().String(),
-		UnityClientURL:          unityClientURL,
-		UnityClientLoaderURL:    unityClientURL + "/WebGL.loader.js",
-		UnityClientDataURL:      unityClientURL + "/WebGL.data.gz",
-		UnityClientFrameworkURL: unityClientURL + "/WebGL.framework.js.gz",
-		UnityClientCodeURL:      unityClientURL + "/WebGL.wasm.gz",
+		UnityClientURL:          unityClientURL.String(),
+		UnityClientLoaderURL:    unityClientURL.JoinPath(n.cfg.UIClient.UnityLoaderFileName).String(),
+		UnityClientDataURL:      unityClientURL.JoinPath(n.cfg.UIClient.UnityDataFileName).String(),
+		UnityClientFrameworkURL: unityClientURL.JoinPath(n.cfg.UIClient.UnityFrameworkFileName).String(),
+		UnityClientCodeURL:      unityClientURL.JoinPath(n.cfg.UIClient.UnityCodeFileName).String(),
 		RenderServiceURL:        n.cfg.UIClient.FrontendURL + "/api/v3/render",
 		BackendEndpointURL:      n.cfg.UIClient.FrontendURL + "/api/v3/backend",
 	}

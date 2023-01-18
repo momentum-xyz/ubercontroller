@@ -50,7 +50,7 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 	}
 }
 
-func (db *DB) NodeAttributesGetNodeAttributes(ctx context.Context) ([]*entry.NodeAttribute, error) {
+func (db *DB) GetNodeAttributes(ctx context.Context) ([]*entry.NodeAttribute, error) {
 	var assets []*entry.NodeAttribute
 	if err := pgxscan.Select(ctx, db.conn, &assets, getNodeAttributesQuery); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
@@ -58,7 +58,7 @@ func (db *DB) NodeAttributesGetNodeAttributes(ctx context.Context) ([]*entry.Nod
 	return assets, nil
 }
 
-func (db *DB) NodeAttributesGetNodeAttributeByAttributeID(
+func (db *DB) GetNodeAttributeByAttributeID(
 	ctx context.Context, attributeID entry.AttributeID,
 ) (*entry.NodeAttribute, error) {
 	var attr entry.NodeAttribute
@@ -71,7 +71,7 @@ func (db *DB) NodeAttributesGetNodeAttributeByAttributeID(
 	return &attr, nil
 }
 
-func (db *DB) NodeAttributesGetNodeAttributeValueByAttributeID(
+func (db *DB) GetNodeAttributeValueByAttributeID(
 	ctx context.Context, attributeID entry.AttributeID,
 ) (*entry.AttributeValue, error) {
 	var value entry.AttributeValue
@@ -85,7 +85,7 @@ func (db *DB) NodeAttributesGetNodeAttributeValueByAttributeID(
 	return &value, nil
 }
 
-func (db *DB) NodeAttributesGetNodeAttributeOptionsByAttributeID(
+func (db *DB) GetNodeAttributeOptionsByAttributeID(
 	ctx context.Context, attributeID entry.AttributeID,
 ) (*entry.AttributeOptions, error) {
 	var options entry.AttributeOptions
@@ -99,7 +99,7 @@ func (db *DB) NodeAttributesGetNodeAttributeOptionsByAttributeID(
 	return &options, nil
 }
 
-func (db *DB) NodeAttributesUpsertNodeAttribute(ctx context.Context, nodeAttribute *entry.NodeAttribute) error {
+func (db *DB) UpsertNodeAttribute(ctx context.Context, nodeAttribute *entry.NodeAttribute) error {
 	if _, err := db.conn.Exec(
 		ctx, upsertNodeAttributeQuery,
 		nodeAttribute.PluginID, nodeAttribute.Name, nodeAttribute.Value, nodeAttribute.Options,
@@ -109,7 +109,7 @@ func (db *DB) NodeAttributesUpsertNodeAttribute(ctx context.Context, nodeAttribu
 	return nil
 }
 
-func (db *DB) NodeAttributesUpsertNodeAttributes(ctx context.Context, nodeAttributes []*entry.NodeAttribute) error {
+func (db *DB) UpsertNodeAttributes(ctx context.Context, nodeAttributes []*entry.NodeAttribute) error {
 	batch := &pgx.Batch{}
 	for i := range nodeAttributes {
 		batch.Queue(
@@ -133,28 +133,28 @@ func (db *DB) NodeAttributesUpsertNodeAttributes(ctx context.Context, nodeAttrib
 	return errs.ErrorOrNil()
 }
 
-func (db *DB) NodeAttributesRemoveNodeAttributeByName(ctx context.Context, name string) error {
+func (db *DB) RemoveNodeAttributeByName(ctx context.Context, name string) error {
 	if _, err := db.conn.Exec(ctx, removeNodeAttributeByNameQuery, name); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) NodeAttributesRemoveNodeAttributesByNames(ctx context.Context, names []string) error {
+func (db *DB) RemoveNodeAttributesByNames(ctx context.Context, names []string) error {
 	if _, err := db.conn.Exec(ctx, removeNodeAttributesByNamesQuery, names); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) NodeAttributesRemoveNodeAttributesByPluginID(ctx context.Context, pluginID uuid.UUID) error {
+func (db *DB) RemoveNodeAttributesByPluginID(ctx context.Context, pluginID uuid.UUID) error {
 	if _, err := db.conn.Exec(ctx, removeNodeAttributesByPluginIdQuery, pluginID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) NodeAttributesRemoveNodeAttributeByAttributeID(ctx context.Context, attributeID entry.AttributeID) error {
+func (db *DB) RemoveNodeAttributeByAttributeID(ctx context.Context, attributeID entry.AttributeID) error {
 	if _, err := db.conn.Exec(
 		ctx, removeNodeAttributeByPluginIdAndNameQuery, attributeID.PluginID, attributeID.Name,
 	); err != nil {
@@ -163,7 +163,7 @@ func (db *DB) NodeAttributesRemoveNodeAttributeByAttributeID(ctx context.Context
 	return nil
 }
 
-func (db *DB) NodeAttributesUpdateNodeAttributeValue(
+func (db *DB) UpdateNodeAttributeValue(
 	ctx context.Context, attributeID entry.AttributeID, value *entry.AttributeValue,
 ) error {
 	if _, err := db.conn.Exec(
@@ -175,7 +175,7 @@ func (db *DB) NodeAttributesUpdateNodeAttributeValue(
 	return nil
 }
 
-func (db *DB) NodeAttributesUpdateNodeAttributeOptions(
+func (db *DB) UpdateNodeAttributeOptions(
 	ctx context.Context, attributeID entry.AttributeID, options *entry.AttributeOptions,
 ) error {
 	if _, err := db.conn.Exec(

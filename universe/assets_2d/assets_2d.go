@@ -2,7 +2,11 @@ package assets_2d
 
 import (
 	"context"
+
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
+
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -10,8 +14,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/asset_2d"
 	"github.com/momentum-xyz/ubercontroller/utils"
-	"github.com/pkg/errors"
-	"go.uber.org/zap"
 )
 
 var _ universe.Assets2d = (*Assets2d)(nil)
@@ -82,7 +84,7 @@ func (a *Assets2d) AddAsset2d(asset2d universe.Asset2d, updateDB bool) error {
 	defer a.assets.Mu.Unlock()
 
 	if updateDB {
-		if err := a.db.Assets2dUpsertAsset(a.ctx, asset2d.GetEntry()); err != nil {
+		if err := a.db.GetAssets2dDB().UpsertAsset(a.ctx, asset2d.GetEntry()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -101,7 +103,7 @@ func (a *Assets2d) AddAssets2d(assets2d []universe.Asset2d, updateDB bool) error
 		for i := range assets2d {
 			entries[i] = assets2d[i].GetEntry()
 		}
-		if err := a.db.Assets2dUpsertAssets(a.ctx, entries); err != nil {
+		if err := a.db.GetAssets2dDB().UpsertAssets(a.ctx, entries); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -122,7 +124,7 @@ func (a *Assets2d) RemoveAsset2d(asset2d universe.Asset2d, updateDB bool) error 
 	}
 
 	if updateDB {
-		if err := a.db.Assets2dRemoveAssetByID(a.ctx, asset2d.GetID()); err != nil {
+		if err := a.db.GetAssets2dDB().RemoveAssetByID(a.ctx, asset2d.GetID()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -147,7 +149,7 @@ func (a *Assets2d) RemoveAssets2d(assets2d []universe.Asset2d, updateDB bool) er
 		for i := range assets2d {
 			ids[i] = assets2d[i].GetID()
 		}
-		if err := a.db.Assets2dRemoveAssetsByIDs(a.ctx, ids); err != nil {
+		if err := a.db.GetAssets2dDB().RemoveAssetsByIDs(a.ctx, ids); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -162,7 +164,7 @@ func (a *Assets2d) RemoveAssets2d(assets2d []universe.Asset2d, updateDB bool) er
 func (a *Assets2d) Load() error {
 	a.log.Info("Loading assets 2d...")
 
-	entries, err := a.db.Assets2dGetAssets(a.ctx)
+	entries, err := a.db.GetAssets2dDB().GetAssets(a.ctx)
 	if err != nil {
 		return errors.WithMessage(err, "failed to get assets 2d")
 	}
@@ -195,7 +197,7 @@ func (a *Assets2d) Save() error {
 		entries = append(entries, asset.GetEntry())
 	}
 
-	if err := a.db.Assets2dUpsertAssets(a.ctx, entries); err != nil {
+	if err := a.db.GetAssets2dDB().UpsertAssets(a.ctx, entries); err != nil {
 		return errors.WithMessage(err, "failed to upsert assets 2d")
 	}
 
