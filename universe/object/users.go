@@ -1,4 +1,4 @@
-package space
+package object
 
 import (
 	"github.com/google/uuid"
@@ -9,7 +9,7 @@ import (
 	"github.com/zakaria-chahboun/cute"
 )
 
-func (s *Space) GetUser(userID uuid.UUID, recursive bool) (universe.User, bool) {
+func (s *Object) GetUser(userID uuid.UUID, recursive bool) (universe.User, bool) {
 	user, ok := s.Users.Load(userID)
 	if ok {
 		return user, true
@@ -33,7 +33,7 @@ func (s *Space) GetUser(userID uuid.UUID, recursive bool) (universe.User, bool) 
 
 // GetUsers return map with all nested users if recursive is true,
 // otherwise the method return map with users dependent only to current space.
-func (s *Space) GetUsers(recursive bool) map[uuid.UUID]universe.User {
+func (s *Object) GetUsers(recursive bool) map[uuid.UUID]universe.User {
 	s.Users.Mu.RLock()
 	users := make(map[uuid.UUID]universe.User, len(s.Users.Data))
 	for id, user := range s.Users.Data {
@@ -58,7 +58,7 @@ func (s *Space) GetUsers(recursive bool) map[uuid.UUID]universe.User {
 }
 
 // TODO: think about rollback on error
-func (s *Space) AddUser(user universe.User, updateDB bool) error {
+func (s *Object) AddUser(user universe.User, updateDB bool) error {
 	s.Users.Mu.Lock()
 	defer s.Users.Mu.Unlock()
 
@@ -67,17 +67,17 @@ func (s *Space) AddUser(user universe.User, updateDB bool) error {
 	}
 
 	if updateDB {
-		s.log.Error("Space: AddUser: update database is not supported")
+		s.log.Error("Object: AddUser: update database is not supported")
 	}
 
-	user.SetSpace(s)
+	user.SetObject(s)
 	s.Users.Data[user.GetID()] = user
 	s.sendSpaceEnterLeaveStats(user, 1)
 
 	return nil
 }
 
-func (s *Space) RemoveUser(user universe.User, updateDB bool) error {
+func (s *Object) RemoveUser(user universe.User, updateDB bool) error {
 	s.Users.Mu.Lock()
 	defer s.Users.Mu.Unlock()
 
@@ -86,24 +86,24 @@ func (s *Space) RemoveUser(user universe.User, updateDB bool) error {
 	}
 
 	if updateDB {
-		s.log.Error("Space: RemoveUser: update database is not supported")
+		s.log.Error("Object: RemoveUser: update database is not supported")
 	}
 
-	user.SetSpace(nil)
+	user.SetObject(nil)
 	delete(s.Users.Data, user.GetID())
 	s.sendSpaceEnterLeaveStats(user, 1)
 	return nil
 }
 
-func (s *Space) SendToUser(userID uuid.UUID, msg *websocket.PreparedMessage, recursive bool) error {
+func (s *Object) SendToUser(userID uuid.UUID, msg *websocket.PreparedMessage, recursive bool) error {
 	return errors.Errorf("implement me")
 }
 
-func (s *Space) Send(msg *websocket.PreparedMessage, recursive bool) error {
+func (s *Object) Send(msg *websocket.PreparedMessage, recursive bool) error {
 	if msg == nil {
 		cute.SetTitleColor(cute.BrightRed)
 		cute.SetMessageColor(cute.Red)
-		cute.Printf("Space: Send", "%+v", errors.WithStack(errors.Errorf("empty message received")))
+		cute.Printf("Object: Send", "%+v", errors.WithStack(errors.Errorf("empty message received")))
 		return nil
 	}
 
@@ -113,7 +113,7 @@ func (s *Space) Send(msg *websocket.PreparedMessage, recursive bool) error {
 		}
 		s.broadcastPipeline <- msg
 	}
-	
+
 	if !recursive {
 		return nil
 	}
@@ -133,7 +133,7 @@ func (s *Space) Send(msg *websocket.PreparedMessage, recursive bool) error {
 	return errs.ErrorOrNil()
 }
 
-func (s *Space) performBroadcast(message *websocket.PreparedMessage) {
+func (s *Object) performBroadcast(message *websocket.PreparedMessage) {
 	s.Users.Mu.RLock()
 	defer s.Users.Mu.RUnlock()
 

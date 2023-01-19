@@ -1,4 +1,4 @@
-package space
+package object
 
 import (
 	"github.com/pkg/errors"
@@ -13,11 +13,11 @@ import (
 var _ universe.Attributes[entry.AttributeID] = (*spaceAttributes)(nil)
 
 type spaceAttributes struct {
-	space *Space
+	space *Object
 	data  map[entry.AttributeID]*entry.AttributePayload
 }
 
-func newSpaceAttributes(space *Space) *spaceAttributes {
+func newSpaceAttributes(space *Object) *spaceAttributes {
 	return &spaceAttributes{
 		space: space,
 		data:  make(map[entry.AttributeID]*entry.AttributePayload),
@@ -71,7 +71,7 @@ func (sa *spaceAttributes) GetEffectiveOptions(attributeID entry.AttributeID) (*
 		sa.space.log.Error(
 			errors.WithMessagef(
 				err,
-				"Space attributes: GetEffectiveOptions: failed to merge options: %s: %+v",
+				"Object attributes: GetEffectiveOptions: failed to merge options: %s: %+v",
 				sa.space.GetID(), attributeID,
 			),
 		)
@@ -228,18 +228,18 @@ func (sa *spaceAttributes) Len() int {
 	return len(sa.data)
 }
 
-func (s *Space) onSpaceAttributeChanged(
+func (s *Object) onSpaceAttributeChanged(
 	changeType universe.AttributeChangeType, attributeID entry.AttributeID,
 	value *entry.AttributeValue, effectiveOptions *entry.AttributeOptions,
 ) {
 	go s.calendarOnSpaceAttributeChanged(changeType, attributeID, value, effectiveOptions)
 
 	if effectiveOptions == nil {
-		options, ok := s.GetSpaceAttributes().GetEffectiveOptions(attributeID)
+		options, ok := s.GetObjectAttributes().GetEffectiveOptions(attributeID)
 		if !ok {
 			s.log.Error(
 				errors.Errorf(
-					"Space: onSpaceAttributeChanged: failed to get space attribute effective options: %+v",
+					"Object: onSpaceAttributeChanged: failed to get space attribute effective options: %+v",
 					attributeID,
 				),
 			)
@@ -252,7 +252,7 @@ func (s *Space) onSpaceAttributeChanged(
 		if err := s.posBusAutoOnSpaceAttributeChanged(changeType, attributeID, value, effectiveOptions); err != nil {
 			s.log.Error(
 				errors.WithMessagef(
-					err, "Space: onSpaceAttributeChanged: failed to handle posbus auto: %s: %+v",
+					err, "Object: onSpaceAttributeChanged: failed to handle posbus auto: %s: %+v",
 					s.GetID(), attributeID,
 				),
 			)
@@ -263,7 +263,7 @@ func (s *Space) onSpaceAttributeChanged(
 		if err := s.unityAutoOnSpaceAttributeChanged(changeType, attributeID, value, effectiveOptions); err != nil {
 			s.log.Error(
 				errors.WithMessagef(
-					err, "Space: onSpaceAttributeChanged: failed to handle unity auto: %s: %+v",
+					err, "Object: onSpaceAttributeChanged: failed to handle unity auto: %s: %+v",
 					s.GetID(), attributeID,
 				),
 			)
@@ -271,7 +271,7 @@ func (s *Space) onSpaceAttributeChanged(
 	}()
 }
 
-func (s *Space) calendarOnSpaceAttributeChanged(
+func (s *Object) calendarOnSpaceAttributeChanged(
 	changeType universe.AttributeChangeType, attributeID entry.AttributeID, value *entry.AttributeValue,
 	effectiveOptions *entry.AttributeOptions,
 ) error {
@@ -292,13 +292,13 @@ func (s *Space) calendarOnSpaceAttributeChanged(
 	return nil
 }
 
-func (s *Space) loadSpaceAttributes() error {
+func (s *Object) loadSpaceAttributes() error {
 	entries, err := s.db.GetSpaceAttributesDB().GetSpaceAttributesBySpaceID(s.ctx, s.GetID())
 	if err != nil {
 		return errors.WithMessage(err, "failed to get space attributes")
 	}
 
-	attributes := s.GetSpaceAttributes()
+	attributes := s.GetObjectAttributes()
 	for i := range entries {
 		if _, err := attributes.Upsert(
 			entries[i].AttributeID, modify.MergeWith(entries[i].AttributePayload), false,
@@ -310,7 +310,7 @@ func (s *Space) loadSpaceAttributes() error {
 		if !ok {
 			// QUESTION: why our "attribute_type.attribute_name" is not a foreign key in database?
 			s.log.Warnf(
-				"Space: loadSpaceAttributes: failed to get space attribute effective options: %+v",
+				"Object: loadSpaceAttributes: failed to get space attribute effective options: %+v",
 				entries[i].SpaceAttributeID,
 			)
 			continue
@@ -322,7 +322,7 @@ func (s *Space) loadSpaceAttributes() error {
 		s.UpdateAutoTextureMap(autoOption, entries[i].Value)
 	}
 
-	s.log.Debugf("Space attributes loaded: %s: %d", s.GetID(), attributes.Len())
+	s.log.Debugf("Object attributes loaded: %s: %d", s.GetID(), attributes.Len())
 
 	return nil
 }

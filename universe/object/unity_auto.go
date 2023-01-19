@@ -1,4 +1,4 @@
-package space
+package object
 
 import (
 	"github.com/gorilla/websocket"
@@ -10,7 +10,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/common/unity"
 )
 
-func (s *Space) unityAutoOnSpaceAttributeChanged(
+func (s *Object) unityAutoOnSpaceAttributeChanged(
 	changeType universe.AttributeChangeType,
 	attributeID entry.AttributeID,
 	value *entry.AttributeValue,
@@ -58,7 +58,7 @@ func (s *Space) unityAutoOnSpaceAttributeChanged(
 	return nil
 }
 
-func (s *Space) SendUnityAutoAttributeMessage(
+func (s *Object) SendUnityAutoAttributeMessage(
 	option *entry.UnityAutoAttributeOption,
 	value *entry.AttributeValue,
 	send func(*websocket.PreparedMessage) error,
@@ -70,7 +70,7 @@ func (s *Space) SendUnityAutoAttributeMessage(
 	return
 }
 
-func (s *Space) UpdateAutoTextureMap(
+func (s *Object) UpdateAutoTextureMap(
 	option *entry.UnityAutoAttributeOption, value *entry.AttributeValue,
 ) *websocket.PreparedMessage {
 	if option == nil || value == nil {

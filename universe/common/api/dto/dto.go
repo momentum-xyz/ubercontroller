@@ -22,7 +22,7 @@ type PluginsOptions map[uuid.UUID]PluginOptions
 
 type PluginOptions *entry.PluginOptions
 
-type SpaceOptions *entry.SpaceOptions
+type SpaceOptions *entry.ObjectOptions
 
 type SpaceSubOptions map[string]any
 

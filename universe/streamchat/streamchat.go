@@ -185,7 +185,7 @@ func (s *StreamChat) GetToken(ctx context.Context, user universe.User) (string, 
 }
 
 // Get or create a channel for given space.
-func (s *StreamChat) GetChannel(ctx context.Context, space universe.Space) (*stream.Channel, error) {
+func (s *StreamChat) GetChannel(ctx context.Context, space universe.Object) (*stream.Channel, error) {
 
 	chanID := space.GetID().String()
 	userID := systemUser

@@ -56,8 +56,8 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 	}
 }
 
-func (db *DB) GetSpaceByID(ctx context.Context, spaceID uuid.UUID) (*entry.Space, error) {
-	var space entry.Space
+func (db *DB) GetSpaceByID(ctx context.Context, spaceID uuid.UUID) (*entry.Object, error) {
+	var space entry.Object
 	if err := pgxscan.Get(ctx, db.conn, &space, getSpaceByIDQuery, spaceID); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
@@ -72,8 +72,8 @@ func (db *DB) GetSpaceIDsByParentID(ctx context.Context, parentID uuid.UUID) ([]
 	return ids, nil
 }
 
-func (db *DB) GetSpacesByParentID(ctx context.Context, parentID uuid.UUID) ([]*entry.Space, error) {
-	var spaces []*entry.Space
+func (db *DB) GetSpacesByParentID(ctx context.Context, parentID uuid.UUID) ([]*entry.Object, error) {
+	var spaces []*entry.Object
 	if err := pgxscan.Select(ctx, db.conn, &spaces, getSpacesByParentIDQuery, parentID); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
@@ -136,14 +136,14 @@ func (db *DB) UpdateSpaceSpaceTypeID(ctx context.Context, spaceID, spaceTypeID u
 	return nil
 }
 
-func (db *DB) UpdateSpaceOptions(ctx context.Context, spaceID uuid.UUID, options *entry.SpaceOptions) error {
+func (db *DB) UpdateSpaceOptions(ctx context.Context, spaceID uuid.UUID, options *entry.ObjectOptions) error {
 	if _, err := db.conn.Exec(ctx, updateSpaceOptionsQuery, spaceID, options); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) UpsertSpace(ctx context.Context, space *entry.Space) error {
+func (db *DB) UpsertSpace(ctx context.Context, space *entry.Object) error {
 	if _, err := db.conn.Exec(
 		ctx, upsertSpaceQuery,
 		space.SpaceID, space.SpaceTypeID, space.OwnerID, space.ParentID, space.Asset2dID, space.Asset3dID,
@@ -154,7 +154,7 @@ func (db *DB) UpsertSpace(ctx context.Context, space *entry.Space) error {
 	return nil
 }
 
-func (db *DB) UpsertSpaces(ctx context.Context, spaces []*entry.Space) error {
+func (db *DB) UpsertSpaces(ctx context.Context, spaces []*entry.Object) error {
 	batch := &pgx.Batch{}
 	for _, space := range spaces {
 		batch.Queue(

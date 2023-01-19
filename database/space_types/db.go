@@ -50,15 +50,15 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 	}
 }
 
-func (db *DB) GetSpaceTypes(ctx context.Context) ([]*entry.SpaceType, error) {
-	var spaceTypes []*entry.SpaceType
+func (db *DB) GetSpaceTypes(ctx context.Context) ([]*entry.ObjectType, error) {
+	var spaceTypes []*entry.ObjectType
 	if err := pgxscan.Select(ctx, db.conn, &spaceTypes, getSpaceTypesQuery); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return spaceTypes, nil
 }
 
-func (db *DB) UpsertSpaceType(ctx context.Context, spaceType *entry.SpaceType) error {
+func (db *DB) UpsertSpaceType(ctx context.Context, spaceType *entry.ObjectType) error {
 	if _, err := db.conn.Exec(ctx, upsertSpaceTypeQuery, spaceType.SpaceTypeID, spaceType.Asset2dID, spaceType.Asset3dID,
 		spaceType.SpaceTypeName, spaceType.CategoryName, spaceType.Description, spaceType.Options); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
@@ -66,7 +66,7 @@ func (db *DB) UpsertSpaceType(ctx context.Context, spaceType *entry.SpaceType) e
 	return nil
 }
 
-func (db *DB) UpsertSpaceTypes(ctx context.Context, spaceTypes []*entry.SpaceType) error {
+func (db *DB) UpsertSpaceTypes(ctx context.Context, spaceTypes []*entry.ObjectType) error {
 	batch := &pgx.Batch{}
 	for _, spaceType := range spaceTypes {
 		batch.Queue(upsertSpaceTypeQuery, spaceType.SpaceTypeID, spaceType.Asset2dID, spaceType.Asset3dID,
@@ -121,7 +121,7 @@ func (db *DB) UpdateSpaceTypeDescription(ctx context.Context, spaceTypeID uuid.U
 	return nil
 }
 
-func (db *DB) UpdateSpaceTypeOptions(ctx context.Context, spaceTypeID uuid.UUID, options *entry.SpaceOptions) error {
+func (db *DB) UpdateSpaceTypeOptions(ctx context.Context, spaceTypeID uuid.UUID, options *entry.ObjectOptions) error {
 	if _, err := db.conn.Exec(ctx, updateSpaceTypeOptionsQuery, spaceTypeID, options); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}

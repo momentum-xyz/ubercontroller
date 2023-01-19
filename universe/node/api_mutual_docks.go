@@ -242,16 +242,16 @@ func createWorldPortal(portalName string, from, to universe.World) (uuid.UUID, e
 	return helper.AddSpaceFromTemplate(&template, true)
 }
 
-func getWorldDockingStation(world universe.World) (universe.Space, error) {
+func getWorldDockingStation(world universe.World) (universe.Object, error) {
 	dockingStationID := world.GetSettings().Spaces["docking_station"]
-	dockingStation, ok := world.GetSpaceFromAllSpaces(dockingStationID)
+	dockingStation, ok := world.GetObjectFromAllObjects(dockingStationID)
 	if !ok {
 		return nil, errors.Errorf("failed to get docking station space: %s", dockingStationID)
 	}
 	return dockingStation, nil
 }
 
-func getWorldPortals(from, to universe.World) map[uuid.UUID]universe.Space {
+func getWorldPortals(from, to universe.World) map[uuid.UUID]universe.Object {
 	dockingStation, err := getWorldDockingStation(from)
 	if err != nil {
 		return nil
@@ -261,8 +261,8 @@ func getWorldPortals(from, to universe.World) map[uuid.UUID]universe.Space {
 	attributeID := entry.NewAttributeID(
 		universe.GetSystemPluginID(), universe.ReservedAttributes.World.TeleportDestination.Name,
 	)
-	findPortalFn := func(spaceID uuid.UUID, space universe.Space) bool {
-		value, ok := space.GetSpaceAttributes().GetValue(attributeID)
+	findPortalFn := func(spaceID uuid.UUID, space universe.Object) bool {
+		value, ok := space.GetObjectAttributes().GetValue(attributeID)
 		if !ok || value == nil {
 			return false
 		}
@@ -275,5 +275,5 @@ func getWorldPortals(from, to universe.World) map[uuid.UUID]universe.Space {
 		return false
 	}
 
-	return dockingStation.FilterSpaces(findPortalFn, false)
+	return dockingStation.FilterObjects(findPortalFn, false)
 }

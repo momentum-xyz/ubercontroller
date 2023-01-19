@@ -116,7 +116,7 @@ func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 		return
 	}
 
-	root, ok := world.GetSpaceFromAllSpaces(spaceID)
+	root, ok := world.GetObjectFromAllObjects(spaceID)
 	if !ok {
 		err := errors.Errorf("Worlds: apiWorldsGetSpacesWithChildren: failed to get space: %s", spaceID)
 		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, w.log)
@@ -133,8 +133,8 @@ func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 	c.JSON(http.StatusOK, options)
 }
 
-func (w *Worlds) apiWorldsGetRootOptions(root universe.Space) (dto.ExploreOption, error) {
-	spaces := root.GetSpaces(false)
+func (w *Worlds) apiWorldsGetRootOptions(root universe.Object) (dto.ExploreOption, error) {
+	spaces := root.GetObjects(false)
 	var option dto.ExploreOption
 
 	name, description, err := w.apiWorldsResolveNameDescription(root)
@@ -157,7 +157,7 @@ func (w *Worlds) apiWorldsGetRootOptions(root universe.Space) (dto.ExploreOption
 	return option, nil
 }
 
-func (w *Worlds) apiWorldsGetChildrenOptions(spaces map[uuid.UUID]universe.Space, currentLevel int, maxLevel int) ([]dto.ExploreOption, error) {
+func (w *Worlds) apiWorldsGetChildrenOptions(spaces map[uuid.UUID]universe.Object, currentLevel int, maxLevel int) ([]dto.ExploreOption, error) {
 	options := make([]dto.ExploreOption, 0, len(spaces))
 	if currentLevel == maxLevel {
 		return options, nil
@@ -169,7 +169,7 @@ func (w *Worlds) apiWorldsGetChildrenOptions(spaces map[uuid.UUID]universe.Space
 			return nil, errors.WithMessage(err, "failed to resolve name or description")
 		}
 
-		subSpaces := space.GetSpaces(false)
+		subSpaces := space.GetObjects(false)
 		foundSubSpaces, err := w.apiWorldsGetChildrenOptions(subSpaces, currentLevel+1, maxLevel)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to get options")
@@ -188,10 +188,10 @@ func (w *Worlds) apiWorldsGetChildrenOptions(spaces map[uuid.UUID]universe.Space
 	return options, nil
 }
 
-func (w *Worlds) apiWorldsResolveNameDescription(space universe.Space) (spaceName string, spaceDescription string, err error) {
+func (w *Worlds) apiWorldsResolveNameDescription(space universe.Object) (spaceName string, spaceDescription string, err error) {
 	var description string
 	descriptionAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Space.Description.Name)
-	descriptionValue, _ := space.GetSpaceAttributes().GetValue(descriptionAttributeID)
+	descriptionValue, _ := space.GetObjectAttributes().GetValue(descriptionAttributeID)
 	if descriptionValue != nil {
 		description = utils.GetFromAnyMap(*descriptionValue, universe.ReservedAttributes.Space.Description.Name, "")
 	}
@@ -250,7 +250,7 @@ func (w *Worlds) apiWorldsSearchSpaces(c *gin.Context) {
 }
 
 func (w *Worlds) apiWorldsFilterSpaces(searchQuery string, world universe.World) (dto.SearchOptions, error) {
-	predicateFn := func(spaceID uuid.UUID, space universe.Space) bool {
+	predicateFn := func(spaceID uuid.UUID, space universe.Object) bool {
 		name, _, err := w.apiWorldsResolveNameDescription(space)
 		if err != nil {
 			return false
@@ -261,7 +261,7 @@ func (w *Worlds) apiWorldsFilterSpaces(searchQuery string, world universe.World)
 		return strings.Contains(name, searchQuery)
 	}
 
-	spaces := world.FilterAllSpaces(predicateFn)
+	spaces := world.FilterAllObjects(predicateFn)
 
 	options, err := w.apiWorldsGetChildrenOptions(spaces, 0, 1)
 	if err != nil {
@@ -270,12 +270,12 @@ func (w *Worlds) apiWorldsFilterSpaces(searchQuery string, world universe.World)
 
 	group := make(dto.SearchOptions)
 	for _, option := range options {
-		space, ok := world.GetSpaceFromAllSpaces(option.ID)
+		space, ok := world.GetObjectFromAllObjects(option.ID)
 		if !ok {
 			return nil, errors.Errorf("failed to get space: %T", option.ID)
 		}
 
-		spaceType := space.GetSpaceType()
+		spaceType := space.GetObjectType()
 		categoryName := spaceType.GetCategoryName()
 
 		group[categoryName] = append(group[categoryName], option)

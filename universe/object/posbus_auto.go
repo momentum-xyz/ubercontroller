@@ -1,4 +1,4 @@
-package space
+package object
 
 import (
 	"github.com/hashicorp/go-multierror"
@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (s *Space) posBusAutoOnSpaceAttributeChanged(
+func (s *Object) posBusAutoOnSpaceAttributeChanged(
 	changeType universe.AttributeChangeType, attributeID entry.AttributeID, value *entry.AttributeValue,
 	effectiveOptions *entry.AttributeOptions,
 ) error {

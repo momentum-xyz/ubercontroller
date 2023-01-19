@@ -21,14 +21,14 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/calendar"
-	"github.com/momentum-xyz/ubercontroller/universe/space"
+	"github.com/momentum-xyz/ubercontroller/universe/object"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 var _ universe.World = (*World)(nil)
 
 type World struct {
-	*space.Space
+	*object.Object
 	ctx              context.Context
 	cancel           context.CancelFunc
 	log              *zap.SugaredLogger
@@ -39,16 +39,16 @@ type World struct {
 	metaMsg             atomic.Pointer[websocket.PreparedMessage]
 	metaData            Metadata
 	settings            atomic.Pointer[universe.WorldSettings]
-	allSpaces           *generic.SyncMap[uuid.UUID, universe.Space]
+	allSpaces           *generic.SyncMap[uuid.UUID, universe.Object]
 	calendar            *calendar.Calendar
 }
 
 func NewWorld(id uuid.UUID, db database.DB) *World {
 	world := &World{
 		db:        db,
-		allSpaces: generic.NewSyncMap[uuid.UUID, universe.Space](0),
+		allSpaces: generic.NewSyncMap[uuid.UUID, universe.Object](0),
 	}
-	world.Space = space.NewSpace(id, db, world)
+	world.Object = object.NewSpace(id, db, world)
 	world.settings.Store(&universe.WorldSettings{})
 	world.pluginController = mplugin.NewPluginController(id)
 	//world.corePluginInstance, _ = world.pluginController.AddPlugin(world.GetID(), world.corePluginInitFunc)
@@ -58,7 +58,7 @@ func NewWorld(id uuid.UUID, db database.DB) *World {
 }
 
 func (w *World) GetID() uuid.UUID {
-	return w.Space.GetID()
+	return w.Object.GetID()
 }
 
 func (w *World) corePluginInitFunc(pi mplugin.PluginInterface) (mplugin.PluginInstance, error) {
@@ -80,11 +80,11 @@ func (w *World) Initialize(ctx context.Context) error {
 		return errors.WithMessage(err, "failed to initialize calendar")
 	}
 
-	return w.Space.Initialize(ctx)
+	return w.Object.Initialize(ctx)
 }
 
-func (w *World) ToSpace() universe.Space {
-	return w.Space
+func (w *World) ToObject() universe.Object {
+	return w.Object
 }
 
 func (w *World) GetSettings() *universe.WorldSettings {
@@ -95,15 +95,15 @@ func (w *World) GetCalendar() universe.Calendar {
 	return w.calendar
 }
 
-func (w *World) SetParent(parent universe.Space, updateDB bool) error {
+func (w *World) SetParent(parent universe.Object, updateDB bool) error {
 	if parent == nil {
 		return errors.Errorf("parent is nil")
 	} else if parent.GetID() != universe.GetNode().GetID() {
 		return errors.Errorf("parent is not the node")
 	}
 
-	w.Space.Mu.Lock()
-	defer w.Space.Mu.Unlock()
+	w.Object.Mu.Lock()
+	defer w.Object.Mu.Unlock()
 
 	if updateDB {
 		if err := w.db.GetSpacesDB().UpdateSpaceParentID(w.ctx, w.GetID(), parent.GetID()); err != nil {
@@ -111,7 +111,7 @@ func (w *World) SetParent(parent universe.Space, updateDB bool) error {
 		}
 	}
 
-	w.Space.Parent = parent
+	w.Object.Parent = parent
 
 	return nil
 }
@@ -239,11 +239,11 @@ func (w *World) Update(recursive bool) error {
 		w.log.Error(errors.WithMessagef(err, "World: Update: failed to update world settings: %s", w.GetID()))
 	}
 
-	return w.Space.Update(recursive)
+	return w.Object.Update(recursive)
 }
 
 func (w *World) UpdateWorldSettings() error {
-	value, ok := w.GetSpaceAttributes().GetValue(
+	value, ok := w.GetObjectAttributes().GetValue(
 		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.World.Settings.Name),
 	)
 	if !ok || value == nil {
@@ -261,7 +261,7 @@ func (w *World) UpdateWorldSettings() error {
 }
 
 func (w *World) UpdateWorldMetadata() error {
-	meta, ok := w.GetSpaceAttributes().GetValue(
+	meta, ok := w.GetObjectAttributes().GetValue(
 		entry.NewAttributeID(
 			uuid.UUID(w.corePluginInterface.GetId()), universe.ReservedAttributes.World.Meta.Name,
 		),
@@ -296,9 +296,9 @@ func (w *World) UpdateWorldMetadata() error {
 func (w *World) Save() error {
 	w.log.Infof("Saving world: %s", w.GetID())
 
-	spaces := w.GetAllSpaces()
+	spaces := w.GetAllObjects()
 
-	entries := make([]*entry.Space, 0, len(spaces))
+	entries := make([]*entry.Object, 0, len(spaces))
 	for _, space := range spaces {
 		entries = append(entries, space.GetEntry())
 	}

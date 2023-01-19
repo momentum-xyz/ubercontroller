@@ -16,7 +16,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
-var _ universe.SpaceType = (*SpaceType)(nil)
+var _ universe.ObjectType = (*SpaceType)(nil)
 
 type SpaceType struct {
 	id           uuid.UUID
@@ -27,7 +27,7 @@ type SpaceType struct {
 	name         string
 	categoryName string
 	description  *string
-	options      *entry.SpaceOptions
+	options      *entry.ObjectOptions
 	asset2d      universe.Asset2d
 	asset3d      universe.Asset3d
 }
@@ -36,7 +36,7 @@ func NewSpaceType(id uuid.UUID, db database.DB) *SpaceType {
 	return &SpaceType{
 		id: id,
 		db: db,
-		options: &entry.SpaceOptions{
+		options: &entry.ObjectOptions{
 			AllowedSubspaces: []uuid.UUID{},
 			Minimap:          utils.GetPTR(true),
 			Visible:          utils.GetPTR(entry.ReactUnitySpaceVisibleType),
@@ -172,15 +172,15 @@ func (s *SpaceType) SetAsset3d(asset3d universe.Asset3d, updateDB bool) error {
 	return nil
 }
 
-func (s *SpaceType) GetOptions() *entry.SpaceOptions {
+func (s *SpaceType) GetOptions() *entry.ObjectOptions {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	return s.options
 }
 
-func (s *SpaceType) SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool) (*entry.SpaceOptions, error) {
-	options, err := func() (*entry.SpaceOptions, error) {
+func (s *SpaceType) SetOptions(modifyFn modify.Fn[entry.ObjectOptions], updateDB bool) (*entry.ObjectOptions, error) {
+	options, err := func() (*entry.ObjectOptions, error) {
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
@@ -203,8 +203,8 @@ func (s *SpaceType) SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB 
 		return nil, err
 	}
 
-	for _, space := range universe.GetNode().GetAllSpaces() {
-		spaceType := space.GetSpaceType()
+	for _, space := range universe.GetNode().GetAllObjects() {
+		spaceType := space.GetObjectType()
 		if spaceType == nil {
 			continue
 		}
@@ -217,11 +217,11 @@ func (s *SpaceType) SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB 
 	return options, nil
 }
 
-func (s *SpaceType) GetEntry() *entry.SpaceType {
+func (s *SpaceType) GetEntry() *entry.ObjectType {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	entry := &entry.SpaceType{
+	entry := &entry.ObjectType{
 		SpaceTypeID:   s.id,
 		SpaceTypeName: s.name,
 		CategoryName:  s.categoryName,
@@ -238,7 +238,7 @@ func (s *SpaceType) GetEntry() *entry.SpaceType {
 	return entry
 }
 
-func (s *SpaceType) LoadFromEntry(entry *entry.SpaceType) error {
+func (s *SpaceType) LoadFromEntry(entry *entry.ObjectType) error {
 	if entry.SpaceTypeID != s.GetID() {
 		return errors.Errorf("space type ids mismatch: %s != %s", entry.SpaceTypeID, s.GetID())
 	}

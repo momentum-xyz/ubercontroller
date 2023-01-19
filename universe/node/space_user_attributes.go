@@ -20,7 +20,7 @@ func newSpaceUserAttributes(node *Node) *spaceUserAttributes {
 	}
 }
 
-func (sua *spaceUserAttributes) GetPayload(spaceUserAttributeID entry.SpaceUserAttributeID) (*entry.AttributePayload, bool) {
+func (sua *spaceUserAttributes) GetPayload(spaceUserAttributeID entry.ObjectUserAttributeID) (*entry.AttributePayload, bool) {
 	payload, err := sua.node.db.GetSpaceUserAttributesDB().GetSpaceUserAttributePayloadByID(sua.node.ctx, spaceUserAttributeID)
 	if err != nil {
 		return nil, false
@@ -28,7 +28,7 @@ func (sua *spaceUserAttributes) GetPayload(spaceUserAttributeID entry.SpaceUserA
 	return payload, true
 }
 
-func (sua *spaceUserAttributes) GetValue(spaceUserAttributeID entry.SpaceUserAttributeID) (*entry.AttributeValue, bool) {
+func (sua *spaceUserAttributes) GetValue(spaceUserAttributeID entry.ObjectUserAttributeID) (*entry.AttributeValue, bool) {
 	value, err := sua.node.db.GetSpaceUserAttributesDB().GetSpaceUserAttributeValueByID(sua.node.ctx, spaceUserAttributeID)
 	if err != nil {
 		return nil, false
@@ -36,7 +36,7 @@ func (sua *spaceUserAttributes) GetValue(spaceUserAttributeID entry.SpaceUserAtt
 	return value, true
 }
 
-func (sua *spaceUserAttributes) GetOptions(spaceUserAttributeID entry.SpaceUserAttributeID) (*entry.AttributeOptions, bool) {
+func (sua *spaceUserAttributes) GetOptions(spaceUserAttributeID entry.ObjectUserAttributeID) (*entry.AttributeOptions, bool) {
 	options, err := sua.node.db.GetSpaceUserAttributesDB().GetSpaceUserAttributeOptionsByID(sua.node.ctx, spaceUserAttributeID)
 	if err != nil {
 		return nil, false
@@ -45,7 +45,7 @@ func (sua *spaceUserAttributes) GetOptions(spaceUserAttributeID entry.SpaceUserA
 }
 
 func (sua *spaceUserAttributes) GetEffectiveOptions(
-	spaceUserAttributeID entry.SpaceUserAttributeID,
+	spaceUserAttributeID entry.ObjectUserAttributeID,
 ) (*entry.AttributeOptions, bool) {
 	attributeType, ok := sua.node.GetAttributeTypes().GetAttributeType(entry.AttributeTypeID(spaceUserAttributeID.AttributeID))
 	if !ok {
@@ -62,7 +62,7 @@ func (sua *spaceUserAttributes) GetEffectiveOptions(
 	if err != nil {
 		sua.node.log.Error(
 			errors.WithMessagef(
-				err, "Space user attributes: GetEffectiveOptions: failed to merge options: %+v", spaceUserAttributeID,
+				err, "Object user attributes: GetEffectiveOptions: failed to merge options: %+v", spaceUserAttributeID,
 			),
 		)
 		return nil, false
@@ -72,7 +72,7 @@ func (sua *spaceUserAttributes) GetEffectiveOptions(
 }
 
 func (sua *spaceUserAttributes) Upsert(
-	spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
+	spaceUserAttributeID entry.ObjectUserAttributeID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
 ) (*entry.AttributePayload, error) {
 	payload, err := sua.node.db.GetSpaceUserAttributesDB().UpsertSpaceUserAttribute(sua.node.ctx, spaceUserAttributeID, modifyFn)
 	if err != nil {
@@ -93,7 +93,7 @@ func (sua *spaceUserAttributes) Upsert(
 }
 
 func (sua *spaceUserAttributes) UpdateValue(
-	spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool,
+	spaceUserAttributeID entry.ObjectUserAttributeID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool,
 ) (*entry.AttributeValue, error) {
 	value, err := sua.node.db.GetSpaceUserAttributesDB().UpdateSpaceUserAttributeValue(sua.node.ctx, spaceUserAttributeID, modifyFn)
 	if err != nil {
@@ -108,7 +108,7 @@ func (sua *spaceUserAttributes) UpdateValue(
 }
 
 func (sua *spaceUserAttributes) UpdateOptions(
-	spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool,
+	spaceUserAttributeID entry.ObjectUserAttributeID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool,
 ) (*entry.AttributeOptions, error) {
 	options, err := sua.node.db.GetSpaceUserAttributesDB().UpdateSpaceUserAttributeOptions(sua.node.ctx, spaceUserAttributeID, modifyFn)
 	if err != nil {
@@ -120,7 +120,7 @@ func (sua *spaceUserAttributes) UpdateOptions(
 			value, ok := sua.GetValue(spaceUserAttributeID)
 			if !ok {
 				sua.node.log.Errorf(
-					"Space user attributes: UpdateOptions: failed to get space user attribute value: %+v",
+					"Object user attributes: UpdateOptions: failed to get space user attribute value: %+v",
 					spaceUserAttributeID,
 				)
 				return
@@ -132,7 +132,7 @@ func (sua *spaceUserAttributes) UpdateOptions(
 	return options, nil
 }
 
-func (sua *spaceUserAttributes) Remove(spaceUserAttributeID entry.SpaceUserAttributeID, updateDB bool) (bool, error) {
+func (sua *spaceUserAttributes) Remove(spaceUserAttributeID entry.ObjectUserAttributeID, updateDB bool) (bool, error) {
 	effectiveOptions, ok := sua.GetEffectiveOptions(spaceUserAttributeID)
 	if !ok {
 		return false, nil
@@ -156,7 +156,7 @@ func (sua *spaceUserAttributes) Len() int {
 	count, err := sua.node.db.GetUserAttributesDB().GetUserAttributesCount(sua.node.ctx)
 	if err != nil {
 		sua.node.log.Error(
-			errors.WithMessage(err, "Space user attributes: Len: failed to get space user attributes count"),
+			errors.WithMessage(err, "Object user attributes: Len: failed to get space user attributes count"),
 		)
 		return 0
 	}
@@ -164,11 +164,11 @@ func (sua *spaceUserAttributes) Len() int {
 }
 
 func (n *Node) onSpaceUserAttributeChanged(
-	changeType universe.AttributeChangeType, spaceUserAttributeID entry.SpaceUserAttributeID, value *entry.AttributeValue,
+	changeType universe.AttributeChangeType, spaceUserAttributeID entry.ObjectUserAttributeID, value *entry.AttributeValue,
 	effectiveOptions *entry.AttributeOptions,
 ) {
 	if effectiveOptions == nil {
-		options, ok := n.GetSpaceUserAttributes().GetEffectiveOptions(spaceUserAttributeID)
+		options, ok := n.GetObjectUserAttributes().GetEffectiveOptions(spaceUserAttributeID)
 		if !ok {
 			n.log.Errorf(
 				"Node: onSpaceUserAttributeChanged: failed to get space user attribute effective options: %+v",

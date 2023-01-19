@@ -1,7 +1,7 @@
 package entry
 
 type Node struct {
-	*Space
+	*Object
 }
 
 type NodeAttributeID struct {

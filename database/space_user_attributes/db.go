@@ -89,7 +89,7 @@ func (db *DB) GetSpaceUserAttributes(ctx context.Context) ([]*entry.SpaceUserAtt
 }
 
 func (db *DB) GetSpaceUserAttributeByID(
-	ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
+	ctx context.Context, spaceUserAttributeID entry.ObjectUserAttributeID,
 ) (*entry.SpaceUserAttribute, error) {
 	var attribute entry.SpaceUserAttribute
 	if err := pgxscan.Get(
@@ -102,7 +102,7 @@ func (db *DB) GetSpaceUserAttributeByID(
 }
 
 func (db *DB) GetSpaceUserAttributePayloadByID(
-	ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
+	ctx context.Context, spaceUserAttributeID entry.ObjectUserAttributeID,
 ) (*entry.AttributePayload, error) {
 	var payload entry.AttributePayload
 	if err := pgxscan.Get(ctx, db.conn, &payload, getSpaceUserAttributePayloadQuery,
@@ -115,7 +115,7 @@ func (db *DB) GetSpaceUserAttributePayloadByID(
 }
 
 func (db *DB) GetSpaceUserAttributeValueByID(
-	ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
+	ctx context.Context, spaceUserAttributeID entry.ObjectUserAttributeID,
 ) (*entry.AttributeValue, error) {
 	var value entry.AttributeValue
 	err := db.conn.QueryRow(ctx,
@@ -131,7 +131,7 @@ func (db *DB) GetSpaceUserAttributeValueByID(
 }
 
 func (db *DB) GetSpaceUserAttributeOptionsByID(
-	ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
+	ctx context.Context, spaceUserAttributeID entry.ObjectUserAttributeID,
 ) (*entry.AttributeOptions, error) {
 	var options entry.AttributeOptions
 	err := db.conn.QueryRow(ctx,
@@ -200,7 +200,7 @@ func (db *DB) GetSpaceUserAttributesCount(ctx context.Context) (int64, error) {
 }
 
 func (db *DB) UpsertSpaceUserAttribute(
-	ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
+	ctx context.Context, spaceUserAttributeID entry.ObjectUserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
 ) (*entry.AttributePayload, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
@@ -471,7 +471,7 @@ func (db *DB) RemoveSpaceUserAttributeByPluginIDAndSpaceIDAndUserID(
 }
 
 func (db *DB) RemoveSpaceUserAttributeByID(
-	ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
+	ctx context.Context, spaceUserAttributeID entry.ObjectUserAttributeID,
 ) error {
 	res, err := db.conn.Exec(
 		ctx, removeSpaceUserAttributesByPluginIDAndNameAndSpaceIDAndUserIDQuery,
@@ -487,7 +487,7 @@ func (db *DB) RemoveSpaceUserAttributeByID(
 }
 
 func (db *DB) UpdateSpaceUserAttributeValue(
-	ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributeValue],
+	ctx context.Context, spaceUserAttributeID entry.ObjectUserAttributeID, modifyFn modify.Fn[entry.AttributeValue],
 ) (*entry.AttributeValue, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
@@ -514,7 +514,7 @@ func (db *DB) UpdateSpaceUserAttributeValue(
 }
 
 func (db *DB) UpdateSpaceUserAttributeOptions(
-	ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributeOptions],
+	ctx context.Context, spaceUserAttributeID entry.ObjectUserAttributeID, modifyFn modify.Fn[entry.AttributeOptions],
 ) (*entry.AttributeOptions, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()

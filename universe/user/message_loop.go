@@ -56,7 +56,7 @@ func (u *User) OnMessage(msg *posbus.Message) error {
 }
 
 func (u *User) UpdateSpacePosition(msg *posbus.SetStaticObjectPosition) error {
-	space, ok := universe.GetNode().GetSpaceFromAllSpaces(msg.ObjectID())
+	space, ok := universe.GetNode().GetObjectFromAllObjects(msg.ObjectID())
 	if !ok {
 		return errors.Errorf("space not found: %s", msg.ObjectID())
 	}
@@ -113,7 +113,7 @@ func (u *User) InteractionHandler(m *posbus.TriggerInteraction) error {
 
 	switch kind {
 	case posbus.TriggerEnteredSpace:
-		space, ok := universe.GetNode().GetSpaceFromAllSpaces(targetUUID)
+		space, ok := universe.GetNode().GetObjectFromAllObjects(targetUUID)
 		if !ok {
 			return errors.WithMessage(
 				errors.Errorf("space not found: %s", targetUUID), "failed to handle: enter space",
@@ -126,7 +126,7 @@ func (u *User) InteractionHandler(m *posbus.TriggerInteraction) error {
 		}
 		return nil
 	case posbus.TriggerLeftSpace:
-		space, ok := universe.GetNode().GetSpaceFromAllSpaces(targetUUID)
+		space, ok := universe.GetNode().GetObjectFromAllObjects(targetUUID)
 		if !ok {
 			return errors.WithMessage(
 				errors.Errorf("space not found: %s", targetUUID), "failed to handle: left space",
@@ -154,7 +154,7 @@ func (u *User) LockObject(msg *posbus.SetObjectLockState) error {
 	id := msg.ObjectID()
 	state := msg.State()
 
-	space, ok := u.GetWorld().GetSpaceFromAllSpaces(id)
+	space, ok := u.GetWorld().GetObjectFromAllObjects(id)
 	if !ok {
 		return errors.Errorf("space not found: %s", id)
 	}

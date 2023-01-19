@@ -17,7 +17,7 @@ func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (uuid.UUI
 	node := universe.GetNode()
 
 	// loading
-	worldSpaceType, ok := node.GetSpaceTypes().GetSpaceType(worldTemplate.SpaceTypeID)
+	worldSpaceType, ok := node.GetObjectTypes().GetObjectType(worldTemplate.SpaceTypeID)
 	if !ok {
 		return uuid.Nil, errors.Errorf("failed to get world space type: %s", worldTemplate.SpaceTypeID)
 	}
@@ -40,7 +40,7 @@ func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (uuid.UUI
 	if err := world.SetOwnerID(*worldTemplate.OwnerID, false); err != nil {
 		return uuid.Nil, errors.WithMessagef(err, "failed to set owner: %s", worldTemplate.OwnerID)
 	}
-	if err := world.SetSpaceType(worldSpaceType, false); err != nil {
+	if err := world.SetObjectType(worldSpaceType, false); err != nil {
 		return uuid.Nil, errors.WithMessagef(err, "failed to set space type: %s", worldTemplate.SpaceTypeID)
 	}
 
@@ -98,7 +98,7 @@ func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (uuid.UUI
 	)
 
 	for i := range worldTemplate.SpaceAttributes {
-		if _, err := world.GetSpaceAttributes().Upsert(
+		if _, err := world.GetObjectAttributes().Upsert(
 			worldTemplate.SpaceAttributes[i].AttributeID,
 			modify.MergeWith(worldTemplate.SpaceAttributes[i].AttributePayload),
 			updateDB,

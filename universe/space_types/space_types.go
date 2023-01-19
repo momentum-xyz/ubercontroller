@@ -16,19 +16,19 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
-var _ universe.SpaceTypes = (*SpaceTypes)(nil)
+var _ universe.ObjectTypes = (*SpaceTypes)(nil)
 
 type SpaceTypes struct {
 	ctx        context.Context
 	log        *zap.SugaredLogger
 	db         database.DB
-	spaceTypes *generic.SyncMap[uuid.UUID, universe.SpaceType]
+	spaceTypes *generic.SyncMap[uuid.UUID, universe.ObjectType]
 }
 
 func NewSpaceTypes(db database.DB) *SpaceTypes {
 	return &SpaceTypes{
 		db:         db,
-		spaceTypes: generic.NewSyncMap[uuid.UUID, universe.SpaceType](0),
+		spaceTypes: generic.NewSyncMap[uuid.UUID, universe.ObjectType](0),
 	}
 }
 
@@ -44,33 +44,33 @@ func (s *SpaceTypes) Initialize(ctx context.Context) error {
 	return nil
 }
 
-func (s *SpaceTypes) CreateSpaceType(spaceTypeID uuid.UUID) (universe.SpaceType, error) {
+func (s *SpaceTypes) CreateObjectType(spaceTypeID uuid.UUID) (universe.ObjectType, error) {
 	spaceType := space_type.NewSpaceType(spaceTypeID, s.db)
 
 	if err := spaceType.Initialize(s.ctx); err != nil {
 		return nil, errors.WithMessagef(err, "failed to initialize space type: %s", spaceTypeID)
 	}
-	if err := s.AddSpaceType(spaceType, false); err != nil {
+	if err := s.AddObjectType(spaceType, false); err != nil {
 		return nil, errors.WithMessagef(err, "failed to add space type: %s", spaceTypeID)
 	}
 
 	return spaceType, nil
 }
 
-func (s *SpaceTypes) FilterSpaceTypes(predicateFn universe.SpaceTypesFilterPredicateFn) map[uuid.UUID]universe.SpaceType {
+func (s *SpaceTypes) FilterObjectTypes(predicateFn universe.ObjectTypesFilterPredicateFn) map[uuid.UUID]universe.ObjectType {
 	return s.spaceTypes.Filter(predicateFn)
 }
 
-func (s *SpaceTypes) GetSpaceType(spaceTypeID uuid.UUID) (universe.SpaceType, bool) {
+func (s *SpaceTypes) GetObjectType(spaceTypeID uuid.UUID) (universe.ObjectType, bool) {
 	spaceType, ok := s.spaceTypes.Load(spaceTypeID)
 	return spaceType, ok
 }
 
-func (s *SpaceTypes) GetSpaceTypes() map[uuid.UUID]universe.SpaceType {
+func (s *SpaceTypes) GetObjectTypes() map[uuid.UUID]universe.ObjectType {
 	s.spaceTypes.Mu.RLock()
 	defer s.spaceTypes.Mu.RUnlock()
 
-	spaceTypes := make(map[uuid.UUID]universe.SpaceType, len(s.spaceTypes.Data))
+	spaceTypes := make(map[uuid.UUID]universe.ObjectType, len(s.spaceTypes.Data))
 
 	for id, spaceType := range s.spaceTypes.Data {
 		spaceTypes[id] = spaceType
@@ -79,7 +79,7 @@ func (s *SpaceTypes) GetSpaceTypes() map[uuid.UUID]universe.SpaceType {
 	return spaceTypes
 }
 
-func (s *SpaceTypes) AddSpaceType(spaceType universe.SpaceType, updateDB bool) error {
+func (s *SpaceTypes) AddObjectType(spaceType universe.ObjectType, updateDB bool) error {
 	s.spaceTypes.Mu.Lock()
 	defer s.spaceTypes.Mu.Unlock()
 
@@ -94,12 +94,12 @@ func (s *SpaceTypes) AddSpaceType(spaceType universe.SpaceType, updateDB bool) e
 	return nil
 }
 
-func (s *SpaceTypes) AddSpaceTypes(spaceTypes []universe.SpaceType, updateDB bool) error {
+func (s *SpaceTypes) AddObjectTypes(spaceTypes []universe.ObjectType, updateDB bool) error {
 	s.spaceTypes.Mu.Lock()
 	defer s.spaceTypes.Mu.Unlock()
 
 	if updateDB {
-		entries := make([]*entry.SpaceType, len(spaceTypes))
+		entries := make([]*entry.ObjectType, len(spaceTypes))
 		for i := range spaceTypes {
 			entries[i] = spaceTypes[i].GetEntry()
 		}
@@ -115,7 +115,7 @@ func (s *SpaceTypes) AddSpaceTypes(spaceTypes []universe.SpaceType, updateDB boo
 	return nil
 }
 
-func (s *SpaceTypes) RemoveSpaceType(spaceType universe.SpaceType, updateDB bool) error {
+func (s *SpaceTypes) RemoveObjectType(spaceType universe.ObjectType, updateDB bool) error {
 	s.spaceTypes.Mu.Lock()
 	defer s.spaceTypes.Mu.Unlock()
 
@@ -134,7 +134,7 @@ func (s *SpaceTypes) RemoveSpaceType(spaceType universe.SpaceType, updateDB bool
 	return nil
 }
 
-func (s *SpaceTypes) RemoveSpaceTypes(spaceTypes []universe.SpaceType, updateDB bool) error {
+func (s *SpaceTypes) RemoveObjectTypes(spaceTypes []universe.ObjectType, updateDB bool) error {
 	s.spaceTypes.Mu.Lock()
 	defer s.spaceTypes.Mu.Unlock()
 
@@ -170,7 +170,7 @@ func (s *SpaceTypes) Load() error {
 	}
 
 	for i := range entries {
-		spaceType, err := s.CreateSpaceType(entries[i].SpaceTypeID)
+		spaceType, err := s.CreateObjectType(entries[i].SpaceTypeID)
 		if err != nil {
 			return errors.WithMessagef(err, "failed to create new space type: %s", entries[i].SpaceTypeID)
 		}
@@ -181,7 +181,7 @@ func (s *SpaceTypes) Load() error {
 
 	universe.GetNode().AddAPIRegister(s)
 
-	s.log.Infof("Space types loaded: %d", s.spaceTypes.Len())
+	s.log.Infof("Object types loaded: %d", s.spaceTypes.Len())
 
 	return nil
 }
@@ -192,7 +192,7 @@ func (s *SpaceTypes) Save() error {
 	s.spaceTypes.Mu.RLock()
 	defer s.spaceTypes.Mu.RUnlock()
 
-	entries := make([]*entry.SpaceType, 0, len(s.spaceTypes.Data))
+	entries := make([]*entry.ObjectType, 0, len(s.spaceTypes.Data))
 	for _, spaceType := range s.spaceTypes.Data {
 		entries = append(entries, spaceType.GetEntry())
 	}
@@ -201,7 +201,7 @@ func (s *SpaceTypes) Save() error {
 		return errors.WithMessage(err, "failed to upsert space types")
 	}
 
-	s.log.Info("Space types saved")
+	s.log.Info("Object types saved")
 
 	return nil
 }

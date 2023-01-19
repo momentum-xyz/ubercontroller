@@ -1,4 +1,4 @@
-package space
+package object
 
 import (
 	"sort"
@@ -15,7 +15,7 @@ import (
 
 // TODO: Rewrite
 
-func (s *Space) GetPlacement(placementMap *entry.SpaceChildPlacement) (position_algo.Algo, error) {
+func (s *Object) GetPlacement(placementMap *entry.SpaceChildPlacement) (position_algo.Algo, error) {
 
 	//fmt.Printf("PLSMAP %+v\n", placementMap)
 
@@ -42,14 +42,14 @@ func (s *Space) GetPlacement(placementMap *entry.SpaceChildPlacement) (position_
 	return par, nil
 }
 
-func (s *Space) GetPlacements() map[uuid.UUID]position_algo.Algo {
+func (s *Object) GetPlacements() map[uuid.UUID]position_algo.Algo {
 	//fmt.Printf("eopts %+v\n:", s.GetEffectiveOptions().ChildPlacements)
 	placements := s.GetEffectiveOptions().ChildPlacements
 	//fmt.Println(len(placements))
 	pls := make(map[uuid.UUID]position_algo.Algo)
 	for sId, placement := range placements {
 		if p, err := s.GetPlacement(placement); err != nil {
-			s.log.Error(errors.WithMessage(err, "Space: UpdateMetaFromMap: failed to fill placement"))
+			s.log.Error(errors.WithMessage(err, "Object: UpdateMetaFromMap: failed to fill placement"))
 		} else {
 			//fmt.Printf("%+v | %+v\n", sId, p)
 			pls[sId] = p
@@ -58,7 +58,7 @@ func (s *Space) GetPlacements() map[uuid.UUID]position_algo.Algo {
 	return pls
 }
 
-func (s *Space) SetActualPosition(pos cmath.SpacePosition, theta float64) error {
+func (s *Object) SetActualPosition(pos cmath.SpacePosition, theta float64) error {
 	s.Mu.Lock()
 	defer s.Mu.Unlock()
 
@@ -83,18 +83,18 @@ func (s *Space) SetActualPosition(pos cmath.SpacePosition, theta float64) error 
 	return nil
 }
 
-func (s *Space) GetPosition() *cmath.SpacePosition {
+func (s *Object) GetPosition() *cmath.SpacePosition {
 	s.Mu.RLock()
 	defer s.Mu.RUnlock()
 
 	return s.position
 }
 
-func (s *Space) GetActualPosition() *cmath.SpacePosition {
+func (s *Object) GetActualPosition() *cmath.SpacePosition {
 	return s.actualPosition.Load()
 }
 
-func (s *Space) SetPosition(position *cmath.SpacePosition, updateDB bool) error {
+func (s *Object) SetPosition(position *cmath.SpacePosition, updateDB bool) error {
 	s.Mu.Lock()
 	defer s.Mu.Unlock()
 
@@ -126,7 +126,7 @@ func (s *Space) SetPosition(position *cmath.SpacePosition, updateDB bool) error 
 	return nil
 }
 
-func (s *Space) UpdateChildrenPosition(recursive bool) error {
+func (s *Object) UpdateChildrenPosition(recursive bool) error {
 	//fmt.Println("pls1", s.GetID())
 	pls := s.GetPlacements()
 	//fmt.Printf("pls1a:%+v : %+v\n", s.GetID(), pls)
@@ -140,7 +140,7 @@ func (s *Space) UpdateChildrenPosition(recursive bool) error {
 
 	for _, child := range s.Children.Data {
 		if child.GetPosition() == nil {
-			spaceTypeID := child.GetSpaceType().GetID()
+			spaceTypeID := child.GetObjectType().GetID()
 			if _, ok := pls[spaceTypeID]; !ok {
 				spaceTypeID = uuid.Nil
 			}
@@ -161,11 +161,11 @@ func (s *Space) UpdateChildrenPosition(recursive bool) error {
 			child, ok := s.Children.Data[k]
 			//fmt.Println(ok)
 			if !ok {
-				s.log.Errorf("Space: UpdatePosition: failed to get space: %s", k)
+				s.log.Errorf("Object: UpdatePosition: failed to get space: %s", k)
 				continue
 			}
 			if err := child.SetActualPosition(pos, theta); err != nil {
-				s.log.Errorf("Space: UpdatePosition: failed to update position: %s", k)
+				s.log.Errorf("Object: UpdatePosition: failed to update position: %s", k)
 			}
 
 			if !recursive {

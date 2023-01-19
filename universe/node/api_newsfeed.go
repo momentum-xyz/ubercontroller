@@ -57,7 +57,7 @@ func (n *Node) apiNewsFeedAddItem(c *gin.Context) {
 		return current, nil
 	}
 
-	if _, err := n.GetSpaceAttributes().Upsert(
+	if _, err := n.GetObjectAttributes().Upsert(
 		entry.NewAttributeID(
 			universe.GetSystemPluginID(), universe.ReservedAttributes.Space.NewsFeedItems.Name,
 		), modifyFn, true,
@@ -80,7 +80,7 @@ func (n *Node) apiNewsFeedAddItem(c *gin.Context) {
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/newsfeed [get]
 func (n *Node) apiNewsFeedGetAll(c *gin.Context) {
-	value, ok := n.GetSpaceAttributes().GetValue(
+	value, ok := n.GetObjectAttributes().GetValue(
 		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Space.NewsFeedItems.Name),
 	)
 	if !ok || value == nil {

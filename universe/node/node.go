@@ -23,7 +23,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/space"
+	"github.com/momentum-xyz/ubercontroller/universe/object"
 	"github.com/momentum-xyz/ubercontroller/universe/streamchat"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
@@ -31,7 +31,7 @@ import (
 var _ universe.Node = (*Node)(nil)
 
 type Node struct {
-	*space.Space
+	*object.Object
 	cfg        *config.Config
 	ctx        context.Context
 	log        *zap.SugaredLogger
@@ -47,7 +47,7 @@ type Node struct {
 	worlds         universe.Worlds
 	assets2d       universe.Assets2d
 	assets3d       universe.Assets3d
-	spaceTypes     universe.SpaceTypes
+	spaceTypes     universe.ObjectTypes
 	userTypes      universe.UserTypes
 	attributeTypes universe.AttributeTypes
 	plugins        universe.Plugins
@@ -69,12 +69,12 @@ func NewNode(
 	assets2D universe.Assets2d,
 	assets3D universe.Assets3d,
 	plugins universe.Plugins,
-	spaceTypes universe.SpaceTypes,
+	spaceTypes universe.ObjectTypes,
 	userTypes universe.UserTypes,
 	attributeTypes universe.AttributeTypes,
 ) *Node {
 	node := &Node{
-		Space:          space.NewSpace(id, db, nil),
+		Object:         object.NewSpace(id, db, nil),
 		db:             db,
 		worlds:         worlds,
 		assets2d:       assets2D,
@@ -128,11 +128,11 @@ func (n *Node) Initialize(ctx context.Context) error {
 		return err
 	}
 
-	return n.Space.Initialize(ctx)
+	return n.Object.Initialize(ctx)
 }
 
-func (n *Node) ToSpace() universe.Space {
-	return n.Space
+func (n *Node) ToObject() universe.Object {
+	return n.Object
 }
 
 func (n *Node) GetNodeAttributes() universe.NodeAttributes {
@@ -147,7 +147,7 @@ func (n *Node) GetUserUserAttributes() universe.UserUserAttributes {
 	return n.userUserAttributes
 }
 
-func (n *Node) GetSpaceUserAttributes() universe.SpaceUserAttributes {
+func (n *Node) GetObjectUserAttributes() universe.ObjectUserAttributes {
 	return n.spaceUserAttributes
 }
 
@@ -171,7 +171,7 @@ func (n *Node) GetAttributeTypes() universe.AttributeTypes {
 	return n.attributeTypes
 }
 
-func (n *Node) GetSpaceTypes() universe.SpaceTypes {
+func (n *Node) GetObjectTypes() universe.ObjectTypes {
 	return n.spaceTypes
 }
 
@@ -250,7 +250,7 @@ func (n *Node) Load() error {
 				if err != nil {
 					return errors.WithMessage(err, "failed to get node")
 				}
-				if err := n.LoadFromEntry(nodeEntry.Space, false); err != nil {
+				if err := n.LoadFromEntry(nodeEntry.Object, false); err != nil {
 					return errors.WithMessage(err, "failed to load node from entry")
 				}
 

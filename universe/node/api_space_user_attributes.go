@@ -19,7 +19,7 @@ import (
 // @Tags spaces
 // @Accept json
 // @Produce json
-// @Param space_id path string true "Space ID"
+// @Param space_id path string true "Object ID"
 // @Param query query node.apiGetSpaceAttributesValue.InQuery true "query params"
 // @Success 200 {object} entry.AttributeValue
 // @Failure 500 {object} api.HTTPError
@@ -63,7 +63,7 @@ func (n *Node) apiGetSpaceUserAttributesValue(c *gin.Context) {
 
 	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
 	spaceUserAttributeID := entry.NewSpaceUserAttributeID(attributeID, spaceID, userID)
-	out, ok := n.GetSpaceUserAttributes().GetValue(spaceUserAttributeID)
+	out, ok := n.GetObjectUserAttributes().GetValue(spaceUserAttributeID)
 	if !ok {
 		err := errors.Errorf("Node: apiGetSpaceUserAttributesValue: space attribute value not found: %s", attributeID)
 		api.AbortRequest(c, http.StatusNotFound, "attribute_not_found", err, n.log)
@@ -79,7 +79,7 @@ func (n *Node) apiGetSpaceUserAttributesValue(c *gin.Context) {
 // @Tags spaces
 // @Accept json
 // @Produce json
-// @Param space_id path string true "Space ID"
+// @Param space_id path string true "Object ID"
 // @Param body body node.apiSetSpaceAttributesValue.InBody true "body params"
 // @Success 202 {object} entry.AttributeValue
 // @Failure 500 {object} api.HTTPError
@@ -146,7 +146,7 @@ func (n *Node) apiSetSpaceUserAttributesValue(c *gin.Context) {
 		return current, nil
 	}
 
-	spaceUserAttribute, err := n.GetSpaceUserAttributes().Upsert(spaceUserAttributeID, modifyFn, true)
+	spaceUserAttribute, err := n.GetObjectUserAttributes().Upsert(spaceUserAttributeID, modifyFn, true)
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiSetSpaceUserAttributesValue: failed to upsert space user attribute")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert", err, n.log)
@@ -162,7 +162,7 @@ func (n *Node) apiSetSpaceUserAttributesValue(c *gin.Context) {
 // @Tags spaces
 // @Accept json
 // @Produce json
-// @Param space_id path string true "Space ID"
+// @Param space_id path string true "Object ID"
 // @Param query query node.apiGetSpaceAttributeSubValue.InQuery true "query params"
 // @Success 200 {object} dto.SpaceSubAttributes
 // @Failure 500 {object} api.HTTPError
@@ -207,7 +207,7 @@ func (n *Node) apiGetSpaceUserAttributeSubValue(c *gin.Context) {
 
 	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
 	spaceUserAttributeID := entry.NewSpaceUserAttributeID(attributeID, spaceID, userID)
-	spaceUserAttributeValue, ok := n.GetSpaceUserAttributes().GetValue(spaceUserAttributeID)
+	spaceUserAttributeValue, ok := n.GetObjectUserAttributes().GetValue(spaceUserAttributeID)
 	if !ok {
 		err := errors.Errorf("Node: apiGetSpaceUserAttributeSubValue: space user attribute value not found: %s", attributeID)
 		api.AbortRequest(c, http.StatusNotFound, "attribute_value_not_found", err, n.log)
@@ -233,7 +233,7 @@ func (n *Node) apiGetSpaceUserAttributeSubValue(c *gin.Context) {
 // @Tags spaces
 // @Accept json
 // @Produce json
-// @Param space_id path string true "Space ID"
+// @Param space_id path string true "Object ID"
 // @Param body body node.apiSetSpaceAttributeSubValue.Body true "body params"
 // @Success 202 {object} dto.SpaceSubAttributes
 // @Failure 500 {object} api.HTTPError
@@ -301,7 +301,7 @@ func (n *Node) apiSetSpaceUserAttributeSubValue(c *gin.Context) {
 		return current, nil
 	}
 
-	spaceUserAttribute, err := n.GetSpaceUserAttributes().Upsert(spaceUserAttributeID, modifyFn, true)
+	spaceUserAttribute, err := n.GetObjectUserAttributes().Upsert(spaceUserAttributeID, modifyFn, true)
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiSetSpaceUserAttributeSubValue: failed to upsert space user attribute")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert", err, n.log)
@@ -321,7 +321,7 @@ func (n *Node) apiSetSpaceUserAttributeSubValue(c *gin.Context) {
 // @Tags spaces
 // @Accept json
 // @Produce json
-// @Param space_id path string true "Space ID"
+// @Param space_id path string true "Object ID"
 // @Param body body node.apiRemoveSpaceAttributeSubValue.Body true "body params"
 // @Success 200 {object} nil
 // @Failure 500 {object} api.HTTPError
@@ -377,7 +377,7 @@ func (n *Node) apiRemoveSpaceUserAttributeSubValue(c *gin.Context) {
 		return current, nil
 	}
 
-	if _, err := n.GetSpaceUserAttributes().UpdateValue(spaceUserAttributeID, modifyFn, true); err != nil {
+	if _, err := n.GetObjectUserAttributes().UpdateValue(spaceUserAttributeID, modifyFn, true); err != nil {
 		err = errors.WithMessage(err, "Node: apiRemoveSpaceUserAttributeSubValue: failed to update space user attribute")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_update", err, n.log)
 		return
@@ -392,7 +392,7 @@ func (n *Node) apiRemoveSpaceUserAttributeSubValue(c *gin.Context) {
 // @Tags spaces
 // @Accept json
 // @Produce json
-// @Param space_id path string true "Space ID"
+// @Param space_id path string true "Object ID"
 // @Param body body node.apiRemoveSpaceAttributeValue.Body true "body params"
 // @Success 200 {object} nil
 // @Failure 500 {object} api.HTTPError
@@ -436,7 +436,7 @@ func (n *Node) apiRemoveSpaceUserAttributeValue(c *gin.Context) {
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
 	spaceUserAttributeID := entry.NewSpaceUserAttributeID(attributeID, spaceID, userID)
 
-	if _, err := n.GetSpaceUserAttributes().UpdateValue(
+	if _, err := n.GetObjectUserAttributes().UpdateValue(
 		spaceUserAttributeID, modify.ReplaceWith[entry.AttributeValue](nil), true,
 	); err != nil {
 		err = errors.WithMessage(err, "Node: apiRemoveSpaceUserAttributeValue: failed to update space user attribute")
@@ -453,7 +453,7 @@ func (n *Node) apiRemoveSpaceUserAttributeValue(c *gin.Context) {
 // @Tags spaces
 // @Accept json
 // @Produce json
-// @Param space_id path string true "Space ID"
+// @Param space_id path string true "Object ID"
 // @Param query query node.apiGetSpaceAllUsersAttributeValuesList.InQuery true "query params"
 // @Success 200 {object} map[uuid.UUID]entry.AttributeValue
 // @Failure 500 {object} api.HTTPError

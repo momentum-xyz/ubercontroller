@@ -1,4 +1,4 @@
-package space
+package object
 
 import (
 	"context"
@@ -24,9 +24,9 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
-var _ universe.Space = (*Space)(nil)
+var _ universe.Object = (*Object)(nil)
 
-type Space struct {
+type Object struct {
 	id       uuid.UUID
 	world    universe.World
 	ctx      context.Context
@@ -34,18 +34,18 @@ type Space struct {
 	db       database.DB
 	enabled  atomic.Bool
 	Users    *generic.SyncMap[uuid.UUID, universe.User]
-	Children *generic.SyncMap[uuid.UUID, universe.Space]
+	Children *generic.SyncMap[uuid.UUID, universe.Object]
 	//Mu               sync.RWMutex
 	Mu               deadlock.RWMutex
 	ownerID          uuid.UUID
 	position         *cmath.SpacePosition
-	options          *entry.SpaceOptions
-	Parent           universe.Space
+	options          *entry.ObjectOptions
+	Parent           universe.Object
 	asset2d          universe.Asset2d
 	asset3d          universe.Asset3d
-	spaceType        universe.SpaceType
-	effectiveOptions *entry.SpaceOptions
-	spaceAttributes  *spaceAttributes // WARNING: the Space is sharing the same mutex ("Mu") with it
+	spaceType        universe.ObjectType
+	effectiveOptions *entry.ObjectOptions
+	spaceAttributes  *spaceAttributes // WARNING: the Object is sharing the same mutex ("Mu") with it
 
 	spawnMsg          atomic.Pointer[websocket.PreparedMessage]
 	attributesMsg     *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
@@ -62,12 +62,12 @@ type Space struct {
 	theta float64
 }
 
-func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
-	space := &Space{
+func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Object {
+	space := &Object{
 		id:               id,
 		db:               db,
 		Users:            generic.NewSyncMap[uuid.UUID, universe.User](0),
-		Children:         generic.NewSyncMap[uuid.UUID, universe.Space](0),
+		Children:         generic.NewSyncMap[uuid.UUID, universe.Object](0),
 		attributesMsg:    generic.NewSyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]](0),
 		renderTextureMap: generic.NewSyncMap[string, string](0),
 		world:            world,
@@ -77,21 +77,21 @@ func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
 	return space
 }
 
-func (s *Space) GetID() uuid.UUID {
+func (s *Object) GetID() uuid.UUID {
 	return s.id
 }
 
-func (s *Space) GetEnabled() bool {
+func (s *Object) GetEnabled() bool {
 	return s.enabled.Load()
 }
 
-func (s *Space) SetEnabled(enabled bool) {
+func (s *Object) SetEnabled(enabled bool) {
 	s.enabled.Store(enabled)
 }
 
-func (s *Space) GetName() string {
+func (s *Object) GetName() string {
 	name := "unknown"
-	value, ok := s.GetSpaceAttributes().GetValue(
+	value, ok := s.GetObjectAttributes().GetValue(
 		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Space.Name.Name),
 	)
 	if !ok || value == nil {
@@ -100,8 +100,8 @@ func (s *Space) GetName() string {
 	return utils.GetFromAnyMap(*value, universe.ReservedAttributes.Space.Name.Key, name)
 }
 
-func (s *Space) SetName(name string, updateDB bool) error {
-	if _, err := s.GetSpaceAttributes().Upsert(
+func (s *Object) SetName(name string, updateDB bool) error {
+	if _, err := s.GetObjectAttributes().Upsert(
 		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Space.Name.Name),
 		modify.MergeWith(entry.NewAttributePayload(
 			&entry.AttributeValue{
@@ -115,11 +115,11 @@ func (s *Space) SetName(name string, updateDB bool) error {
 	return nil
 }
 
-func (s *Space) GetSpaceAttributes() universe.SpaceAttributes {
+func (s *Object) GetObjectAttributes() universe.ObjectAttributes {
 	return s.spaceAttributes
 }
 
-func (s *Space) Initialize(ctx context.Context) error {
+func (s *Object) Initialize(ctx context.Context) error {
 	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
 	if log == nil {
 		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
@@ -136,21 +136,21 @@ func (s *Space) Initialize(ctx context.Context) error {
 	return nil
 }
 
-func (s *Space) GetWorld() universe.World {
+func (s *Object) GetWorld() universe.World {
 	s.Mu.RLock()
 	defer s.Mu.RUnlock()
 
 	return s.world
 }
 
-func (s *Space) GetParent() universe.Space {
+func (s *Object) GetParent() universe.Object {
 	s.Mu.RLock()
 	defer s.Mu.RUnlock()
 
 	return s.Parent
 }
 
-func (s *Space) SetParent(parent universe.Space, updateDB bool) error {
+func (s *Object) SetParent(parent universe.Object, updateDB bool) error {
 	s.Mu.Lock()
 	defer s.Mu.Unlock()
 
@@ -174,14 +174,14 @@ func (s *Space) SetParent(parent universe.Space, updateDB bool) error {
 	return nil
 }
 
-func (s *Space) GetOwnerID() uuid.UUID {
+func (s *Object) GetOwnerID() uuid.UUID {
 	s.Mu.RLock()
 	defer s.Mu.RUnlock()
 
 	return s.ownerID
 }
 
-func (s *Space) SetOwnerID(ownerID uuid.UUID, updateDB bool) error {
+func (s *Object) SetOwnerID(ownerID uuid.UUID, updateDB bool) error {
 	s.Mu.Lock()
 	defer s.Mu.Unlock()
 
@@ -196,14 +196,14 @@ func (s *Space) SetOwnerID(ownerID uuid.UUID, updateDB bool) error {
 	return nil
 }
 
-func (s *Space) GetAsset2D() universe.Asset2d {
+func (s *Object) GetAsset2D() universe.Asset2d {
 	s.Mu.RLock()
 	defer s.Mu.RUnlock()
 
 	return s.asset2d
 }
 
-func (s *Space) SetAsset2D(asset2d universe.Asset2d, updateDB bool) error {
+func (s *Object) SetAsset2D(asset2d universe.Asset2d, updateDB bool) error {
 	s.Mu.Lock()
 	defer s.Mu.Unlock()
 
@@ -222,14 +222,14 @@ func (s *Space) SetAsset2D(asset2d universe.Asset2d, updateDB bool) error {
 	return nil
 }
 
-func (s *Space) GetAsset3D() universe.Asset3d {
+func (s *Object) GetAsset3D() universe.Asset3d {
 	s.Mu.RLock()
 	defer s.Mu.RUnlock()
 
 	return s.asset3d
 }
 
-func (s *Space) SetAsset3D(asset3d universe.Asset3d, updateDB bool) error {
+func (s *Object) SetAsset3D(asset3d universe.Asset3d, updateDB bool) error {
 	s.Mu.Lock()
 	defer s.Mu.Unlock()
 
@@ -248,14 +248,14 @@ func (s *Space) SetAsset3D(asset3d universe.Asset3d, updateDB bool) error {
 	return nil
 }
 
-func (s *Space) GetSpaceType() universe.SpaceType {
+func (s *Object) GetObjectType() universe.ObjectType {
 	s.Mu.RLock()
 	defer s.Mu.RUnlock()
 
 	return s.spaceType
 }
 
-func (s *Space) SetSpaceType(spaceType universe.SpaceType, updateDB bool) error {
+func (s *Object) SetObjectType(spaceType universe.ObjectType, updateDB bool) error {
 	if spaceType == nil {
 		return errors.Errorf("space type is nil")
 	}
@@ -275,14 +275,14 @@ func (s *Space) SetSpaceType(spaceType universe.SpaceType, updateDB bool) error 
 	return nil
 }
 
-func (s *Space) GetOptions() *entry.SpaceOptions {
+func (s *Object) GetOptions() *entry.ObjectOptions {
 	s.Mu.RLock()
 	defer s.Mu.RUnlock()
 
 	return s.options
 }
 
-func (s *Space) SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool) (*entry.SpaceOptions, error) {
+func (s *Object) SetOptions(modifyFn modify.Fn[entry.ObjectOptions], updateDB bool) (*entry.ObjectOptions, error) {
 	s.Mu.Lock()
 	defer s.Mu.Unlock()
 
@@ -303,7 +303,7 @@ func (s *Space) SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool
 	return options, nil
 }
 
-func (s *Space) GetEffectiveOptions() *entry.SpaceOptions {
+func (s *Object) GetEffectiveOptions() *entry.ObjectOptions {
 	s.Mu.Lock()
 	defer s.Mu.Unlock()
 
@@ -312,7 +312,7 @@ func (s *Space) GetEffectiveOptions() *entry.SpaceOptions {
 		if err != nil {
 			s.log.Error(
 				errors.WithMessagef(
-					err, "Space: GetEffectiveOptions: failed to merge space effective options: %s", s.GetID(),
+					err, "Object: GetEffectiveOptions: failed to merge space effective options: %s", s.GetID(),
 				),
 			)
 			return nil
@@ -324,22 +324,22 @@ func (s *Space) GetEffectiveOptions() *entry.SpaceOptions {
 	return s.effectiveOptions
 }
 
-func (s *Space) DropCache() {
+func (s *Object) DropCache() {
 	s.Mu.Lock()
 	defer s.Mu.Unlock()
 
 	s.dropCache()
 }
 
-func (s *Space) dropCache() {
+func (s *Object) dropCache() {
 	s.effectiveOptions = nil
 }
 
-func (s *Space) GetEntry() *entry.Space {
+func (s *Object) GetEntry() *entry.Object {
 	s.Mu.RLock()
 	defer s.Mu.RUnlock()
 
-	entry := &entry.Space{
+	entry := &entry.Object{
 		SpaceID:  s.id,
 		OwnerID:  &s.ownerID,
 		Options:  s.options,
@@ -361,7 +361,7 @@ func (s *Space) GetEntry() *entry.Space {
 	return entry
 }
 
-func (s *Space) Run() error {
+func (s *Object) Run() error {
 	s.numSendsQueued.Store(0)
 	s.broadcastPipeline = make(chan *websocket.PreparedMessage, 100)
 
@@ -392,7 +392,7 @@ func (s *Space) Run() error {
 	return nil
 }
 
-func (s *Space) Stop() error {
+func (s *Object) Stop() error {
 	ns := s.numSendsQueued.Add(1)
 	if ns >= 0 {
 		s.broadcastPipeline <- nil
@@ -400,7 +400,7 @@ func (s *Space) Stop() error {
 	return nil
 }
 
-func (s *Space) Update(recursive bool) error {
+func (s *Object) Update(recursive bool) error {
 	s.UpdateSpawnMessage()
 
 	if s.GetEnabled() {
@@ -431,7 +431,7 @@ func (s *Space) Update(recursive bool) error {
 	return nil
 }
 
-func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
+func (s *Object) LoadFromEntry(entry *entry.Object, recursive bool) error {
 	s.log.Debugf("Loading space %s...", entry.SpaceID)
 
 	if entry.SpaceID != s.GetID() {
@@ -469,7 +469,7 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 			}
 
 			for i := range entries {
-				child, err := s.CreateSpace(entries[i].SpaceID)
+				child, err := s.CreateObject(entries[i].SpaceID)
 				if err != nil {
 					return errors.WithMessagef(err, "failed to create new space: %s", entries[i].SpaceID)
 				}
@@ -484,7 +484,7 @@ func (s *Space) LoadFromEntry(entry *entry.Space, recursive bool) error {
 	return group.Wait()
 }
 
-func (s *Space) loadSelfData(spaceEntry *entry.Space) error {
+func (s *Object) loadSelfData(spaceEntry *entry.Object) error {
 	if err := s.SetOwnerID(*spaceEntry.OwnerID, false); err != nil {
 		return errors.WithMessagef(err, "failed to set owner id: %s", spaceEntry.OwnerID)
 	}
@@ -494,14 +494,14 @@ func (s *Space) loadSelfData(spaceEntry *entry.Space) error {
 	return nil
 }
 
-func (s *Space) loadDependencies(entry *entry.Space) error {
+func (s *Object) loadDependencies(entry *entry.Object) error {
 	node := universe.GetNode()
 
-	spaceType, ok := node.GetSpaceTypes().GetSpaceType(*entry.SpaceTypeID)
+	spaceType, ok := node.GetObjectTypes().GetObjectType(*entry.SpaceTypeID)
 	if !ok {
 		return errors.Errorf("failed to get space type: %s", entry.SpaceTypeID)
 	}
-	if err := s.SetSpaceType(spaceType, false); err != nil {
+	if err := s.SetObjectType(spaceType, false); err != nil {
 		return errors.WithMessagef(err, "failed to set space type: %s", entry.SpaceTypeID)
 	}
 
@@ -528,7 +528,7 @@ func (s *Space) loadDependencies(entry *entry.Space) error {
 	return nil
 }
 
-func (s *Space) UpdateSpawnMessage() error {
+func (s *Object) UpdateSpawnMessage() error {
 	world := s.GetWorld()
 	if world == nil {
 		return errors.Errorf("world is empty")
@@ -542,7 +542,7 @@ func (s *Space) UpdateSpawnMessage() error {
 
 	asset3dID := uuid.Nil
 	asset3d := s.GetAsset3D()
-	spaceType := s.GetSpaceType()
+	spaceType := s.GetObjectType()
 	assetFormat := dto.AddressableAssetType
 	if asset3d == nil && spaceType != nil {
 		asset3d = spaceType.GetAsset3d()
@@ -583,11 +583,11 @@ func (s *Space) UpdateSpawnMessage() error {
 	return nil
 }
 
-func (s *Space) GetSpawnMessage() *websocket.PreparedMessage {
+func (s *Object) GetSpawnMessage() *websocket.PreparedMessage {
 	return s.spawnMsg.Load()
 }
 
-func (s *Space) SendSpawnMessage(sendFn func(*websocket.PreparedMessage) error, recursive bool) {
+func (s *Object) SendSpawnMessage(sendFn func(*websocket.PreparedMessage) error, recursive bool) {
 	sendFn(s.spawnMsg.Load())
 	//time.Sleep(time.Millisecond * 100)
 	if !recursive {
@@ -603,7 +603,7 @@ func (s *Space) SendSpawnMessage(sendFn func(*websocket.PreparedMessage) error, 
 
 }
 
-func (s *Space) SendTextures(sendFn func(*websocket.PreparedMessage) error, recursive bool) {
+func (s *Object) SendTextures(sendFn func(*websocket.PreparedMessage) error, recursive bool) {
 	msg := s.textMsg.Load()
 	if msg != nil {
 		sendFn(msg)
@@ -622,7 +622,7 @@ func (s *Space) SendTextures(sendFn func(*websocket.PreparedMessage) error, recu
 }
 
 // QUESTION: why this method is never called?
-func (s *Space) SendAttributes(sendFn func(*websocket.PreparedMessage), recursive bool) {
+func (s *Object) SendAttributes(sendFn func(*websocket.PreparedMessage), recursive bool) {
 	s.attributesMsg.Mu.RLock()
 	for _, g := range s.attributesMsg.Data {
 		for _, a := range g.Data {
@@ -643,7 +643,7 @@ func (s *Space) SendAttributes(sendFn func(*websocket.PreparedMessage), recursiv
 }
 
 // QUESTION: why this method is never called?
-func (s *Space) SetAttributesMsg(kind, name string, msg *websocket.PreparedMessage) {
+func (s *Object) SetAttributesMsg(kind, name string, msg *websocket.PreparedMessage) {
 	m, ok := s.attributesMsg.Load(kind)
 	if !ok {
 		m = generic.NewSyncMap[string, *websocket.PreparedMessage](0)
@@ -652,7 +652,7 @@ func (s *Space) SetAttributesMsg(kind, name string, msg *websocket.PreparedMessa
 	m.Store(name, msg)
 }
 
-func (s *Space) LockUnityObject(user universe.User, state uint32) bool {
+func (s *Object) LockUnityObject(user universe.User, state uint32) bool {
 	if state == 1 {
 		return s.lockedBy.CompareAndSwap(uuid.Nil, user.GetID())
 	} else {

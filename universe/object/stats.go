@@ -1,4 +1,4 @@
-package space
+package object
 
 import (
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
@@ -7,19 +7,19 @@ import (
 	"time"
 )
 
-func (s *Space) AddSpaceTags(prefix string, p *write.Point) *write.Point {
+func (s *Object) AddSpaceTags(prefix string, p *write.Point) *write.Point {
 	if prefix != "" {
 		prefix += " "
 	}
-	p.AddTag(prefix+"Space UUID", s.GetID().String())
-	p.AddTag(prefix+"Space Name", s.GetName())
-	p.AddTag(prefix+"Space Type", s.spaceType.GetName())
-	p.AddTag(prefix+"Space Type UUID", s.spaceType.GetID().String())
+	p.AddTag(prefix+"Object UUID", s.GetID().String())
+	p.AddTag(prefix+"Object Name", s.GetName())
+	p.AddTag(prefix+"Object Type", s.spaceType.GetName())
+	p.AddTag(prefix+"Object Type UUID", s.spaceType.GetID().String())
 	return p
 
 }
 
-func (s *Space) sendSpaceEnterLeaveStats(user universe.User, value int) error {
+func (s *Object) sendSpaceEnterLeaveStats(user universe.User, value int) error {
 	p := influxdb2.NewPoint(
 		"space_join",
 		map[string]string{},

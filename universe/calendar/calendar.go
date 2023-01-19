@@ -55,7 +55,7 @@ func (c *Calendar) Run() error {
 }
 
 func (c *Calendar) update() {
-	spaces := c.world.GetAllSpaces()
+	spaces := c.world.GetAllObjects()
 
 	events := getAllEvents(spaces)
 	nextEvents := findNextEvents(events)
@@ -93,7 +93,7 @@ func (c *Calendar) tick(eventID string) error {
 }
 
 func (c *Calendar) getEventByID(eventID string) *Event {
-	spaces := c.world.GetAllSpaces()
+	spaces := c.world.GetAllObjects()
 	events := getAllEvents(spaces)
 	for _, e := range events {
 		if e.EventID == eventID {
@@ -139,7 +139,7 @@ func findNextEvents(events []Event) []Event {
 	return result2
 }
 
-func getAllEvents(spaces map[uuid.UUID]universe.Space) []Event {
+func getAllEvents(spaces map[uuid.UUID]universe.Object) []Event {
 	attributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Space.Events.Name)
 
 	//a := c.world.GetSpaceAttributesValue(true)
@@ -149,7 +149,7 @@ func getAllEvents(spaces map[uuid.UUID]universe.Space) []Event {
 	for spaceID, _ := range spaces {
 		space := spaces[spaceID]
 
-		attributeValue, ok := space.GetSpaceAttributes().GetValue(attributeID)
+		attributeValue, ok := space.GetObjectAttributes().GetValue(attributeID)
 		if !ok {
 			continue
 		}

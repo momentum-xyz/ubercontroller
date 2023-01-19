@@ -15,20 +15,20 @@ const (
 	ReactUnitySpaceVisibleType SpaceVisibleType = 0b11
 )
 
-type Space struct {
+type Object struct {
 	SpaceID     uuid.UUID            `db:"space_id"`
 	SpaceTypeID *uuid.UUID           `db:"space_type_id"`
 	OwnerID     *uuid.UUID           `db:"owner_id"`
 	ParentID    *uuid.UUID           `db:"parent_id"`
 	Asset2dID   *uuid.UUID           `db:"asset_2d_id"`
 	Asset3dID   *uuid.UUID           `db:"asset_3d_id"`
-	Options     *SpaceOptions        `db:"options"`
+	Options     *ObjectOptions       `db:"options"`
 	Position    *cmath.SpacePosition `db:"position"`
 	CreatedAt   time.Time            `db:"created_at"`
 	UpdatedAt   *time.Time           `db:"updated_at"`
 }
 
-type SpaceOptions struct {
+type ObjectOptions struct {
 	Asset2dOptions   any                                `db:"asset_2d_options" json:"asset_2d_options,omitempty"`
 	Asset3dOptions   any                                `db:"asset_3d_options" json:"asset_3d_options,omitempty"`
 	FrameTemplates   map[string]any                     `db:"frame_templates" json:"frame_templates,omitempty"`
@@ -54,7 +54,7 @@ type SpaceAttributeID struct {
 	SpaceID uuid.UUID `db:"space_id"`
 }
 
-type SpaceUserAttributeID struct {
+type ObjectUserAttributeID struct {
 	AttributeID
 	SpaceID uuid.UUID `db:"space_id"`
 	UserID  uuid.UUID `db:"user_id"`
@@ -71,7 +71,7 @@ type SpaceAttribute struct {
 }
 
 type SpaceUserAttribute struct {
-	SpaceUserAttributeID
+	ObjectUserAttributeID
 	*AttributePayload
 }
 
@@ -82,10 +82,10 @@ func NewSpaceAttribute(spaceAttributeID SpaceAttributeID, payload *AttributePayl
 	}
 }
 
-func NewSpaceUserAttribute(spaceUserAttributeID SpaceUserAttributeID, payload *AttributePayload) *SpaceUserAttribute {
+func NewSpaceUserAttribute(spaceUserAttributeID ObjectUserAttributeID, payload *AttributePayload) *SpaceUserAttribute {
 	return &SpaceUserAttribute{
-		SpaceUserAttributeID: spaceUserAttributeID,
-		AttributePayload:     payload,
+		ObjectUserAttributeID: spaceUserAttributeID,
+		AttributePayload:      payload,
 	}
 }
 
@@ -96,8 +96,8 @@ func NewSpaceAttributeID(attributeID AttributeID, spaceID uuid.UUID) SpaceAttrib
 	}
 }
 
-func NewSpaceUserAttributeID(attributeID AttributeID, spaceID, userID uuid.UUID) SpaceUserAttributeID {
-	return SpaceUserAttributeID{
+func NewSpaceUserAttributeID(attributeID AttributeID, spaceID, userID uuid.UUID) ObjectUserAttributeID {
+	return ObjectUserAttributeID{
 		AttributeID: attributeID,
 		SpaceID:     spaceID,
 		UserID:      userID,

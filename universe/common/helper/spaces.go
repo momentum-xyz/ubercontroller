@@ -22,7 +22,7 @@ type SpaceTemplate struct {
 	OwnerID         *uuid.UUID           `json:"owner_id"`
 	Asset2dID       *uuid.UUID           `json:"asset_2d_id"`
 	Asset3dID       *uuid.UUID           `json:"asset_3d_id"`
-	Options         *entry.SpaceOptions  `json:"options"`
+	Options         *entry.ObjectOptions `json:"options"`
 	Position        *cmath.SpacePosition `json:"position"`
 	Label           *string              `json:"label"`
 	SpaceAttributes []*entry.Attribute   `json:"space_attributes"`
@@ -33,12 +33,12 @@ func AddSpaceFromTemplate(spaceTemplate *SpaceTemplate, updateDB bool) (uuid.UUI
 	node := universe.GetNode()
 
 	// loading
-	spaceType, ok := node.GetSpaceTypes().GetSpaceType(spaceTemplate.SpaceTypeID)
+	spaceType, ok := node.GetObjectTypes().GetObjectType(spaceTemplate.SpaceTypeID)
 	if !ok {
 		return uuid.Nil, errors.Errorf("failed to get space type: %s", spaceTemplate.SpaceTypeID)
 	}
 
-	parent, ok := node.GetSpaceFromAllSpaces(spaceTemplate.ParentID)
+	parent, ok := node.GetObjectFromAllObjects(spaceTemplate.ParentID)
 	if !ok {
 		return uuid.Nil, errors.Errorf("parent space not found: %s", spaceTemplate.ParentID)
 	}
@@ -75,7 +75,7 @@ func AddSpaceFromTemplate(spaceTemplate *SpaceTemplate, updateDB bool) (uuid.UUI
 	}
 
 	// creating
-	space, err := parent.CreateSpace(*spaceID)
+	space, err := parent.CreateObject(*spaceID)
 	if err != nil {
 		return uuid.Nil, errors.WithMessagef(err, "failed to create space: %s", spaceID)
 	}
@@ -83,7 +83,7 @@ func AddSpaceFromTemplate(spaceTemplate *SpaceTemplate, updateDB bool) (uuid.UUI
 	if err := space.SetOwnerID(*ownerID, false); err != nil {
 		return uuid.Nil, errors.WithMessagef(err, "failed to set owner id: %s", ownerID)
 	}
-	if err := space.SetSpaceType(spaceType, false); err != nil {
+	if err := space.SetObjectType(spaceType, false); err != nil {
 		return uuid.Nil, errors.WithMessagef(err, "failed to set space type: %s", spaceTemplate.SpaceTypeID)
 	}
 	if asset2d != nil {
@@ -104,7 +104,7 @@ func AddSpaceFromTemplate(spaceTemplate *SpaceTemplate, updateDB bool) (uuid.UUI
 
 	// saving in database
 	if updateDB {
-		if err := parent.AddSpace(space, updateDB); err != nil {
+		if err := parent.AddObject(space, updateDB); err != nil {
 			return uuid.Nil, errors.WithMessage(err, "failed to add space")
 		}
 	}
@@ -136,7 +136,7 @@ func AddSpaceFromTemplate(spaceTemplate *SpaceTemplate, updateDB bool) (uuid.UUI
 	}
 
 	for i := range spaceTemplate.SpaceAttributes {
-		if _, err := space.GetSpaceAttributes().Upsert(
+		if _, err := space.GetObjectAttributes().Upsert(
 			spaceTemplate.SpaceAttributes[i].AttributeID,
 			modify.MergeWith(spaceTemplate.SpaceAttributes[i].AttributePayload),
 			updateDB,
@@ -153,12 +153,12 @@ func AddSpaceFromTemplate(spaceTemplate *SpaceTemplate, updateDB bool) (uuid.UUI
 	return *spaceID, nil
 }
 
-func RemoveSpaceFromParent(parent, space universe.Space, updateDB bool) (bool, error) {
+func RemoveSpaceFromParent(parent, space universe.Object, updateDB bool) (bool, error) {
 	if parent == nil {
 		return false, errors.Errorf("parent is nil")
 	}
 
-	removed, err := parent.RemoveSpace(space, true, updateDB)
+	removed, err := parent.RemoveObject(space, true, updateDB)
 	if err != nil {
 		return false, errors.WithMessagef(err, "failed to remove space from parent: %s", parent.GetID())
 	}
@@ -189,7 +189,7 @@ func RemoveSpaceFromParent(parent, space universe.Space, updateDB bool) (bool, e
 	common.GetLogger().Infof("Helper: RemoveSpaceFromParent: space removed: %s", space.GetID())
 
 	go func() {
-		for _, child := range space.GetSpaces(false) {
+		for _, child := range space.GetObjects(false) {
 			// prevent spam while removing
 			child.SetEnabled(false)
 
@@ -207,7 +207,7 @@ func RemoveSpaceFromParent(parent, space universe.Space, updateDB bool) (bool, e
 }
 
 func CalcSpaceSpawnPosition(parentID, userID uuid.UUID) (*cmath.SpacePosition, error) {
-	parent, ok := universe.GetNode().GetSpaceFromAllSpaces(parentID)
+	parent, ok := universe.GetNode().GetObjectFromAllObjects(parentID)
 	if !ok {
 		return nil, errors.Errorf("space parent not found: %s", parentID)
 	}

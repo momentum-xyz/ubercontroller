@@ -16,13 +16,13 @@ type IDer interface {
 	GetID() uuid.UUID
 }
 
+type Initializer interface {
+	Initialize(ctx context.Context) error
+}
+
 type Enabler interface {
 	GetEnabled() bool
 	SetEnabled(enabled bool)
-}
-
-type Initializer interface {
-	Initialize(ctx context.Context) error
 }
 
 type Runner interface {
@@ -55,12 +55,12 @@ type APIRegister interface {
 	RegisterAPI(r *gin.Engine)
 }
 
-type SpaceCacher interface {
-	GetAllSpaces() map[uuid.UUID]Space
-	GetSpaceFromAllSpaces(spaceID uuid.UUID) (Space, bool)
-	FilterAllSpaces(predicateFn SpacesFilterPredicateFn) map[uuid.UUID]Space
-	AddSpaceToAllSpaces(space Space) error
-	RemoveSpaceFromAllSpaces(space Space) (bool, error)
+type ObjectsCacher interface {
+	GetAllObjects() map[uuid.UUID]Object
+	GetObjectFromAllObjects(objectID uuid.UUID) (Object, bool)
+	FilterAllObjects(predicateFn ObjectsFilterPredicateFn) map[uuid.UUID]Object
+	AddObjectToAllObjects(object Object) error
+	RemoveObjectFromAllObjects(object Object) (bool, error)
 }
 
 type DropCacher interface {
@@ -68,17 +68,17 @@ type DropCacher interface {
 }
 
 type Node interface {
-	Space
+	Object
 	LoadSaver
 	APIRegister
-	SpaceCacher
+	ObjectsCacher
 
-	ToSpace() Space
+	ToObject() Object
 
 	GetWorlds() Worlds
 	GetAssets2d() Assets2d
 	GetAssets3d() Assets3d
-	GetSpaceTypes() SpaceTypes
+	GetObjectTypes() ObjectTypes
 	GetUserTypes() UserTypes
 	GetAttributeTypes() AttributeTypes
 	GetPlugins() Plugins
@@ -86,7 +86,7 @@ type Node interface {
 	GetNodeAttributes() NodeAttributes
 	GetUserAttributes() UserAttributes
 	GetUserUserAttributes() UserUserAttributes
-	GetSpaceUserAttributes() SpaceUserAttributes
+	GetObjectUserAttributes() ObjectUserAttributes
 
 	AddAPIRegister(register APIRegister)
 
@@ -110,11 +110,11 @@ type Worlds interface {
 }
 
 type World interface {
-	Space
+	Object
 	LoadSaver
-	SpaceCacher
+	ObjectsCacher
 
-	ToSpace() Space
+	ToObject() Object
 
 	GetSettings() *WorldSettings
 
@@ -123,7 +123,7 @@ type World interface {
 	WriteInfluxPoint(point *influxWrite.Point) error
 }
 
-type Space interface {
+type Object interface {
 	IDer
 	Enabler
 	Initializer
@@ -135,8 +135,8 @@ type Space interface {
 	GetName() string
 	SetName(name string, updateDB bool) error
 
-	GetParent() Space
-	SetParent(parent Space, updateDB bool) error
+	GetParent() Object
+	SetParent(parent Object, updateDB bool) error
 
 	GetOwnerID() uuid.UUID
 	SetOwnerID(ownerID uuid.UUID, updateDB bool) error
@@ -146,9 +146,9 @@ type Space interface {
 	SetPosition(position *cmath.SpacePosition, updateDB bool) error
 	SetActualPosition(pos cmath.SpacePosition, theta float64) error
 
-	GetOptions() *entry.SpaceOptions
-	GetEffectiveOptions() *entry.SpaceOptions
-	SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool) (*entry.SpaceOptions, error)
+	GetOptions() *entry.ObjectOptions
+	GetEffectiveOptions() *entry.ObjectOptions
+	SetOptions(modifyFn modify.Fn[entry.ObjectOptions], updateDB bool) (*entry.ObjectOptions, error)
 
 	GetAsset2D() Asset2d
 	SetAsset2D(asset2d Asset2d, updateDB bool) error
@@ -156,25 +156,25 @@ type Space interface {
 	GetAsset3D() Asset3d
 	SetAsset3D(asset3d Asset3d, updateDB bool) error
 
-	GetSpaceType() SpaceType
-	SetSpaceType(spaceType SpaceType, updateDB bool) error
+	GetObjectType() ObjectType
+	SetObjectType(objectType ObjectType, updateDB bool) error
 
-	GetSpaceAttributes() SpaceAttributes
+	GetObjectAttributes() ObjectAttributes
 
-	GetEntry() *entry.Space
-	LoadFromEntry(entry *entry.Space, recursive bool) error
+	GetEntry() *entry.Object
+	LoadFromEntry(entry *entry.Object, recursive bool) error
 
 	Update(recursive bool) error
 	UpdateChildrenPosition(recursive bool) error
 
-	CreateSpace(spaceID uuid.UUID) (Space, error)
-	GetSpace(spaceID uuid.UUID, recursive bool) (Space, bool)
-	GetSpaces(recursive bool) map[uuid.UUID]Space
-	FilterSpaces(predicateFn SpacesFilterPredicateFn, recursive bool) map[uuid.UUID]Space
-	AddSpace(space Space, updateDB bool) error
-	AddSpaces(spaces []Space, updateDB bool) error
-	RemoveSpace(space Space, recursive, updateDB bool) (bool, error)
-	RemoveSpaces(spaces []Space, recursive, updateDB bool) (bool, error)
+	CreateObject(objectID uuid.UUID) (Object, error)
+	GetObject(objectID uuid.UUID, recursive bool) (Object, bool)
+	GetObjects(recursive bool) map[uuid.UUID]Object
+	FilterObjects(predicateFn ObjectsFilterPredicateFn, recursive bool) map[uuid.UUID]Object
+	AddObject(object Object, updateDB bool) error
+	AddObjects(objects []Object, updateDB bool) error
+	RemoveObject(object Object, recursive, updateDB bool) (bool, error)
+	RemoveObjects(objects []Object, recursive, updateDB bool) (bool, error)
 
 	GetUser(userID uuid.UUID, recursive bool) (User, bool)
 	GetUsers(recursive bool) map[uuid.UUID]User
@@ -198,8 +198,8 @@ type User interface {
 	GetWorld() World
 	SetWorld(world World)
 
-	GetSpace() Space
-	SetSpace(space Space)
+	GetObject() Object
+	SetObject(object Object)
 
 	GetUserType() UserType
 	SetUserType(userType UserType, updateDB bool) error
@@ -219,8 +219,6 @@ type User interface {
 
 	Send(message *websocket.PreparedMessage) error
 	SendDirectly(message *websocket.PreparedMessage) error
-
-	ReleaseSendBuffer()
 
 	AddInfluxTags(prefix string, point *influxWrite.Point) *influxWrite.Point
 }
@@ -245,7 +243,7 @@ type NodeAttributes interface {
 	Len() int
 }
 
-type SpaceAttributes interface {
+type ObjectAttributes interface {
 	Attributes[entry.AttributeID]
 
 	Len() int
@@ -261,9 +259,9 @@ type UserUserAttributes interface {
 	Attributes[entry.UserUserAttributeID]
 }
 
-// SpaceUserAttributes ignores "updateDB" flag
-type SpaceUserAttributes interface {
-	Attributes[entry.SpaceUserAttributeID]
+// ObjectUserAttributes ignores "updateDB" flag
+type ObjectUserAttributes interface {
+	Attributes[entry.ObjectUserAttributeID]
 }
 
 type Assets2d interface {
@@ -387,22 +385,22 @@ type AttributeType interface {
 	LoadFromEntry(entry *entry.AttributeType) error
 }
 
-type SpaceTypes interface {
+type ObjectTypes interface {
 	Initializer
 	LoadSaver
 	APIRegister
 
-	CreateSpaceType(spaceTypeID uuid.UUID) (SpaceType, error)
-	GetSpaceType(spaceTypeID uuid.UUID) (SpaceType, bool)
-	GetSpaceTypes() map[uuid.UUID]SpaceType
-	FilterSpaceTypes(predicateFn SpaceTypesFilterPredicateFn) map[uuid.UUID]SpaceType
-	AddSpaceType(spaceType SpaceType, updateDB bool) error
-	AddSpaceTypes(spaceTypes []SpaceType, updateDB bool) error
-	RemoveSpaceType(spaceType SpaceType, updateDB bool) error
-	RemoveSpaceTypes(spaceTypes []SpaceType, updateDB bool) error
+	CreateObjectType(objectTypeID uuid.UUID) (ObjectType, error)
+	GetObjectType(objectTypeID uuid.UUID) (ObjectType, bool)
+	GetObjectTypes() map[uuid.UUID]ObjectType
+	FilterObjectTypes(predicateFn ObjectTypesFilterPredicateFn) map[uuid.UUID]ObjectType
+	AddObjectType(objectType ObjectType, updateDB bool) error
+	AddObjectTypes(objectTypes []ObjectType, updateDB bool) error
+	RemoveObjectType(objectType ObjectType, updateDB bool) error
+	RemoveObjectTypes(objectTypes []ObjectType, updateDB bool) error
 }
 
-type SpaceType interface {
+type ObjectType interface {
 	IDer
 	Initializer
 
@@ -415,8 +413,8 @@ type SpaceType interface {
 	GetDescription() *string
 	SetDescription(description *string, updateDB bool) error
 
-	GetOptions() *entry.SpaceOptions
-	SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool) (*entry.SpaceOptions, error)
+	GetOptions() *entry.ObjectOptions
+	SetOptions(modifyFn modify.Fn[entry.ObjectOptions], updateDB bool) (*entry.ObjectOptions, error)
 
 	GetAsset2d() Asset2d
 	SetAsset2d(asset2d Asset2d, updateDB bool) error
@@ -424,8 +422,8 @@ type SpaceType interface {
 	GetAsset3d() Asset3d
 	SetAsset3d(asset3d Asset3d, updateDB bool) error
 
-	GetEntry() *entry.SpaceType
-	LoadFromEntry(entry *entry.SpaceType) error
+	GetEntry() *entry.ObjectType
+	LoadFromEntry(entry *entry.ObjectType) error
 }
 
 type UserTypes interface {
@@ -437,10 +435,10 @@ type UserTypes interface {
 	GetUserType(userTypeID uuid.UUID) (UserType, bool)
 	GetUserTypes() map[uuid.UUID]UserType
 	FilterUserTypes(predicateFn UserTypesFilterPredicateFn) map[uuid.UUID]UserType
-	AddUserType(spaceType UserType, updateDB bool) error
-	AddUserTypes(spaceTypes []UserType, updateDB bool) error
-	RemoveUserType(spaceType UserType, updateDB bool) error
-	RemoveUserTypes(spaceTypes []UserType, updateDB bool) error
+	AddUserType(userType UserType, updateDB bool) error
+	AddUserTypes(userTypes []UserType, updateDB bool) error
+	RemoveUserType(userType UserType, updateDB bool) error
+	RemoveUserTypes(userTypes []UserType, updateDB bool) error
 }
 
 type UserType interface {

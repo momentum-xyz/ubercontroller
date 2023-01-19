@@ -7,21 +7,21 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
-func (n *Node) CreateSpace(spaceID uuid.UUID) (universe.Space, error) {
+func (n *Node) CreateObject(spaceID uuid.UUID) (universe.Object, error) {
 	return nil, errors.Errorf("not permitted for node")
 }
 
-func (n *Node) SetParent(parent universe.Space, updateDB bool) error {
+func (n *Node) SetParent(parent universe.Object, updateDB bool) error {
 	return errors.Errorf("not permitted for node")
 }
 
-func (n *Node) GetAllSpaces() map[uuid.UUID]universe.Space {
-	spaces := map[uuid.UUID]universe.Space{
-		n.GetID(): n.ToSpace(),
+func (n *Node) GetAllObjects() map[uuid.UUID]universe.Object {
+	spaces := map[uuid.UUID]universe.Object{
+		n.GetID(): n.ToObject(),
 	}
 
 	for _, world := range n.GetWorlds().GetWorlds() {
-		for spaceID, space := range world.GetAllSpaces() {
+		for spaceID, space := range world.GetAllObjects() {
 			spaces[spaceID] = space
 		}
 	}
@@ -29,14 +29,14 @@ func (n *Node) GetAllSpaces() map[uuid.UUID]universe.Space {
 	return spaces
 }
 
-func (n *Node) FilterAllSpaces(predicateFn universe.SpacesFilterPredicateFn) map[uuid.UUID]universe.Space {
-	spaces := make(map[uuid.UUID]universe.Space)
-	if predicateFn(n.GetID(), n.ToSpace()) {
-		spaces[n.GetID()] = n.ToSpace()
+func (n *Node) FilterAllObjects(predicateFn universe.ObjectsFilterPredicateFn) map[uuid.UUID]universe.Object {
+	spaces := make(map[uuid.UUID]universe.Object)
+	if predicateFn(n.GetID(), n.ToObject()) {
+		spaces[n.GetID()] = n.ToObject()
 	}
 
 	for _, world := range n.GetWorlds().GetWorlds() {
-		for spaceID, space := range world.FilterAllSpaces(predicateFn) {
+		for spaceID, space := range world.FilterAllObjects(predicateFn) {
 			spaces[spaceID] = space
 		}
 	}
@@ -44,9 +44,9 @@ func (n *Node) FilterAllSpaces(predicateFn universe.SpacesFilterPredicateFn) map
 	return spaces
 }
 
-func (n *Node) GetSpaceFromAllSpaces(spaceID uuid.UUID) (universe.Space, bool) {
+func (n *Node) GetObjectFromAllObjects(spaceID uuid.UUID) (universe.Object, bool) {
 	if spaceID == n.GetID() {
-		return n.ToSpace(), true
+		return n.ToObject(), true
 	}
 
 	world, ok := n.spaceIDToWorld.Load(spaceID)
@@ -54,10 +54,10 @@ func (n *Node) GetSpaceFromAllSpaces(spaceID uuid.UUID) (universe.Space, bool) {
 		return nil, false
 	}
 
-	return world.GetSpaceFromAllSpaces(spaceID)
+	return world.GetObjectFromAllObjects(spaceID)
 }
 
-func (n *Node) AddSpaceToAllSpaces(space universe.Space) error {
+func (n *Node) AddObjectToAllObjects(space universe.Object) error {
 	if space.GetID() == n.GetID() {
 		return errors.Errorf("not permitted for node")
 	}
@@ -67,7 +67,7 @@ func (n *Node) AddSpaceToAllSpaces(space universe.Space) error {
 		return errors.Errorf("space has nil world")
 	}
 
-	if err := world.AddSpaceToAllSpaces(space); err != nil {
+	if err := world.AddObjectToAllObjects(space); err != nil {
 		return errors.WithMessage(err, "failed to add space to world all spaces")
 	}
 
@@ -76,7 +76,7 @@ func (n *Node) AddSpaceToAllSpaces(space universe.Space) error {
 	return nil
 }
 
-func (n *Node) RemoveSpaceFromAllSpaces(space universe.Space) (bool, error) {
+func (n *Node) RemoveObjectFromAllObjects(space universe.Object) (bool, error) {
 	if space.GetID() == n.GetID() {
 		return false, errors.Errorf("not permitted for node")
 	}
@@ -87,7 +87,7 @@ func (n *Node) RemoveSpaceFromAllSpaces(space universe.Space) (bool, error) {
 	if world, ok := n.spaceIDToWorld.Data[space.GetID()]; ok {
 		delete(n.spaceIDToWorld.Data, space.GetID())
 
-		return world.RemoveSpaceFromAllSpaces(space)
+		return world.RemoveObjectFromAllObjects(space)
 	}
 
 	return false, nil

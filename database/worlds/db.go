@@ -43,8 +43,8 @@ func (db *DB) GetWorldIDs(ctx context.Context) ([]uuid.UUID, error) {
 	return ids, nil
 }
 
-func (db *DB) GetWorlds(ctx context.Context) ([]*entry.Space, error) {
-	var worlds []*entry.Space
+func (db *DB) GetWorlds(ctx context.Context) ([]*entry.Object, error) {
+	var worlds []*entry.Object
 	if err := pgxscan.Select(ctx, db.conn, &worlds, getWorldsQuery); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}

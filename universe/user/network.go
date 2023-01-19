@@ -35,6 +35,7 @@ func (u *User) StartIOPumps() {
 
 func (u *User) ReleaseSendBuffer() {
 	u.bufferSends.Store(false)
+	u.log.Infof("User: ReleaseSendBuffer: messages waterfall opened: %s", u.GetID())
 }
 
 func (u *User) readPump() {

@@ -140,7 +140,7 @@ func (n *Node) posBusAutoOnUserUserAttributeChanged(
 }
 
 func (n *Node) posBusAutoOnSpaceUserAttributeChanged(
-	changeType universe.AttributeChangeType, spaceUserAttributeID entry.SpaceUserAttributeID, value *entry.AttributeValue,
+	changeType universe.AttributeChangeType, spaceUserAttributeID entry.ObjectUserAttributeID, value *entry.AttributeValue,
 	effectiveOptions *entry.AttributeOptions,
 ) error {
 	autoOption, err := posbus.GetOptionAutoOption(effectiveOptions)
@@ -155,7 +155,7 @@ func (n *Node) posBusAutoOnSpaceUserAttributeChanged(
 		return nil
 	}
 
-	space, ok := n.GetSpaceFromAllSpaces(spaceUserAttributeID.SpaceID)
+	space, ok := n.GetObjectFromAllObjects(spaceUserAttributeID.SpaceID)
 	if !ok {
 		return errors.Errorf("space not found: %s", spaceUserAttributeID.SpaceID)
 	}

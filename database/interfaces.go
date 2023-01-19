@@ -39,16 +39,16 @@ type NodesDB interface {
 
 type WorldsDB interface {
 	GetWorldIDs(ctx context.Context) ([]uuid.UUID, error)
-	GetWorlds(ctx context.Context) ([]*entry.Space, error)
+	GetWorlds(ctx context.Context) ([]*entry.Object, error)
 }
 
 type SpacesDB interface {
-	GetSpaceByID(ctx context.Context, spaceID uuid.UUID) (*entry.Space, error)
+	GetSpaceByID(ctx context.Context, spaceID uuid.UUID) (*entry.Object, error)
 	GetSpaceIDsByParentID(ctx context.Context, parentID uuid.UUID) ([]uuid.UUID, error)
-	GetSpacesByParentID(ctx context.Context, parentID uuid.UUID) ([]*entry.Space, error)
+	GetSpacesByParentID(ctx context.Context, parentID uuid.UUID) ([]*entry.Object, error)
 
-	UpsertSpace(ctx context.Context, space *entry.Space) error
-	UpsertSpaces(ctx context.Context, spaces []*entry.Space) error
+	UpsertSpace(ctx context.Context, space *entry.Object) error
+	UpsertSpaces(ctx context.Context, spaces []*entry.Object) error
 
 	UpdateSpaceParentID(ctx context.Context, spaceID uuid.UUID, parentID uuid.UUID) error
 	UpdateSpacePosition(ctx context.Context, spaceID uuid.UUID, position *cmath.SpacePosition) error
@@ -56,7 +56,7 @@ type SpacesDB interface {
 	UpdateSpaceAsset2dID(ctx context.Context, spaceID uuid.UUID, asset2dID *uuid.UUID) error
 	UpdateSpaceAsset3dID(ctx context.Context, spaceID uuid.UUID, asset3dID *uuid.UUID) error
 	UpdateSpaceSpaceTypeID(ctx context.Context, spaceID, spaceTypeID uuid.UUID) error
-	UpdateSpaceOptions(ctx context.Context, spaceID uuid.UUID, options *entry.SpaceOptions) error
+	UpdateSpaceOptions(ctx context.Context, spaceID uuid.UUID, options *entry.ObjectOptions) error
 
 	RemoveSpaceByID(ctx context.Context, spaceID uuid.UUID) error
 	RemoveSpacesByIDs(ctx context.Context, spaceIDs []uuid.UUID) error
@@ -121,15 +121,15 @@ type PluginsDB interface {
 }
 
 type SpaceTypesDB interface {
-	GetSpaceTypes(ctx context.Context) ([]*entry.SpaceType, error)
+	GetSpaceTypes(ctx context.Context) ([]*entry.ObjectType, error)
 
-	UpsertSpaceType(ctx context.Context, spaceType *entry.SpaceType) error
-	UpsertSpaceTypes(ctx context.Context, spaceTypes []*entry.SpaceType) error
+	UpsertSpaceType(ctx context.Context, spaceType *entry.ObjectType) error
+	UpsertSpaceTypes(ctx context.Context, spaceTypes []*entry.ObjectType) error
 
 	UpdateSpaceTypeName(ctx context.Context, spaceTypeID uuid.UUID, name string) error
 	UpdateSpaceTypeCategoryName(ctx context.Context, spaceTypeID uuid.UUID, categoryName string) error
 	UpdateSpaceTypeDescription(ctx context.Context, spaceTypeID uuid.UUID, description *string) error
-	UpdateSpaceTypeOptions(ctx context.Context, spaceTypeID uuid.UUID, options *entry.SpaceOptions) error
+	UpdateSpaceTypeOptions(ctx context.Context, spaceTypeID uuid.UUID, options *entry.ObjectOptions) error
 
 	RemoveSpaceTypeByID(ctx context.Context, spaceTypeID uuid.UUID) error
 	RemoveSpaceTypesByIDs(ctx context.Context, spaceTypeIDs []uuid.UUID) error
@@ -234,16 +234,16 @@ type SpaceAttributesDB interface {
 type SpaceUserAttributesDB interface {
 	GetSpaceUserAttributes(ctx context.Context) ([]*entry.SpaceUserAttribute, error)
 	GetSpaceUserAttributeByID(
-		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
+		ctx context.Context, spaceUserAttributeID entry.ObjectUserAttributeID,
 	) (*entry.SpaceUserAttribute, error)
 	GetSpaceUserAttributePayloadByID(
-		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
+		ctx context.Context, spaceUserAttributeID entry.ObjectUserAttributeID,
 	) (*entry.AttributePayload, error)
 	GetSpaceUserAttributeValueByID(
-		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
+		ctx context.Context, spaceUserAttributeID entry.ObjectUserAttributeID,
 	) (*entry.AttributeValue, error)
 	GetSpaceUserAttributeOptionsByID(
-		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
+		ctx context.Context, spaceUserAttributeID entry.ObjectUserAttributeID,
 	) (*entry.AttributeOptions, error)
 	GetSpaceUserAttributesBySpaceID(
 		ctx context.Context, spaceID uuid.UUID,
@@ -261,20 +261,20 @@ type SpaceUserAttributesDB interface {
 	GetSpaceUserAttributesCount(ctx context.Context) (int64, error)
 
 	UpsertSpaceUserAttribute(
-		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
+		ctx context.Context, spaceUserAttributeID entry.ObjectUserAttributeID,
 		modifyFn modify.Fn[entry.AttributePayload],
 	) (*entry.AttributePayload, error)
 
 	UpdateSpaceUserAttributeOptions(
-		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
+		ctx context.Context, spaceUserAttributeID entry.ObjectUserAttributeID,
 		modifyFn modify.Fn[entry.AttributeOptions],
 	) (*entry.AttributeOptions, error)
 	UpdateSpaceUserAttributeValue(
-		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID, modifyFn modify.Fn[entry.AttributeValue],
+		ctx context.Context, spaceUserAttributeID entry.ObjectUserAttributeID, modifyFn modify.Fn[entry.AttributeValue],
 	) (*entry.AttributeValue, error)
 
 	RemoveSpaceUserAttributeByID(
-		ctx context.Context, spaceUserAttributeID entry.SpaceUserAttributeID,
+		ctx context.Context, spaceUserAttributeID entry.ObjectUserAttributeID,
 	) error
 	RemoveSpaceUserAttributeByName(ctx context.Context, name string) error
 	RemoveSpaceUserAttributesByNames(ctx context.Context, names []string) error

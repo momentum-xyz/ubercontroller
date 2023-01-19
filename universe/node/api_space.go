@@ -23,7 +23,7 @@ import (
 // @Tags spaces
 // @Accept json
 // @Produce json
-// @Param space_id path string true "Space ID"
+// @Param space_id path string true "Object ID"
 // @Param body body node.apiGenAgoraToken.Body false "body params"
 // @Success 200 {object} node.apiGenAgoraToken.Out
 // @Failure 400 {object} api.HTTPError
@@ -48,7 +48,7 @@ func (n *Node) apiGenAgoraToken(c *gin.Context) {
 		return
 	}
 
-	if _, ok := n.GetSpaceFromAllSpaces(spaceID); !ok {
+	if _, ok := n.GetObjectFromAllObjects(spaceID); !ok {
 		err := errors.Errorf("Node: apiGenAgoraToken: space not found: %s", spaceID)
 		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
 		return
@@ -103,7 +103,7 @@ func (n *Node) apiGenAgoraToken(c *gin.Context) {
 // @Tags spaces
 // @Accept json
 // @Produce json
-// @Param space_id path string true "Space ID"
+// @Param space_id path string true "Object ID"
 // @Param query query node.apiGetSpace.InQuery false "query params"
 // @Success 202 {object} dto.Space
 // @Failure 400 {object} api.HTTPError
@@ -130,7 +130,7 @@ func (n *Node) apiGetSpace(c *gin.Context) {
 		return
 	}
 
-	space, ok := n.GetSpaceFromAllSpaces(spaceID)
+	space, ok := n.GetObjectFromAllObjects(spaceID)
 	if !ok {
 		err := errors.Errorf("Node: apiGetSpace: space not found: %s", spaceID)
 		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
@@ -142,7 +142,7 @@ func (n *Node) apiGetSpace(c *gin.Context) {
 	}
 	parent := space.GetParent()
 	position := space.GetActualPosition()
-	spaceType := space.GetSpaceType()
+	spaceType := space.GetObjectType()
 	if parent != nil {
 		out.ParentID = parent.GetID().String()
 	}
@@ -179,7 +179,7 @@ func (n *Node) apiGetSpace(c *gin.Context) {
 // @Tags spaces
 // @Accept json
 // @Produce json
-// @Param space_id path string true "Space ID"
+// @Param space_id path string true "Object ID"
 // @Success 200 {object} nil
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
@@ -193,7 +193,7 @@ func (n *Node) apiRemoveSpace(c *gin.Context) {
 		return
 	}
 
-	space, ok := n.GetSpaceFromAllSpaces(spaceID)
+	space, ok := n.GetObjectFromAllObjects(spaceID)
 	if !ok {
 		err := errors.Errorf("Node: apiRemoveSpace: space not found: %s", spaceID)
 		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
@@ -221,7 +221,7 @@ func (n *Node) apiRemoveSpace(c *gin.Context) {
 // @Tags spaces
 // @Accept json
 // @Produce json
-// @Param space_id path string true "Space ID"
+// @Param space_id path string true "Object ID"
 // @Param body body node.apiUpdateSpace.InBody true "body params"
 // @Success 200 {object} node.apiUpdateSpace.Out
 // @Failure 500 {object} api.HTTPError
@@ -252,7 +252,7 @@ func (n *Node) apiUpdateSpace(c *gin.Context) {
 		return
 	}
 
-	space, ok := n.GetSpaceFromAllSpaces(spaceID)
+	space, ok := n.GetObjectFromAllObjects(spaceID)
 	if !ok {
 		err := errors.Errorf("Node: apiUpdateSpace: space not found: %s", spaceID)
 		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
@@ -336,7 +336,7 @@ func (n *Node) apiUpdateSpace(c *gin.Context) {
 // @Tags spaces
 // @Accept json
 // @Produce json
-// @Param space_id path string true "Space ID"
+// @Param space_id path string true "Object ID"
 // @Param body body node.apiSpacesSetSpaceSubOption.Body true "body params"
 // @Success 202 {object} dto.SpaceSubOptions
 // @Failure 500 {object} api.HTTPError
@@ -363,16 +363,16 @@ func (n *Node) apiSpacesSetSpaceSubOption(c *gin.Context) {
 		return
 	}
 
-	space, ok := n.GetSpaceFromAllSpaces(spaceID)
+	space, ok := n.GetObjectFromAllObjects(spaceID)
 	if !ok {
 		err := errors.Errorf("Node: apiSpacesSetSpaceSubOption: space not found: %s", spaceID)
 		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
 		return
 	}
 
-	modifyFn := func(current *entry.SpaceOptions) (*entry.SpaceOptions, error) {
+	modifyFn := func(current *entry.ObjectOptions) (*entry.ObjectOptions, error) {
 		if current == nil {
-			current = &entry.SpaceOptions{}
+			current = &entry.ObjectOptions{}
 		}
 		if current.Subs == nil {
 			current.Subs = make(map[string]any)
@@ -402,7 +402,7 @@ func (n *Node) apiSpacesSetSpaceSubOption(c *gin.Context) {
 // @Tags spaces
 // @Accept json
 // @Produce json
-// @Param space_id path string true "Space ID"
+// @Param space_id path string true "Object ID"
 // @Param body body node.apiSpacesRemoveSpaceSubOption.Body true "body params"
 // @Success 200 {object} nil
 // @Failure 500 {object} api.HTTPError
@@ -428,14 +428,14 @@ func (n *Node) apiSpacesRemoveSpaceSubOption(c *gin.Context) {
 		return
 	}
 
-	space, ok := n.GetSpaceFromAllSpaces(spaceID)
+	space, ok := n.GetObjectFromAllObjects(spaceID)
 	if !ok {
 		err := errors.Errorf("Node: apiSpacesRemoveSpaceSubOption: space not found: %s", spaceID)
 		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
 		return
 	}
 
-	modifyFn := func(current *entry.SpaceOptions) (*entry.SpaceOptions, error) {
+	modifyFn := func(current *entry.ObjectOptions) (*entry.ObjectOptions, error) {
 		if current == nil || current.Subs == nil {
 			return current, nil
 		}
@@ -460,7 +460,7 @@ func (n *Node) apiSpacesRemoveSpaceSubOption(c *gin.Context) {
 // @Tags spaces
 // @Accept json
 // @Produce json
-// @Param space_id path string true "Space ID"
+// @Param space_id path string true "Object ID"
 // @Param query query node.apiSpacesGetSpaceOptions.InQuery false "query params"
 // @Success 200 {object} dto.SpaceOptions
 // @Failure 500 {object} api.HTTPError
@@ -488,7 +488,7 @@ func (n *Node) apiSpacesGetSpaceOptions(c *gin.Context) {
 		return
 	}
 
-	space, ok := n.GetSpaceFromAllSpaces(spaceID)
+	space, ok := n.GetObjectFromAllObjects(spaceID)
 	if !ok {
 		err := errors.Errorf("Node: apiSpacesGetSpaceOptions: space not found: %s", spaceID)
 		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
@@ -511,7 +511,7 @@ func (n *Node) apiSpacesGetSpaceOptions(c *gin.Context) {
 // @Tags spaces
 // @Accept json
 // @Produce json
-// @Param space_id path string true "Space ID"
+// @Param space_id path string true "Object ID"
 // @Param query query node.apiSpacesGetSpaceSubOptions.InQuery true "query params"
 // @Success 200 {object} dto.SpaceSubOptions
 // @Failure 500 {object} api.HTTPError
@@ -540,14 +540,14 @@ func (n *Node) apiSpacesGetSpaceSubOptions(c *gin.Context) {
 		return
 	}
 
-	space, ok := n.GetSpaceFromAllSpaces(spaceID)
+	space, ok := n.GetObjectFromAllObjects(spaceID)
 	if !ok {
 		err := errors.Errorf("Node: apiSpacesGetSpaceSubOptions: space not found: %s", spaceID)
 		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
 		return
 	}
 
-	var options *entry.SpaceOptions
+	var options *entry.ObjectOptions
 	if inQuery.Effective {
 		options = space.GetEffectiveOptions()
 	} else {
