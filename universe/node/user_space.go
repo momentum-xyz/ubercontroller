@@ -7,8 +7,8 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
-func (n *Node) GetUserSpaceValue(userSpaceID entry.UserSpaceID) (*entry.UserSpaceValue, bool) {
-	value, err := n.db.GetUserSpaceDB().GetValueByID(n.ctx, userSpaceID)
+func (n *Node) GetUserSpaceValue(userSpaceID entry.UserObjectID) (*entry.UserObjectValue, bool) {
+	value, err := n.db.GetUserObjectDB().GetValueByID(n.ctx, userSpaceID)
 	if err != nil {
 		return nil, false
 	}
@@ -16,9 +16,9 @@ func (n *Node) GetUserSpaceValue(userSpaceID entry.UserSpaceID) (*entry.UserSpac
 }
 
 func (n *Node) UpdateUserSpaceValue(
-	userSpaceID entry.UserSpaceID, modifyFn modify.Fn[entry.UserSpaceValue],
-) (*entry.UserSpaceValue, error) {
-	value, err := n.db.GetUserSpaceDB().UpdateValueByID(n.ctx, userSpaceID, modifyFn)
+	userSpaceID entry.UserObjectID, modifyFn modify.Fn[entry.UserObjectValue],
+) (*entry.UserObjectValue, error) {
+	value, err := n.db.GetUserObjectDB().UpdateValueByID(n.ctx, userSpaceID, modifyFn)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to update space user attribute value")
 	}

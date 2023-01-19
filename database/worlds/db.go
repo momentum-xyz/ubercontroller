@@ -2,7 +2,6 @@ package worlds
 
 import (
 	"context"
-
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -24,10 +23,10 @@ var _ database.WorldsDB = (*DB)(nil)
 type DB struct {
 	conn   *pgxpool.Pool
 	common database.CommonDB
-	spaces database.SpacesDB
+	spaces database.ObjectsDB
 }
 
-func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB, spacesDB database.SpacesDB) *DB {
+func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB, spacesDB database.ObjectsDB) *DB {
 	return &DB{
 		conn:   conn,
 		common: commonDB,

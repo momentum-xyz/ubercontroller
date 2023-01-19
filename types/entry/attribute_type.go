@@ -11,6 +11,6 @@ type AttributeTypeID struct {
 
 type AttributeType struct {
 	AttributeTypeID
-	Description *string           `db:"description"`
-	Options     *AttributeOptions `db:"options"`
+	Description *string           `db:"description" json:"description"`
+	Options     *AttributeOptions `db:"options" json:"options"`
 }

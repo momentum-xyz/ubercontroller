@@ -37,11 +37,11 @@ func NewSpaceType(id uuid.UUID, db database.DB) *SpaceType {
 		id: id,
 		db: db,
 		options: &entry.ObjectOptions{
-			AllowedSubspaces: []uuid.UUID{},
-			Minimap:          utils.GetPTR(true),
-			Visible:          utils.GetPTR(entry.ReactUnitySpaceVisibleType),
-			Editable:         utils.GetPTR(true),
-			Private:          utils.GetPTR(false),
+			AllowedSubObjects: []uuid.UUID{},
+			Minimap:           utils.GetPTR(true),
+			Visible:           utils.GetPTR(entry.ReactUnityObjectVisibleType),
+			Editable:          utils.GetPTR(true),
+			Private:           utils.GetPTR(false),
 		},
 	}
 }
@@ -74,7 +74,7 @@ func (s *SpaceType) SetName(name string, updateDB bool) error {
 	defer s.mu.Unlock()
 
 	if updateDB {
-		if err := s.db.GetSpaceTypesDB().UpdateSpaceTypeName(s.ctx, s.GetID(), name); err != nil {
+		if err := s.db.GetObjectTypesDB().UpdateObjectTypeName(s.ctx, s.GetID(), name); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -96,7 +96,7 @@ func (s *SpaceType) SetCategoryName(categoryName string, updateDB bool) error {
 	defer s.mu.Unlock()
 
 	if updateDB {
-		if err := s.db.GetSpaceTypesDB().UpdateSpaceTypeCategoryName(s.ctx, s.GetID(), categoryName); err != nil {
+		if err := s.db.GetObjectTypesDB().UpdateObjectTypeCategoryName(s.ctx, s.GetID(), categoryName); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -118,7 +118,7 @@ func (s *SpaceType) SetDescription(description *string, updateDB bool) error {
 	defer s.mu.Unlock()
 
 	if updateDB {
-		if err := s.db.GetSpaceTypesDB().UpdateSpaceTypeDescription(s.ctx, s.GetID(), description); err != nil {
+		if err := s.db.GetObjectTypesDB().UpdateObjectTypeDescription(s.ctx, s.GetID(), description); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -190,7 +190,7 @@ func (s *SpaceType) SetOptions(modifyFn modify.Fn[entry.ObjectOptions], updateDB
 		}
 
 		if updateDB {
-			if err := s.db.GetSpaceTypesDB().UpdateSpaceTypeOptions(s.ctx, s.GetID(), options); err != nil {
+			if err := s.db.GetObjectTypesDB().UpdateObjectTypeOptions(s.ctx, s.GetID(), options); err != nil {
 				return nil, errors.WithMessage(err, "failed to update db")
 			}
 		}
@@ -222,11 +222,11 @@ func (s *SpaceType) GetEntry() *entry.ObjectType {
 	defer s.mu.Unlock()
 
 	entry := &entry.ObjectType{
-		SpaceTypeID:   s.id,
-		SpaceTypeName: s.name,
-		CategoryName:  s.categoryName,
-		Description:   s.description,
-		Options:       s.options,
+		ObjectTypeID:   s.id,
+		ObjectTypeName: s.name,
+		CategoryName:   s.categoryName,
+		Description:    s.description,
+		Options:        s.options,
 	}
 	if s.asset2d != nil {
 		entry.Asset2dID = utils.GetPTR(s.asset2d.GetID())
@@ -239,11 +239,11 @@ func (s *SpaceType) GetEntry() *entry.ObjectType {
 }
 
 func (s *SpaceType) LoadFromEntry(entry *entry.ObjectType) error {
-	if entry.SpaceTypeID != s.GetID() {
-		return errors.Errorf("space type ids mismatch: %s != %s", entry.SpaceTypeID, s.GetID())
+	if entry.ObjectTypeID != s.GetID() {
+		return errors.Errorf("space type ids mismatch: %s != %s", entry.ObjectTypeID, s.GetID())
 	}
 
-	if err := s.SetName(entry.SpaceTypeName, false); err != nil {
+	if err := s.SetName(entry.ObjectTypeName, false); err != nil {
 		return errors.WithMessage(err, "failed to set name")
 	}
 	if err := s.SetCategoryName(entry.CategoryName, false); err != nil {

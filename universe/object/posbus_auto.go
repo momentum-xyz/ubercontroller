@@ -42,7 +42,7 @@ func (s *Object) posBusAutoOnSpaceAttributeChanged(
 					),
 				)
 			}
-		case entry.SpacePosBusAutoScopeAttributeOption:
+		case entry.ObjectPosBusAutoScopeAttributeOption:
 			if err := s.Send(autoMessage, false); err != nil {
 				errs = multierror.Append(
 					errs, errors.WithMessagef(

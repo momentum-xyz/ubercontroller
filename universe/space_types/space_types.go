@@ -84,7 +84,7 @@ func (s *SpaceTypes) AddObjectType(spaceType universe.ObjectType, updateDB bool)
 	defer s.spaceTypes.Mu.Unlock()
 
 	if updateDB {
-		if err := s.db.GetSpaceTypesDB().UpsertSpaceType(s.ctx, spaceType.GetEntry()); err != nil {
+		if err := s.db.GetObjectTypesDB().UpsertObjectType(s.ctx, spaceType.GetEntry()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -103,7 +103,7 @@ func (s *SpaceTypes) AddObjectTypes(spaceTypes []universe.ObjectType, updateDB b
 		for i := range spaceTypes {
 			entries[i] = spaceTypes[i].GetEntry()
 		}
-		if err := s.db.GetSpaceTypesDB().UpsertSpaceTypes(s.ctx, entries); err != nil {
+		if err := s.db.GetObjectTypesDB().UpsertObjectTypes(s.ctx, entries); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -124,7 +124,7 @@ func (s *SpaceTypes) RemoveObjectType(spaceType universe.ObjectType, updateDB bo
 	}
 
 	if updateDB {
-		if err := s.db.GetSpaceTypesDB().RemoveSpaceTypeByID(s.ctx, spaceType.GetID()); err != nil {
+		if err := s.db.GetObjectTypesDB().RemoveObjectTypeByID(s.ctx, spaceType.GetID()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -149,7 +149,7 @@ func (s *SpaceTypes) RemoveObjectTypes(spaceTypes []universe.ObjectType, updateD
 		for i := range spaceTypes {
 			ids[i] = spaceTypes[i].GetID()
 		}
-		if err := s.db.GetSpaceTypesDB().RemoveSpaceTypesByIDs(s.ctx, ids); err != nil {
+		if err := s.db.GetObjectTypesDB().RemoveObjectTypesByIDs(s.ctx, ids); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -164,18 +164,18 @@ func (s *SpaceTypes) RemoveObjectTypes(spaceTypes []universe.ObjectType, updateD
 func (s *SpaceTypes) Load() error {
 	s.log.Info("Loading space types...")
 
-	entries, err := s.db.GetSpaceTypesDB().GetSpaceTypes(s.ctx)
+	entries, err := s.db.GetObjectTypesDB().GetObjectTypes(s.ctx)
 	if err != nil {
 		return errors.WithMessage(err, "failed to get space types")
 	}
 
 	for i := range entries {
-		spaceType, err := s.CreateObjectType(entries[i].SpaceTypeID)
+		spaceType, err := s.CreateObjectType(entries[i].ObjectTypeID)
 		if err != nil {
-			return errors.WithMessagef(err, "failed to create new space type: %s", entries[i].SpaceTypeID)
+			return errors.WithMessagef(err, "failed to create new space type: %s", entries[i].ObjectTypeID)
 		}
 		if err := spaceType.LoadFromEntry(entries[i]); err != nil {
-			return errors.WithMessagef(err, "failed to load space type from entry: %s", entries[i].SpaceTypeID)
+			return errors.WithMessagef(err, "failed to load space type from entry: %s", entries[i].ObjectTypeID)
 		}
 	}
 
@@ -197,7 +197,7 @@ func (s *SpaceTypes) Save() error {
 		entries = append(entries, spaceType.GetEntry())
 	}
 
-	if err := s.db.GetSpaceTypesDB().UpsertSpaceTypes(s.ctx, entries); err != nil {
+	if err := s.db.GetObjectTypesDB().UpsertObjectTypes(s.ctx, entries); err != nil {
 		return errors.WithMessage(err, "failed to upsert space types")
 	}
 

@@ -28,7 +28,7 @@ func AuthorizeAdmin(log *zap.SugaredLogger, db database.DB) gin.HandlerFunc {
 			return
 		}
 
-		isAdmin, err := db.GetUserSpaceDB().CheckIsUserIndirectSpaceAdmin(c, userID, spaceID)
+		isAdmin, err := db.GetUserObjectDB().CheckIsUserIndirectObjectAdmin(c, userID, spaceID)
 		if err != nil {
 			err := errors.WithMessage(err, "Middleware: AuthorizeAdmin: failed to check is indirect admin")
 			api.AbortRequest(c, http.StatusInternalServerError, "check_failed", err, log)

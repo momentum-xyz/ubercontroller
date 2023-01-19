@@ -155,9 +155,9 @@ func (n *Node) posBusAutoOnSpaceUserAttributeChanged(
 		return nil
 	}
 
-	space, ok := n.GetObjectFromAllObjects(spaceUserAttributeID.SpaceID)
+	space, ok := n.GetObjectFromAllObjects(spaceUserAttributeID.ObjectID)
 	if !ok {
-		return errors.Errorf("space not found: %s", spaceUserAttributeID.SpaceID)
+		return errors.Errorf("space not found: %s", spaceUserAttributeID.ObjectID)
 	}
 
 	var errs *multierror.Error
@@ -178,7 +178,7 @@ func (n *Node) posBusAutoOnSpaceUserAttributeChanged(
 					),
 				)
 			}
-		case entry.SpacePosBusAutoScopeAttributeOption:
+		case entry.ObjectPosBusAutoScopeAttributeOption:
 			if err := space.Send(autoMessage, false); err != nil {
 				errs = multierror.Append(
 					errs, errors.WithMessagef(

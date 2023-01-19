@@ -17,16 +17,6 @@ import (
 const (
 	getAttributeTypesQuery = `SELECT * FROM attribute_type;`
 
-	removeAttributeTypeByNameQuery             = `DELETE FROM attribute_type WHERE attribute_name = $1;`
-	removeAttributeTypesByNamesQuery           = `DELETE FROM attribute_type WHERE attribute_name = ANY($1);`
-	removeAttributeTypesByPluginIDQuery        = `DELETE FROM attribute_type WHERE plugin_id = $1;`
-	removeAttributeTypeByPluginIDAndNameQuery  = `DELETE FROM attribute_type WHERE plugin_id = $1 AND attribute_name = $2;`
-	removeAttributeTypesByPluginIDAndNameQuery = `DELETE FROM attribute_type WHERE plugin_id = $1 AND attribute_name = ANY($2);`
-
-	updateAttributeTypeNameQuery        = `UPDATE attribute_type SET attribute_name = $3 WHERE plugin_id = $1 AND attribute_name = $2;`
-	updateAttributeTypeDescriptionQuery = `UPDATE attribute_type SET description = $3 WHERE plugin_id = $1 AND attribute_name = $2;`
-	updateAttributeTypeOptionsQuery     = `UPDATE attribute_type SET options = $3 WHERE plugin_id = $1 AND attribute_name = $2;`
-
 	upsertAttributeTypeQuery = `INSERT INTO attribute_type
 									(plugin_id, attribute_name, description, options)
 								VALUES
@@ -34,6 +24,15 @@ const (
 								ON CONFLICT (plugin_id, attribute_name)
 								DO UPDATE SET
 									description = $3,options = $4;`
+
+	updateAttributeTypeNameQuery        = `UPDATE attribute_type SET attribute_name = $3 WHERE plugin_id = $1 AND attribute_name = $2;`
+	updateAttributeTypeDescriptionQuery = `UPDATE attribute_type SET description = $3 WHERE plugin_id = $1 AND attribute_name = $2;`
+	updateAttributeTypeOptionsQuery     = `UPDATE attribute_type SET options = $3 WHERE plugin_id = $1 AND attribute_name = $2;`
+
+	removeAttributeTypeByIDQuery        = `DELETE FROM attribute_type WHERE plugin_id = $1 AND attribute_name = $2;`
+	removeAttributeTypesByPluginIDQuery = `DELETE FROM attribute_type WHERE plugin_id = $1;`
+	removeAttributeTypeByNameQuery      = `DELETE FROM attribute_type WHERE attribute_name = $1;`
+	removeAttributeTypesByNamesQuery    = `DELETE FROM attribute_type WHERE attribute_name = ANY($1);`
 )
 
 var _ database.AttributeTypesDB = (*DB)(nil)
@@ -92,7 +91,7 @@ func (db *DB) UpsertAttributeTypes(ctx context.Context, attributeTypes []*entry.
 	return errs.ErrorOrNil()
 }
 
-func (db *DB) RemoveAttributeTypeByName(ctx context.Context, name string) error {
+func (db *DB) RemoveAttributeTypesByName(ctx context.Context, name string) error {
 	if _, err := db.conn.Exec(ctx, removeAttributeTypeByNameQuery, name); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
@@ -115,7 +114,7 @@ func (db *DB) RemoveAttributeTypesByPluginID(ctx context.Context, pluginID uuid.
 
 func (db *DB) RemoveAttributeTypeByID(ctx context.Context, attributeTypeID entry.AttributeTypeID) error {
 	if _, err := db.conn.Exec(
-		ctx, removeAttributeTypeByPluginIDAndNameQuery, attributeTypeID.PluginID, attributeTypeID.Name,
+		ctx, removeAttributeTypeByIDQuery, attributeTypeID.PluginID, attributeTypeID.Name,
 	); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
@@ -126,7 +125,7 @@ func (db *DB) RemoveAttributeTypesByIDs(ctx context.Context, attributeTypeIDs []
 	batch := &pgx.Batch{}
 	for _, attributeTypeID := range attributeTypeIDs {
 		batch.Queue(
-			removeAttributeTypesByPluginIDAndNameQuery,
+			removeAttributeTypeByIDQuery,
 			attributeTypeID.PluginID, attributeTypeID.Name,
 		)
 	}

@@ -97,20 +97,20 @@ func (n *Node) apiUsersCreateMutualDocks(c *gin.Context) {
 		return
 	}
 
-	permissions := []*entry.UserSpace{
+	permissions := []*entry.UserObject{
 		{
-			SpaceID: worldA.GetID(),
-			UserID:  userB.UserID,
-			Value:   map[string]any{"role": "admin"},
+			ObjectID: worldA.GetID(),
+			UserID:   userB.UserID,
+			Value:    map[string]any{"role": "admin"},
 		},
 		{
-			SpaceID: worldB.GetID(),
-			UserID:  userA.UserID,
-			Value:   map[string]any{"role": "admin"},
+			ObjectID: worldB.GetID(),
+			UserID:   userA.UserID,
+			Value:    map[string]any{"role": "admin"},
 		},
 	}
 
-	if err := n.db.GetUserSpaceDB().UpsertUserSpaces(n.ctx, permissions); err != nil {
+	if err := n.db.GetUserObjectDB().UpsertUserObjects(n.ctx, permissions); err != nil {
 		err := errors.WithMessage(err, "Node: apiUsersCreateMutualDocks: failed to upsert user spaces")
 		api.AbortRequest(c, http.StatusInternalServerError, "upsert_user_spaces_failed", err, n.log)
 		return
@@ -184,18 +184,18 @@ func (n *Node) apiUsersRemoveMutualDocks(c *gin.Context) {
 		}
 	}
 
-	permissions := []*entry.UserSpace{
+	permissions := []*entry.UserObject{
 		{
-			SpaceID: worldA.GetID(),
-			UserID:  userB.UserID,
+			ObjectID: worldA.GetID(),
+			UserID:   userB.UserID,
 		},
 		{
-			SpaceID: worldB.GetID(),
-			UserID:  userA.UserID,
+			ObjectID: worldB.GetID(),
+			UserID:   userA.UserID,
 		},
 	}
 
-	if err := n.db.GetUserSpaceDB().RemoveUserSpaces(n.ctx, permissions); err != nil {
+	if err := n.db.GetUserObjectDB().RemoveUserObjects(n.ctx, permissions); err != nil {
 		err := errors.WithMessage(err, "Node: apiUsersRemoveMutualDocks: failed to remove user spaces")
 		api.AbortRequest(c, http.StatusInternalServerError, "user_spaces_remove_failed", err, n.log)
 		return

@@ -152,7 +152,7 @@ func (w *Worlds) RemoveWorld(world universe.World, updateDB bool) error {
 		for _, space := range spaces {
 			ids = append(ids, space.GetID())
 		}
-		if err := w.db.GetSpacesDB().RemoveSpacesByIDs(w.ctx, ids); err != nil {
+		if err := w.db.GetObjectsDB().RemoveObjectsByIDs(w.ctx, ids); err != nil {
 			return errors.WithMessage(err, "failed to remove spaces by ids")
 		}
 	}
@@ -185,7 +185,7 @@ func (w *Worlds) RemoveWorlds(worlds []universe.World, updateDB bool) error {
 					ids = append(ids, spaces[i].GetID())
 				}
 
-				if err := w.db.GetSpacesDB().RemoveSpacesByIDs(w.ctx, ids); err != nil {
+				if err := w.db.GetObjectsDB().RemoveObjectsByIDs(w.ctx, ids); err != nil {
 					return errors.WithMessagef(err, "failed to remove spaces by ids: %s", world.GetID())
 				}
 

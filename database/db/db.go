@@ -13,18 +13,18 @@ type DB struct {
 	database.CommonDB
 	database.NodesDB
 	database.WorldsDB
-	database.SpacesDB
+	database.ObjectsDB
 	database.UsersDB
 	database.Assets2dDB
 	database.Assets3dDB
 	database.PluginsDB
-	database.SpaceTypesDB
-	database.UserSpaceDB
+	database.ObjectTypesDB
+	database.UserObjectDB
 	database.UserTypesDB
 	database.AttributeTypesDB
 	database.NodeAttributesDB
-	database.SpaceAttributesDB
-	database.SpaceUserAttributesDB
+	database.ObjectAttributesDB
+	database.ObjectUserAttributesDB
 	database.UserAttributesDB
 	database.UserUserAttributesDB
 }
@@ -41,8 +41,8 @@ func (DB *DB) GetWorldsDB() database.WorldsDB {
 	return DB.WorldsDB
 }
 
-func (DB *DB) GetSpacesDB() database.SpacesDB {
-	return DB.SpacesDB
+func (DB *DB) GetObjectsDB() database.ObjectsDB {
+	return DB.ObjectsDB
 }
 
 func (DB *DB) GetUsersDB() database.UsersDB {
@@ -61,8 +61,8 @@ func (DB *DB) GetPluginsDB() database.PluginsDB {
 	return DB.PluginsDB
 }
 
-func (DB *DB) GetSpaceTypesDB() database.SpaceTypesDB {
-	return DB.SpaceTypesDB
+func (DB *DB) GetObjectTypesDB() database.ObjectTypesDB {
+	return DB.ObjectTypesDB
 }
 
 func (DB *DB) GetUserTypesDB() database.UserTypesDB {
@@ -77,12 +77,12 @@ func (DB *DB) GetNodeAttributesDB() database.NodeAttributesDB {
 	return DB.NodeAttributesDB
 }
 
-func (DB *DB) GetSpaceAttributesDB() database.SpaceAttributesDB {
-	return DB.SpaceAttributesDB
+func (DB *DB) GetObjectAttributesDB() database.ObjectAttributesDB {
+	return DB.ObjectAttributesDB
 }
 
-func (DB *DB) GetSpaceUserAttributesDB() database.SpaceUserAttributesDB {
-	return DB.SpaceUserAttributesDB
+func (DB *DB) GetObjectUserAttributesDB() database.ObjectUserAttributesDB {
+	return DB.ObjectUserAttributesDB
 }
 
 func (DB *DB) GetUserAttributesDB() database.UserAttributesDB {
@@ -93,8 +93,8 @@ func (DB *DB) GetUserUserAttributesDB() database.UserUserAttributesDB {
 	return DB.UserUserAttributesDB
 }
 
-func (DB *DB) GetUserSpaceDB() database.UserSpaceDB {
-	return DB.UserSpaceDB
+func (DB *DB) GetUserObjectDB() database.UserObjectDB {
+	return DB.UserObjectDB
 }
 
 func NewDB(
@@ -102,39 +102,39 @@ func NewDB(
 	common database.CommonDB,
 	nodes database.NodesDB,
 	worlds database.WorldsDB,
-	spaces database.SpacesDB,
+	spaces database.ObjectsDB,
 	users database.UsersDB,
 	assets2d database.Assets2dDB,
 	assets3d database.Assets3dDB,
 	plugins database.PluginsDB,
-	userSpace database.UserSpaceDB,
-	spaceTypes database.SpaceTypesDB,
+	userSpace database.UserObjectDB,
+	spaceTypes database.ObjectTypesDB,
 	userTypes database.UserTypesDB,
 	attributeTypes database.AttributeTypesDB,
 	nodeAttributes database.NodeAttributesDB,
-	spaceAttributes database.SpaceAttributesDB,
-	spaceUserAttributes database.SpaceUserAttributesDB,
+	spaceAttributes database.ObjectAttributesDB,
+	spaceUserAttributes database.ObjectUserAttributesDB,
 	userAttributes database.UserAttributesDB,
 	userUserAttributes database.UserUserAttributesDB,
 ) *DB {
 	return &DB{
-		conn:                  conn,
-		CommonDB:              common,
-		NodesDB:               nodes,
-		WorldsDB:              worlds,
-		SpacesDB:              spaces,
-		UsersDB:               users,
-		Assets2dDB:            assets2d,
-		Assets3dDB:            assets3d,
-		PluginsDB:             plugins,
-		SpaceTypesDB:          spaceTypes,
-		UserSpaceDB:           userSpace,
-		UserTypesDB:           userTypes,
-		AttributeTypesDB:      attributeTypes,
-		NodeAttributesDB:      nodeAttributes,
-		SpaceAttributesDB:     spaceAttributes,
-		SpaceUserAttributesDB: spaceUserAttributes,
-		UserAttributesDB:      userAttributes,
-		UserUserAttributesDB:  userUserAttributes,
+		conn:                   conn,
+		CommonDB:               common,
+		NodesDB:                nodes,
+		WorldsDB:               worlds,
+		ObjectsDB:              spaces,
+		UsersDB:                users,
+		Assets2dDB:             assets2d,
+		Assets3dDB:             assets3d,
+		PluginsDB:              plugins,
+		ObjectTypesDB:          spaceTypes,
+		UserObjectDB:           userSpace,
+		UserTypesDB:            userTypes,
+		AttributeTypesDB:       attributeTypes,
+		NodeAttributesDB:       nodeAttributes,
+		ObjectAttributesDB:     spaceAttributes,
+		ObjectUserAttributesDB: spaceUserAttributes,
+		UserAttributesDB:       userAttributes,
+		UserUserAttributesDB:   userUserAttributes,
 	}
 }

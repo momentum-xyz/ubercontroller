@@ -164,7 +164,7 @@ func (s *Object) SetParent(parent universe.Object, updateDB bool) error {
 		if parent == nil {
 			return errors.Errorf("parent is nil")
 		}
-		if err := s.db.GetSpacesDB().UpdateSpaceParentID(s.ctx, s.GetID(), parent.GetID()); err != nil {
+		if err := s.db.GetObjectsDB().UpdateObjectParentID(s.ctx, s.GetID(), parent.GetID()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -186,7 +186,7 @@ func (s *Object) SetOwnerID(ownerID uuid.UUID, updateDB bool) error {
 	defer s.Mu.Unlock()
 
 	if updateDB {
-		if err := s.db.GetSpacesDB().UpdateSpaceOwnerID(s.ctx, s.GetID(), ownerID); err != nil {
+		if err := s.db.GetObjectsDB().UpdateObjectOwnerID(s.ctx, s.GetID(), ownerID); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -212,7 +212,7 @@ func (s *Object) SetAsset2D(asset2d universe.Asset2d, updateDB bool) error {
 		if asset2d != nil {
 			asset2dID = utils.GetPTR(asset2d.GetID())
 		}
-		if err := s.db.GetSpacesDB().UpdateSpaceAsset2dID(s.ctx, s.GetID(), asset2dID); err != nil {
+		if err := s.db.GetObjectsDB().UpdateObjectAsset2dID(s.ctx, s.GetID(), asset2dID); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -238,7 +238,7 @@ func (s *Object) SetAsset3D(asset3d universe.Asset3d, updateDB bool) error {
 		if asset3d != nil {
 			asset3dID = utils.GetPTR(asset3d.GetID())
 		}
-		if err := s.db.GetSpacesDB().UpdateSpaceAsset3dID(s.ctx, s.GetID(), asset3dID); err != nil {
+		if err := s.db.GetObjectsDB().UpdateObjectAsset3dID(s.ctx, s.GetID(), asset3dID); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -264,7 +264,7 @@ func (s *Object) SetObjectType(spaceType universe.ObjectType, updateDB bool) err
 	defer s.Mu.Unlock()
 
 	if updateDB {
-		if err := s.db.GetSpacesDB().UpdateSpaceSpaceTypeID(s.ctx, s.GetID(), spaceType.GetID()); err != nil {
+		if err := s.db.GetObjectsDB().UpdateObjectObjectTypeID(s.ctx, s.GetID(), spaceType.GetID()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -292,7 +292,7 @@ func (s *Object) SetOptions(modifyFn modify.Fn[entry.ObjectOptions], updateDB bo
 	}
 
 	if updateDB {
-		if err := s.db.GetSpacesDB().UpdateSpaceOptions(s.ctx, s.GetID(), options); err != nil {
+		if err := s.db.GetObjectsDB().UpdateObjectOptions(s.ctx, s.GetID(), options); err != nil {
 			return nil, errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -340,13 +340,13 @@ func (s *Object) GetEntry() *entry.Object {
 	defer s.Mu.RUnlock()
 
 	entry := &entry.Object{
-		SpaceID:  s.id,
+		ObjectID: s.id,
 		OwnerID:  &s.ownerID,
 		Options:  s.options,
 		Position: s.position,
 	}
 	if s.spaceType != nil {
-		entry.SpaceTypeID = utils.GetPTR(s.spaceType.GetID())
+		entry.ObjectTypeID = utils.GetPTR(s.spaceType.GetID())
 	}
 	if s.Parent != nil {
 		entry.ParentID = utils.GetPTR(s.Parent.GetID())
@@ -432,10 +432,10 @@ func (s *Object) Update(recursive bool) error {
 }
 
 func (s *Object) LoadFromEntry(entry *entry.Object, recursive bool) error {
-	s.log.Debugf("Loading space %s...", entry.SpaceID)
+	s.log.Debugf("Loading space %s...", entry.ObjectID)
 
-	if entry.SpaceID != s.GetID() {
-		return errors.Errorf("space ids mismatch: %s != %s", entry.SpaceID, s.GetID())
+	if entry.ObjectID != s.GetID() {
+		return errors.Errorf("space ids mismatch: %s != %s", entry.ObjectID, s.GetID())
 	}
 
 	group, _ := errgroup.WithContext(s.ctx)
@@ -463,18 +463,18 @@ func (s *Object) LoadFromEntry(entry *entry.Object, recursive bool) error {
 				return nil
 			}
 
-			entries, err := s.db.GetSpacesDB().GetSpacesByParentID(s.ctx, s.GetID())
+			entries, err := s.db.GetObjectsDB().GetObjectsByParentID(s.ctx, s.GetID())
 			if err != nil {
 				return errors.WithMessagef(err, "failed to get spaces by parent id: %s", s.GetID())
 			}
 
 			for i := range entries {
-				child, err := s.CreateObject(entries[i].SpaceID)
+				child, err := s.CreateObject(entries[i].ObjectID)
 				if err != nil {
-					return errors.WithMessagef(err, "failed to create new space: %s", entries[i].SpaceID)
+					return errors.WithMessagef(err, "failed to create new space: %s", entries[i].ObjectID)
 				}
 				if err := child.LoadFromEntry(entries[i], recursive); err != nil {
-					return errors.WithMessagef(err, "failed to load space from entry: %s", entries[i].SpaceID)
+					return errors.WithMessagef(err, "failed to load space from entry: %s", entries[i].ObjectID)
 				}
 			}
 
@@ -497,12 +497,12 @@ func (s *Object) loadSelfData(spaceEntry *entry.Object) error {
 func (s *Object) loadDependencies(entry *entry.Object) error {
 	node := universe.GetNode()
 
-	spaceType, ok := node.GetObjectTypes().GetObjectType(*entry.SpaceTypeID)
+	spaceType, ok := node.GetObjectTypes().GetObjectType(*entry.ObjectTypeID)
 	if !ok {
-		return errors.Errorf("failed to get space type: %s", entry.SpaceTypeID)
+		return errors.Errorf("failed to get space type: %s", entry.ObjectTypeID)
 	}
 	if err := s.SetObjectType(spaceType, false); err != nil {
-		return errors.WithMessagef(err, "failed to set space type: %s", entry.SpaceTypeID)
+		return errors.WithMessagef(err, "failed to set space type: %s", entry.ObjectTypeID)
 	}
 
 	if entry.Asset2dID != nil {

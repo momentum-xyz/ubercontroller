@@ -62,7 +62,7 @@ func (n *Node) apiGetSpaceUserAttributesValue(c *gin.Context) {
 	}
 
 	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
-	spaceUserAttributeID := entry.NewSpaceUserAttributeID(attributeID, spaceID, userID)
+	spaceUserAttributeID := entry.NewObjectUserAttributeID(attributeID, spaceID, userID)
 	out, ok := n.GetObjectUserAttributes().GetValue(spaceUserAttributeID)
 	if !ok {
 		err := errors.Errorf("Node: apiGetSpaceUserAttributesValue: space attribute value not found: %s", attributeID)
@@ -123,7 +123,7 @@ func (n *Node) apiSetSpaceUserAttributesValue(c *gin.Context) {
 	}
 
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
-	spaceUserAttributeID := entry.NewSpaceUserAttributeID(attributeID, spaceID, userID)
+	spaceUserAttributeID := entry.NewObjectUserAttributeID(attributeID, spaceID, userID)
 
 	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
 		newValue := func() *entry.AttributeValue {
@@ -206,7 +206,7 @@ func (n *Node) apiGetSpaceUserAttributeSubValue(c *gin.Context) {
 	}
 
 	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
-	spaceUserAttributeID := entry.NewSpaceUserAttributeID(attributeID, spaceID, userID)
+	spaceUserAttributeID := entry.NewObjectUserAttributeID(attributeID, spaceID, userID)
 	spaceUserAttributeValue, ok := n.GetObjectUserAttributes().GetValue(spaceUserAttributeID)
 	if !ok {
 		err := errors.Errorf("Node: apiGetSpaceUserAttributeSubValue: space user attribute value not found: %s", attributeID)
@@ -278,7 +278,7 @@ func (n *Node) apiSetSpaceUserAttributeSubValue(c *gin.Context) {
 	}
 
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
-	spaceUserAttributeID := entry.NewSpaceUserAttributeID(attributeID, spaceID, userID)
+	spaceUserAttributeID := entry.NewObjectUserAttributeID(attributeID, spaceID, userID)
 
 	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
 		newValue := func() *entry.AttributeValue {
@@ -365,7 +365,7 @@ func (n *Node) apiRemoveSpaceUserAttributeSubValue(c *gin.Context) {
 	}
 
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
-	spaceUserAttributeID := entry.NewSpaceUserAttributeID(attributeID, spaceID, userID)
+	spaceUserAttributeID := entry.NewObjectUserAttributeID(attributeID, spaceID, userID)
 
 	modifyFn := func(current *entry.AttributeValue) (*entry.AttributeValue, error) {
 		if current == nil {
@@ -434,7 +434,7 @@ func (n *Node) apiRemoveSpaceUserAttributeValue(c *gin.Context) {
 	}
 
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
-	spaceUserAttributeID := entry.NewSpaceUserAttributeID(attributeID, spaceID, userID)
+	spaceUserAttributeID := entry.NewObjectUserAttributeID(attributeID, spaceID, userID)
 
 	if _, err := n.GetObjectUserAttributes().UpdateValue(
 		spaceUserAttributeID, modify.ReplaceWith[entry.AttributeValue](nil), true,
@@ -488,8 +488,8 @@ func (n *Node) apiGetSpaceAllUsersAttributeValuesList(c *gin.Context) {
 		return
 	}
 
-	sua, err := n.db.GetSpaceUserAttributesDB().GetSpaceUserAttributesByPluginIDAndNameAndSpaceID(
-		n.ctx, pluginID, inQuery.AttributeName, spaceID,
+	sua, err := n.db.GetObjectUserAttributesDB().GetObjectUserAttributesByObjectAttributeID(
+		n.ctx, entry.NewObjectAttributeID(entry.NewAttributeID(pluginID, inQuery.AttributeName), spaceID),
 	)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetSpaceAllUsersAttributeValuesList: failed to get space user attributes")

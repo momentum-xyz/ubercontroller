@@ -16,56 +16,55 @@ import (
 )
 
 const (
-	getSpaceUserAttributesQuery                            = `SELECT * FROM space_user_attribute;`
-	getSpaceUserAttributeByIDQuery                         = `SELECT * FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3 AND user_id = $4;`
-	getSpaceUserAttributePayloadQuery                      = `SELECT value, options FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3 AND user_id = $4;`
-	getSpaceUserAttributeValueByIDQuery                    = `SELECT value FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3 AND user_id = $4;`
-	getSpaceUserAttributeOptionsByIDQuery                  = `SELECT options FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3 AND user_id = $4;`
-	getSpaceUserAttributesBySpaceIDQuery                   = `SELECT * FROM space_user_attribute WHERE space_id = $1;`
-	getSpaceUserAttributesByUserIDQuery                    = `SELECT * FROM space_user_attribute WHERE user_id = $1;`
-	getSpaceUserAttributesBySpaceIDAndUserIDQuery          = `SELECT * FROM space_user_attribute WHERE space_id = $1 AND user_id = $2;`
-	getSpaceUserAttributesByPluginIDAndNameAndSpaceIDQuery = `SELECT * FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3;`
+	getSpaceUserAttributesQuery                     = `SELECT * FROM space_user_attribute;`
+	getSpaceUserAttributeByIDQuery                  = `SELECT * FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3 AND user_id = $4;`
+	getSpaceUserAttributePayloadQuery               = `SELECT value, options FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3 AND user_id = $4;`
+	getSpaceUserAttributeValueByIDQuery             = `SELECT value FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3 AND user_id = $4;`
+	getSpaceUserAttributeOptionsByIDQuery           = `SELECT options FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3 AND user_id = $4;`
+	getSpaceUserAttributesBySpaceIDQuery            = `SELECT * FROM space_user_attribute WHERE space_id = $1;`
+	getSpaceUserAttributesByUserIDQuery             = `SELECT * FROM space_user_attribute WHERE user_id = $1;`
+	getSpaceUserAttributesBySpaceIDAndUserIDQuery   = `SELECT * FROM space_user_attribute WHERE space_id = $1 AND user_id = $2;`
+	getObjectUserAttributesByObjectAttributeIDQuery = `SELECT * FROM object_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND object_id = $3;`
 
 	getSpaceUserAttributesCountQuery = `SELECT COUNT(*) FROM space_user_attribute;`
 
-	removeSpaceUserAttributeByNameQuery             = `DELETE FROM space_user_attribute WHERE attribute_name = $1;`
-	removeSpaceUserAttributesByNamesQuery           = `DELETE FROM space_user_attribute WHERE attribute_name = ANY($1);`
-	removeSpaceUserAttributesByPluginIDQuery        = `DELETE FROM space_user_attribute WHERE plugin_id = $1;`
-	removeSpaceUserAttributeByPluginIDAndNameQuery  = `DELETE FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2;`
-	removeSpaceUserAttributesBySpaceIDQuery         = `DELETE FROM space_user_attribute WHERE space_id = $1;`
-	removeSpaceUserAttributeByNameAndSpaceIDQuery   = `DELETE FROM space_user_attribute WHERE attribute_name = $1 AND space_id = $2;`
-	removeSpaceUserAttributesByNamesAndSpaceIDQuery = `DELETE FROM space_user_attribute WHERE attribute_name = ANY($1) AND space_id = $2;`
-
-	removeSpaceUserAttributesByUserIDQuery         = `DELETE FROM space_user_attribute WHERE user_id = $1;`
-	removeSpaceUserAttributeByNameAndUserIDQuery   = `DELETE FROM space_user_attribute WHERE attribute_name = $1 AND user_id = $2;`
-	removeSpaceUserAttributesByNamesAndUserIDQuery = `DELETE FROM space_user_attribute WHERE attribute_name = ANY($1) AND user_id = $2;`
-
-	removeSpaceUserAttributesBySpaceIDAndUserIDQuery         = `DELETE FROM space_user_attribute WHERE space_id = $1 AND user_id = $2;`
-	removeSpaceUserAttributeByNameAndSpaceIDAndUserIDQuery   = `DELETE FROM space_user_attribute WHERE attribute_name = $1 AND space_id = $2 AND user_id = $3;`
-	removeSpaceUserAttributesByNamesAndSpaceIDAndUserIDQuery = `DELETE FROM space_user_attribute WHERE attribute_name = ANY($1) AND space_id = $2 AND user_id = $3;`
-
-	removeSpaceUserAttributesByPluginIDAndSpaceIDQuery        = `DELETE FROM space_user_attribute WHERE plugin_id = $1 AND space_id = $2;`
-	removeSpaceUserAttributesByPluginIDAndNameAndSpaceIDQuery = `DELETE FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3;`
-
-	removeSpaceUserAttributesByPluginIDAndUserIDQuery        = `DELETE FROM space_user_attribute WHERE plugin_id = $1 AND user_id = $2;`
-	removeSpaceUserAttributesByPluginIDAndNameAndUserIDQuery = `DELETE FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
-
-	removeSpaceUserAttributesByPluginIDAndSpaceIDAndUserIDQuery        = `DELETE FROM space_user_attribute WHERE plugin_id = $1 AND space_id = $2 AND user_id = $3;`
-	removeSpaceUserAttributesByPluginIDAndNameAndSpaceIDAndUserIDQuery = `DELETE FROM space_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3 AND user_id = $4;`
+	upsertObjectUserAttributeQuery = `INSERT INTO object_user_attribute
+											(plugin_id, attribute_name, object_id, user_id, value, options)
+										VALUES
+											($1, $2, $3, $4, $5, $6)
+										ON CONFLICT (plugin_id, attribute_name, object_id, user_id)
+										DO UPDATE SET
+											value = $5,options = $6;`
 
 	updateSpaceUserAttributeValueQuery   = `UPDATE space_user_attribute SET value = $5 WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3 AND user_id = $4;`
 	updateSpaceUserAttributeOptionsQuery = `UPDATE space_user_attribute SET options = $5 WHERE plugin_id = $1 AND attribute_name = $2 AND space_id = $3 AND user_id = $4;`
 
-	upsertSpaceUserAttributeQuery = `INSERT INTO space_user_attribute
-											(plugin_id, attribute_name, space_id, user_id, value, options)
-										VALUES
-											($1, $2, $3, $4, $5, $6)
-										ON CONFLICT (plugin_id, attribute_name, space_id, user_id)
-										DO UPDATE SET
-											value = $5,options = $6;`
+	removeObjectUserAttributeByIDQuery               = `DELETE FROM object_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND object_id = $3 AND user_id = $4;`
+	removeObjectUserAttributesByNameQuery            = `DELETE FROM object_user_attribute WHERE attribute_name = $1;`
+	removeSpaceUserAttributesByNamesQuery            = `DELETE FROM space_user_attribute WHERE attribute_name = ANY($1);`
+	removeSpaceUserAttributesByPluginIDQuery         = `DELETE FROM space_user_attribute WHERE plugin_id = $1;`
+	removeObjectUserAttributesByAttributeIDQuery     = `DELETE FROM object_user_attribute WHERE plugin_id = $1 AND attribute_name = $2;`
+	removeSpaceUserAttributesBySpaceIDQuery          = `DELETE FROM space_user_attribute WHERE space_id = $1;`
+	removeObjectUserAttributesByNameAndObjectIDQuery = `DELETE FROM object_user_attribute WHERE attribute_name = $1 AND object_id = $2;`
+	removeSpaceUserAttributesByNamesAndSpaceIDQuery  = `DELETE FROM space_user_attribute WHERE attribute_name = ANY($1) AND space_id = $2;`
+
+	removeSpaceUserAttributesByUserIDQuery         = `DELETE FROM space_user_attribute WHERE user_id = $1;`
+	removeObjectUserAttributesByNameAndUserIDQuery = `DELETE FROM object_user_attribute WHERE attribute_name = $1 AND user_id = $2;`
+	removeSpaceUserAttributesByNamesAndUserIDQuery = `DELETE FROM space_user_attribute WHERE attribute_name = ANY($1) AND user_id = $2;`
+
+	removeSpaceUserAttributesBySpaceIDAndUserIDQuery         = `DELETE FROM space_user_attribute WHERE space_id = $1 AND user_id = $2;`
+	removeSpaceUserAttributesByNameAndObjectIDAndUserIDQuery = `DELETE FROM object_user_attribute WHERE attribute_name = $1 AND object_id = $2 AND user_id = $3;`
+	removeSpaceUserAttributesByNamesAndSpaceIDAndUserIDQuery = `DELETE FROM space_user_attribute WHERE attribute_name = ANY($1) AND space_id = $2 AND user_id = $3;`
+
+	removeSpaceUserAttributesByPluginIDAndSpaceIDQuery = `DELETE FROM space_user_attribute WHERE plugin_id = $1 AND space_id = $2;`
+	removeObjectUserAttributesByObjectAttributeIDQuery = `DELETE FROM object_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND object_id = $3;`
+
+	removeSpaceUserAttributesByPluginIDAndUserIDQuery           = `DELETE FROM space_user_attribute WHERE plugin_id = $1 AND user_id = $2;`
+	removeObjectUserAttributesByUserAttributeIDQuery            = `DELETE FROM object_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
+	removeSpaceUserAttributesByPluginIDAndSpaceIDAndUserIDQuery = `DELETE FROM space_user_attribute WHERE plugin_id = $1 AND space_id = $2 AND user_id = $3;`
 )
 
-var _ database.SpaceUserAttributesDB = (*DB)(nil)
+var _ database.ObjectUserAttributesDB = (*DB)(nil)
 
 type DB struct {
 	conn   *pgxpool.Pool
@@ -80,41 +79,41 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 	}
 }
 
-func (db *DB) GetSpaceUserAttributes(ctx context.Context) ([]*entry.SpaceUserAttribute, error) {
-	var attributes []*entry.SpaceUserAttribute
+func (db *DB) GetObjectUserAttributes(ctx context.Context) ([]*entry.ObjectUserAttribute, error) {
+	var attributes []*entry.ObjectUserAttribute
 	if err := pgxscan.Select(ctx, db.conn, &attributes, getSpaceUserAttributesQuery); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return attributes, nil
 }
 
-func (db *DB) GetSpaceUserAttributeByID(
+func (db *DB) GetObjectUserAttributeByID(
 	ctx context.Context, spaceUserAttributeID entry.ObjectUserAttributeID,
-) (*entry.SpaceUserAttribute, error) {
-	var attribute entry.SpaceUserAttribute
+) (*entry.ObjectUserAttribute, error) {
+	var attribute entry.ObjectUserAttribute
 	if err := pgxscan.Get(
 		ctx, db.conn, &attribute, getSpaceUserAttributeByIDQuery,
-		spaceUserAttributeID.PluginID, spaceUserAttributeID.Name, spaceUserAttributeID.SpaceID, spaceUserAttributeID.UserID,
+		spaceUserAttributeID.PluginID, spaceUserAttributeID.Name, spaceUserAttributeID.ObjectID, spaceUserAttributeID.UserID,
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return &attribute, nil
 }
 
-func (db *DB) GetSpaceUserAttributePayloadByID(
+func (db *DB) GetObjectUserAttributePayloadByID(
 	ctx context.Context, spaceUserAttributeID entry.ObjectUserAttributeID,
 ) (*entry.AttributePayload, error) {
 	var payload entry.AttributePayload
 	if err := pgxscan.Get(ctx, db.conn, &payload, getSpaceUserAttributePayloadQuery,
 		spaceUserAttributeID.PluginID, spaceUserAttributeID.Name,
-		spaceUserAttributeID.SpaceID, spaceUserAttributeID.UserID,
+		spaceUserAttributeID.ObjectID, spaceUserAttributeID.UserID,
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return &payload, nil
 }
 
-func (db *DB) GetSpaceUserAttributeValueByID(
+func (db *DB) GetObjectUserAttributeValueByID(
 	ctx context.Context, spaceUserAttributeID entry.ObjectUserAttributeID,
 ) (*entry.AttributeValue, error) {
 	var value entry.AttributeValue
@@ -122,7 +121,7 @@ func (db *DB) GetSpaceUserAttributeValueByID(
 		getSpaceUserAttributeValueByIDQuery,
 		spaceUserAttributeID.PluginID,
 		spaceUserAttributeID.Name,
-		spaceUserAttributeID.SpaceID,
+		spaceUserAttributeID.ObjectID,
 		spaceUserAttributeID.UserID).Scan(&value)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
@@ -130,7 +129,7 @@ func (db *DB) GetSpaceUserAttributeValueByID(
 	return &value, nil
 }
 
-func (db *DB) GetSpaceUserAttributeOptionsByID(
+func (db *DB) GetObjectUserAttributeOptionsByID(
 	ctx context.Context, spaceUserAttributeID entry.ObjectUserAttributeID,
 ) (*entry.AttributeOptions, error) {
 	var options entry.AttributeOptions
@@ -138,7 +137,7 @@ func (db *DB) GetSpaceUserAttributeOptionsByID(
 		getSpaceUserAttributeOptionsByIDQuery,
 		spaceUserAttributeID.PluginID,
 		spaceUserAttributeID.Name,
-		spaceUserAttributeID.SpaceID,
+		spaceUserAttributeID.ObjectID,
 		spaceUserAttributeID.UserID).Scan(&options)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
@@ -146,30 +145,30 @@ func (db *DB) GetSpaceUserAttributeOptionsByID(
 	return &options, nil
 }
 
-func (db *DB) GetSpaceUserAttributesBySpaceID(
+func (db *DB) GetObjectUserAttributesByObjectID(
 	ctx context.Context, spaceID uuid.UUID,
-) ([]*entry.SpaceUserAttribute, error) {
-	var attributes []*entry.SpaceUserAttribute
+) ([]*entry.ObjectUserAttribute, error) {
+	var attributes []*entry.ObjectUserAttribute
 	if err := pgxscan.Select(ctx, db.conn, &attributes, getSpaceUserAttributesBySpaceIDQuery, spaceID); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return attributes, nil
 }
 
-func (db *DB) GetSpaceUserAttributesByUserID(
+func (db *DB) GetObjectUserAttributesByUserID(
 	ctx context.Context, userID uuid.UUID,
-) ([]*entry.SpaceUserAttribute, error) {
-	var attributes []*entry.SpaceUserAttribute
+) ([]*entry.ObjectUserAttribute, error) {
+	var attributes []*entry.ObjectUserAttribute
 	if err := pgxscan.Select(ctx, db.conn, &attributes, getSpaceUserAttributesByUserIDQuery, userID); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return attributes, nil
 }
 
-func (db *DB) GetSpaceUserAttributesBySpaceIDAndUserID(
+func (db *DB) GetObjectUserAttributesByObjectIDAndUserID(
 	ctx context.Context, spaceID uuid.UUID, userID uuid.UUID,
-) ([]*entry.SpaceUserAttribute, error) {
-	var attributes []*entry.SpaceUserAttribute
+) ([]*entry.ObjectUserAttribute, error) {
+	var attributes []*entry.ObjectUserAttribute
 	if err := pgxscan.Select(
 		ctx, db.conn, &attributes, getSpaceUserAttributesBySpaceIDAndUserIDQuery, spaceID, userID,
 	); err != nil {
@@ -178,19 +177,20 @@ func (db *DB) GetSpaceUserAttributesBySpaceIDAndUserID(
 	return attributes, nil
 }
 
-func (db *DB) GetSpaceUserAttributesByPluginIDAndNameAndSpaceID(
-	ctx context.Context, pluginID uuid.UUID, name string, spaceID uuid.UUID,
-) ([]*entry.SpaceUserAttribute, error) {
-	var attributes []*entry.SpaceUserAttribute
-	if err := pgxscan.Select(ctx, db.conn, &attributes, getSpaceUserAttributesByPluginIDAndNameAndSpaceIDQuery,
-		pluginID, name, spaceID,
+func (db *DB) GetObjectUserAttributesByObjectAttributeID(
+	ctx context.Context, objectAttributeID entry.ObjectAttributeID,
+) ([]*entry.ObjectUserAttribute, error) {
+	var attributes []*entry.ObjectUserAttribute
+	if err := pgxscan.Select(
+		ctx, db.conn, &attributes, getObjectUserAttributesByObjectAttributeIDQuery,
+		objectAttributeID.PluginID, objectAttributeID.Name, objectAttributeID.ObjectID,
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return attributes, nil
 }
 
-func (db *DB) GetSpaceUserAttributesCount(ctx context.Context) (int64, error) {
+func (db *DB) GetObjectUserAttributesCount(ctx context.Context) (int64, error) {
 	var count int64
 	if err := db.conn.QueryRow(ctx, getSpaceUserAttributesCountQuery).
 		Scan(&count); err != nil {
@@ -199,13 +199,13 @@ func (db *DB) GetSpaceUserAttributesCount(ctx context.Context) (int64, error) {
 	return count, nil
 }
 
-func (db *DB) UpsertSpaceUserAttribute(
+func (db *DB) UpsertObjectUserAttribute(
 	ctx context.Context, spaceUserAttributeID entry.ObjectUserAttributeID, modifyFn modify.Fn[entry.AttributePayload],
 ) (*entry.AttributePayload, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
-	payload, err := db.GetSpaceUserAttributePayloadByID(ctx, spaceUserAttributeID)
+	payload, err := db.GetObjectUserAttributePayloadByID(ctx, spaceUserAttributeID)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
 			return nil, errors.WithMessage(err, "failed to get attribute payload by id")
@@ -225,8 +225,8 @@ func (db *DB) UpsertSpaceUserAttribute(
 	}
 
 	if _, err := db.conn.Exec(
-		ctx, upsertSpaceUserAttributeQuery, spaceUserAttributeID.PluginID, spaceUserAttributeID.Name,
-		spaceUserAttributeID.SpaceID, spaceUserAttributeID.UserID,
+		ctx, upsertObjectUserAttributeQuery, spaceUserAttributeID.PluginID, spaceUserAttributeID.Name,
+		spaceUserAttributeID.ObjectID, spaceUserAttributeID.UserID,
 		value, options,
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to exec db")
@@ -235,8 +235,8 @@ func (db *DB) UpsertSpaceUserAttribute(
 	return payload, nil
 }
 
-func (db *DB) RemoveSpaceUserAttributeByName(ctx context.Context, name string) error {
-	res, err := db.conn.Exec(ctx, removeSpaceUserAttributeByNameQuery, name)
+func (db *DB) RemoveObjectUserAttributeByName(ctx context.Context, name string) error {
+	res, err := db.conn.Exec(ctx, removeObjectUserAttributesByNameQuery, name)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
@@ -246,7 +246,7 @@ func (db *DB) RemoveSpaceUserAttributeByName(ctx context.Context, name string) e
 	return nil
 }
 
-func (db *DB) RemoveSpaceUserAttributesByNames(ctx context.Context, names []string) error {
+func (db *DB) RemoveObjectUserAttributesByNames(ctx context.Context, names []string) error {
 	res, err := db.conn.Exec(ctx, removeSpaceUserAttributesByNamesQuery, names)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
@@ -257,7 +257,7 @@ func (db *DB) RemoveSpaceUserAttributesByNames(ctx context.Context, names []stri
 	return nil
 }
 
-func (db *DB) RemoveSpaceUserAttributesByPluginID(ctx context.Context, pluginID uuid.UUID) error {
+func (db *DB) RemoveObjectUserAttributesByPluginID(ctx context.Context, pluginID uuid.UUID) error {
 	res, err := db.conn.Exec(ctx, removeSpaceUserAttributesByPluginIDQuery, pluginID)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
@@ -268,10 +268,10 @@ func (db *DB) RemoveSpaceUserAttributesByPluginID(ctx context.Context, pluginID 
 	return nil
 }
 
-func (db *DB) RemoveSpaceUserAttributeByAttributeID(
+func (db *DB) RemoveObjectUserAttributeByAttributeID(
 	ctx context.Context, attributeID entry.AttributeID,
 ) error {
-	res, err := db.conn.Exec(ctx, removeSpaceUserAttributeByPluginIDAndNameQuery, attributeID.PluginID, attributeID.Name)
+	res, err := db.conn.Exec(ctx, removeObjectUserAttributesByAttributeIDQuery, attributeID.PluginID, attributeID.Name)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
@@ -281,7 +281,7 @@ func (db *DB) RemoveSpaceUserAttributeByAttributeID(
 	return nil
 }
 
-func (db *DB) RemoveSpaceUserAttributeBySpaceID(
+func (db *DB) RemoveObjectUserAttributeByObjectID(
 	ctx context.Context, spaceID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeSpaceUserAttributesBySpaceIDQuery, spaceID)
@@ -294,10 +294,10 @@ func (db *DB) RemoveSpaceUserAttributeBySpaceID(
 	return nil
 }
 
-func (db *DB) RemoveSpaceUserAttributeByNameAndSpaceID(
+func (db *DB) RemoveObjectUserAttributeByNameAndObjectID(
 	ctx context.Context, name string, spaceID uuid.UUID,
 ) error {
-	res, err := db.conn.Exec(ctx, removeSpaceUserAttributeByNameAndSpaceIDQuery, name, spaceID)
+	res, err := db.conn.Exec(ctx, removeObjectUserAttributesByNameAndObjectIDQuery, name, spaceID)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
@@ -307,7 +307,7 @@ func (db *DB) RemoveSpaceUserAttributeByNameAndSpaceID(
 	return nil
 }
 
-func (db *DB) RemoveSpaceUserAttributeByNamesAndSpaceID(
+func (db *DB) RemoveObjectUserAttributeByNamesAndObjectID(
 	ctx context.Context, names []string, spaceID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeSpaceUserAttributesByNamesAndSpaceIDQuery, names, spaceID)
@@ -320,7 +320,7 @@ func (db *DB) RemoveSpaceUserAttributeByNamesAndSpaceID(
 	return nil
 }
 
-func (db *DB) RemoveSpaceUserAttributeByUserID(
+func (db *DB) RemoveObjectUserAttributeByUserID(
 	ctx context.Context, userID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeSpaceUserAttributesByUserIDQuery, userID)
@@ -333,10 +333,10 @@ func (db *DB) RemoveSpaceUserAttributeByUserID(
 	return nil
 }
 
-func (db *DB) RemoveSpaceUserAttributeByNameAndUserID(
+func (db *DB) RemoveObjectUserAttributeByNameAndUserID(
 	ctx context.Context, name string, userID uuid.UUID,
 ) error {
-	res, err := db.conn.Exec(ctx, removeSpaceUserAttributeByNameAndUserIDQuery, name, userID)
+	res, err := db.conn.Exec(ctx, removeObjectUserAttributesByNameAndUserIDQuery, name, userID)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
@@ -346,7 +346,7 @@ func (db *DB) RemoveSpaceUserAttributeByNameAndUserID(
 	return nil
 }
 
-func (db *DB) RemoveSpaceUserAttributeByNamesAndUserID(
+func (db *DB) RemoveObjectUserAttributeByNamesAndUserID(
 	ctx context.Context, names []string, userID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeSpaceUserAttributesByNamesAndUserIDQuery, names, userID)
@@ -359,7 +359,7 @@ func (db *DB) RemoveSpaceUserAttributeByNamesAndUserID(
 	return nil
 }
 
-func (db *DB) RemoveSpaceUserAttributeBySpaceIDAndUserID(
+func (db *DB) RemoveObjectUserAttributeByObjectIDAndUserID(
 	ctx context.Context, spaceID uuid.UUID, userID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeSpaceUserAttributesBySpaceIDAndUserIDQuery, spaceID, userID)
@@ -372,10 +372,10 @@ func (db *DB) RemoveSpaceUserAttributeBySpaceIDAndUserID(
 	return nil
 }
 
-func (db *DB) RemoveSpaceUserAttributeByNameAndSpaceIDAndUserID(
+func (db *DB) RemoveObjectUserAttributeByNameAndObjectIDAndUserID(
 	ctx context.Context, name string, spaceID uuid.UUID, userID uuid.UUID,
 ) error {
-	res, err := db.conn.Exec(ctx, removeSpaceUserAttributeByNameAndSpaceIDAndUserIDQuery, name, spaceID, userID)
+	res, err := db.conn.Exec(ctx, removeSpaceUserAttributesByNameAndObjectIDAndUserIDQuery, name, spaceID, userID)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
@@ -385,7 +385,7 @@ func (db *DB) RemoveSpaceUserAttributeByNameAndSpaceIDAndUserID(
 	return nil
 }
 
-func (db *DB) RemoveSpaceUserAttributeByNamesAndSpaceIDAndUserID(
+func (db *DB) RemoveObjectUserAttributeByNamesAndObjectIDAndUserID(
 	ctx context.Context, names []string, spaceID uuid.UUID, userID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeSpaceUserAttributesByNamesAndSpaceIDAndUserIDQuery, names, spaceID, userID)
@@ -398,7 +398,7 @@ func (db *DB) RemoveSpaceUserAttributeByNamesAndSpaceIDAndUserID(
 	return nil
 }
 
-func (db *DB) RemoveSpaceUserAttributeByPluginIDAndSpaceID(
+func (db *DB) RemoveObjectUserAttributeByPluginIDAndObjectID(
 	ctx context.Context, pluginID uuid.UUID, spaceID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeSpaceUserAttributesByPluginIDAndSpaceIDQuery, pluginID, spaceID)
@@ -411,12 +411,12 @@ func (db *DB) RemoveSpaceUserAttributeByPluginIDAndSpaceID(
 	return nil
 }
 
-func (db *DB) RemoveSpaceUserAttributeBySpaceAttributeID(
-	ctx context.Context, spaceAttributeID entry.SpaceAttributeID,
+func (db *DB) RemoveObjectUserAttributeByObjectAttributeID(
+	ctx context.Context, spaceAttributeID entry.ObjectAttributeID,
 ) error {
 	res, err := db.conn.Exec(
-		ctx, removeSpaceUserAttributesByPluginIDAndNameAndSpaceIDQuery,
-		spaceAttributeID.PluginID, spaceAttributeID.Name, spaceAttributeID.SpaceID,
+		ctx, removeObjectUserAttributesByObjectAttributeIDQuery,
+		spaceAttributeID.PluginID, spaceAttributeID.Name, spaceAttributeID.ObjectID,
 	)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
@@ -427,7 +427,7 @@ func (db *DB) RemoveSpaceUserAttributeBySpaceAttributeID(
 	return nil
 }
 
-func (db *DB) RemoveSpaceUserAttributeByPluginIDAndUserID(
+func (db *DB) RemoveObjectUserAttributeByPluginIDAndUserID(
 	ctx context.Context, pluginID uuid.UUID, userID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(
@@ -442,11 +442,11 @@ func (db *DB) RemoveSpaceUserAttributeByPluginIDAndUserID(
 	return nil
 }
 
-func (db *DB) RemoveSpaceUserAttributeByUserAttributeID(
+func (db *DB) RemoveObjectUserAttributeByUserAttributeID(
 	ctx context.Context, userAttributeID entry.UserAttributeID,
 ) error {
 	res, err := db.conn.Exec(
-		ctx, removeSpaceUserAttributesByPluginIDAndNameAndUserIDQuery,
+		ctx, removeObjectUserAttributesByUserAttributeIDQuery,
 		userAttributeID.PluginID, userAttributeID.Name, userAttributeID.UserID,
 	)
 	if err != nil {
@@ -457,7 +457,7 @@ func (db *DB) RemoveSpaceUserAttributeByUserAttributeID(
 	}
 	return nil
 }
-func (db *DB) RemoveSpaceUserAttributeByPluginIDAndSpaceIDAndUserID(
+func (db *DB) RemoveObjectUserAttributeByPluginIDAndObjectIDAndUserID(
 	ctx context.Context, pluginID uuid.UUID, spaceID uuid.UUID, userID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeSpaceUserAttributesByPluginIDAndSpaceIDAndUserIDQuery, pluginID, spaceID, userID)
@@ -470,12 +470,12 @@ func (db *DB) RemoveSpaceUserAttributeByPluginIDAndSpaceIDAndUserID(
 	return nil
 }
 
-func (db *DB) RemoveSpaceUserAttributeByID(
+func (db *DB) RemoveObjectUserAttributeByID(
 	ctx context.Context, spaceUserAttributeID entry.ObjectUserAttributeID,
 ) error {
 	res, err := db.conn.Exec(
-		ctx, removeSpaceUserAttributesByPluginIDAndNameAndSpaceIDAndUserIDQuery,
-		spaceUserAttributeID.PluginID, spaceUserAttributeID.Name, spaceUserAttributeID.SpaceID, spaceUserAttributeID.UserID,
+		ctx, removeObjectUserAttributeByIDQuery,
+		spaceUserAttributeID.PluginID, spaceUserAttributeID.Name, spaceUserAttributeID.ObjectID, spaceUserAttributeID.UserID,
 	)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
@@ -486,13 +486,13 @@ func (db *DB) RemoveSpaceUserAttributeByID(
 	return nil
 }
 
-func (db *DB) UpdateSpaceUserAttributeValue(
+func (db *DB) UpdateObjectUserAttributeValue(
 	ctx context.Context, spaceUserAttributeID entry.ObjectUserAttributeID, modifyFn modify.Fn[entry.AttributeValue],
 ) (*entry.AttributeValue, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
-	value, err := db.GetSpaceUserAttributeValueByID(ctx, spaceUserAttributeID)
+	value, err := db.GetObjectUserAttributeValueByID(ctx, spaceUserAttributeID)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to get value by id")
 	}
@@ -504,7 +504,7 @@ func (db *DB) UpdateSpaceUserAttributeValue(
 
 	if _, err := db.conn.Exec(
 		ctx, updateSpaceUserAttributeValueQuery,
-		spaceUserAttributeID.PluginID, spaceUserAttributeID.Name, spaceUserAttributeID.SpaceID, spaceUserAttributeID.UserID,
+		spaceUserAttributeID.PluginID, spaceUserAttributeID.Name, spaceUserAttributeID.ObjectID, spaceUserAttributeID.UserID,
 		value,
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to exec db")
@@ -513,13 +513,13 @@ func (db *DB) UpdateSpaceUserAttributeValue(
 	return value, nil
 }
 
-func (db *DB) UpdateSpaceUserAttributeOptions(
+func (db *DB) UpdateObjectUserAttributeOptions(
 	ctx context.Context, spaceUserAttributeID entry.ObjectUserAttributeID, modifyFn modify.Fn[entry.AttributeOptions],
 ) (*entry.AttributeOptions, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
-	options, err := db.GetSpaceUserAttributeOptionsByID(ctx, spaceUserAttributeID)
+	options, err := db.GetObjectUserAttributeOptionsByID(ctx, spaceUserAttributeID)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to get options by id")
 	}
@@ -531,7 +531,7 @@ func (db *DB) UpdateSpaceUserAttributeOptions(
 
 	if _, err := db.conn.Exec(
 		ctx, updateSpaceUserAttributeOptionsQuery,
-		spaceUserAttributeID.PluginID, spaceUserAttributeID.Name, spaceUserAttributeID.SpaceID, spaceUserAttributeID.UserID,
+		spaceUserAttributeID.PluginID, spaceUserAttributeID.Name, spaceUserAttributeID.ObjectID, spaceUserAttributeID.UserID,
 		options,
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to exec db")

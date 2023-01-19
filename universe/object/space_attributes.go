@@ -93,8 +93,8 @@ func (sa *spaceAttributes) Upsert(
 	}
 
 	if updateDB {
-		if err := sa.space.db.GetSpaceAttributesDB().UpsertSpaceAttribute(
-			sa.space.ctx, entry.NewSpaceAttribute(entry.NewSpaceAttributeID(attributeID, sa.space.GetID()), payload),
+		if err := sa.space.db.GetObjectAttributesDB().UpsertObjectAttribute(
+			sa.space.ctx, entry.NewObjectAttribute(entry.NewObjectAttributeID(attributeID, sa.space.GetID()), payload),
 		); err != nil {
 			return nil, errors.WithMessagef(err, "failed to upsert space attribute")
 		}
@@ -133,8 +133,8 @@ func (sa *spaceAttributes) UpdateValue(
 	}
 
 	if updateDB {
-		if err := sa.space.db.GetSpaceAttributesDB().UpdateSpaceAttributeValue(
-			sa.space.ctx, entry.NewSpaceAttributeID(attributeID, sa.space.GetID()), value,
+		if err := sa.space.db.GetObjectAttributesDB().UpdateObjectAttributeValue(
+			sa.space.ctx, entry.NewObjectAttributeID(attributeID, sa.space.GetID()), value,
 		); err != nil {
 			return nil, errors.WithMessagef(err, "failed to update space attribute value")
 		}
@@ -170,8 +170,8 @@ func (sa *spaceAttributes) UpdateOptions(
 	}
 
 	if updateDB {
-		if err := sa.space.db.GetSpaceAttributesDB().UpdateSpaceAttributeOptions(
-			sa.space.ctx, entry.NewSpaceAttributeID(attributeID, sa.space.GetID()), options,
+		if err := sa.space.db.GetObjectAttributesDB().UpdateObjectAttributeOptions(
+			sa.space.ctx, entry.NewObjectAttributeID(attributeID, sa.space.GetID()), options,
 		); err != nil {
 			return nil, errors.WithMessagef(err, "failed to update space attribute options")
 		}
@@ -205,8 +205,8 @@ func (sa *spaceAttributes) Remove(attributeID entry.AttributeID, updateDB bool) 
 	}
 
 	if updateDB {
-		if err := sa.space.db.GetSpaceAttributesDB().RemoveSpaceAttributeByID(
-			sa.space.ctx, entry.NewSpaceAttributeID(attributeID, sa.space.GetID()),
+		if err := sa.space.db.GetObjectAttributesDB().RemoveObjectAttributeByID(
+			sa.space.ctx, entry.NewObjectAttributeID(attributeID, sa.space.GetID()),
 		); err != nil {
 			return false, errors.WithMessagef(err, "failed to remove space attribute")
 		}
@@ -293,7 +293,7 @@ func (s *Object) calendarOnSpaceAttributeChanged(
 }
 
 func (s *Object) loadSpaceAttributes() error {
-	entries, err := s.db.GetSpaceAttributesDB().GetSpaceAttributesBySpaceID(s.ctx, s.GetID())
+	entries, err := s.db.GetObjectAttributesDB().GetObjectAttributesByObjectID(s.ctx, s.GetID())
 	if err != nil {
 		return errors.WithMessage(err, "failed to get space attributes")
 	}
@@ -311,7 +311,7 @@ func (s *Object) loadSpaceAttributes() error {
 			// QUESTION: why our "attribute_type.attribute_name" is not a foreign key in database?
 			s.log.Warnf(
 				"Object: loadSpaceAttributes: failed to get space attribute effective options: %+v",
-				entries[i].SpaceAttributeID,
+				entries[i].ObjectAttributeID,
 			)
 			continue
 		}

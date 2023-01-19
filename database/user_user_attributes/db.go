@@ -32,7 +32,7 @@ const (
 	removeUserUserAttributeByNameQuery                  = `DELETE FROM user_user_attribute WHERE attribute_name = $1;`
 	removeUserUserAttributesByNamesQuery                = `DELETE FROM user_user_attribute WHERE attribute_name = ANY($1);`
 	removeUserUserAttributesByPluginIDQuery             = `DELETE FROM user_user_attribute WHERE plugin_id = $1;`
-	removeUserUserAttributeByPluginIDAndNameQuery       = `DELETE FROM user_user_attribute WHERE plugin_id = $1 AND attribute_name = $2;`
+	removeUserUserAttributesByAttributeIDQuery          = `DELETE FROM user_user_attribute WHERE plugin_id = $1 AND attribute_name = $2;`
 	removeUserUserAttributesBySourceUserIDQuery         = `DELETE FROM user_user_attribute WHERE source_user_id = $1;`
 	removeUserUserAttributeByNameAndSourceUserIDQuery   = `DELETE FROM user_user_attribute WHERE attribute_name = $1 and source_user_id = $2;`
 	removeUserUserAttributesByNamesAndSourceUserIDQuery = `DELETE FROM user_user_attribute WHERE attribute_name = ANY($1) AND source_user_id = $2;`
@@ -265,8 +265,8 @@ func (db *DB) RemoveUserUserAttributesByPluginID(ctx context.Context, pluginID u
 	return nil
 }
 
-func (db *DB) RemoveUserUserAttributeByAttributeID(ctx context.Context, attributeID entry.AttributeID) error {
-	res, err := db.conn.Exec(ctx, removeUserUserAttributeByPluginIDAndNameQuery, attributeID.PluginID, attributeID.Name)
+func (db *DB) RemoveUserUserAttributesByAttributeID(ctx context.Context, attributeID entry.AttributeID) error {
+	res, err := db.conn.Exec(ctx, removeUserUserAttributesByAttributeIDQuery, attributeID.PluginID, attributeID.Name)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}

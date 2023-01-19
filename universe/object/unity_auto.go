@@ -43,8 +43,8 @@ func (s *Object) unityAutoOnSpaceAttributeChanged(
 
 			(*value)["auto_render_hash"] = hash.Hash
 
-			if err := s.db.GetSpaceAttributesDB().UpdateSpaceAttributeValue(
-				s.ctx, entry.NewSpaceAttributeID(attributeID, s.GetID()), value,
+			if err := s.db.GetObjectAttributesDB().UpdateObjectAttributeValue(
+				s.ctx, entry.NewObjectAttributeID(attributeID, s.GetID()), value,
 			); err != nil {
 				return errors.WithMessage(err, "failed to update db")
 			}

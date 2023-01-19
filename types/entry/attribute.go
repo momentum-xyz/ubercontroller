@@ -21,7 +21,7 @@ const (
 	InvalidPosBusAutoScopeAttributeOption PosBusAutoScopeAttributeOption = ""
 	NodePosBusAutoScopeAttributeOption    PosBusAutoScopeAttributeOption = "node"
 	WorldPosBusAutoScopeAttributeOption   PosBusAutoScopeAttributeOption = "world"
-	SpacePosBusAutoScopeAttributeOption   PosBusAutoScopeAttributeOption = "space"
+	ObjectPosBusAutoScopeAttributeOption  PosBusAutoScopeAttributeOption = "object"
 	UserPosBusAutoScopeAttributeOption    PosBusAutoScopeAttributeOption = "user"
 )
 

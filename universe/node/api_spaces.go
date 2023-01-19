@@ -58,7 +58,7 @@ func (n *Node) apiSpacesCreateSpace(c *gin.Context) {
 		return
 	}
 
-	isAdmin, err := n.db.GetUserSpaceDB().CheckIsUserIndirectSpaceAdmin(c, userID, parentID)
+	isAdmin, err := n.db.GetUserObjectDB().CheckIsUserIndirectObjectAdmin(c, userID, parentID)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiSpacesCreateSpace: failed to check space indirect admin")
 		api.AbortRequest(c, http.StatusBadRequest, "admin_check_failed", err, n.log)

@@ -21,11 +21,11 @@ import (
 	commonDB "github.com/momentum-xyz/ubercontroller/database/common"
 	nodeAttributesDB "github.com/momentum-xyz/ubercontroller/database/node_attributes"
 	nodesDB "github.com/momentum-xyz/ubercontroller/database/nodes"
+	spaceAttributesDB "github.com/momentum-xyz/ubercontroller/database/object_attributes"
+	spacesDB "github.com/momentum-xyz/ubercontroller/database/objects"
 	pluginsDB "github.com/momentum-xyz/ubercontroller/database/plugins"
-	spaceAttributesDB "github.com/momentum-xyz/ubercontroller/database/space_attributes"
 	spaceTypesDB "github.com/momentum-xyz/ubercontroller/database/space_types"
 	spaceUserAttributesDB "github.com/momentum-xyz/ubercontroller/database/space_user_attributes"
-	spacesDB "github.com/momentum-xyz/ubercontroller/database/spaces"
 	userAttributesDB "github.com/momentum-xyz/ubercontroller/database/user_attributes"
 	userSpaceDB "github.com/momentum-xyz/ubercontroller/database/user_space"
 	userTypesDB "github.com/momentum-xyz/ubercontroller/database/user_types"
@@ -141,7 +141,7 @@ func createNode(ctx context.Context, db database.DB) (universe.Node, error) {
 	}
 
 	node := node.NewNode(
-		nodeEntry.SpaceID,
+		nodeEntry.ObjectID,
 		db,
 		worlds,
 		assets2d,

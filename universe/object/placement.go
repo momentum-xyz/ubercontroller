@@ -15,7 +15,7 @@ import (
 
 // TODO: Rewrite
 
-func (s *Object) GetPlacement(placementMap *entry.SpaceChildPlacement) (position_algo.Algo, error) {
+func (s *Object) GetPlacement(placementMap *entry.ObjectChildPlacement) (position_algo.Algo, error) {
 
 	//fmt.Printf("PLSMAP %+v\n", placementMap)
 
@@ -99,7 +99,7 @@ func (s *Object) SetPosition(position *cmath.SpacePosition, updateDB bool) error
 	defer s.Mu.Unlock()
 
 	if updateDB {
-		if err := s.db.GetSpacesDB().UpdateSpacePosition(s.ctx, s.GetID(), position); err != nil {
+		if err := s.db.GetObjectsDB().UpdateObjectPosition(s.ctx, s.GetID(), position); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
