@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -9,11 +8,14 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/momentum-xyz/ubercontroller/database"
+	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
 )
 
-func AuthorizeAdmin(log *zap.SugaredLogger, db database.DB) gin.HandlerFunc {
+func AuthorizeAdmin(log *zap.SugaredLogger) gin.HandlerFunc {
+	userObjects := universe.GetNode().GetUserObjects()
+
 	return func(c *gin.Context) {
 		objectID, err := uuid.Parse(c.Param("spaceID"))
 		if err != nil {
@@ -29,9 +31,9 @@ func AuthorizeAdmin(log *zap.SugaredLogger, db database.DB) gin.HandlerFunc {
 			return
 		}
 
-		isAdmin, err := db.GetUserObjectsDB().CheckIsIndirectAdminByID(c, entry.NewUserObjectID(userID, objectID))
+		isAdmin, err := userObjects.CheckIsIndirectAdmin(entry.NewUserObjectID(userID, objectID))
 		if err != nil {
-			err := errors.WithMessage(err, "Middleware: AuthorizeAdmin: failed to check is indirect admin by id")
+			err := errors.WithMessage(err, "Middleware: AuthorizeAdmin: failed to check is indirect admin")
 			api.AbortRequest(c, http.StatusInternalServerError, "check_failed", err, log)
 			return
 		}

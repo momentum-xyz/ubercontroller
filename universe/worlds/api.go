@@ -24,7 +24,7 @@ func (w *Worlds) RegisterAPI(r *gin.Engine) {
 					world.GET("/explore/search", w.apiWorldsSearchSpaces)
 					world.GET("/online-users", w.apiGetOnlineUsers)
 
-					authorizedAdmin := world.Group("", middleware.AuthorizeAdmin(w.log, w.db))
+					authorizedAdmin := world.Group("", middleware.AuthorizeAdmin(w.log))
 					{
 						authorizedAdmin.POST("/fly-to-me", w.apiWorldsFlyToMe)
 						authorizedAdmin.POST("/teleport-user", w.apiWorldsTeleportUser)
