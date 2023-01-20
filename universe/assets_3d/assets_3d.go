@@ -174,7 +174,7 @@ func (a *Assets3d) RemoveAsset3dByID(asset3dID uuid.UUID, updateDB bool) error {
 	defer a.assets.Mu.Unlock()
 
 	if _, ok := a.assets.Data[asset3dID]; !ok {
-		return errors.Errorf("asset 3d not found: %s", asset3dID.String())
+		return errors.Errorf("asset 3d not found")
 	}
 
 	if updateDB {

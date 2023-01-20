@@ -61,11 +61,6 @@ type ObjectUserAttributeID struct {
 	UserID   uuid.UUID `db:"user_id" json:"user_id"`
 }
 
-type UserObjectID struct {
-	UserID   uuid.UUID `db:"user_id" json:"user_id"`
-	ObjectID uuid.UUID `db:"space_id" json:"object_id"`
-}
-
 type ObjectAttribute struct {
 	ObjectAttributeID
 	*AttributePayload
@@ -102,12 +97,5 @@ func NewObjectUserAttributeID(attributeID AttributeID, objectID, userID uuid.UUI
 		AttributeID: attributeID,
 		ObjectID:    objectID,
 		UserID:      userID,
-	}
-}
-
-func NewUserObjectID(userID uuid.UUID, objectID uuid.UUID) UserObjectID {
-	return UserObjectID{
-		UserID:   userID,
-		ObjectID: objectID,
 	}
 }

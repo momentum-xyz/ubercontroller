@@ -83,7 +83,7 @@ func (db *DB) UpsertAttributeTypes(ctx context.Context, attributeTypes []*entry.
 	for i := 0; i < batch.Len(); i++ {
 		if _, err := batchRes.Exec(); err != nil {
 			errs = multierror.Append(
-				errs, errors.WithMessagef(err, "failed to exec db for: %v", attributeTypes[i].Name),
+				errs, errors.WithMessagef(err, "failed to exec db for: %+v", attributeTypes[i].AttributeTypeID),
 			)
 		}
 	}
@@ -137,7 +137,7 @@ func (db *DB) RemoveAttributeTypesByIDs(ctx context.Context, attributeTypeIDs []
 	for i := 0; i < batch.Len(); i++ {
 		if _, err := batchRes.Exec(); err != nil {
 			errs = multierror.Append(
-				errs, errors.WithMessagef(err, "failed to exec db for: %v", attributeTypeIDs[i].Name),
+				errs, errors.WithMessagef(err, "failed to exec db for: %+v", attributeTypeIDs[i]),
 			)
 		}
 	}

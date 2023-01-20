@@ -10,6 +10,8 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
+var _ universe.UserUserAttributes = (*userUserAttributes)(nil)
+
 type userUserAttributes struct {
 	node *Node
 }
@@ -155,7 +157,9 @@ func (uua *userUserAttributes) Remove(userUserAttributeID entry.UserUserAttribut
 func (uua *userUserAttributes) Len() int {
 	count, err := uua.node.db.GetUserUserAttributesDB().GetUserUserAttributesCount(uua.node.ctx)
 	if err != nil {
-		uua.node.log.Error(errors.WithMessage(err, "User user attributes: Len: failed to get user user attributes count"))
+		uua.node.log.Error(
+			errors.WithMessage(err, "User user attributes: Len: failed to get user user attributes count"),
+		)
 		return 0
 	}
 	return int(count)

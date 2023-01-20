@@ -15,20 +15,22 @@ import (
 )
 
 const (
-	getUserTypesQuery              = `SELECT * FROM user_type;`
+	getUserTypesQuery = `SELECT * FROM user_type;`
+
+	upsertUserTypeQuery = `INSERT INTO user_type
+											(user_type_id, user_type_name, description, options)
+										VALUES
+											($1, $2, $3, $4)
+										ON CONFLICT (user_type_id)
+										DO UPDATE SET
+											user_type_name = $2, description = $3, options = $4;`
+
 	updateUserTypeNameQuery        = `UPDATE user_type SET user_type_name = $2 WHERE user_type_id = $1;`
 	updateUserTypeDescriptionQuery = `UPDATE user_type SET description = $2 WHERE user_type_id = $1;`
 	updateUserTypeOptionsQuery     = `UPDATE user_type SET options = $2 WHERE user_type_id = $1;`
-	removeUserTypeByIDQuery        = `DELETE FROM user_type WHERE user_type_id = $1;`
-	removeUserTypesByIDsQuery      = `DELETE FROM user_type WHERE user_type_id = ANY($1);`
-	upsertUserTypeQuery            = `INSERT INTO user_type
-											(user_type_id, user_type_name,description, options, created_at, updated_at)
-										VALUES
-											($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-										ON CONFLICT (user_type_id)
-										DO UPDATE SET
-											user_type_name = $2,
-											description = $3, options = $4;`
+
+	removeUserTypeByIDQuery   = `DELETE FROM user_type WHERE user_type_id = $1;`
+	removeUserTypesByIDsQuery = `DELETE FROM user_type WHERE user_type_id = ANY($1);`
 )
 
 var _ database.UserTypesDB = (*DB)(nil)

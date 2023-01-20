@@ -1,6 +1,7 @@
 package node
 
 import (
+	"github.com/momentum-xyz/ubercontroller/utils/modify"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -98,22 +99,26 @@ func (n *Node) apiUsersCreateMutualDocks(c *gin.Context) {
 	}
 
 	permissions := []*entry.UserObject{
-		{
-			ObjectID: worldA.GetID(),
-			UserID:   userB.UserID,
-			Value:    map[string]any{"role": "admin"},
-		},
-		{
-			ObjectID: worldB.GetID(),
-			UserID:   userA.UserID,
-			Value:    map[string]any{"role": "admin"},
-		},
+		entry.NewUserObject(
+			entry.NewUserObjectID(userA.UserID, worldB.GetID()),
+			&entry.UserObjectValue{"role": "admin"},
+		),
+		entry.NewUserObject(
+			entry.NewUserObjectID(userB.UserID, worldA.GetID()),
+			&entry.UserObjectValue{"role": "admin"},
+		),
 	}
 
-	if err := n.db.GetUserObjectDB().UpsertUserObjects(n.ctx, permissions); err != nil {
-		err := errors.WithMessage(err, "Node: apiUsersCreateMutualDocks: failed to upsert user spaces")
-		api.AbortRequest(c, http.StatusInternalServerError, "upsert_user_spaces_failed", err, n.log)
-		return
+	for i := range permissions {
+		if _, err := n.GetUserObjects().Upsert(
+			permissions[i].UserObjectID, modify.MergeWith(permissions[i].Value), true,
+		); err != nil {
+			err := errors.WithMessagef(
+				err, "Node: apiUsersCreateMutualDocks: failed to upsert user object: %+v", permissions[i].UserObjectID,
+			)
+			api.AbortRequest(c, http.StatusInternalServerError, "upsert_user_object_failed", err, n.log)
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, nil)
@@ -184,20 +189,14 @@ func (n *Node) apiUsersRemoveMutualDocks(c *gin.Context) {
 		}
 	}
 
-	permissions := []*entry.UserObject{
-		{
-			ObjectID: worldA.GetID(),
-			UserID:   userB.UserID,
-		},
-		{
-			ObjectID: worldB.GetID(),
-			UserID:   userA.UserID,
-		},
+	permissions := []entry.UserObjectID{
+		entry.NewUserObjectID(userA.UserID, worldB.GetID()),
+		entry.NewUserObjectID(userB.UserID, worldA.GetID()),
 	}
 
-	if err := n.db.GetUserObjectDB().RemoveUserObjects(n.ctx, permissions); err != nil {
-		err := errors.WithMessage(err, "Node: apiUsersRemoveMutualDocks: failed to remove user spaces")
-		api.AbortRequest(c, http.StatusInternalServerError, "user_spaces_remove_failed", err, n.log)
+	if _, err := n.GetUserObjects().RemoveMany(permissions, true); err != nil {
+		err := errors.WithMessage(err, "Node: apiUsersRemoveMutualDocks: failed to remove user objects")
+		api.AbortRequest(c, http.StatusInternalServerError, "user_objects_remove_failed", err, n.log)
 		return
 	}
 

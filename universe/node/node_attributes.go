@@ -4,9 +4,12 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
+
+var _ universe.NodeAttributes = (*nodeAttributes)(nil)
 
 type nodeAttributes struct {
 	node *Node

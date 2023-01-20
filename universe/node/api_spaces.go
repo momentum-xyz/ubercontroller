@@ -1,6 +1,7 @@
 package node
 
 import (
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"net/http"
 
 	"github.com/momentum-xyz/ubercontroller/universe/common/helper"
@@ -58,9 +59,9 @@ func (n *Node) apiSpacesCreateSpace(c *gin.Context) {
 		return
 	}
 
-	isAdmin, err := n.db.GetUserObjectDB().CheckIsUserIndirectObjectAdmin(c, userID, parentID)
+	isAdmin, err := n.db.GetUserObjectsDB().CheckIsIndirectAdminByID(c, entry.NewUserObjectID(userID, parentID))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSpacesCreateSpace: failed to check space indirect admin")
+		err := errors.WithMessage(err, "Node: apiSpacesCreateSpace: failed to check object indirect admin")
 		api.AbortRequest(c, http.StatusBadRequest, "admin_check_failed", err, n.log)
 		return
 	}

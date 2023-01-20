@@ -39,11 +39,6 @@ type Node struct {
 	router     *gin.Engine
 	httpServer *http.Server
 
-	nodeAttributes      *nodeAttributes // WARNING: the Node is sharing the same mutex ("Mu") with it
-	userAttributes      *userAttributes
-	userUserAttributes  *userUserAttributes
-	spaceUserAttributes *spaceUserAttributes
-
 	worlds         universe.Worlds
 	assets2d       universe.Assets2d
 	assets3d       universe.Assets3d
@@ -51,6 +46,13 @@ type Node struct {
 	userTypes      universe.UserTypes
 	attributeTypes universe.AttributeTypes
 	plugins        universe.Plugins
+
+	userObjects *userObjects
+
+	nodeAttributes      *nodeAttributes // WARNING: the Node is sharing the same mutex ("Mu") with it
+	userAttributes      *userAttributes
+	userUserAttributes  *userUserAttributes
+	spaceUserAttributes *spaceUserAttributes
 
 	spaceIDToWorld *generic.SyncMap[uuid.UUID, universe.World] // TODO: introduce GC for lost Worlds and Spaces
 
@@ -85,6 +87,7 @@ func NewNode(
 		attributeTypes: attributeTypes,
 		spaceIDToWorld: generic.NewSyncMap[uuid.UUID, universe.World](0),
 	}
+	node.userObjects = newUserObjects(node)
 	node.nodeAttributes = newNodeAttributes(node)
 	node.userAttributes = newUserAttributes(node)
 	node.userUserAttributes = newUserUserAttributes(node)
@@ -133,6 +136,10 @@ func (n *Node) Initialize(ctx context.Context) error {
 
 func (n *Node) ToObject() universe.Object {
 	return n.Object
+}
+
+func (n *Node) GetUserObjects() universe.UserObjects {
+	return n.userObjects
 }
 
 func (n *Node) GetNodeAttributes() universe.NodeAttributes {

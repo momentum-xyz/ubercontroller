@@ -129,8 +129,8 @@ func (db *DB) UpdateObjectAsset3dID(ctx context.Context, objectID uuid.UUID, ass
 	return nil
 }
 
-func (db *DB) UpdateObjectObjectTypeID(ctx context.Context, objectID, spaceTypeID uuid.UUID) error {
-	if _, err := db.conn.Exec(ctx, updateObjectObjectTypeIDQuery, objectID, spaceTypeID); err != nil {
+func (db *DB) UpdateObjectObjectTypeID(ctx context.Context, objectID, objectTypeID uuid.UUID) error {
+	if _, err := db.conn.Exec(ctx, updateObjectObjectTypeIDQuery, objectID, objectTypeID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
@@ -169,7 +169,9 @@ func (db *DB) UpsertObjects(ctx context.Context, objects []*entry.Object) error 
 	var errs *multierror.Error
 	for i := 0; i < batch.Len(); i++ {
 		if _, err := batchRes.Exec(); err != nil {
-			errs = multierror.Append(errs, errors.WithMessagef(err, "failed to exec db for: %s", objects[i].ObjectID))
+			errs = multierror.Append(
+				errs, errors.WithMessagef(err, "failed to exec db for: %s", objects[i].ObjectID),
+			)
 		}
 	}
 

@@ -19,7 +19,7 @@ type DB struct {
 	database.Assets3dDB
 	database.PluginsDB
 	database.ObjectTypesDB
-	database.UserObjectDB
+	database.UserObjectsDB
 	database.UserTypesDB
 	database.AttributeTypesDB
 	database.NodeAttributesDB
@@ -27,6 +27,48 @@ type DB struct {
 	database.ObjectUserAttributesDB
 	database.UserAttributesDB
 	database.UserUserAttributesDB
+}
+
+func NewDB(
+	conn *pgxpool.Pool,
+	common database.CommonDB,
+	nodes database.NodesDB,
+	worlds database.WorldsDB,
+	objects database.ObjectsDB,
+	users database.UsersDB,
+	assets2d database.Assets2dDB,
+	assets3d database.Assets3dDB,
+	plugins database.PluginsDB,
+	userObjects database.UserObjectsDB,
+	objectTypes database.ObjectTypesDB,
+	userTypes database.UserTypesDB,
+	attributeTypes database.AttributeTypesDB,
+	nodeAttributes database.NodeAttributesDB,
+	objectAttributes database.ObjectAttributesDB,
+	objectUserAttributes database.ObjectUserAttributesDB,
+	userAttributes database.UserAttributesDB,
+	userUserAttributes database.UserUserAttributesDB,
+) *DB {
+	return &DB{
+		conn:                   conn,
+		CommonDB:               common,
+		NodesDB:                nodes,
+		WorldsDB:               worlds,
+		ObjectsDB:              objects,
+		UsersDB:                users,
+		Assets2dDB:             assets2d,
+		Assets3dDB:             assets3d,
+		PluginsDB:              plugins,
+		ObjectTypesDB:          objectTypes,
+		UserObjectsDB:          userObjects,
+		UserTypesDB:            userTypes,
+		AttributeTypesDB:       attributeTypes,
+		NodeAttributesDB:       nodeAttributes,
+		ObjectAttributesDB:     objectAttributes,
+		ObjectUserAttributesDB: objectUserAttributes,
+		UserAttributesDB:       userAttributes,
+		UserUserAttributesDB:   userUserAttributes,
+	}
 }
 
 func (DB *DB) GetCommonDB() database.CommonDB {
@@ -93,48 +135,6 @@ func (DB *DB) GetUserUserAttributesDB() database.UserUserAttributesDB {
 	return DB.UserUserAttributesDB
 }
 
-func (DB *DB) GetUserObjectDB() database.UserObjectDB {
-	return DB.UserObjectDB
-}
-
-func NewDB(
-	conn *pgxpool.Pool,
-	common database.CommonDB,
-	nodes database.NodesDB,
-	worlds database.WorldsDB,
-	spaces database.ObjectsDB,
-	users database.UsersDB,
-	assets2d database.Assets2dDB,
-	assets3d database.Assets3dDB,
-	plugins database.PluginsDB,
-	userSpace database.UserObjectDB,
-	spaceTypes database.ObjectTypesDB,
-	userTypes database.UserTypesDB,
-	attributeTypes database.AttributeTypesDB,
-	nodeAttributes database.NodeAttributesDB,
-	spaceAttributes database.ObjectAttributesDB,
-	spaceUserAttributes database.ObjectUserAttributesDB,
-	userAttributes database.UserAttributesDB,
-	userUserAttributes database.UserUserAttributesDB,
-) *DB {
-	return &DB{
-		conn:                   conn,
-		CommonDB:               common,
-		NodesDB:                nodes,
-		WorldsDB:               worlds,
-		ObjectsDB:              spaces,
-		UsersDB:                users,
-		Assets2dDB:             assets2d,
-		Assets3dDB:             assets3d,
-		PluginsDB:              plugins,
-		ObjectTypesDB:          spaceTypes,
-		UserObjectDB:           userSpace,
-		UserTypesDB:            userTypes,
-		AttributeTypesDB:       attributeTypes,
-		NodeAttributesDB:       nodeAttributes,
-		ObjectAttributesDB:     spaceAttributes,
-		ObjectUserAttributesDB: spaceUserAttributes,
-		UserAttributesDB:       userAttributes,
-		UserUserAttributesDB:   userUserAttributes,
-	}
+func (DB *DB) GetUserObjectsDB() database.UserObjectsDB {
+	return DB.UserObjectsDB
 }

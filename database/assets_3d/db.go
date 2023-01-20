@@ -17,12 +17,6 @@ import (
 const (
 	getAssetsQuery = `SELECT * FROM asset_3d;`
 
-	removeAssetByIDQuery   = `DELETE FROM asset_3d WHERE asset_3d_id = $1;`
-	removeAssetsByIDsQuery = `DELETE FROM asset_3d WHERE asset_3d_id = ANY($1);`
-
-	updateAssetMetaQuery    = `UPDATE asset_3d SET meta = $2 WHERE asset_3d_id = $1;`
-	updateAssetOptionsQuery = `UPDATE asset_3d SET options = $2 WHERE asset_3d_id = $1;`
-
 	upsertAssetQuery = `INSERT INTO asset_3d
 							(asset_3d_id, meta, options, created_at, updated_at)
 						VALUES
@@ -30,6 +24,12 @@ const (
 						ON CONFLICT (asset_3d_id)
 						DO UPDATE SET
 							meta = $2, options = $3, updated_at = CURRENT_TIMESTAMP;`
+
+	updateAssetMetaQuery    = `UPDATE asset_3d SET meta = $2 WHERE asset_3d_id = $1;`
+	updateAssetOptionsQuery = `UPDATE asset_3d SET options = $2 WHERE asset_3d_id = $1;`
+
+	removeAssetByIDQuery   = `DELETE FROM asset_3d WHERE asset_3d_id = $1;`
+	removeAssetsByIDsQuery = `DELETE FROM asset_3d WHERE asset_3d_id = ANY($1);`
 )
 
 var _ database.Assets3dDB = (*DB)(nil)

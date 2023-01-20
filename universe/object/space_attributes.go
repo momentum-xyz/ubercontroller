@@ -10,7 +10,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
-var _ universe.Attributes[entry.AttributeID] = (*spaceAttributes)(nil)
+var _ universe.ObjectAttributes = (*spaceAttributes)(nil)
 
 type spaceAttributes struct {
 	space *Object

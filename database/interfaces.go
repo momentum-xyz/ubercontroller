@@ -19,6 +19,7 @@ type DB interface {
 	GetAssets2dDB() Assets2dDB
 	GetAssets3dDB() Assets3dDB
 	GetPluginsDB() PluginsDB
+	GetUserObjectsDB() UserObjectsDB
 	GetObjectTypesDB() ObjectTypesDB
 	GetUserTypesDB() UserTypesDB
 	GetAttributeTypesDB() AttributeTypesDB
@@ -27,7 +28,6 @@ type DB interface {
 	GetObjectUserAttributesDB() ObjectUserAttributesDB
 	GetUserAttributesDB() UserAttributesDB
 	GetUserUserAttributesDB() UserUserAttributesDB
-	GetUserObjectDB() UserObjectDB
 }
 
 type CommonDB interface {
@@ -116,6 +116,30 @@ type PluginsDB interface {
 
 	RemovePluginByID(ctx context.Context, pluginID uuid.UUID) error
 	RemovePluginsByIDs(ctx context.Context, pluginIDs []uuid.UUID) error
+}
+
+type UserObjectsDB interface {
+	GetUserObjects(ctx context.Context) ([]*entry.UserObject, error)
+	GetUserObjectByID(ctx context.Context, userObjectID entry.UserObjectID) (*entry.UserObject, error)
+	GetUserObjectsByUserID(ctx context.Context, userID uuid.UUID) ([]*entry.UserObject, error)
+	GetUserObjectsByObjectID(ctx context.Context, objectID uuid.UUID) ([]*entry.UserObject, error)
+	GetUserObjectValueByID(ctx context.Context, userObjectID entry.UserObjectID) (*entry.UserObjectValue, error)
+
+	GetObjectIndirectAdmins(ctx context.Context, objectID uuid.UUID) ([]*uuid.UUID, error)
+	CheckIsIndirectAdminByID(ctx context.Context, userObjectID entry.UserObjectID) (bool, error)
+
+	UpsertUserObject(
+		ctx context.Context, userObjectID entry.UserObjectID,
+		modifyFn modify.Fn[entry.UserObjectValue],
+	) (*entry.UserObjectValue, error)
+
+	UpdateUserObjectValue(
+		ctx context.Context, userObjectID entry.UserObjectID,
+		modifyFn modify.Fn[entry.UserObjectValue],
+	) (*entry.UserObjectValue, error)
+
+	RemoveUserObjectByID(ctx context.Context, userObjectID entry.UserObjectID) error
+	RemoveUserObjectsByIDs(ctx context.Context, userObjectIDs []entry.UserObjectID) error
 }
 
 type ObjectTypesDB interface {
@@ -217,7 +241,6 @@ type ObjectAttributesDB interface {
 	RemoveObjectAttributesByPluginIDAndObjectID(ctx context.Context, pluginID uuid.UUID, objectID uuid.UUID) error
 }
 
-// TODO: continue
 type ObjectUserAttributesDB interface {
 	GetObjectUserAttributes(ctx context.Context) ([]*entry.ObjectUserAttribute, error)
 	GetObjectUserAttributeByID(
@@ -258,36 +281,36 @@ type ObjectUserAttributesDB interface {
 	) (*entry.AttributeValue, error)
 
 	RemoveObjectUserAttributeByID(ctx context.Context, objectUserAttributeID entry.ObjectUserAttributeID) error
-	RemoveObjectUserAttributeByName(ctx context.Context, name string) error
+	RemoveObjectUserAttributesByName(ctx context.Context, name string) error
 	RemoveObjectUserAttributesByNames(ctx context.Context, names []string) error
 	RemoveObjectUserAttributesByPluginID(ctx context.Context, pluginID uuid.UUID) error
-	RemoveObjectUserAttributeByAttributeID(ctx context.Context, attributeID entry.AttributeID) error
-	RemoveObjectUserAttributeByObjectID(ctx context.Context, objectID uuid.UUID) error
-	RemoveObjectUserAttributeByNameAndObjectID(ctx context.Context, name string, objectID uuid.UUID) error
-	RemoveObjectUserAttributeByNamesAndObjectID(ctx context.Context, names []string, objectID uuid.UUID) error
-	RemoveObjectUserAttributeByUserID(ctx context.Context, userID uuid.UUID) error
-	RemoveObjectUserAttributeByNameAndUserID(ctx context.Context, name string, userID uuid.UUID) error
-	RemoveObjectUserAttributeByNamesAndUserID(ctx context.Context, names []string, userID uuid.UUID) error
-	RemoveObjectUserAttributeByObjectIDAndUserID(ctx context.Context, objectID uuid.UUID, userID uuid.UUID) error
-	RemoveObjectUserAttributeByPluginIDAndObjectID(ctx context.Context, pluginID uuid.UUID, objectID uuid.UUID) error
-	RemoveObjectUserAttributeByObjectAttributeID(ctx context.Context, objectAttributeID entry.ObjectAttributeID) error
-	RemoveObjectUserAttributeByPluginIDAndUserID(ctx context.Context, pluginID uuid.UUID, userID uuid.UUID) error
-	RemoveObjectUserAttributeByUserAttributeID(ctx context.Context, userAttributeID entry.UserAttributeID) error
-	RemoveObjectUserAttributeByNameAndObjectIDAndUserID(
+	RemoveObjectUserAttributesByAttributeID(ctx context.Context, attributeID entry.AttributeID) error
+	RemoveObjectUserAttributesByObjectID(ctx context.Context, objectID uuid.UUID) error
+	RemoveObjectUserAttributesByNameAndObjectID(ctx context.Context, name string, objectID uuid.UUID) error
+	RemoveObjectUserAttributesByNamesAndObjectID(ctx context.Context, names []string, objectID uuid.UUID) error
+	RemoveObjectUserAttributesByUserID(ctx context.Context, userID uuid.UUID) error
+	RemoveObjectUserAttributesByNameAndUserID(ctx context.Context, name string, userID uuid.UUID) error
+	RemoveObjectUserAttributesByNamesAndUserID(ctx context.Context, names []string, userID uuid.UUID) error
+	RemoveObjectUserAttributesByObjectIDAndUserID(ctx context.Context, objectID uuid.UUID, userID uuid.UUID) error
+	RemoveObjectUserAttributesByPluginIDAndObjectID(ctx context.Context, pluginID uuid.UUID, objectID uuid.UUID) error
+	RemoveObjectUserAttributesByObjectAttributeID(ctx context.Context, objectAttributeID entry.ObjectAttributeID) error
+	RemoveObjectUserAttributesByPluginIDAndUserID(ctx context.Context, pluginID uuid.UUID, userID uuid.UUID) error
+	RemoveObjectUserAttributesByUserAttributeID(ctx context.Context, userAttributeID entry.UserAttributeID) error
+	RemoveObjectUserAttributesByNameAndObjectIDAndUserID(
 		ctx context.Context, name string, objectID uuid.UUID, userID uuid.UUID,
 	) error
-	RemoveObjectUserAttributeByNamesAndObjectIDAndUserID(
+	RemoveObjectUserAttributesByNamesAndObjectIDAndUserID(
 		ctx context.Context, names []string, objectID uuid.UUID, userID uuid.UUID,
 	) error
-	RemoveObjectUserAttributeByPluginIDAndObjectIDAndUserID(
+	RemoveObjectUserAttributesByPluginIDAndObjectIDAndUserID(
 		ctx context.Context, pluginID uuid.UUID, objectID uuid.UUID, userID uuid.UUID,
 	) error
 }
 
 type UserAttributesDB interface {
 	GetUserAttributes(ctx context.Context) ([]*entry.UserAttribute, error)
-	GetUserAttributesByUserID(ctx context.Context, userID uuid.UUID) ([]*entry.UserAttribute, error)
 	GetUserAttributeByID(ctx context.Context, userAttributeID entry.UserAttributeID) (*entry.UserAttribute, error)
+	GetUserAttributesByUserID(ctx context.Context, userID uuid.UUID) ([]*entry.UserAttribute, error)
 	GetUserAttributePayloadByID(ctx context.Context, userAttributeID entry.UserAttributeID) (*entry.AttributePayload, error)
 	GetUserAttributeValueByID(ctx context.Context, userAttributeID entry.UserAttributeID) (*entry.AttributeValue, error)
 	GetUserAttributeOptionsByID(ctx context.Context, userAttributeID entry.UserAttributeID) (*entry.AttributeOptions, error)
@@ -309,14 +332,14 @@ type UserAttributesDB interface {
 	) (*entry.AttributeOptions, error)
 
 	RemoveUserAttributeByID(ctx context.Context, userAttributeID entry.UserAttributeID) error
-	RemoveUserAttributeByName(ctx context.Context, name string) error
+	RemoveUserAttributesByName(ctx context.Context, name string) error
 	RemoveUserAttributesByNames(ctx context.Context, names []string) error
 	RemoveUserAttributesByPluginID(ctx context.Context, pluginID uuid.UUID) error
 	RemoveUserAttributesByAttributeID(ctx context.Context, attributeID entry.AttributeID) error
-	RemoveUserAttributeByUserID(ctx context.Context, userID uuid.UUID) error
-	RemoveUserAttributeByNameAndUserID(ctx context.Context, name string, userID uuid.UUID) error
-	RemoveUserAttributeByNamesAndUserID(ctx context.Context, names []string, userID uuid.UUID) error
-	RemoveUserAttributeByPluginIDAndUserID(ctx context.Context, pluginID uuid.UUID, userID uuid.UUID) error
+	RemoveUserAttributesByUserID(ctx context.Context, userID uuid.UUID) error
+	RemoveUserAttributesByNameAndUserID(ctx context.Context, name string, userID uuid.UUID) error
+	RemoveUserAttributesByNamesAndUserID(ctx context.Context, names []string, userID uuid.UUID) error
+	RemoveUserAttributesByPluginIDAndUserID(ctx context.Context, pluginID uuid.UUID, userID uuid.UUID) error
 }
 
 type UserUserAttributesDB interface {
@@ -360,60 +383,38 @@ type UserUserAttributesDB interface {
 	) (*entry.AttributeOptions, error)
 
 	RemoveUserUserAttributeByID(ctx context.Context, userUserAttributeID entry.UserUserAttributeID) error
-	RemoveUserUserAttributeByName(ctx context.Context, name string) error
+	RemoveUserUserAttributesByName(ctx context.Context, name string) error
 	RemoveUserUserAttributesByNames(ctx context.Context, names []string) error
 	RemoveUserUserAttributesByPluginID(ctx context.Context, pluginID uuid.UUID) error
 	RemoveUserUserAttributesByAttributeID(ctx context.Context, attributeID entry.AttributeID) error
-	RemoveUserUserAttributeBySourceUserID(ctx context.Context, sourceUserID uuid.UUID) error
-	RemoveUserUserAttributeByNameAndSourceUserID(ctx context.Context, name string, sourceUserID uuid.UUID) error
-	RemoveUserUserAttributeByNamesAndSourceUserID(ctx context.Context, names []string, sourceUserID uuid.UUID) error
-	RemoveUserUserAttributeByTargetUserID(ctx context.Context, targetUserID uuid.UUID) error
-	RemoveUserUserAttributeByNameAndTargetUserID(ctx context.Context, name string, targetUserID uuid.UUID) error
-	RemoveUserUserAttributeByNamesAndTargetUserID(ctx context.Context, names []string, targetUserID uuid.UUID) error
-	RemoveUserUserAttributeBySourceUserIDAndTargetUserID(
+	RemoveUserUserAttributesBySourceUserID(ctx context.Context, sourceUserID uuid.UUID) error
+	RemoveUserUserAttributesByNameAndSourceUserID(ctx context.Context, name string, sourceUserID uuid.UUID) error
+	RemoveUserUserAttributesByNamesAndSourceUserID(ctx context.Context, names []string, sourceUserID uuid.UUID) error
+	RemoveUserUserAttributesByTargetUserID(ctx context.Context, targetUserID uuid.UUID) error
+	RemoveUserUserAttributesByNameAndTargetUserID(ctx context.Context, name string, targetUserID uuid.UUID) error
+	RemoveUserUserAttributesByNamesAndTargetUserID(ctx context.Context, names []string, targetUserID uuid.UUID) error
+	RemoveUserUserAttributesBySourceUserIDAndTargetUserID(
 		ctx context.Context, sourceUserID uuid.UUID, targetUserID uuid.UUID,
 	) error
-	RemoveUserUserAttributeByNameAndSourceUserIDAndTargetUserID(
+	RemoveUserUserAttributesByNameAndSourceUserIDAndTargetUserID(
 		ctx context.Context, name string, sourceUserID uuid.UUID, targetUserID uuid.UUID,
 	) error
-	RemoveUserUserAttributeByNamesAndSourceUserIDAndTargetUserID(
+	RemoveUserUserAttributesByNamesAndSourceUserIDAndTargetUserID(
 		ctx context.Context, names []string, sourceUserID uuid.UUID, targetUserID uuid.UUID,
 	) error
-	RemoveUserUserAttributeByPluginIDAndSourceUserID(
+	RemoveUserUserAttributesByPluginIDAndSourceUserID(
 		ctx context.Context, pluginID uuid.UUID, sourceUserID uuid.UUID,
 	) error
-	RemoveUserUserAttributeBySourceUserAttributeID(
+	RemoveUserUserAttributesBySourceUserAttributeID(
 		ctx context.Context, sourceUserAttributeID entry.UserAttributeID,
 	) error
-	RemoveUserUserAttributeByPluginIDAndTargetUserID(
+	RemoveUserUserAttributesByPluginIDAndTargetUserID(
 		ctx context.Context, pluginID uuid.UUID, targetUserID uuid.UUID,
 	) error
-	RemoveUserUserAttributeByTargetUserAttributeID(
+	RemoveUserUserAttributesByTargetUserAttributeID(
 		ctx context.Context, targetUserAttributeID entry.UserAttributeID,
 	) error
-	RemoveUserUserAttributeByPluginIDAndSourceUserIDAndTargetUserID(
+	RemoveUserUserAttributesByPluginIDAndSourceUserIDAndTargetUserID(
 		ctx context.Context, pluginID uuid.UUID, sourceUserID uuid.UUID, targetUserID uuid.UUID,
 	) error
-}
-
-type UserObjectDB interface {
-	GetUserObjects(ctx context.Context) ([]*entry.UserObject, error)
-	GetUserObjectByID(ctx context.Context, userObjectID entry.UserObjectID) (*entry.UserObject, error)
-	GetUserObjectsByUserID(ctx context.Context, userID uuid.UUID) ([]*entry.UserObject, error)
-	GetUserObjectsByObjectID(ctx context.Context, objectID uuid.UUID) ([]*entry.UserObject, error)
-	GetValueByID(ctx context.Context, userObjectID entry.UserObjectID) (*entry.UserObjectValue, error)
-
-	GetObjectIndirectAdmins(ctx context.Context, objectID uuid.UUID) ([]*uuid.UUID, error)
-	CheckIsUserIndirectObjectAdmin(ctx context.Context, userID, objectID uuid.UUID) (bool, error)
-
-	UpsertUserObject(ctx context.Context, userObject *entry.UserObject) error
-	UpsertUserObjects(ctx context.Context, userObjects []*entry.UserObject) error
-
-	UpdateValueByID(
-		ctx context.Context, userObjectID entry.UserObjectID,
-		modifyFn modify.Fn[entry.UserObjectValue],
-	) (*entry.UserObjectValue, error)
-
-	RemoveUserObject(ctx context.Context, userObject *entry.UserObject) error
-	RemoveUserObjects(ctx context.Context, userObjects []*entry.UserObject) error
 }

@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -14,10 +15,10 @@ import (
 
 func AuthorizeAdmin(log *zap.SugaredLogger, db database.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		spaceID, err := uuid.Parse(c.Param("spaceID"))
+		objectID, err := uuid.Parse(c.Param("spaceID"))
 		if err != nil {
-			err := errors.WithMessage(err, "Middleware: AuthorizeAdmin: failed to parse space id")
-			api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, log)
+			err := errors.WithMessage(err, "Middleware: AuthorizeAdmin: failed to parse object id")
+			api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, log)
 			return
 		}
 
@@ -28,9 +29,9 @@ func AuthorizeAdmin(log *zap.SugaredLogger, db database.DB) gin.HandlerFunc {
 			return
 		}
 
-		isAdmin, err := db.GetUserObjectDB().CheckIsUserIndirectObjectAdmin(c, userID, spaceID)
+		isAdmin, err := db.GetUserObjectsDB().CheckIsIndirectAdminByID(c, entry.NewUserObjectID(userID, objectID))
 		if err != nil {
-			err := errors.WithMessage(err, "Middleware: AuthorizeAdmin: failed to check is indirect admin")
+			err := errors.WithMessage(err, "Middleware: AuthorizeAdmin: failed to check is indirect admin by id")
 			api.AbortRequest(c, http.StatusInternalServerError, "check_failed", err, log)
 			return
 		}

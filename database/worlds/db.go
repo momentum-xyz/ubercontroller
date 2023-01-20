@@ -12,10 +12,12 @@ import (
 )
 
 const (
-	getWorldIDsQuery = `SELECT space_id FROM space WHERE space_id != parent_id
-						AND parent_id = (SELECT space_id FROM space WHERE space_id = parent_id);`
-	getWorldsQuery = `SELECT * FROM space WHERE space_id != parent_id
-						AND parent_id = (SELECT space_id FROM space WHERE space_id = parent_id);`
+	getWorldIDsQuery = `SELECT object_id FROM object
+                 			WHERE parent_id = (SELECT object_id FROM object WHERE object_id = parent_id)
+                 			AND object_id != parent_id;`
+	getWorldsQuery = `SELECT * FROM object
+         					WHERE parent_id = (SELECT object_id FROM object WHERE object_id = parent_id)
+         					AND object_id != parent_id;`
 )
 
 var _ database.WorldsDB = (*DB)(nil)

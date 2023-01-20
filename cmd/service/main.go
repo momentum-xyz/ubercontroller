@@ -7,32 +7,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/momentum-xyz/ubercontroller/universe/common"
-
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/zakaria-chahboun/cute"
 	"go.uber.org/zap"
-
-	assets2dDB "github.com/momentum-xyz/ubercontroller/database/assets_2d"
-	assets3dDB "github.com/momentum-xyz/ubercontroller/database/assets_3d"
-	attributesTypeDB "github.com/momentum-xyz/ubercontroller/database/attribute_types"
-	commonDB "github.com/momentum-xyz/ubercontroller/database/common"
-	nodeAttributesDB "github.com/momentum-xyz/ubercontroller/database/node_attributes"
-	nodesDB "github.com/momentum-xyz/ubercontroller/database/nodes"
-	spaceAttributesDB "github.com/momentum-xyz/ubercontroller/database/object_attributes"
-	spacesDB "github.com/momentum-xyz/ubercontroller/database/objects"
-	pluginsDB "github.com/momentum-xyz/ubercontroller/database/plugins"
-	spaceTypesDB "github.com/momentum-xyz/ubercontroller/database/space_types"
-	spaceUserAttributesDB "github.com/momentum-xyz/ubercontroller/database/space_user_attributes"
-	userAttributesDB "github.com/momentum-xyz/ubercontroller/database/user_attributes"
-	userSpaceDB "github.com/momentum-xyz/ubercontroller/database/user_space"
-	userTypesDB "github.com/momentum-xyz/ubercontroller/database/user_types"
-	userUserAttributesDB "github.com/momentum-xyz/ubercontroller/database/user_user_attributes"
-	usersDB "github.com/momentum-xyz/ubercontroller/database/users"
-	worldsDB "github.com/momentum-xyz/ubercontroller/database/worlds"
-	"github.com/momentum-xyz/ubercontroller/utils"
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
@@ -45,11 +24,31 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/assets_2d"
 	"github.com/momentum-xyz/ubercontroller/universe/assets_3d"
 	"github.com/momentum-xyz/ubercontroller/universe/attribute_types"
+	"github.com/momentum-xyz/ubercontroller/universe/common"
 	"github.com/momentum-xyz/ubercontroller/universe/node"
 	"github.com/momentum-xyz/ubercontroller/universe/plugins"
 	"github.com/momentum-xyz/ubercontroller/universe/space_types"
 	"github.com/momentum-xyz/ubercontroller/universe/user_types"
 	"github.com/momentum-xyz/ubercontroller/universe/worlds"
+	"github.com/momentum-xyz/ubercontroller/utils"
+
+	assets2dDB "github.com/momentum-xyz/ubercontroller/database/assets_2d"
+	assets3dDB "github.com/momentum-xyz/ubercontroller/database/assets_3d"
+	attributesTypeDB "github.com/momentum-xyz/ubercontroller/database/attribute_types"
+	commonDB "github.com/momentum-xyz/ubercontroller/database/common"
+	nodeAttributesDB "github.com/momentum-xyz/ubercontroller/database/node_attributes"
+	nodesDB "github.com/momentum-xyz/ubercontroller/database/nodes"
+	objectAttributesDB "github.com/momentum-xyz/ubercontroller/database/object_attributes"
+	objectTypesDB "github.com/momentum-xyz/ubercontroller/database/object_types"
+	objectUserAttributesDB "github.com/momentum-xyz/ubercontroller/database/object_user_attributes"
+	objectsDB "github.com/momentum-xyz/ubercontroller/database/objects"
+	pluginsDB "github.com/momentum-xyz/ubercontroller/database/plugins"
+	userAttributesDB "github.com/momentum-xyz/ubercontroller/database/user_attributes"
+	userObjectsDB "github.com/momentum-xyz/ubercontroller/database/user_objects"
+	userTypesDB "github.com/momentum-xyz/ubercontroller/database/user_types"
+	userUserAttributesDB "github.com/momentum-xyz/ubercontroller/database/user_user_attributes"
+	usersDB "github.com/momentum-xyz/ubercontroller/database/users"
+	worldsDB "github.com/momentum-xyz/ubercontroller/database/worlds"
 )
 
 var log = logger.L()
@@ -201,24 +200,24 @@ func createDBConnection(ctx context.Context, cfg *config.Postgres) (*pgxpool.Poo
 
 func createDB(conn *pgxpool.Pool) (database.DB, error) {
 	common := commonDB.NewDB(conn)
-	spaces := spacesDB.NewDB(conn, common)
+	objects := objectsDB.NewDB(conn, common)
 	return db.NewDB(
 		conn,
 		common,
 		nodesDB.NewDB(conn, common),
-		worldsDB.NewDB(conn, common, spaces),
-		spaces,
+		worldsDB.NewDB(conn, common, objects),
+		objects,
 		usersDB.NewDB(conn, common),
 		assets2dDB.NewDB(conn, common),
 		assets3dDB.NewDB(conn, common),
 		pluginsDB.NewDB(conn, common),
-		userSpaceDB.NewDB(conn, common),
-		spaceTypesDB.NewDB(conn, common),
+		userObjectsDB.NewDB(conn, common),
+		objectTypesDB.NewDB(conn, common),
 		userTypesDB.NewDB(conn, common),
 		attributesTypeDB.NewDB(conn, common),
 		nodeAttributesDB.NewDB(conn, common),
-		spaceAttributesDB.NewDB(conn, common),
-		spaceUserAttributesDB.NewDB(conn, common),
+		objectAttributesDB.NewDB(conn, common),
+		objectUserAttributesDB.NewDB(conn, common),
 		userAttributesDB.NewDB(conn, common),
 		userUserAttributesDB.NewDB(conn, common),
 	), nil

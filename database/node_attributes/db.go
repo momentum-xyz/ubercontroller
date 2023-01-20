@@ -126,7 +126,7 @@ func (db *DB) UpsertNodeAttributes(ctx context.Context, nodeAttributes []*entry.
 	for i := 0; i < batch.Len(); i++ {
 		if _, err := batchRes.Exec(); err != nil {
 			errs = multierror.Append(errs,
-				errors.WithMessagef(err, "failed to exec db for: %s", nodeAttributes[i].Name),
+				errors.WithMessagef(err, "failed to exec db for: %+v", nodeAttributes[i].NodeAttributeID),
 			)
 		}
 	}

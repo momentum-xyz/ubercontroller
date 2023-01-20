@@ -83,6 +83,8 @@ type Node interface {
 	GetAttributeTypes() AttributeTypes
 	GetPlugins() Plugins
 
+	GetUserObjects() UserObjects
+
 	GetNodeAttributes() NodeAttributes
 	GetUserAttributes() UserAttributes
 	GetUserUserAttributes() UserUserAttributes
@@ -105,8 +107,8 @@ type Worlds interface {
 	FilterWorlds(predicateFn WorldsFilterPredicateFn) map[uuid.UUID]World
 	AddWorld(world World, updateDB bool) error
 	AddWorlds(worlds []World, updateDB bool) error
-	RemoveWorld(world World, updateDB bool) error
-	RemoveWorlds(worlds []World, updateDB bool) error
+	RemoveWorld(world World, updateDB bool) (bool, error)
+	RemoveWorlds(worlds []World, updateDB bool) (bool, error)
 }
 
 type World interface {
@@ -179,7 +181,7 @@ type Object interface {
 	GetUser(userID uuid.UUID, recursive bool) (User, bool)
 	GetUsers(recursive bool) map[uuid.UUID]User
 	AddUser(user User, updateDB bool) error
-	RemoveUser(user User, updateDB bool) error
+	RemoveUser(user User, updateDB bool) (bool, error)
 
 	Send(msg *websocket.PreparedMessage, recursive bool) error
 
@@ -223,6 +225,25 @@ type User interface {
 	AddInfluxTags(prefix string, point *influxWrite.Point) *influxWrite.Point
 }
 
+// UserObjects ignores "updateDB" flag
+type UserObjects interface {
+	GetValue(userObjectID entry.UserObjectID) (*entry.UserObjectValue, bool)
+
+	GetObjectIndirectAdmins(objectID uuid.UUID) ([]*uuid.UUID, bool)
+	CheckIsIndirectAdmin(userObjectID entry.UserObjectID) (bool, error)
+
+	Upsert(
+		userObjectID entry.UserObjectID, modifyFn modify.Fn[entry.UserObjectValue], updateDB bool,
+	) (*entry.UserObjectValue, error)
+
+	UpdateValue(
+		userObjectID entry.UserObjectID, modifyFn modify.Fn[entry.UserObjectValue], updateDB bool,
+	) (*entry.UserObjectValue, error)
+
+	Remove(userObjectID entry.UserObjectID, updateDB bool) (bool, error)
+	RemoveMany(userObjectIDs []entry.UserObjectID, updateDB bool) (bool, error)
+}
+
 type Attributes[ID comparable] interface {
 	GetPayload(attributeID ID) (*entry.AttributePayload, bool)
 	GetValue(attributeID ID) (*entry.AttributeValue, bool)
@@ -238,12 +259,14 @@ type Attributes[ID comparable] interface {
 }
 
 type NodeAttributes interface {
+	LoadSaver
 	Attributes[entry.AttributeID]
 
 	Len() int
 }
 
 type ObjectAttributes interface {
+	LoadSaver
 	Attributes[entry.AttributeID]
 
 	Len() int
@@ -275,8 +298,8 @@ type Assets2d interface {
 	FilterAssets2d(predicateFn Assets2dFilterPredicateFn) map[uuid.UUID]Asset2d
 	AddAsset2d(asset2d Asset2d, updateDB bool) error
 	AddAssets2d(assets2d []Asset2d, updateDB bool) error
-	RemoveAsset2d(asset2d Asset2d, updateDB bool) error
-	RemoveAssets2d(assets2d []Asset2d, updateDB bool) error
+	RemoveAsset2d(asset2d Asset2d, updateDB bool) (bool, error)
+	RemoveAssets2d(assets2d []Asset2d, updateDB bool) (bool, error)
 }
 
 type Asset2d interface {
@@ -304,10 +327,10 @@ type Assets3d interface {
 	FilterAssets3d(predicateFn Assets3dFilterPredicateFn) map[uuid.UUID]Asset3d
 	AddAsset3d(asset3d Asset3d, updateDB bool) error
 	AddAssets3d(assets3d []Asset3d, updateDB bool) error
-	RemoveAsset3d(asset3d Asset3d, updateDB bool) error
-	RemoveAssets3d(assets3d []Asset3d, updateDB bool) error
-	RemoveAsset3dByID(asset3dID uuid.UUID, updateDB bool) error
-	RemoveAssets3dByIDs(assets3dIDs []uuid.UUID, updateDB bool) error
+	RemoveAsset3d(asset3d Asset3d, updateDB bool) (bool, error)
+	RemoveAssets3d(assets3d []Asset3d, updateDB bool) (bool, error)
+	RemoveAssets3dByID(assets3dID uuid.UUID, updateDB bool) (bool, error)
+	RemoveAssets3dByIDs(assets3dIDs []uuid.UUID, updateDB bool) (bool, error)
 }
 
 type Asset3d interface {
@@ -335,8 +358,8 @@ type Plugins interface {
 	FilterPlugins(predicateFn PluginsFilterPredicateFn) map[uuid.UUID]Plugin
 	AddPlugin(plugin Plugin, updateDB bool) error
 	AddPlugins(plugins []Plugin, updateDB bool) error
-	RemovePlugin(plugin Plugin, updateDB bool) error
-	RemovePlugins(plugins []Plugin, updateDB bool) error
+	RemovePlugin(plugin Plugin, updateDB bool) (bool, error)
+	RemovePlugins(plugins []Plugin, updateDB bool) (bool, error)
 }
 
 type Plugin interface {
@@ -364,8 +387,8 @@ type AttributeTypes interface {
 	FilterAttributeTypes(predicateFn AttributeTypesFilterPredicateFn) map[entry.AttributeTypeID]AttributeType
 	AddAttributeType(attributeType AttributeType, updateDB bool) error
 	AddAttributeTypes(attributeTypes []AttributeType, updateDB bool) error
-	RemoveAttributeType(attributeType AttributeType, updateDB bool) error
-	RemoveAttributeTypes(attributeTypes []AttributeType, updateDB bool) error
+	RemoveAttributeType(attributeType AttributeType, updateDB bool) (bool, error)
+	RemoveAttributeTypes(attributeTypes []AttributeType, updateDB bool) (bool, error)
 }
 
 type AttributeType interface {
@@ -396,8 +419,8 @@ type ObjectTypes interface {
 	FilterObjectTypes(predicateFn ObjectTypesFilterPredicateFn) map[uuid.UUID]ObjectType
 	AddObjectType(objectType ObjectType, updateDB bool) error
 	AddObjectTypes(objectTypes []ObjectType, updateDB bool) error
-	RemoveObjectType(objectType ObjectType, updateDB bool) error
-	RemoveObjectTypes(objectTypes []ObjectType, updateDB bool) error
+	RemoveObjectType(objectType ObjectType, updateDB bool) (bool, error)
+	RemoveObjectTypes(objectTypes []ObjectType, updateDB bool) (bool, error)
 }
 
 type ObjectType interface {
@@ -437,8 +460,8 @@ type UserTypes interface {
 	FilterUserTypes(predicateFn UserTypesFilterPredicateFn) map[uuid.UUID]UserType
 	AddUserType(userType UserType, updateDB bool) error
 	AddUserTypes(userTypes []UserType, updateDB bool) error
-	RemoveUserType(userType UserType, updateDB bool) error
-	RemoveUserTypes(userTypes []UserType, updateDB bool) error
+	RemoveUserType(userType UserType, updateDB bool) (bool, error)
+	RemoveUserTypes(userTypes []UserType, updateDB bool) (bool, error)
 }
 
 type UserType interface {

@@ -122,7 +122,7 @@ func (db *DB) UpsertObjectAttributes(ctx context.Context, objectAttributes []*en
 	for i := 0; i < batch.Len(); i++ {
 		if _, err := batchRes.Exec(); err != nil {
 			errs = multierror.Append(
-				errs, errors.WithMessagef(err, "failed to exec db for: %s", objectAttributes[i].Name),
+				errs, errors.WithMessagef(err, "failed to exec db for: %+v", objectAttributes[i].ObjectAttributeID),
 			)
 		}
 	}

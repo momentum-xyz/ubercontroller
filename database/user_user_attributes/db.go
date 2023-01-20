@@ -16,9 +16,9 @@ import (
 )
 
 const (
-	getUserUserAttributesQuery                    = `SELECT * FROM user_user_attribute;`
-	getUserUserAttributesQueryBySourceUserIDQuery = `SELECT * FROM user_user_attribute WHERE source_user_id = $1;`
-	getUserUserAttributesQueryByTargetUserIDQuery = `SELECT * FROM user_user_attribute WHERE target_user_id = $1;`
+	getUserUserAttributesQuery               = `SELECT * FROM user_user_attribute;`
+	getUserUserAttributesBySourceUserIDQuery = `SELECT * FROM user_user_attribute WHERE source_user_id = $1;`
+	getUserUserAttributesByTargetUserIDQuery = `SELECT * FROM user_user_attribute WHERE target_user_id = $1;`
 
 	getUserUserAttributePayloadByIDQuery = `SELECT value, options FROM user_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND source_user_id = $3 AND target_user_id = $4;`
 	getUserUserAttributeValueByIDQuery   = `SELECT value FROM user_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND source_user_id = $3 AND target_user_id = $4;`
@@ -29,34 +29,6 @@ const (
 
 	getUserUserAttributesCountQuery = `SELECT COUNT(*) FROM user_user_attribute;`
 
-	removeUserUserAttributeByNameQuery                  = `DELETE FROM user_user_attribute WHERE attribute_name = $1;`
-	removeUserUserAttributesByNamesQuery                = `DELETE FROM user_user_attribute WHERE attribute_name = ANY($1);`
-	removeUserUserAttributesByPluginIDQuery             = `DELETE FROM user_user_attribute WHERE plugin_id = $1;`
-	removeUserUserAttributesByAttributeIDQuery          = `DELETE FROM user_user_attribute WHERE plugin_id = $1 AND attribute_name = $2;`
-	removeUserUserAttributesBySourceUserIDQuery         = `DELETE FROM user_user_attribute WHERE source_user_id = $1;`
-	removeUserUserAttributeByNameAndSourceUserIDQuery   = `DELETE FROM user_user_attribute WHERE attribute_name = $1 and source_user_id = $2;`
-	removeUserUserAttributesByNamesAndSourceUserIDQuery = `DELETE FROM user_user_attribute WHERE attribute_name = ANY($1) AND source_user_id = $2;`
-
-	removeUserUserAttributesByTargetUserIDQuery         = `DELETE FROM user_user_attribute WHERE target_user_id = $1;`
-	removeUserUserAttributeByNameAndTargetUserIDQuery   = `DELETE FROM user_user_attribute WHERE attribute_name = $1 AND target_user_id = $2;`
-	removeUserUserAttributesByNamesAndTargetUserIDQuery = `DELETE FROM user_user_attribute WHERE attribute_name = ANY($1) AND target_user_id = $2;`
-
-	removeUserUserAttributesBySourceUserIDAndTargetUserIDQuery         = `DELETE FROM user_user_attribute WHERE source_user_id = $1 AND target_user_id = $2;`
-	removeUserUserAttributeByNameAndSourceUserIDAndTargetUserIDQuery   = `DELETE FROM user_user_attribute WHERE attribute_name = $1 AND source_user_id = $2 AND target_user_id = $3;`
-	removeUserUserAttributesByNamesAndSourceUserIDAndTargetUserIDQuery = `DELETE FROM user_user_attribute WHERE attribute_name = ANY($1) AND source_user_id = $2 AND target_user_id = $3;`
-
-	removeUserUserAttributesByPluginIDAndSourceUserIDQuery        = `DELETE FROM user_user_attribute WHERE plugin_id = $1 AND source_user_id = $2;`
-	removeUserUserAttributesByPluginIDAndNameAndSourceUserIDQuery = `DELETE FROM user_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND source_user_id = $3;`
-
-	removeUserUserAttributesByPluginIDAndTargetUserIDQuery        = `DELETE FROM user_user_attribute WHERE plugin_id = $1 AND target_user_id = $2;`
-	removeUserUserAttributesByPluginIDAndNameAndTargetUserIDQuery = `DELETE FROM user_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND target_user_id = $3;`
-
-	removeUserUserAttributesByIDQuery                                     = `DELETE FROM user_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND source_user_id = $3 AND target_user_id = $4;`
-	removeUserUserAttributesByPluginIDAndSourceUserIDAndTargetUserIDQuery = `DELETE FROM user_user_attribute WHERE plugin_id = $1 AND source_user_id = $2 AND target_user_id = $3;`
-
-	updateUserUserAttributeValueQuery   = `UPDATE user_user_attribute SET value = $5 WHERE plugin_id = $1 AND attribute_name = $2 AND source_user_id = $3 AND target_user_id = $4;`
-	updateUserUserAttributeOptionsQuery = `UPDATE user_user_attribute SET options = $5 WHERE plugin_id = $1 AND attribute_name = $2 AND source_user_id = $3 AND target_user_id = $4;`
-
 	upsertUserUserAttributeQuery = `INSERT INTO user_user_attribute
 										(plugin_id, attribute_name, source_user_id, target_user_id, value, options)
 									VALUES
@@ -64,6 +36,34 @@ const (
 									ON CONFLICT (plugin_id, attribute_name, source_user_id, target_user_id)
 									DO UPDATE SET
 									    value = $5, options = $6;`
+
+	updateUserUserAttributeValueQuery   = `UPDATE user_user_attribute SET value = $5 WHERE plugin_id = $1 AND attribute_name = $2 AND source_user_id = $3 AND target_user_id = $4;`
+	updateUserUserAttributeOptionsQuery = `UPDATE user_user_attribute SET options = $5 WHERE plugin_id = $1 AND attribute_name = $2 AND source_user_id = $3 AND target_user_id = $4;`
+
+	removeUserUserAttributesByNameQuery                 = `DELETE FROM user_user_attribute WHERE attribute_name = $1;`
+	removeUserUserAttributesByNamesQuery                = `DELETE FROM user_user_attribute WHERE attribute_name = ANY($1);`
+	removeUserUserAttributesByPluginIDQuery             = `DELETE FROM user_user_attribute WHERE plugin_id = $1;`
+	removeUserUserAttributesByAttributeIDQuery          = `DELETE FROM user_user_attribute WHERE plugin_id = $1 AND attribute_name = $2;`
+	removeUserUserAttributesBySourceUserIDQuery         = `DELETE FROM user_user_attribute WHERE source_user_id = $1;`
+	removeUserUserAttributesByNameAndSourceUserIDQuery  = `DELETE FROM user_user_attribute WHERE attribute_name = $1 and source_user_id = $2;`
+	removeUserUserAttributesByNamesAndSourceUserIDQuery = `DELETE FROM user_user_attribute WHERE attribute_name = ANY($1) AND source_user_id = $2;`
+
+	removeUserUserAttributesByTargetUserIDQuery         = `DELETE FROM user_user_attribute WHERE target_user_id = $1;`
+	removeUserUserAttributesByNameAndTargetUserIDQuery  = `DELETE FROM user_user_attribute WHERE attribute_name = $1 AND target_user_id = $2;`
+	removeUserUserAttributesByNamesAndTargetUserIDQuery = `DELETE FROM user_user_attribute WHERE attribute_name = ANY($1) AND target_user_id = $2;`
+
+	removeUserUserAttributesBySourceUserIDAndTargetUserIDQuery         = `DELETE FROM user_user_attribute WHERE source_user_id = $1 AND target_user_id = $2;`
+	removeUserUserAttributesByNameAndSourceUserIDAndTargetUserIDQuery  = `DELETE FROM user_user_attribute WHERE attribute_name = $1 AND source_user_id = $2 AND target_user_id = $3;`
+	removeUserUserAttributesByNamesAndSourceUserIDAndTargetUserIDQuery = `DELETE FROM user_user_attribute WHERE attribute_name = ANY($1) AND source_user_id = $2 AND target_user_id = $3;`
+
+	removeUserUserAttributesByPluginIDAndSourceUserIDQuery = `DELETE FROM user_user_attribute WHERE plugin_id = $1 AND source_user_id = $2;`
+	removeUserUserAttributesBySourceUserAttributeIDQuery   = `DELETE FROM user_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND source_user_id = $3;`
+
+	removeUserUserAttributesByPluginIDAndTargetUserIDQuery = `DELETE FROM user_user_attribute WHERE plugin_id = $1 AND target_user_id = $2;`
+	removeUserUserAttributesByTargetUserAttributeIDQuery   = `DELETE FROM user_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND target_user_id = $3;`
+
+	removeUserUserAttributesByIDQuery                                     = `DELETE FROM user_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND source_user_id = $3 AND target_user_id = $4;`
+	removeUserUserAttributesByPluginIDAndSourceUserIDAndTargetUserIDQuery = `DELETE FROM user_user_attribute WHERE plugin_id = $1 AND source_user_id = $2 AND target_user_id = $3;`
 )
 
 var _ database.UserUserAttributesDB = (*DB)(nil)
@@ -156,7 +156,7 @@ func (db *DB) GetUserUserAttributesBySourceUserID(
 ) ([]*entry.UserUserAttribute, error) {
 	var attributes []*entry.UserUserAttribute
 	if err := pgxscan.Select(
-		ctx, db.conn, &attributes, getUserUserAttributesQueryBySourceUserIDQuery, sourceUserID,
+		ctx, db.conn, &attributes, getUserUserAttributesBySourceUserIDQuery, sourceUserID,
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
@@ -168,7 +168,7 @@ func (db *DB) GetUserUserAttributesByTargetUserID(
 ) ([]*entry.UserUserAttribute, error) {
 	var attributes []*entry.UserUserAttribute
 	if err := pgxscan.Select(
-		ctx, db.conn, &attributes, getUserUserAttributesQueryByTargetUserIDQuery, targetUserID,
+		ctx, db.conn, &attributes, getUserUserAttributesByTargetUserIDQuery, targetUserID,
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
@@ -232,8 +232,8 @@ func (db *DB) UpsertUserUserAttribute(
 	return payload, nil
 }
 
-func (db *DB) RemoveUserUserAttributeByName(ctx context.Context, name string) error {
-	res, err := db.conn.Exec(ctx, removeUserUserAttributeByNameQuery, name)
+func (db *DB) RemoveUserUserAttributesByName(ctx context.Context, name string) error {
+	res, err := db.conn.Exec(ctx, removeUserUserAttributesByNameQuery, name)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
@@ -276,7 +276,7 @@ func (db *DB) RemoveUserUserAttributesByAttributeID(ctx context.Context, attribu
 	return nil
 }
 
-func (db *DB) RemoveUserUserAttributeBySourceUserID(ctx context.Context, sourceUserID uuid.UUID) error {
+func (db *DB) RemoveUserUserAttributesBySourceUserID(ctx context.Context, sourceUserID uuid.UUID) error {
 	res, err := db.conn.Exec(ctx, removeUserUserAttributesBySourceUserIDQuery, sourceUserID)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
@@ -287,10 +287,10 @@ func (db *DB) RemoveUserUserAttributeBySourceUserID(ctx context.Context, sourceU
 	return nil
 }
 
-func (db *DB) RemoveUserUserAttributeByNameAndSourceUserID(
+func (db *DB) RemoveUserUserAttributesByNameAndSourceUserID(
 	ctx context.Context, name string, sourceUserID uuid.UUID,
 ) error {
-	res, err := db.conn.Exec(ctx, removeUserUserAttributeByNameAndSourceUserIDQuery, name, sourceUserID)
+	res, err := db.conn.Exec(ctx, removeUserUserAttributesByNameAndSourceUserIDQuery, name, sourceUserID)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
@@ -300,7 +300,7 @@ func (db *DB) RemoveUserUserAttributeByNameAndSourceUserID(
 	return nil
 }
 
-func (db *DB) RemoveUserUserAttributeByNamesAndSourceUserID(
+func (db *DB) RemoveUserUserAttributesByNamesAndSourceUserID(
 	ctx context.Context, names []string, sourceUserID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeUserUserAttributesByNamesAndSourceUserIDQuery, names, sourceUserID)
@@ -313,7 +313,7 @@ func (db *DB) RemoveUserUserAttributeByNamesAndSourceUserID(
 	return nil
 }
 
-func (db *DB) RemoveUserUserAttributeByTargetUserID(ctx context.Context, targetUserID uuid.UUID) error {
+func (db *DB) RemoveUserUserAttributesByTargetUserID(ctx context.Context, targetUserID uuid.UUID) error {
 	res, err := db.conn.Exec(ctx, removeUserUserAttributesByTargetUserIDQuery, targetUserID)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
@@ -324,10 +324,10 @@ func (db *DB) RemoveUserUserAttributeByTargetUserID(ctx context.Context, targetU
 	return nil
 }
 
-func (db *DB) RemoveUserUserAttributeByNameAndTargetUserID(
+func (db *DB) RemoveUserUserAttributesByNameAndTargetUserID(
 	ctx context.Context, name string, targetUserID uuid.UUID,
 ) error {
-	res, err := db.conn.Exec(ctx, removeUserUserAttributeByNameAndTargetUserIDQuery, name, targetUserID)
+	res, err := db.conn.Exec(ctx, removeUserUserAttributesByNameAndTargetUserIDQuery, name, targetUserID)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
@@ -337,7 +337,7 @@ func (db *DB) RemoveUserUserAttributeByNameAndTargetUserID(
 	return nil
 }
 
-func (db *DB) RemoveUserUserAttributeByNamesAndTargetUserID(
+func (db *DB) RemoveUserUserAttributesByNamesAndTargetUserID(
 	ctx context.Context, names []string, targetUserID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeUserUserAttributesByNamesAndTargetUserIDQuery, names, targetUserID)
@@ -350,7 +350,7 @@ func (db *DB) RemoveUserUserAttributeByNamesAndTargetUserID(
 	return nil
 }
 
-func (db *DB) RemoveUserUserAttributeBySourceUserIDAndTargetUserID(
+func (db *DB) RemoveUserUserAttributesBySourceUserIDAndTargetUserID(
 	ctx context.Context, sourceUserID uuid.UUID, targetUserID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeUserUserAttributesBySourceUserIDAndTargetUserIDQuery, sourceUserID, targetUserID)
@@ -363,11 +363,11 @@ func (db *DB) RemoveUserUserAttributeBySourceUserIDAndTargetUserID(
 	return nil
 }
 
-func (db *DB) RemoveUserUserAttributeByNameAndSourceUserIDAndTargetUserID(
+func (db *DB) RemoveUserUserAttributesByNameAndSourceUserIDAndTargetUserID(
 	ctx context.Context, name string, sourceUserID uuid.UUID, targetUserID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(
-		ctx, removeUserUserAttributeByNameAndSourceUserIDAndTargetUserIDQuery, name, sourceUserID, targetUserID,
+		ctx, removeUserUserAttributesByNameAndSourceUserIDAndTargetUserIDQuery, name, sourceUserID, targetUserID,
 	)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
@@ -378,7 +378,7 @@ func (db *DB) RemoveUserUserAttributeByNameAndSourceUserIDAndTargetUserID(
 	return nil
 }
 
-func (db *DB) RemoveUserUserAttributeByNamesAndSourceUserIDAndTargetUserID(
+func (db *DB) RemoveUserUserAttributesByNamesAndSourceUserIDAndTargetUserID(
 	ctx context.Context, names []string, sourceUserID uuid.UUID, targetUserID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(
@@ -393,7 +393,7 @@ func (db *DB) RemoveUserUserAttributeByNamesAndSourceUserIDAndTargetUserID(
 	return nil
 }
 
-func (db *DB) RemoveUserUserAttributeByPluginIDAndSourceUserID(
+func (db *DB) RemoveUserUserAttributesByPluginIDAndSourceUserID(
 	ctx context.Context, pluginID uuid.UUID, sourceUserID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeUserUserAttributesByPluginIDAndSourceUserIDQuery, pluginID, sourceUserID)
@@ -406,11 +406,11 @@ func (db *DB) RemoveUserUserAttributeByPluginIDAndSourceUserID(
 	return nil
 }
 
-func (db *DB) RemoveUserUserAttributeBySourceUserAttributeID(
+func (db *DB) RemoveUserUserAttributesBySourceUserAttributeID(
 	ctx context.Context, sourceUserAttributeID entry.UserAttributeID,
 ) error {
 	res, err := db.conn.Exec(
-		ctx, removeUserUserAttributesByPluginIDAndNameAndSourceUserIDQuery,
+		ctx, removeUserUserAttributesBySourceUserAttributeIDQuery,
 		sourceUserAttributeID.PluginID, sourceUserAttributeID.Name, sourceUserAttributeID.UserID,
 	)
 	if err != nil {
@@ -422,7 +422,7 @@ func (db *DB) RemoveUserUserAttributeBySourceUserAttributeID(
 	return nil
 }
 
-func (db *DB) RemoveUserUserAttributeByPluginIDAndTargetUserID(
+func (db *DB) RemoveUserUserAttributesByPluginIDAndTargetUserID(
 	ctx context.Context, pluginID uuid.UUID, targetUserID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeUserUserAttributesByPluginIDAndTargetUserIDQuery, pluginID, targetUserID)
@@ -435,11 +435,11 @@ func (db *DB) RemoveUserUserAttributeByPluginIDAndTargetUserID(
 	return nil
 }
 
-func (db *DB) RemoveUserUserAttributeByTargetUserAttributeID(
+func (db *DB) RemoveUserUserAttributesByTargetUserAttributeID(
 	ctx context.Context, targetUserAttributeID entry.UserAttributeID,
 ) error {
 	res, err := db.conn.Exec(
-		ctx, removeUserUserAttributesByPluginIDAndNameAndTargetUserIDQuery,
+		ctx, removeUserUserAttributesByTargetUserAttributeIDQuery,
 		targetUserAttributeID.PluginID, targetUserAttributeID.Name, targetUserAttributeID.UserID,
 	)
 	if err != nil {
@@ -450,7 +450,7 @@ func (db *DB) RemoveUserUserAttributeByTargetUserAttributeID(
 	}
 	return nil
 }
-func (db *DB) RemoveUserUserAttributeByPluginIDAndSourceUserIDAndTargetUserID(
+func (db *DB) RemoveUserUserAttributesByPluginIDAndSourceUserIDAndTargetUserID(
 	ctx context.Context, pluginId uuid.UUID, sourceUserID uuid.UUID, targetUserID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(
