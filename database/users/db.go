@@ -24,6 +24,7 @@ const (
          						                	WHERE plugin_id = '86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8'
          						                    AND attribute_name = 'wallet'
          						                    AND value->'wallet' ? $1);`
+	getUserByNameQuery          = `SELECT * FROM "user" WHERE profile->'name' ? $1;`
 	getUserProfileByUserIDQuery = `SELECT profile FROM "user" WHERE user_id = $1;`
 
 	removeUserByIDQuery   = `DELETE FROM "user" WHERE user_id = $1;`
@@ -75,6 +76,14 @@ func (db *DB) GetUsersByIDs(ctx context.Context, userIDs []uuid.UUID) ([]*entry.
 func (db *DB) GetUserByWallet(ctx context.Context, wallet string) (*entry.User, error) {
 	var user entry.User
 	if err := pgxscan.Get(ctx, db.conn, &user, getUserByWalletQuery, wallet); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return &user, nil
+}
+
+func (db *DB) GetUserByName(ctx context.Context, name string) (*entry.User, error) {
+	var user entry.User
+	if err := pgxscan.Get(ctx, db.conn, &user, getUserByNameQuery, name); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return &user, nil
