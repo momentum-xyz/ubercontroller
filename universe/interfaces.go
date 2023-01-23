@@ -329,7 +329,7 @@ type Assets3d interface {
 	AddAssets3d(assets3d []Asset3d, updateDB bool) error
 	RemoveAsset3d(asset3d Asset3d, updateDB bool) (bool, error)
 	RemoveAssets3d(assets3d []Asset3d, updateDB bool) (bool, error)
-	RemoveAssets3dByID(assets3dID uuid.UUID, updateDB bool) (bool, error)
+	RemoveAsset3dByID(assets3dID uuid.UUID, updateDB bool) (bool, error)
 	RemoveAssets3dByIDs(assets3dIDs []uuid.UUID, updateDB bool) (bool, error)
 }
 

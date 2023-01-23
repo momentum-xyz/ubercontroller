@@ -24,6 +24,57 @@ func newSpaceAttributes(space *Object) *spaceAttributes {
 	}
 }
 
+func (sa *spaceAttributes) Load() error {
+	entries, err := sa.space.db.GetObjectAttributesDB().GetObjectAttributesByObjectID(sa.space.ctx, sa.space.GetID())
+	if err != nil {
+		return errors.WithMessage(err, "failed to get space attributes")
+	}
+
+	for i := range entries {
+		if _, err := sa.Upsert(
+			entries[i].AttributeID, modify.MergeWith(entries[i].AttributePayload), false,
+		); err != nil {
+			return errors.WithMessagef(err, "failed to upsert space attribute: %+v", entries[i].AttributeID)
+		}
+
+		effectiveOptions, ok := sa.GetEffectiveOptions(entries[i].AttributeID)
+		if !ok {
+			// QUESTION: why our "attribute_type.attribute_name" is not a foreign key in database?
+			sa.space.log.Warnf(
+				"Object: loadSpaceAttributes: failed to get space attribute effective options: %+v",
+				entries[i].ObjectAttributeID,
+			)
+			continue
+		}
+		autoOption, err := unity.GetOptionAutoOption(entries[i].AttributeID, effectiveOptions)
+		if err != nil {
+			return errors.WithMessagef(err, "failed to get option auto option: %+v", entries[i])
+		}
+		sa.space.UpdateAutoTextureMap(autoOption, entries[i].Value)
+	}
+
+	sa.space.log.Debugf("Object attributes loaded: %s: %d", sa.space.GetID(), sa.Len())
+
+	return nil
+}
+
+func (sa *spaceAttributes) Save() error {
+	sa.space.Mu.RLock()
+	defer sa.space.Mu.RUnlock()
+
+	attributes := make([]*entry.ObjectAttribute, 0, len(sa.data))
+
+	for id, payload := range sa.data {
+		attributes = append(attributes, entry.NewObjectAttribute(entry.NewObjectAttributeID(id, sa.space.GetID()), payload))
+	}
+
+	if err := sa.space.db.GetObjectAttributesDB().UpsertObjectAttributes(sa.space.ctx, attributes); err != nil {
+		return errors.WithMessage(err, "failed to upsert object attributes")
+	}
+
+	return nil
+}
+
 func (sa *spaceAttributes) GetPayload(attributeID entry.AttributeID) (*entry.AttributePayload, bool) {
 	sa.space.Mu.RLock()
 	defer sa.space.Mu.RUnlock()
@@ -288,41 +339,6 @@ func (s *Object) calendarOnSpaceAttributeChanged(
 	default:
 		return errors.Errorf("unsupported change type: %s", changeType)
 	}
-
-	return nil
-}
-
-func (s *Object) loadSpaceAttributes() error {
-	entries, err := s.db.GetObjectAttributesDB().GetObjectAttributesByObjectID(s.ctx, s.GetID())
-	if err != nil {
-		return errors.WithMessage(err, "failed to get space attributes")
-	}
-
-	attributes := s.GetObjectAttributes()
-	for i := range entries {
-		if _, err := attributes.Upsert(
-			entries[i].AttributeID, modify.MergeWith(entries[i].AttributePayload), false,
-		); err != nil {
-			return errors.WithMessagef(err, "failed to upsert space attribute: %+v", entries[i].AttributeID)
-		}
-
-		effectiveOptions, ok := attributes.GetEffectiveOptions(entries[i].AttributeID)
-		if !ok {
-			// QUESTION: why our "attribute_type.attribute_name" is not a foreign key in database?
-			s.log.Warnf(
-				"Object: loadSpaceAttributes: failed to get space attribute effective options: %+v",
-				entries[i].ObjectAttributeID,
-			)
-			continue
-		}
-		autoOption, err := unity.GetOptionAutoOption(entries[i].AttributeID, effectiveOptions)
-		if err != nil {
-			return errors.WithMessagef(err, "failed to get option auto option: %+v", entries[i])
-		}
-		s.UpdateAutoTextureMap(autoOption, entries[i].Value)
-	}
-
-	s.log.Debugf("Object attributes loaded: %s: %d", s.GetID(), attributes.Len())
 
 	return nil
 }

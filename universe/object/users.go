@@ -77,12 +77,12 @@ func (s *Object) AddUser(user universe.User, updateDB bool) error {
 	return nil
 }
 
-func (s *Object) RemoveUser(user universe.User, updateDB bool) error {
+func (s *Object) RemoveUser(user universe.User, updateDB bool) (bool, error) {
 	s.Users.Mu.Lock()
 	defer s.Users.Mu.Unlock()
 
 	if user.GetWorld().GetID() != s.GetWorld().GetID() {
-		return errors.Errorf("worlds mismatch: %s != %s", user.GetWorld().GetID(), s.GetWorld().GetID())
+		return false, nil
 	}
 
 	if updateDB {
@@ -92,7 +92,7 @@ func (s *Object) RemoveUser(user universe.User, updateDB bool) error {
 	user.SetObject(nil)
 	delete(s.Users.Data, user.GetID())
 	s.sendSpaceEnterLeaveStats(user, 1)
-	return nil
+	return true, nil
 }
 
 func (s *Object) SendToUser(userID uuid.UUID, msg *websocket.PreparedMessage, recursive bool) error {

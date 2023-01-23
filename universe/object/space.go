@@ -439,14 +439,7 @@ func (s *Object) LoadFromEntry(entry *entry.Object, recursive bool) error {
 	}
 
 	group, _ := errgroup.WithContext(s.ctx)
-	group.Go(
-		func() error {
-			if err := s.loadSpaceAttributes(); err != nil {
-				return errors.WithMessage(err, "failed to load space attributes")
-			}
-			return nil
-		},
-	)
+	group.Go(s.GetObjectAttributes().Load)
 	group.Go(
 		func() error {
 			if err := s.loadSelfData(entry); err != nil {

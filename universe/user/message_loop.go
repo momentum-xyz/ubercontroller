@@ -132,7 +132,7 @@ func (u *User) InteractionHandler(m *posbus.TriggerInteraction) error {
 				errors.Errorf("space not found: %s", targetUUID), "failed to handle: left space",
 			)
 		}
-		if err := space.RemoveUser(u, true); err != nil {
+		if _, err := space.RemoveUser(u, true); err != nil {
 			return errors.WithMessage(
 				errors.Errorf("failed to remove user from space: %s", targetUUID), "failed to handle: left space",
 			)

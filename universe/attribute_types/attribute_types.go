@@ -117,33 +117,33 @@ func (a *AttributeTypes) AddAttributeTypes(attributeTypes []universe.AttributeTy
 }
 
 // TODO: update node/space attributes
-func (a *AttributeTypes) RemoveAttributeType(attributeType universe.AttributeType, updateDB bool) error {
+func (a *AttributeTypes) RemoveAttributeType(attributeType universe.AttributeType, updateDB bool) (bool, error) {
 	a.attributeTypes.Mu.Lock()
 	defer a.attributeTypes.Mu.Unlock()
 
 	if _, ok := a.attributeTypes.Data[attributeType.GetID()]; !ok {
-		return errors.Errorf("attribute type not found")
+		return false, nil
 	}
 
 	if updateDB {
 		if err := a.db.GetAttributeTypesDB().RemoveAttributeTypeByID(a.ctx, attributeType.GetID()); err != nil {
-			return errors.WithMessage(err, "failed to update db")
+			return false, errors.WithMessage(err, "failed to update db")
 		}
 	}
 
 	delete(a.attributeTypes.Data, attributeType.GetID())
 
-	return nil
+	return true, nil
 }
 
 // TODO: update node/space attributes
-func (a *AttributeTypes) RemoveAttributeTypes(attributeTypes []universe.AttributeType, updateDB bool) error {
+func (a *AttributeTypes) RemoveAttributeTypes(attributeTypes []universe.AttributeType, updateDB bool) (bool, error) {
 	a.attributeTypes.Mu.Lock()
 	defer a.attributeTypes.Mu.Unlock()
 
 	for i := range attributeTypes {
 		if _, ok := a.attributeTypes.Data[attributeTypes[i].GetID()]; !ok {
-			return errors.Errorf("attribute type not found: %s", attributeTypes[i].GetID())
+			return false, nil
 		}
 	}
 
@@ -153,7 +153,7 @@ func (a *AttributeTypes) RemoveAttributeTypes(attributeTypes []universe.Attribut
 			ids[i] = attributeTypes[i].GetID()
 		}
 		if err := a.db.GetAttributeTypesDB().RemoveAttributeTypesByIDs(a.ctx, ids); err != nil {
-			return errors.WithMessage(err, "failed to update db")
+			return false, errors.WithMessage(err, "failed to update db")
 		}
 	}
 
@@ -161,7 +161,7 @@ func (a *AttributeTypes) RemoveAttributeTypes(attributeTypes []universe.Attribut
 		delete(a.attributeTypes.Data, attributeTypes[i].GetID())
 	}
 
-	return nil
+	return true, nil
 }
 
 func (a *AttributeTypes) Load() error {

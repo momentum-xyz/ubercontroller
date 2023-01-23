@@ -115,32 +115,32 @@ func (s *SpaceTypes) AddObjectTypes(spaceTypes []universe.ObjectType, updateDB b
 	return nil
 }
 
-func (s *SpaceTypes) RemoveObjectType(spaceType universe.ObjectType, updateDB bool) error {
+func (s *SpaceTypes) RemoveObjectType(spaceType universe.ObjectType, updateDB bool) (bool, error) {
 	s.spaceTypes.Mu.Lock()
 	defer s.spaceTypes.Mu.Unlock()
 
 	if _, ok := s.spaceTypes.Data[spaceType.GetID()]; !ok {
-		return errors.Errorf("space type not found")
+		return false, nil
 	}
 
 	if updateDB {
 		if err := s.db.GetObjectTypesDB().RemoveObjectTypeByID(s.ctx, spaceType.GetID()); err != nil {
-			return errors.WithMessage(err, "failed to update db")
+			return false, errors.WithMessage(err, "failed to update db")
 		}
 	}
 
 	delete(s.spaceTypes.Data, spaceType.GetID())
 
-	return nil
+	return true, nil
 }
 
-func (s *SpaceTypes) RemoveObjectTypes(spaceTypes []universe.ObjectType, updateDB bool) error {
+func (s *SpaceTypes) RemoveObjectTypes(spaceTypes []universe.ObjectType, updateDB bool) (bool, error) {
 	s.spaceTypes.Mu.Lock()
 	defer s.spaceTypes.Mu.Unlock()
 
 	for i := range spaceTypes {
 		if _, ok := s.spaceTypes.Data[spaceTypes[i].GetID()]; !ok {
-			return errors.Errorf("space type not found: %s", spaceTypes[i].GetID())
+			return false, nil
 		}
 	}
 
@@ -150,7 +150,7 @@ func (s *SpaceTypes) RemoveObjectTypes(spaceTypes []universe.ObjectType, updateD
 			ids[i] = spaceTypes[i].GetID()
 		}
 		if err := s.db.GetObjectTypesDB().RemoveObjectTypesByIDs(s.ctx, ids); err != nil {
-			return errors.WithMessage(err, "failed to update db")
+			return false, errors.WithMessage(err, "failed to update db")
 		}
 	}
 
@@ -158,7 +158,7 @@ func (s *SpaceTypes) RemoveObjectTypes(spaceTypes []universe.ObjectType, updateD
 		delete(s.spaceTypes.Data, spaceTypes[i].GetID())
 	}
 
-	return nil
+	return true, nil
 }
 
 func (s *SpaceTypes) Load() error {

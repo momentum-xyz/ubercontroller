@@ -138,12 +138,12 @@ func (w *Worlds) AddWorlds(worlds []universe.World, updateDB bool) error {
 }
 
 // TODO: introduce "helper.RemoveWorld()" method and fix this one
-func (w *Worlds) RemoveWorld(world universe.World, updateDB bool) error {
+func (w *Worlds) RemoveWorld(world universe.World, updateDB bool) (bool, error) {
 	w.worlds.Mu.Lock()
 	defer w.worlds.Mu.Unlock()
 
 	if _, ok := w.worlds.Data[world.GetID()]; !ok {
-		return errors.Errorf("world not found")
+		return false, nil
 	}
 
 	if updateDB {
@@ -153,23 +153,23 @@ func (w *Worlds) RemoveWorld(world universe.World, updateDB bool) error {
 			ids = append(ids, space.GetID())
 		}
 		if err := w.db.GetObjectsDB().RemoveObjectsByIDs(w.ctx, ids); err != nil {
-			return errors.WithMessage(err, "failed to remove spaces by ids")
+			return false, errors.WithMessage(err, "failed to remove spaces by ids")
 		}
 	}
 
 	delete(w.worlds.Data, world.GetID())
 
-	return nil
+	return true, nil
 }
 
 // TODO: introduce "helper.RemoveWorld()" method and fix this one
-func (w *Worlds) RemoveWorlds(worlds []universe.World, updateDB bool) error {
+func (w *Worlds) RemoveWorlds(worlds []universe.World, updateDB bool) (bool, error) {
 	w.worlds.Mu.Lock()
 	defer w.worlds.Mu.Unlock()
 
 	for i := range worlds {
 		if _, ok := w.worlds.Data[worlds[i].GetID()]; !ok {
-			return errors.Errorf("world not found: %s", worlds[i].GetID())
+			return false, nil
 		}
 	}
 
@@ -193,7 +193,7 @@ func (w *Worlds) RemoveWorlds(worlds []universe.World, updateDB bool) error {
 			})
 		}
 		if err := group.Wait(); err != nil {
-			return errors.WithMessage(err, "failed to update db")
+			return false, errors.WithMessage(err, "failed to update db")
 		}
 	}
 
@@ -201,7 +201,7 @@ func (w *Worlds) RemoveWorlds(worlds []universe.World, updateDB bool) error {
 		delete(w.worlds.Data, worlds[i].GetID())
 	}
 
-	return nil
+	return true, nil
 }
 
 func (w *Worlds) Run() error {

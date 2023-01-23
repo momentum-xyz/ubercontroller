@@ -23,6 +23,44 @@ func newNodeAttributes(node *Node) *nodeAttributes {
 	}
 }
 
+func (na *nodeAttributes) Load() error {
+	na.node.log.Infof("Loading node attributes: %s...", na.node.GetID())
+
+	entries, err := na.node.db.GetNodeAttributesDB().GetNodeAttributes(na.node.ctx)
+	if err != nil {
+		return errors.WithMessage(err, "failed to get node attributes")
+	}
+
+	for i := range entries {
+		if _, err := na.Upsert(
+			entries[i].AttributeID, modify.MergeWith(entries[i].AttributePayload), false,
+		); err != nil {
+			return errors.WithMessagef(err, "failed to upsert node attribute: %+v", entries[i].NodeAttributeID)
+		}
+	}
+
+	na.node.log.Infof("Node attributes loaded: %s: %d", na.node.GetID(), na.Len())
+
+	return nil
+}
+
+func (na *nodeAttributes) Save() error {
+	na.node.Mu.RLock()
+	defer na.node.Mu.RUnlock()
+
+	attributes := make([]*entry.NodeAttribute, 0, len(na.data))
+
+	for id, payload := range na.data {
+		attributes = append(attributes, entry.NewNodeAttribute(entry.NewNodeAttributeID(id), payload))
+	}
+
+	if err := na.node.db.GetNodeAttributesDB().UpsertNodeAttributes(na.node.ctx, attributes); err != nil {
+		return errors.WithMessage(err, "failed to upsert node attributes")
+	}
+
+	return nil
+}
+
 func (na *nodeAttributes) GetPayload(attributeID entry.AttributeID) (*entry.AttributePayload, bool) {
 	na.node.Mu.RLock()
 	defer na.node.Mu.RUnlock()
@@ -190,26 +228,4 @@ func (na *nodeAttributes) Len() int {
 	defer na.node.Mu.RUnlock()
 
 	return len(na.data)
-}
-
-func (n *Node) loadNodeAttributes() error {
-	n.log.Infof("Loading node attributes: %s...", n.GetID())
-
-	entries, err := n.db.GetNodeAttributesDB().GetNodeAttributes(n.ctx)
-	if err != nil {
-		return errors.WithMessage(err, "failed to get node attributes")
-	}
-
-	attributes := n.GetNodeAttributes()
-	for i := range entries {
-		if _, err := attributes.Upsert(
-			entries[i].AttributeID, modify.MergeWith(entries[i].AttributePayload), false,
-		); err != nil {
-			return errors.WithMessagef(err, "failed to upsert node attribute: %+v", entries[i].NodeAttributeID)
-		}
-	}
-
-	n.log.Infof("Node attributes loaded: %s: %d", n.GetID(), attributes.Len())
-
-	return nil
 }

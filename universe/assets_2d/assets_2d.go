@@ -115,32 +115,32 @@ func (a *Assets2d) AddAssets2d(assets2d []universe.Asset2d, updateDB bool) error
 	return nil
 }
 
-func (a *Assets2d) RemoveAsset2d(asset2d universe.Asset2d, updateDB bool) error {
+func (a *Assets2d) RemoveAsset2d(asset2d universe.Asset2d, updateDB bool) (bool, error) {
 	a.assets.Mu.Lock()
 	defer a.assets.Mu.Unlock()
 
 	if _, ok := a.assets.Data[asset2d.GetID()]; !ok {
-		return errors.Errorf("asset 2d not found")
+		return false, nil
 	}
 
 	if updateDB {
 		if err := a.db.GetAssets2dDB().RemoveAssetByID(a.ctx, asset2d.GetID()); err != nil {
-			return errors.WithMessage(err, "failed to update db")
+			return false, errors.WithMessage(err, "failed to update db")
 		}
 	}
 
 	delete(a.assets.Data, asset2d.GetID())
 
-	return nil
+	return true, nil
 }
 
-func (a *Assets2d) RemoveAssets2d(assets2d []universe.Asset2d, updateDB bool) error {
+func (a *Assets2d) RemoveAssets2d(assets2d []universe.Asset2d, updateDB bool) (bool, error) {
 	a.assets.Mu.Lock()
 	defer a.assets.Mu.Unlock()
 
 	for i := range assets2d {
 		if _, ok := a.assets.Data[assets2d[i].GetID()]; !ok {
-			return errors.Errorf("asset 2d not found: %s", assets2d[i].GetID())
+			return false, nil
 		}
 	}
 
@@ -150,7 +150,7 @@ func (a *Assets2d) RemoveAssets2d(assets2d []universe.Asset2d, updateDB bool) er
 			ids[i] = assets2d[i].GetID()
 		}
 		if err := a.db.GetAssets2dDB().RemoveAssetsByIDs(a.ctx, ids); err != nil {
-			return errors.WithMessage(err, "failed to update db")
+			return false, errors.WithMessage(err, "failed to update db")
 		}
 	}
 
@@ -158,7 +158,7 @@ func (a *Assets2d) RemoveAssets2d(assets2d []universe.Asset2d, updateDB bool) er
 		delete(a.assets.Data, assets2d[i].GetID())
 	}
 
-	return nil
+	return true, nil
 }
 
 func (a *Assets2d) Load() error {

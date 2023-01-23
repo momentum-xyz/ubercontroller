@@ -68,7 +68,7 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 	return err
 }
 
-func (w *World) RemoveUser(user universe.User, updateDB bool) error {
+func (w *World) RemoveUser(user universe.User, updateDB bool) (bool, error) {
 	w.Users.Mu.Lock()
 	defer w.Users.Mu.Unlock()
 
@@ -83,14 +83,19 @@ func (w *World) GetUserSpawnPosition(userID uuid.UUID) cmath.Vec3 {
 	return cmath.Vec3{X: 40, Y: 40, Z: 40}
 }
 
-func (w *World) noLockRemoveUser(user universe.User, updateDB bool) error {
+func (w *World) noLockRemoveUser(user universe.User, updateDB bool) (bool, error) {
 	if user.GetWorld().GetID() != w.GetID() {
-		return errors.Errorf("worlds mismatch: %s != %s", user.GetWorld().GetID(), w.GetID())
+		return false, errors.Errorf("worlds mismatch: %s != %s", user.GetWorld().GetID(), w.GetID())
 	}
-	user.SetWorld(nil)
-	delete(w.Users.Data, user.GetID())
 
+	if _, ok := w.Users.Data[user.GetID()]; !ok {
+		return false, nil
+	}
+
+	user.SetWorld(nil)
 	user.Stop()
+
+	delete(w.Users.Data, user.GetID())
 
 	// clean up all locks hold by this user,
 	// temporarily here.
@@ -103,7 +108,7 @@ func (w *World) noLockRemoveUser(user universe.User, updateDB bool) error {
 		}
 	}
 
-	return nil
+	return true, nil
 }
 
 func (w *World) initializeUnity(user universe.User) error {

@@ -261,7 +261,7 @@ func (n *Node) Load() error {
 					return errors.WithMessage(err, "failed to load node from entry")
 				}
 
-				if err := n.loadNodeAttributes(); err != nil {
+				if err := n.GetNodeAttributes().Load(); err != nil {
 					return errors.WithMessage(err, "failed to load node attributes")
 				}
 
