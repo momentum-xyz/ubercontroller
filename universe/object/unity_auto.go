@@ -10,7 +10,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/common/unity"
 )
 
-func (s *Object) unityAutoOnSpaceAttributeChanged(
+func (s *Object) unityAutoOnObjectAttributeChanged(
 	changeType universe.AttributeChangeType,
 	attributeID entry.AttributeID,
 	value *entry.AttributeValue,
@@ -38,8 +38,8 @@ func (s *Object) unityAutoOnSpaceAttributeChanged(
 	// TODO: fix it properly later
 	if hash != nil && hash.Hash != "" {
 		return func() error {
-			s.spaceAttributes.space.Mu.Lock()
-			defer s.spaceAttributes.space.Mu.Unlock()
+			s.objectAttributes.object.Mu.Lock()
+			defer s.objectAttributes.object.Mu.Unlock()
 
 			(*value)["auto_render_hash"] = hash.Hash
 

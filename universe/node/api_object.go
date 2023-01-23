@@ -200,7 +200,7 @@ func (n *Node) apiRemoveSpace(c *gin.Context) {
 		return
 	}
 
-	removed, err := helper.RemoveSpaceFromParent(space.GetParent(), space, true)
+	removed, err := helper.RemoveObjectFromParent(space.GetParent(), space, true)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiRemoveSpace: failed to remove space from parent")
 		api.AbortRequest(c, http.StatusInternalServerError, "remove_failed", err, n.log)

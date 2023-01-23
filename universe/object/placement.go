@@ -140,11 +140,11 @@ func (s *Object) UpdateChildrenPosition(recursive bool) error {
 
 	for _, child := range s.Children.Data {
 		if child.GetPosition() == nil {
-			spaceTypeID := child.GetObjectType().GetID()
-			if _, ok := pls[spaceTypeID]; !ok {
-				spaceTypeID = uuid.Nil
+			objectTypeID := child.GetObjectType().GetID()
+			if _, ok := pls[objectTypeID]; !ok {
+				objectTypeID = uuid.Nil
 			}
-			ChildMap[spaceTypeID] = append(ChildMap[spaceTypeID], child.GetID())
+			ChildMap[objectTypeID] = append(ChildMap[objectTypeID], child.GetID())
 		}
 	}
 	//fmt.Println("pls3", s.GetID(), ChildMap)
@@ -161,7 +161,7 @@ func (s *Object) UpdateChildrenPosition(recursive bool) error {
 			child, ok := s.Children.Data[k]
 			//fmt.Println(ok)
 			if !ok {
-				s.log.Errorf("Object: UpdatePosition: failed to get space: %s", k)
+				s.log.Errorf("Object: UpdatePosition: failed to get object: %s", k)
 				continue
 			}
 			if err := child.SetActualPosition(pos, theta); err != nil {

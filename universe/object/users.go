@@ -32,7 +32,7 @@ func (s *Object) GetUser(userID uuid.UUID, recursive bool) (universe.User, bool)
 }
 
 // GetUsers return map with all nested users if recursive is true,
-// otherwise the method return map with users dependent only to current space.
+// otherwise the method return map with users dependent only to current object.
 func (s *Object) GetUsers(recursive bool) map[uuid.UUID]universe.User {
 	s.Users.Mu.RLock()
 	users := make(map[uuid.UUID]universe.User, len(s.Users.Data))
@@ -48,8 +48,8 @@ func (s *Object) GetUsers(recursive bool) map[uuid.UUID]universe.User {
 	s.Children.Mu.RLock()
 	defer s.Children.Mu.RUnlock()
 
-	for _, space := range s.Children.Data {
-		for id, user := range space.GetUsers(recursive) {
+	for _, child := range s.Children.Data {
+		for id, user := range child.GetUsers(recursive) {
 			users[id] = user
 		}
 	}
@@ -72,7 +72,7 @@ func (s *Object) AddUser(user universe.User, updateDB bool) error {
 
 	user.SetObject(s)
 	s.Users.Data[user.GetID()] = user
-	s.sendSpaceEnterLeaveStats(user, 1)
+	s.sendObjectEnterLeaveStats(user, 1)
 
 	return nil
 }
@@ -91,7 +91,7 @@ func (s *Object) RemoveUser(user universe.User, updateDB bool) (bool, error) {
 
 	user.SetObject(nil)
 	delete(s.Users.Data, user.GetID())
-	s.sendSpaceEnterLeaveStats(user, 1)
+	s.sendObjectEnterLeaveStats(user, 1)
 	return true, nil
 }
 

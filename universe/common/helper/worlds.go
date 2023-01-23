@@ -10,23 +10,23 @@ import (
 )
 
 type WorldTemplate struct {
-	SpaceTemplate
+	ObjectTemplate
 }
 
 func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (uuid.UUID, error) {
 	node := universe.GetNode()
 
 	// loading
-	worldSpaceType, ok := node.GetObjectTypes().GetObjectType(worldTemplate.SpaceTypeID)
+	worldObjectType, ok := node.GetObjectTypes().GetObjectType(worldTemplate.ObjectTypeID)
 	if !ok {
-		return uuid.Nil, errors.Errorf("failed to get world space type: %s", worldTemplate.SpaceTypeID)
+		return uuid.Nil, errors.Errorf("failed to get world object type: %s", worldTemplate.ObjectTypeID)
 	}
 
-	worldID := worldTemplate.SpaceID
+	worldID := worldTemplate.ObjectID
 	if worldID == nil {
 		worldID = utils.GetPTR(uuid.New())
 	}
-	worldName := worldTemplate.SpaceName
+	worldName := worldTemplate.ObjectName
 	if worldName == nil {
 		worldName = utils.GetPTR(worldID.String())
 	}
@@ -40,8 +40,8 @@ func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (uuid.UUI
 	if err := world.SetOwnerID(*worldTemplate.OwnerID, false); err != nil {
 		return uuid.Nil, errors.WithMessagef(err, "failed to set owner: %s", worldTemplate.OwnerID)
 	}
-	if err := world.SetObjectType(worldSpaceType, false); err != nil {
-		return uuid.Nil, errors.WithMessagef(err, "failed to set space type: %s", worldTemplate.SpaceTypeID)
+	if err := world.SetObjectType(worldObjectType, false); err != nil {
+		return uuid.Nil, errors.WithMessagef(err, "failed to set space type: %s", worldTemplate.ObjectTypeID)
 	}
 
 	// saving in database
@@ -57,18 +57,18 @@ func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (uuid.UUI
 	}
 
 	// adding children
-	spaceLabelToID := make(map[string]uuid.UUID)
-	for i := range worldTemplate.Spaces {
-		worldTemplate.Spaces[i].ParentID = *worldID
-		spaceID, err := AddSpaceFromTemplate(worldTemplate.Spaces[i], updateDB)
+	objectLabelToID := make(map[string]uuid.UUID)
+	for i := range worldTemplate.Children {
+		worldTemplate.Children[i].ParentID = *worldID
+		objectID, err := AddObjectFromTemplate(worldTemplate.Children[i], updateDB)
 		if err != nil {
 			return uuid.Nil, errors.WithMessagef(
-				err, "failed to add space from template: %+v", worldTemplate.Spaces[i],
+				err, "failed to add object from template: %+v", worldTemplate.Children[i],
 			)
 		}
 
-		if worldTemplate.Spaces[i].Label != nil {
-			spaceLabelToID[*worldTemplate.Spaces[i].Label] = spaceID
+		if worldTemplate.Children[i].Label != nil {
+			objectLabelToID[*worldTemplate.Children[i].Label] = objectID
 		}
 	}
 
@@ -80,31 +80,31 @@ func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (uuid.UUI
 		return uuid.Nil, errors.WithMessage(err, "failed to set world name")
 	}
 
-	worldTemplate.SpaceAttributes = append(
-		worldTemplate.SpaceAttributes,
+	worldTemplate.ObjectAttributes = append(
+		worldTemplate.ObjectAttributes,
 		entry.NewAttribute(
 			entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.World.Settings.Name),
 			entry.NewAttributePayload(
 				&entry.AttributeValue{
-					"kind":        "basic",
-					"spaces":      spaceLabelToID,
-					"attributes":  map[string]any{},
-					"space_types": map[string]any{},
-					"effects":     map[string]any{},
+					"kind":         "basic",
+					"objects":      objectLabelToID,
+					"attributes":   map[string]any{},
+					"object_types": map[string]any{},
+					"effects":      map[string]any{},
 				},
 				nil,
 			),
 		),
 	)
 
-	for i := range worldTemplate.SpaceAttributes {
+	for i := range worldTemplate.ObjectAttributes {
 		if _, err := world.GetObjectAttributes().Upsert(
-			worldTemplate.SpaceAttributes[i].AttributeID,
-			modify.MergeWith(worldTemplate.SpaceAttributes[i].AttributePayload),
+			worldTemplate.ObjectAttributes[i].AttributeID,
+			modify.MergeWith(worldTemplate.ObjectAttributes[i].AttributePayload),
 			updateDB,
 		); err != nil {
 			return uuid.Nil, errors.WithMessagef(
-				err, "failed to upsert world space attribute: %+v", worldTemplate.SpaceAttributes[i],
+				err, "failed to upsert world space attribute: %+v", worldTemplate.ObjectAttributes[i],
 			)
 		}
 	}

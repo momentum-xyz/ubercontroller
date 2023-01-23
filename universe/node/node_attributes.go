@@ -49,7 +49,6 @@ func (na *nodeAttributes) Save() error {
 	defer na.node.Mu.RUnlock()
 
 	attributes := make([]*entry.NodeAttribute, 0, len(na.data))
-
 	for id, payload := range na.data {
 		attributes = append(attributes, entry.NewNodeAttribute(entry.NewNodeAttributeID(id), payload))
 	}

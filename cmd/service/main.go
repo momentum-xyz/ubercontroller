@@ -26,8 +26,8 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/attribute_types"
 	"github.com/momentum-xyz/ubercontroller/universe/common"
 	"github.com/momentum-xyz/ubercontroller/universe/node"
+	"github.com/momentum-xyz/ubercontroller/universe/object_types"
 	"github.com/momentum-xyz/ubercontroller/universe/plugins"
-	"github.com/momentum-xyz/ubercontroller/universe/space_types"
 	"github.com/momentum-xyz/ubercontroller/universe/user_types"
 	"github.com/momentum-xyz/ubercontroller/universe/worlds"
 	"github.com/momentum-xyz/ubercontroller/utils"
@@ -130,7 +130,7 @@ func createNode(ctx context.Context, db database.DB) (universe.Node, error) {
 	assets2d := assets_2d.NewAssets2d(db)
 	assets3d := assets_3d.NewAssets3d(db)
 	plugins := plugins.NewPlugins(db)
-	spaceTypes := space_types.NewSpaceTypes(db)
+	objectTypes := object_types.NewObjectTypes(db)
 	userTypes := user_types.NewUserTypes(db)
 	attributeTypes := attribute_types.NewAttributeTypes(db)
 
@@ -146,7 +146,7 @@ func createNode(ctx context.Context, db database.DB) (universe.Node, error) {
 		assets2d,
 		assets3d,
 		plugins,
-		spaceTypes,
+		objectTypes,
 		userTypes,
 		attributeTypes,
 	)
@@ -161,7 +161,7 @@ func createNode(ctx context.Context, db database.DB) (universe.Node, error) {
 	if err := assets3d.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize assets 3d")
 	}
-	if err := spaceTypes.Initialize(ctx); err != nil {
+	if err := objectTypes.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize space types")
 	}
 	if err := userTypes.Initialize(ctx); err != nil {

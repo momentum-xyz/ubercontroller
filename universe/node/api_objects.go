@@ -27,8 +27,8 @@ import (
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/spaces [post]
 func (n *Node) apiSpacesCreateSpace(c *gin.Context) {
-	// TODO: use "helper.SpaceTemplate" alternative here to have ability to create composite objects
-	// QUESTION: can we automatically clone "helper.SpaceTemplate" definition and add validation tags to it?
+	// TODO: use "helper.ObjectTemplate" alternative here to have ability to create composite objects
+	// QUESTION: can we automatically clone "helper.ObjectTemplate" definition and add validation tags to it?
 	type InBody struct {
 		SpaceName   string               `json:"space_name" binding:"required"`
 		ParentID    string               `json:"parent_id" binding:"required"`
@@ -74,7 +74,7 @@ func (n *Node) apiSpacesCreateSpace(c *gin.Context) {
 
 	position := inBody.Position
 	if position == nil {
-		position, err = helper.CalcSpaceSpawnPosition(parentID, userID)
+		position, err = helper.CalcObjectSpawnPosition(parentID, userID)
 		if err != nil {
 			err := errors.WithMessage(err, "Node: apiSpacesCreateSpace: failed to calc space spawn position")
 			api.AbortRequest(c, http.StatusBadRequest, "calc_spawn_position_failed", err, n.log)
@@ -111,17 +111,17 @@ func (n *Node) apiSpacesCreateSpace(c *gin.Context) {
 		asset3dID = &assetID
 	}
 
-	spaceTemplate := helper.SpaceTemplate{
-		SpaceName:   &inBody.SpaceName,
-		SpaceTypeID: spaceTypeID,
-		ParentID:    parentID,
-		OwnerID:     &userID,
-		Asset2dID:   asset2dID,
-		Asset3dID:   asset3dID,
-		Position:    position,
+	spaceTemplate := helper.ObjectTemplate{
+		ObjectName:   &inBody.SpaceName,
+		ObjectTypeID: spaceTypeID,
+		ParentID:     parentID,
+		OwnerID:      &userID,
+		Asset2dID:    asset2dID,
+		Asset3dID:    asset3dID,
+		Position:     position,
 	}
 
-	spaceID, err := helper.AddSpaceFromTemplate(&spaceTemplate, true)
+	spaceID, err := helper.AddObjectFromTemplate(&spaceTemplate, true)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiSpacesCreateSpace: failed to add space from template")
 		api.AbortRequest(c, http.StatusInternalServerError, "add_space_failed", err, n.log)
@@ -140,7 +140,7 @@ func (n *Node) apiSpacesCreateSpace(c *gin.Context) {
 
 // TODO: it was created only for tests, fix or remove
 func (n *Node) apiSpacesCreateSpaceFromTemplate(c *gin.Context) {
-	var template helper.SpaceTemplate
+	var template helper.ObjectTemplate
 
 	if err := c.ShouldBindJSON(&template); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
@@ -149,7 +149,7 @@ func (n *Node) apiSpacesCreateSpaceFromTemplate(c *gin.Context) {
 		return
 	}
 
-	spaceID, err := helper.AddSpaceFromTemplate(&template, true)
+	spaceID, err := helper.AddObjectFromTemplate(&template, true)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),

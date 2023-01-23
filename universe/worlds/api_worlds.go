@@ -190,10 +190,10 @@ func (w *Worlds) apiWorldsGetChildrenOptions(spaces map[uuid.UUID]universe.Objec
 
 func (w *Worlds) apiWorldsResolveNameDescription(space universe.Object) (spaceName string, spaceDescription string, err error) {
 	var description string
-	descriptionAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Space.Description.Name)
+	descriptionAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Object.Description.Name)
 	descriptionValue, _ := space.GetObjectAttributes().GetValue(descriptionAttributeID)
 	if descriptionValue != nil {
-		description = utils.GetFromAnyMap(*descriptionValue, universe.ReservedAttributes.Space.Description.Name, "")
+		description = utils.GetFromAnyMap(*descriptionValue, universe.ReservedAttributes.Object.Description.Name, "")
 	}
 
 	return space.GetName(), description, nil

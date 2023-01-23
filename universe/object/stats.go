@@ -7,26 +7,26 @@ import (
 	"time"
 )
 
-func (s *Object) AddSpaceTags(prefix string, p *write.Point) *write.Point {
+func (s *Object) AddObjectTags(prefix string, p *write.Point) *write.Point {
 	if prefix != "" {
 		prefix += " "
 	}
 	p.AddTag(prefix+"Object UUID", s.GetID().String())
 	p.AddTag(prefix+"Object Name", s.GetName())
-	p.AddTag(prefix+"Object Type", s.spaceType.GetName())
-	p.AddTag(prefix+"Object Type UUID", s.spaceType.GetID().String())
+	p.AddTag(prefix+"Object Type", s.objectType.GetName())
+	p.AddTag(prefix+"Object Type UUID", s.objectType.GetID().String())
 	return p
 
 }
 
-func (s *Object) sendSpaceEnterLeaveStats(user universe.User, value int) error {
+func (s *Object) sendObjectEnterLeaveStats(user universe.User, value int) error {
 	p := influxdb2.NewPoint(
-		"space_join",
+		"object_join",
 		map[string]string{},
 		map[string]interface{}{"value": value},
 		time.Now(),
 	)
 	user.AddInfluxTags("", p)
-	s.AddSpaceTags("", p)
+	s.AddObjectTags("", p)
 	return s.world.WriteInfluxPoint(p)
 }

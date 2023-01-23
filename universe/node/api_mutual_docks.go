@@ -180,7 +180,7 @@ func (n *Node) apiUsersRemoveMutualDocks(c *gin.Context) {
 	portalsA := getWorldPortals(worldA, worldB)
 	portalsB := getWorldPortals(worldB, worldA)
 	for _, portal := range utils.MergeMaps(portalsA, portalsB) {
-		if _, err := helper.RemoveSpaceFromParent(portal.GetParent(), portal, true); err != nil {
+		if _, err := helper.RemoveObjectFromParent(portal.GetParent(), portal, true); err != nil {
 			err := errors.WithMessagef(
 				err, "Node: apiUsersRemoveMutualDocks: failed to remove portal: %s", portal.GetID(),
 			)
@@ -216,16 +216,16 @@ func createWorldPortal(portalName string, from, to universe.World) (uuid.UUID, e
 		return uuid.Nil, errors.WithMessage(err, "failed to get docking station")
 	}
 
-	portalSpaceTypeID, err := helper.GetPortalSpaceTypeID()
+	portalObjectTypeID, err := helper.GetPortalObjectTypeID()
 	if err != nil {
 		return uuid.Nil, errors.WithMessage(err, "failed to get portal space type id")
 	}
 
-	template := helper.SpaceTemplate{
-		SpaceName:   &portalName,
-		SpaceTypeID: portalSpaceTypeID,
-		ParentID:    dockingStation.GetID(),
-		SpaceAttributes: []*entry.Attribute{
+	template := helper.ObjectTemplate{
+		ObjectName:   &portalName,
+		ObjectTypeID: portalObjectTypeID,
+		ParentID:     dockingStation.GetID(),
+		ObjectAttributes: []*entry.Attribute{
 			entry.NewAttribute(
 				entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.World.TeleportDestination.Name),
 				entry.NewAttributePayload(
@@ -238,11 +238,11 @@ func createWorldPortal(portalName string, from, to universe.World) (uuid.UUID, e
 		},
 	}
 
-	return helper.AddSpaceFromTemplate(&template, true)
+	return helper.AddObjectFromTemplate(&template, true)
 }
 
 func getWorldDockingStation(world universe.World) (universe.Object, error) {
-	dockingStationID := world.GetSettings().Spaces["docking_station"]
+	dockingStationID := world.GetSettings().Objects["docking_station"]
 	dockingStation, ok := world.GetObjectFromAllObjects(dockingStationID)
 	if !ok {
 		return nil, errors.Errorf("failed to get docking station space: %s", dockingStationID)
@@ -260,8 +260,8 @@ func getWorldPortals(from, to universe.World) map[uuid.UUID]universe.Object {
 	attributeID := entry.NewAttributeID(
 		universe.GetSystemPluginID(), universe.ReservedAttributes.World.TeleportDestination.Name,
 	)
-	findPortalFn := func(spaceID uuid.UUID, space universe.Object) bool {
-		value, ok := space.GetObjectAttributes().GetValue(attributeID)
+	findPortalFn := func(objectID uuid.UUID, object universe.Object) bool {
+		value, ok := object.GetObjectAttributes().GetValue(attributeID)
 		if !ok || value == nil {
 			return false
 		}

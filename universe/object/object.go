@@ -43,9 +43,9 @@ type Object struct {
 	Parent           universe.Object
 	asset2d          universe.Asset2d
 	asset3d          universe.Asset3d
-	spaceType        universe.ObjectType
+	objectType       universe.ObjectType
 	effectiveOptions *entry.ObjectOptions
-	spaceAttributes  *spaceAttributes // WARNING: the Object is sharing the same mutex ("Mu") with it
+	objectAttributes *objectAttributes // WARNING: the Object is sharing the same mutex ("Mu") with it
 
 	spawnMsg          atomic.Pointer[websocket.PreparedMessage]
 	attributesMsg     *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
@@ -62,8 +62,8 @@ type Object struct {
 	theta float64
 }
 
-func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Object {
-	space := &Object{
+func NewObject(id uuid.UUID, db database.DB, world universe.World) *Object {
+	object := &Object{
 		id:               id,
 		db:               db,
 		Users:            generic.NewSyncMap[uuid.UUID, universe.User](0),
@@ -72,9 +72,9 @@ func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Object {
 		renderTextureMap: generic.NewSyncMap[string, string](0),
 		world:            world,
 	}
-	space.spaceAttributes = newSpaceAttributes(space)
+	object.objectAttributes = newObjectAttributes(object)
 
-	return space
+	return object
 }
 
 func (s *Object) GetID() uuid.UUID {
@@ -92,31 +92,31 @@ func (s *Object) SetEnabled(enabled bool) {
 func (s *Object) GetName() string {
 	name := "unknown"
 	value, ok := s.GetObjectAttributes().GetValue(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Space.Name.Name),
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Object.Name.Name),
 	)
 	if !ok || value == nil {
 		return name
 	}
-	return utils.GetFromAnyMap(*value, universe.ReservedAttributes.Space.Name.Key, name)
+	return utils.GetFromAnyMap(*value, universe.ReservedAttributes.Object.Name.Key, name)
 }
 
 func (s *Object) SetName(name string, updateDB bool) error {
 	if _, err := s.GetObjectAttributes().Upsert(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Space.Name.Name),
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Object.Name.Name),
 		modify.MergeWith(entry.NewAttributePayload(
 			&entry.AttributeValue{
-				universe.ReservedAttributes.Space.Name.Key: name,
+				universe.ReservedAttributes.Object.Name.Key: name,
 			},
 			nil),
 		), updateDB,
 	); err != nil {
-		return errors.WithMessage(err, "failed to upsert space attribute")
+		return errors.WithMessage(err, "failed to upsert object attribute")
 	}
 	return nil
 }
 
 func (s *Object) GetObjectAttributes() universe.ObjectAttributes {
-	return s.spaceAttributes
+	return s.objectAttributes
 }
 
 func (s *Object) Initialize(ctx context.Context) error {
@@ -155,7 +155,7 @@ func (s *Object) SetParent(parent universe.Object, updateDB bool) error {
 	defer s.Mu.Unlock()
 
 	if parent == s {
-		return errors.Errorf("space can't be a parent of itself")
+		return errors.Errorf("object can't be a parent of itself")
 	} else if parent != nil && parent.GetWorld().GetID() != s.world.GetID() {
 		return errors.Errorf("worlds mismatch: %s != %s", parent.GetWorld().GetID(), s.world.GetID())
 	}
@@ -252,24 +252,24 @@ func (s *Object) GetObjectType() universe.ObjectType {
 	s.Mu.RLock()
 	defer s.Mu.RUnlock()
 
-	return s.spaceType
+	return s.objectType
 }
 
-func (s *Object) SetObjectType(spaceType universe.ObjectType, updateDB bool) error {
-	if spaceType == nil {
-		return errors.Errorf("space type is nil")
+func (s *Object) SetObjectType(objectType universe.ObjectType, updateDB bool) error {
+	if objectType == nil {
+		return errors.Errorf("object type is nil")
 	}
 
 	s.Mu.Lock()
 	defer s.Mu.Unlock()
 
 	if updateDB {
-		if err := s.db.GetObjectsDB().UpdateObjectObjectTypeID(s.ctx, s.GetID(), spaceType.GetID()); err != nil {
+		if err := s.db.GetObjectsDB().UpdateObjectObjectTypeID(s.ctx, s.GetID(), objectType.GetID()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
 
-	s.spaceType = spaceType
+	s.objectType = objectType
 	s.dropCache()
 
 	return nil
@@ -308,11 +308,11 @@ func (s *Object) GetEffectiveOptions() *entry.ObjectOptions {
 	defer s.Mu.Unlock()
 
 	if s.effectiveOptions == nil {
-		effectiveOptions, err := merge.Auto(s.options, s.spaceType.GetOptions())
+		effectiveOptions, err := merge.Auto(s.options, s.objectType.GetOptions())
 		if err != nil {
 			s.log.Error(
 				errors.WithMessagef(
-					err, "Object: GetEffectiveOptions: failed to merge space effective options: %s", s.GetID(),
+					err, "Object: GetEffectiveOptions: failed to merge object effective options: %s", s.GetID(),
 				),
 			)
 			return nil
@@ -345,8 +345,8 @@ func (s *Object) GetEntry() *entry.Object {
 		Options:  s.options,
 		Position: s.position,
 	}
-	if s.spaceType != nil {
-		entry.ObjectTypeID = utils.GetPTR(s.spaceType.GetID())
+	if s.objectType != nil {
+		entry.ObjectTypeID = utils.GetPTR(s.objectType.GetID())
 	}
 	if s.Parent != nil {
 		entry.ParentID = utils.GetPTR(s.Parent.GetID())
@@ -432,10 +432,10 @@ func (s *Object) Update(recursive bool) error {
 }
 
 func (s *Object) LoadFromEntry(entry *entry.Object, recursive bool) error {
-	s.log.Debugf("Loading space %s...", entry.ObjectID)
+	s.log.Debugf("Loading object %s...", entry.ObjectID)
 
 	if entry.ObjectID != s.GetID() {
-		return errors.Errorf("space ids mismatch: %s != %s", entry.ObjectID, s.GetID())
+		return errors.Errorf("object ids mismatch: %s != %s", entry.ObjectID, s.GetID())
 	}
 
 	group, _ := errgroup.WithContext(s.ctx)
@@ -464,10 +464,10 @@ func (s *Object) LoadFromEntry(entry *entry.Object, recursive bool) error {
 			for i := range entries {
 				child, err := s.CreateObject(entries[i].ObjectID)
 				if err != nil {
-					return errors.WithMessagef(err, "failed to create new space: %s", entries[i].ObjectID)
+					return errors.WithMessagef(err, "failed to create new object: %s", entries[i].ObjectID)
 				}
 				if err := child.LoadFromEntry(entries[i], recursive); err != nil {
-					return errors.WithMessagef(err, "failed to load space from entry: %s", entries[i].ObjectID)
+					return errors.WithMessagef(err, "failed to load object from entry: %s", entries[i].ObjectID)
 				}
 			}
 
@@ -477,11 +477,11 @@ func (s *Object) LoadFromEntry(entry *entry.Object, recursive bool) error {
 	return group.Wait()
 }
 
-func (s *Object) loadSelfData(spaceEntry *entry.Object) error {
-	if err := s.SetOwnerID(*spaceEntry.OwnerID, false); err != nil {
-		return errors.WithMessagef(err, "failed to set owner id: %s", spaceEntry.OwnerID)
+func (s *Object) loadSelfData(objectEntry *entry.Object) error {
+	if err := s.SetOwnerID(*objectEntry.OwnerID, false); err != nil {
+		return errors.WithMessagef(err, "failed to set owner id: %s", objectEntry.OwnerID)
 	}
-	if _, err := s.SetOptions(modify.MergeWith(spaceEntry.Options), false); err != nil {
+	if _, err := s.SetOptions(modify.MergeWith(objectEntry.Options), false); err != nil {
 		return errors.WithMessage(err, "failed to set options")
 	}
 	return nil
@@ -490,12 +490,12 @@ func (s *Object) loadSelfData(spaceEntry *entry.Object) error {
 func (s *Object) loadDependencies(entry *entry.Object) error {
 	node := universe.GetNode()
 
-	spaceType, ok := node.GetObjectTypes().GetObjectType(*entry.ObjectTypeID)
+	objectType, ok := node.GetObjectTypes().GetObjectType(*entry.ObjectTypeID)
 	if !ok {
-		return errors.Errorf("failed to get space type: %s", entry.ObjectTypeID)
+		return errors.Errorf("failed to get object type: %s", entry.ObjectTypeID)
 	}
-	if err := s.SetObjectType(spaceType, false); err != nil {
-		return errors.WithMessagef(err, "failed to set space type: %s", entry.ObjectTypeID)
+	if err := s.SetObjectType(objectType, false); err != nil {
+		return errors.WithMessagef(err, "failed to set object type: %s", entry.ObjectTypeID)
 	}
 
 	if entry.Asset2dID != nil {
@@ -535,10 +535,10 @@ func (s *Object) UpdateSpawnMessage() error {
 
 	asset3dID := uuid.Nil
 	asset3d := s.GetAsset3D()
-	spaceType := s.GetObjectType()
+	objectType := s.GetObjectType()
 	assetFormat := dto.AddressableAssetType
-	if asset3d == nil && spaceType != nil {
-		asset3d = spaceType.GetAsset3d()
+	if asset3d == nil && objectType != nil {
+		asset3d = objectType.GetAsset3d()
 	}
 	if asset3d != nil {
 		asset3dID = asset3d.GetID()
@@ -590,8 +590,8 @@ func (s *Object) SendSpawnMessage(sendFn func(*websocket.PreparedMessage) error,
 	s.Children.Mu.RLock()
 	defer s.Children.Mu.RUnlock()
 
-	for _, space := range s.Children.Data {
-		space.SendSpawnMessage(sendFn, recursive)
+	for _, child := range s.Children.Data {
+		child.SendSpawnMessage(sendFn, recursive)
 	}
 
 }
@@ -609,8 +609,8 @@ func (s *Object) SendTextures(sendFn func(*websocket.PreparedMessage) error, rec
 	s.Children.Mu.RLock()
 	defer s.Children.Mu.RUnlock()
 
-	for _, space := range s.Children.Data {
-		space.SendTextures(sendFn, recursive)
+	for _, child := range s.Children.Data {
+		child.SendTextures(sendFn, recursive)
 	}
 }
 
@@ -625,13 +625,16 @@ func (s *Object) SendAttributes(sendFn func(*websocket.PreparedMessage), recursi
 	s.attributesMsg.Mu.RUnlock()
 
 	sendFn(s.spawnMsg.Load())
-	if recursive {
-		s.Children.Mu.RLock()
-		defer s.Children.Mu.RUnlock()
 
-		for _, space := range s.Children.Data {
-			space.SendAttributes(sendFn, recursive)
-		}
+	if !recursive {
+		return
+	}
+
+	s.Children.Mu.RLock()
+	defer s.Children.Mu.RUnlock()
+
+	for _, child := range s.Children.Data {
+		child.SendAttributes(sendFn, recursive)
 	}
 }
 

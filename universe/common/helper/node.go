@@ -47,21 +47,21 @@ func GetNormalUserTypeID() (uuid.UUID, error) {
 	return normUserTypeID, nil
 }
 
-func GetPortalSpaceTypeID() (uuid.UUID, error) {
-	portalSpaceTypeValue, ok := universe.GetNode().GetNodeAttributes().GetValue(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Node.PortalSpaceType.Name),
+func GetPortalObjectTypeID() (uuid.UUID, error) {
+	portalObjectTypeValue, ok := universe.GetNode().GetNodeAttributes().GetValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Node.PortalObjectType.Name),
 	)
-	if !ok || portalSpaceTypeValue == nil {
-		return uuid.Nil, errors.Errorf("failed to get portal space type attribute value")
+	if !ok || portalObjectTypeValue == nil {
+		return uuid.Nil, errors.Errorf("failed to get portal object type attribute value")
 	}
 
-	portalSpaceType := utils.GetFromAnyMap(
-		*portalSpaceTypeValue, universe.ReservedAttributes.Node.PortalSpaceType.Key, "",
+	portalObjectType := utils.GetFromAnyMap(
+		*portalObjectTypeValue, universe.ReservedAttributes.Node.PortalObjectType.Key, "",
 	)
-	portalSpaceTypeID, err := uuid.Parse(portalSpaceType)
+	portalObjectTypeID, err := uuid.Parse(portalObjectType)
 	if err != nil {
-		return uuid.Nil, errors.Errorf("failed to parse portal space type id")
+		return uuid.Nil, errors.Errorf("failed to parse portal object type id")
 	}
 
-	return portalSpaceTypeID, nil
+	return portalObjectTypeID, nil
 }

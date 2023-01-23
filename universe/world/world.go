@@ -48,7 +48,7 @@ func NewWorld(id uuid.UUID, db database.DB) *World {
 		db:        db,
 		allSpaces: generic.NewSyncMap[uuid.UUID, universe.Object](0),
 	}
-	world.Object = object.NewSpace(id, db, world)
+	world.Object = object.NewObject(id, db, world)
 	world.settings.Store(&universe.WorldSettings{})
 	world.pluginController = mplugin.NewPluginController(id)
 	//world.corePluginInstance, _ = world.pluginController.AddPlugin(world.GetID(), world.corePluginInitFunc)

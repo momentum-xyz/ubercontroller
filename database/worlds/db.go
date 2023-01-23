@@ -23,16 +23,16 @@ const (
 var _ database.WorldsDB = (*DB)(nil)
 
 type DB struct {
-	conn   *pgxpool.Pool
-	common database.CommonDB
-	spaces database.ObjectsDB
+	conn    *pgxpool.Pool
+	common  database.CommonDB
+	objects database.ObjectsDB
 }
 
-func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB, spacesDB database.ObjectsDB) *DB {
+func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB, objectsDB database.ObjectsDB) *DB {
 	return &DB{
-		conn:   conn,
-		common: commonDB,
-		spaces: spacesDB,
+		conn:    conn,
+		common:  commonDB,
+		objects: objectsDB,
 	}
 }
 

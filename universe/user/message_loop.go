@@ -219,7 +219,7 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 	)
 	target.Send(posbus.NewRelayToReactMsg("high5", high5Data).WebsocketMessage())
 
-	effectsEmitterID := world.GetSettings().Spaces["effects_emitter"]
+	effectsEmitterID := world.GetSettings().Objects["effects_emitter"]
 	effect := posbus.NewTriggerTransitionalBridgingEffectsOnPositionMsg(1)
 	effect.SetEffect(0, effectsEmitterID, u.GetPosition(), target.GetPosition(), 1001)
 	u.GetWorld().Send(effect.WebsocketMessage(), false)

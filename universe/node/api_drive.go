@@ -164,8 +164,8 @@ func (n *Node) createWorld(ownerID uuid.UUID, name string) error {
 	if err := utils.MapDecode(*templateValue, &worldTemplate); err != nil {
 		return errors.WithMessage(err, "failed to decode world template")
 	}
-	worldTemplate.SpaceID = &ownerID // User's world (aka Odyssey) should be equal to user ID
-	worldTemplate.SpaceName = &name
+	worldTemplate.ObjectID = &ownerID // User's world (aka Odyssey) should be equal to user ID
+	worldTemplate.ObjectName = &name
 	worldTemplate.OwnerID = &ownerID
 
 	if _, err := helper.AddWorldFromTemplate(&worldTemplate, true); err != nil {

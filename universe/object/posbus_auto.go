@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (s *Object) posBusAutoOnSpaceAttributeChanged(
+func (s *Object) posBusAutoOnObjecteAttributeChanged(
 	changeType universe.AttributeChangeType, attributeID entry.AttributeID, value *entry.AttributeValue,
 	effectiveOptions *entry.AttributeOptions,
 ) error {
