@@ -39,14 +39,14 @@ type World struct {
 	metaMsg             atomic.Pointer[websocket.PreparedMessage]
 	metaData            Metadata
 	settings            atomic.Pointer[universe.WorldSettings]
-	allSpaces           *generic.SyncMap[uuid.UUID, universe.Object]
+	allObjects          *generic.SyncMap[uuid.UUID, universe.Object]
 	calendar            *calendar.Calendar
 }
 
 func NewWorld(id uuid.UUID, db database.DB) *World {
 	world := &World{
-		db:        db,
-		allSpaces: generic.NewSyncMap[uuid.UUID, universe.Object](0),
+		db:         db,
+		allObjects: generic.NewSyncMap[uuid.UUID, universe.Object](0),
 	}
 	world.Object = object.NewObject(id, db, world)
 	world.settings.Store(&universe.WorldSettings{})
@@ -119,8 +119,8 @@ func (w *World) SetParent(parent universe.Object, updateDB bool) error {
 func (w *World) Run() error {
 	go func() {
 		go func() {
-			if err := w.runSpaces(); err != nil {
-				w.log.Error(errors.WithMessagef(err, "World: Run: failed to run spaces: %s", w.GetID()))
+			if err := w.runObjects(); err != nil {
+				w.log.Error(errors.WithMessagef(err, "World: Run: failed to run objects: %s", w.GetID()))
 			}
 		}()
 		go w.calendar.Run()
@@ -129,8 +129,8 @@ func (w *World) Run() error {
 		defer func() {
 			w.calendar.Stop()
 			ticker.Stop()
-			if err := w.stopSpaces(); err != nil {
-				w.log.Error(errors.WithMessagef(err, "World: Run: failed to stop spaces: %s", w.GetID()))
+			if err := w.stopObjects(); err != nil {
+				w.log.Error(errors.WithMessagef(err, "World: Run: failed to stop objects: %s", w.GetID()))
 			}
 		}()
 
@@ -158,32 +158,32 @@ func (w *World) Stop() error {
 	return nil
 }
 
-func (w *World) runSpaces() error {
-	w.allSpaces.Mu.RLock()
-	defer w.allSpaces.Mu.RUnlock()
+func (w *World) runObjects() error {
+	w.allObjects.Mu.RLock()
+	defer w.allObjects.Mu.RUnlock()
 
 	var errs *multierror.Error
-	for _, space := range w.allSpaces.Data {
-		if err := space.Run(); err != nil {
-			errs = multierror.Append(errs, errors.WithMessagef(err, "failed to run space: %s", space.GetID()))
+	for _, object := range w.allObjects.Data {
+		if err := object.Run(); err != nil {
+			errs = multierror.Append(errs, errors.WithMessagef(err, "failed to run object: %s", object.GetID()))
 		}
-		space.SetEnabled(true)
+		object.SetEnabled(true)
 	}
 
 	return errs.ErrorOrNil()
 }
 
 // TODO: optimize
-func (w *World) stopSpaces() error {
-	w.allSpaces.Mu.RLock()
-	defer w.allSpaces.Mu.RUnlock()
+func (w *World) stopObjects() error {
+	w.allObjects.Mu.RLock()
+	defer w.allObjects.Mu.RUnlock()
 
 	var errs *multierror.Error
-	for _, space := range w.allSpaces.Data {
-		if err := space.Stop(); err != nil {
-			errs = multierror.Append(errs, errors.WithMessagef(err, "failed to stop space: %s", space.GetID()))
+	for _, object := range w.allObjects.Data {
+		if err := object.Stop(); err != nil {
+			errs = multierror.Append(errs, errors.WithMessagef(err, "failed to stop object: %s", object.GetID()))
 		}
-		space.SetEnabled(false)
+		object.SetEnabled(false)
 	}
 
 	return errs.ErrorOrNil()
@@ -213,7 +213,7 @@ func (w *World) Load() error {
 
 	entry, err := w.db.GetObjectsDB().GetObjectByID(w.ctx, w.GetID())
 	if err != nil {
-		return errors.WithMessage(err, "failed to get space by id")
+		return errors.WithMessage(err, "failed to get object by id")
 	}
 
 	if err := w.LoadFromEntry(entry, true); err != nil {
@@ -247,7 +247,7 @@ func (w *World) UpdateWorldSettings() error {
 		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.World.Settings.Name),
 	)
 	if !ok || value == nil {
-		return errors.Errorf("space attribute not found")
+		return errors.Errorf("object attribute not found")
 	}
 
 	var settings universe.WorldSettings
@@ -296,15 +296,15 @@ func (w *World) UpdateWorldMetadata() error {
 func (w *World) Save() error {
 	w.log.Infof("Saving world: %s", w.GetID())
 
-	spaces := w.GetAllObjects()
+	objects := w.GetAllObjects()
 
-	entries := make([]*entry.Object, 0, len(spaces))
-	for _, space := range spaces {
-		entries = append(entries, space.GetEntry())
+	entries := make([]*entry.Object, 0, len(objects))
+	for _, object := range objects {
+		entries = append(entries, object.GetEntry())
 	}
 
 	if err := w.db.GetObjectsDB().UpsertObjects(w.ctx, entries); err != nil {
-		return errors.WithMessage(err, "failed to upsert spaces")
+		return errors.WithMessage(err, "failed to upsert objects")
 	}
 
 	w.log.Infof("World saved: %s", w.GetID())

@@ -41,7 +41,7 @@ func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (uuid.UUI
 		return uuid.Nil, errors.WithMessagef(err, "failed to set owner: %s", worldTemplate.OwnerID)
 	}
 	if err := world.SetObjectType(worldObjectType, false); err != nil {
-		return uuid.Nil, errors.WithMessagef(err, "failed to set space type: %s", worldTemplate.ObjectTypeID)
+		return uuid.Nil, errors.WithMessagef(err, "failed to set object type: %s", worldTemplate.ObjectTypeID)
 	}
 
 	// saving in database
@@ -104,7 +104,7 @@ func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (uuid.UUI
 			updateDB,
 		); err != nil {
 			return uuid.Nil, errors.WithMessagef(
-				err, "failed to upsert world space attribute: %+v", worldTemplate.ObjectAttributes[i],
+				err, "failed to upsert world object attribute: %+v", worldTemplate.ObjectAttributes[i],
 			)
 		}
 	}

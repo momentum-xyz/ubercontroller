@@ -324,7 +324,7 @@ func (n *Node) Save() error {
 		if err := n.objectTypes.Save(); err != nil {
 			errsMu.Lock()
 			defer errsMu.Unlock()
-			errs = multierror.Append(errs, errors.WithMessage(err, "failed to save space types"))
+			errs = multierror.Append(errs, errors.WithMessage(err, "failed to save object types"))
 		}
 	}()
 

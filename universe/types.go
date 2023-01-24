@@ -84,7 +84,7 @@ var (
 			},
 			PortalObjectType: ReservedAttribute{
 				Name: "node_settings",
-				Key:  "docking_hub_space_type",
+				Key:  "docking_hub_object_type",
 			},
 			WorldTemplate: ReservedAttribute{
 				Name: "world_template",

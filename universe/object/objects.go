@@ -68,7 +68,7 @@ func (s *Object) GetObject(objectID uuid.UUID, recursive bool) (universe.Object,
 	return nil, false
 }
 
-// GetSpaces return map with all nested children if recursive is true,
+// GetObjects return map with all nested children if recursive is true,
 // otherwise the method return map with children dependent only to current object.
 func (s *Object) GetObjects(recursive bool) map[uuid.UUID]universe.Object {
 	s.Children.Mu.RLock()
@@ -220,7 +220,7 @@ func (s *Object) DoRemoveObject(object universe.Object, updateDB bool) (bool, er
 	return universe.GetNode().RemoveObjectFromAllObjects(object)
 }
 
-// RemoveObjects return true in first value if all spaces with object ids was removed.
+// RemoveObjects return true in first value if all objects with object ids was removed.
 // TODO: rethink and optimize/reimplement
 func (s *Object) RemoveObjects(objects []universe.Object, recursive, updateDB bool) (bool, error) {
 	res := true

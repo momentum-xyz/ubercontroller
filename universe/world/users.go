@@ -99,10 +99,10 @@ func (w *World) noLockRemoveUser(user universe.User, updateDB bool) (bool, error
 
 	// clean up all locks hold by this user,
 	// temporarily here.
-	w.allSpaces.Mu.RLock()
-	defer w.allSpaces.Mu.RUnlock()
+	w.allObjects.Mu.RLock()
+	defer w.allObjects.Mu.RUnlock()
 
-	for _, child := range w.allSpaces.Data {
+	for _, child := range w.allObjects.Data {
 		if child.LockUnityObject(user, 0) {
 			w.Send(posbus.NewSetObjectLockState(user.GetID(), 0).WebsocketMessage(), true)
 		}

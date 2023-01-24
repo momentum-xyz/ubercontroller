@@ -71,8 +71,8 @@ func (ot *ObjectTypes) GetObjectTypes() map[uuid.UUID]universe.ObjectType {
 
 	objectTypes := make(map[uuid.UUID]universe.ObjectType, len(ot.objectTypes.Data))
 
-	for id, spaceType := range ot.objectTypes.Data {
-		objectTypes[id] = spaceType
+	for id, objectType := range ot.objectTypes.Data {
+		objectTypes[id] = objectType
 	}
 
 	return objectTypes

@@ -116,7 +116,7 @@ func (a *AttributeTypes) AddAttributeTypes(attributeTypes []universe.AttributeTy
 	return nil
 }
 
-// TODO: update node/space attributes
+// TODO: update node/object attributes
 func (a *AttributeTypes) RemoveAttributeType(attributeType universe.AttributeType, updateDB bool) (bool, error) {
 	a.attributeTypes.Mu.Lock()
 	defer a.attributeTypes.Mu.Unlock()
@@ -136,7 +136,7 @@ func (a *AttributeTypes) RemoveAttributeType(attributeType universe.AttributeTyp
 	return true, nil
 }
 
-// TODO: update node/space attributes
+// TODO: update node/object attributes
 func (a *AttributeTypes) RemoveAttributeTypes(attributeTypes []universe.AttributeType, updateDB bool) (bool, error) {
 	a.attributeTypes.Mu.Lock()
 	defer a.attributeTypes.Mu.Unlock()

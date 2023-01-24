@@ -213,7 +213,7 @@ func (na *nodeAttributes) Remove(attributeID entry.AttributeID, updateDB bool) (
 
 	if updateDB {
 		if err := na.node.db.GetNodeAttributesDB().RemoveNodeAttributeByAttributeID(na.node.ctx, attributeID); err != nil {
-			return false, errors.WithMessagef(err, "failed to remove space attribute")
+			return false, errors.WithMessagef(err, "failed to remove node attribute")
 		}
 	}
 

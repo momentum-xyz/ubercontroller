@@ -17,7 +17,7 @@ const (
 
 type Object struct {
 	ObjectID     uuid.UUID            `db:"object_id" json:"object_id"`
-	ObjectTypeID *uuid.UUID           `db:"space_type_id" json:"object_type_id"`
+	ObjectTypeID *uuid.UUID           `db:"object_type_id" json:"object_type_id"`
 	OwnerID      *uuid.UUID           `db:"owner_id" json:"owner_id"`
 	ParentID     *uuid.UUID           `db:"parent_id" json:"parent_id"`
 	Asset2dID    *uuid.UUID           `db:"asset_2d_id" json:"asset_2d_id"`
@@ -29,20 +29,19 @@ type Object struct {
 }
 
 type ObjectOptions struct {
-	Asset2dOptions  any                                 `db:"asset_2d_options" json:"asset_2d_options,omitempty"`
-	Asset3dOptions  any                                 `db:"asset_3d_options" json:"asset_3d_options,omitempty"`
-	FrameTemplates  map[string]any                      `db:"frame_templates" json:"frame_templates,omitempty"`
-	ChildPlacements map[uuid.UUID]*ObjectChildPlacement `db:"child_placement" json:"child_placement,omitempty"`
-	// WARNING: was renamed from "allowed_subspaces"
-	AllowedSubObjects []uuid.UUID        `db:"allowed_sub_objects" json:"allowed_sub_objects,omitempty"`
-	DefaultTiles      []any              `db:"default_tiles" json:"default_tiles,omitempty"`
-	InfoUIID          *uuid.UUID         `db:"infoui_id" json:"infoui_id,omitempty"`
-	Minimap           *bool              `db:"minimap" json:"minimap,omitempty"`
-	Visible           *ObjectVisibleType `db:"visible" json:"visible,omitempty"`
-	Editable          *bool              `db:"editable" json:"editable,omitempty"`
-	Private           *bool              `db:"private" json:"private,omitempty"`
-	DashboardPlugins  []string           `db:"dashboard_plugins" json:"dashboard_plugins,omitempty"`
-	Subs              map[string]any     `db:"subs" json:"subs"`
+	Asset2dOptions    any                                 `db:"asset_2d_options" json:"asset_2d_options,omitempty"`
+	Asset3dOptions    any                                 `db:"asset_3d_options" json:"asset_3d_options,omitempty"`
+	FrameTemplates    map[string]any                      `db:"frame_templates" json:"frame_templates,omitempty"`
+	ChildPlacements   map[uuid.UUID]*ObjectChildPlacement `db:"child_placement" json:"child_placement,omitempty"`
+	AllowedSubObjects []uuid.UUID                         `db:"allowed_sub_objects" json:"allowed_sub_objects,omitempty"`
+	DefaultTiles      []any                               `db:"default_tiles" json:"default_tiles,omitempty"`
+	InfoUIID          *uuid.UUID                          `db:"infoui_id" json:"infoui_id,omitempty"`
+	Minimap           *bool                               `db:"minimap" json:"minimap,omitempty"`
+	Visible           *ObjectVisibleType                  `db:"visible" json:"visible,omitempty"`
+	Editable          *bool                               `db:"editable" json:"editable,omitempty"`
+	Private           *bool                               `db:"private" json:"private,omitempty"`
+	DashboardPlugins  []string                            `db:"dashboard_plugins" json:"dashboard_plugins,omitempty"`
+	Subs              map[string]any                      `db:"subs" json:"subs"`
 }
 
 type ObjectChildPlacement struct {
@@ -57,7 +56,7 @@ type ObjectAttributeID struct {
 
 type ObjectUserAttributeID struct {
 	AttributeID
-	ObjectID uuid.UUID `db:"space_id" json:"object_id"`
+	ObjectID uuid.UUID `db:"object_id" json:"object_id"`
 	UserID   uuid.UUID `db:"user_id" json:"user_id"`
 }
 

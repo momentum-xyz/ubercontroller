@@ -162,7 +162,7 @@ func createNode(ctx context.Context, db database.DB) (universe.Node, error) {
 		return nil, errors.WithMessage(err, "failed to initialize assets 3d")
 	}
 	if err := objectTypes.Initialize(ctx); err != nil {
-		return nil, errors.WithMessage(err, "failed to initialize space types")
+		return nil, errors.WithMessage(err, "failed to initialize object types")
 	}
 	if err := userTypes.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize user types")

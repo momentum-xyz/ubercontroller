@@ -107,7 +107,7 @@ func (oua *objectUserAttributes) UpdateValue(
 		oua.node.ctx, objectUserAttributeID, modifyFn,
 	)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to update space user attribute value")
+		return nil, errors.WithMessage(err, "failed to update object user attribute value")
 	}
 
 	if oua.node.GetEnabled() {

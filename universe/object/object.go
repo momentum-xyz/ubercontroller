@@ -458,7 +458,7 @@ func (s *Object) LoadFromEntry(entry *entry.Object, recursive bool) error {
 
 			entries, err := s.db.GetObjectsDB().GetObjectsByParentID(s.ctx, s.GetID())
 			if err != nil {
-				return errors.WithMessagef(err, "failed to get spaces by parent id: %s", s.GetID())
+				return errors.WithMessagef(err, "failed to get objects by parent id: %s", s.GetID())
 			}
 
 			for i := range entries {
