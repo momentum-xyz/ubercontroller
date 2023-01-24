@@ -299,6 +299,17 @@ func (n *Node) Save() error {
 	go func() {
 		defer wg.Done()
 
+		if err := n.plugins.Save(); err != nil {
+			errsMu.Lock()
+			defer errsMu.Unlock()
+			errs = multierror.Append(errs, errors.WithMessage(err, "failed to save plugins"))
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
 		if err := n.assets2d.Save(); err != nil {
 			errsMu.Lock()
 			defer errsMu.Unlock()

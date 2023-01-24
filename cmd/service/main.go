@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/zakaria-chahboun/cute"
@@ -19,7 +20,9 @@ import (
 	"github.com/momentum-xyz/ubercontroller/database/migrations"
 	"github.com/momentum-xyz/ubercontroller/logger"
 	"github.com/momentum-xyz/ubercontroller/pkg/message"
+	"github.com/momentum-xyz/ubercontroller/seed"
 	"github.com/momentum-xyz/ubercontroller/types"
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/assets_2d"
 	"github.com/momentum-xyz/ubercontroller/universe/assets_3d"
@@ -94,12 +97,17 @@ func run(ctx context.Context) error {
 		return errors.WithMessage(err, "failed to create db")
 	}
 
-	node, err := createNode(ctx, db)
+	nodeEntry, err := GetNodeEntry(ctx, db)
+	if err != nil {
+		return errors.WithMessage(err, "failed to get node entry")
+	}
+
+	node, err := createNode(ctx, db, nodeEntry)
 	if err != nil {
 		return errors.WithMessage(err, "failed to create node")
 	}
 
-	if err := node.Load(); err != nil {
+	if err := loadNode(ctx, node, nodeEntry); err != nil {
 		return errors.WithMessagef(err, "failed to load node: %s", node.GetID())
 	}
 	tm2 := time.Now()
@@ -125,7 +133,34 @@ func run(ctx context.Context) error {
 	return nil
 }
 
-func createNode(ctx context.Context, db database.DB) (universe.Node, error) {
+func loadNode(ctx context.Context, node universe.Node, nodeEntry *entry.Node) error {
+	if nodeEntry == nil {
+		if err := seed.Node(ctx, node); err != nil {
+			return errors.WithMessage(err, "failed to seed node")
+		}
+		return nil
+	}
+
+	if err := node.Load(); err != nil {
+		return errors.WithMessage(err, "failed to load node")
+	}
+
+	return nil
+}
+
+func GetNodeEntry(ctx context.Context, db database.DB) (*entry.Node, error) {
+	nodeEntry, err := db.GetNodesDB().GetNode(ctx)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, errors.WithMessage(err, "failed to get node")
+	}
+
+	return nodeEntry, nil
+}
+
+func createNode(ctx context.Context, db database.DB, nodeEntry *entry.Node) (universe.Node, error) {
 	worlds := worlds.NewWorlds(db)
 	assets2d := assets_2d.NewAssets2d(db)
 	assets3d := assets_3d.NewAssets3d(db)
@@ -134,13 +169,13 @@ func createNode(ctx context.Context, db database.DB) (universe.Node, error) {
 	userTypes := user_types.NewUserTypes(db)
 	attributeTypes := attribute_types.NewAttributeTypes(db)
 
-	nodeEntry, err := db.GetNodesDB().GetNode(ctx)
-	if err != nil {
-		return nil, errors.WithMessage(err, "failed to get node")
+	objectID := uuid.New()
+	if nodeEntry != nil {
+		objectID = nodeEntry.ObjectID
 	}
 
 	node := node.NewNode(
-		nodeEntry.ObjectID,
+		objectID,
 		db,
 		worlds,
 		assets2d,
