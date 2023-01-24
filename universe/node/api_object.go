@@ -20,15 +20,15 @@ import (
 // @Summary Generate Agora token
 // @Schemes
 // @Description Returns an Agora token
-// @Tags spaces
+// @Tags objects
 // @Accept json
 // @Produce json
-// @Param space_id path string true "Object ID"
+// @Param object_id path string true "Object ID"
 // @Param body body node.apiGenAgoraToken.Body false "body params"
 // @Success 200 {object} node.apiGenAgoraToken.Out
 // @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/spaces/{space_id}/agora/token [post]
+// @Router /api/v4/objects/{object_id}/agora/token [post]
 func (n *Node) apiGenAgoraToken(c *gin.Context) {
 	type Body struct {
 		ScreenShare bool `json:"screenshare"`
@@ -41,16 +41,16 @@ func (n *Node) apiGenAgoraToken(c *gin.Context) {
 		return
 	}
 
-	spaceID, err := uuid.Parse(c.Param("spaceID"))
+	objectID, err := uuid.Parse(c.Param("objectID"))
 	if err != nil {
-		err = errors.WithMessage(err, "Node: apiGenAgoraToken: failed to parse space id")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, n.log)
+		err = errors.WithMessage(err, "Node: apiGenAgoraToken: failed to parse object id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
 		return
 	}
 
-	if _, ok := n.GetObjectFromAllObjects(spaceID); !ok {
-		err := errors.Errorf("Node: apiGenAgoraToken: space not found: %s", spaceID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+	if _, ok := n.GetObjectFromAllObjects(objectID); !ok {
+		err := errors.Errorf("Node: apiGenAgoraToken: object not found: %s", objectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 		return
 	}
 
@@ -67,9 +67,9 @@ func (n *Node) apiGenAgoraToken(c *gin.Context) {
 	expire := currentTimestamp + expireSeconds
 	var channel string
 	if inBody.ScreenShare {
-		channel = fmt.Sprintf("ss|%s", spaceID)
+		channel = fmt.Sprintf("ss|%s", objectID)
 	} else {
-		channel = spaceID.String()
+		channel = objectID.String()
 	}
 	token, err := rtctokenbuilder.BuildTokenWithUserAccount(
 		n.cfg.UIClient.AgoraAppID,
@@ -97,19 +97,19 @@ func (n *Node) apiGenAgoraToken(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// @Summary Get space by ID
+// @Summary Get object by ID
 // @Schemes
-// @Description Returns a space info based on ID and query
-// @Tags spaces
+// @Description Returns a object info based on ID and query
+// @Tags objects
 // @Accept json
 // @Produce json
-// @Param space_id path string true "Object ID"
-// @Param query query node.apiGetSpace.InQuery false "query params"
-// @Success 202 {object} dto.Space
+// @Param object_id path string true "Object ID"
+// @Param query query node.apiGetObject.InQuery false "query params"
+// @Success 202 {object} dto.Object
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{space_id} [get]
-func (n *Node) apiGetSpace(c *gin.Context) {
+// @Router /api/v4/objects/{object_id} [get]
+func (n *Node) apiGetObject(c *gin.Context) {
 	type InQuery struct {
 		Effective bool `form:"effective"`
 	}
@@ -118,49 +118,49 @@ func (n *Node) apiGetSpace(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		err := errors.WithMessage(err, "Node: apiGetSpace: failed to bind query")
+		err := errors.WithMessage(err, "Node: apiGetObject: failed to bind query")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
 		return
 	}
 
-	spaceID, err := uuid.Parse(c.Param("spaceID"))
+	objectID, err := uuid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiGetSpace: failed to parse space id")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, n.log)
+		err := errors.WithMessage(err, "Node: apiGetObject: failed to parse object id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
 		return
 	}
 
-	space, ok := n.GetObjectFromAllObjects(spaceID)
+	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
-		err := errors.Errorf("Node: apiGetSpace: space not found: %s", spaceID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		err := errors.Errorf("Node: apiGetObject: object not found: %s", objectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 		return
 	}
 
-	out := dto.Space{
-		OwnerID: space.GetOwnerID().String(),
+	out := dto.Object{
+		OwnerID: object.GetOwnerID().String(),
 	}
-	parent := space.GetParent()
-	position := space.GetActualPosition()
-	spaceType := space.GetObjectType()
+	parent := object.GetParent()
+	position := object.GetActualPosition()
+	objectType := object.GetObjectType()
 	if parent != nil {
 		out.ParentID = parent.GetID().String()
 	}
 	if position != nil {
 		out.Position = *position
 	}
-	if spaceType != nil {
-		out.SpaceTypeID = spaceType.GetID().String()
+	if objectType != nil {
+		out.ObjectTypeID = objectType.GetID().String()
 	}
 
-	asset2d := space.GetAsset2D()
-	asset3d := space.GetAsset3D()
+	asset2d := object.GetAsset2D()
+	asset3d := object.GetAsset3D()
 	if inQuery.Effective {
-		if asset2d == nil && spaceType != nil {
-			asset2d = spaceType.GetAsset2d()
+		if asset2d == nil && objectType != nil {
+			asset2d = objectType.GetAsset2d()
 		}
-		if asset3d == nil && spaceType != nil {
-			asset3d = spaceType.GetAsset3d()
+		if asset3d == nil && objectType != nil {
+			asset3d = objectType.GetAsset3d()
 		}
 	}
 	if asset2d != nil {
@@ -173,66 +173,66 @@ func (n *Node) apiGetSpace(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// @Summary Delete a space by ID
+// @Summary Delete a object by ID
 // @Schemes
-// @Description Deletes a space by ID
-// @Tags spaces
+// @Description Deletes a object by ID
+// @Tags objects
 // @Accept json
 // @Produce json
-// @Param space_id path string true "Object ID"
+// @Param object_id path string true "Object ID"
 // @Success 200 {object} nil
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{space_id} [delete]
-func (n *Node) apiRemoveSpace(c *gin.Context) {
-	spaceID, err := uuid.Parse(c.Param("spaceID"))
+// @Router /api/v4/objects/{object_id} [delete]
+func (n *Node) apiRemoveObject(c *gin.Context) {
+	objectID, err := uuid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiRemoveSpace: failed to parse space id")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, n.log)
+		err := errors.WithMessage(err, "Node: apiRemoveObject: failed to parse object id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
 		return
 	}
 
-	space, ok := n.GetObjectFromAllObjects(spaceID)
+	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
-		err := errors.Errorf("Node: apiRemoveSpace: space not found: %s", spaceID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		err := errors.Errorf("Node: apiRemoveObject: object not found: %s", objectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 		return
 	}
 
-	removed, err := helper.RemoveObjectFromParent(space.GetParent(), space, true)
+	removed, err := helper.RemoveObjectFromParent(object.GetParent(), object, true)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiRemoveSpace: failed to remove space from parent")
+		err := errors.WithMessage(err, "Node: apiRemoveObject: failed to remove object from parent")
 		api.AbortRequest(c, http.StatusInternalServerError, "remove_failed", err, n.log)
 		return
 	}
 
 	if !removed {
-		err := errors.Errorf("Node: apiRemoveSpace: space not found in parent")
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found_in_parent", err, n.log)
+		err := errors.Errorf("Node: apiRemoveObject: object not found in parent")
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found_in_parent", err, n.log)
 		return
 	}
 
 	c.JSON(http.StatusOK, nil)
 }
 
-// @Summary Update a space by ID
-// @Description Updates a space by ID, 're-parenting' not supported, returns updated space ID.
-// @Tags spaces
+// @Summary Update a object by ID
+// @Description Updates a object by ID, 're-parenting' not supported, returns updated object ID.
+// @Tags objects
 // @Accept json
 // @Produce json
-// @Param space_id path string true "Object ID"
-// @Param body body node.apiUpdateSpace.InBody true "body params"
-// @Success 200 {object} node.apiUpdateSpace.Out
+// @Param object_id path string true "Object ID"
+// @Param body body node.apiUpdateObject.InBody true "body params"
+// @Success 200 {object} node.apiUpdateObject.Out
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{space_id} [patch]
-func (n *Node) apiUpdateSpace(c *gin.Context) {
-	spaceID, err := uuid.Parse(c.Param("spaceID"))
+// @Router /api/v4/objects/{object_id} [patch]
+func (n *Node) apiUpdateObject(c *gin.Context) {
+	objectID, err := uuid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiUpdateSpace: failed to parse space id")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, n.log)
+		err := errors.WithMessage(err, "Node: apiUpdateObject: failed to parse object id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
 		return
 	}
 
@@ -240,22 +240,22 @@ func (n *Node) apiUpdateSpace(c *gin.Context) {
 	// not supporting 're-parenting' and changing type'. Have to delete and recreate for that.
 	// Update/edit the positioning is done through unity edit mode.
 	type InBody struct {
-		SpaceName string `json:"space_name"`
-		Asset2dID string `json:"asset_2d_id"`
-		Asset3dID string `json:"asset_3d_id"`
+		ObjectName string `json:"object_name"`
+		Asset2dID  string `json:"asset_2d_id"`
+		Asset3dID  string `json:"asset_3d_id"`
 	}
 	var inBody InBody
 
 	if err := c.ShouldBindJSON(&inBody); err != nil {
-		err := errors.WithMessage(err, "Node: apiUpdateSpace: failed to bind json")
+		err := errors.WithMessage(err, "Node: apiUpdateObject: failed to bind json")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
 		return
 	}
 
-	space, ok := n.GetObjectFromAllObjects(spaceID)
+	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
-		err := errors.Errorf("Node: apiUpdateSpace: space not found: %s", spaceID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		err := errors.Errorf("Node: apiUpdateObject: object not found: %s", objectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 		return
 	}
 
@@ -263,21 +263,21 @@ func (n *Node) apiUpdateSpace(c *gin.Context) {
 	if inBody.Asset2dID != "" {
 		asset2dID, err := uuid.Parse(inBody.Asset2dID)
 		if err != nil {
-			err := errors.WithMessage(err, "Node: apiUpdateSpace: failed to parse asset 2d id")
+			err := errors.WithMessage(err, "Node: apiUpdateObject: failed to parse asset 2d id")
 			api.AbortRequest(c, http.StatusBadRequest, "invalid_asset_2d_id", err, n.log)
 			return
 		}
 		asset2d, ok = n.GetAssets2d().GetAsset2d(asset2dID)
 		if !ok {
-			err := errors.Errorf("Node: apiUpdateSpace: 2D asset not found: %s", asset2dID)
-			api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+			err := errors.Errorf("Node: apiUpdateObject: 2D asset not found: %s", asset2dID)
+			api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 			return
 		}
 	}
 	if asset2d != nil {
-		if err := space.SetAsset2D(asset2d, true); err != nil {
-			err := errors.Errorf("Node: apiUpdateSpace: failed to update 2d asset: %s", asset2d.GetID())
-			api.AbortRequest(c, http.StatusInternalServerError, "space_asset_2d", err, n.log)
+		if err := object.SetAsset2D(asset2d, true); err != nil {
+			err := errors.Errorf("Node: apiUpdateObject: failed to update 2d asset: %s", asset2d.GetID())
+			api.AbortRequest(c, http.StatusInternalServerError, "object_asset_2d", err, n.log)
 			return
 		}
 	}
@@ -286,64 +286,64 @@ func (n *Node) apiUpdateSpace(c *gin.Context) {
 	if inBody.Asset3dID != "" {
 		asset3dID, err := uuid.Parse(inBody.Asset3dID)
 		if err != nil {
-			err := errors.WithMessage(err, "Node: apiUpdateSpace: failed to parse asset 3d id")
+			err := errors.WithMessage(err, "Node: apiUpdateObject: failed to parse asset 3d id")
 			api.AbortRequest(c, http.StatusBadRequest, "invalid_asset_3d_id", err, n.log)
 			return
 		}
 		asset3d, ok = n.GetAssets3d().GetAsset3d(asset3dID)
 		if !ok {
-			err := errors.Errorf("Node: apiUpdateSpace: 3D asset not found: %s", asset3dID)
-			api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+			err := errors.Errorf("Node: apiUpdateObject: 3D asset not found: %s", asset3dID)
+			api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 			return
 		}
 	}
 	if asset3d != nil {
-		if err := space.SetAsset3D(asset3d, true); err != nil {
-			err := errors.Errorf("Node: apiUpdateSpace: failed to update 3d asset: %s", asset3d.GetID())
-			api.AbortRequest(c, http.StatusInternalServerError, "space_asset_3d", err, n.log)
+		if err := object.SetAsset3D(asset3d, true); err != nil {
+			err := errors.Errorf("Node: apiUpdateObject: failed to update 3d asset: %s", asset3d.GetID())
+			api.AbortRequest(c, http.StatusInternalServerError, "object_asset_3d", err, n.log)
 			return
 		}
 	}
 
-	if inBody.SpaceName != "" {
-		if err := space.SetName(inBody.SpaceName, true); err != nil {
-			err := errors.WithMessagef(err, "Node: apiUpdateSpace: failed to set space name: %s", inBody.SpaceName)
-			api.AbortRequest(c, http.StatusInternalServerError, "space_name", err, n.log)
+	if inBody.ObjectName != "" {
+		if err := object.SetName(inBody.ObjectName, true); err != nil {
+			err := errors.WithMessagef(err, "Node: apiUpdateObject: failed to set object name: %s", inBody.ObjectName)
+			api.AbortRequest(c, http.StatusInternalServerError, "object_name", err, n.log)
 			return
 		}
 	}
 
-	if err := space.Update(false); err != nil {
-		err = errors.WithMessage(err, "Node: apiUpdateSpace: failed to update space")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_space_update", err, n.log)
+	if err := object.Update(false); err != nil {
+		err = errors.WithMessage(err, "Node: apiUpdateObject: failed to update object")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_object_update", err, n.log)
 		return
 	}
 
-	// TODO: output full space data
+	// TODO: output full object data
 	type Out struct {
-		SpaceID string `json:"space_id"`
+		ObjectID string `json:"object_id"`
 	}
 	out := Out{
-		SpaceID: spaceID.String(),
+		ObjectID: objectID.String(),
 	}
 
 	c.JSON(http.StatusOK, out)
 }
 
-// @Summary Set space sub option by space ID
+// @Summary Set object sub option by object ID
 // @Schemes
-// @Description Sets a space sub option by space ID, returns appended space option
-// @Tags spaces
+// @Description Sets a object sub option by object ID, returns appended object option
+// @Tags objects
 // @Accept json
 // @Produce json
-// @Param space_id path string true "Object ID"
-// @Param body body node.apiSpacesSetSpaceSubOption.Body true "body params"
-// @Success 202 {object} dto.SpaceSubOptions
+// @Param object_id path string true "Object ID"
+// @Param body body node.apiObjectsSetObjectSubOption.Body true "body params"
+// @Success 202 {object} dto.ObjectSubOptions
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{space_id}/options/sub [post]
-func (n *Node) apiSpacesSetSpaceSubOption(c *gin.Context) {
+// @Router /api/v4/objects/{object_id}/options/sub [post]
+func (n *Node) apiObjectsSetObjectSubOption(c *gin.Context) {
 	type Body struct {
 		SubOptionKey   string `json:"sub_option_key" binding:"required"`
 		SubOptionValue any    `json:"sub_option_value" binding:"required"`
@@ -351,22 +351,22 @@ func (n *Node) apiSpacesSetSpaceSubOption(c *gin.Context) {
 
 	var inBody Body
 	if err := c.ShouldBindJSON(&inBody); err != nil {
-		err = errors.WithMessage(err, "Node: apiSpacesSetSpaceSubOption: failed to bind json")
+		err = errors.WithMessage(err, "Node: apiObjectsSetObjectSubOption: failed to bind json")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
 		return
 	}
 
-	spaceID, err := uuid.Parse(c.Param("spaceID"))
+	objectID, err := uuid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSpacesSetSpaceSubOption: failed to parse space id")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, n.log)
+		err := errors.WithMessage(err, "Node: apiObjectsSetObjectSubOption: failed to parse object id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
 		return
 	}
 
-	space, ok := n.GetObjectFromAllObjects(spaceID)
+	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
-		err := errors.Errorf("Node: apiSpacesSetSpaceSubOption: space not found: %s", spaceID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		err := errors.Errorf("Node: apiObjectsSetObjectSubOption: object not found: %s", objectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 		return
 	}
 
@@ -383,55 +383,55 @@ func (n *Node) apiSpacesSetSpaceSubOption(c *gin.Context) {
 		return current, nil
 	}
 
-	if _, err := space.SetOptions(modifyFn, true); err != nil {
-		err := errors.WithMessage(err, "Node: apiSpacesSetSpaceSubOption: failed to set options")
+	if _, err := object.SetOptions(modifyFn, true); err != nil {
+		err := errors.WithMessage(err, "Node: apiObjectsSetObjectSubOption: failed to set options")
 		api.AbortRequest(c, http.StatusInternalServerError, "set_options_failed", err, n.log)
 		return
 	}
 
-	out := dto.SpaceSubOptions{
+	out := dto.ObjectSubOptions{
 		inBody.SubOptionKey: inBody.SubOptionValue,
 	}
 
 	c.JSON(http.StatusAccepted, out)
 }
 
-// @Summary Delete space sub option by space ID
+// @Summary Delete object sub option by object ID
 // @Schemes
-// @Description Deletes a space sub option by space ID
-// @Tags spaces
+// @Description Deletes a object sub option by object ID
+// @Tags objects
 // @Accept json
 // @Produce json
-// @Param space_id path string true "Object ID"
-// @Param body body node.apiSpacesRemoveSpaceSubOption.Body true "body params"
+// @Param object_id path string true "Object ID"
+// @Param body body node.apiObjectsRemoveObjectSubOption.Body true "body params"
 // @Success 200 {object} nil
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{space_id}/options/sub [delete]
-func (n *Node) apiSpacesRemoveSpaceSubOption(c *gin.Context) {
+// @Router /api/v4/objects/{object_id}/options/sub [delete]
+func (n *Node) apiObjectsRemoveObjectSubOption(c *gin.Context) {
 	type Body struct {
 		SubOptionKey string `json:"sub_option_key" binding:"required"`
 	}
 
 	var inBody Body
 	if err := c.ShouldBindJSON(&inBody); err != nil {
-		err = errors.WithMessage(err, "Node: apiSpacesRemoveSpaceSubOption: failed to bind json")
+		err = errors.WithMessage(err, "Node: apiObjectsRemoveObjectSubOption: failed to bind json")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
 		return
 	}
 
-	spaceID, err := uuid.Parse(c.Param("spaceID"))
+	objectID, err := uuid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSpacesRemoveSpaceSubOption: failed to parse space id")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, n.log)
+		err := errors.WithMessage(err, "Node: apiObjectsRemoveObjectSubOption: failed to parse object id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
 		return
 	}
 
-	space, ok := n.GetObjectFromAllObjects(spaceID)
+	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
-		err := errors.Errorf("Node: apiSpacesRemoveSpaceSubOption: space not found: %s", spaceID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		err := errors.Errorf("Node: apiObjectsRemoveObjectSubOption: object not found: %s", objectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 		return
 	}
 
@@ -445,8 +445,8 @@ func (n *Node) apiSpacesRemoveSpaceSubOption(c *gin.Context) {
 		return current, nil
 	}
 
-	if _, err := space.SetOptions(modifyFn, true); err != nil {
-		err := errors.WithMessage(err, "Node: apiSpacesRemoveSpaceSubOption: failed to set options")
+	if _, err := object.SetOptions(modifyFn, true); err != nil {
+		err := errors.WithMessage(err, "Node: apiObjectsRemoveObjectSubOption: failed to set options")
 		api.AbortRequest(c, http.StatusInternalServerError, "set_options_failed", err, n.log)
 		return
 	}
@@ -454,20 +454,20 @@ func (n *Node) apiSpacesRemoveSpaceSubOption(c *gin.Context) {
 	c.JSON(http.StatusOK, nil)
 }
 
-// @Summary Get space options by space ID
+// @Summary Get object options by object ID
 // @Schemes
-// @Description Returns a space options based on space ID and query
-// @Tags spaces
+// @Description Returns a object options based on object ID and query
+// @Tags objects
 // @Accept json
 // @Produce json
-// @Param space_id path string true "Object ID"
-// @Param query query node.apiSpacesGetSpaceOptions.InQuery false "query params"
-// @Success 200 {object} dto.SpaceOptions
+// @Param object_id path string true "Object ID"
+// @Param query query node.apiObjectsGetObjectOptions.InQuery false "query params"
+// @Success 200 {object} dto.ObjectOptions
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{space_id}/options [get]
-func (n *Node) apiSpacesGetSpaceOptions(c *gin.Context) {
+// @Router /api/v4/objects/{object_id}/options [get]
+func (n *Node) apiObjectsGetObjectOptions(c *gin.Context) {
 	type InQuery struct {
 		Effective bool `form:"effective"`
 	}
@@ -476,49 +476,49 @@ func (n *Node) apiSpacesGetSpaceOptions(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		err := errors.WithMessage(err, "Node: apiSpacesGetSpaceOptions: failed to bind query")
+		err := errors.WithMessage(err, "Node: apiObjectsGetObjectOptions: failed to bind query")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
 		return
 	}
 
-	spaceID, err := uuid.Parse(c.Param("spaceID"))
+	objectID, err := uuid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSpacesGetSpaceOptions: failed to parse space id")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, n.log)
+		err := errors.WithMessage(err, "Node: apiObjectsGetObjectOptions: failed to parse object id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
 		return
 	}
 
-	space, ok := n.GetObjectFromAllObjects(spaceID)
+	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
-		err := errors.Errorf("Node: apiSpacesGetSpaceOptions: space not found: %s", spaceID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		err := errors.Errorf("Node: apiObjectsGetObjectOptions: object not found: %s", objectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 		return
 	}
 
-	var out dto.SpaceOptions
+	var out dto.ObjectOptions
 	if inQuery.Effective {
-		out = space.GetEffectiveOptions()
+		out = object.GetEffectiveOptions()
 	} else {
-		out = space.GetOptions()
+		out = object.GetOptions()
 	}
 
 	c.JSON(http.StatusOK, out)
 }
 
-// @Summary Get space sub options
+// @Summary Get object sub options
 // @Schemes
-// @Description Returns a space sub options based on query
-// @Tags spaces
+// @Description Returns a object sub options based on query
+// @Tags objects
 // @Accept json
 // @Produce json
-// @Param space_id path string true "Object ID"
-// @Param query query node.apiSpacesGetSpaceSubOptions.InQuery true "query params"
-// @Success 200 {object} dto.SpaceSubOptions
+// @Param object_id path string true "Object ID"
+// @Param query query node.apiObjectsGetObjectSubOptions.InQuery true "query params"
+// @Success 200 {object} dto.ObjectSubOptions
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{space_id}/options/sub [get]
-func (n *Node) apiSpacesGetSpaceSubOptions(c *gin.Context) {
+// @Router /api/v4/objects/{object_id}/options/sub [get]
+func (n *Node) apiObjectsGetObjectSubOptions(c *gin.Context) {
 	type InQuery struct {
 		Effective    bool   `form:"effective"`
 		SubOptionKey string `form:"sub_option_key" binding:"required"`
@@ -528,45 +528,45 @@ func (n *Node) apiSpacesGetSpaceSubOptions(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		err := errors.WithMessage(err, "Node: apiSpacesGetSpaceSubOptions: failed to bind query")
+		err := errors.WithMessage(err, "Node: apiObjectsGetObjectSubOptions: failed to bind query")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
 		return
 	}
 
-	spaceID, err := uuid.Parse(c.Param("spaceID"))
+	objectID, err := uuid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSpacesGetSpaceSubOptions: failed to parse space id")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, n.log)
+		err := errors.WithMessage(err, "Node: apiObjectsGetObjectSubOptions: failed to parse object id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
 		return
 	}
 
-	space, ok := n.GetObjectFromAllObjects(spaceID)
+	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
-		err := errors.Errorf("Node: apiSpacesGetSpaceSubOptions: space not found: %s", spaceID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		err := errors.Errorf("Node: apiObjectsGetObjectSubOptions: object not found: %s", objectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 		return
 	}
 
 	var options *entry.ObjectOptions
 	if inQuery.Effective {
-		options = space.GetEffectiveOptions()
+		options = object.GetEffectiveOptions()
 	} else {
-		options = space.GetOptions()
+		options = object.GetOptions()
 	}
 
 	if options == nil {
-		err := errors.Errorf("Node: apiSpacesGetSpaceSubOptions: empty options")
+		err := errors.Errorf("Node: apiObjectsGetObjectSubOptions: empty options")
 		api.AbortRequest(c, http.StatusNotFound, "empty_options", err, n.log)
 		return
 	}
 
 	if options.Subs == nil {
-		err := errors.Errorf("Node: apiSpacesGetSpaceSubOptions: empty sub options")
+		err := errors.Errorf("Node: apiObjectsGetObjectSubOptions: empty sub options")
 		api.AbortRequest(c, http.StatusNotFound, "empty_sub_options", err, n.log)
 		return
 	}
 
-	out := dto.SpaceSubOptions{
+	out := dto.ObjectSubOptions{
 		inQuery.SubOptionKey: options.Subs[inQuery.SubOptionKey],
 	}
 

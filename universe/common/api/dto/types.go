@@ -64,7 +64,7 @@ type MagicType string
 
 const (
 	UnknownMagicType     MagicType = ""
-	OpenSpaceMagicType   MagicType = "open_space"
+	OpenObjectMagicType  MagicType = "open_space"
 	JoinMeetingMagicType MagicType = "join_meeting"
 	FlyMagicType         MagicType = "fly"
 	EventMagicType       MagicType = "event"
@@ -78,15 +78,15 @@ const (
 	StoppedStageModeStatusType   StageModeStatusType = "stopped"
 )
 
-type SpaceType string
+type ObjectType string
 
 const (
-	UnknownSpaceType    SpaceType = ""
-	WorldSpaceType      SpaceType = "world"
-	ProgramSpaceType    SpaceType = "program"
-	ChallengeSpaceType  SpaceType = "challenge"
-	ProjectSpaceType    SpaceType = "project"
-	GrabATableSpaceType SpaceType = "grab-a-table"
+	UnknownObjectType    ObjectType = ""
+	WorldObjectType      ObjectType = "world"
+	ProgramObjectType    ObjectType = "program"
+	ChallengeObjectType  ObjectType = "challenge"
+	ProjectObjectType    ObjectType = "project"
+	GrabATableObjectType ObjectType = "grab-a-table"
 )
 
 type StageModeRequestType string

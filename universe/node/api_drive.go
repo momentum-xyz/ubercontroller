@@ -334,7 +334,7 @@ func (n *Node) mint(jobID uuid.UUID, wallet string, meta NFTMeta, blockHash stri
 // @Success 200 {object} node.apiDriveMintOdysseyCheckJob.Out
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{job_id} [get]
+// @Router /api/v4/objects/{job_id} [get]
 func (n *Node) apiDriveMintOdysseyCheckJob(c *gin.Context) {
 	type Out struct {
 		NodeJSOut *NodeJSOut `json:"nodeJSOut"`

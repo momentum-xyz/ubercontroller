@@ -38,7 +38,7 @@ type Object struct {
 	//Mu               sync.RWMutex
 	Mu               deadlock.RWMutex
 	ownerID          uuid.UUID
-	position         *cmath.SpacePosition
+	position         *cmath.ObjectPosition
 	options          *entry.ObjectOptions
 	Parent           universe.Object
 	asset2d          universe.Asset2d
@@ -51,7 +51,7 @@ type Object struct {
 	attributesMsg     *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
 	renderTextureMap  *generic.SyncMap[string, string]
 	textMsg           atomic.Pointer[websocket.PreparedMessage]
-	actualPosition    atomic.Pointer[cmath.SpacePosition]
+	actualPosition    atomic.Pointer[cmath.ObjectPosition]
 	broadcastPipeline chan *websocket.PreparedMessage
 	messageAccept     atomic.Bool
 	numSendsQueued    atomic.Int64
@@ -130,7 +130,7 @@ func (s *Object) Initialize(ctx context.Context) error {
 	s.numSendsQueued.Store(chanIsClosed)
 	s.lockedBy.Store(uuid.Nil)
 
-	newPos := cmath.SpacePosition{Location: *new(cmath.Vec3), Rotation: *new(cmath.Vec3), Scale: *new(cmath.Vec3)}
+	newPos := cmath.ObjectPosition{Location: *new(cmath.Vec3), Rotation: *new(cmath.Vec3), Scale: *new(cmath.Vec3)}
 	s.actualPosition.Store(&newPos)
 
 	return nil

@@ -15,18 +15,18 @@ import (
 )
 
 type ObjectTemplate struct {
-	ObjectID         *uuid.UUID           `json:"object_id"`
-	ObjectName       *string              `json:"object_name"`
-	ObjectTypeID     uuid.UUID            `json:"object_type_id"`
-	ParentID         uuid.UUID            `json:"parent_id"`
-	OwnerID          *uuid.UUID           `json:"owner_id"`
-	Asset2dID        *uuid.UUID           `json:"asset_2d_id"`
-	Asset3dID        *uuid.UUID           `json:"asset_3d_id"`
-	Options          *entry.ObjectOptions `json:"options"`
-	Position         *cmath.SpacePosition `json:"position"`
-	Label            *string              `json:"label"`
-	ObjectAttributes []*entry.Attribute   `json:"object_attributes"`
-	Children         []*ObjectTemplate    `json:"children"`
+	ObjectID         *uuid.UUID            `json:"object_id"`
+	ObjectName       *string               `json:"object_name"`
+	ObjectTypeID     uuid.UUID             `json:"object_type_id"`
+	ParentID         uuid.UUID             `json:"parent_id"`
+	OwnerID          *uuid.UUID            `json:"owner_id"`
+	Asset2dID        *uuid.UUID            `json:"asset_2d_id"`
+	Asset3dID        *uuid.UUID            `json:"asset_3d_id"`
+	Options          *entry.ObjectOptions  `json:"options"`
+	Position         *cmath.ObjectPosition `json:"position"`
+	Label            *string               `json:"label"`
+	ObjectAttributes []*entry.Attribute    `json:"object_attributes"`
+	Children         []*ObjectTemplate     `json:"children"`
 }
 
 func AddObjectFromTemplate(objectTemplate *ObjectTemplate, updateDB bool) (uuid.UUID, error) {
@@ -208,13 +208,13 @@ func RemoveObjectFromParent(parent, object universe.Object, updateDB bool) (bool
 	return removed, errs.ErrorOrNil()
 }
 
-func CalcObjectSpawnPosition(parentID, userID uuid.UUID) (*cmath.SpacePosition, error) {
+func CalcObjectSpawnPosition(parentID, userID uuid.UUID) (*cmath.ObjectPosition, error) {
 	parent, ok := universe.GetNode().GetObjectFromAllObjects(parentID)
 	if !ok {
 		return nil, errors.Errorf("object parent not found: %s", parentID)
 	}
 
-	var position *cmath.SpacePosition
+	var position *cmath.ObjectPosition
 	effectiveOptions := parent.GetEffectiveOptions()
 	if effectiveOptions == nil || len(effectiveOptions.ChildPlacements) == 0 {
 		world := parent.GetWorld()
@@ -223,7 +223,7 @@ func CalcObjectSpawnPosition(parentID, userID uuid.UUID) (*cmath.SpacePosition, 
 			if ok {
 				fmt.Printf("User rotation: %v", user.GetRotation())
 				//distance := float32(10)
-				position = &cmath.SpacePosition{
+				position = &cmath.ObjectPosition{
 					// TODO: recalc based on euler angles, not lookat: Location: cmath.Add(user.GetPosition(), cmath.MultiplyN(user.GetRotation(), distance)),
 					Location: user.GetPosition(),
 					Rotation: cmath.Vec3{},

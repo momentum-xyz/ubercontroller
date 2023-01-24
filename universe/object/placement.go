@@ -58,7 +58,7 @@ func (s *Object) GetPlacements() map[uuid.UUID]position_algo.Algo {
 	return pls
 }
 
-func (s *Object) SetActualPosition(pos cmath.SpacePosition, theta float64) error {
+func (s *Object) SetActualPosition(pos cmath.ObjectPosition, theta float64) error {
 	s.Mu.Lock()
 	defer s.Mu.Unlock()
 
@@ -83,18 +83,18 @@ func (s *Object) SetActualPosition(pos cmath.SpacePosition, theta float64) error
 	return nil
 }
 
-func (s *Object) GetPosition() *cmath.SpacePosition {
+func (s *Object) GetPosition() *cmath.ObjectPosition {
 	s.Mu.RLock()
 	defer s.Mu.RUnlock()
 
 	return s.position
 }
 
-func (s *Object) GetActualPosition() *cmath.SpacePosition {
+func (s *Object) GetActualPosition() *cmath.ObjectPosition {
 	return s.actualPosition.Load()
 }
 
-func (s *Object) SetPosition(position *cmath.SpacePosition, updateDB bool) error {
+func (s *Object) SetPosition(position *cmath.ObjectPosition, updateDB bool) error {
 	s.Mu.Lock()
 	defer s.Mu.Unlock()
 

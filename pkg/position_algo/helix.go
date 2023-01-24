@@ -33,8 +33,8 @@ func NewHelix(parameterMap map[string]interface{}) Algo {
 	}
 }
 
-func (h *helix) CalcPos(parentTheta float64, parentPosition cmath.SpacePosition, i, n int) (
-	cmath.SpacePosition, float64,
+func (h *helix) CalcPos(parentTheta float64, parentPosition cmath.ObjectPosition, i, n int) (
+	cmath.ObjectPosition, float64,
 ) {
 	parent := parentPosition.Location.ToVec3f64()
 	id := float64(i)
@@ -51,7 +51,7 @@ func (h *helix) CalcPos(parentTheta float64, parentPosition cmath.SpacePosition,
 		Z: math.Round((parent.Z+r*math.Sin(angle))*10.0) / 10.0,
 	}
 
-	np := cmath.SpacePosition{Location: p.ToVec3()}
+	np := cmath.ObjectPosition{Location: p.ToVec3()}
 	return np, math.Atan2(p.Z-parent.Z, p.X-parent.X) /* theta */
 }
 

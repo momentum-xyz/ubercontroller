@@ -25,7 +25,7 @@ type Calendar struct {
 }
 
 type Event struct {
-	ObjectID *uuid.UUID `json:"spaceId"`
+	ObjectID *uuid.UUID `json:"objectId"`
 	Title    string     `json:"title"`
 	Start    time.Time  `json:"start"`
 	End      time.Time  `json:"end"`

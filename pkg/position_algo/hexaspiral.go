@@ -39,8 +39,8 @@ func NewHexaSpiral(parameterMap map[string]interface{}) Algo {
 	}
 }
 
-func (h *hexaSpiral) CalcPos(parentTheta float64, parentPosition cmath.SpacePosition, i, n int) (
-	cmath.SpacePosition, float64,
+func (h *hexaSpiral) CalcPos(parentTheta float64, parentPosition cmath.ObjectPosition, i, n int) (
+	cmath.ObjectPosition, float64,
 ) {
 	parent := parentPosition.Location.ToVec3f64()
 
@@ -61,7 +61,7 @@ func (h *hexaSpiral) CalcPos(parentTheta float64, parentPosition cmath.SpacePosi
 		Z: math.Round((parent.Z+y*h.Robject)*10.0) / 10.0,
 	}
 
-	np := cmath.SpacePosition{Location: p.ToVec3()}
+	np := cmath.ObjectPosition{Location: p.ToVec3()}
 	return np, math.Atan2(p.Z-parent.Z, p.X-parent.X) /* theta */
 }
 

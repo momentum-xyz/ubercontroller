@@ -79,56 +79,56 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 			verifiedProfile.PATCH("", n.apiProfileUpdate)
 		}
 
-		verifiedSpaces := verified.Group("/spaces")
+		verifiedObjects := verified.Group("/objects")
 		{
 			// TODO: it was created only for tests, fix or remove
-			verifiedSpaces.POST("/template", n.apiSpacesCreateSpaceFromTemplate)
+			verifiedObjects.POST("/template", n.apiObjectsCreateObjectFromTemplate)
 
-			verifiedSpaces.POST("", n.apiSpacesCreateSpace)
+			verifiedObjects.POST("", n.apiObjectsCreateObject)
 
-			space := verifiedSpaces.Group("/:spaceID")
+			object := verifiedObjects.Group("/:objectID")
 			{
-				spaceAdmin := space.Group("", middleware.AuthorizeAdmin(n.log))
+				objectAdmin := object.Group("", middleware.AuthorizeAdmin(n.log))
 				{
-					spaceAdmin.POST("/options/sub", n.apiSpacesSetSpaceSubOption)
-					spaceAdmin.DELETE("/options/sub", n.apiSpacesRemoveSpaceSubOption)
+					objectAdmin.POST("/options/sub", n.apiObjectsSetObjectSubOption)
+					objectAdmin.DELETE("/options/sub", n.apiObjectsRemoveObjectSubOption)
 
-					spaceAdmin.DELETE("", n.apiRemoveSpace)
-					spaceAdmin.PATCH("", n.apiUpdateSpace)
+					objectAdmin.DELETE("", n.apiRemoveObject)
+					objectAdmin.PATCH("", n.apiUpdateObject)
 				}
 
-				space.POST("/attributes", n.apiSetSpaceAttributesValue)
-				space.DELETE("/attributes", n.apiRemoveSpaceAttributeValue)
+				object.POST("/attributes", n.apiSetObjectAttributesValue)
+				object.DELETE("/attributes", n.apiRemoveObjectAttributeValue)
 
-				space.POST("/attributes/sub", n.apiSetSpaceAttributeSubValue)
-				space.DELETE("/attributes/sub", n.apiRemoveSpaceAttributeSubValue)
+				object.POST("/attributes/sub", n.apiSetObjectAttributeSubValue)
+				object.DELETE("/attributes/sub", n.apiRemoveObjectAttributeSubValue)
 
-				space.POST("/agora/token", n.apiGenAgoraToken)
+				object.POST("/agora/token", n.apiGenAgoraToken)
 
-				space.GET("", n.apiGetSpace)
+				object.GET("", n.apiGetObject)
 
-				space.GET("/options", n.apiSpacesGetSpaceOptions)
-				space.GET("/options/sub", n.apiSpacesGetSpaceSubOptions)
+				object.GET("/options", n.apiObjectsGetObjectOptions)
+				object.GET("/options/sub", n.apiObjectsGetObjectSubOptions)
 
-				space.GET("/attributes", n.apiGetSpaceAttributesValue)
-				space.GET("/attributes-with-children", n.apiGetSpaceWithChildrenAttributeValues)
+				object.GET("/attributes", n.apiGetObjectAttributesValue)
+				object.GET("/attributes-with-children", n.apiGetObjectWithChildrenAttributeValues)
 
-				space.GET("/attributes/sub", n.apiGetSpaceAttributeSubValue)
+				object.GET("/attributes/sub", n.apiGetObjectAttributeSubValue)
 
-				space.GET("/all-users/attributes", n.apiGetSpaceAllUsersAttributeValuesList)
+				object.GET("/all-users/attributes", n.apiGetObjectAllUsersAttributeValuesList)
 			}
 
-			spaceUser := verifiedSpaces.Group("/:spaceID/:userID")
+			objectUser := verifiedObjects.Group("/:objectID/:userID")
 			{
-				spaceUser.POST("/attributes", n.apiSetSpaceUserAttributesValue)
-				spaceUser.DELETE("/attributes", n.apiRemoveSpaceUserAttributeValue)
+				objectUser.POST("/attributes", n.apiSetObjectUserAttributesValue)
+				objectUser.DELETE("/attributes", n.apiRemoveObjectUserAttributeValue)
 
-				spaceUser.POST("/attributes/sub", n.apiSetSpaceUserAttributeSubValue)
-				spaceUser.DELETE("/attributes/sub", n.apiRemoveSpaceUserAttributeSubValue)
+				objectUser.POST("/attributes/sub", n.apiSetObjectUserAttributeSubValue)
+				objectUser.DELETE("/attributes/sub", n.apiRemoveObjectUserAttributeSubValue)
 
-				spaceUser.GET("/attributes", n.apiGetSpaceUserAttributesValue)
+				objectUser.GET("/attributes", n.apiGetObjectUserAttributesValue)
 
-				spaceUser.GET("/attributes/sub", n.apiGetSpaceUserAttributeSubValue)
+				objectUser.GET("/attributes/sub", n.apiGetObjectUserAttributeSubValue)
 			}
 		}
 

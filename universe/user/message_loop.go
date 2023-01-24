@@ -112,7 +112,7 @@ func (u *User) InteractionHandler(m *posbus.TriggerInteraction) error {
 	)
 
 	switch kind {
-	case posbus.TriggerEnteredSpace:
+	case posbus.TriggerEnteredObject:
 		object, ok := universe.GetNode().GetObjectFromAllObjects(targetUUID)
 		if !ok {
 			return errors.WithMessage(
@@ -125,7 +125,7 @@ func (u *User) InteractionHandler(m *posbus.TriggerInteraction) error {
 			)
 		}
 		return nil
-	case posbus.TriggerLeftSpace:
+	case posbus.TriggerLeftObject:
 		object, ok := universe.GetNode().GetObjectFromAllObjects(targetUUID)
 		if !ok {
 			return errors.WithMessage(
