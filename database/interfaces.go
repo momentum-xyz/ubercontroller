@@ -66,8 +66,9 @@ type UsersDB interface {
 	GetUserByID(ctx context.Context, userID uuid.UUID) (*entry.User, error)
 	GetUsersByIDs(ctx context.Context, userIDs []uuid.UUID) ([]*entry.User, error)
 	GetUserByWallet(ctx context.Context, wallet string) (*entry.User, error)
-	GetUserByName(ctx context.Context, name string) (*entry.User, error)
 	GetUserProfileByUserID(ctx context.Context, userID uuid.UUID) (*entry.UserProfile, error)
+
+	UserExistsByName(ctx context.Context, name string) (bool, error)
 
 	UpsertUser(ctx context.Context, user *entry.User) error
 	UpsertUsers(ctx context.Context, user []*entry.User) error

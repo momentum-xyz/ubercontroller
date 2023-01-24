@@ -128,7 +128,7 @@ func ValidateJWTWithSecret(signedString string, secret []byte) (*jwt.Token, erro
 	})
 }
 
-func GenerateVisitorName(c *gin.Context, db database.DB) (string, error) {
+func GenerateGuestName(c *gin.Context, db database.DB) (string, error) {
 	visitorNameTemplate := "Visitor_"
 
 	visitorSuffix, err := gonanoid.New(7)
@@ -138,10 +138,13 @@ func GenerateVisitorName(c *gin.Context, db database.DB) (string, error) {
 
 	visitorName := visitorNameTemplate + visitorSuffix
 
-	_, err = db.GetUsersDB().GetUserByName(c, visitorName)
-	if err == nil {
+	exists, err := db.GetUsersDB().UserExistsByName(c, visitorName)
+	if err != nil {
+		return "", errors.WithMessage(err, "failed to check for duplicates")
+	}
+	if exists {
 		// Row exists -> regenerate
-		GenerateVisitorName(c, db)
+		GenerateGuestName(c, db)
 	}
 
 	return visitorName, nil

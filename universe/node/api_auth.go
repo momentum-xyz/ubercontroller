@@ -197,7 +197,7 @@ func (n *Node) apiGenToken(c *gin.Context) {
 // @Failure 500 {object} api.HTTPError
 // @Router /api/v4/auth/guest-token [post]
 func (n *Node) apiGuestToken(c *gin.Context) {
-	visitorName, err := api.GenerateVisitorName(c, n.db)
+	visitorName, err := api.GenerateGuestName(c, n.db)
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiGuestToken: failed to generate visitor name")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_generate_name", err, n.log)
