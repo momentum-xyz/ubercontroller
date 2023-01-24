@@ -23,7 +23,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/space"
+	"github.com/momentum-xyz/ubercontroller/universe/object"
 	"github.com/momentum-xyz/ubercontroller/universe/streamchat"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
@@ -31,7 +31,7 @@ import (
 var _ universe.Node = (*Node)(nil)
 
 type Node struct {
-	*space.Space
+	*object.Object
 	cfg        *config.Config
 	ctx        context.Context
 	log        *zap.SugaredLogger
@@ -39,20 +39,22 @@ type Node struct {
 	router     *gin.Engine
 	httpServer *http.Server
 
-	nodeAttributes      *nodeAttributes // WARNING: the Node is sharing the same mutex ("Mu") with it
-	userAttributes      *userAttributes
-	userUserAttributes  *userUserAttributes
-	spaceUserAttributes *spaceUserAttributes
-
 	worlds         universe.Worlds
 	assets2d       universe.Assets2d
 	assets3d       universe.Assets3d
-	spaceTypes     universe.SpaceTypes
+	objectTypes    universe.ObjectTypes
 	userTypes      universe.UserTypes
 	attributeTypes universe.AttributeTypes
 	plugins        universe.Plugins
 
-	spaceIDToWorld *generic.SyncMap[uuid.UUID, universe.World] // TODO: introduce GC for lost Worlds and Spaces
+	userObjects *userObjects
+
+	nodeAttributes       *nodeAttributes // WARNING: the Node is sharing the same mutex ("Mu") with it
+	userAttributes       *userAttributes
+	userUserAttributes   *userUserAttributes
+	objectUserAttributes *objectUserAttributes
+
+	objectIDToWorld *generic.SyncMap[uuid.UUID, universe.World] // TODO: introduce GC for lost Worlds and Objects
 
 	chatService *streamchat.StreamChat
 
@@ -69,26 +71,27 @@ func NewNode(
 	assets2D universe.Assets2d,
 	assets3D universe.Assets3d,
 	plugins universe.Plugins,
-	spaceTypes universe.SpaceTypes,
+	objectTypes universe.ObjectTypes,
 	userTypes universe.UserTypes,
 	attributeTypes universe.AttributeTypes,
 ) *Node {
 	node := &Node{
-		Space:          space.NewSpace(id, db, nil),
-		db:             db,
-		worlds:         worlds,
-		assets2d:       assets2D,
-		assets3d:       assets3D,
-		plugins:        plugins,
-		spaceTypes:     spaceTypes,
-		userTypes:      userTypes,
-		attributeTypes: attributeTypes,
-		spaceIDToWorld: generic.NewSyncMap[uuid.UUID, universe.World](0),
+		Object:          object.NewObject(id, db, nil),
+		db:              db,
+		worlds:          worlds,
+		assets2d:        assets2D,
+		assets3d:        assets3D,
+		plugins:         plugins,
+		objectTypes:     objectTypes,
+		userTypes:       userTypes,
+		attributeTypes:  attributeTypes,
+		objectIDToWorld: generic.NewSyncMap[uuid.UUID, universe.World](0),
 	}
+	node.userObjects = newUserObjects(node)
 	node.nodeAttributes = newNodeAttributes(node)
 	node.userAttributes = newUserAttributes(node)
 	node.userUserAttributes = newUserUserAttributes(node)
-	node.spaceUserAttributes = newSpaceUserAttributes(node)
+	node.objectUserAttributes = newObjectUserAttributes(node)
 
 	return node
 }
@@ -128,11 +131,15 @@ func (n *Node) Initialize(ctx context.Context) error {
 		return err
 	}
 
-	return n.Space.Initialize(ctx)
+	return n.Object.Initialize(ctx)
 }
 
-func (n *Node) ToSpace() universe.Space {
-	return n.Space
+func (n *Node) ToObject() universe.Object {
+	return n.Object
+}
+
+func (n *Node) GetUserObjects() universe.UserObjects {
+	return n.userObjects
 }
 
 func (n *Node) GetNodeAttributes() universe.NodeAttributes {
@@ -147,8 +154,8 @@ func (n *Node) GetUserUserAttributes() universe.UserUserAttributes {
 	return n.userUserAttributes
 }
 
-func (n *Node) GetSpaceUserAttributes() universe.SpaceUserAttributes {
-	return n.spaceUserAttributes
+func (n *Node) GetObjectUserAttributes() universe.ObjectUserAttributes {
+	return n.objectUserAttributes
 }
 
 func (n *Node) GetWorlds() universe.Worlds {
@@ -171,8 +178,8 @@ func (n *Node) GetAttributeTypes() universe.AttributeTypes {
 	return n.attributeTypes
 }
 
-func (n *Node) GetSpaceTypes() universe.SpaceTypes {
-	return n.spaceTypes
+func (n *Node) GetObjectTypes() universe.ObjectTypes {
+	return n.objectTypes
 }
 
 func (n *Node) GetUserTypes() universe.UserTypes {
@@ -236,7 +243,7 @@ func (n *Node) Load() error {
 
 		// second stage
 		group, _ = errgroup.WithContext(n.ctx)
-		group.Go(n.spaceTypes.Load)
+		group.Go(n.objectTypes.Load)
 		group.Go(n.plugins.Load)
 		if err := group.Wait(); err != nil {
 			return errors.WithMessage(err, "failed to load additional data")
@@ -250,11 +257,11 @@ func (n *Node) Load() error {
 				if err != nil {
 					return errors.WithMessage(err, "failed to get node")
 				}
-				if err := n.LoadFromEntry(nodeEntry.Space, false); err != nil {
+				if err := n.LoadFromEntry(nodeEntry.Object, false); err != nil {
 					return errors.WithMessage(err, "failed to load node from entry")
 				}
 
-				if err := n.loadNodeAttributes(); err != nil {
+				if err := n.GetNodeAttributes().Load(); err != nil {
 					return errors.WithMessage(err, "failed to load node attributes")
 				}
 
@@ -314,10 +321,10 @@ func (n *Node) Save() error {
 	go func() {
 		defer wg.Done()
 
-		if err := n.spaceTypes.Save(); err != nil {
+		if err := n.objectTypes.Save(); err != nil {
 			errsMu.Lock()
 			defer errsMu.Unlock()
-			errs = multierror.Append(errs, errors.WithMessage(err, "failed to save space types"))
+			errs = multierror.Append(errs, errors.WithMessage(err, "failed to save object types"))
 		}
 	}()
 

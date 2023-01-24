@@ -41,7 +41,7 @@ type User struct {
 	ctx                         context.Context
 	send                        chan *websocket.PreparedMessage
 	mu                          deadlock.RWMutex
-	space                       universe.Space
+	object                      universe.Object
 	world                       universe.World
 	profile                     *entry.UserProfile
 	options                     *entry.UserOptions
@@ -93,18 +93,18 @@ func (u *User) SetWorld(world universe.World) {
 	u.world = world
 }
 
-func (u *User) GetSpace() universe.Space {
+func (u *User) GetObject() universe.Object {
 	u.mu.RLock()
 	defer u.mu.RUnlock()
 
-	return u.space
+	return u.object
 }
 
-func (u *User) SetSpace(space universe.Space) {
+func (u *User) SetObject(object universe.Object) {
 	u.mu.Lock()
 	defer u.mu.Unlock()
 
-	u.space = space
+	u.object = object
 }
 
 func (u *User) GetUserType() universe.UserType {

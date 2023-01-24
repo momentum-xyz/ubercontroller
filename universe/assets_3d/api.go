@@ -16,7 +16,7 @@ func (a *Assets3d) RegisterAPI(r *gin.Engine) {
 	{
 		assets3d := vx.Group("/assets-3d/:spaceID", middleware.VerifyUser(a.log))
 		{
-			authorizedAdmin := assets3d.Group("", middleware.AuthorizeAdmin(a.log, a.db))
+			authorizedAdmin := assets3d.Group("", middleware.AuthorizeAdmin(a.log))
 			{
 				authorizedAdmin.POST("", a.apiAddAssets3d)
 				authorizedAdmin.POST("/upload", a.apiUploadAsset3d)

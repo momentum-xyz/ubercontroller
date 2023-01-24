@@ -46,13 +46,17 @@ func (m *SyncMap[K, V]) Remove(k K) bool {
 	return true
 }
 
-func (m *SyncMap[K, V]) Map(mapFn func(v V) V) {
+func (m *SyncMap[K, V]) Map(mapFn func(k K, v V) V) map[K]V {
 	m.Mu.Lock()
 	defer m.Mu.Unlock()
 
+	data := make(map[K]V, len(m.Data))
+
 	for k, v := range m.Data {
-		m.Data[k] = mapFn(v)
+		data[k] = mapFn(k, v)
 	}
+
+	return data
 }
 
 func (m *SyncMap[K, V]) Filter(predicateFn func(k K, v V) bool) map[K]V {

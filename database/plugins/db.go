@@ -17,12 +17,6 @@ import (
 const (
 	getPluginsQuery = `SELECT * FROM plugin;`
 
-	removePluginByIDQuery   = `DELETE FROM plugin WHERE plugin_id = $1;`
-	removePluginsByIDsQuery = `DELETE FROM plugin WHERE plugin_id = ANY($1);`
-
-	updatePluginMetaQuery    = `UPDATE plugin SET meta = $2 WHERE plugin_id = $1;`
-	updatePluginOptionsQuery = `UPDATE plugin SET options = $2 WHERE plugin_id = $1;`
-
 	upsertPluginQuery = `INSERT INTO plugin
 								(plugin_id, meta, options, created_at, updated_at)
 							VALUES
@@ -30,6 +24,12 @@ const (
 							ON CONFLICT (plugin_id)
 							DO UPDATE SET
 								meta = $2, options = $3, updated_at = CURRENT_TIMESTAMP;`
+
+	updatePluginMetaQuery    = `UPDATE plugin SET meta = $2 WHERE plugin_id = $1;`
+	updatePluginOptionsQuery = `UPDATE plugin SET options = $2 WHERE plugin_id = $1;`
+
+	removePluginByIDQuery   = `DELETE FROM plugin WHERE plugin_id = $1;`
+	removePluginsByIDsQuery = `DELETE FROM plugin WHERE plugin_id = ANY($1);`
 )
 
 var _ database.PluginsDB = (*DB)(nil)

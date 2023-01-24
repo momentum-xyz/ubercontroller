@@ -251,7 +251,7 @@ func (a *Assets3d) apiRemoveAssets3dByIDs(c *gin.Context) {
 	var inBody InBody
 
 	if err := c.ShouldBindJSON(&inBody); err != nil {
-		err = errors.WithMessage(err, "Assets3d: apiRemoveAssets3dByIDs: failed to bind json")
+		err := errors.WithMessage(err, "Assets3d: apiRemoveAssets3dByIDs: failed to bind json")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, a.log)
 		return
 	}
@@ -260,16 +260,22 @@ func (a *Assets3d) apiRemoveAssets3dByIDs(c *gin.Context) {
 	for i := range inBody.Assets3dIDs {
 		uid, err := uuid.Parse(inBody.Assets3dIDs[i])
 		if err != nil {
-			err = errors.WithMessage(err, "Assets3d: apiRemoveAssets3dByIDs: failed to parse uuid")
+			err := errors.WithMessage(err, "Assets3d: apiRemoveAssets3dByIDs: failed to parse uuid")
 			api.AbortRequest(c, http.StatusInternalServerError, "invalid_uuid_parse", err, a.log)
 			return
 		}
 		uids[i] = uid
 	}
 
-	if err := a.RemoveAssets3dByIDs(uids, true); err != nil {
-		err = errors.WithMessage(err, "Assets3d: apiRemoveAssets3dByIDs: failed to remove assets3d")
+	removed, err := a.RemoveAssets3dByIDs(uids, true)
+	if err != nil {
+		err := errors.WithMessage(err, "Assets3d: apiRemoveAssets3dByIDs: failed to remove assets3d")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_remove_assets3d_by_ids", err, a.log)
+		return
+	}
+	if !removed {
+		err := errors.WithMessage(err, "Assets3d: apiRemoveAssets3dByIDs: failed to remove assets3d")
+		api.AbortRequest(c, http.StatusNotFound, "assets3d_not_removed", err, a.log)
 		return
 	}
 
@@ -380,14 +386,20 @@ func (a *Assets3d) apiGetAssets3dMeta(c *gin.Context) {
 func (a *Assets3d) apiRemoveAsset3dByID(c *gin.Context) {
 	uid, err := uuid.Parse(c.Param("asset3dID"))
 	if err != nil {
-		err = errors.WithMessage(err, "Assets3d: apiRemoveAsset3dByID: failed to parse uuid")
+		err := errors.WithMessage(err, "Assets3d: apiRemoveAsset3dByID: failed to parse uuid")
 		api.AbortRequest(c, http.StatusInternalServerError, "invalid_uuid_parse", err, a.log)
 		return
 	}
 
-	if err := a.RemoveAsset3dByID(uid, true); err != nil {
-		err = errors.WithMessage(err, "Assets3d: apiRemoveAsset3dByID: failed to remove asset3d")
+	removed, err := a.RemoveAsset3dByID(uid, true)
+	if err != nil {
+		err := errors.WithMessage(err, "Assets3d: apiRemoveAsset3dByID: failed to remove asset3d")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_remove_asset3d_by_id", err, a.log)
+		return
+	}
+	if !removed {
+		err := errors.WithMessage(err, "Assets3d: apiRemoveAsset3dByID: failed to remove asset3d")
+		api.AbortRequest(c, http.StatusNotFound, "asset3d_not_removed", err, a.log)
 		return
 	}
 

@@ -184,10 +184,9 @@ func (s *StreamChat) GetToken(ctx context.Context, user universe.User) (string, 
 	return token, nil
 }
 
-// Get or create a channel for given space.
-func (s *StreamChat) GetChannel(ctx context.Context, space universe.Space) (*stream.Channel, error) {
-
-	chanID := space.GetID().String()
+// Get or create a channel for given object.
+func (s *StreamChat) GetChannel(ctx context.Context, object universe.Object) (*stream.Channel, error) {
+	chanID := object.GetID().String()
 	userID := systemUser
 	response, err := s.client.CreateChannel(ctx, MomentumChannelType, chanID, userID, nil)
 	if err != nil {

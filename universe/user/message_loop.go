@@ -41,8 +41,8 @@ func (u *User) OnMessage(msg *posbus.Message) error {
 			return errors.WithMessage(err, "failed to handle: signal")
 		}
 	case posbus.MsgTypeSetStaticObjectPosition:
-		if err := u.UpdateSpacePosition(msg.AsSetStaticObjectPosition()); err != nil {
-			return errors.WithMessage(err, "failed to update space position")
+		if err := u.UpdateObjectPosition(msg.AsSetStaticObjectPosition()); err != nil {
+			return errors.WithMessage(err, "failed to update object position")
 		}
 	case posbus.MsgTypeSetObjectLockState:
 		if err := u.LockObject(msg.AsSetObjectLockState()); err != nil {
@@ -55,12 +55,12 @@ func (u *User) OnMessage(msg *posbus.Message) error {
 	return nil
 }
 
-func (u *User) UpdateSpacePosition(msg *posbus.SetStaticObjectPosition) error {
-	space, ok := universe.GetNode().GetSpaceFromAllSpaces(msg.ObjectID())
+func (u *User) UpdateObjectPosition(msg *posbus.SetStaticObjectPosition) error {
+	object, ok := universe.GetNode().GetObjectFromAllObjects(msg.ObjectID())
 	if !ok {
-		return errors.Errorf("space not found: %s", msg.ObjectID())
+		return errors.Errorf("object not found: %s", msg.ObjectID())
 	}
-	return space.SetPosition(utils.GetPTR(msg.Position()), true)
+	return object.SetPosition(utils.GetPTR(msg.Position()), true)
 }
 
 func (u *User) Teleport(msg *posbus.SwitchWorld) error {
@@ -113,28 +113,28 @@ func (u *User) InteractionHandler(m *posbus.TriggerInteraction) error {
 
 	switch kind {
 	case posbus.TriggerEnteredSpace:
-		space, ok := universe.GetNode().GetSpaceFromAllSpaces(targetUUID)
+		object, ok := universe.GetNode().GetObjectFromAllObjects(targetUUID)
 		if !ok {
 			return errors.WithMessage(
-				errors.Errorf("space not found: %s", targetUUID), "failed to handle: enter space",
+				errors.Errorf("object not found: %s", targetUUID), "failed to handle: enter object",
 			)
 		}
-		if err := space.AddUser(u, true); err != nil {
+		if err := object.AddUser(u, true); err != nil {
 			return errors.WithMessage(
-				errors.Errorf("failed to add user to space: %s", targetUUID), "failed to handle: enter space",
+				errors.Errorf("failed to add user to object: %s", targetUUID), "failed to handle: enter object",
 			)
 		}
 		return nil
 	case posbus.TriggerLeftSpace:
-		space, ok := universe.GetNode().GetSpaceFromAllSpaces(targetUUID)
+		object, ok := universe.GetNode().GetObjectFromAllObjects(targetUUID)
 		if !ok {
 			return errors.WithMessage(
-				errors.Errorf("space not found: %s", targetUUID), "failed to handle: left space",
+				errors.Errorf("object not found: %s", targetUUID), "failed to handle: left object",
 			)
 		}
-		if err := space.RemoveUser(u, true); err != nil {
+		if _, err := object.RemoveUser(u, true); err != nil {
 			return errors.WithMessage(
-				errors.Errorf("failed to remove user from space: %s", targetUUID), "failed to handle: left space",
+				errors.Errorf("failed to remove user from object: %s", targetUUID), "failed to handle: left object",
 			)
 		}
 		return nil
@@ -154,12 +154,12 @@ func (u *User) LockObject(msg *posbus.SetObjectLockState) error {
 	id := msg.ObjectID()
 	state := msg.State()
 
-	space, ok := u.GetWorld().GetSpaceFromAllSpaces(id)
+	object, ok := u.GetWorld().GetObjectFromAllObjects(id)
 	if !ok {
-		return errors.Errorf("space not found: %s", id)
+		return errors.Errorf("object not found: %s", id)
 	}
 
-	result := space.LockUnityObject(u, state)
+	result := object.LockUnityObject(u, state)
 	newState := state
 	if !result {
 		newState = 1 - state
@@ -219,7 +219,7 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 	)
 	target.Send(posbus.NewRelayToReactMsg("high5", high5Data).WebsocketMessage())
 
-	effectsEmitterID := world.GetSettings().Spaces["effects_emitter"]
+	effectsEmitterID := world.GetSettings().Objects["effects_emitter"]
 	effect := posbus.NewTriggerTransitionalBridgingEffectsOnPositionMsg(1)
 	effect.SetEffect(0, effectsEmitterID, u.GetPosition(), target.GetPosition(), 1001)
 	u.GetWorld().Send(effect.WebsocketMessage(), false)

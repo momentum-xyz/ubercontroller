@@ -13,11 +13,11 @@ import (
 )
 
 func (w *World) GetUser(userID uuid.UUID, recursive bool) (universe.User, bool) {
-	return w.Space.GetUser(userID, false)
+	return w.Object.GetUser(userID, false)
 }
 
 func (w *World) GetUsers(recursive bool) map[uuid.UUID]universe.User {
-	return w.Space.GetUsers(false)
+	return w.Object.GetUsers(false)
 }
 
 func (w *World) AddUser(user universe.User, updateDB bool) error {
@@ -60,7 +60,7 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 
 	w.log.Infof("AddUser: %+v\n", user.GetID())
 	// effectively replace user if exists
-	if err = w.Space.AddUser(user, updateDB); err != nil {
+	if err = w.Object.AddUser(user, updateDB); err != nil {
 		return errors.WithMessagef(err, "failed to add user %s to world: %s", user.GetID(), w.GetID())
 	}
 
@@ -68,7 +68,7 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 	return err
 }
 
-func (w *World) RemoveUser(user universe.User, updateDB bool) error {
+func (w *World) RemoveUser(user universe.User, updateDB bool) (bool, error) {
 	w.Users.Mu.Lock()
 	defer w.Users.Mu.Unlock()
 
@@ -76,34 +76,39 @@ func (w *World) RemoveUser(user universe.User, updateDB bool) error {
 }
 
 func (w *World) Send(msg *websocket.PreparedMessage, recursive bool) error {
-	return w.Space.Send(msg, false)
+	return w.Object.Send(msg, false)
 }
 
 func (w *World) GetUserSpawnPosition(userID uuid.UUID) cmath.Vec3 {
 	return cmath.Vec3{X: 40, Y: 40, Z: 40}
 }
 
-func (w *World) noLockRemoveUser(user universe.User, updateDB bool) error {
+func (w *World) noLockRemoveUser(user universe.User, updateDB bool) (bool, error) {
 	if user.GetWorld().GetID() != w.GetID() {
-		return errors.Errorf("worlds mismatch: %s != %s", user.GetWorld().GetID(), w.GetID())
+		return false, errors.Errorf("worlds mismatch: %s != %s", user.GetWorld().GetID(), w.GetID())
 	}
-	user.SetWorld(nil)
-	delete(w.Users.Data, user.GetID())
 
+	if _, ok := w.Users.Data[user.GetID()]; !ok {
+		return false, nil
+	}
+
+	user.SetWorld(nil)
 	user.Stop()
+
+	delete(w.Users.Data, user.GetID())
 
 	// clean up all locks hold by this user,
 	// temporarily here.
-	w.allSpaces.Mu.RLock()
-	defer w.allSpaces.Mu.RUnlock()
+	w.allObjects.Mu.RLock()
+	defer w.allObjects.Mu.RUnlock()
 
-	for _, child := range w.allSpaces.Data {
+	for _, child := range w.allObjects.Data {
 		if child.LockUnityObject(user, 0) {
 			w.Send(posbus.NewSetObjectLockState(user.GetID(), 0).WebsocketMessage(), true)
 		}
 	}
 
-	return nil
+	return true, nil
 }
 
 func (w *World) initializeUnity(user universe.User) error {
@@ -138,8 +143,7 @@ func (w *World) initializeUnity(user universe.User) error {
 
 	w.SendTextures(user.SendDirectly, true)
 	w.log.Infof("Sent Textures: %+v\n", user.GetID())
-	user.ReleaseSendBuffer()
-	w.log.Infof("Opened waterfall: %+v\n", user.GetID())
+
 	return nil
 }
 

@@ -126,7 +126,7 @@ func (s *StreamChat) apiChannelLeave(c *gin.Context) {
 
 // Get the common objects for these api requests
 // TODO: put these in the actual context in shared middleware?
-func (s *StreamChat) getRequestContextObjects(c *gin.Context) (space universe.Space, user universe.User, err error) {
+func (s *StreamChat) getRequestContextObjects(c *gin.Context) (space universe.Object, user universe.User, err error) {
 	spaceID := c.Param("spaceID")
 	space, err = s.getSpace(spaceID)
 	if err != nil {
@@ -142,13 +142,13 @@ func (s *StreamChat) getRequestContextObjects(c *gin.Context) (space universe.Sp
 }
 
 // Get space by UUID string.
-func (s *StreamChat) getSpace(id string) (universe.Space, error) {
+func (s *StreamChat) getSpace(id string) (universe.Object, error) {
 	spaceID, err := uuid.Parse(id)
 	if err != nil {
 		err := errors.WithMessagef(err, "Failed to parse ID %s", id)
 		return nil, err
 	}
-	space, ok := s.node.GetSpaceFromAllSpaces(spaceID)
+	space, ok := s.node.GetObjectFromAllObjects(spaceID)
 	if !ok {
 		err := errors.Errorf("Object not found: %s", spaceID)
 		return nil, err
@@ -157,7 +157,7 @@ func (s *StreamChat) getSpace(id string) (universe.Space, error) {
 }
 
 // Resolve the user object from the request context and the given space.
-func (s *StreamChat) getUserFromContext(ctx *gin.Context, space universe.Space) (universe.User, error) {
+func (s *StreamChat) getUserFromContext(ctx *gin.Context, space universe.Object) (universe.User, error) {
 
 	userID, err := api.GetUserIDFromContext(ctx)
 	if err != nil {

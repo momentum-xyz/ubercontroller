@@ -10,7 +10,7 @@ import (
 
 const (
 	hexaSpiralAngleDefaultValue            = 0.0
-	hexaSpiralRSpaceDefaultValue           = 50.0
+	hexaSpiralRObjectDefaultValue          = 50.0
 	hexaSpiralRandDisplacementDefaultValue = 0.0
 	hexaSpiralVShiftDefaultValue           = 10.0
 	hexaSpiralDrawCenterDefaultValue       = true
@@ -21,7 +21,7 @@ var hexaSpiralSideChoice = []int{0, 3, 5, 2, 4, 1}
 
 type hexaSpiral struct {
 	Angle            float64 `json:"angle"`
-	Rspace           float64 `json:"Rspace"`
+	Robject          float64 `json:"Robject"`
 	Vshift           float64 `json:"Vshift"`
 	DrawCenter       bool    `json:"DrawCenter"`
 	RandDisplacement float64 `json:"RandDisplacement"`
@@ -32,7 +32,7 @@ func NewHexaSpiral(parameterMap map[string]interface{}) Algo {
 	return &hexaSpiral{
 		Angle:            utils.GetFromAnyMap(parameterMap, "angle", hexaSpiralAngleDefaultValue),
 		Vshift:           utils.GetFromAnyMap(parameterMap, "Vshift", hexaSpiralVShiftDefaultValue),
-		Rspace:           utils.GetFromAnyMap(parameterMap, "Rspace", hexaSpiralRSpaceDefaultValue),
+		Robject:          utils.GetFromAnyMap(parameterMap, "Robject", hexaSpiralRObjectDefaultValue),
 		RandDisplacement: utils.GetFromAnyMap(parameterMap, "RandDisplacement", hexaSpiralRandDisplacementDefaultValue),
 		DrawCenter:       utils.GetFromAnyMap(parameterMap, "DrawCenter", hexaSpiralDrawCenterDefaultValue),
 		Scatter:          utils.GetFromAnyMap(parameterMap, "Scatter", hexaSpiralDrawCenterDefaultValue),
@@ -47,18 +47,18 @@ func (h *hexaSpiral) CalcPos(parentTheta float64, parentPosition cmath.SpacePosi
 	x, y := getHexPosition(i, h.DrawCenter, h.Scatter)
 
 	if h.RandDisplacement > 0.0 {
-		rand.Seed(int64(i + i*n + n*n*int(h.Rspace*100000) + int(h.Vshift*100)))
+		rand.Seed(int64(i + i*n + n*n*int(h.Robject*100000) + int(h.Vshift*100)))
 		randomAngle := rand.Float64() * 2 * math.Pi
-		randomDisplacement := math.Sqrt(rand.Float64()) * h.RandDisplacement / h.Rspace
+		randomDisplacement := math.Sqrt(rand.Float64()) * h.RandDisplacement / h.Robject
 		xShift := randomDisplacement * math.Cos(randomAngle)
 		yShift := randomDisplacement * math.Sin(randomAngle)
 		x += xShift
 		y += yShift
 	}
 	p := cmath.Vec3f64{
-		X: math.Round((parent.X+x*h.Rspace)*10.0) / 10.0,
+		X: math.Round((parent.X+x*h.Robject)*10.0) / 10.0,
 		Y: parent.Y + h.Vshift,
-		Z: math.Round((parent.Z+y*h.Rspace)*10.0) / 10.0,
+		Z: math.Round((parent.Z+y*h.Robject)*10.0) / 10.0,
 	}
 
 	np := cmath.SpacePosition{Location: p.ToVec3()}

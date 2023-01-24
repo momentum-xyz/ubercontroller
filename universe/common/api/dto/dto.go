@@ -22,11 +22,11 @@ type PluginsOptions map[uuid.UUID]PluginOptions
 
 type PluginOptions *entry.PluginOptions
 
-type SpaceOptions *entry.SpaceOptions
+type SpaceOptions *entry.ObjectOptions
 
 type SpaceSubOptions map[string]any
 
-type SpaceAttributes map[uuid.UUID]*entry.SpaceAttribute
+type SpaceAttributes map[uuid.UUID]*entry.ObjectAttribute
 
 type SpaceAttributeValues map[uuid.UUID]*entry.AttributeValue
 

@@ -88,7 +88,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 			space := verifiedSpaces.Group("/:spaceID")
 			{
-				spaceAdmin := space.Group("", middleware.AuthorizeAdmin(n.log, n.db))
+				spaceAdmin := space.Group("", middleware.AuthorizeAdmin(n.log))
 				{
 					spaceAdmin.POST("/options/sub", n.apiSpacesSetSpaceSubOption)
 					spaceAdmin.DELETE("/options/sub", n.apiSpacesRemoveSpaceSubOption)

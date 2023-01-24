@@ -115,32 +115,32 @@ func (u *UserTypes) AddUserTypes(userTypes []universe.UserType, updateDB bool) e
 	return nil
 }
 
-func (u *UserTypes) RemoveUserType(userType universe.UserType, updateDB bool) error {
+func (u *UserTypes) RemoveUserType(userType universe.UserType, updateDB bool) (bool, error) {
 	u.userTypes.Mu.Lock()
 	defer u.userTypes.Mu.Unlock()
 
 	if _, ok := u.userTypes.Data[userType.GetID()]; !ok {
-		return errors.Errorf("user type not found: %s", userType.GetID())
+		return false, nil
 	}
 
 	if updateDB {
 		if err := u.db.GetUserTypesDB().RemoveUserTypeByID(u.ctx, userType.GetID()); err != nil {
-			return errors.WithMessage(err, "failed to update db")
+			return false, errors.WithMessage(err, "failed to update db")
 		}
 	}
 
 	delete(u.userTypes.Data, userType.GetID())
 
-	return nil
+	return true, nil
 }
 
-func (u *UserTypes) RemoveUserTypes(userTypes []universe.UserType, updateDB bool) error {
+func (u *UserTypes) RemoveUserTypes(userTypes []universe.UserType, updateDB bool) (bool, error) {
 	u.userTypes.Mu.Lock()
 	defer u.userTypes.Mu.Unlock()
 
 	for i := range userTypes {
 		if _, ok := u.userTypes.Data[userTypes[i].GetID()]; !ok {
-			return errors.Errorf("user type not found: %s", userTypes[i].GetID())
+			return false, nil
 		}
 	}
 
@@ -150,7 +150,7 @@ func (u *UserTypes) RemoveUserTypes(userTypes []universe.UserType, updateDB bool
 			ids[i] = userTypes[i].GetID()
 		}
 		if err := u.db.GetUserTypesDB().RemoveUserTypesByIDs(u.ctx, ids); err != nil {
-			return errors.WithMessage(err, "failed to update db")
+			return false, errors.WithMessage(err, "failed to update db")
 		}
 	}
 
@@ -158,7 +158,7 @@ func (u *UserTypes) RemoveUserTypes(userTypes []universe.UserType, updateDB bool
 		delete(u.userTypes.Data, userTypes[i].GetID())
 	}
 
-	return nil
+	return true, nil
 }
 
 func (u *UserTypes) Load() error {

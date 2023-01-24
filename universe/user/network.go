@@ -35,6 +35,7 @@ func (u *User) StartIOPumps() {
 
 func (u *User) ReleaseSendBuffer() {
 	u.bufferSends.Store(false)
+	u.log.Infof("User: ReleaseSendBuffer: messages waterfall opened: %s", u.GetID())
 }
 
 func (u *User) readPump() {
@@ -194,7 +195,7 @@ func (u *User) close(needToRemoveFromWorld bool) error {
 	if needToRemoveFromWorld {
 		world := u.GetWorld()
 		if world != nil {
-			if err := world.RemoveUser(u, true); err != nil {
+			if _, err := world.RemoveUser(u, true); err != nil {
 				return errors.WithMessagef(err, "failed to remove user from world: %s", world.GetID())
 			}
 		}

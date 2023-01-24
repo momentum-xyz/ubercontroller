@@ -106,7 +106,7 @@ func (w *Worlds) AddWorld(world universe.World, updateDB bool) error {
 
 	w.worlds.Data[world.GetID()] = world
 
-	return node.AddSpaceToAllSpaces(world.ToSpace())
+	return node.AddObjectToAllObjects(world.ToObject())
 }
 
 func (w *Worlds) AddWorlds(worlds []universe.World, updateDB bool) error {
@@ -138,38 +138,38 @@ func (w *Worlds) AddWorlds(worlds []universe.World, updateDB bool) error {
 }
 
 // TODO: introduce "helper.RemoveWorld()" method and fix this one
-func (w *Worlds) RemoveWorld(world universe.World, updateDB bool) error {
+func (w *Worlds) RemoveWorld(world universe.World, updateDB bool) (bool, error) {
 	w.worlds.Mu.Lock()
 	defer w.worlds.Mu.Unlock()
 
 	if _, ok := w.worlds.Data[world.GetID()]; !ok {
-		return errors.Errorf("world not found")
+		return false, nil
 	}
 
 	if updateDB {
-		spaces := world.GetAllSpaces()
-		ids := make([]uuid.UUID, 0, len(spaces))
-		for _, space := range spaces {
-			ids = append(ids, space.GetID())
+		objects := world.GetAllObjects()
+		ids := make([]uuid.UUID, 0, len(objects))
+		for _, object := range objects {
+			ids = append(ids, object.GetID())
 		}
-		if err := w.db.GetSpacesDB().RemoveSpacesByIDs(w.ctx, ids); err != nil {
-			return errors.WithMessage(err, "failed to remove spaces by ids")
+		if err := w.db.GetObjectsDB().RemoveObjectsByIDs(w.ctx, ids); err != nil {
+			return false, errors.WithMessage(err, "failed to remove objects by ids")
 		}
 	}
 
 	delete(w.worlds.Data, world.GetID())
 
-	return nil
+	return true, nil
 }
 
 // TODO: introduce "helper.RemoveWorld()" method and fix this one
-func (w *Worlds) RemoveWorlds(worlds []universe.World, updateDB bool) error {
+func (w *Worlds) RemoveWorlds(worlds []universe.World, updateDB bool) (bool, error) {
 	w.worlds.Mu.Lock()
 	defer w.worlds.Mu.Unlock()
 
 	for i := range worlds {
 		if _, ok := w.worlds.Data[worlds[i].GetID()]; !ok {
-			return errors.Errorf("world not found: %s", worlds[i].GetID())
+			return false, nil
 		}
 	}
 
@@ -179,21 +179,21 @@ func (w *Worlds) RemoveWorlds(worlds []universe.World, updateDB bool) error {
 			world := worlds[i]
 
 			group.Go(func() error {
-				spaces := world.GetAllSpaces()
-				ids := make([]uuid.UUID, 0, len(spaces))
-				for i := range spaces {
-					ids = append(ids, spaces[i].GetID())
+				objects := world.GetAllObjects()
+				ids := make([]uuid.UUID, 0, len(objects))
+				for i := range objects {
+					ids = append(ids, objects[i].GetID())
 				}
 
-				if err := w.db.GetSpacesDB().RemoveSpacesByIDs(w.ctx, ids); err != nil {
-					return errors.WithMessagef(err, "failed to remove spaces by ids: %s", world.GetID())
+				if err := w.db.GetObjectsDB().RemoveObjectsByIDs(w.ctx, ids); err != nil {
+					return errors.WithMessagef(err, "failed to remove objects by ids: %s", world.GetID())
 				}
 
 				return nil
 			})
 		}
 		if err := group.Wait(); err != nil {
-			return errors.WithMessage(err, "failed to update db")
+			return false, errors.WithMessage(err, "failed to update db")
 		}
 	}
 
@@ -201,7 +201,7 @@ func (w *Worlds) RemoveWorlds(worlds []universe.World, updateDB bool) error {
 		delete(w.worlds.Data, worlds[i].GetID())
 	}
 
-	return nil
+	return true, nil
 }
 
 func (w *Worlds) Run() error {
