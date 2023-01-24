@@ -138,7 +138,7 @@ func GenerateGuestName(c *gin.Context, db database.DB) (string, error) {
 
 	visitorName := visitorNameTemplate + visitorSuffix
 
-	exists, err := db.GetUsersDB().UserExistsByName(c, visitorName)
+	exists, err := db.GetUsersDB().CheckIsUserExistsByName(c, visitorName)
 	if err != nil {
 		return "", errors.WithMessage(err, "failed to check for duplicates")
 	}
