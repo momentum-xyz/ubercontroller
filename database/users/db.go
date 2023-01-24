@@ -24,7 +24,8 @@ const (
          						                	WHERE plugin_id = '86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8'
          						                    AND attribute_name = 'wallet'
          						                    AND value->'wallet' ? $1);`
-	getUserProfileByUserIDQuery = `SELECT profile FROM "user" WHERE user_id = $1;`
+	checkIsUserExistsByNameQuery = `SELECT EXISTS(SELECT 1 FROM "user" WHERE profile->>'name' = $1);`
+	getUserProfileByUserIDQuery  = `SELECT profile FROM "user" WHERE user_id = $1;`
 
 	removeUserByIDQuery   = `DELETE FROM "user" WHERE user_id = $1;`
 	removeUsersByIDsQuery = `DELETE FROM "user" WHERE user_id = ANY($1);`
@@ -78,6 +79,14 @@ func (db *DB) GetUserByWallet(ctx context.Context, wallet string) (*entry.User, 
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return &user, nil
+}
+
+func (db *DB) CheckIsUserExistsByName(ctx context.Context, name string) (bool, error) {
+	var exists bool
+	if err := pgxscan.Get(ctx, db.conn, &exists, checkIsUserExistsByNameQuery, name); err != nil {
+		return false, errors.WithMessage(err, "failed to query db")
+	}
+	return exists, nil
 }
 
 func (db *DB) GetUserProfileByUserID(ctx context.Context, userID uuid.UUID) (*entry.UserProfile, error) {
