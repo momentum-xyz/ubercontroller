@@ -18,8 +18,12 @@ func Node(ctx context.Context, node universe.Node) error {
 		return seedPlugins(node)
 	})
 
+	group.Go(func() error {
+		return seedAttributeType(node)
+	})
+
 	if err := group.Wait(); err != nil {
-		return errors.WithMessage(err, "failed to seed plugins")
+		return errors.WithMessage(err, "failed to seed plugins or attribute types")
 	}
 
 	return node.Save()
