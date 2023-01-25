@@ -2,6 +2,7 @@ package universe
 
 import (
 	"context"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
@@ -93,6 +94,8 @@ type Node interface {
 	AddAPIRegister(register APIRegister)
 
 	WriteInfluxPoint(point *influxWrite.Point) error
+
+	SaveDebug() error
 }
 
 type Worlds interface {

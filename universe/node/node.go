@@ -287,6 +287,17 @@ func (n *Node) Load() error {
 
 	return nil
 }
+func (n *Node) SaveDebug() error {
+	if err := n.plugins.Save(); err != nil {
+		return errors.WithMessage(err, "failed to save plugins")
+	}
+
+	if err := n.attributeTypes.Save(); err != nil {
+		return errors.WithMessage(err, "failed to save attribute types")
+	}
+
+	return nil
+}
 
 func (n *Node) Save() error {
 	n.log.Infof("Saving node: %s...", n.GetID())
