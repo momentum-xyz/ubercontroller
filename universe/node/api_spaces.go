@@ -1,8 +1,9 @@
 package node
 
 import (
-	"github.com/momentum-xyz/ubercontroller/universe/common/helper"
 	"net/http"
+
+	"github.com/momentum-xyz/ubercontroller/universe/common/helper"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -65,7 +66,7 @@ func (n *Node) apiSpacesCreateSpace(c *gin.Context) {
 	}
 
 	if !isAdmin {
-		err := errors.WithMessage(err, "Node: apiSpacesCreateSpace: operation is not permitted for user")
+		err := errors.New("Node: apiSpacesCreateSpace: operation is not permitted for user")
 		api.AbortRequest(c, http.StatusUnauthorized, "space_creation_not_permitted", err, n.log)
 		return
 	}
