@@ -131,7 +131,7 @@ func ValidateJWTWithSecret(signedString string, secret []byte) (*jwt.Token, erro
 func GenerateGuestName(c *gin.Context, db database.DB) (string, error) {
 	visitorNameTemplate := "Visitor_"
 
-	visitorSuffix, err := gonanoid.New(7)
+	visitorSuffix, err := gonanoid.Generate("0123456789", 7)
 	if err != nil {
 		return "", errors.WithMessage(err, "failed to generate visitor name")
 	}
