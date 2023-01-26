@@ -79,12 +79,6 @@ func seedPlugins(node universe.Node) error {
 			},
 		},
 		{
-			ID: uuid.MustParse("3159dfc4-1ba2-4a76-bd81-dc08846d8557"),
-			Meta: &entry.PluginMeta{
-				"name": "Twitch",
-			},
-		},
-		{
 			ID:   uuid.MustParse("220578c8-5fec-42c8-ade1-14d970e714bd"),
 			Meta: &entry.PluginMeta{},
 		},

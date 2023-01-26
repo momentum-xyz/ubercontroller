@@ -111,18 +111,6 @@ func seedAttributeType(node universe.Node) error {
 		},
 		//
 		{
-			pluginID:      uuid.MustParse("3159dfc4-1ba2-4a76-bd81-dc08846d8557"),
-			attributeName: "state",
-			description:   "Twitch state",
-			options: &entry.AttributeOptions{
-				"posbus_auto": map[string]any{
-					"scope":   []string{"space"},
-					"send_to": 1,
-				},
-			},
-		},
-		//
-		{
 			pluginID:      uuid.MustParse("3253d616-215f-47a9-ba9d-93185eb3e6b5"),
 			attributeName: "count",
 			description:   "High5s given",
