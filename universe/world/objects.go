@@ -12,7 +12,6 @@ func (w *World) GetAllObjects() map[uuid.UUID]universe.Object {
 	defer w.allObjects.Mu.RUnlock()
 
 	objects := make(map[uuid.UUID]universe.Object, len(w.allObjects.Data))
-
 	for id, object := range w.allObjects.Data {
 		objects[id] = object
 	}

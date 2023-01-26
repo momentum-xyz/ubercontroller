@@ -24,105 +24,125 @@ func newObjectAttributes(object *Object) *objectAttributes {
 	}
 }
 
-func (sa *objectAttributes) Load() error {
-	entries, err := sa.object.db.GetObjectAttributesDB().GetObjectAttributesByObjectID(sa.object.ctx, sa.object.GetID())
+func (oa *objectAttributes) GetAll() map[entry.AttributeID]*entry.AttributePayload {
+	oa.object.Mu.RLock()
+	defer oa.object.Mu.RUnlock()
+
+	attributes := make(map[entry.AttributeID]*entry.AttributePayload, len(oa.data))
+	for id, payload := range oa.data {
+		attributes[id] = payload
+	}
+
+	return attributes
+}
+
+func (oa *objectAttributes) Load() error {
+	oa.object.log.Debugf("Loading object attributes: %s...", oa.object.GetID())
+
+	entries, err := oa.object.db.GetObjectAttributesDB().GetObjectAttributesByObjectID(oa.object.ctx, oa.object.GetID())
 	if err != nil {
 		return errors.WithMessage(err, "failed to get object attributes")
 	}
 
-	for i := range entries {
-		if _, err := sa.Upsert(
-			entries[i].AttributeID, modify.MergeWith(entries[i].AttributePayload), false,
+	for _, oaEntry := range entries {
+		if _, err := oa.Upsert(
+			oaEntry.AttributeID, modify.MergeWith(oaEntry.AttributePayload), false,
 		); err != nil {
-			return errors.WithMessagef(err, "failed to upsert object attribute: %+v", entries[i].AttributeID)
+			return errors.WithMessagef(err, "failed to upsert object attribute: %+v", oaEntry.AttributeID)
 		}
 
-		effectiveOptions, ok := sa.GetEffectiveOptions(entries[i].AttributeID)
+		effectiveOptions, ok := oa.GetEffectiveOptions(oaEntry.AttributeID)
 		if !ok {
 			// QUESTION: why our "attribute_type.attribute_name" is not a foreign key in database?
-			sa.object.log.Warnf(
+			oa.object.log.Warnf(
 				"Object attributes: Load: failed to get object attribute effective options: %+v",
-				entries[i].ObjectAttributeID,
+				oaEntry.ObjectAttributeID,
 			)
 			continue
 		}
-		autoOption, err := unity.GetOptionAutoOption(entries[i].AttributeID, effectiveOptions)
+		autoOption, err := unity.GetOptionAutoOption(oaEntry.AttributeID, effectiveOptions)
 		if err != nil {
-			return errors.WithMessagef(err, "failed to get option auto option: %+v", entries[i])
+			return errors.WithMessagef(err, "failed to get option auto option: %+v", oaEntry)
 		}
-		sa.object.UpdateAutoTextureMap(autoOption, entries[i].Value)
+		oa.object.UpdateAutoTextureMap(autoOption, oaEntry.Value)
 	}
 
-	sa.object.log.Debugf("Object attributes loaded: %s: %d", sa.object.GetID(), sa.Len())
+	oa.object.log.Debugf("Object attributes loaded: %s: %d", oa.object.GetID(), oa.Len())
 
 	return nil
 }
 
-func (sa *objectAttributes) Save() error {
-	sa.object.Mu.RLock()
-	defer sa.object.Mu.RUnlock()
+func (oa *objectAttributes) Save() error {
+	oa.object.log.Debugf("Saving object attributes: %s...", oa.object.GetID())
 
-	attributes := make([]*entry.ObjectAttribute, 0, len(sa.data))
-	for id, payload := range sa.data {
-		attributes = append(attributes, entry.NewObjectAttribute(entry.NewObjectAttributeID(id, sa.object.GetID()), payload))
+	oa.object.Mu.RLock()
+	defer oa.object.Mu.RUnlock()
+
+	attributes := make([]*entry.ObjectAttribute, 0, len(oa.data))
+	for id, payload := range oa.data {
+		attributes = append(
+			attributes, entry.NewObjectAttribute(entry.NewObjectAttributeID(id, oa.object.GetID()), payload),
+		)
 	}
 
-	if err := sa.object.db.GetObjectAttributesDB().UpsertObjectAttributes(sa.object.ctx, attributes); err != nil {
+	if err := oa.object.db.GetObjectAttributesDB().UpsertObjectAttributes(oa.object.ctx, attributes); err != nil {
 		return errors.WithMessage(err, "failed to upsert object attributes")
 	}
 
+	oa.object.log.Debugf("Object attributes saved: %s: %d", oa.object.GetID(), len(oa.data))
+
 	return nil
 }
 
-func (sa *objectAttributes) GetPayload(attributeID entry.AttributeID) (*entry.AttributePayload, bool) {
-	sa.object.Mu.RLock()
-	defer sa.object.Mu.RUnlock()
+func (oa *objectAttributes) GetPayload(attributeID entry.AttributeID) (*entry.AttributePayload, bool) {
+	oa.object.Mu.RLock()
+	defer oa.object.Mu.RUnlock()
 
-	if payload, ok := sa.data[attributeID]; ok {
+	if payload, ok := oa.data[attributeID]; ok {
 		return payload, true
 	}
 	return nil, false
 }
 
-func (sa *objectAttributes) GetValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool) {
-	sa.object.Mu.RLock()
-	defer sa.object.Mu.RUnlock()
+func (oa *objectAttributes) GetValue(attributeID entry.AttributeID) (*entry.AttributeValue, bool) {
+	oa.object.Mu.RLock()
+	defer oa.object.Mu.RUnlock()
 
-	if payload, ok := sa.data[attributeID]; ok && payload != nil {
+	if payload, ok := oa.data[attributeID]; ok && payload != nil {
 		return payload.Value, true
 	}
 	return nil, false
 }
 
-func (sa *objectAttributes) GetOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool) {
-	sa.object.Mu.RLock()
-	defer sa.object.Mu.RUnlock()
+func (oa *objectAttributes) GetOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool) {
+	oa.object.Mu.RLock()
+	defer oa.object.Mu.RUnlock()
 
-	if payload, ok := sa.data[attributeID]; ok && payload != nil {
+	if payload, ok := oa.data[attributeID]; ok && payload != nil {
 		return payload.Options, true
 	}
 	return nil, false
 }
 
-func (sa *objectAttributes) GetEffectiveOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool) {
+func (oa *objectAttributes) GetEffectiveOptions(attributeID entry.AttributeID) (*entry.AttributeOptions, bool) {
 	attributeType, ok := universe.GetNode().GetAttributeTypes().GetAttributeType(entry.AttributeTypeID(attributeID))
 	if !ok {
 		return nil, false
 	}
 	attributeTypeOptions := attributeType.GetOptions()
 
-	attributeOptions, ok := sa.GetOptions(attributeID)
+	attributeOptions, ok := oa.GetOptions(attributeID)
 	if !ok {
 		return nil, false
 	}
 
 	effectiveOptions, err := merge.Auto(attributeOptions, attributeTypeOptions)
 	if err != nil {
-		sa.object.log.Error(
+		oa.object.log.Error(
 			errors.WithMessagef(
 				err,
 				"Object attributes: GetEffectiveOptions: failed to merge options: %s: %+v",
-				sa.object.GetID(), attributeID,
+				oa.object.GetID(), attributeID,
 			),
 		)
 		return nil, false
@@ -131,45 +151,45 @@ func (sa *objectAttributes) GetEffectiveOptions(attributeID entry.AttributeID) (
 	return effectiveOptions, true
 }
 
-func (sa *objectAttributes) Upsert(
+func (oa *objectAttributes) Upsert(
 	attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool,
 ) (*entry.AttributePayload, error) {
-	sa.object.Mu.Lock()
-	defer sa.object.Mu.Unlock()
+	oa.object.Mu.Lock()
+	defer oa.object.Mu.Unlock()
 
-	payload, err := modifyFn(sa.data[attributeID])
+	payload, err := modifyFn(oa.data[attributeID])
 	if err != nil {
 		return nil, errors.WithMessagef(err, "failed to modify payload")
 	}
 
 	if updateDB {
-		if err := sa.object.db.GetObjectAttributesDB().UpsertObjectAttribute(
-			sa.object.ctx, entry.NewObjectAttribute(entry.NewObjectAttributeID(attributeID, sa.object.GetID()), payload),
+		if err := oa.object.db.GetObjectAttributesDB().UpsertObjectAttribute(
+			oa.object.ctx, entry.NewObjectAttribute(entry.NewObjectAttributeID(attributeID, oa.object.GetID()), payload),
 		); err != nil {
 			return nil, errors.WithMessagef(err, "failed to upsert object attribute")
 		}
 	}
 
-	sa.data[attributeID] = payload
+	oa.data[attributeID] = payload
 
-	if sa.object.GetEnabled() {
+	if oa.object.GetEnabled() {
 		var value *entry.AttributeValue
 		if payload != nil {
 			value = payload.Value
 		}
-		go sa.object.onObjectAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
+		go oa.object.onObjectAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
 	}
 
 	return payload, nil
 }
 
-func (sa *objectAttributes) UpdateValue(
+func (oa *objectAttributes) UpdateValue(
 	attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool,
 ) (*entry.AttributeValue, error) {
-	sa.object.Mu.Lock()
-	defer sa.object.Mu.Unlock()
+	oa.object.Mu.Lock()
+	defer oa.object.Mu.Unlock()
 
-	payload, ok := sa.data[attributeID]
+	payload, ok := oa.data[attributeID]
 	if !ok {
 		return nil, errors.Errorf("object attribute not found")
 	}
@@ -183,30 +203,30 @@ func (sa *objectAttributes) UpdateValue(
 	}
 
 	if updateDB {
-		if err := sa.object.db.GetObjectAttributesDB().UpdateObjectAttributeValue(
-			sa.object.ctx, entry.NewObjectAttributeID(attributeID, sa.object.GetID()), value,
+		if err := oa.object.db.GetObjectAttributesDB().UpdateObjectAttributeValue(
+			oa.object.ctx, entry.NewObjectAttributeID(attributeID, oa.object.GetID()), value,
 		); err != nil {
 			return nil, errors.WithMessagef(err, "failed to update object attribute value")
 		}
 	}
 
 	payload.Value = value
-	sa.data[attributeID] = payload
+	oa.data[attributeID] = payload
 
-	if sa.object.GetEnabled() {
-		go sa.object.onObjectAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
+	if oa.object.GetEnabled() {
+		go oa.object.onObjectAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
 	}
 
 	return value, nil
 }
 
-func (sa *objectAttributes) UpdateOptions(
+func (oa *objectAttributes) UpdateOptions(
 	attributeID entry.AttributeID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool,
 ) (*entry.AttributeOptions, error) {
-	sa.object.Mu.Lock()
-	defer sa.object.Mu.Unlock()
+	oa.object.Mu.Lock()
+	defer oa.object.Mu.Unlock()
 
-	payload, ok := sa.data[attributeID]
+	payload, ok := oa.data[attributeID]
 	if !ok {
 		return nil, errors.Errorf("object attribute not found")
 	}
@@ -220,74 +240,74 @@ func (sa *objectAttributes) UpdateOptions(
 	}
 
 	if updateDB {
-		if err := sa.object.db.GetObjectAttributesDB().UpdateObjectAttributeOptions(
-			sa.object.ctx, entry.NewObjectAttributeID(attributeID, sa.object.GetID()), options,
+		if err := oa.object.db.GetObjectAttributesDB().UpdateObjectAttributeOptions(
+			oa.object.ctx, entry.NewObjectAttributeID(attributeID, oa.object.GetID()), options,
 		); err != nil {
 			return nil, errors.WithMessagef(err, "failed to update object attribute options")
 		}
 	}
 
 	payload.Options = options
-	sa.data[attributeID] = payload
+	oa.data[attributeID] = payload
 
-	if sa.object.GetEnabled() {
+	if oa.object.GetEnabled() {
 		var value *entry.AttributeValue
 		if payload != nil {
 			value = payload.Value
 		}
-		go sa.object.onObjectAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
+		go oa.object.onObjectAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
 	}
 
 	return options, nil
 }
 
-func (sa *objectAttributes) Remove(attributeID entry.AttributeID, updateDB bool) (bool, error) {
-	effectiveOptions, ok := sa.GetEffectiveOptions(attributeID)
+func (oa *objectAttributes) Remove(attributeID entry.AttributeID, updateDB bool) (bool, error) {
+	effectiveOptions, ok := oa.GetEffectiveOptions(attributeID)
 	if !ok {
 		return false, nil
 	}
 
-	sa.object.Mu.Lock()
-	defer sa.object.Mu.Unlock()
+	oa.object.Mu.Lock()
+	defer oa.object.Mu.Unlock()
 
-	if _, ok := sa.data[attributeID]; !ok {
+	if _, ok := oa.data[attributeID]; !ok {
 		return false, nil
 	}
 
 	if updateDB {
-		if err := sa.object.db.GetObjectAttributesDB().RemoveObjectAttributeByID(
-			sa.object.ctx, entry.NewObjectAttributeID(attributeID, sa.object.GetID()),
+		if err := oa.object.db.GetObjectAttributesDB().RemoveObjectAttributeByID(
+			oa.object.ctx, entry.NewObjectAttributeID(attributeID, oa.object.GetID()),
 		); err != nil {
 			return false, errors.WithMessagef(err, "failed to remove object attribute")
 		}
 	}
 
-	delete(sa.data, attributeID)
+	delete(oa.data, attributeID)
 
-	if sa.object.GetEnabled() {
-		go sa.object.onObjectAttributeChanged(universe.RemovedAttributeChangeType, attributeID, nil, effectiveOptions)
+	if oa.object.GetEnabled() {
+		go oa.object.onObjectAttributeChanged(universe.RemovedAttributeChangeType, attributeID, nil, effectiveOptions)
 	}
 
 	return true, nil
 }
 
-func (sa *objectAttributes) Len() int {
-	sa.object.Mu.RLock()
-	defer sa.object.Mu.RUnlock()
+func (oa *objectAttributes) Len() int {
+	oa.object.Mu.RLock()
+	defer oa.object.Mu.RUnlock()
 
-	return len(sa.data)
+	return len(oa.data)
 }
 
-func (s *Object) onObjectAttributeChanged(
+func (o *Object) onObjectAttributeChanged(
 	changeType universe.AttributeChangeType, attributeID entry.AttributeID,
 	value *entry.AttributeValue, effectiveOptions *entry.AttributeOptions,
 ) {
-	go s.calendarOnObjectAttributeChanged(changeType, attributeID, value, effectiveOptions)
+	go o.calendarOnObjectAttributeChanged(changeType, attributeID, value, effectiveOptions)
 
 	if effectiveOptions == nil {
-		options, ok := s.GetObjectAttributes().GetEffectiveOptions(attributeID)
+		options, ok := o.GetObjectAttributes().GetEffectiveOptions(attributeID)
 		if !ok {
-			s.log.Error(
+			o.log.Error(
 				errors.Errorf(
 					"Object: onObjectAttributeChanged: failed to get object attribute effective options: %+v",
 					attributeID,
@@ -299,33 +319,33 @@ func (s *Object) onObjectAttributeChanged(
 	}
 
 	go func() {
-		if err := s.posBusAutoOnObjecteAttributeChanged(changeType, attributeID, value, effectiveOptions); err != nil {
-			s.log.Error(
+		if err := o.posBusAutoOnObjecteAttributeChanged(changeType, attributeID, value, effectiveOptions); err != nil {
+			o.log.Error(
 				errors.WithMessagef(
 					err, "Object: onObjectAttributeChanged: failed to handle posbus auto: %s: %+v",
-					s.GetID(), attributeID,
+					o.GetID(), attributeID,
 				),
 			)
 		}
 	}()
 
 	go func() {
-		if err := s.unityAutoOnObjectAttributeChanged(changeType, attributeID, value, effectiveOptions); err != nil {
-			s.log.Error(
+		if err := o.unityAutoOnObjectAttributeChanged(changeType, attributeID, value, effectiveOptions); err != nil {
+			o.log.Error(
 				errors.WithMessagef(
 					err, "Object: onObjectAttributeChanged: failed to handle unity auto: %s: %+v",
-					s.GetID(), attributeID,
+					o.GetID(), attributeID,
 				),
 			)
 		}
 	}()
 }
 
-func (s *Object) calendarOnObjectAttributeChanged(
+func (o *Object) calendarOnObjectAttributeChanged(
 	changeType universe.AttributeChangeType, attributeID entry.AttributeID, value *entry.AttributeValue,
 	effectiveOptions *entry.AttributeOptions,
 ) error {
-	world := s.GetWorld()
+	world := o.GetWorld()
 	if world == nil {
 		return nil
 	}

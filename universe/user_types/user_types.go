@@ -169,13 +169,13 @@ func (u *UserTypes) Load() error {
 		return errors.WithMessage(err, "failed to get user types")
 	}
 
-	for i := range entries {
-		userType, err := u.CreateUserType(entries[i].UserTypeID)
+	for _, utEntry := range entries {
+		userType, err := u.CreateUserType(utEntry.UserTypeID)
 		if err != nil {
-			return errors.WithMessagef(err, "failed to create new user type: %s", entries[i].UserTypeID)
+			return errors.WithMessagef(err, "failed to create new user type: %s", utEntry.UserTypeID)
 		}
-		if err := userType.LoadFromEntry(entries[i]); err != nil {
-			return errors.WithMessagef(err, "failed to load user type from entry: %s", entries[i].UserTypeID)
+		if err := userType.LoadFromEntry(utEntry); err != nil {
+			return errors.WithMessagef(err, "failed to load user type from entry: %s", utEntry.UserTypeID)
 		}
 	}
 
@@ -187,21 +187,21 @@ func (u *UserTypes) Load() error {
 }
 
 func (u *UserTypes) Save() error {
-	u.log.Info("Saving spate types...")
+	u.log.Info("Saving user types...")
 
 	u.userTypes.Mu.RLock()
 	defer u.userTypes.Mu.RUnlock()
 
 	entries := make([]*entry.UserType, 0, len(u.userTypes.Data))
-	for _, UserType := range u.userTypes.Data {
-		entries = append(entries, UserType.GetEntry())
+	for _, userType := range u.userTypes.Data {
+		entries = append(entries, userType.GetEntry())
 	}
 
 	if err := u.db.GetUserTypesDB().UpsertUserTypes(u.ctx, entries); err != nil {
 		return errors.WithMessage(err, "failed to upsert user types")
 	}
 
-	u.log.Info("User types saved")
+	u.log.Infof("User types saved: %d", len(u.userTypes.Data))
 
 	return nil
 }

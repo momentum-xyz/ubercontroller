@@ -121,7 +121,7 @@ func (n *Node) apiSpacesCreateSpace(c *gin.Context) {
 		Position:     position,
 	}
 
-	spaceID, err := helper.AddObjectFromTemplate(&spaceTemplate, true)
+	object, err := helper.AddObjectFromTemplate(&spaceTemplate, true)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiSpacesCreateSpace: failed to add space from template")
 		api.AbortRequest(c, http.StatusInternalServerError, "add_space_failed", err, n.log)
@@ -132,7 +132,7 @@ func (n *Node) apiSpacesCreateSpace(c *gin.Context) {
 		SpaceID string `json:"space_id"`
 	}
 	out := Out{
-		SpaceID: spaceID.String(),
+		SpaceID: object.GetID().String(),
 	}
 
 	c.JSON(http.StatusCreated, out)

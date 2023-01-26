@@ -219,13 +219,13 @@ func (a *Assets3d) Load() error {
 		return errors.WithMessage(err, "failed to get assets 3d")
 	}
 
-	for i := range entries {
-		asset3d, err := a.CreateAsset3d(entries[i].Asset3dID)
+	for _, assetEntry := range entries {
+		asset3d, err := a.CreateAsset3d(assetEntry.Asset3dID)
 		if err != nil {
-			return errors.WithMessagef(err, "failed to create new asset 3d: %s", entries[i].Asset3dID)
+			return errors.WithMessagef(err, "failed to create new asset 3d: %s", assetEntry.Asset3dID)
 		}
-		if err := asset3d.LoadFromEntry(entries[i]); err != nil {
-			return errors.WithMessagef(err, "failed to load asset 3d from entry: %s", entries[i].Asset3dID)
+		if err := asset3d.LoadFromEntry(assetEntry); err != nil {
+			return errors.WithMessagef(err, "failed to load asset 3d from entry: %s", assetEntry.Asset3dID)
 		}
 	}
 
@@ -243,15 +243,15 @@ func (a *Assets3d) Save() error {
 	defer a.assets.Mu.RUnlock()
 
 	entries := make([]*entry.Asset3d, 0, len(a.assets.Data))
-	for _, asset := range a.assets.Data {
-		entries = append(entries, asset.GetEntry())
+	for _, asset3d := range a.assets.Data {
+		entries = append(entries, asset3d.GetEntry())
 	}
 
 	if err := a.db.GetAssets3dDB().UpsertAssets(a.ctx, entries); err != nil {
 		return errors.WithMessage(err, "failed to upsert assets 3d")
 	}
 
-	a.log.Info("Assets 3d saved")
+	a.log.Infof("Assets 3d saved: %d", len(a.assets.Data))
 
 	return nil
 }
