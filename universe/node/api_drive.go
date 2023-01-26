@@ -207,7 +207,7 @@ func (n *Node) mint(jobID uuid.UUID, wallet string, meta NFTMeta, blockHash stri
 		return
 	}
 
-	output, err := exec.Command("node", "mint.js", wallet, n.cfg.Common.MnemonicPhrase, string(b), blockHash).Output()
+	output, err := exec.Command("node", "mint.js", wallet, n.CFG.Common.MnemonicPhrase, string(b), blockHash).Output()
 	if err != nil {
 		err = errors.WithMessage(err, "failed to exec node mint.js")
 		{
@@ -421,7 +421,7 @@ func (n *Node) apiResolveNode(c *gin.Context) {
 		NodeID uuid.UUID `json:"node_id"`
 	}
 
-	u, _ := url.Parse(n.cfg.UIClient.FrontendURL)
+	u, _ := url.Parse(n.CFG.UIClient.FrontendURL)
 	h := u.Hostname()
 	if h == "" {
 		h = "localhost"

@@ -2,6 +2,7 @@ package object
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/config"
 	"sync/atomic"
 
 	"github.com/google/uuid"
@@ -31,6 +32,7 @@ type Object struct {
 	world    universe.World
 	ctx      context.Context
 	log      *zap.SugaredLogger
+	CFG      *config.Config
 	db       database.DB
 	enabled  atomic.Bool
 	Users    *generic.SyncMap[uuid.UUID, universe.User]
@@ -77,21 +79,21 @@ func NewObject(id uuid.UUID, db database.DB, world universe.World) *Object {
 	return object
 }
 
-func (s *Object) GetID() uuid.UUID {
-	return s.id
+func (o *Object) GetID() uuid.UUID {
+	return o.id
 }
 
-func (s *Object) GetEnabled() bool {
-	return s.enabled.Load()
+func (o *Object) GetEnabled() bool {
+	return o.enabled.Load()
 }
 
-func (s *Object) SetEnabled(enabled bool) {
-	s.enabled.Store(enabled)
+func (o *Object) SetEnabled(enabled bool) {
+	o.enabled.Store(enabled)
 }
 
-func (s *Object) GetName() string {
-	name := "unknown"
-	value, ok := s.GetObjectAttributes().GetValue(
+func (o *Object) GetName() string {
+	name := o.GetID().String()
+	value, ok := o.GetObjectAttributes().GetValue(
 		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Object.Name.Name),
 	)
 	if !ok || value == nil {
@@ -100,8 +102,8 @@ func (s *Object) GetName() string {
 	return utils.GetFromAnyMap(*value, universe.ReservedAttributes.Object.Name.Key, name)
 }
 
-func (s *Object) SetName(name string, updateDB bool) error {
-	if _, err := s.GetObjectAttributes().Upsert(
+func (o *Object) SetName(name string, updateDB bool) error {
+	if _, err := o.GetObjectAttributes().Upsert(
 		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Object.Name.Name),
 		modify.MergeWith(entry.NewAttributePayload(
 			&entry.AttributeValue{
@@ -115,276 +117,281 @@ func (s *Object) SetName(name string, updateDB bool) error {
 	return nil
 }
 
-func (s *Object) GetObjectAttributes() universe.ObjectAttributes {
-	return s.objectAttributes
+func (o *Object) GetObjectAttributes() universe.ObjectAttributes {
+	return o.objectAttributes
 }
 
-func (s *Object) Initialize(ctx context.Context) error {
+func (o *Object) Initialize(ctx context.Context) error {
 	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
 	if log == nil {
 		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
 	}
+	cfg := utils.GetFromAny(ctx.Value(types.ConfigContextKey), (*config.Config)(nil))
+	if cfg == nil {
+		return errors.Errorf("failed to get config from context: %T", ctx.Value(types.ConfigContextKey))
+	}
 
-	s.ctx = ctx
-	s.log = log
-	s.numSendsQueued.Store(chanIsClosed)
-	s.lockedBy.Store(uuid.Nil)
+	o.ctx = ctx
+	o.log = log
+	o.CFG = cfg
+	o.numSendsQueued.Store(chanIsClosed)
+	o.lockedBy.Store(uuid.Nil)
 
 	newPos := cmath.SpacePosition{Location: *new(cmath.Vec3), Rotation: *new(cmath.Vec3), Scale: *new(cmath.Vec3)}
-	s.actualPosition.Store(&newPos)
+	o.actualPosition.Store(&newPos)
 
 	return nil
 }
 
-func (s *Object) GetWorld() universe.World {
-	s.Mu.RLock()
-	defer s.Mu.RUnlock()
+func (o *Object) GetWorld() universe.World {
+	o.Mu.RLock()
+	defer o.Mu.RUnlock()
 
-	return s.world
+	return o.world
 }
 
-func (s *Object) GetParent() universe.Object {
-	s.Mu.RLock()
-	defer s.Mu.RUnlock()
+func (o *Object) GetParent() universe.Object {
+	o.Mu.RLock()
+	defer o.Mu.RUnlock()
 
-	return s.Parent
+	return o.Parent
 }
 
-func (s *Object) SetParent(parent universe.Object, updateDB bool) error {
-	s.Mu.Lock()
-	defer s.Mu.Unlock()
+func (o *Object) SetParent(parent universe.Object, updateDB bool) error {
+	o.Mu.Lock()
+	defer o.Mu.Unlock()
 
-	if parent == s {
+	if parent == o {
 		return errors.Errorf("object can't be a parent of itself")
-	} else if parent != nil && parent.GetWorld().GetID() != s.world.GetID() {
-		return errors.Errorf("worlds mismatch: %s != %s", parent.GetWorld().GetID(), s.world.GetID())
+	} else if parent != nil && parent.GetWorld().GetID() != o.world.GetID() {
+		return errors.Errorf("worlds mismatch: %s != %s", parent.GetWorld().GetID(), o.world.GetID())
 	}
 
 	if updateDB {
 		if parent == nil {
 			return errors.Errorf("parent is nil")
 		}
-		if err := s.db.GetObjectsDB().UpdateObjectParentID(s.ctx, s.GetID(), parent.GetID()); err != nil {
+		if err := o.db.GetObjectsDB().UpdateObjectParentID(o.ctx, o.GetID(), parent.GetID()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
 
-	s.Parent = parent
+	o.Parent = parent
 
 	return nil
 }
 
-func (s *Object) GetOwnerID() uuid.UUID {
-	s.Mu.RLock()
-	defer s.Mu.RUnlock()
+func (o *Object) GetOwnerID() uuid.UUID {
+	o.Mu.RLock()
+	defer o.Mu.RUnlock()
 
-	return s.ownerID
+	return o.ownerID
 }
 
-func (s *Object) SetOwnerID(ownerID uuid.UUID, updateDB bool) error {
-	s.Mu.Lock()
-	defer s.Mu.Unlock()
+func (o *Object) SetOwnerID(ownerID uuid.UUID, updateDB bool) error {
+	o.Mu.Lock()
+	defer o.Mu.Unlock()
 
 	if updateDB {
-		if err := s.db.GetObjectsDB().UpdateObjectOwnerID(s.ctx, s.GetID(), ownerID); err != nil {
+		if err := o.db.GetObjectsDB().UpdateObjectOwnerID(o.ctx, o.GetID(), ownerID); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
 
-	s.ownerID = ownerID
+	o.ownerID = ownerID
 
 	return nil
 }
 
-func (s *Object) GetAsset2D() universe.Asset2d {
-	s.Mu.RLock()
-	defer s.Mu.RUnlock()
+func (o *Object) GetAsset2D() universe.Asset2d {
+	o.Mu.RLock()
+	defer o.Mu.RUnlock()
 
-	return s.asset2d
+	return o.asset2d
 }
 
-func (s *Object) SetAsset2D(asset2d universe.Asset2d, updateDB bool) error {
-	s.Mu.Lock()
-	defer s.Mu.Unlock()
+func (o *Object) SetAsset2D(asset2d universe.Asset2d, updateDB bool) error {
+	o.Mu.Lock()
+	defer o.Mu.Unlock()
 
 	if updateDB {
 		var asset2dID *uuid.UUID
 		if asset2d != nil {
 			asset2dID = utils.GetPTR(asset2d.GetID())
 		}
-		if err := s.db.GetObjectsDB().UpdateObjectAsset2dID(s.ctx, s.GetID(), asset2dID); err != nil {
+		if err := o.db.GetObjectsDB().UpdateObjectAsset2dID(o.ctx, o.GetID(), asset2dID); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
 
-	s.asset2d = asset2d
+	o.asset2d = asset2d
 
 	return nil
 }
 
-func (s *Object) GetAsset3D() universe.Asset3d {
-	s.Mu.RLock()
-	defer s.Mu.RUnlock()
+func (o *Object) GetAsset3D() universe.Asset3d {
+	o.Mu.RLock()
+	defer o.Mu.RUnlock()
 
-	return s.asset3d
+	return o.asset3d
 }
 
-func (s *Object) SetAsset3D(asset3d universe.Asset3d, updateDB bool) error {
-	s.Mu.Lock()
-	defer s.Mu.Unlock()
+func (o *Object) SetAsset3D(asset3d universe.Asset3d, updateDB bool) error {
+	o.Mu.Lock()
+	defer o.Mu.Unlock()
 
 	if updateDB {
 		var asset3dID *uuid.UUID
 		if asset3d != nil {
 			asset3dID = utils.GetPTR(asset3d.GetID())
 		}
-		if err := s.db.GetObjectsDB().UpdateObjectAsset3dID(s.ctx, s.GetID(), asset3dID); err != nil {
+		if err := o.db.GetObjectsDB().UpdateObjectAsset3dID(o.ctx, o.GetID(), asset3dID); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
 
-	s.asset3d = asset3d
+	o.asset3d = asset3d
 
 	return nil
 }
 
-func (s *Object) GetObjectType() universe.ObjectType {
-	s.Mu.RLock()
-	defer s.Mu.RUnlock()
+func (o *Object) GetObjectType() universe.ObjectType {
+	o.Mu.RLock()
+	defer o.Mu.RUnlock()
 
-	return s.objectType
+	return o.objectType
 }
 
-func (s *Object) SetObjectType(objectType universe.ObjectType, updateDB bool) error {
+func (o *Object) SetObjectType(objectType universe.ObjectType, updateDB bool) error {
 	if objectType == nil {
 		return errors.Errorf("object type is nil")
 	}
 
-	s.Mu.Lock()
-	defer s.Mu.Unlock()
+	o.Mu.Lock()
+	defer o.Mu.Unlock()
 
 	if updateDB {
-		if err := s.db.GetObjectsDB().UpdateObjectObjectTypeID(s.ctx, s.GetID(), objectType.GetID()); err != nil {
+		if err := o.db.GetObjectsDB().UpdateObjectObjectTypeID(o.ctx, o.GetID(), objectType.GetID()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
 
-	s.objectType = objectType
-	s.dropCache()
+	o.objectType = objectType
+	o.invalidateCache()
 
 	return nil
 }
 
-func (s *Object) GetOptions() *entry.ObjectOptions {
-	s.Mu.RLock()
-	defer s.Mu.RUnlock()
+func (o *Object) GetOptions() *entry.ObjectOptions {
+	o.Mu.RLock()
+	defer o.Mu.RUnlock()
 
-	return s.options
+	return o.options
 }
 
-func (s *Object) SetOptions(modifyFn modify.Fn[entry.ObjectOptions], updateDB bool) (*entry.ObjectOptions, error) {
-	s.Mu.Lock()
-	defer s.Mu.Unlock()
+func (o *Object) SetOptions(modifyFn modify.Fn[entry.ObjectOptions], updateDB bool) (*entry.ObjectOptions, error) {
+	o.Mu.Lock()
+	defer o.Mu.Unlock()
 
-	options, err := modifyFn(s.options)
+	options, err := modifyFn(o.options)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to modify options")
 	}
 
 	if updateDB {
-		if err := s.db.GetObjectsDB().UpdateObjectOptions(s.ctx, s.GetID(), options); err != nil {
+		if err := o.db.GetObjectsDB().UpdateObjectOptions(o.ctx, o.GetID(), options); err != nil {
 			return nil, errors.WithMessage(err, "failed to update db")
 		}
 	}
 
-	s.options = options
-	s.dropCache()
+	o.options = options
+	o.invalidateCache()
 
 	return options, nil
 }
 
-func (s *Object) GetEffectiveOptions() *entry.ObjectOptions {
-	s.Mu.Lock()
-	defer s.Mu.Unlock()
+func (o *Object) GetEffectiveOptions() *entry.ObjectOptions {
+	o.Mu.Lock()
+	defer o.Mu.Unlock()
 
-	if s.effectiveOptions == nil {
-		effectiveOptions, err := merge.Auto(s.options, s.objectType.GetOptions())
+	if o.effectiveOptions == nil {
+		effectiveOptions, err := merge.Auto(o.options, o.objectType.GetOptions())
 		if err != nil {
-			s.log.Error(
+			o.log.Error(
 				errors.WithMessagef(
-					err, "Object: GetEffectiveOptions: failed to merge object effective options: %s", s.GetID(),
+					err, "Object: GetEffectiveOptions: failed to merge object effective options: %s", o.GetID(),
 				),
 			)
 			return nil
 		}
 
-		s.effectiveOptions = effectiveOptions
+		o.effectiveOptions = effectiveOptions
 	}
 
-	return s.effectiveOptions
+	return o.effectiveOptions
 }
 
-func (s *Object) DropCache() {
-	s.Mu.Lock()
-	defer s.Mu.Unlock()
+func (o *Object) InvalidateCache() {
+	o.Mu.Lock()
+	defer o.Mu.Unlock()
 
-	s.dropCache()
+	o.invalidateCache()
 }
 
-func (s *Object) dropCache() {
-	s.effectiveOptions = nil
+func (o *Object) invalidateCache() {
+	o.effectiveOptions = nil
 }
 
-func (s *Object) GetEntry() *entry.Object {
-	s.Mu.RLock()
-	defer s.Mu.RUnlock()
+func (o *Object) GetEntry() *entry.Object {
+	o.Mu.RLock()
+	defer o.Mu.RUnlock()
 
 	entry := &entry.Object{
-		ObjectID: s.id,
-		OwnerID:  &s.ownerID,
-		Options:  s.options,
-		Position: s.position,
+		ObjectID: o.id,
+		OwnerID:  &o.ownerID,
+		Options:  o.options,
+		Position: o.position,
 	}
-	if s.objectType != nil {
-		entry.ObjectTypeID = utils.GetPTR(s.objectType.GetID())
+	if o.objectType != nil {
+		entry.ObjectTypeID = utils.GetPTR(o.objectType.GetID())
 	}
-	if s.Parent != nil {
-		entry.ParentID = utils.GetPTR(s.Parent.GetID())
+	if o.Parent != nil {
+		entry.ParentID = utils.GetPTR(o.Parent.GetID())
 	}
-	if s.asset2d != nil {
-		entry.Asset2dID = utils.GetPTR(s.asset2d.GetID())
+	if o.asset2d != nil {
+		entry.Asset2dID = utils.GetPTR(o.asset2d.GetID())
 	}
-	if s.asset3d != nil {
-		entry.Asset3dID = utils.GetPTR(s.asset3d.GetID())
+	if o.asset3d != nil {
+		entry.Asset3dID = utils.GetPTR(o.asset3d.GetID())
 	}
 
 	return entry
 }
 
-func (s *Object) Run() error {
-	s.numSendsQueued.Store(0)
-	s.broadcastPipeline = make(chan *websocket.PreparedMessage, 100)
+func (o *Object) Run() error {
+	o.numSendsQueued.Store(0)
+	o.broadcastPipeline = make(chan *websocket.PreparedMessage, 100)
 
 	go func() {
 		defer func() {
-			ns := s.numSendsQueued.Swap(chanIsClosed)
+			ns := o.numSendsQueued.Swap(chanIsClosed)
 			for i := int64(0); i < ns; i++ {
-				<-s.broadcastPipeline
+				<-o.broadcastPipeline
 			}
-			close(s.broadcastPipeline)
+			close(o.broadcastPipeline)
 		}()
 
 		for {
 			select {
-			case message := <-s.broadcastPipeline:
-				s.numSendsQueued.Add(-1)
+			case message := <-o.broadcastPipeline:
+				o.numSendsQueued.Add(-1)
 				if message == nil {
 					return
 				}
 
-				s.performBroadcast(message)
-			case <-s.ctx.Done():
-				s.Stop()
+				o.performBroadcast(message)
+			case <-o.ctx.Done():
+				o.Stop()
 			}
 		}
 	}()
@@ -392,24 +399,24 @@ func (s *Object) Run() error {
 	return nil
 }
 
-func (s *Object) Stop() error {
-	ns := s.numSendsQueued.Add(1)
+func (o *Object) Stop() error {
+	ns := o.numSendsQueued.Add(1)
 	if ns >= 0 {
-		s.broadcastPipeline <- nil
+		o.broadcastPipeline <- nil
 	}
 	return nil
 }
 
-func (s *Object) Update(recursive bool) error {
-	s.UpdateSpawnMessage()
+func (o *Object) Update(recursive bool) error {
+	o.UpdateSpawnMessage()
 
-	if s.GetEnabled() {
-		world := s.GetWorld()
+	if o.GetEnabled() {
+		world := o.GetWorld()
 		if world != nil {
-			world.Send(s.spawnMsg.Load(), true)
-			s.SendTextures(
+			world.Send(o.spawnMsg.Load(), true)
+			o.SendTextures(
 				func(msg *websocket.PreparedMessage) error {
-					return world.Send(msg, false)
+					return world.Send(msg, true)
 				}, false,
 			)
 		}
@@ -419,11 +426,11 @@ func (s *Object) Update(recursive bool) error {
 		return nil
 	}
 
-	s.Children.Mu.RLock()
-	defer s.Children.Mu.RUnlock()
+	o.Children.Mu.RLock()
+	defer o.Children.Mu.RUnlock()
 
-	for _, child := range s.Children.Data {
-		if err := child.Update(recursive); err != nil {
+	for _, child := range o.Children.Data {
+		if err := child.Update(true); err != nil {
 			return errors.WithMessagef(err, "failed to update child: %s", child.GetID())
 		}
 	}
@@ -431,24 +438,24 @@ func (s *Object) Update(recursive bool) error {
 	return nil
 }
 
-func (s *Object) LoadFromEntry(entry *entry.Object, recursive bool) error {
-	s.log.Debugf("Loading object %s...", entry.ObjectID)
+func (o *Object) LoadFromEntry(entry *entry.Object, recursive bool) error {
+	o.log.Debugf("Loading object: %s...", entry.ObjectID)
 
-	if entry.ObjectID != s.GetID() {
-		return errors.Errorf("object ids mismatch: %s != %s", entry.ObjectID, s.GetID())
+	if entry.ObjectID != o.GetID() {
+		return errors.Errorf("object ids mismatch: %s != %s", entry.ObjectID, o.GetID())
 	}
 
-	group, _ := errgroup.WithContext(s.ctx)
-	group.Go(s.GetObjectAttributes().Load)
+	group, ctx := errgroup.WithContext(o.ctx)
+	group.Go(o.GetObjectAttributes().Load)
 	group.Go(
 		func() error {
-			if err := s.loadSelfData(entry); err != nil {
+			if err := o.loadSelfData(entry); err != nil {
 				return errors.WithMessage(err, "failed to load self data")
 			}
-			if err := s.loadDependencies(entry); err != nil {
+			if err := o.loadDependencies(entry); err != nil {
 				return errors.WithMessage(err, "failed to load dependencies")
 			}
-			if err := s.SetPosition(entry.Position, false); err != nil {
+			if err := o.SetPosition(entry.Position, false); err != nil {
 				return errors.WithMessage(err, "failed to set position")
 			}
 
@@ -456,18 +463,18 @@ func (s *Object) LoadFromEntry(entry *entry.Object, recursive bool) error {
 				return nil
 			}
 
-			entries, err := s.db.GetObjectsDB().GetObjectsByParentID(s.ctx, s.GetID())
+			entries, err := o.db.GetObjectsDB().GetObjectsByParentID(ctx, o.GetID())
 			if err != nil {
-				return errors.WithMessagef(err, "failed to get objects by parent id: %s", s.GetID())
+				return errors.WithMessagef(err, "failed to get objects by parent id: %s", o.GetID())
 			}
 
-			for i := range entries {
-				child, err := s.CreateObject(entries[i].ObjectID)
+			for _, childEntry := range entries {
+				child, err := o.CreateObject(childEntry.ObjectID)
 				if err != nil {
-					return errors.WithMessagef(err, "failed to create new object: %s", entries[i].ObjectID)
+					return errors.WithMessagef(err, "failed to create new object: %s", childEntry.ObjectID)
 				}
-				if err := child.LoadFromEntry(entries[i], recursive); err != nil {
-					return errors.WithMessagef(err, "failed to load object from entry: %s", entries[i].ObjectID)
+				if err := child.LoadFromEntry(childEntry, true); err != nil {
+					return errors.WithMessagef(err, "failed to load object from entry: %s", childEntry.ObjectID)
 				}
 			}
 
@@ -477,24 +484,70 @@ func (s *Object) LoadFromEntry(entry *entry.Object, recursive bool) error {
 	return group.Wait()
 }
 
-func (s *Object) loadSelfData(objectEntry *entry.Object) error {
-	if err := s.SetOwnerID(*objectEntry.OwnerID, false); err != nil {
-		return errors.WithMessagef(err, "failed to set owner id: %s", objectEntry.OwnerID)
+func (o *Object) Save() error {
+	return o.saveObjects(map[uuid.UUID]universe.Object{
+		o.GetID(): o,
+	})
+}
+
+func (o *Object) saveObjects(objects map[uuid.UUID]universe.Object) error {
+	if len(objects) < 1 {
+		return nil
 	}
-	if _, err := s.SetOptions(modify.MergeWith(objectEntry.Options), false); err != nil {
+
+	objList := make([]universe.Object, 0, len(objects))
+	entries := make([]*entry.Object, 0, len(objects))
+	for _, object := range objects {
+		objList = append(objList, object)
+		entries = append(entries, object.GetEntry())
+	}
+
+	// saving objects
+	if err := o.db.GetObjectsDB().UpsertObjects(o.ctx, entries); err != nil {
+		return errors.WithMessage(err, "failed to upsert objects")
+	}
+
+	// saving objects attributes
+	if err := generic.NewButcher(objList).HandleItems(
+		int(o.CFG.Postgres.MAXCONNS), // modify batchSize when database consumption while saving will be changed
+		func(object universe.Object) error {
+			if err := object.GetObjectAttributes().Save(); err != nil {
+				return errors.WithMessagef(err, "failed to save object attributes: %s", object.GetID())
+			}
+			return nil
+		},
+	); err != nil {
+		return errors.WithMessage(err, "failed to save objects attributes")
+	}
+
+	// saving children
+	for _, object := range objects {
+		if err := o.saveObjects(object.GetObjects(false)); err != nil {
+			return errors.WithMessagef(err, "failed to save children: %s", object.GetID())
+		}
+	}
+
+	return nil
+}
+
+func (o *Object) loadSelfData(entry *entry.Object) error {
+	if err := o.SetOwnerID(*entry.OwnerID, false); err != nil {
+		return errors.WithMessagef(err, "failed to set owner id: %s", entry.OwnerID)
+	}
+	if _, err := o.SetOptions(modify.MergeWith(entry.Options), false); err != nil {
 		return errors.WithMessage(err, "failed to set options")
 	}
 	return nil
 }
 
-func (s *Object) loadDependencies(entry *entry.Object) error {
+func (o *Object) loadDependencies(entry *entry.Object) error {
 	node := universe.GetNode()
 
 	objectType, ok := node.GetObjectTypes().GetObjectType(*entry.ObjectTypeID)
 	if !ok {
 		return errors.Errorf("failed to get object type: %s", entry.ObjectTypeID)
 	}
-	if err := s.SetObjectType(objectType, false); err != nil {
+	if err := o.SetObjectType(objectType, false); err != nil {
 		return errors.WithMessagef(err, "failed to set object type: %s", entry.ObjectTypeID)
 	}
 
@@ -503,7 +556,7 @@ func (s *Object) loadDependencies(entry *entry.Object) error {
 		if !ok {
 			return errors.Errorf("failed to get asset 2d: %s", entry.Asset2dID)
 		}
-		if err := s.SetAsset2D(asset2d, false); err != nil {
+		if err := o.SetAsset2D(asset2d, false); err != nil {
 			return errors.WithMessagef(err, "failed to set asset 2d: %s", entry.Asset2dID)
 		}
 	}
@@ -513,7 +566,7 @@ func (s *Object) loadDependencies(entry *entry.Object) error {
 		if !ok {
 			return errors.Errorf("failed to get asset 3d: %s", entry.Asset3dID)
 		}
-		if err := s.SetAsset3D(asset3d, false); err != nil {
+		if err := o.SetAsset3D(asset3d, false); err != nil {
 			return errors.WithMessagef(err, "failed to set asset 3d: %s", entry.Asset3dID)
 		}
 	}
@@ -521,21 +574,21 @@ func (s *Object) loadDependencies(entry *entry.Object) error {
 	return nil
 }
 
-func (s *Object) UpdateSpawnMessage() error {
-	world := s.GetWorld()
+func (o *Object) UpdateSpawnMessage() error {
+	world := o.GetWorld()
 	if world == nil {
 		return errors.Errorf("world is empty")
 	}
 
 	parentID := uuid.Nil
-	parent := s.GetParent()
+	parent := o.GetParent()
 	if parent != nil {
 		parentID = parent.GetID()
 	}
 
 	asset3dID := uuid.Nil
-	asset3d := s.GetAsset3D()
-	objectType := s.GetObjectType()
+	asset3d := o.GetAsset3D()
+	objectType := o.GetObjectType()
 	assetFormat := dto.AddressableAssetType
 	if asset3d == nil && objectType != nil {
 		asset3d = objectType.GetAsset3d()
@@ -556,48 +609,48 @@ func (s *Object) UpdateSpawnMessage() error {
 	uuidNilPtr := utils.GetPTR(uuid.Nil)
 	falsePtr := utils.GetPTR(false)
 	truePtr := utils.GetPTR(true)
-	opts := s.GetEffectiveOptions()
+	opts := o.GetEffectiveOptions()
 	msg := message.GetBuilder().MsgObjectDefinition(
 		message.ObjectDefinition{
-			ObjectID:         s.GetID(),
+			ObjectID:         o.GetID(),
 			ParentID:         parentID,
 			AssetType:        asset3dID,
 			AssetFormat:      assetFormat,
-			Name:             s.GetName(),
-			Position:         *s.GetActualPosition(),
+			Name:             o.GetName(),
+			Position:         *o.GetActualPosition(),
 			Editable:         *utils.GetFromAny(opts.Editable, truePtr),
 			TetheredToParent: true,
 			Minimap:          *utils.GetFromAny(opts.Minimap, falsePtr),
 			InfoUI:           *utils.GetFromAny(opts.InfoUIID, uuidNilPtr),
 		},
 	)
-	s.spawnMsg.Store(msg)
+	o.spawnMsg.Store(msg)
 
 	return nil
 }
 
-func (s *Object) GetSpawnMessage() *websocket.PreparedMessage {
-	return s.spawnMsg.Load()
+func (o *Object) GetSpawnMessage() *websocket.PreparedMessage {
+	return o.spawnMsg.Load()
 }
 
-func (s *Object) SendSpawnMessage(sendFn func(*websocket.PreparedMessage) error, recursive bool) {
-	sendFn(s.spawnMsg.Load())
+func (o *Object) SendSpawnMessage(sendFn func(*websocket.PreparedMessage) error, recursive bool) {
+	sendFn(o.spawnMsg.Load())
 	//time.Sleep(time.Millisecond * 100)
 	if !recursive {
 		return
 	}
 
-	s.Children.Mu.RLock()
-	defer s.Children.Mu.RUnlock()
+	o.Children.Mu.RLock()
+	defer o.Children.Mu.RUnlock()
 
-	for _, child := range s.Children.Data {
-		child.SendSpawnMessage(sendFn, recursive)
+	for _, child := range o.Children.Data {
+		child.SendSpawnMessage(sendFn, true)
 	}
 
 }
 
-func (s *Object) SendTextures(sendFn func(*websocket.PreparedMessage) error, recursive bool) {
-	msg := s.textMsg.Load()
+func (o *Object) SendTextures(sendFn func(*websocket.PreparedMessage) error, recursive bool) {
+	msg := o.textMsg.Load()
 	if msg != nil {
 		sendFn(msg)
 	}
@@ -606,52 +659,52 @@ func (s *Object) SendTextures(sendFn func(*websocket.PreparedMessage) error, rec
 		return
 	}
 
-	s.Children.Mu.RLock()
-	defer s.Children.Mu.RUnlock()
+	o.Children.Mu.RLock()
+	defer o.Children.Mu.RUnlock()
 
-	for _, child := range s.Children.Data {
-		child.SendTextures(sendFn, recursive)
+	for _, child := range o.Children.Data {
+		child.SendTextures(sendFn, true)
 	}
 }
 
 // QUESTION: why this method is never called?
-func (s *Object) SendAttributes(sendFn func(*websocket.PreparedMessage), recursive bool) {
-	s.attributesMsg.Mu.RLock()
-	for _, g := range s.attributesMsg.Data {
+func (o *Object) SendAttributes(sendFn func(*websocket.PreparedMessage), recursive bool) {
+	o.attributesMsg.Mu.RLock()
+	for _, g := range o.attributesMsg.Data {
 		for _, a := range g.Data {
 			sendFn(a)
 		}
 	}
-	s.attributesMsg.Mu.RUnlock()
+	o.attributesMsg.Mu.RUnlock()
 
-	sendFn(s.spawnMsg.Load())
+	sendFn(o.spawnMsg.Load())
 
 	if !recursive {
 		return
 	}
 
-	s.Children.Mu.RLock()
-	defer s.Children.Mu.RUnlock()
+	o.Children.Mu.RLock()
+	defer o.Children.Mu.RUnlock()
 
-	for _, child := range s.Children.Data {
-		child.SendAttributes(sendFn, recursive)
+	for _, child := range o.Children.Data {
+		child.SendAttributes(sendFn, true)
 	}
 }
 
 // QUESTION: why this method is never called?
-func (s *Object) SetAttributesMsg(kind, name string, msg *websocket.PreparedMessage) {
-	m, ok := s.attributesMsg.Load(kind)
+func (o *Object) SetAttributesMsg(kind, name string, msg *websocket.PreparedMessage) {
+	m, ok := o.attributesMsg.Load(kind)
 	if !ok {
 		m = generic.NewSyncMap[string, *websocket.PreparedMessage](0)
-		s.attributesMsg.Store(kind, m)
+		o.attributesMsg.Store(kind, m)
 	}
 	m.Store(name, msg)
 }
 
-func (s *Object) LockUnityObject(user universe.User, state uint32) bool {
+func (o *Object) LockUnityObject(user universe.User, state uint32) bool {
 	if state == 1 {
-		return s.lockedBy.CompareAndSwap(uuid.Nil, user.GetID())
+		return o.lockedBy.CompareAndSwap(uuid.Nil, user.GetID())
 	} else {
-		return s.lockedBy.CompareAndSwap(user.GetID(), uuid.Nil)
+		return o.lockedBy.CompareAndSwap(user.GetID(), uuid.Nil)
 	}
 }

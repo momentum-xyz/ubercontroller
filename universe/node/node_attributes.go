@@ -23,6 +23,18 @@ func newNodeAttributes(node *Node) *nodeAttributes {
 	}
 }
 
+func (na *nodeAttributes) GetAll() map[entry.AttributeID]*entry.AttributePayload {
+	na.node.Mu.RLock()
+	defer na.node.Mu.RUnlock()
+
+	attributes := make(map[entry.AttributeID]*entry.AttributePayload, len(na.data))
+	for id, payload := range na.data {
+		attributes[id] = payload
+	}
+
+	return attributes
+}
+
 func (na *nodeAttributes) Load() error {
 	na.node.log.Infof("Loading node attributes: %s...", na.node.GetID())
 
@@ -45,6 +57,8 @@ func (na *nodeAttributes) Load() error {
 }
 
 func (na *nodeAttributes) Save() error {
+	na.node.log.Infof("Saving node attributes: %s...", na.node.GetID())
+
 	na.node.Mu.RLock()
 	defer na.node.Mu.RUnlock()
 
@@ -56,6 +70,8 @@ func (na *nodeAttributes) Save() error {
 	if err := na.node.db.GetNodeAttributesDB().UpsertNodeAttributes(na.node.ctx, attributes); err != nil {
 		return errors.WithMessage(err, "failed to upsert node attributes")
 	}
+
+	na.node.log.Infof("Node attributes saved: %s: %d", na.node.GetID(), len(na.data))
 
 	return nil
 }

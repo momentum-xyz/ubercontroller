@@ -13,11 +13,11 @@ import (
 )
 
 func (w *World) GetUser(userID uuid.UUID, recursive bool) (universe.User, bool) {
-	return w.Object.GetUser(userID, false)
+	return w.ToObject().GetUser(userID, false)
 }
 
 func (w *World) GetUsers(recursive bool) map[uuid.UUID]universe.User {
-	return w.Object.GetUsers(false)
+	return w.ToObject().GetUsers(false)
 }
 
 func (w *World) AddUser(user universe.User, updateDB bool) error {
@@ -60,7 +60,7 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 
 	w.log.Infof("AddUser: %+v\n", user.GetID())
 	// effectively replace user if exists
-	if err = w.Object.AddUser(user, updateDB); err != nil {
+	if err = w.ToObject().AddUser(user, updateDB); err != nil {
 		return errors.WithMessagef(err, "failed to add user %s to world: %s", user.GetID(), w.GetID())
 	}
 
@@ -76,7 +76,7 @@ func (w *World) RemoveUser(user universe.User, updateDB bool) (bool, error) {
 }
 
 func (w *World) Send(msg *websocket.PreparedMessage, recursive bool) error {
-	return w.Object.Send(msg, false)
+	return w.ToObject().Send(msg, false)
 }
 
 func (w *World) GetUserSpawnPosition(userID uuid.UUID) cmath.Vec3 {

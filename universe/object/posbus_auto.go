@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (s *Object) posBusAutoOnObjecteAttributeChanged(
+func (o *Object) posBusAutoOnObjecteAttributeChanged(
 	changeType universe.AttributeChangeType, attributeID entry.AttributeID, value *entry.AttributeValue,
 	effectiveOptions *entry.AttributeOptions,
 ) error {
@@ -28,7 +28,7 @@ func (s *Object) posBusAutoOnObjecteAttributeChanged(
 	for i := range autoOption.Scope {
 		switch autoOption.Scope[i] {
 		case entry.WorldPosBusAutoScopeAttributeOption:
-			world := s.GetWorld()
+			world := o.GetWorld()
 			if world == nil {
 				errs = multierror.Append(
 					err, errors.Errorf("failed to get world: %s", autoOption.Scope[i]),
@@ -43,7 +43,7 @@ func (s *Object) posBusAutoOnObjecteAttributeChanged(
 				)
 			}
 		case entry.ObjectPosBusAutoScopeAttributeOption:
-			if err := s.Send(autoMessage, false); err != nil {
+			if err := o.Send(autoMessage, false); err != nil {
 				errs = multierror.Append(
 					errs, errors.WithMessagef(
 						err, "failed to send message: %s", autoOption.Scope[i],

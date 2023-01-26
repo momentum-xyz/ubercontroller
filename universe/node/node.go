@@ -32,7 +32,6 @@ var _ universe.Node = (*Node)(nil)
 
 type Node struct {
 	*object.Object
-	cfg        *config.Config
 	ctx        context.Context
 	log        *zap.SugaredLogger
 	db         database.DB
@@ -93,6 +92,9 @@ func NewNode(
 	node.userUserAttributes = newUserUserAttributes(node)
 	node.objectUserAttributes = newObjectUserAttributes(node)
 
+	node.chatService = streamchat.NewStreamChat()
+	node.pluginController = mplugin.NewPluginController(id)
+
 	return node
 }
 
@@ -107,7 +109,6 @@ func (n *Node) Initialize(ctx context.Context) error {
 	}
 
 	n.ctx = ctx
-	n.cfg = cfg
 	n.log = log
 
 	consoleWriter := zapcore.Lock(os.Stdout)
@@ -122,16 +123,15 @@ func (n *Node) Initialize(ctx context.Context) error {
 
 	n.router = r
 	n.httpServer = &http.Server{
-		Addr:    fmt.Sprintf("%s:%d", n.cfg.Settings.Address, n.cfg.Settings.Port),
+		Addr:    fmt.Sprintf("%s:%d", cfg.Settings.Address, cfg.Settings.Port),
 		Handler: n.router,
 	}
-	n.pluginController = mplugin.NewPluginController(n.GetID())
-	n.chatService = streamchat.NewStreamChat()
+
 	if err := n.chatService.Initialize(ctx); err != nil {
-		return err
+		return errors.WithMessage(err, "failed to initialize chat service")
 	}
 
-	return n.Object.Initialize(ctx)
+	return n.ToObject().Initialize(ctx)
 }
 
 func (n *Node) ToObject() universe.Object {
@@ -226,49 +226,33 @@ func (n *Node) Stop() error {
 
 // TODO: investigate how to load with limited database connection pool
 func (n *Node) Load() error {
-	n.log.Infof("Loading node %s...", n.GetID())
+	n.log.Infof("Loading node: %s...", n.GetID())
 
-	group, _ := errgroup.WithContext(n.ctx)
 	// main loading thread
+	group, ctx := errgroup.WithContext(n.ctx)
 	group.Go(func() error {
 		// first stage
-		group, _ := errgroup.WithContext(n.ctx)
-		group.Go(n.assets2d.Load)
-		group.Go(n.assets3d.Load)
-		group.Go(n.userTypes.Load)
-		group.Go(n.attributeTypes.Load)
+		group, _ := errgroup.WithContext(ctx)
+		group.Go(n.GetPlugins().Load)
+		group.Go(n.GetAssets2d().Load)
+		group.Go(n.GetAssets3d().Load)
+		group.Go(n.GetUserTypes().Load)
+		group.Go(n.GetAttributeTypes().Load)
 		if err := group.Wait(); err != nil {
 			return errors.WithMessage(err, "failed to load basic data")
 		}
 
 		// second stage
-		group, _ = errgroup.WithContext(n.ctx)
-		group.Go(n.objectTypes.Load)
-		group.Go(n.plugins.Load)
+		group, _ = errgroup.WithContext(ctx)
+		group.Go(n.GetObjectAttributes().Load)
 		if err := group.Wait(); err != nil {
 			return errors.WithMessage(err, "failed to load additional data")
 		}
 
 		// third stage
-		group, _ = errgroup.WithContext(n.ctx)
-		group.Go(
-			func() error {
-				nodeEntry, err := n.db.GetNodesDB().GetNode(n.ctx)
-				if err != nil {
-					return errors.WithMessage(err, "failed to get node")
-				}
-				if err := n.LoadFromEntry(nodeEntry.Object, false); err != nil {
-					return errors.WithMessage(err, "failed to load node from entry")
-				}
-
-				if err := n.GetNodeAttributes().Load(); err != nil {
-					return errors.WithMessage(err, "failed to load node attributes")
-				}
-
-				return nil
-			},
-		)
-		group.Go(n.worlds.Load)
+		group, _ = errgroup.WithContext(ctx)
+		group.Go(n.load)
+		group.Go(n.GetWorlds().Load)
 		if err := group.Wait(); err != nil {
 			return errors.WithMessage(err, "failed to load universe tree")
 		}
@@ -291,57 +275,85 @@ func (n *Node) Load() error {
 func (n *Node) Save() error {
 	n.log.Infof("Saving node: %s...", n.GetID())
 
-	var wg sync.WaitGroup
 	var errs *multierror.Error
 	var errsMu sync.Mutex
+	addError := func(err error, msg string) {
+		errsMu.Lock()
+		defer errsMu.Unlock()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+		errs = multierror.Append(errs, errors.WithMessage(err, msg))
+	}
 
-		if err := n.assets2d.Save(); err != nil {
-			errsMu.Lock()
-			defer errsMu.Unlock()
-			errs = multierror.Append(errs, errors.WithMessage(err, "failed to save assets 2d"))
-		}
-	}()
+	addWGTask := func(wg *sync.WaitGroup, task func() error, errMsg string) {
+		wg.Add(1)
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+		go func() {
+			defer wg.Done()
 
-		if err := n.assets3d.Save(); err != nil {
-			errsMu.Lock()
-			defer errsMu.Unlock()
-			errs = multierror.Append(errs, errors.WithMessage(err, "failed to save assets 3d"))
-		}
-	}()
+			if err := task(); err != nil {
+				addError(err, errMsg)
+			}
+		}()
+	}
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	// first stage
+	wg := &sync.WaitGroup{}
+	addWGTask(wg, n.GetPlugins().Save, "failed to save plugins")
+	addWGTask(wg, n.GetAssets2d().Save, "failed to save assets 2d")
+	addWGTask(wg, n.GetAssets3d().Save, "failed to save assets 3d")
+	addWGTask(wg, n.GetUserTypes().Save, "failed to save user types")
+	addWGTask(wg, n.GetAttributeTypes().Save, "failed to save attribute types")
+	wg.Wait()
 
-		if err := n.objectTypes.Save(); err != nil {
-			errsMu.Lock()
-			defer errsMu.Unlock()
-			errs = multierror.Append(errs, errors.WithMessage(err, "failed to save object types"))
-		}
-	}()
+	// second stage
+	wg = &sync.WaitGroup{}
+	addWGTask(wg, n.GetObjectTypes().Save, "failed to save object types")
+	wg.Wait()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	// third stage
+	wg = &sync.WaitGroup{}
+	addWGTask(wg, n.save, "failed to save node data")
+	wg.Wait()
 
-		if err := n.worlds.Save(); err != nil {
-			errsMu.Lock()
-			defer errsMu.Unlock()
-			errs = multierror.Append(errs, errors.WithMessage(err, "failed to save worlds"))
-		}
-	}()
-
+	wg = &sync.WaitGroup{}
+	addWGTask(wg, n.GetWorlds().Save, "failed to save worlds")
 	wg.Wait()
 
 	n.log.Infof("Node saved: %s", n.GetID())
 
 	return errs.ErrorOrNil()
+}
+
+func (n *Node) save() error {
+	if err := n.ToObject().Save(); err != nil {
+		return errors.WithMessage(err, "failed to save node object")
+	}
+	if err := n.GetNodeAttributes().Save(); err != nil {
+		return errors.WithMessage(err, "failed to save node attributes")
+	}
+	return nil
+}
+
+func (n *Node) load() error {
+	n.log.Infof("Loading node data: %s...", n.GetID())
+
+	group, ctx := errgroup.WithContext(n.ctx)
+	group.Go(n.GetNodeAttributes().Load)
+	group.Go(func() error {
+		nodeEntry, err := n.db.GetNodesDB().GetNode(ctx)
+		if err != nil {
+			return errors.WithMessage(err, "failed to get node")
+		}
+		if err := n.LoadFromEntry(nodeEntry.Object, false); err != nil {
+			return errors.WithMessage(err, "failed to load node from entry")
+		}
+		return nil
+	})
+	if err := group.Wait(); err != nil {
+		return errors.WithMessage(err, "failed to load node data")
+	}
+
+	n.log.Infof("Node data loaded: %s", n.GetID())
+
+	return nil
 }

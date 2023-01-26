@@ -172,13 +172,13 @@ func (a *AttributeTypes) Load() error {
 		return errors.WithMessage(err, "failed to get attribute types")
 	}
 
-	for i := range entries {
-		attributeType, err := a.CreateAttributeType(entries[i].AttributeTypeID)
+	for _, atEntry := range entries {
+		attributeType, err := a.CreateAttributeType(atEntry.AttributeTypeID)
 		if err != nil {
-			return errors.WithMessagef(err, "failed to create new attribute type: %s", entries[i].AttributeTypeID)
+			return errors.WithMessagef(err, "failed to create new attribute type: %s", atEntry.AttributeTypeID)
 		}
-		if err := attributeType.LoadFromEntry(entries[i]); err != nil {
-			return errors.WithMessagef(err, "failed to load attribute type from entry: %s", entries[i].AttributeTypeID)
+		if err := attributeType.LoadFromEntry(atEntry); err != nil {
+			return errors.WithMessagef(err, "failed to load attribute type from entry: %s", atEntry.AttributeTypeID)
 		}
 	}
 
@@ -204,7 +204,7 @@ func (a *AttributeTypes) Save() error {
 		return errors.WithMessage(err, "failed to upsert attribute types")
 	}
 
-	a.log.Info("Attribute types saved")
+	a.log.Infof("Attribute types saved: %d", len(a.attributeTypes.Data))
 
 	return nil
 }

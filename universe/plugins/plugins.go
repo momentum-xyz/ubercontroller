@@ -160,7 +160,7 @@ func (p *Plugins) Save() error {
 		return errors.WithMessage(err, "failed to upsert plugins")
 	}
 
-	p.log.Info("Plugins saved")
+	p.log.Infof("Plugins saved: %d", len(p.plugins.Data))
 
 	return nil
 }

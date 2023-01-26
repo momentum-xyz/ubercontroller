@@ -47,8 +47,8 @@ func (m *SyncMap[K, V]) Remove(k K) bool {
 }
 
 func (m *SyncMap[K, V]) Map(mapFn func(k K, v V) V) map[K]V {
-	m.Mu.Lock()
-	defer m.Mu.Unlock()
+	m.Mu.RLock()
+	defer m.Mu.RUnlock()
 
 	data := make(map[K]V, len(m.Data))
 
