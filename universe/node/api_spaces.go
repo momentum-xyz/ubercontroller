@@ -67,7 +67,7 @@ func (n *Node) apiSpacesCreateSpace(c *gin.Context) {
 
 	if !isAdmin {
 		err := errors.New("Node: apiSpacesCreateSpace: operation is not permitted for user")
-		api.AbortRequest(c, http.StatusUnauthorized, "space_creation_not_permitted", err, n.log)
+		api.AbortRequest(c, http.StatusForbidden, "space_creation_not_permitted", err, n.log)
 		return
 	}
 
