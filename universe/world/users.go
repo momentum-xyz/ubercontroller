@@ -128,13 +128,19 @@ func (w *World) initializeUnity(user universe.User) error {
 
 	w.SendSpawnMessage(user.SendDirectly, true)
 	w.log.Infof("Sent Spawn: %+v\n", user.GetID())
-	//time.Sleep(1 * time.Second)
+	time.Sleep(1 * time.Second)
 	user.SendDirectly(
 		posbus.NewSignalMsg(
 			posbus.SignalSpawn,
 		).WebsocketMessage(),
 	)
 	w.log.Infof("Sent Signal: %+v\n", user.GetID())
+
+	sm := w.TempGetSkybox()
+	if sm != nil {
+		w.log.Infof("SKYBOX: Sending texture to  %+v\n", u.GetID().String())
+		user.SendDirectly(sm)
+	}
 
 	w.SendTextures(user.SendDirectly, true)
 	w.log.Infof("Sent Textures: %+v\n", user.GetID())
