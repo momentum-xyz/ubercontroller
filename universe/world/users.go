@@ -138,7 +138,7 @@ func (w *World) initializeUnity(user universe.User) error {
 
 	sm := w.TempGetSkybox()
 	if sm != nil {
-		w.log.Infof("SKYBOX: Sending texture to  %+v\n", u.GetID().String())
+		w.log.Infof("SKYBOX: Sending texture to  %+v\n", user.GetID().String())
 		user.SendDirectly(sm)
 	}
 
