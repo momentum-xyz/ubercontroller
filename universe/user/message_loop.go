@@ -3,7 +3,6 @@ package user
 import (
 	"encoding/json"
 	"fmt"
-
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/posbus-protocol/posbus"
@@ -84,7 +83,8 @@ func (u *User) SignalsHandler(s posbus.Signal) error {
 	switch s {
 	case posbus.SignalReady:
 		u.log.Infof("SKYBOX: Got SignalReady from %+v\n", u.GetID().String())
-
+		u.GetWorld().SendTextures(u.SendDirectly, true)
+		u.log.Infof("Sent Textures: %+v\n", u.GetID())
 		u.ReleaseSendBuffer()
 		//u.log.Debugf("Got signalReady from %s", u.id.String())
 		//TODO: Do we need it?
