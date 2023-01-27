@@ -24,6 +24,10 @@ func Node(ctx context.Context, node universe.Node) error {
 		return seedNodeAttributes(node)
 	})
 
+	group.Go(func() error {
+		return seedAssets2d(node)
+	})
+
 	if err := group.Wait(); err != nil {
 		return errors.WithMessage(err, "failed to seed plugins or attribute types")
 	}

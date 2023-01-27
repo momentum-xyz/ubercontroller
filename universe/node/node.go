@@ -284,6 +284,9 @@ func (n *Node) Save() error {
 	if err := n.GetNodeAttributes().Save(); err != nil {
 		return errors.WithMessage(err, "failed to save NodeAttributes")
 	}
+	if err := n.GetAssets2d().Save(); err != nil {
+		return errors.WithMessage(err, "failed to save assets 2d")
+	}
 
 	var errs *multierror.Error
 	var errsMu sync.Mutex
