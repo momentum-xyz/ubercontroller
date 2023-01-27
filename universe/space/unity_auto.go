@@ -74,11 +74,9 @@ func (s *Space) SendUnityAutoAttributeMessage(
 func (s *Space) UpdateAutoTextureMap(
 	option *entry.UnityAutoAttributeOption, value *entry.AttributeValue,
 ) *websocket.PreparedMessage {
-	s.log.Infof("unity-auto stage5a for %+v  to %+v\n", s.GetID(), value)
 	if option == nil || value == nil {
 		return nil
 	}
-	s.log.Infof("unity-auto stage5b for %+v to %+v\n", s.GetID(), value)
 	var msg *websocket.PreparedMessage
 	switch option.SlotType {
 	case entry.UnitySlotTypeNumber:
@@ -119,7 +117,6 @@ func (s *Space) UpdateAutoTextureMap(
 		}
 
 		s.renderTextureMap.Store(option.SlotName, val)
-		s.log.Infof("unity-auto stage6 for %+v, %+v to %+v\n", s.GetID(), value, val)
 		func() {
 			s.renderTextureMap.Mu.RLock()
 			defer s.renderTextureMap.Mu.RUnlock()
@@ -127,7 +124,10 @@ func (s *Space) UpdateAutoTextureMap(
 			s.textMsg.Store(message.GetBuilder().SetObjectTextures(s.GetID(), s.renderTextureMap.Data))
 			st := s.GetSpaceType()
 			if st != nil && st.GetAsset3d() != nil && st.GetAsset3d().GetID() == uuid.MustParse("313a597a-8b9a-47a7-9908-52bdc7a21a3e") {
-				s.log.Infof("unity-auto stage7b :Setting skybox texture for %+v to %+v\n", s.world.GetID(), val)
+				s.log.Infof(
+					"unity-auto stage7b :Setting skybox texture for %+v to %+v from %+v\n", s.world.GetID(), val,
+					s.GetID(),
+				)
 				skyBoxTextureMap := map[string]string{option.SlotName: val}
 				s.world.TempSetSkybox(message.GetBuilder().SetObjectTextures(s.GetID(), skyBoxTextureMap))
 			}
