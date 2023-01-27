@@ -203,22 +203,22 @@ func (n *Node) apiUsersRemoveMutualDocks(c *gin.Context) {
 	c.JSON(http.StatusAccepted, nil)
 }
 
-func createWorldPortal(portalName string, from, to universe.World) (uuid.UUID, error) {
+func createWorldPortal(portalName string, from, to universe.World) (universe.Object, error) {
 	portals := getWorldPortals(from, to)
 	if len(portals) > 0 {
-		for portalID, _ := range portals {
-			return portalID, nil
+		for _, portal := range portals {
+			return portal, nil
 		}
 	}
 
 	dockingStation, err := getWorldDockingStation(from)
 	if err != nil {
-		return uuid.Nil, errors.WithMessage(err, "failed to get docking station")
+		return nil, errors.WithMessage(err, "failed to get docking station")
 	}
 
 	portalObjectTypeID, err := helper.GetPortalObjectTypeID()
 	if err != nil {
-		return uuid.Nil, errors.WithMessage(err, "failed to get portal space type id")
+		return nil, errors.WithMessage(err, "failed to get portal space type id")
 	}
 
 	template := helper.ObjectTemplate{

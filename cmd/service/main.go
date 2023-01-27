@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"os"
 	"os/signal"
 	"syscall"
@@ -80,6 +81,9 @@ func run(ctx context.Context) error {
 		uuid.MustParse("86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8"),
 	); err != nil {
 		return errors.WithMessage(err, "failed to initialize universe")
+	}
+	if err := generic.Initialize(ctx); err != nil {
+		return errors.WithMessage(err, "failed to initialize generic package")
 	}
 	if err := common.Initialize(ctx); err != nil {
 		return errors.WithMessage(err, "failed to initialize common package")

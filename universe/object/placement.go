@@ -15,7 +15,7 @@ import (
 
 // TODO: Rewrite
 
-func (s *Object) GetPlacement(placementMap *entry.ObjectChildPlacement) (position_algo.Algo, error) {
+func (o *Object) GetPlacement(placementMap *entry.ObjectChildPlacement) (position_algo.Algo, error) {
 
 	//fmt.Printf("PLSMAP %+v\n", placementMap)
 
@@ -25,7 +25,7 @@ func (s *Object) GetPlacement(placementMap *entry.ObjectChildPlacement) (positio
 		algo = *placementMap.Algo
 	}
 
-	//fmt.Printf("%s | %+v\n", algo, placementMap.Options)
+	//fmt.Printf("%o | %+v\n", algo, placementMap.Options)
 	switch algo {
 	case "circular":
 		par = position_algo.NewCircular(placementMap.Options)
@@ -42,14 +42,14 @@ func (s *Object) GetPlacement(placementMap *entry.ObjectChildPlacement) (positio
 	return par, nil
 }
 
-func (s *Object) GetPlacements() map[uuid.UUID]position_algo.Algo {
-	//fmt.Printf("eopts %+v\n:", s.GetEffectiveOptions().ChildPlacements)
-	placements := s.GetEffectiveOptions().ChildPlacements
+func (o *Object) GetPlacements() map[uuid.UUID]position_algo.Algo {
+	//fmt.Printf("eopts %+v\n:", o.GetEffectiveOptions().ChildPlacements)
+	placements := o.GetEffectiveOptions().ChildPlacements
 	//fmt.Println(len(placements))
 	pls := make(map[uuid.UUID]position_algo.Algo)
 	for sId, placement := range placements {
-		if p, err := s.GetPlacement(placement); err != nil {
-			s.log.Error(errors.WithMessage(err, "Object: UpdateMetaFromMap: failed to fill placement"))
+		if p, err := o.GetPlacement(placement); err != nil {
+			o.log.Error(errors.WithMessage(err, "Object: UpdateMetaFromMap: failed to fill placement"))
 		} else {
 			//fmt.Printf("%+v | %+v\n", sId, p)
 			pls[sId] = p
@@ -58,21 +58,23 @@ func (s *Object) GetPlacements() map[uuid.UUID]position_algo.Algo {
 	return pls
 }
 
-func (s *Object) SetActualPosition(pos cmath.SpacePosition, theta float64) error {
-	s.Mu.Lock()
-	defer s.Mu.Unlock()
+func (o *Object) SetActualPosition(pos cmath.SpacePosition, theta float64) error {
+	o.Mu.Lock()
+	defer o.Mu.Unlock()
 
-	if (s.theta != theta) || (*s.actualPosition.Load() != pos) {
-		s.theta = theta
-		s.actualPosition.Store(&pos)
+	if (o.theta != theta) || (*o.actualPosition.Load() != pos) {
+		o.theta = theta
+		o.actualPosition.Store(&pos)
 
-		if s.enabled.Load() {
+		if o.enabled.Load() {
 			go func() {
-				s.UpdateSpawnMessage()
-				world := s.GetWorld()
+				o.UpdateSpawnMessage()
+				world := o.GetWorld()
 				if world != nil {
 					world.Send(
-						posbus.NewSetStaticObjectPositionMsg(s.GetID(), *(s.GetActualPosition())).WebsocketMessage(),
+						posbus.NewSetStaticObjectPositionMsg(
+							o.GetID(), *(o.GetActualPosition()),
+						).WebsocketMessage(),
 						true,
 					)
 				}
@@ -83,39 +85,39 @@ func (s *Object) SetActualPosition(pos cmath.SpacePosition, theta float64) error
 	return nil
 }
 
-func (s *Object) GetPosition() *cmath.SpacePosition {
-	s.Mu.RLock()
-	defer s.Mu.RUnlock()
+func (o *Object) GetPosition() *cmath.SpacePosition {
+	o.Mu.RLock()
+	defer o.Mu.RUnlock()
 
-	return s.position
+	return o.position
 }
 
-func (s *Object) GetActualPosition() *cmath.SpacePosition {
-	return s.actualPosition.Load()
+func (o *Object) GetActualPosition() *cmath.SpacePosition {
+	return o.actualPosition.Load()
 }
 
-func (s *Object) SetPosition(position *cmath.SpacePosition, updateDB bool) error {
-	s.Mu.Lock()
-	defer s.Mu.Unlock()
+func (o *Object) SetPosition(position *cmath.SpacePosition, updateDB bool) error {
+	o.Mu.Lock()
+	defer o.Mu.Unlock()
 
 	if updateDB {
-		if err := s.db.GetObjectsDB().UpdateObjectPosition(s.ctx, s.GetID(), position); err != nil {
+		if err := o.db.GetObjectsDB().UpdateObjectPosition(o.ctx, o.GetID(), position); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
 
 	// TODO: unclear how we have to do it, in case if one or another is nil
-	s.position = position
-	if s.position != nil {
-		s.actualPosition.Store(s.position)
+	o.position = position
+	if o.position != nil {
+		o.actualPosition.Store(o.position)
 
-		if s.enabled.Load() {
+		if o.enabled.Load() {
 			go func() {
-				s.UpdateSpawnMessage()
-				world := s.GetWorld()
+				o.UpdateSpawnMessage()
+				world := o.GetWorld()
 				if world != nil {
 					world.Send(
-						posbus.NewSetStaticObjectPositionMsg(s.GetID(), *(s.GetActualPosition())).WebsocketMessage(),
+						posbus.NewSetStaticObjectPositionMsg(o.GetID(), *(o.GetActualPosition())).WebsocketMessage(),
 						true,
 					)
 				}
@@ -126,19 +128,19 @@ func (s *Object) SetPosition(position *cmath.SpacePosition, updateDB bool) error
 	return nil
 }
 
-func (s *Object) UpdateChildrenPosition(recursive bool) error {
-	//fmt.Println("pls1", s.GetID())
-	pls := s.GetPlacements()
-	//fmt.Printf("pls1a:%+v : %+v\n", s.GetID(), pls)
+func (o *Object) UpdateChildrenPosition(recursive bool) error {
+	//fmt.Println("pls1", o.GetID())
+	pls := o.GetPlacements()
+	//fmt.Printf("pls1a:%+v : %+v\n", o.GetID(), pls)
 	ChildMap := make(map[uuid.UUID][]uuid.UUID)
 	for u := range pls {
 		ChildMap[u] = make([]uuid.UUID, 0)
 	}
-	//fmt.Println("pls2", s.GetID())
-	s.Children.Mu.RLock()
-	defer s.Children.Mu.RUnlock()
+	//fmt.Println("pls2", o.GetID())
+	o.Children.Mu.RLock()
+	defer o.Children.Mu.RUnlock()
 
-	for _, child := range s.Children.Data {
+	for _, child := range o.Children.Data {
 		if child.GetPosition() == nil {
 			objectTypeID := child.GetObjectType().GetID()
 			if _, ok := pls[objectTypeID]; !ok {
@@ -147,34 +149,34 @@ func (s *Object) UpdateChildrenPosition(recursive bool) error {
 			ChildMap[objectTypeID] = append(ChildMap[objectTypeID], child.GetID())
 		}
 	}
-	//fmt.Println("pls3", s.GetID(), ChildMap)
+	//fmt.Println("pls3", o.GetID(), ChildMap)
 	for u := range pls {
-		//fmt.Println("pls4", s.GetID(), u)
+		//fmt.Println("pls4", o.GetID(), u)
 		lpm := ChildMap[u]
-		//fmt.Println("pls4a", s.GetID(), lpm)
+		//fmt.Println("pls4a", o.GetID(), lpm)
 		sort.Slice(lpm, func(i, j int) bool { return lpm[i].ClockSequence() < lpm[j].ClockSequence() })
-		//fmt.Println("pls4b", s.GetID(), lpm)
+		//fmt.Println("pls4b", o.GetID(), lpm)
 		for i, k := range lpm {
-			pos, theta := pls[u].CalcPos(s.theta, *s.GetActualPosition(), i, len(lpm))
-			//fmt.Printf(" Position: %s |  %+v\n", s.GetID(), pos)
+			pos, theta := pls[u].CalcPos(o.theta, *o.GetActualPosition(), i, len(lpm))
+			//fmt.Printf(" Position: %o |  %+v\n", o.GetID(), pos)
 
-			child, ok := s.Children.Data[k]
+			child, ok := o.Children.Data[k]
 			//fmt.Println(ok)
 			if !ok {
-				s.log.Errorf("Object: UpdatePosition: failed to get object: %s", k)
+				o.log.Errorf("Object: UpdatePosition: failed to get object: %s", k)
 				continue
 			}
 			if err := child.SetActualPosition(pos, theta); err != nil {
-				s.log.Errorf("Object: UpdatePosition: failed to update position: %s", k)
+				o.log.Errorf("Object: UpdatePosition: failed to update position: %s", k)
 			}
 
 			if !recursive {
 				continue
 			}
 
-			child.UpdateChildrenPosition(recursive)
+			child.UpdateChildrenPosition(true)
 		}
 	}
-	//fmt.Println("pls10", s.GetID())
+	//fmt.Println("pls10", o.GetID())
 	return nil
 }

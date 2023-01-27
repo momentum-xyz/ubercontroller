@@ -72,8 +72,8 @@ func (n *Node) apiGenAgoraToken(c *gin.Context) {
 		channel = spaceID.String()
 	}
 	token, err := rtctokenbuilder.BuildTokenWithUserAccount(
-		n.cfg.UIClient.AgoraAppID,
-		n.cfg.Common.AgoraAppCertificate,
+		n.CFG.UIClient.AgoraAppID,
+		n.CFG.Common.AgoraAppCertificate,
 		channel,
 		userID.String(),
 		rtctokenbuilder.RolePublisher,

@@ -5,11 +5,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-
-	"github.com/momentum-xyz/ubercontroller/logger"
 )
-
-var log = logger.L()
 
 type TimerFunc[T comparable] func(key T) error
 
@@ -32,7 +28,7 @@ func (t *TimerSet[T]) Set(key T, delay time.Duration, fn TimerFunc[T]) {
 		stopFn.Value()()
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), delay)
+	ctx, cancel := context.WithTimeout(generic.ctx, delay)
 	stopFn = NewUnique(cancel)
 	t.timers.Data[key] = stopFn
 
@@ -52,7 +48,7 @@ func (t *TimerSet[T]) Set(key T, delay time.Duration, fn TimerFunc[T]) {
 		case <-ctx.Done():
 			if ctx.Err() == context.DeadlineExceeded {
 				if err := fn(key); err != nil {
-					log.Warn(errors.WithMessagef(err, "TimerSet: Set: function call failed: %+v", key))
+					generic.log.Warn(errors.WithMessagef(err, "TimerSet: Set: function call failed: %+v", key))
 				}
 			}
 		}

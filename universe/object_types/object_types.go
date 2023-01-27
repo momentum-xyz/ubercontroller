@@ -48,10 +48,10 @@ func (ot *ObjectTypes) CreateObjectType(objectTypeID uuid.UUID) (universe.Object
 	objectType := object_type.NewObjectType(objectTypeID, ot.db)
 
 	if err := objectType.Initialize(ot.ctx); err != nil {
-		return nil, errors.WithMessagef(err, "failed to initialize object type: %ot", objectTypeID)
+		return nil, errors.WithMessagef(err, "failed to initialize object type: %s", objectTypeID)
 	}
 	if err := ot.AddObjectType(objectType, false); err != nil {
-		return nil, errors.WithMessagef(err, "failed to add object type: %ot", objectTypeID)
+		return nil, errors.WithMessagef(err, "failed to add object type: %s", objectTypeID)
 	}
 
 	return objectType, nil
@@ -168,13 +168,13 @@ func (ot *ObjectTypes) Load() error {
 		return errors.WithMessage(err, "failed to get object types")
 	}
 
-	for i := range entries {
-		objectType, err := ot.CreateObjectType(entries[i].ObjectTypeID)
+	for _, otEntry := range entries {
+		objectType, err := ot.CreateObjectType(otEntry.ObjectTypeID)
 		if err != nil {
-			return errors.WithMessagef(err, "failed to create object type: %ot", entries[i].ObjectTypeID)
+			return errors.WithMessagef(err, "failed to create new object type: %s", otEntry.ObjectTypeID)
 		}
-		if err := objectType.LoadFromEntry(entries[i]); err != nil {
-			return errors.WithMessagef(err, "failed to load object type from entry: %ot", entries[i].ObjectTypeID)
+		if err := objectType.LoadFromEntry(otEntry); err != nil {
+			return errors.WithMessagef(err, "failed to load object type from entry: %s", otEntry.ObjectTypeID)
 		}
 	}
 
@@ -200,7 +200,7 @@ func (ot *ObjectTypes) Save() error {
 		return errors.WithMessage(err, "failed to upsert object types")
 	}
 
-	ot.log.Info("Object types saved")
+	ot.log.Infof("Object types saved: %d", len(ot.objectTypes.Data))
 
 	return nil
 }

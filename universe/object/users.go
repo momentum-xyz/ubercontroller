@@ -9,8 +9,8 @@ import (
 	"github.com/zakaria-chahboun/cute"
 )
 
-func (s *Object) GetUser(userID uuid.UUID, recursive bool) (universe.User, bool) {
-	user, ok := s.Users.Load(userID)
+func (o *Object) GetUser(userID uuid.UUID, recursive bool) (universe.User, bool) {
+	user, ok := o.Users.Load(userID)
 	if ok {
 		return user, true
 	}
@@ -19,11 +19,11 @@ func (s *Object) GetUser(userID uuid.UUID, recursive bool) (universe.User, bool)
 		return nil, false
 	}
 
-	s.Children.Mu.RLock()
-	defer s.Children.Mu.RUnlock()
+	o.Children.Mu.RLock()
+	defer o.Children.Mu.RUnlock()
 
-	for _, child := range s.Children.Data {
-		if user, ok := child.GetUser(userID, recursive); ok {
+	for _, child := range o.Children.Data {
+		if user, ok := child.GetUser(userID, true); ok {
 			return user, true
 		}
 	}
@@ -33,23 +33,23 @@ func (s *Object) GetUser(userID uuid.UUID, recursive bool) (universe.User, bool)
 
 // GetUsers return map with all nested users if recursive is true,
 // otherwise the method return map with users dependent only to current object.
-func (s *Object) GetUsers(recursive bool) map[uuid.UUID]universe.User {
-	s.Users.Mu.RLock()
-	users := make(map[uuid.UUID]universe.User, len(s.Users.Data))
-	for id, user := range s.Users.Data {
+func (o *Object) GetUsers(recursive bool) map[uuid.UUID]universe.User {
+	o.Users.Mu.RLock()
+	users := make(map[uuid.UUID]universe.User, len(o.Users.Data))
+	for id, user := range o.Users.Data {
 		users[id] = user
 	}
-	s.Users.Mu.RUnlock()
+	o.Users.Mu.RUnlock()
 
 	if !recursive {
 		return users
 	}
 
-	s.Children.Mu.RLock()
-	defer s.Children.Mu.RUnlock()
+	o.Children.Mu.RLock()
+	defer o.Children.Mu.RUnlock()
 
-	for _, child := range s.Children.Data {
-		for id, user := range child.GetUsers(recursive) {
+	for _, child := range o.Children.Data {
+		for id, user := range child.GetUsers(true) {
 			users[id] = user
 		}
 	}
@@ -58,48 +58,48 @@ func (s *Object) GetUsers(recursive bool) map[uuid.UUID]universe.User {
 }
 
 // TODO: think about rollback on error
-func (s *Object) AddUser(user universe.User, updateDB bool) error {
-	s.Users.Mu.Lock()
-	defer s.Users.Mu.Unlock()
+func (o *Object) AddUser(user universe.User, updateDB bool) error {
+	o.Users.Mu.Lock()
+	defer o.Users.Mu.Unlock()
 
-	if user.GetWorld().GetID() != s.GetWorld().GetID() {
-		return errors.Errorf("worlds mismatch: %s != %s", user.GetWorld().GetID(), s.GetWorld().GetID())
+	if user.GetWorld().GetID() != o.GetWorld().GetID() {
+		return errors.Errorf("worlds mismatch: %s != %s", user.GetWorld().GetID(), o.GetWorld().GetID())
 	}
 
 	if updateDB {
-		s.log.Error("Object: AddUser: update database is not supported")
+		o.log.Error("Object: AddUser: update database is not supported")
 	}
 
-	user.SetObject(s)
-	s.Users.Data[user.GetID()] = user
-	s.sendObjectEnterLeaveStats(user, 1)
+	user.SetObject(o)
+	o.Users.Data[user.GetID()] = user
+	o.sendObjectEnterLeaveStats(user, 1)
 
 	return nil
 }
 
-func (s *Object) RemoveUser(user universe.User, updateDB bool) (bool, error) {
-	s.Users.Mu.Lock()
-	defer s.Users.Mu.Unlock()
+func (o *Object) RemoveUser(user universe.User, updateDB bool) (bool, error) {
+	o.Users.Mu.Lock()
+	defer o.Users.Mu.Unlock()
 
-	if user.GetWorld().GetID() != s.GetWorld().GetID() {
+	if user.GetWorld().GetID() != o.GetWorld().GetID() {
 		return false, nil
 	}
 
 	if updateDB {
-		s.log.Error("Object: RemoveUser: update database is not supported")
+		o.log.Error("Object: RemoveUser: update database is not supported")
 	}
 
 	user.SetObject(nil)
-	delete(s.Users.Data, user.GetID())
-	s.sendObjectEnterLeaveStats(user, 1)
+	delete(o.Users.Data, user.GetID())
+	o.sendObjectEnterLeaveStats(user, 1)
 	return true, nil
 }
 
-func (s *Object) SendToUser(userID uuid.UUID, msg *websocket.PreparedMessage, recursive bool) error {
+func (o *Object) SendToUser(userID uuid.UUID, msg *websocket.PreparedMessage, recursive bool) error {
 	return errors.Errorf("implement me")
 }
 
-func (s *Object) Send(msg *websocket.PreparedMessage, recursive bool) error {
+func (o *Object) Send(msg *websocket.PreparedMessage, recursive bool) error {
 	if msg == nil {
 		cute.SetTitleColor(cute.BrightRed)
 		cute.SetMessageColor(cute.Red)
@@ -107,23 +107,23 @@ func (s *Object) Send(msg *websocket.PreparedMessage, recursive bool) error {
 		return nil
 	}
 
-	if s.GetEnabled() {
-		if s.numSendsQueued.Add(1) < 0 {
+	if o.GetEnabled() {
+		if o.numSendsQueued.Add(1) < 0 {
 			return nil
 		}
-		s.broadcastPipeline <- msg
+		o.broadcastPipeline <- msg
 	}
 
 	if !recursive {
 		return nil
 	}
 
-	s.Children.Mu.RLock()
-	defer s.Children.Mu.RUnlock()
+	o.Children.Mu.RLock()
+	defer o.Children.Mu.RUnlock()
 
 	var errs *multierror.Error
-	for _, child := range s.Children.Data {
-		if err := child.Send(msg, recursive); err != nil {
+	for _, child := range o.Children.Data {
+		if err := child.Send(msg, true); err != nil {
 			errs = multierror.Append(
 				errs, errors.WithMessagef(err, "failed to send message to child: %s", child.GetID()),
 			)
@@ -133,11 +133,11 @@ func (s *Object) Send(msg *websocket.PreparedMessage, recursive bool) error {
 	return errs.ErrorOrNil()
 }
 
-func (s *Object) performBroadcast(message *websocket.PreparedMessage) {
-	s.Users.Mu.RLock()
-	defer s.Users.Mu.RUnlock()
+func (o *Object) performBroadcast(message *websocket.PreparedMessage) {
+	o.Users.Mu.RLock()
+	defer o.Users.Mu.RUnlock()
 
-	for _, user := range s.Users.Data {
+	for _, user := range o.Users.Data {
 		user.Send(message)
 	}
 }

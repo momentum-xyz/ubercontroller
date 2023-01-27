@@ -2,6 +2,7 @@ package world
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/config"
 	"sync/atomic"
 	"time"
 
@@ -30,9 +31,9 @@ var _ universe.World = (*World)(nil)
 type World struct {
 	*object.Object
 	ctx              context.Context
-	cancel           context.CancelFunc
 	log              *zap.SugaredLogger
 	db               database.DB
+	cancel           context.CancelFunc
 	pluginController *mplugin.PluginController
 	//corePluginInstance  mplugin.PluginInstance
 	corePluginInterface mplugin.PluginInterface
@@ -57,10 +58,6 @@ func NewWorld(id uuid.UUID, db database.DB) *World {
 	return world
 }
 
-func (w *World) GetID() uuid.UUID {
-	return w.Object.GetID()
-}
-
 func (w *World) corePluginInitFunc(pi mplugin.PluginInterface) (mplugin.PluginInstance, error) {
 	instance := CorePluginInstance{PluginInterface: pi}
 	w.corePluginInterface = pi
@@ -72,6 +69,10 @@ func (w *World) Initialize(ctx context.Context) error {
 	if log == nil {
 		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
 	}
+	cfg := utils.GetFromAny(ctx.Value(types.ConfigContextKey), (*config.Config)(nil))
+	if cfg == nil {
+		return errors.Errorf("failed to get config from context: %T", ctx.Value(types.ConfigContextKey))
+	}
 
 	w.ctx, w.cancel = context.WithCancel(ctx)
 	w.log = log
@@ -80,7 +81,7 @@ func (w *World) Initialize(ctx context.Context) error {
 		return errors.WithMessage(err, "failed to initialize calendar")
 	}
 
-	return w.Object.Initialize(ctx)
+	return w.ToObject().Initialize(ctx)
 }
 
 func (w *World) ToObject() universe.Object {
@@ -136,13 +137,7 @@ func (w *World) Run() error {
 
 		for {
 			select {
-			//case message := <-cu.broadcast:
-			// v := reflect.ValueOf(cu.broadcast)
-			// fmt.Println(color.Red, "Bcast", wc.users.Num(), v.Len(), color.Reset)
-			//go cu.PerformBroadcast(message)
-			// logger.Logln(4, "BcastE")
 			case <-ticker.C:
-				// fmt.Println(color.Red, "Ticker", color.Reset)
 				go w.broadcastPositions()
 			case <-w.ctx.Done():
 				return
@@ -211,12 +206,12 @@ func (w *World) broadcastPositions() {
 func (w *World) Load() error {
 	w.log.Infof("Loading world: %s...", w.GetID())
 
-	entry, err := w.db.GetObjectsDB().GetObjectByID(w.ctx, w.GetID())
+	worldEntry, err := w.db.GetObjectsDB().GetObjectByID(w.ctx, w.GetID())
 	if err != nil {
 		return errors.WithMessage(err, "failed to get object by id")
 	}
 
-	if err := w.LoadFromEntry(entry, true); err != nil {
+	if err := w.LoadFromEntry(worldEntry, true); err != nil {
 		return errors.WithMessage(err, "failed to load from entry")
 	}
 	if err := w.UpdateChildrenPosition(true); err != nil {
@@ -231,6 +226,18 @@ func (w *World) Load() error {
 	return nil
 }
 
+func (w *World) Save() error {
+	w.log.Infof("Saving world: %s...", w.GetID())
+
+	if err := w.ToObject().Save(); err != nil {
+		return errors.WithMessage(err, "failed to save world object")
+	}
+
+	w.log.Infof("World saved: %s", w.GetID())
+
+	return nil
+}
+
 func (w *World) Update(recursive bool) error {
 	if err := w.UpdateWorldMetadata(); err != nil {
 		w.log.Error(errors.WithMessagef(err, "World: Update: failed to update world metadata: %s", w.GetID()))
@@ -239,7 +246,7 @@ func (w *World) Update(recursive bool) error {
 		w.log.Error(errors.WithMessagef(err, "World: Update: failed to update world settings: %s", w.GetID()))
 	}
 
-	return w.Object.Update(recursive)
+	return w.ToObject().Update(recursive)
 }
 
 func (w *World) UpdateWorldSettings() error {
@@ -289,25 +296,6 @@ func (w *World) UpdateWorldMetadata() error {
 			dec,
 		),
 	)
-
-	return nil
-}
-
-func (w *World) Save() error {
-	w.log.Infof("Saving world: %s", w.GetID())
-
-	objects := w.GetAllObjects()
-
-	entries := make([]*entry.Object, 0, len(objects))
-	for _, object := range objects {
-		entries = append(entries, object.GetEntry())
-	}
-
-	if err := w.db.GetObjectsDB().UpsertObjects(w.ctx, entries); err != nil {
-		return errors.WithMessage(err, "failed to upsert objects")
-	}
-
-	w.log.Infof("World saved: %s", w.GetID())
 
 	return nil
 }

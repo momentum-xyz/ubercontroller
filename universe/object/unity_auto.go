@@ -10,13 +10,13 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/common/unity"
 )
 
-func (s *Object) unityAutoOnObjectAttributeChanged(
+func (o *Object) unityAutoOnObjectAttributeChanged(
 	changeType universe.AttributeChangeType,
 	attributeID entry.AttributeID,
 	value *entry.AttributeValue,
 	effectiveOptions *entry.AttributeOptions,
 ) error {
-	s.log.Infof("attribute Unuty Auto processing for %+v %+v", s.GetID(), attributeID)
+	o.log.Infof("attribute Unuty Auto processing for %+v %+v", o.GetID(), attributeID)
 	autoOption, err := unity.GetOptionAutoOption(attributeID, effectiveOptions)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to get auto option: %+v", attributeID)
@@ -25,26 +25,26 @@ func (s *Object) unityAutoOnObjectAttributeChanged(
 		return nil
 	}
 
-	s.log.Infof("unity-auto stage3 for %+v %+v", s.GetID(), attributeID)
+	o.log.Infof("unity-auto stage3 for %+v %+v", o.GetID(), attributeID)
 
-	hash, err := unity.PrerenderAutoValue(s.ctx, autoOption, value)
+	hash, err := unity.PrerenderAutoValue(o.ctx, autoOption, value)
 	if err != nil {
 		return errors.WithMessagef(err, "prerendering error: %+v", attributeID)
 	}
 
-	s.log.Infof("unity-auto stage4 for %+v %+v %+v", s.GetID(), attributeID, hash)
+	o.log.Infof("unity-auto stage4 for %+v %+v %+v", o.GetID(), attributeID, hash)
 
 	//dirty hack to set auto_render_hash value without triggering processing again
 	// TODO: fix it properly later
 	if hash != nil && hash.Hash != "" {
 		return func() error {
-			s.objectAttributes.object.Mu.Lock()
-			defer s.objectAttributes.object.Mu.Unlock()
+			o.objectAttributes.object.Mu.Lock()
+			defer o.objectAttributes.object.Mu.Unlock()
 
 			(*value)["auto_render_hash"] = hash.Hash
 
-			if err := s.db.GetObjectAttributesDB().UpdateObjectAttributeValue(
-				s.ctx, entry.NewObjectAttributeID(attributeID, s.GetID()), value,
+			if err := o.db.GetObjectAttributesDB().UpdateObjectAttributeValue(
+				o.ctx, entry.NewObjectAttributeID(attributeID, o.GetID()), value,
 			); err != nil {
 				return errors.WithMessage(err, "failed to update db")
 			}
@@ -52,25 +52,25 @@ func (s *Object) unityAutoOnObjectAttributeChanged(
 			return nil
 		}()
 	}
-	s.SendUnityAutoAttributeMessage(
-		autoOption, value, func(m *websocket.PreparedMessage) error { return s.GetWorld().Send(m, false) },
+	o.SendUnityAutoAttributeMessage(
+		autoOption, value, func(m *websocket.PreparedMessage) error { return o.GetWorld().Send(m, false) },
 	)
 	return nil
 }
 
-func (s *Object) SendUnityAutoAttributeMessage(
+func (o *Object) SendUnityAutoAttributeMessage(
 	option *entry.UnityAutoAttributeOption,
 	value *entry.AttributeValue,
 	send func(*websocket.PreparedMessage) error,
 ) {
-	msg := s.UpdateAutoTextureMap(option, value)
+	msg := o.UpdateAutoTextureMap(option, value)
 	if msg != nil {
 		send(msg)
 	}
 	return
 }
 
-func (s *Object) UpdateAutoTextureMap(
+func (o *Object) UpdateAutoTextureMap(
 	option *entry.UnityAutoAttributeOption, value *entry.AttributeValue,
 ) *websocket.PreparedMessage {
 	if option == nil || value == nil {
@@ -89,7 +89,7 @@ func (s *Object) UpdateAutoTextureMap(
 			return nil
 		}
 		sendMap := map[string]int32{option.SlotName: int32(val)}
-		msg = message.GetBuilder().SetObjectAttributes(s.GetID(), sendMap)
+		msg = message.GetBuilder().SetObjectAttributes(o.GetID(), sendMap)
 	case entry.UnitySlotTypeString:
 		v, ok := (*value)[option.ValueField]
 		if !ok {
@@ -101,7 +101,7 @@ func (s *Object) UpdateAutoTextureMap(
 		}
 
 		sendMap := map[string]string{option.SlotName: val}
-		msg = message.GetBuilder().SetObjectStrings(s.GetID(), sendMap)
+		msg = message.GetBuilder().SetObjectStrings(o.GetID(), sendMap)
 	case entry.UnitySlotTypeTexture:
 		valField := "auto_render_hash"
 		if option.ContentType == "image" {
@@ -116,16 +116,16 @@ func (s *Object) UpdateAutoTextureMap(
 			return nil
 		}
 
-		s.renderTextureMap.Store(option.SlotName, val)
+		o.renderTextureMap.Store(option.SlotName, val)
 		func() {
-			s.renderTextureMap.Mu.RLock()
-			defer s.renderTextureMap.Mu.RUnlock()
+			o.renderTextureMap.Mu.RLock()
+			defer o.renderTextureMap.Mu.RUnlock()
 
-			s.textMsg.Store(message.GetBuilder().SetObjectTextures(s.GetID(), s.renderTextureMap.Data))
+			o.textMsg.Store(message.GetBuilder().SetObjectTextures(o.GetID(), o.renderTextureMap.Data))
 		}()
 
 		sendMap := map[string]string{option.SlotName: val}
-		msg = message.GetBuilder().SetObjectTextures(s.GetID(), sendMap)
+		msg = message.GetBuilder().SetObjectTextures(o.GetID(), sendMap)
 
 	}
 	return msg

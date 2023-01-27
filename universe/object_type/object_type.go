@@ -211,7 +211,7 @@ func (ot *ObjectType) SetOptions(modifyFn modify.Fn[entry.ObjectOptions], update
 		if objectType.GetID() != ot.GetID() {
 			continue
 		}
-		object.DropCache()
+		object.InvalidateCache()
 	}
 
 	return options, nil
@@ -240,7 +240,7 @@ func (ot *ObjectType) GetEntry() *entry.ObjectType {
 
 func (ot *ObjectType) LoadFromEntry(entry *entry.ObjectType) error {
 	if entry.ObjectTypeID != ot.GetID() {
-		return errors.Errorf("object type ids mismatch: %ot != %ot", entry.ObjectTypeID, ot.GetID())
+		return errors.Errorf("object type ids mismatch: %s != %s", entry.ObjectTypeID, ot.GetID())
 	}
 
 	if err := ot.SetName(entry.ObjectTypeName, false); err != nil {
@@ -260,20 +260,20 @@ func (ot *ObjectType) LoadFromEntry(entry *entry.ObjectType) error {
 	if entry.Asset2dID != nil {
 		asset2d, ok := node.GetAssets2d().GetAsset2d(*entry.Asset2dID)
 		if !ok {
-			return errors.Errorf("asset 2d not found: %ot", entry.Asset2dID)
+			return errors.Errorf("asset 2d not found: %s", entry.Asset2dID)
 		}
 		if err := ot.SetAsset2d(asset2d, false); err != nil {
-			return errors.WithMessagef(err, "failed to set asset 2d: %ot", entry.Asset2dID)
+			return errors.WithMessagef(err, "failed to set asset 2d: %s", entry.Asset2dID)
 		}
 	}
 
 	if entry.Asset3dID != nil {
 		asset3d, ok := node.GetAssets3d().GetAsset3d(*entry.Asset3dID)
 		if !ok {
-			return errors.Errorf("asset 3d not found: %ot", entry.Asset3dID)
+			return errors.Errorf("asset 3d not found: %s", entry.Asset3dID)
 		}
 		if err := ot.SetAsset3d(asset3d, false); err != nil {
-			return errors.WithMessagef(err, "failed to set asset 3d: %ot", entry.Asset3dID)
+			return errors.WithMessagef(err, "failed to set asset 3d: %s", entry.Asset3dID)
 		}
 	}
 

@@ -64,8 +64,8 @@ type ObjectsCacher interface {
 	RemoveObjectFromAllObjects(object Object) (bool, error)
 }
 
-type DropCacher interface {
-	DropCache()
+type CacheInvalidator interface {
+	InvalidateCache()
 }
 
 type Node interface {
@@ -133,7 +133,8 @@ type Object interface {
 	Enabler
 	Initializer
 	RunStopper
-	DropCacher
+	Saver
+	CacheInvalidator
 
 	GetWorld() World
 
@@ -265,12 +266,16 @@ type NodeAttributes interface {
 	LoadSaver
 	Attributes[entry.AttributeID]
 
+	GetAll() map[entry.AttributeID]*entry.AttributePayload
+
 	Len() int
 }
 
 type ObjectAttributes interface {
 	LoadSaver
 	Attributes[entry.AttributeID]
+
+	GetAll() map[entry.AttributeID]*entry.AttributePayload
 
 	Len() int
 }
