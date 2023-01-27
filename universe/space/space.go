@@ -103,11 +103,13 @@ func (s *Space) GetName() string {
 func (s *Space) SetName(name string, updateDB bool) error {
 	if _, err := s.GetSpaceAttributes().Upsert(
 		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Space.Name.Name),
-		modify.MergeWith(entry.NewAttributePayload(
-			&entry.AttributeValue{
-				universe.ReservedAttributes.Space.Name.Key: name,
-			},
-			nil),
+		modify.MergeWith(
+			entry.NewAttributePayload(
+				&entry.AttributeValue{
+					universe.ReservedAttributes.Space.Name.Key: name,
+				},
+				nil,
+			),
 		), updateDB,
 	); err != nil {
 		return errors.WithMessage(err, "failed to upsert space attribute")

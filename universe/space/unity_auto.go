@@ -1,6 +1,7 @@
 package space
 
 import (
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 
@@ -122,6 +123,11 @@ func (s *Space) UpdateAutoTextureMap(
 			defer s.renderTextureMap.Mu.RUnlock()
 
 			s.textMsg.Store(message.GetBuilder().SetObjectTextures(s.GetID(), s.renderTextureMap.Data))
+			if s.GetSpaceType().GetAsset3d().GetID() == uuid.MustParse("313a597a-8b9a-47a7-9908-52bdc7a21a3e") {
+				s.log.Debugf("Setting skybox texture for %+v to %+v\n", s.world.GetID(), val)
+				skyBoxTextureMap := map[string]string{option.SlotName: val}
+				s.world.TempSetSkybox(message.GetBuilder().SetObjectTextures(s.GetID(), skyBoxTextureMap))
+			}
 		}()
 
 		sendMap := map[string]string{option.SlotName: val}

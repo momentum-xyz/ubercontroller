@@ -83,6 +83,7 @@ func (u *User) SignalsHandler(s posbus.Signal) error {
 	fmt.Printf("Got Signal %+v\n", s)
 	switch s {
 	case posbus.SignalReady:
+		u.SendDirectly(u.world.TempGetSkybox())
 		u.ReleaseSendBuffer()
 		//u.log.Debugf("Got signalReady from %s", u.id.String())
 		//TODO: Do we need it?

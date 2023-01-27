@@ -128,7 +128,7 @@ func (w *World) initializeUnity(user universe.User) error {
 
 	w.SendSpawnMessage(user.SendDirectly, true)
 	w.log.Infof("Sent Spawn: %+v\n", user.GetID())
-	time.Sleep(1 * time.Second)
+	//time.Sleep(1 * time.Second)
 	user.SendDirectly(
 		posbus.NewSignalMsg(
 			posbus.SignalSpawn,

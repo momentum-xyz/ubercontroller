@@ -121,6 +121,9 @@ type World interface {
 	GetCalendar() Calendar
 
 	WriteInfluxPoint(point *influxWrite.Point) error
+
+	TempSetSkybox(msg *websocket.PreparedMessage)
+	TempGetSkybox() *websocket.PreparedMessage
 }
 
 type Space interface {
@@ -234,7 +237,9 @@ type Attributes[ID comparable] interface {
 	Upsert(attributeID ID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool) (*entry.AttributePayload, error)
 
 	UpdateValue(attributeID ID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool) (*entry.AttributeValue, error)
-	UpdateOptions(attributeID ID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool) (*entry.AttributeOptions, error)
+	UpdateOptions(attributeID ID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool) (
+		*entry.AttributeOptions, error,
+	)
 
 	Remove(attributeID ID, updateDB bool) (bool, error)
 }

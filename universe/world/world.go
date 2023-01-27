@@ -41,6 +41,15 @@ type World struct {
 	settings            atomic.Pointer[universe.WorldSettings]
 	allSpaces           *generic.SyncMap[uuid.UUID, universe.Space]
 	calendar            *calendar.Calendar
+	skyBoxMsg           atomic.Pointer[websocket.PreparedMessage]
+}
+
+func (w *World) TempSetSkybox(msg *websocket.PreparedMessage) {
+	w.skyBoxMsg.Store(msg)
+}
+
+func (w *World) TempGetSkybox() *websocket.PreparedMessage {
+	return w.skyBoxMsg.Load()
 }
 
 func NewWorld(id uuid.UUID, db database.DB) *World {
