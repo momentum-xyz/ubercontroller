@@ -142,9 +142,9 @@ func (w *World) initializeUnity(user universe.User) error {
 		user.SendDirectly(sm)
 	}
 
-	//w.SendTextures(user.SendDirectly, true)
-	//w.log.Infof("Sent Textures: %+v\n", user.GetID())
-	//user.ReleaseSendBuffer()
+	w.SendTextures(user.SendDirectly, true)
+	w.log.Infof("Sent Textures: %+v\n", user.GetID())
+	user.ReleaseSendBuffer()
 	//w.log.Infof("Opened waterfall: %+v\n", user.GetID())
 	return nil
 }
