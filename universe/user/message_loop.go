@@ -83,7 +83,7 @@ func (u *User) SignalsHandler(s posbus.Signal) error {
 	switch s {
 	case posbus.SignalReady:
 		u.log.Infof("Got SignalReady from %+v\n", u.GetID().String())
-		//u.GetWorld().SendTextures(u.SendDirectly, true)
+		//u.GetWorld().SendAllAutoAttributes(u.SendDirectly, true)
 		//u.log.Infof("Sent Textures: %+v\n", u.GetID())
 		//u.ReleaseSendBuffer()
 		//u.log.Debugf("Got signalReady from %s", u.id.String())

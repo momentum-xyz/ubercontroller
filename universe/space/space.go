@@ -50,7 +50,9 @@ type Space struct {
 	spawnMsg          atomic.Pointer[websocket.PreparedMessage]
 	attributesMsg     *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
 	renderTextureMap  *generic.SyncMap[string, string]
-	textMsg           atomic.Pointer[websocket.PreparedMessage]
+	renderStringMap   *generic.SyncMap[string, string]
+	textureMsg        atomic.Pointer[websocket.PreparedMessage]
+	stringMsg         atomic.Pointer[websocket.PreparedMessage]
 	actualPosition    atomic.Pointer[cmath.SpacePosition]
 	broadcastPipeline chan *websocket.PreparedMessage
 	messageAccept     atomic.Bool
@@ -70,6 +72,7 @@ func NewSpace(id uuid.UUID, db database.DB, world universe.World) *Space {
 		Children:         generic.NewSyncMap[uuid.UUID, universe.Space](0),
 		attributesMsg:    generic.NewSyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]](0),
 		renderTextureMap: generic.NewSyncMap[string, string](0),
+		renderStringMap:  generic.NewSyncMap[string, string](0),
 		world:            world,
 	}
 	space.spaceAttributes = newSpaceAttributes(space)
@@ -409,7 +412,7 @@ func (s *Space) Update(recursive bool) error {
 		world := s.GetWorld()
 		if world != nil {
 			world.Send(s.spawnMsg.Load(), true)
-			s.SendTextures(
+			s.SendAllAutoAttributes(
 				func(msg *websocket.PreparedMessage) error {
 					return world.Send(msg, false)
 				}, false,
@@ -605,8 +608,13 @@ func (s *Space) SendSpawnMessage(sendFn func(*websocket.PreparedMessage) error, 
 
 }
 
-func (s *Space) SendTextures(sendFn func(*websocket.PreparedMessage) error, recursive bool) {
-	msg := s.textMsg.Load()
+func (s *Space) SendAllAutoAttributes(sendFn func(*websocket.PreparedMessage) error, recursive bool) {
+	msg := s.textureMsg.Load()
+	if msg != nil {
+		sendFn(msg)
+	}
+
+	msg = s.stringMsg.Load()
 	if msg != nil {
 		sendFn(msg)
 	}
@@ -619,7 +627,7 @@ func (s *Space) SendTextures(sendFn func(*websocket.PreparedMessage) error, recu
 	defer s.Children.Mu.RUnlock()
 
 	for _, space := range s.Children.Data {
-		space.SendTextures(sendFn, recursive)
+		space.SendAllAutoAttributes(sendFn, recursive)
 	}
 }
 

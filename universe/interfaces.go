@@ -188,7 +188,7 @@ type Space interface {
 
 	SendSpawnMessage(sendFn func(msg *websocket.PreparedMessage) error, recursive bool)
 	SendAttributes(sendFn func(*websocket.PreparedMessage), recursive bool)
-	SendTextures(sendFn func(msg *websocket.PreparedMessage) error, recursive bool)
+	SendAllAutoAttributes(sendFn func(msg *websocket.PreparedMessage) error, recursive bool)
 
 	LockUnityObject(user User, state uint32) bool
 }

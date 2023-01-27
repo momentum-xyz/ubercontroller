@@ -91,6 +91,7 @@ func (s *Space) UpdateAutoTextureMap(
 		sendMap := map[string]int32{option.SlotName: int32(val)}
 		msg = message.GetBuilder().SetObjectAttributes(s.GetID(), sendMap)
 	case entry.UnitySlotTypeString:
+		s.log.Infof("Processing String Slot %+v for %+v \n", option.SlotName, s.GetID())
 		v, ok := (*value)[option.ValueField]
 		if !ok {
 			return nil
@@ -100,8 +101,18 @@ func (s *Space) UpdateAutoTextureMap(
 			return nil
 		}
 
+		s.log.Infof("Setting String Slot %+v for %+v to  %+v  \n", option.SlotName, s.GetID(), val)
+
+		s.renderStringMap.Store(option.SlotName, val)
+		func() {
+			s.renderStringMap.Mu.RLock()
+			defer s.renderStringMap.Mu.RUnlock()
+			s.stringMsg.Store(message.GetBuilder().SetObjectTextures(s.GetID(), s.renderStringMap.Data))
+		}()
+
 		sendMap := map[string]string{option.SlotName: val}
 		msg = message.GetBuilder().SetObjectStrings(s.GetID(), sendMap)
+
 	case entry.UnitySlotTypeTexture:
 		valField := "auto_render_hash"
 		if option.ContentType == "image" {
@@ -121,7 +132,7 @@ func (s *Space) UpdateAutoTextureMap(
 			s.renderTextureMap.Mu.RLock()
 			defer s.renderTextureMap.Mu.RUnlock()
 
-			s.textMsg.Store(message.GetBuilder().SetObjectTextures(s.GetID(), s.renderTextureMap.Data))
+			s.textureMsg.Store(message.GetBuilder().SetObjectTextures(s.GetID(), s.renderTextureMap.Data))
 			st := s.GetSpaceType()
 			if st != nil && option.SlotName == "skybox_custom" && st.GetAsset3d() != nil && st.GetAsset3d().GetID() == uuid.MustParse("313a597a-8b9a-47a7-9908-52bdc7a21a3e") {
 				s.log.Infof(
