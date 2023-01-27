@@ -83,8 +83,10 @@ func (u *User) SignalsHandler(s posbus.Signal) error {
 	fmt.Printf("Got Signal %+v\n", s)
 	switch s {
 	case posbus.SignalReady:
+		u.log.Infof("SKYBOX: Got SignalReady from %+v\n", u.GetID().String())
 		sm := u.world.TempGetSkybox()
 		if sm != nil {
+			u.log.Infof("SKYBOX: Sending texture to  %+v\n", u.GetID().String())
 			u.SendDirectly(sm)
 		}
 
