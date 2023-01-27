@@ -278,6 +278,12 @@ func (n *Node) Save() error {
 	if err := n.GetPlugins().Save(); err != nil {
 		return errors.WithMessage(err, "failed to save plugins")
 	}
+	if err := n.GetAttributeTypes().Save(); err != nil {
+		return errors.WithMessage(err, "failed to save AttributeTypes")
+	}
+	if err := n.GetNodeAttributes().Save(); err != nil {
+		return errors.WithMessage(err, "failed to save NodeAttributes")
+	}
 
 	var errs *multierror.Error
 	var errsMu sync.Mutex
