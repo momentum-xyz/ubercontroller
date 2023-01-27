@@ -275,6 +275,10 @@ func (n *Node) Load() error {
 func (n *Node) Save() error {
 	n.log.Infof("Saving node: %s...", n.GetID())
 
+	if err := n.GetPlugins().Save(); err != nil {
+		return errors.WithMessage(err, "failed to save plugins")
+	}
+
 	var errs *multierror.Error
 	var errsMu sync.Mutex
 	addError := func(err error, msg string) {

@@ -24,5 +24,5 @@ func Node(ctx context.Context, node universe.Node) error {
 		return errors.WithMessage(err, "failed to seed plugins or attribute types")
 	}
 
-	return node.SaveDebug()
+	return node.Save()
 }

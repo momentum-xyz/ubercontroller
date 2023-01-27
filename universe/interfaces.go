@@ -94,8 +94,6 @@ type Node interface {
 	AddAPIRegister(register APIRegister)
 
 	WriteInfluxPoint(point *influxWrite.Point) error
-
-	SaveDebug() error
 }
 
 type Worlds interface {
