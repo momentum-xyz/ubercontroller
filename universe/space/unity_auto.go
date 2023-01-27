@@ -74,10 +74,11 @@ func (s *Space) SendUnityAutoAttributeMessage(
 func (s *Space) UpdateAutoTextureMap(
 	option *entry.UnityAutoAttributeOption, value *entry.AttributeValue,
 ) *websocket.PreparedMessage {
+	s.log.Debugf("unity-auto stage1a for %+v, %+v to %+v\n", s.GetID(), value)
 	if option == nil || value == nil {
 		return nil
 	}
-
+	s.log.Debugf("unity-auto stage1b for %+v, %+v to %+v\n", s.GetID(), value)
 	var msg *websocket.PreparedMessage
 	switch option.SlotType {
 	case entry.UnitySlotTypeNumber:
