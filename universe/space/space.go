@@ -584,7 +584,7 @@ func (s *Space) UpdateSpawnMessage() error {
 			Editable:         *utils.GetFromAny(effectiveOptions.Editable, utils.GetPTR(true)),
 			TetheredToParent: true,
 			Minimap:          *utils.GetFromAny(effectiveOptions.Minimap, &visible),
-			InfoUI:           *utils.GetFromAny(effectiveOptions.InfoUIID, &uuid.Nil),
+			InfoUI:           *utils.GetFromAny(effectiveOptions.InfoUIID, utils.GetPTR(uuid.Nil)),
 		},
 	)
 	s.spawnMsg.Store(msg)
