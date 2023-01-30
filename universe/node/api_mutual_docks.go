@@ -222,9 +222,11 @@ func createWorldPortal(portalName string, from, to universe.World) (universe.Obj
 	}
 
 	template := helper.ObjectTemplate{
-		ObjectName:   &portalName,
-		ObjectTypeID: portalObjectTypeID,
-		ParentID:     dockingStation.GetID(),
+		Object: entry.Object{
+			ObjectTypeID: portalObjectTypeID,
+			ParentID:     dockingStation.GetID(),
+		},
+		ObjectName: &portalName,
 		ObjectAttributes: []*entry.Attribute{
 			entry.NewAttribute(
 				entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.World.TeleportDestination.Name),

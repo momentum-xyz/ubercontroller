@@ -24,20 +24,20 @@ func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (universe
 
 	worldID := worldTemplate.ObjectID
 	worldName := worldTemplate.ObjectName
-	if worldID == nil {
-		worldID = utils.GetPTR(uuid.New())
+	if worldID == uuid.Nil {
+		worldID = uuid.New()
 	}
 	if worldName == nil {
 		worldName = utils.GetPTR(worldID.String())
 	}
 
 	// creating
-	world, err := node.GetWorlds().CreateWorld(*worldID)
+	world, err := node.GetWorlds().CreateWorld(worldID)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "failed to create world: %s", worldID)
 	}
 
-	if err := world.SetOwnerID(*worldTemplate.OwnerID, false); err != nil {
+	if err := world.SetOwnerID(worldTemplate.OwnerID, false); err != nil {
 		return world, errors.WithMessagef(err, "failed to set owner: %s", worldTemplate.OwnerID)
 	}
 	if err := world.SetObjectType(worldObjectType, false); err != nil {

@@ -112,13 +112,15 @@ func (n *Node) apiSpacesCreateSpace(c *gin.Context) {
 	}
 
 	spaceTemplate := helper.ObjectTemplate{
-		ObjectName:   &inBody.SpaceName,
-		ObjectTypeID: spaceTypeID,
-		ParentID:     parentID,
-		OwnerID:      &userID,
-		Asset2dID:    asset2dID,
-		Asset3dID:    asset3dID,
-		Position:     position,
+		Object: entry.Object{
+			ObjectTypeID: spaceTypeID,
+			ParentID:     parentID,
+			OwnerID:      userID,
+			Asset2dID:    asset2dID,
+			Asset3dID:    asset3dID,
+			Position:     position,
+		},
+		ObjectName: &inBody.SpaceName,
 	}
 
 	object, err := helper.AddObjectFromTemplate(&spaceTemplate, true)

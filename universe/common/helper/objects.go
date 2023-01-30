@@ -15,18 +15,11 @@ import (
 )
 
 type ObjectTemplate struct {
-	ObjectID         *uuid.UUID           `json:"object_id"`
-	ObjectName       *string              `json:"object_name"`
-	ObjectTypeID     uuid.UUID            `json:"object_type_id"`
-	ParentID         uuid.UUID            `json:"parent_id"`
-	OwnerID          *uuid.UUID           `json:"owner_id"`
-	Asset2dID        *uuid.UUID           `json:"asset_2d_id"`
-	Asset3dID        *uuid.UUID           `json:"asset_3d_id"`
-	Options          *entry.ObjectOptions `json:"options"`
-	Position         *cmath.SpacePosition `json:"position"`
-	Label            *string              `json:"label"`
-	ObjectAttributes []*entry.Attribute   `json:"object_attributes"`
-	Children         []*ObjectTemplate    `json:"children"`
+	entry.Object
+	ObjectName       *string            `json:"object_name"`
+	Label            *string            `json:"label"`
+	ObjectAttributes []*entry.Attribute `json:"object_attributes"`
+	Children         []*ObjectTemplate  `json:"children"`
 }
 
 // TODO: think about rollback
@@ -174,23 +167,23 @@ func createObjectFromTemplate(parent universe.Object, objectTemplate *ObjectTemp
 	ownerID := objectTemplate.OwnerID
 	objectID := objectTemplate.ObjectID
 	objectName := objectTemplate.ObjectName
-	if ownerID == nil {
-		ownerID = utils.GetPTR(parent.GetOwnerID())
+	if ownerID == uuid.Nil {
+		ownerID = parent.GetOwnerID()
 	}
-	if objectID == nil {
-		objectID = utils.GetPTR(uuid.New())
+	if objectID == uuid.Nil {
+		objectID = uuid.New()
 	}
 	if objectName == nil {
 		objectName = utils.GetPTR(objectID.String())
 	}
 
 	// creating
-	object, err := parent.CreateObject(*objectID)
+	object, err := parent.CreateObject(objectID)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "failed to create object: %s", objectID)
 	}
 
-	if err := object.SetOwnerID(*ownerID, false); err != nil {
+	if err := object.SetOwnerID(ownerID, false); err != nil {
 		return object, errors.WithMessagef(err, "failed to set owner id: %s", ownerID)
 	}
 	if err := object.SetObjectType(objectType, false); err != nil {
