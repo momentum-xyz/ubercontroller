@@ -290,7 +290,7 @@ func (w *Worlds) apiWorldsFilterSpaces(searchQuery string, world universe.World)
 // @Tags worlds
 // @Accept json
 // @Produce json
-// @Param world_id path string true "World ID"
+// @Param space_id path string true "Space ID"
 // @Success 200 {object} nil
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
