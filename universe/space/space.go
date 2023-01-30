@@ -609,12 +609,12 @@ func (s *Space) SendSpawnMessage(sendFn func(*websocket.PreparedMessage) error, 
 }
 
 func (s *Space) SendAllAutoAttributes(sendFn func(*websocket.PreparedMessage) error, recursive bool) {
-	msg := s.textureMsg.Load()
+	msg := s.stringMsg.Load()
 	if msg != nil {
 		sendFn(msg)
 	}
 
-	msg = s.stringMsg.Load()
+	msg = s.textureMsg.Load()
 	if msg != nil {
 		sendFn(msg)
 	}
