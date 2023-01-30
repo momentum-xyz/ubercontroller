@@ -290,6 +290,9 @@ func (n *Node) Save() error {
 	if err := n.GetAssets3d().Save(); err != nil {
 		return errors.WithMessage(err, "failed to save assets 3d")
 	}
+	if err := n.GetUserTypes().Save(); err != nil {
+		return errors.WithMessage(err, "failed to save user types")
+	}
 
 	var errs *multierror.Error
 	var errsMu sync.Mutex

@@ -32,6 +32,10 @@ func Node(ctx context.Context, node universe.Node) error {
 		return seedAssets3d(node)
 	})
 
+	group.Go(func() error {
+		return seedUserTypes(node)
+	})
+
 	if err := group.Wait(); err != nil {
 		return errors.WithMessage(err, "failed to seed")
 	}
