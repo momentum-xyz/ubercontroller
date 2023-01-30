@@ -75,7 +75,7 @@ func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
 // @Tags worlds
 // @Accept json
 // @Produce json
-// @Param world_id path string true "World ID"
+// @Param space_id path string true "Space ID"
 // @Param query query worlds.apiWorldsGetSpacesWithChildren.Query true "query params"
 // @Success 200 {object} dto.ExploreOption
 // @Failure 500 {object} api.HTTPError
