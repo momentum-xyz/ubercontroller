@@ -50,7 +50,7 @@ func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (universe
 	}
 
 	// adding children
-	labelToChild := make(map[string]universe.Object)
+	labelToChildID := make(map[string]any)
 	for _, childTemplate := range worldTemplate.Children {
 		child, err := createObjectFromTemplate(world.ToObject(), childTemplate)
 		if err != nil {
@@ -58,7 +58,7 @@ func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (universe
 		}
 
 		if childTemplate.Label != nil {
-			labelToChild[*childTemplate.Label] = child
+			labelToChildID[*childTemplate.Label] = child.GetID()
 		}
 	}
 
@@ -77,7 +77,7 @@ func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (universe
 			entry.NewAttributePayload(
 				&entry.AttributeValue{
 					"kind":         "basic",
-					"objects":      labelToChild,
+					"objects":      labelToChildID,
 					"attributes":   map[string]any{},
 					"object_types": map[string]any{},
 					"effects":      map[string]any{},

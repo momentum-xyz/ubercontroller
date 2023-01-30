@@ -69,7 +69,7 @@ type CacheInvalidator interface {
 
 type Node interface {
 	Object
-	LoadSaver
+	Loader
 	APIRegister
 	ObjectsCacher
 
@@ -113,7 +113,7 @@ type Worlds interface {
 
 type World interface {
 	Object
-	LoadSaver
+	Loader
 	ObjectsCacher
 
 	ToObject() Object
