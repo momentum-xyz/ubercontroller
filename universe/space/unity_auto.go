@@ -107,7 +107,7 @@ func (s *Space) UpdateAutoTextureMap(
 		func() {
 			s.renderStringMap.Mu.RLock()
 			defer s.renderStringMap.Mu.RUnlock()
-			s.stringMsg.Store(message.GetBuilder().SetObjectTextures(s.GetID(), s.renderStringMap.Data))
+			s.stringMsg.Store(message.GetBuilder().SetObjectStrings(s.GetID(), s.renderStringMap.Data))
 		}()
 
 		sendMap := map[string]string{option.SlotName: val}
