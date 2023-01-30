@@ -293,6 +293,9 @@ func (n *Node) Save() error {
 	if err := n.GetUserTypes().Save(); err != nil {
 		return errors.WithMessage(err, "failed to save user types")
 	}
+	if err := n.GetObjectTypes().Save(); err != nil {
+		return errors.WithMessage(err, "failed to save object types")
+	}
 
 	var errs *multierror.Error
 	var errsMu sync.Mutex
