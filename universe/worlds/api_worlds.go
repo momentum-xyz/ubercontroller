@@ -23,7 +23,7 @@ import (
 // @Tags worlds
 // @Accept json
 // @Produce json
-// @Param worldID path string true "World ID"
+// @Param spaceID path string true "Space ID"
 // @Success 200 {array} dto.User
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
