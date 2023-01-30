@@ -140,6 +140,10 @@ func CalcObjectSpawnPosition(parentID, userID uuid.UUID) (*cmath.SpacePosition, 
 // createObjectFromTemplate creates in-memory ready for use object with children from template
 func createObjectFromTemplate(parent universe.Object, objectTemplate *ObjectTemplate) (universe.Object, error) {
 	// TODO: think about rollback
+	if parent == nil {
+		return nil, errors.Errorf("parent is nil")
+	}
+
 	node := universe.GetNode()
 
 	// loading
