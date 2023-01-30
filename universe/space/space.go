@@ -566,9 +566,16 @@ func (s *Space) UpdateSpawnMessage() error {
 	}
 
 	uuidNilPtr := utils.GetPTR(uuid.Nil)
-	falsePtr := utils.GetPTR(false)
 	truePtr := utils.GetPTR(true)
-	opts := s.GetEffectiveOptions()
+	falsePtr := utils.GetPTR(false)
+	effectiveOptions := s.GetEffectiveOptions()
+
+	// TODO: discuss is it ok to rely on "ReactSpaceVisibleType"?
+	visible := falsePtr
+	if *utils.GetFromAny(effectiveOptions.Visible, utils.GetPTR(entry.InvalidSpaceVisibleType)) == entry.ReactSpaceVisibleType {
+		visible = truePtr
+	}
+
 	msg := message.GetBuilder().MsgObjectDefinition(
 		message.ObjectDefinition{
 			ObjectID:         s.GetID(),
@@ -577,10 +584,10 @@ func (s *Space) UpdateSpawnMessage() error {
 			AssetFormat:      assetFormat,
 			Name:             s.GetName(),
 			Position:         *s.GetActualPosition(),
-			Editable:         *utils.GetFromAny(opts.Editable, truePtr),
+			Editable:         *utils.GetFromAny(effectiveOptions.Editable, truePtr),
 			TetheredToParent: true,
-			Minimap:          *utils.GetFromAny(opts.Minimap, falsePtr),
-			InfoUI:           *utils.GetFromAny(opts.InfoUIID, uuidNilPtr),
+			Minimap:          *utils.GetFromAny(effectiveOptions.Minimap, visible),
+			InfoUI:           *utils.GetFromAny(effectiveOptions.InfoUIID, uuidNilPtr),
 		},
 	)
 	s.spawnMsg.Store(msg)

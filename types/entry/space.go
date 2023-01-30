@@ -10,6 +10,7 @@ import (
 type SpaceVisibleType byte
 
 const (
+	InvalidSpaceVisibleType    SpaceVisibleType = 0b00
 	ReactSpaceVisibleType      SpaceVisibleType = 0b01
 	UnitySpaceVisibleType      SpaceVisibleType = 0b10
 	ReactUnitySpaceVisibleType SpaceVisibleType = 0b11
