@@ -32,8 +32,8 @@ import (
 func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
 	worldID, err := uuid.Parse(c.Param("spaceID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Worlds: apiGetOnlineUsers: failed to parse world id")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
+		err := errors.WithMessage(err, "Worlds: apiGetOnlineUsers: failed to parse space id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, w.log)
 		return
 	}
 
@@ -104,8 +104,8 @@ func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 
 	worldID, err := uuid.Parse(c.Param("spaceID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Worlds: apiWorldsGetSpacesWithChildren: failed to parse world id")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
+		err := errors.WithMessage(err, "Worlds: apiWorldsGetSpacesWithChildren: failed to parse space id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, w.log)
 		return
 	}
 
@@ -227,8 +227,8 @@ func (w *Worlds) apiWorldsSearchSpaces(c *gin.Context) {
 
 	spaceID, err := uuid.Parse(c.Param("spaceID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Worlds: apiWorldsSearchSpaces: failed to parse world id")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
+		err := errors.WithMessage(err, "Worlds: apiWorldsSearchSpaces: failed to parse space id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, w.log)
 		return
 	}
 
@@ -299,8 +299,8 @@ func (w *Worlds) apiWorldsFilterSpaces(searchQuery string, world universe.World)
 func (w *Worlds) apiWorldsTeleportUser(c *gin.Context) {
 	spaceID, err := uuid.Parse(c.Param("spaceID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Worlds: apiWorldsTeleportUser: failed to parse world id")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
+		err := errors.WithMessage(err, "Worlds: apiWorldsTeleportUser: failed to parse space id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, w.log)
 		return
 	}
 
