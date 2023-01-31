@@ -35,7 +35,7 @@ func (a *Assets2d) apiGetAsset2d(c *gin.Context) {
 	}
 
 	out := dto.Asset2d{
-		Meta:    asset2d.GetMeta(),
+		Meta:    dto.Asset2dMeta(asset2d.GetMeta()),
 		Options: asset2d.GetOptions(),
 	}
 

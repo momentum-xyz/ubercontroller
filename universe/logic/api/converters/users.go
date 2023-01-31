@@ -15,7 +15,8 @@ func ToUserDTO(userEntry *entry.User, guestUserTypeID uuid.UUID, includeWallet b
 	profileEntry := userEntry.Profile
 
 	userDTO := dto.User{
-		ID: userEntry.UserID.String(),
+		ID:         userEntry.UserID.String(),
+		UserTypeID: userEntry.UserTypeID.String(),
 		Profile: dto.Profile{
 			Bio:         profileEntry.Bio,
 			Location:    profileEntry.Location,
@@ -23,21 +24,14 @@ func ToUserDTO(userEntry *entry.User, guestUserTypeID uuid.UUID, includeWallet b
 			ProfileLink: profileEntry.ProfileLink,
 		},
 		CreatedAt: userEntry.CreatedAt.Format(time.RFC3339),
+		UpdatedAt: userEntry.UpdatedAt.Format(time.RFC3339),
 		IsGuest:   false,
 	}
-	if userEntry.UserTypeID != nil {
-		userDTO.UserTypeID = userEntry.UserTypeID.String()
-		if *userEntry.UserTypeID == guestUserTypeID {
-			userDTO.IsGuest = true
-		}
+	if userEntry.UserTypeID == guestUserTypeID {
+		userDTO.IsGuest = true
 	}
-	if userEntry.UpdatedAt != nil {
-		userDTO.UpdatedAt = utils.GetPTR(userEntry.UpdatedAt.Format(time.RFC3339))
-	}
-	if profileEntry != nil {
-		if profileEntry.Name != nil {
-			userDTO.Name = *profileEntry.Name
-		}
+	if profileEntry.Name != nil {
+		userDTO.Name = *profileEntry.Name
 	}
 
 	if includeWallet {

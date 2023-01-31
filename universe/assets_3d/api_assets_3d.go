@@ -42,13 +42,7 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 
 	var a3dMap map[uuid.UUID]universe.Asset3d
 	predicateFn := func(asset3dID uuid.UUID, asset3d universe.Asset3d) bool {
-		var category string
-		meta := asset3d.GetMeta()
-
-		if meta == nil {
-			return false
-		}
-		category = utils.GetFromAnyMap(*meta, "category", "")
+		category := utils.GetFromAnyMap(asset3d.GetMeta(), "category", "")
 		return category == inQuery.Category
 	}
 
@@ -65,7 +59,7 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 
 		assetDTO := &dto.Asset3d{
 			ID:        asset.Asset3dID.String(),
-			Meta:      asset.Meta,
+			Meta:      dto.Asset3dMeta(asset.Meta),
 			CreatedAt: asset.CreatedAt.Format(time.RFC3339),
 			UpdatedAt: asset.UpdatedAt.Format(time.RFC3339),
 		}
@@ -213,7 +207,7 @@ func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 		"name":     name,
 	}
 
-	if err := newAsset.SetMeta(&meta, true); err != nil {
+	if err := newAsset.SetMeta(meta, true); err != nil {
 		err = errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to set meta")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_meta", err, a.log)
 		return
@@ -227,7 +221,7 @@ func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 
 	out := dto.Asset3d{
 		ID:   newAsset.GetID().String(),
-		Meta: newAsset.GetMeta(),
+		Meta: dto.Asset3dMeta(newAsset.GetMeta()),
 	}
 
 	c.JSON(http.StatusAccepted, out)
@@ -368,7 +362,7 @@ func (a *Assets3d) apiGetAssets3dMeta(c *gin.Context) {
 			return
 		}
 
-		out[asset3dID] = gotAsset3d.GetMeta()
+		out[asset3dID] = dto.Asset3dMeta(gotAsset3d.GetMeta())
 	}
 
 	c.JSON(http.StatusOK, out)

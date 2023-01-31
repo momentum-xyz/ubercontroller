@@ -100,7 +100,7 @@ func (db *DB) RemovePluginsByIDs(ctx context.Context, PluginIDs []uuid.UUID) err
 	return nil
 }
 
-func (db *DB) UpdatePluginMeta(ctx context.Context, pluginID uuid.UUID, meta *entry.PluginMeta) error {
+func (db *DB) UpdatePluginMeta(ctx context.Context, pluginID uuid.UUID, meta entry.PluginMeta) error {
 	if _, err := db.conn.Exec(ctx, updatePluginMetaQuery, pluginID, meta); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}

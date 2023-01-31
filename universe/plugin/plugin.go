@@ -27,7 +27,7 @@ type Plugin struct {
 	mu  sync.RWMutex
 
 	id                uuid.UUID
-	meta              *entry.PluginMeta
+	meta              entry.PluginMeta
 	options           *entry.PluginOptions
 	object            *plugin.Plugin
 	newInstance       mplugin.NewInstanceFunction
@@ -58,14 +58,14 @@ func (p *Plugin) GetID() uuid.UUID {
 	return p.id
 }
 
-func (p *Plugin) GetMeta() *entry.PluginMeta {
+func (p *Plugin) GetMeta() entry.PluginMeta {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
 	return p.meta
 }
 
-func (p *Plugin) SetMeta(meta *entry.PluginMeta, updateDB bool) error {
+func (p *Plugin) SetMeta(meta entry.PluginMeta, updateDB bool) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 

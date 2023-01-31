@@ -223,19 +223,18 @@ func (n *Node) apiGuestToken(c *gin.Context) {
 		return
 	}
 
+	name := userEntry.UserID.String()
+	if userEntry.Profile.Name != nil {
+		name = *userEntry.Profile.Name
+	}
 	outUser := dto.User{
-		ID:        userEntry.UserID.String(),
-		Name:      *userEntry.Profile.Name,
-		CreatedAt: time.Now().Format(time.RFC3339),
-		JWTToken:  &token,
-		IsGuest:   true,
-	}
-
-	if userEntry.UserTypeID != nil {
-		outUser.UserTypeID = userEntry.UserTypeID.String()
-	}
-	if userEntry.UpdatedAt != nil {
-		outUser.UpdatedAt = utils.GetPTR(userEntry.UpdatedAt.Format(time.RFC3339))
+		ID:         userEntry.UserID.String(),
+		UserTypeID: userEntry.UserTypeID.String(),
+		Name:       name,
+		JWTToken:   &token,
+		CreatedAt:  userEntry.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:  userEntry.UpdatedAt.Format(time.RFC3339),
+		IsGuest:    true,
 	}
 
 	c.JSON(http.StatusOK, outUser)

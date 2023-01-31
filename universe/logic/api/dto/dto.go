@@ -17,7 +17,7 @@ type Plugins map[uuid.UUID]string
 
 type PluginsMeta map[uuid.UUID]PluginMeta
 
-type PluginMeta *entry.PluginMeta
+type PluginMeta entry.PluginMeta
 
 type PluginsOptions map[uuid.UUID]PluginOptions
 
@@ -33,7 +33,7 @@ type SpaceAttributeValues map[uuid.UUID]*entry.AttributeValue
 
 type SpaceSubAttributes map[string]any
 
-type Asset2dMeta *entry.Asset2dMeta
+type Asset2dMeta entry.Asset2dMeta
 
 type Asset2dOptions *entry.Asset2dOptions
 
@@ -43,7 +43,7 @@ type Asset3dOptions *entry.Asset3dOptions
 
 type Assets3dMeta map[uuid.UUID]Asset3dMeta
 
-type Asset3dMeta *entry.Asset3dMeta
+type Asset3dMeta entry.Asset3dMeta
 
 type ExploreOption struct {
 	ID          uuid.UUID       `json:"id"`
@@ -85,7 +85,7 @@ type User struct {
 	Profile    Profile `json:"profile"`
 	JWTToken   *string `json:"token,omitempty"`
 	CreatedAt  string  `json:"createdAt"`
-	UpdatedAt  *string `json:"updatedAt,omitempty"`
+	UpdatedAt  string  `json:"updatedAt,omitempty"`
 	IsGuest    bool    `json:"isGuest"`
 }
 

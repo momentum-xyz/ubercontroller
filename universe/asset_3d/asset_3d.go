@@ -3,7 +3,6 @@ package asset_3d
 import (
 	"context"
 	"sync"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -28,13 +27,10 @@ type Asset3d struct {
 }
 
 func NewAsset3d(id uuid.UUID, db database.DB) *Asset3d {
-	now := time.Now().UTC()
 	return &Asset3d{
 		db: db,
 		entry: &entry.Asset3d{
 			Asset3dID: id,
-			CreatedAt: now,
-			UpdatedAt: &now, // TODO: not nullable, convert from pointer
 		},
 	}
 }
@@ -55,14 +51,14 @@ func (a *Asset3d) Initialize(ctx context.Context) error {
 	return nil
 }
 
-func (a *Asset3d) GetMeta() *entry.Asset3dMeta {
+func (a *Asset3d) GetMeta() entry.Asset3dMeta {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
 	return a.entry.Meta
 }
 
-func (a *Asset3d) SetMeta(meta *entry.Asset3dMeta, updateDB bool) error {
+func (a *Asset3d) SetMeta(meta entry.Asset3dMeta, updateDB bool) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 

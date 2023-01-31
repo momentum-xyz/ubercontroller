@@ -71,10 +71,10 @@ func (n *Node) apiUsersCreateMutualDocks(c *gin.Context) {
 
 	abPortalName := userB.UserID.String()
 	baPortalName := userA.UserID.String()
-	if userB.Profile != nil && userB.Profile.Name != nil {
+	if userB.Profile.Name != nil {
 		abPortalName = *userB.Profile.Name
 	}
-	if userA.Profile != nil && userA.Profile.Name != nil {
+	if userA.Profile.Name != nil {
 		baPortalName = *userA.Profile.Name
 	}
 

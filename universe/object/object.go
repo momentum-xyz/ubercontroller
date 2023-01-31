@@ -596,7 +596,7 @@ func (o *Object) UpdateSpawnMessage() error {
 			metaData := struct {
 				Type int `json:"type"`
 			}{}
-			utils.MapDecode(*asset3dMeta, &metaData)
+			utils.MapDecode(asset3dMeta, &metaData)
 			assetFormat = dto.Asset3dType(metaData.Type)
 		}
 	}
