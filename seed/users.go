@@ -18,6 +18,8 @@ func seedUsers(node universe.Node) error {
 		options    *entry.UserOptions
 	}
 
+	// 1 Odin (Deity)
+	// 2 Node Admin (User)
 	items := []*item{
 		{
 			id:         uuid.MustParse("00000000-0000-0000-0000-000000000003"),

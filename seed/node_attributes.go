@@ -1,6 +1,9 @@
 package seed
 
 import (
+	"crypto/rand"
+	"math/big"
+
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
@@ -15,6 +18,16 @@ func seedNodeAttributes(node universe.Node) error {
 		attributeName string
 		value         *entry.AttributeValue
 		options       *entry.AttributeOptions
+	}
+
+	secret, err := generateRandomString(40)
+	if err != nil {
+		return errors.WithMessage(err, "failed to generate secret")
+	}
+
+	signature, err := generateRandomString(30)
+	if err != nil {
+		return errors.WithMessage(err, "failed to generate signature")
 	}
 
 	items := []*item{
@@ -37,8 +50,8 @@ func seedNodeAttributes(node universe.Node) error {
 			pluginID:      universe.GetSystemPluginID(),
 			attributeName: "jwt_key",
 			value: &entry.AttributeValue{
-				"secret":    "todo",
-				"signature": "todo",
+				"secret":    secret,
+				"signature": signature,
 			},
 			options: nil,
 		},
@@ -117,4 +130,18 @@ func seedNodeAttributes(node universe.Node) error {
 	}
 
 	return nil
+}
+
+func generateRandomString(n int) (string, error) {
+	const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_"
+	ret := make([]byte, n)
+	for i := 0; i < n; i++ {
+		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(letters))))
+		if err != nil {
+			return "", err
+		}
+		ret[i] = letters[num.Int64()]
+	}
+
+	return string(ret), nil
 }

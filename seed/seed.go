@@ -40,6 +40,12 @@ func Node(ctx context.Context, node universe.Node) error {
 		return seedObjectTypes(node)
 	})
 
+	//node.SetObjectType(node.GetObjectTypes().GetObjectType(uuid.MustParse("00000000-0000-0000-0000-000000000001")))
+
+	//group.Go(func() error {
+	//	return node.GetWorlds().Save()
+	//})
+
 	if err := group.Wait(); err != nil {
 		return errors.WithMessage(err, "failed to seed")
 	}

@@ -21,14 +21,14 @@ func seedPlugins(node universe.Node) error {
 				"name": "Core",
 			},
 		},
-		{
-			ID: uuid.MustParse("fd94324b-b2bb-4d79-8328-7f33362385b2"),
-			Meta: &entry.PluginMeta{
-				"name":      "Template",
-				"scopeName": "momentum_plugin_template",
-				"scriptUrl": "http://localhost:3002/remoteEntry.js",
-			},
-		},
+		//{
+		//	ID: uuid.MustParse("fd94324b-b2bb-4d79-8328-7f33362385b2"),
+		//	Meta: &entry.PluginMeta{
+		//		"name":      "Template",
+		//		"scopeName": "momentum_plugin_template",
+		//		"scriptUrl": "http://localhost:3002/remoteEntry.js",
+		//	},
+		//},
 		{
 			ID: uuid.MustParse("2b92edbc-5ef5-4028-89a6-d510f8583887"),
 			Meta: &entry.PluginMeta{
