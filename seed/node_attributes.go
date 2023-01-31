@@ -107,7 +107,7 @@ func seedNodeAttributes(node universe.Node) error {
 			options: nil,
 		},
 		{
-			pluginID:      uuid.MustParse("86dc3ae7-9f3d-42cb-85a3-a71abc3c3cb8"),
+			pluginID:      universe.GetKusamaPluginID(),
 			attributeName: "challenge_store",
 			value:         &entry.AttributeValue{},
 			options:       nil,

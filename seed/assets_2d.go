@@ -27,7 +27,7 @@ func seedAssets2d(node universe.Node) error {
 			},
 			Meta: &entry.Asset2dMeta{
 				"name":      "miro",
-				"pluginId":  "24071066-e8c6-4692-95b5-ae2dc3ed075c",
+				"pluginId":  miroPluginID,
 				"scopeName": "plugin_miro",
 				"scriptUrl": "http://localhost/plugins/miro/remoteEntry.js",
 			},
@@ -40,7 +40,7 @@ func seedAssets2d(node universe.Node) error {
 			},
 			Meta: &entry.Asset2dMeta{
 				"name":      "google Drive",
-				"pluginId":  "c3f89640-e0f0-4536-ae0d-8fc8a75ec0cd",
+				"pluginId":  googleDrivePluginID,
 				"scopeName": "plugin_google_drive",
 				"scriptUrl": "http://localhost/plugins/google-drive/remoteEntry.js",
 			},
@@ -53,7 +53,7 @@ func seedAssets2d(node universe.Node) error {
 			},
 			Meta: &entry.Asset2dMeta{
 				"name":      "google drive Local",
-				"pluginId":  "c3f89640-e0f0-4536-ae0d-8fc8a75ec0cd",
+				"pluginId":  googleDrivePluginID,
 				"scopeName": "plugin_google_drive",
 				"scriptUrl": "http://localhost:3002/remoteEntry.js",
 			},
@@ -63,7 +63,7 @@ func seedAssets2d(node universe.Node) error {
 			Options:   &entry.Asset2dOptions{},
 			Meta: &entry.Asset2dMeta{
 				"name":     "image",
-				"pluginId": "ff40fbf0-8c22-437d-b27a-0258f99130fe",
+				"pluginId": imagePluginID,
 			},
 		},
 		{
@@ -71,7 +71,7 @@ func seedAssets2d(node universe.Node) error {
 			Options:   &entry.Asset2dOptions{},
 			Meta: &entry.Asset2dMeta{
 				"name":     "text",
-				"pluginId": "fc9f2eb7-590a-4a1a-ac75-cd3bfeef28b2",
+				"pluginId": textPluginID,
 			},
 		},
 		{
@@ -79,7 +79,7 @@ func seedAssets2d(node universe.Node) error {
 			Options:   &entry.Asset2dOptions{},
 			Meta: &entry.Asset2dMeta{
 				"name":     "video",
-				"pluginId": "308fdacc-8c2d-40dc-bd5f-d1549e3e03ba",
+				"pluginId": videoPluginID,
 			},
 		},
 		{
@@ -91,7 +91,7 @@ func seedAssets2d(node universe.Node) error {
 			},
 			Meta: &entry.Asset2dMeta{
 				"name":      "miro local",
-				"pluginId":  "24071066-e8c6-4692-95b5-ae2dc3ed075c",
+				"pluginId":  miroPluginID,
 				"scopeName": "plugin_miro",
 				"scriptUrl": "http://localhost:3001/remoteEntry.js",
 			},

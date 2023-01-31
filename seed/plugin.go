@@ -21,14 +21,6 @@ func seedPlugins(node universe.Node) error {
 				"name": "Core",
 			},
 		},
-		//{
-		//	ID: uuid.MustParse("fd94324b-b2bb-4d79-8328-7f33362385b2"),
-		//	Meta: &entry.PluginMeta{
-		//		"name":      "Template",
-		//		"scopeName": "momentum_plugin_template",
-		//		"scriptUrl": "http://localhost:3002/remoteEntry.js",
-		//	},
-		//},
 		{
 			ID: uuid.MustParse("2b92edbc-5ef5-4028-89a6-d510f8583887"),
 			Meta: &entry.PluginMeta{
@@ -37,25 +29,25 @@ func seedPlugins(node universe.Node) error {
 			},
 		},
 		{
-			ID: uuid.MustParse("308fdacc-8c2d-40dc-bd5f-d1549e3e03ba"),
+			ID: uuid.MustParse(videoPluginID),
 			Meta: &entry.PluginMeta{
 				"name": "Video",
 			},
 		},
 		{
-			ID: uuid.MustParse("ff40fbf0-8c22-437d-b27a-0258f99130fe"),
+			ID: uuid.MustParse(imagePluginID),
 			Meta: &entry.PluginMeta{
 				"name": "Image",
 			},
 		},
 		{
-			ID: uuid.MustParse("fc9f2eb7-590a-4a1a-ac75-cd3bfeef28b2"),
+			ID: uuid.MustParse(textPluginID),
 			Meta: &entry.PluginMeta{
 				"name": "Text",
 			},
 		},
 		{
-			ID: uuid.MustParse("24071066-e8c6-4692-95b5-ae2dc3ed075c"),
+			ID: uuid.MustParse(miroPluginID),
 			Meta: &entry.PluginMeta{
 				"name": "Miro",
 				"assets2d": []string{
@@ -67,7 +59,7 @@ func seedPlugins(node universe.Node) error {
 			},
 		},
 		{
-			ID: uuid.MustParse("c3f89640-e0f0-4536-ae0d-8fc8a75ec0cd"),
+			ID: uuid.MustParse(googleDrivePluginID),
 			Meta: &entry.PluginMeta{
 				"name": "Google Drive",
 				"assets2d": []string{
@@ -79,15 +71,15 @@ func seedPlugins(node universe.Node) error {
 			},
 		},
 		{
-			ID:   uuid.MustParse("220578c8-5fec-42c8-ade1-14d970e714bd"),
+			ID:   uuid.MustParse(noname1PluginID),
 			Meta: &entry.PluginMeta{},
 		},
 		{
-			ID:   uuid.MustParse("86dc3ae7-9f3d-42cb-85a3-a71abc3c3cb8"),
+			ID:   universe.GetKusamaPluginID(),
 			Meta: &entry.PluginMeta{},
 		},
 		{
-			ID:   uuid.MustParse("3253d616-215f-47a9-ba9d-93185eb3e6b5"),
+			ID:   uuid.MustParse(high5PluginID),
 			Meta: &entry.PluginMeta{},
 		},
 	}

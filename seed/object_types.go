@@ -32,7 +32,7 @@ func seedObjectTypes(node universe.Node) error {
 			options: &entry.ObjectOptions{
 				Subs: map[string]any{
 					"asset2d_plugins": []any{
-						"24071066-e8c6-4692-95b5-ae2dc3ed075c",
+						miroPluginID,
 					},
 				},
 				Private:           utils.GetPTR(false),
@@ -52,7 +52,7 @@ func seedObjectTypes(node universe.Node) error {
 			options: &entry.ObjectOptions{
 				Subs: map[string]any{
 					"asset2d_plugins": []any{
-						"24071066-e8c6-4692-95b5-ae2dc3ed075c",
+						miroPluginID,
 					},
 				},
 				Private: utils.GetPTR(false),

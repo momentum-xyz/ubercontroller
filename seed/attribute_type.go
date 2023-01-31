@@ -19,7 +19,7 @@ func seedAttributeType(node universe.Node) error {
 
 	items := []*item{
 		{
-			pluginID:      uuid.MustParse("220578c8-5fec-42c8-ade1-14d970e714bd"),
+			pluginID:      uuid.MustParse(noname1PluginID),
 			attributeName: "problem",
 			description:   "Problem for space",
 			options: &entry.AttributeOptions{
@@ -28,7 +28,7 @@ func seedAttributeType(node universe.Node) error {
 			},
 		},
 		{
-			pluginID:      uuid.MustParse("220578c8-5fec-42c8-ade1-14d970e714bd"),
+			pluginID:      uuid.MustParse(noname1PluginID),
 			attributeName: "solution",
 			description:   "solution for space",
 			options: &entry.AttributeOptions{
@@ -37,7 +37,7 @@ func seedAttributeType(node universe.Node) error {
 			},
 		},
 		{
-			pluginID:      uuid.MustParse("220578c8-5fec-42c8-ade1-14d970e714bd"),
+			pluginID:      uuid.MustParse(noname1PluginID),
 			attributeName: "tile",
 			description:   "tile for space",
 			options: &entry.AttributeOptions{
@@ -45,7 +45,7 @@ func seedAttributeType(node universe.Node) error {
 			},
 		},
 		{
-			pluginID:      uuid.MustParse("220578c8-5fec-42c8-ade1-14d970e714bd"),
+			pluginID:      uuid.MustParse(noname1PluginID),
 			attributeName: "third",
 			description:   "Third screen for space",
 			options: &entry.AttributeOptions{
@@ -53,7 +53,7 @@ func seedAttributeType(node universe.Node) error {
 			},
 		},
 		{
-			pluginID:      uuid.MustParse("220578c8-5fec-42c8-ade1-14d970e714bd"),
+			pluginID:      uuid.MustParse(noname1PluginID),
 			attributeName: "poster",
 			description:   "Poster for space",
 			options: &entry.AttributeOptions{
@@ -61,7 +61,7 @@ func seedAttributeType(node universe.Node) error {
 			},
 		},
 		{
-			pluginID:      uuid.MustParse("220578c8-5fec-42c8-ade1-14d970e714bd"),
+			pluginID:      uuid.MustParse(noname1PluginID),
 			attributeName: "meme",
 			description:   "Meme for space",
 			options: &entry.AttributeOptions{
@@ -69,7 +69,7 @@ func seedAttributeType(node universe.Node) error {
 			},
 		},
 		{
-			pluginID:      uuid.MustParse("220578c8-5fec-42c8-ade1-14d970e714bd"),
+			pluginID:      uuid.MustParse(noname1PluginID),
 			attributeName: "video",
 			description:   "Video for space",
 			options: &entry.AttributeOptions{
@@ -79,7 +79,7 @@ func seedAttributeType(node universe.Node) error {
 		},
 		//
 		{
-			pluginID:      uuid.MustParse("24071066-e8c6-4692-95b5-ae2dc3ed075c"),
+			pluginID:      uuid.MustParse(miroPluginID),
 			attributeName: "state",
 			description:   "Miro state",
 			options: &entry.AttributeOptions{
@@ -90,14 +90,14 @@ func seedAttributeType(node universe.Node) error {
 			},
 		},
 		{
-			pluginID:      uuid.MustParse("24071066-e8c6-4692-95b5-ae2dc3ed075c"),
+			pluginID:      uuid.MustParse(miroPluginID),
 			attributeName: "config",
 			description:   "Miro configuration",
 			options:       nil,
 		},
 		//
 		{
-			pluginID:      uuid.MustParse("308fdacc-8c2d-40dc-bd5f-d1549e3e03ba"),
+			pluginID:      uuid.MustParse(videoPluginID),
 			attributeName: "state",
 			description:   "State of the video tile",
 			options: &entry.AttributeOptions{
@@ -111,33 +111,33 @@ func seedAttributeType(node universe.Node) error {
 		},
 		//
 		{
-			pluginID:      uuid.MustParse("3253d616-215f-47a9-ba9d-93185eb3e6b5"),
+			pluginID:      uuid.MustParse(high5PluginID),
 			attributeName: "count",
 			description:   "High5s given",
 			options:       nil,
 		},
 		//
 		{
-			pluginID:      uuid.MustParse("86dc3ae7-9f3d-42cb-85a3-a71abc3c3cb8"),
+			pluginID:      universe.GetKusamaPluginID(),
 			attributeName: "challenge_store",
 			description:   "auth challenge store",
 			options:       nil,
 		},
 		{
-			pluginID:      uuid.MustParse("86dc3ae7-9f3d-42cb-85a3-a71abc3c3cb8"),
+			pluginID:      universe.GetKusamaPluginID(),
 			attributeName: "wallet",
 			description:   "Kusama/Substrate wallet",
 			options:       nil,
 		},
 		//
 		{
-			pluginID:      uuid.MustParse("c3f89640-e0f0-4536-ae0d-8fc8a75ec0cd"),
+			pluginID:      uuid.MustParse(googleDrivePluginID),
 			attributeName: "config",
 			description:   "Google Drive configuration",
 			options:       nil,
 		},
 		{
-			pluginID:      uuid.MustParse("c3f89640-e0f0-4536-ae0d-8fc8a75ec0cd"),
+			pluginID:      uuid.MustParse(googleDrivePluginID),
 			attributeName: "state",
 			description:   "Google Drive state",
 			options: &entry.AttributeOptions{
@@ -339,7 +339,7 @@ func seedAttributeType(node universe.Node) error {
 		},
 		//
 		{
-			pluginID:      uuid.MustParse("fc9f2eb7-590a-4a1a-ac75-cd3bfeef28b2"),
+			pluginID:      uuid.MustParse(textPluginID),
 			attributeName: "state",
 			description:   "State of the text tile",
 			options: &entry.AttributeOptions{
@@ -404,28 +404,9 @@ func seedAttributeType(node universe.Node) error {
 			},
 		},
 		//
-		{
-			pluginID:      uuid.MustParse("fd94324b-b2bb-4d79-8328-7f33362385b2"),
-			attributeName: "state",
-			description:   "Template plugin state",
-			options: &entry.AttributeOptions{
-				"posbus_auto": map[string]any{
-					"scope": []any{
-						"space",
-					},
-					"send_to": 1,
-				},
-			},
-		},
-		{
-			pluginID:      uuid.MustParse("fd94324b-b2bb-4d79-8328-7f33362385b2"),
-			attributeName: "config",
-			description:   "Template plugin configuration",
-			options:       nil,
-		},
 		//
 		{
-			pluginID:      uuid.MustParse("ff40fbf0-8c22-437d-b27a-0258f99130fe"),
+			pluginID:      uuid.MustParse(imagePluginID),
 			attributeName: "state",
 			description:   "State of the image tile",
 			options: &entry.AttributeOptions{
