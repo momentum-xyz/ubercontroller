@@ -1,12 +1,16 @@
 package helper
 
 import (
+	"math/rand"
+	"time"
+
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
+
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
-	"github.com/pkg/errors"
 )
 
 type WorldTemplate struct {
@@ -70,6 +74,21 @@ func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (uuid.UUI
 		if worldTemplate.Spaces[i].Label != nil {
 			spaceLabelToID[*worldTemplate.Spaces[i].Label] = spaceID
 		}
+	}
+
+	// adding random space
+	rand.Seed(time.Now().Unix())
+	randomSpace := worldTemplate.RandomSpaces[rand.Intn(len(worldTemplate.RandomSpaces))]
+	randomSpace.ParentID = *worldID
+	spaceID, err := AddSpaceFromTemplate(randomSpace, updateDB)
+	if err != nil {
+		return uuid.Nil, errors.WithMessagef(
+			err, "failed to add space from template: %+v", randomSpace,
+		)
+	}
+
+	if randomSpace.Label != nil {
+		spaceLabelToID[*randomSpace.Label] = spaceID
 	}
 
 	// enabling
