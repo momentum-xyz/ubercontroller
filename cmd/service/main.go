@@ -165,6 +165,9 @@ func createNode(ctx context.Context, db database.DB) (universe.Node, error) {
 	if err := assets3d.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize assets 3d")
 	}
+	if err := plugins.Initialize(ctx); err != nil {
+		return nil, errors.WithMessage(err, "failed to initialize plugins")
+	}
 	if err := objectTypes.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize object types")
 	}
@@ -173,9 +176,6 @@ func createNode(ctx context.Context, db database.DB) (universe.Node, error) {
 	}
 	if err := attributeTypes.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize attribute types")
-	}
-	if err := plugins.Initialize(ctx); err != nil {
-		return nil, errors.WithMessage(err, "failed to initialize plugins")
 	}
 	if err := node.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize node")
