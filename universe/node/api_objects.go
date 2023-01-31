@@ -1,17 +1,16 @@
 package node
 
 import (
-	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"net/http"
-
-	"github.com/momentum-xyz/ubercontroller/universe/common/helper"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api"
+	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/tree"
 )
 
 // @Summary Create space
@@ -74,7 +73,7 @@ func (n *Node) apiSpacesCreateSpace(c *gin.Context) {
 
 	position := inBody.Position
 	if position == nil {
-		position, err = helper.CalcObjectSpawnPosition(parentID, userID)
+		position, err = tree.CalcObjectSpawnPosition(parentID, userID)
 		if err != nil {
 			err := errors.WithMessage(err, "Node: apiSpacesCreateSpace: failed to calc space spawn position")
 			api.AbortRequest(c, http.StatusBadRequest, "calc_spawn_position_failed", err, n.log)
@@ -111,7 +110,7 @@ func (n *Node) apiSpacesCreateSpace(c *gin.Context) {
 		asset3dID = &assetID
 	}
 
-	spaceTemplate := helper.ObjectTemplate{
+	spaceTemplate := tree.ObjectTemplate{
 		Object: entry.Object{
 			ObjectTypeID: spaceTypeID,
 			ParentID:     parentID,
@@ -123,7 +122,7 @@ func (n *Node) apiSpacesCreateSpace(c *gin.Context) {
 		ObjectName: &inBody.SpaceName,
 	}
 
-	object, err := helper.AddObjectFromTemplate(&spaceTemplate, true)
+	object, err := tree.AddObjectFromTemplate(&spaceTemplate, true)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiSpacesCreateSpace: failed to add space from template")
 		api.AbortRequest(c, http.StatusInternalServerError, "add_space_failed", err, n.log)
@@ -142,7 +141,7 @@ func (n *Node) apiSpacesCreateSpace(c *gin.Context) {
 
 // TODO: it was created only for tests, fix or remove
 func (n *Node) apiSpacesCreateSpaceFromTemplate(c *gin.Context) {
-	var template helper.ObjectTemplate
+	var template tree.ObjectTemplate
 
 	if err := c.ShouldBindJSON(&template); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
@@ -151,7 +150,7 @@ func (n *Node) apiSpacesCreateSpaceFromTemplate(c *gin.Context) {
 		return
 	}
 
-	spaceID, err := helper.AddObjectFromTemplate(&template, true)
+	spaceID, err := tree.AddObjectFromTemplate(&template, true)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),

@@ -3,8 +3,8 @@ package assets_2d
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/pkg/errors"
 	"net/http"
 )
@@ -35,7 +35,7 @@ func (a *Assets2d) apiGetAsset2d(c *gin.Context) {
 	}
 
 	out := dto.Asset2d{
-		Meta:    asset2d.GetMeta(),
+		Meta:    dto.Asset2dMeta(asset2d.GetMeta()),
 		Options: asset2d.GetOptions(),
 	}
 

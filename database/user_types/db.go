@@ -111,7 +111,7 @@ func (db *DB) UpdateUserTypeName(ctx context.Context, userTypeID uuid.UUID, name
 }
 
 func (db *DB) UpdateUserTypeDescription(
-	ctx context.Context, userTypeID uuid.UUID, description *string,
+	ctx context.Context, userTypeID uuid.UUID, description string,
 ) error {
 	if _, err := db.conn.Exec(ctx, updateUserTypeDescriptionQuery, userTypeID, description); err != nil {
 		return errors.WithMessage(err, "failed to exec db")

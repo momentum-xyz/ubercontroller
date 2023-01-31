@@ -25,7 +25,7 @@ type Object struct {
 	Options      *ObjectOptions       `db:"options" json:"options"`
 	Position     *cmath.SpacePosition `db:"position" json:"position"`
 	CreatedAt    time.Time            `db:"created_at" json:"created_at"`
-	UpdatedAt    *time.Time           `db:"updated_at" json:"updated_at"`
+	UpdatedAt    time.Time            `db:"updated_at" json:"updated_at"`
 }
 
 type ObjectOptions struct {

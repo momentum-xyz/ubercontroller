@@ -10,8 +10,9 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api"
-	"github.com/momentum-xyz/ubercontroller/universe/common/helper"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api/converters"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
@@ -42,14 +43,14 @@ func (n *Node) apiUsersGetMe(c *gin.Context) {
 		return
 	}
 
-	guestUserTypeID, err := helper.GetGuestUserTypeID()
+	guestUserTypeID, err := common.GetGuestUserTypeID()
 	if err != nil {
 		err := errors.New("Node: apiUsersGetMe: failed to GetGuestUserTypeID")
 		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, n.log)
 		return
 	}
 
-	userDTO := api.ToUserDTO(userEntry, guestUserTypeID, true)
+	userDTO := converters.ToUserDTO(userEntry, guestUserTypeID, true)
 
 	c.JSON(http.StatusOK, userDTO)
 }
@@ -80,14 +81,14 @@ func (n *Node) apiUsersGetByID(c *gin.Context) {
 		return
 	}
 
-	guestUserTypeID, err := helper.GetGuestUserTypeID()
+	guestUserTypeID, err := common.GetGuestUserTypeID()
 	if err != nil {
 		err := errors.New("Node: apiUsersGetByID: failed to GetGuestUserTypeID")
 		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, n.log)
 		return
 	}
 
-	userDTO := api.ToUserDTO(userEntry, guestUserTypeID, true)
+	userDTO := converters.ToUserDTO(userEntry, guestUserTypeID, true)
 
 	c.JSON(http.StatusOK, userDTO)
 }
@@ -95,17 +96,17 @@ func (n *Node) apiUsersGetByID(c *gin.Context) {
 func (n *Node) apiCreateGuestUserByName(ctx context.Context, name string) (*entry.User, error) {
 	ue := &entry.User{
 		UserID: uuid.New(),
-		Profile: &entry.UserProfile{
+		Profile: entry.UserProfile{
 			Name: &name,
 		},
 	}
 
-	guestUserTypeID, err := helper.GetGuestUserTypeID()
+	guestUserTypeID, err := common.GetGuestUserTypeID()
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to GetGuestUserTypeID")
 	}
 
-	ue.UserTypeID = &guestUserTypeID
+	ue.UserTypeID = guestUserTypeID
 
 	err = n.db.GetUsersDB().UpsertUser(ctx, ue)
 
@@ -136,17 +137,17 @@ func (n *Node) apiGetOrCreateUserFromWallet(ctx context.Context, wallet string) 
 func (n *Node) createUserFromWalletMeta(ctx context.Context, walletMeta *WalletMeta) (*entry.User, error) {
 	userEntry := &entry.User{
 		UserID: walletMeta.UserID,
-		Profile: &entry.UserProfile{
+		Profile: entry.UserProfile{
 			Name:       &walletMeta.Username,
 			AvatarHash: &walletMeta.Avatar,
 		},
 	}
 
-	normUserTypeID, err := helper.GetNormalUserTypeID()
+	normUserTypeID, err := common.GetNormalUserTypeID()
 	if err != nil {
 		return nil, errors.Errorf("failed to get normal user type id")
 	}
-	userEntry.UserTypeID = &normUserTypeID
+	userEntry.UserTypeID = normUserTypeID
 
 	if err := n.db.GetUsersDB().UpsertUser(ctx, userEntry); err != nil {
 		return nil, errors.WithMessagef(err, "failed to upsert user: %s", userEntry.UserID)

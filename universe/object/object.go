@@ -19,7 +19,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
@@ -596,7 +596,7 @@ func (o *Object) UpdateSpawnMessage() error {
 			metaData := struct {
 				Type int `json:"type"`
 			}{}
-			utils.MapDecode(*asset3dMeta, &metaData)
+			utils.MapDecode(asset3dMeta, &metaData)
 			assetFormat = dto.Asset3dType(metaData.Type)
 		}
 	}

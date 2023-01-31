@@ -2,7 +2,6 @@ package node
 
 import (
 	"fmt"
-	"github.com/momentum-xyz/ubercontroller/universe/common/helper"
 	"net/http"
 	"time"
 
@@ -13,8 +12,9 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/tree"
 )
 
 // @Summary Generate Agora token
@@ -200,7 +200,7 @@ func (n *Node) apiRemoveSpace(c *gin.Context) {
 		return
 	}
 
-	removed, err := helper.RemoveObjectFromParent(space.GetParent(), space, true)
+	removed, err := tree.RemoveObjectFromParent(space.GetParent(), space, true)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiRemoveSpace: failed to remove space from parent")
 		api.AbortRequest(c, http.StatusInternalServerError, "remove_failed", err, n.log)
