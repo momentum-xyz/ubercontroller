@@ -11,9 +11,10 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
-	"github.com/momentum-xyz/ubercontroller/universe/common/helper"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api/converters"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
@@ -57,14 +58,14 @@ func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
 		return
 	}
 
-	guestUserTypeID, err := helper.GetGuestUserTypeID()
+	guestUserTypeID, err := common.GetGuestUserTypeID()
 	if err != nil {
 		err := errors.New("Worlds: apiGetOnlineUsers: failed to GetGuestUserType")
 		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, w.log)
 		return
 	}
 
-	userDTOs := api.ToUserDTOs(userEntries, guestUserTypeID, false)
+	userDTOs := converters.ToUserDTOs(userEntries, guestUserTypeID, false)
 
 	c.JSON(http.StatusOK, userDTOs)
 }

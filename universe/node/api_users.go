@@ -10,8 +10,9 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api"
-	"github.com/momentum-xyz/ubercontroller/universe/common/helper"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api/converters"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
@@ -42,14 +43,14 @@ func (n *Node) apiUsersGetMe(c *gin.Context) {
 		return
 	}
 
-	guestUserTypeID, err := helper.GetGuestUserTypeID()
+	guestUserTypeID, err := common.GetGuestUserTypeID()
 	if err != nil {
 		err := errors.New("Node: apiUsersGetMe: failed to GetGuestUserTypeID")
 		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, n.log)
 		return
 	}
 
-	userDTO := api.ToUserDTO(userEntry, guestUserTypeID, true)
+	userDTO := converters.ToUserDTO(userEntry, guestUserTypeID, true)
 
 	c.JSON(http.StatusOK, userDTO)
 }
@@ -80,14 +81,14 @@ func (n *Node) apiUsersGetByID(c *gin.Context) {
 		return
 	}
 
-	guestUserTypeID, err := helper.GetGuestUserTypeID()
+	guestUserTypeID, err := common.GetGuestUserTypeID()
 	if err != nil {
 		err := errors.New("Node: apiUsersGetByID: failed to GetGuestUserTypeID")
 		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, n.log)
 		return
 	}
 
-	userDTO := api.ToUserDTO(userEntry, guestUserTypeID, true)
+	userDTO := converters.ToUserDTO(userEntry, guestUserTypeID, true)
 
 	c.JSON(http.StatusOK, userDTO)
 }
@@ -100,7 +101,7 @@ func (n *Node) apiCreateGuestUserByName(ctx context.Context, name string) (*entr
 		},
 	}
 
-	guestUserTypeID, err := helper.GetGuestUserTypeID()
+	guestUserTypeID, err := common.GetGuestUserTypeID()
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to GetGuestUserTypeID")
 	}
@@ -142,7 +143,7 @@ func (n *Node) createUserFromWalletMeta(ctx context.Context, walletMeta *WalletM
 		},
 	}
 
-	normUserTypeID, err := helper.GetNormalUserTypeID()
+	normUserTypeID, err := common.GetNormalUserTypeID()
 	if err != nil {
 		return nil, errors.Errorf("failed to get normal user type id")
 	}

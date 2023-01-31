@@ -1,4 +1,4 @@
-package common
+package logic
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var common struct {
+var logic struct {
 	ctx context.Context
 	log *zap.SugaredLogger
 	cfg *config.Config
@@ -25,21 +25,21 @@ func Initialize(ctx context.Context) error {
 		return errors.Errorf("failed to get config from context: %T", ctx.Value(types.ConfigContextKey))
 	}
 
-	common.ctx = ctx
-	common.log = log
-	common.cfg = cfg
+	logic.ctx = ctx
+	logic.log = log
+	logic.cfg = cfg
 
 	return nil
 }
 
 func GetContext() context.Context {
-	return common.ctx
+	return logic.ctx
 }
 
 func GetLogger() *zap.SugaredLogger {
-	return common.log
+	return logic.log
 }
 
 func GetConfig() *config.Config {
-	return common.cfg
+	return logic.cfg
 }

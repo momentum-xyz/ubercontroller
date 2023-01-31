@@ -10,8 +10,8 @@ import (
 
 	"github.com/momentum-xyz/posbus-protocol/posbus"
 
-	"github.com/momentum-xyz/ubercontroller/universe/common/api"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 )
 
 // @Summary Starts a fly to me session

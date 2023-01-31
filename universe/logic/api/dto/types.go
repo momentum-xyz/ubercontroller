@@ -1,3 +1,4 @@
+// TODO: deal with this mess
 package dto
 
 type Asset3dType int8

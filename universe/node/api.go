@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/momentum-xyz/ubercontroller"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api/middleware"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api/middleware"
 )
 
 // @title        Momentum API

@@ -1,19 +1,19 @@
 package node
 
 import (
-	"github.com/momentum-xyz/ubercontroller/utils/modify"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/ubercontroller/universe/common/helper"
-	"github.com/momentum-xyz/ubercontroller/utils"
-
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/tree"
+	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
 // @Summary Create mutual docks
@@ -180,7 +180,7 @@ func (n *Node) apiUsersRemoveMutualDocks(c *gin.Context) {
 	portalsA := getWorldPortals(worldA, worldB)
 	portalsB := getWorldPortals(worldB, worldA)
 	for _, portal := range utils.MergeMaps(portalsA, portalsB) {
-		if _, err := helper.RemoveObjectFromParent(portal.GetParent(), portal, true); err != nil {
+		if _, err := tree.RemoveObjectFromParent(portal.GetParent(), portal, true); err != nil {
 			err := errors.WithMessagef(
 				err, "Node: apiUsersRemoveMutualDocks: failed to remove portal: %s", portal.GetID(),
 			)
@@ -216,12 +216,12 @@ func createWorldPortal(portalName string, from, to universe.World) (universe.Obj
 		return nil, errors.WithMessage(err, "failed to get docking station")
 	}
 
-	portalObjectTypeID, err := helper.GetPortalObjectTypeID()
+	portalObjectTypeID, err := common.GetPortalObjectTypeID()
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to get portal space type id")
 	}
 
-	template := helper.ObjectTemplate{
+	template := tree.ObjectTemplate{
 		Object: entry.Object{
 			ObjectTypeID: portalObjectTypeID,
 			ParentID:     dockingStation.GetID(),
@@ -240,7 +240,7 @@ func createWorldPortal(portalName string, from, to universe.World) (universe.Obj
 		},
 	}
 
-	return helper.AddObjectFromTemplate(&template, true)
+	return tree.AddObjectFromTemplate(&template, true)
 }
 
 func getWorldDockingStation(world universe.World) (universe.Object, error) {
