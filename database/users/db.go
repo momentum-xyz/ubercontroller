@@ -36,9 +36,9 @@ const (
 						DO UPDATE SET
 							user_type_id = $2, profile = $3, options = $4, updated_at = CURRENT_TIMESTAMP;`
 
-	updateUserUserTypeIDQuery = `UPDATE "user" SET user_type_id = $2 WHERE user_id = $1;`
-	updateUserOptionsQuery    = `UPDATE "user" SET options = $2 WHERE user_id = $1;`
-	updateUserProfileQuery    = `UPDATE "user" SET profile = $2 WHERE user_id = $1;`
+	updateUserUserTypeIDQuery = `UPDATE "user" SET user_type_id = $2, updated_at = CURRENT_TIMESTAMP WHERE user_id = $1;`
+	updateUserOptionsQuery    = `UPDATE "user" SET options = $2, updated_at = CURRENT_TIMESTAMP WHERE user_id = $1;`
+	updateUserProfileQuery    = `UPDATE "user" SET profile = $2, updated_at = CURRENT_TIMESTAMP WHERE user_id = $1;`
 
 	removeUserByIDQuery   = `DELETE FROM "user" WHERE user_id = $1;`
 	removeUsersByIDsQuery = `DELETE FROM "user" WHERE user_id = ANY($1);`

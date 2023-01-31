@@ -25,8 +25,8 @@ const (
 						DO UPDATE SET
 							meta = $2, options = $3, updated_at = CURRENT_TIMESTAMP;`
 
-	updateAssetMetaQuery    = `UPDATE asset_3d SET meta = $2 WHERE asset_3d_id = $1;`
-	updateAssetOptionsQuery = `UPDATE asset_3d SET options = $2 WHERE asset_3d_id = $1;`
+	updateAssetMetaQuery    = `UPDATE asset_3d SET meta = $2, updated_at = CURRENT_TIMESTAMP WHERE asset_3d_id = $1;`
+	updateAssetOptionsQuery = `UPDATE asset_3d SET options = $2, updated_at = CURRENT_TIMESTAMP WHERE asset_3d_id = $1;`
 
 	removeAssetByIDQuery   = `DELETE FROM asset_3d WHERE asset_3d_id = $1;`
 	removeAssetsByIDsQuery = `DELETE FROM asset_3d WHERE asset_3d_id = ANY($1);`

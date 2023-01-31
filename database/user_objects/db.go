@@ -42,7 +42,7 @@ const (
 							DO UPDATE SET
 							    value = $3;`
 
-	updateUserObjectValueByIDQuery = `UPDATE user_object SET value = $3 WHERE user_id = $1 AND object_id = $2;`
+	updateUserObjectValueByIDQuery = `UPDATE user_object SET value = $3, updated_at = CURRENT_TIMESTAMP WHERE user_id = $1 AND object_id = $2;`
 
 	removeUserObjectByIDQuery = `DELETE FROM user_object WHERE user_id = $1 AND object_id = $2;`
 )

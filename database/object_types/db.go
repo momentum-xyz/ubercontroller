@@ -27,10 +27,10 @@ const (
 								asset_2d_id = $2, asset_3d_id = $3, object_type_name = $4, category_name = $5,
 								description = $6, options = $7, updated_at = CURRENT_TIMESTAMP;`
 
-	updateObjectTypeNameQuery         = `UPDATE object_type SET object_type_name = $2 WHERE object_type_id = $1;`
-	updateObjectTypeCategoryNameQuery = `UPDATE object_type SET category_name = $2 WHERE object_type_id = $1;`
-	updateObjectTypeDescriptionQuery  = `UPDATE object_type SET description = $2 WHERE object_type_id = $1;`
-	updateObjectTypeOptionsQuery      = `UPDATE object_type SET options = $2 WHERE object_type_id = $1;`
+	updateObjectTypeNameQuery         = `UPDATE object_type SET object_type_name = $2, updated_at = CURRENT_TIMESTAMP WHERE object_type_id = $1;`
+	updateObjectTypeCategoryNameQuery = `UPDATE object_type SET category_name = $2, updated_at = CURRENT_TIMESTAMP WHERE object_type_id = $1;`
+	updateObjectTypeDescriptionQuery  = `UPDATE object_type SET description = $2, updated_at = CURRENT_TIMESTAMP WHERE object_type_id = $1;`
+	updateObjectTypeOptionsQuery      = `UPDATE object_type SET options = $2, updated_at = CURRENT_TIMESTAMP WHERE object_type_id = $1;`
 
 	removeObjectTypeByIDQuery   = `DELETE FROM object_type WHERE object_type_id = $1;`
 	removeObjectTypesByIDsQuery = `DELETE FROM object_type WHERE object_type_id = ANY($1);`
