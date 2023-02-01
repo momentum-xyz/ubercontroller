@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
@@ -104,6 +105,8 @@ func run(ctx context.Context) error {
 		return errors.WithMessagef(err, "failed to load node: %s", node.GetID())
 	}
 	tm2 := time.Now()
+
+	rand.Seed(time.Now().UnixNano())
 
 	cute.SetTitleColor(cute.BrightGreen)
 	cute.SetMessageColor(cute.BrightBlue)

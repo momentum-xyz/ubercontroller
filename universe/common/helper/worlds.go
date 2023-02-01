@@ -1,12 +1,15 @@
 package helper
 
 import (
+	"math/rand"
+
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
+
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
-	"github.com/pkg/errors"
 )
 
 type WorldTemplate struct {
@@ -58,6 +61,8 @@ func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (uuid.UUI
 
 	// adding children
 	spaceLabelToID := make(map[string]uuid.UUID)
+	randomSpace := worldTemplate.RandomSpaces[rand.Intn(len(worldTemplate.RandomSpaces))]
+	worldTemplate.Spaces = append(worldTemplate.Spaces, randomSpace)
 	for i := range worldTemplate.Spaces {
 		worldTemplate.Spaces[i].ParentID = *worldID
 		spaceID, err := AddSpaceFromTemplate(worldTemplate.Spaces[i], updateDB)

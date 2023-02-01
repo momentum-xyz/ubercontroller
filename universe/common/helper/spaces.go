@@ -27,6 +27,7 @@ type SpaceTemplate struct {
 	Label           *string              `json:"label"`
 	SpaceAttributes []*entry.Attribute   `json:"space_attributes"`
 	Spaces          []*SpaceTemplate     `json:"spaces"`
+	RandomSpaces    []*SpaceTemplate     `json:"random_spaces"`
 }
 
 func AddSpaceFromTemplate(spaceTemplate *SpaceTemplate, updateDB bool) (uuid.UUID, error) {
