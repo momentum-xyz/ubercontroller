@@ -62,7 +62,7 @@ func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (uuid.UUI
 	// adding children
 	spaceLabelToID := make(map[string]uuid.UUID)
 	randomSpace := worldTemplate.RandomSpaces[rand.Intn(len(worldTemplate.RandomSpaces))]
-	worldTemplate.Spaces[len(worldTemplate.Spaces)+1] = randomSpace
+	worldTemplate.Spaces = append(worldTemplate.Spaces, randomSpace)
 	for i := range worldTemplate.Spaces {
 		worldTemplate.Spaces[i].ParentID = *worldID
 		spaceID, err := AddSpaceFromTemplate(worldTemplate.Spaces[i], updateDB)
