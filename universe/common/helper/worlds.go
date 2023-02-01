@@ -2,7 +2,6 @@ package helper
 
 import (
 	"math/rand"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -62,6 +61,8 @@ func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (uuid.UUI
 
 	// adding children
 	spaceLabelToID := make(map[string]uuid.UUID)
+	randomSpace := worldTemplate.RandomSpaces[rand.Intn(len(worldTemplate.RandomSpaces))]
+	worldTemplate.Spaces[len(worldTemplate.Spaces)+1] = randomSpace
 	for i := range worldTemplate.Spaces {
 		worldTemplate.Spaces[i].ParentID = *worldID
 		spaceID, err := AddSpaceFromTemplate(worldTemplate.Spaces[i], updateDB)
@@ -74,21 +75,6 @@ func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (uuid.UUI
 		if worldTemplate.Spaces[i].Label != nil {
 			spaceLabelToID[*worldTemplate.Spaces[i].Label] = spaceID
 		}
-	}
-
-	// adding random space
-	rand.Seed(time.Now().Unix())
-	randomSpace := worldTemplate.RandomSpaces[rand.Intn(len(worldTemplate.RandomSpaces))]
-	randomSpace.ParentID = *worldID
-	spaceID, err := AddSpaceFromTemplate(randomSpace, updateDB)
-	if err != nil {
-		return uuid.Nil, errors.WithMessagef(
-			err, "failed to add space from template: %+v", randomSpace,
-		)
-	}
-
-	if randomSpace.Label != nil {
-		spaceLabelToID[*randomSpace.Label] = spaceID
 	}
 
 	// enabling
