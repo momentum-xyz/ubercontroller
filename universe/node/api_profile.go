@@ -25,7 +25,6 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 	type Body struct {
 		Name    *string `json:"name"`
 		Profile *struct {
-			Name        *string `json:"name"`
 			Bio         *string `json:"bio"`
 			ProfileLink *string `json:"profileLink"`
 			Location    *string `json:"location"`
