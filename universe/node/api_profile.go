@@ -1,10 +1,13 @@
 package node
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"os/exec"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
@@ -55,6 +58,9 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 		return
 	}
 
+	nameChanged := inBody.Name != nil && *userProfile.Name != *inBody.Name
+	avatarChanged := inBody.Profile != nil && inBody.Profile.AvatarHash != nil && *userProfile.AvatarHash != *inBody.Profile.AvatarHash
+
 	if inBody.Name != nil {
 		// TODO: check name unique
 		userProfile.Name = inBody.Name
@@ -76,16 +82,17 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 		}
 	}
 
-	wallet, err := n.db.GetUsersDB().GetUserWalletByUserID(c, userID)
-	if err != nil {
-		err = errors.WithMessage(err, "failed to get user wallet by userID")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_update_user_profile", err, n.log)
-		return
-	}
-
-	fmt.Println(wallet)
-
 	userProfile.OnBoarded = utils.GetPTR(true)
+
+	if nameChanged || avatarChanged {
+		// Need update NFT metadata
+		a := userProfile.Name != inBody.Name
+		fmt.Println(a)
+		if err := n.updateNFTMetadata(c, userID, userProfile.Name, userProfile.AvatarHash); err != nil {
+			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_update_user_profile", err, n.log)
+			return
+		}
+	}
 
 	if err := n.db.GetUsersDB().UpdateUserProfile(c, userID, userProfile); err != nil {
 		err = errors.WithMessage(err, "failed to update user profile")
@@ -94,4 +101,35 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 	}
 
 	n.apiUsersGetMe(c)
+}
+
+func (n *Node) updateNFTMetadata(c *gin.Context, userID uuid.UUID, userName *string, avatarHash *string) error {
+	wallet, err := n.db.GetUsersDB().GetUserWalletByUserID(c, userID)
+	if err != nil {
+		return errors.WithMessage(err, "failed to get user wallet by userID")
+	}
+
+	fmt.Println(wallet)
+
+	//walletMeta, err := n.getWalletMetadata(*wallet)
+	//if err != nil {
+	//	return errors.WithMessagef(err, "failed to get wallet metadata: %s", *wallet)
+	//}
+
+	output, err := exec.Command("node", "./nodejs/check-nft/update-nft.js", *wallet).Output()
+	if err != nil {
+		return errors.WithMessage(err, "failed to execute node script update-nft.js")
+	}
+
+	fmt.Println(output)
+	fmt.Println(string(output))
+
+	var nodeJSOut NodeJSOut
+	if err := json.Unmarshal(output, &nodeJSOut); err != nil {
+		return errors.WithMessage(err, "failed to unmarshal output")
+	}
+
+	fmt.Println(nodeJSOut)
+
+	return nil
 }
