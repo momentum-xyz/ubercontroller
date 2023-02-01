@@ -1,6 +1,7 @@
 package node
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -74,6 +75,15 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 			userProfile.ProfileLink = inProfile.ProfileLink
 		}
 	}
+
+	wallet, err := n.db.GetUsersDB().GetUserWalletByUserID(c, userID)
+	if err != nil {
+		err = errors.WithMessage(err, "failed to get user wallet by userID")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_update_user_profile", err, n.log)
+		return
+	}
+
+	fmt.Println(wallet)
 
 	userProfile.OnBoarded = utils.GetPTR(true)
 
