@@ -84,7 +84,7 @@ func (n *Node) apiProfileUpdateCheckJob(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param body body node.apiProfileUpdate.Body true "body params"
-// @Success 200 {object} dto.User
+// @Success 200 {object} node.apiProfileUpdate.Out
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Router /api/v4/profile [patch]
