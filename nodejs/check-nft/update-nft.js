@@ -30,7 +30,7 @@ async function main() {
     }
 
     const WALLET = process.argv[2]
-    log(`target wallet: ${WALLET}`)
+    log(`wallet: ${WALLET}`)
 
     const PHRASE = process.argv[3]
     log(`mnemonic phrase: ${PHRASE.substring(0, 3)} ... ${PHRASE.substring(PHRASE.length - 3)}; length: ${PHRASE.length}`)
@@ -99,8 +99,6 @@ async function main() {
 async function setMeta(api, item_id, user_id, name, image, admin_pair) {
 
     const isFrozen = false
-
-    // ["d83670c7-a120-47a4-892d-f9ec75604f74","Mitia",0,"https://picsum.photos/102"]
     const meta = [user_id, name, 0, image]
 
     return new Promise((resolve, reject) => {
@@ -130,6 +128,5 @@ function log(m) {
     // console.log(m)
     out.logs.push(m)
 }
-
 
 main()

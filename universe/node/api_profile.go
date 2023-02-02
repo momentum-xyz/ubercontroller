@@ -3,7 +3,6 @@ package node
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"os/exec"
 
@@ -148,7 +147,6 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 
 	userProfile.OnBoarded = utils.GetPTR(true)
 
-	/////
 	jobID := uuid.New()
 	updateProfileStore.Store(
 		jobID, UpdateProfileStoreItem{
@@ -159,9 +157,8 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 	shouldUpdateNFT := nameChanged || avatarChanged
 	// Can not use gin context, because worker go-routine should continue after response
 	ctx := context.Background()
-	go n.update(ctx, jobID, userID, userProfile, shouldUpdateNFT)
+	go n.updateUserProfileWorker(ctx, jobID, userID, userProfile, shouldUpdateNFT)
 
-	//n.apiUsersGetMe(c)
 	type Out struct {
 		JobID  uuid.UUID `json:"job_id"`
 		UserID uuid.UUID `json:"user_id"`
@@ -174,7 +171,7 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-func (n *Node) update(ctx context.Context, jobID uuid.UUID, userID uuid.UUID, userProfile *entry.UserProfile, shouldUpdateNFT bool) {
+func (n *Node) updateUserProfileWorker(ctx context.Context, jobID uuid.UUID, userID uuid.UUID, userProfile *entry.UserProfile, shouldUpdateNFT bool) {
 	item := UpdateProfileStoreItem{
 		Status:    "",
 		NodeJSOut: nil,
@@ -230,9 +227,6 @@ func (n *Node) update(ctx context.Context, jobID uuid.UUID, userID uuid.UUID, us
 			log.Error(err)
 			return
 		}
-
-		fmt.Println(output)
-		fmt.Println(string(output))
 
 		var nodeJSOut NodeJSOut
 		if err := json.Unmarshal(output, &nodeJSOut); err != nil {
