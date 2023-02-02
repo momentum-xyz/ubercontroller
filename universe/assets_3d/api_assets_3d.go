@@ -16,6 +16,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/common/api"
 	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/merge"
 )
 
 // @Summary Get 3d assets
@@ -392,4 +393,62 @@ func (a *Assets3d) apiRemoveAsset3dByID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, nil)
+}
+
+// @Summary Update 3d asset meta by its id
+// @Schemes
+// @Description Update 3d asset meta by its id
+// @Tags assets3d
+// @Accept json
+// @Produce json
+// @Param body body assets_3d.apiUpdateAsset3dByID.InBody true "body params"
+// @Success 200 {object} assets_3d.apiUpdateAsset3dByID.Out
+// @Failure 400 {object} api.HTTPError
+// @Failure 500 {object} api.HTTPError
+// @Router /api/v4/assets-3d/{space_id}/{asset3d_id} [patch]
+func (a *Assets3d) apiUpdateAsset3dByID(c *gin.Context) {
+	asset3dID, err := uuid.Parse(c.Param("asset3dID"))
+	if err != nil {
+		err = errors.WithMessage(err, "Assets3d: apiUpdateAsset3dByID: failed to parse uuid")
+		api.AbortRequest(c, http.StatusInternalServerError, "invalid_uuid_parse", err, a.log)
+		return
+	}
+
+	type InBody struct {
+		Meta entry.Asset3dMeta `json:"meta" binding:"required"`
+	}
+
+	var inBody InBody
+	if err := c.ShouldBindJSON(&inBody); err != nil {
+		err = errors.WithMessage(err, "Assets3d: apiUpdateAsset3dByID: failed to bind json")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, a.log)
+		return
+	}
+
+	asset3d, ok := a.GetAssets3d()[asset3dID]
+	if !ok {
+		err = errors.WithMessagef(err, "Assets3d: apiUpdateAsset3dByID: asset3d not found: %s", asset3dID)
+		api.AbortRequest(c, http.StatusNotFound, "not_found", err, a.log)
+		return
+	}
+
+	oldMeta := asset3d.GetMeta()
+	newMeta, err := merge.Auto[entry.Asset3dMeta](&inBody.Meta, oldMeta)
+	if err != nil {
+		err = errors.WithMessagef(err, "Assets3d: apiUpdateAsset3dByID: failed to merge meta")
+		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, a.log)
+		return
+	}
+
+	if err := asset3d.SetMeta(newMeta, true); err != nil {
+		err = errors.WithMessagef(err, "Assets3d: apiUpdateAsset3dByID: failed to set meta")
+		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, a.log)
+		return
+	}
+
+	type Out struct {
+		Meta *entry.Asset3dMeta `json:"meta"`
+	}
+
+	c.JSON(http.StatusOK, Out{Meta: newMeta})
 }
