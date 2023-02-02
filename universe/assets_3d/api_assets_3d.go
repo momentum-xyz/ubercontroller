@@ -28,7 +28,7 @@ import (
 // @Param query query assets_3d.apiGetAssets3d.InQuery true "query params"
 // @Success 200 {array} dto.Asset3d
 // @Failure 400 {object} api.HTTPError
-// @Router /api/v4/{space_id}/assets-3d [get]
+// @Router /api/v4/assets-3d/{space_id} [get]
 func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 	type InQuery struct {
 		Category string `form:"category" json:"category"`
@@ -86,7 +86,7 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 // @Success 200 {object} nil
 // @Failure 400	{object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/{space_id}/assets-3d [post]
+// @Router /api/v4/assets-3d/{space_id} [post]
 func (a *Assets3d) apiAddAssets3d(c *gin.Context) {
 	type InBody struct {
 		Assets3dIDs []string `form:"assets3d_ids[]" binding:"required"`
@@ -136,7 +136,7 @@ func (a *Assets3d) apiAddAssets3d(c *gin.Context) {
 // @Success 202 {object} dto.Asset3d
 // @Failure 400	{object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/{space_id}/assets-3d/upload [post]
+// @Router /api/v4/assets-3d/{space_id}/upload [post]
 // TODO: swag doc for multipart, it does not get *multipart.FileHeader
 func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 	type InBody struct {
@@ -244,7 +244,7 @@ func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 // @Success 200 {object} nil
 // @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/{space_id}/assets-3d [delete]
+// @Router /api/v4/assets-3d/{space_id} [delete]
 func (a *Assets3d) apiRemoveAssets3dByIDs(c *gin.Context) {
 	type InBody struct {
 		Assets3dIDs []string `form:"assets3d_ids[]" binding:"required"`
@@ -333,7 +333,7 @@ func (a *Assets3d) apiGetAssets3dOptions(c *gin.Context) {
 // @Success 200 {object} dto.Assets3dMeta
 // @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/{space_id}/assets-3d/meta [get]
+// @Router /api/v4/assets-3d/{space_id}/meta [get]
 func (a *Assets3d) apiGetAssets3dMeta(c *gin.Context) {
 	type InQuery struct {
 		Assets3dIDs []string `form:"assets3d_ids[]" binding:"required"`
@@ -377,7 +377,7 @@ func (a *Assets3d) apiGetAssets3dMeta(c *gin.Context) {
 // @Produce json
 // @Success 200 {object} nil
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/{space_id}/assets-3d/{asset3d_id} [delete]
+// @Router /api/v4/assets-3d/{space_id}/{asset3d_id} [delete]
 func (a *Assets3d) apiRemoveAsset3dByID(c *gin.Context) {
 	uid, err := uuid.Parse(c.Param("asset3dID"))
 	if err != nil {
