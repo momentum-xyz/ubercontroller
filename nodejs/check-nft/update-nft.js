@@ -101,6 +101,8 @@ async function setMeta(api, item_id, user_id, name, image, admin_pair) {
     const isFrozen = false
     const meta = [user_id, name, 0, image]
 
+    const start = Date.now()
+
     return new Promise((resolve, reject) => {
         api.tx.uniques
             .setMetadata(collectionId, item_id, JSON.stringify(meta), isFrozen)
@@ -109,11 +111,12 @@ async function setMeta(api, item_id, user_id, name, image, admin_pair) {
 
                 if (result.status.isInBlock) {
                     log(`Transaction included at blockHash ${result.status.asInBlock}`);
-                } else if (result.status.isFinalized) {
-                    log(`Transaction finalized at blockHash ${result.status.asFinalized}`);
-                    // unsub();
                     resolve(user_id)
                 }
+                // else if (result.status.isFinalized) {
+                //     log(`Transaction finalized at blockHash ${result.status.asFinalized}`);
+                //     resolve(user_id)
+                // }
             });
     })
 }
@@ -125,7 +128,6 @@ function exitWithError(message) {
 }
 
 function log(m) {
-    // console.log(m)
     out.logs.push(m)
 }
 
