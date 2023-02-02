@@ -123,6 +123,7 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 
 	nameChanged := inBody.Name != nil && *userProfile.Name != *inBody.Name
 	avatarChanged := inBody.Profile != nil && inBody.Profile.AvatarHash != nil && *userProfile.AvatarHash != *inBody.Profile.AvatarHash
+	shouldUpdateNFT := nameChanged || avatarChanged
 
 	if inBody.Name != nil {
 		// TODO: check name unique
@@ -147,6 +148,28 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 
 	userProfile.OnBoarded = utils.GetPTR(true)
 
+	type Out struct {
+		JobID  *uuid.UUID `json:"job_id"`
+		UserID uuid.UUID  `json:"user_id"`
+	}
+
+	if !shouldUpdateNFT {
+		// If no need to update NFT meta, execute update synchronously and return JobID:null
+		if err := n.db.GetUsersDB().UpdateUserProfile(c, userID, userProfile); err != nil {
+			err = errors.WithMessage(err, "Node: apiProfileUpdate: failed to update user profile")
+			api.AbortRequest(c, http.StatusNotFound, "not_found", err, n.log)
+			return
+		}
+
+		out := Out{
+			JobID:  nil,
+			UserID: userID,
+		}
+
+		c.JSON(http.StatusOK, out)
+		return
+	}
+
 	jobID := uuid.New()
 	updateProfileStore.Store(
 		jobID, UpdateProfileStoreItem{
@@ -154,92 +177,86 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 			NodeJSOut: nil,
 		},
 	)
-	shouldUpdateNFT := nameChanged || avatarChanged
+
 	// Can not use gin context, because worker go-routine should continue after response
 	ctx := context.Background()
-	go n.updateUserProfileWorker(ctx, jobID, userID, userProfile, shouldUpdateNFT)
+	go n.updateUserProfileWorker(ctx, jobID, userID, userProfile)
 
-	type Out struct {
-		JobID  uuid.UUID `json:"job_id"`
-		UserID uuid.UUID `json:"user_id"`
-	}
 	out := Out{
-		JobID:  jobID,
+		JobID:  &jobID,
 		UserID: userID,
 	}
 
 	c.JSON(http.StatusOK, out)
 }
 
-func (n *Node) updateUserProfileWorker(ctx context.Context, jobID uuid.UUID, userID uuid.UUID, userProfile *entry.UserProfile, shouldUpdateNFT bool) {
+func (n *Node) updateUserProfileWorker(ctx context.Context, jobID uuid.UUID, userID uuid.UUID, userProfile *entry.UserProfile) {
 	item := UpdateProfileStoreItem{
 		Status:    "",
 		NodeJSOut: nil,
 		Error:     nil,
 	}
 
-	if shouldUpdateNFT {
-		wallet, err := n.db.GetUsersDB().GetUserWalletByUserID(ctx, userID)
-		if err != nil {
-			err = errors.WithMessage(err, "failed to get user wallet by userID")
-			{
-				item.Status = StatusFailed
-				item.Error = err
-				updateProfileStore.Store(jobID, item)
-			}
-			log.Error(err)
-			return
+	wallet, err := n.db.GetUsersDB().GetUserWalletByUserID(ctx, userID)
+	if err != nil {
+		err = errors.WithMessage(err, "failed to get user wallet by userID")
+		{
+			item.Status = StatusFailed
+			item.Error = err
+			updateProfileStore.Store(jobID, item)
 		}
+		log.Error(err)
+		return
+	}
 
-		meta := NFTMeta{
-			Name:  "",
-			Image: "",
-		}
+	meta := NFTMeta{
+		Name:  "",
+		Image: "",
+	}
 
-		if userProfile.Name != nil {
-			meta.Name = *userProfile.Name
-		}
+	if userProfile.Name != nil {
+		meta.Name = *userProfile.Name
+	}
 
-		if userProfile.AvatarHash != nil {
-			meta.Image = *userProfile.AvatarHash
-		}
+	if userProfile.AvatarHash != nil {
+		meta.Image = *userProfile.AvatarHash
+	}
 
-		b, err := json.Marshal(meta)
-		if err != nil {
-			err = errors.WithMessage(err, "failed to json.Marshal meta to nodejs input")
-			{
-				item.Status = StatusFailed
-				item.Error = err
-				updateProfileStore.Store(jobID, item)
-			}
-			log.Error(err)
-			return
+	b, err := json.Marshal(meta)
+	if err != nil {
+		err = errors.WithMessage(err, "failed to json.Marshal meta to nodejs input")
+		{
+			item.Status = StatusFailed
+			item.Error = err
+			updateProfileStore.Store(jobID, item)
 		}
+		log.Error(err)
+		return
+	}
 
-		output, err := exec.Command("node", "./nodejs/check-nft/update-nft.js", *wallet, n.cfg.Common.MnemonicPhrase, string(b), userID.String()).Output()
-		if err != nil {
-			err = errors.WithMessage(err, "failed to execute node script update-nft.js")
-			{
-				item.Status = StatusFailed
-				item.Error = err
-				updateProfileStore.Store(jobID, item)
-			}
-			log.Error(err)
-			return
+	output, err := exec.Command("node", "./nodejs/check-nft/update-nft.js", *wallet, n.cfg.Common.MnemonicPhrase, string(b), userID.String()).Output()
+	if err != nil {
+		err = errors.WithMessage(err, "failed to execute node script update-nft.js")
+		{
+			item.Status = StatusFailed
+			item.Error = err
+			updateProfileStore.Store(jobID, item)
 		}
+		log.Error(err)
+		return
+	}
 
-		var nodeJSOut NodeJSOut
-		if err := json.Unmarshal(output, &nodeJSOut); err != nil {
-			err = errors.WithMessage(err, "failed to unmarshal output update-nft.js")
-			{
-				item.Status = StatusFailed
-				item.NodeJSOut = &nodeJSOut
-				item.Error = err
-				updateProfileStore.Store(jobID, item)
-			}
-			log.Error(err)
-			return
+	var nodeJSOut NodeJSOut
+	if err := json.Unmarshal(output, &nodeJSOut); err != nil {
+		err = errors.WithMessage(err, "failed to unmarshal output update-nft.js")
+		{
+			item.Status = StatusFailed
+			item.NodeJSOut = &nodeJSOut
+			item.Error = err
+			updateProfileStore.Store(jobID, item)
 		}
+		log.Error(err)
+		return
 	}
 
 	// Update DB
