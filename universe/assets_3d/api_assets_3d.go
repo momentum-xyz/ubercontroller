@@ -25,6 +25,7 @@ import (
 // @Tags assets3d
 // @Accept json
 // @Produce json
+// @Param space_id path string true "Space ID"
 // @Param query query assets_3d.apiGetAssets3d.InQuery true "query params"
 // @Success 200 {array} dto.Asset3d
 // @Failure 400 {object} api.HTTPError
@@ -82,6 +83,7 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 // @Tags assets3d
 // @Accept json
 // @Produce json
+// @Param space_id path string true "Space ID"
 // @Param body body assets_3d.apiAddAssets3d.InBody true "body params"
 // @Success 200 {object} nil
 // @Failure 400	{object} api.HTTPError
@@ -133,6 +135,7 @@ func (a *Assets3d) apiAddAssets3d(c *gin.Context) {
 // @Tags assets3d
 // @Accept multipart/form-data
 // @Produce json
+// @Param space_id path string true "Space ID"
 // @Success 202 {object} dto.Asset3d
 // @Failure 400	{object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
@@ -240,6 +243,7 @@ func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 // @Tags assets3d
 // @Accept json
 // @Produce json
+// @Param space_id path string true "Space ID"
 // @Param body body assets_3d.apiRemoveAssets3dByIDs.InBody true "body params"
 // @Success 200 {object} nil
 // @Failure 400 {object} api.HTTPError
@@ -283,6 +287,7 @@ func (a *Assets3d) apiRemoveAssets3dByIDs(c *gin.Context) {
 // @Tags assets3d
 // @Accept json
 // @Produce json
+// @Param space_id path string true "Space ID"
 // @Param query query assets_3d.apiGetAssets3dOptions.InQuery true "query params"
 // @Success 200 {object} dto.Assets3dOptions
 // @Failure 400 {object} api.HTTPError
@@ -329,6 +334,7 @@ func (a *Assets3d) apiGetAssets3dOptions(c *gin.Context) {
 // @Tags assets3d
 // @Accept json
 // @Produce json
+// @Param space_id path string true "Space ID"
 // @Param query query assets_3d.apiGetAssets3dMeta.InQuery true "query params"
 // @Success 200 {object} dto.Assets3dMeta
 // @Failure 400 {object} api.HTTPError
@@ -374,6 +380,8 @@ func (a *Assets3d) apiGetAssets3dMeta(c *gin.Context) {
 // @Description Deletes 3d asset by its id
 // @Tags assets3d
 // @Accept json
+// @Param space_id path string true "Space ID"
+// @Param asset3d_id path string true "Asset 3D ID"
 // @Produce json
 // @Success 200 {object} nil
 // @Failure 500 {object} api.HTTPError
@@ -401,6 +409,8 @@ func (a *Assets3d) apiRemoveAsset3dByID(c *gin.Context) {
 // @Tags assets3d
 // @Accept json
 // @Produce json
+// @Param space_id path string true "Space ID"
+// @Param asset3d_id path string true "Asset 3D ID"
 // @Param body body assets_3d.apiUpdateAsset3dByID.InBody true "body params"
 // @Success 200 {object} dto.Asset3d
 // @Failure 400 {object} api.HTTPError
