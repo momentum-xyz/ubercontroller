@@ -143,8 +143,9 @@ func (a *Assets3d) apiAddAssets3d(c *gin.Context) {
 // TODO: swag doc for multipart, it does not get *multipart.FileHeader
 func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 	type InBody struct {
-		File *multipart.FileHeader `form:"asset"`
-		Name string                `form:"name"`
+		File        *multipart.FileHeader `form:"asset"`
+		Name        string                `form:"name"`
+		PreviewHash *string               `form:"preview_hash"`
 	}
 	var request InBody
 	if err := c.ShouldBind(&request); err != nil {
@@ -153,6 +154,10 @@ func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 		return
 	}
 	assetFile := request.File
+	if assetFile == nil {
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_open", errors.New("Assets3d: apiUploadAsset3d: no file in request"), a.log)
+		return
+	}
 
 	openedFile, err := assetFile.Open()
 	if err != nil {
@@ -215,6 +220,10 @@ func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 		"type":     dto.GLTFAsset3dType,
 		"category": "custom",
 		"name":     name,
+	}
+
+	if request.PreviewHash != nil {
+		meta["preview_hash"] = request.PreviewHash
 	}
 
 	if err := newAsset.SetMeta(&meta, true); err != nil {
