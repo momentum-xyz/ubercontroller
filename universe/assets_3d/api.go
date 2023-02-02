@@ -27,6 +27,8 @@ func (a *Assets3d) RegisterAPI(r *gin.Engine) {
 			assets3d.GET("/meta", a.apiGetAssets3dMeta)
 			assets3d.GET("/options", a.apiGetAssets3dOptions)
 			assets3d.DELETE("/:asset3dID", a.apiRemoveAsset3dByID)
+			// TODO maybe this EP for admins only
+			assets3d.PATCH("/:asset3dID", a.apiUpdateAsset3dByID)
 		}
 	}
 }
