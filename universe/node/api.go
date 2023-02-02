@@ -77,6 +77,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		verifiedProfile := verified.Group("/profile")
 		{
 			verifiedProfile.PATCH("", n.apiProfileUpdate)
+			verifiedProfile.GET("/check-job/:jobID", n.apiProfileUpdateCheckJob)
 		}
 
 		verifiedSpaces := verified.Group("/spaces")

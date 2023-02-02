@@ -24,6 +24,11 @@ const (
          						                	WHERE plugin_id = '86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8'
          						                    AND attribute_name = 'wallet'
          						                    AND value->'wallet' ? $1);`
+	getWalletByUserID = `SELECT value -> 'wallet' ->> 0 AS wallet
+						FROM user_attribute
+						WHERE user_id = $1
+						  AND plugin_id = '86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8'
+						  AND attribute_name = 'wallet'`
 	checkIsUserExistsByNameQuery = `SELECT EXISTS(SELECT 1 FROM "user" WHERE profile->>'name' = $1);`
 	getUserProfileByUserIDQuery  = `SELECT profile FROM "user" WHERE user_id = $1;`
 
@@ -79,6 +84,16 @@ func (db *DB) GetUserByWallet(ctx context.Context, wallet string) (*entry.User, 
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return &user, nil
+}
+
+func (db *DB) GetUserWalletByUserID(ctx context.Context, userID uuid.UUID) (*string, error) {
+	var wallet string
+	if err := db.conn.QueryRow(ctx, getWalletByUserID, userID).
+		Scan(&wallet); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+
+	return &wallet, nil
 }
 
 func (db *DB) CheckIsUserExistsByName(ctx context.Context, name string) (bool, error) {
