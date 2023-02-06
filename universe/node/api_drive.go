@@ -40,7 +40,7 @@ type StoreItem struct {
 
 type NFTMeta struct {
 	Name  string `json:"name" binding:"required"`
-	Image string `json:"image" binding:"required"`
+	Image string `json:"image"`
 }
 
 type WalletMeta struct {

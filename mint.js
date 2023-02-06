@@ -134,8 +134,12 @@ async function main() {
     const name = m.name
     const image = m.image
 
-    if (!name || !image) {
-        exitWithError(`META must contain name and image`)
+    if (!name) {
+        exitWithError(`META must contain name`)
+    }
+
+    if (!image && image !== "") {
+        exitWithError(`META must contain image (can be empty string)`)
     }
 
     const url = "wss://drive.antst.net:19947"
