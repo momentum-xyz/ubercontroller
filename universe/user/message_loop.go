@@ -178,6 +178,7 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 		return errors.New("high-five yourself not permitted")
 	}
 
+	u.log.Infof("handleHighFive handler: %+v %+v\n", u.GetID(), targetID)
 	world := u.GetWorld()
 	target, ok := world.GetUser(targetID, false)
 	if !ok {
@@ -220,6 +221,8 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 		).WebsocketMessage(),
 	)
 	target.Send(posbus.NewRelayToReactMsg("high5", high5Data).WebsocketMessage())
+
+	u.log.Infof("handleHighFive handler, sent to react: %+v %+v\n", u.GetID(), targetID)
 
 	effectsEmitterID := world.GetSettings().Spaces["effects_emitter"]
 	effect := posbus.NewTriggerTransitionalBridgingEffectsOnPositionMsg(1)
