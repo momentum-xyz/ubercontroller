@@ -114,7 +114,7 @@ func (n *Node) Initialize(ctx context.Context) error {
 	utils.SetAnonymizer(n.GetID(), uuid.Nil)
 
 	r := gin.New()
-	r.Use(gin.LoggerWithWriter(consoleWriter))
+	r.Use(gin.LoggerWithWriter(consoleWriter, "/health"))
 	r.Use(gin.RecoveryWithWriter(consoleWriter))
 
 	n.router = r
