@@ -70,14 +70,22 @@ func (n *Node) apiUsersCreateMutualDocks(c *gin.Context) {
 
 	abPortalName := userB.UserID.String()
 	baPortalName := userA.UserID.String()
+	abPortalImage := ""
+	baPortalImage := ""
 	if userB.Profile != nil && userB.Profile.Name != nil {
 		abPortalName = *userB.Profile.Name
+	}
+	if userB.Profile != nil && userB.Profile.AvatarHash != nil {
+		abPortalImage = *userB.Profile.AvatarHash
 	}
 	if userA.Profile != nil && userA.Profile.Name != nil {
 		baPortalName = *userA.Profile.Name
 	}
+	if userA.Profile != nil && userA.Profile.AvatarHash != nil {
+		baPortalImage = *userA.Profile.AvatarHash
+	}
 
-	if _, err := createWorldPortal(abPortalName, worldA, worldB); err != nil {
+	if _, err := createWorldPortal(abPortalName, worldA, worldB, abPortalImage); err != nil {
 		err := errors.WithMessagef(
 			err,
 			"Node: apiUsersCreateMutualDocks: failed to create world portal from %s to %s",
@@ -87,7 +95,7 @@ func (n *Node) apiUsersCreateMutualDocks(c *gin.Context) {
 		return
 	}
 
-	if _, err := createWorldPortal(baPortalName, worldB, worldA); err != nil {
+	if _, err := createWorldPortal(baPortalName, worldB, worldA, baPortalImage); err != nil {
 		err := errors.WithMessagef(
 			err,
 			"Node: apiUsersCreateMutualDocks: failed to create world portal from %s to %s",
@@ -204,7 +212,9 @@ func (n *Node) apiUsersRemoveMutualDocks(c *gin.Context) {
 	c.JSON(http.StatusAccepted, nil)
 }
 
-func createWorldPortal(portalName string, from, to universe.World) (uuid.UUID, error) {
+func createWorldPortal(portalName string, from, to universe.World, portalImage string) (uuid.UUID, error) {
+	var spaceAttributes []*entry.Attribute
+
 	portals := getWorldPortals(from, to)
 	if len(portals) > 0 {
 		for portalID, _ := range portals {
@@ -222,21 +232,33 @@ func createWorldPortal(portalName string, from, to universe.World) (uuid.UUID, e
 		return uuid.Nil, errors.WithMessage(err, "failed to get portal space type id")
 	}
 
-	template := helper.SpaceTemplate{
-		SpaceName:   &portalName,
-		SpaceTypeID: portalSpaceTypeID,
-		ParentID:    dockingStation.GetID(),
-		SpaceAttributes: []*entry.Attribute{
-			entry.NewAttribute(
-				entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.World.TeleportDestination.Name),
-				entry.NewAttributePayload(
-					&entry.AttributeValue{
-						universe.ReservedAttributes.World.TeleportDestination.Key: to.GetID().String(),
-					},
-					nil,
-				),
+	spaceAttributes = append(spaceAttributes, entry.NewAttribute(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.World.TeleportDestination.Name),
+		entry.NewAttributePayload(
+			&entry.AttributeValue{
+				universe.ReservedAttributes.World.TeleportDestination.Key: to.GetID().String(),
+			},
+			nil,
+		),
+	))
+
+	if portalImage != "" {
+		spaceAttributes = append(spaceAttributes, entry.NewAttribute(
+			entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Space.PortalDockFace.Name),
+			entry.NewAttributePayload(
+				&entry.AttributeValue{
+					universe.ReservedAttributes.Space.PortalDockFace.Key: portalImage,
+				},
+				nil,
 			),
-		},
+		))
+	}
+
+	template := helper.SpaceTemplate{
+		SpaceName:       &portalName,
+		SpaceTypeID:     portalSpaceTypeID,
+		ParentID:        dockingStation.GetID(),
+		SpaceAttributes: spaceAttributes,
 	}
 
 	return helper.AddSpaceFromTemplate(&template, true)
