@@ -3,10 +3,11 @@ package node
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/momentum-xyz/ubercontroller/universe/common/helper"
 	"net/http"
 	"net/url"
 	"os/exec"
+
+	"github.com/momentum-xyz/ubercontroller/universe/common/helper"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -416,17 +417,22 @@ func (n *Node) getWalletMetadata(wallet string) (*WalletMeta, error) {
 // @Failure 400 {object} api.HTTPError
 // @Router /api/v4/drive/resolve-node [get]
 func (n *Node) apiResolveNode(c *gin.Context) {
+	// TODO: actually implement dynamic resolving of world->node
 	type Out struct {
-		Domain string    `json:"domain"`
+		Domain string    `json:"domain"` // TODO: deprecated, remove once no usage
+		URL    string    `json:"url"`
 		NodeID uuid.UUID `json:"node_id"`
 	}
 
 	u, _ := url.Parse(n.cfg.UIClient.FrontendURL)
-	h := u.Hostname()
+	h := u.Host
 	if h == "" {
 		h = "localhost"
 	}
-	Response := Out{Domain: h, NodeID: n.GetID()}
+	Response := Out{
+		URL:    u.String(),
+		Domain: h,
+		NodeID: n.GetID()}
 
 	c.JSON(http.StatusOK, Response)
 
