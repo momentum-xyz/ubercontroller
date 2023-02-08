@@ -424,7 +424,13 @@ func (n *Node) apiResolveNode(c *gin.Context) {
 		NodeID uuid.UUID `json:"node_id"`
 	}
 
-	u, _ := url.Parse(n.cfg.UIClient.FrontendURL)
+	u, err := url.ParseRequestURI(n.cfg.UIClient.FrontendURL)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiDriveResolveNode: failed to parse url from config")
+		api.AbortRequest(c, http.StatusInternalServerError, "invalid_request_param", err, n.log)
+		return
+	}
+
 	h := u.Host
 	if h == "" {
 		h = "localhost"
