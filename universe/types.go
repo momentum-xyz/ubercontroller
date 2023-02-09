@@ -52,10 +52,11 @@ var (
 			TeleportDestination ReservedAttribute
 		}
 		Space struct {
-			Name          ReservedAttribute
-			Description   ReservedAttribute
-			NewsFeedItems ReservedAttribute
-			Events        ReservedAttribute
+			Name           ReservedAttribute
+			Description    ReservedAttribute
+			NewsFeedItems  ReservedAttribute
+			PortalDockFace ReservedAttribute
+			Events         ReservedAttribute
 		}
 		Kusama struct {
 			User struct {
@@ -111,10 +112,11 @@ var (
 			},
 		},
 		Space: struct {
-			Name          ReservedAttribute
-			Description   ReservedAttribute
-			NewsFeedItems ReservedAttribute
-			Events        ReservedAttribute
+			Name           ReservedAttribute
+			Description    ReservedAttribute
+			NewsFeedItems  ReservedAttribute
+			PortalDockFace ReservedAttribute
+			Events         ReservedAttribute
 		}{
 			Name: ReservedAttribute{
 				Name: "name",
@@ -126,6 +128,10 @@ var (
 			NewsFeedItems: ReservedAttribute{
 				Name: "news_feed",
 				Key:  "items",
+			},
+			PortalDockFace: ReservedAttribute{
+				Name: "dock_face",
+				Key:  "render_hash",
 			},
 			Events: ReservedAttribute{
 				Name: "events",
