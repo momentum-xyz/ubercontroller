@@ -19,6 +19,13 @@ func seedAssets2d(node universe.Node) error {
 			},
 		},
 		{
+			Asset2dID: uuid.MustParse("00000000-0000-0000-0000-000000000008"),
+			Options:   &entry.Asset2dOptions{},
+			Meta: &entry.Asset2dMeta{
+				"name": "",
+			},
+		},
+		{
 			Asset2dID: uuid.MustParse("a31722a6-26b7-46bc-97f9-435c380c3ca9"),
 			Options: &entry.Asset2dOptions{
 				"exact":    true,

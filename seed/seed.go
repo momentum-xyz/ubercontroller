@@ -2,7 +2,7 @@ package seed
 
 import (
 	"context"
-
+	"fmt"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
 
@@ -36,18 +36,14 @@ func Node(ctx context.Context, node universe.Node) error {
 		return seedUserTypes(node)
 	})
 
-	group.Go(func() error {
-		return seedObjectTypes(node)
-	})
-
-	//node.SetObjectType(node.GetObjectTypes().GetObjectType(uuid.MustParse("00000000-0000-0000-0000-000000000001")))
-
-	//group.Go(func() error {
-	//	return node.GetWorlds().Save()
-	//})
-
 	if err := group.Wait(); err != nil {
 		return errors.WithMessage(err, "failed to seed")
+	}
+
+	// Object Types must be seeded after assets
+	if err := seedObjectTypes(node); err != nil {
+		fmt.Println(err)
+		return errors.WithMessage(err, "failed to seed object types")
 	}
 
 	return node.Save()

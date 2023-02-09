@@ -19,6 +19,13 @@ func seedAssets3d(node universe.Node) error {
 
 	items := []*entry.Asset3d{
 		{
+			Asset3dID: uuid.MustParse("b2ef3600-9595-2743-ac9d-0a86c1a327a2"),
+			Options:   &entry.Asset3dOptions{},
+			Meta: &entry.Asset3dMeta{
+				"name": "",
+			},
+		},
+		{
 			Asset3dID: uuid.MustParse(noname1Asset3dID),
 			Options:   &entry.Asset3dOptions{},
 			Meta: &entry.Asset3dMeta{

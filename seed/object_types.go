@@ -2,18 +2,17 @@ package seed
 
 import (
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
-
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
+	"github.com/pkg/errors"
 )
 
 func seedObjectTypes(node universe.Node) error {
 	type item struct {
 		id             uuid.UUID
-		asset2dID      uuid.UUID
+		asset2dID      *uuid.UUID
 		asset3dID      *uuid.UUID
 		objectTypeName string
 		categoryName   string
@@ -24,7 +23,7 @@ func seedObjectTypes(node universe.Node) error {
 	items := []*item{
 		{
 			id:             uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-			asset2dID:      uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+			asset2dID:      utils.GetPTR(uuid.MustParse("00000000-0000-0000-0000-000000000004")),
 			asset3dID:      nil,
 			objectTypeName: "Node",
 			categoryName:   "Nodes",
@@ -44,7 +43,7 @@ func seedObjectTypes(node universe.Node) error {
 		},
 		{
 			id:             uuid.MustParse("88415343-90db-4d23-a9e7-79a11aaaaf04"),
-			asset2dID:      uuid.MustParse("a31722a6-26b7-46bc-97f9-435c380c3ca9"),
+			asset2dID:      utils.GetPTR(uuid.MustParse("a31722a6-26b7-46bc-97f9-435c380c3ca9")),
 			asset3dID:      utils.GetPTR(uuid.MustParse(noname1Asset3dID)),
 			objectTypeName: "anchor",
 			categoryName:   "Anchors",
@@ -127,20 +126,62 @@ func seedObjectTypes(node universe.Node) error {
 				AllowedSubObjects: []uuid.UUID{},
 			},
 		},
+		{
+			id:             uuid.MustParse("27456794-f9aa-44b5-90a5-e307fc21bc3d"),
+			asset2dID:      nil,
+			asset3dID:      utils.GetPTR(uuid.MustParse(dockingStationAsset3dID)),
+			objectTypeName: "Docking station",
+			categoryName:   "Docking station",
+			description:    utils.GetPTR("Odyssey docking hub"),
+			options: &entry.ObjectOptions{
+				Visible: utils.GetPTR(entry.ReactUnityObjectVisibleType),
+				ChildPlacements: map[uuid.UUID]*entry.ObjectChildPlacement{
+					uuid.MustParse("00000000-0000-0000-0000-000000000000"): &entry.ObjectChildPlacement{
+						Algo: utils.GetPTR("circular"),
+						Options: map[string]any{
+							"R":     42,
+							"angle": 0,
+						},
+					},
+				},
+			},
+		},
+		//
+		{
+			id:             uuid.MustParse("a41ee21e-6c56-41b3-81a9-1c86578b6b3c"),
+			asset2dID:      utils.GetPTR(uuid.MustParse("00000000-0000-0000-0000-000000000008")),
+			asset3dID:      utils.GetPTR(uuid.MustParse("b2ef3600-9595-2743-ac9d-0a86c1a327a2")),
+			objectTypeName: "World",
+			categoryName:   "Worlds",
+			description:    utils.GetPTR("World Type"),
+			options: &entry.ObjectOptions{
+				Subs: map[string]any{
+					"asset2d_plugins": []any{
+						"24071066-e8c6-4692-95b5-ae2dc3ed075c",
+					},
+				},
+				Private:           utils.GetPTR(false),
+				Visible:           utils.GetPTR(entry.ReactUnityObjectVisibleType),
+				DefaultTiles:      []any{},
+				FrameTemplates:    map[string]any{},
+				AllowedSubObjects: []uuid.UUID{},
+			},
+		},
 	}
-
 	for _, item := range items {
 		objectType, err := node.GetObjectTypes().CreateObjectType(item.id)
 		if err != nil {
 			return errors.WithMessagef(err, "failed to create object type: %s", item.id)
 		}
 
-		asset2d, ok := node.GetAssets2d().GetAsset2d(item.asset2dID)
-		if !ok {
-			return errors.WithMessagef(err, "failed to create object type: asset_2d not found: %s", item.asset2dID)
-		}
-		if err := objectType.SetAsset2d(asset2d, false); err != nil {
-			return errors.WithMessagef(err, "failed to set asset_2d: %s for object_type: %s", item.asset2dID, item.id)
+		if item.asset2dID != nil {
+			asset2d, ok := node.GetAssets2d().GetAsset2d(*item.asset2dID)
+			if !ok {
+				return errors.WithMessagef(err, "failed to create object type: asset_2d not found: %s", item.asset2dID)
+			}
+			if err := objectType.SetAsset2d(asset2d, false); err != nil {
+				return errors.WithMessagef(err, "failed to set asset_2d: %s for object_type: %s", item.asset2dID, item.id)
+			}
 		}
 
 		if item.asset3dID != nil {
