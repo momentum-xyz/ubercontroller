@@ -167,7 +167,33 @@ func seedObjectTypes(node universe.Node) error {
 				AllowedSubObjects: []uuid.UUID{},
 			},
 		},
+
+		{
+			id:             uuid.MustParse("b59abd4d-f54d-4a97-8b6d-16a2037ddd8f"),
+			asset2dID:      utils.GetPTR(uuid.MustParse("140c0f2e-2056-443f-b5a7-4a3c2e6b05da")),
+			asset3dID:      utils.GetPTR(uuid.MustParse("a6862b31-8f80-497d-b9d6-8234e6a71773")),
+			objectTypeName: "Docking bulb",
+			categoryName:   "Docking bulbs",
+			description:    utils.GetPTR("Odyssey docking bulb"),
+			options: &entry.ObjectOptions{
+				Visible:  utils.GetPTR(entry.ReactUnityObjectVisibleType),
+				Editable: utils.GetPTR(false),
+			},
+		},
+
+		{
+			id:             uuid.MustParse("4ed3a5bb-53f8-4511-941b-07902982c31c"),
+			asset2dID:      nil,
+			asset3dID:      nil,
+			objectTypeName: "Custom objects",
+			categoryName:   "Custom",
+			description:    utils.GetPTR("Custom placed objects"),
+			options: &entry.ObjectOptions{
+				Visible: utils.GetPTR(entry.UnityObjectVisibleType), //TODO should be 0
+			},
+		},
 	}
+
 	for _, item := range items {
 		objectType, err := node.GetObjectTypes().CreateObjectType(item.id)
 		if err != nil {
