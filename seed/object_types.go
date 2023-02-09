@@ -189,7 +189,7 @@ func seedObjectTypes(node universe.Node) error {
 			categoryName:   "Custom",
 			description:    utils.GetPTR("Custom placed objects"),
 			options: &entry.ObjectOptions{
-				Visible: utils.GetPTR(entry.UnityObjectVisibleType), //TODO should be 0
+				Visible: utils.GetPTR(entry.InvisibleObjectVisibleType),
 			},
 		},
 	}
