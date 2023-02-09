@@ -19,14 +19,14 @@ func seedAssets3d(node universe.Node) error {
 
 	items := []*entry.Asset3d{
 		{
-			Asset3dID: uuid.MustParse("e5609914-e673-7f48-a666-574ed2baff92"),
+			Asset3dID: uuid.MustParse(noname1Asset3dID),
 			Options:   &entry.Asset3dOptions{},
 			Meta: &entry.Asset3dMeta{
 				"name": "",
 			},
 		},
 		{
-			Asset3dID: uuid.MustParse("658611b8-a86a-4bf0-a956-12129b06dbfd"),
+			Asset3dID: uuid.MustParse(skyboxArrivalAsset3dID),
 			Options:   &entry.Asset3dOptions{},
 			Meta: &entry.Asset3dMeta{
 				"name":         "Arrival",
@@ -36,7 +36,7 @@ func seedAssets3d(node universe.Node) error {
 			},
 		},
 		{
-			Asset3dID: uuid.MustParse("b4e10a57-de25-4793-b9f1-35fcb6daf404"),
+			Asset3dID: uuid.MustParse(skyboxAbbysAsset3dID),
 			Options:   &entry.Asset3dOptions{},
 			Meta: &entry.Asset3dMeta{
 				"name":     "Abyss",
@@ -45,7 +45,7 @@ func seedAssets3d(node universe.Node) error {
 			},
 		},
 		{
-			Asset3dID: uuid.MustParse("a0b93937-fbab-4b9f-b5c1-93c47ffef624"),
+			Asset3dID: uuid.MustParse(skyboxQuantumFluxAsset3dID),
 			Options:   &entry.Asset3dOptions{},
 			Meta: &entry.Asset3dMeta{
 				"name":         "QuantumFlux",
@@ -55,7 +55,7 @@ func seedAssets3d(node universe.Node) error {
 			},
 		},
 		{
-			Asset3dID: uuid.MustParse("581a8563-1329-4de6-8c8e-869770526ff0"),
+			Asset3dID: uuid.MustParse(dockingStationAsset3dID),
 			Options:   &entry.Asset3dOptions{},
 			Meta: &entry.Asset3dMeta{
 				"name":     "Docking station",

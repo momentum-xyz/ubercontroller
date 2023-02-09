@@ -96,7 +96,7 @@ func seedNodeAttributes(node universe.Node) error {
 							},
 							"decorations":       []any{},
 							"avatar_controller": "2eeb56e2-5ac4-42c2-a348-d167862260f6",
-							"skybox_controller": "658611b8-a86a-4bf0-a956-12129b06dbfd",
+							"skybox_controller": skyboxArrivalAsset3dID,
 						},
 						"options":        nil,
 						"plugin_id":      "f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0",
