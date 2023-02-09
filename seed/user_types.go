@@ -28,11 +28,19 @@ func seedUserTypes(node universe.Node) error {
 			},
 		},
 		{
-			id:           uuid.MustParse("00000000-0000-0000-0000-000000000006"),
+			id:           uuid.MustParse(normalUserTypeID),
 			userTypeName: "User",
 			description:  utils.GetPTR("Momentum user"),
 			options: &entry.UserOptions{
 				IsGuest: utils.GetPTR(false),
+			},
+		},
+		{
+			id:           uuid.MustParse(guestUserTypeID),
+			userTypeName: "Temporary User",
+			description:  utils.GetPTR("Temporary Momentum user"),
+			options: &entry.UserOptions{
+				IsGuest: utils.GetPTR(true),
 			},
 		},
 	}

@@ -14,4 +14,7 @@ const (
 	skyboxAbbysAsset3dID       = "b4e10a57-de25-4793-b9f1-35fcb6daf404"
 	skyboxQuantumFluxAsset3dID = "a0b93937-fbab-4b9f-b5c1-93c47ffef624"
 	dockingStationAsset3dID    = "581a8563-1329-4de6-8c8e-869770526ff0"
+
+	normalUserTypeID = "00000000-0000-0000-0000-000000000006"
+	guestUserTypeID  = "76802331-37b3-44fa-9010-35008b0cbaec"
 )
