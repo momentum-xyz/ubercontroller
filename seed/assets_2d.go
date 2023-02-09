@@ -12,6 +12,13 @@ import (
 func seedAssets2d(node universe.Node) error {
 	items := []*entry.Asset2d{
 		{
+			Asset2dID: uuid.MustParse("2e44539c-88aa-4ad0-a1d4-b58782a0bf15"),
+			Options:   &entry.Asset2dOptions{},
+			Meta: &entry.Asset2dMeta{
+				"name": "",
+			},
+		},
+		{
 			Asset2dID: uuid.MustParse("00000000-0000-0000-0000-000000000004"),
 			Options:   &entry.Asset2dOptions{},
 			Meta: &entry.Asset2dMeta{

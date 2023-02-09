@@ -192,6 +192,94 @@ func seedObjectTypes(node universe.Node) error {
 				Visible: utils.GetPTR(entry.InvisibleObjectVisibleType),
 			},
 		},
+
+		{
+			id:             uuid.MustParse("4fe4ed05-9024-461a-97d6-22666e8a4f46"),
+			asset2dID:      nil,
+			asset3dID:      utils.GetPTR(uuid.MustParse("6846dba3-38b1-4540-a80d-4ba04af4111e")),
+			objectTypeName: "Effects emitter",
+			categoryName:   "Effects",
+			description:    utils.GetPTR("Effects emitter"),
+			options: &entry.ObjectOptions{
+				Visible: utils.GetPTR(entry.ReactObjectVisibleType),
+			},
+		},
+
+		{
+			id:             uuid.MustParse("69d8ae40-df9b-4fc8-af95-32b736d2bbcd"),
+			asset2dID:      utils.GetPTR(uuid.MustParse("2e44539c-88aa-4ad0-a1d4-b58782a0bf15")),
+			asset3dID:      nil,
+			objectTypeName: "Service Space",
+			categoryName:   "Service Spaces",
+			description:    utils.GetPTR(""),
+			options: &entry.ObjectOptions{
+				Subs: map[string]any{
+					"asset2d_plugins": []any{
+						"24071066-e8c6-4692-95b5-ae2dc3ed075c",
+					},
+				},
+				Private:           utils.GetPTR(false),
+				Visible:           utils.GetPTR(entry.ReactObjectVisibleType),
+				DefaultTiles:      []any{},
+				FrameTemplates:    map[string]any{},
+				AllowedSubObjects: []uuid.UUID{},
+			},
+		},
+
+		{
+			id:             uuid.MustParse("d7a41cbd-5cfe-454b-b522-76f22fa55026"),
+			asset2dID:      nil,
+			asset3dID:      utils.GetPTR(uuid.MustParse("313a597a-8b9a-47a7-9908-52bdc7a21a3e")),
+			objectTypeName: "Skybox",
+			categoryName:   "Skybox",
+			description:    utils.GetPTR("Skybox"),
+			options: &entry.ObjectOptions{
+				Editable: utils.GetPTR(false),
+				Visible:  utils.GetPTR(entry.ReactUnityObjectVisibleType),
+			},
+		},
+
+		{
+			id:             uuid.MustParse("75b56447-c4f1-4020-b8fc-d68704a11d65"),
+			asset2dID:      utils.GetPTR(uuid.MustParse("2e44539c-88aa-4ad0-a1d4-b58782a0bf15")),
+			asset3dID:      nil,
+			objectTypeName: "Generic Space",
+			categoryName:   "Generic Spaces",
+			description:    utils.GetPTR(""),
+			options: &entry.ObjectOptions{
+				Subs: map[string]any{
+					"asset2d_plugins": []any{
+						"24071066-e8c6-4692-95b5-ae2dc3ed075c",
+					},
+				},
+				Private:           utils.GetPTR(false),
+				Visible:           utils.GetPTR(entry.ReactUnityObjectVisibleType),
+				DefaultTiles:      []any{},
+				FrameTemplates:    map[string]any{},
+				AllowedSubObjects: []uuid.UUID{},
+			},
+		},
+
+		{
+			id:             uuid.MustParse("f9607e55-63e8-4cb1-ae47-66395199975d"),
+			asset2dID:      utils.GetPTR(uuid.MustParse("2e44539c-88aa-4ad0-a1d4-b58782a0bf15")),
+			asset3dID:      nil,
+			objectTypeName: "morgue",
+			categoryName:   "Morgues",
+			description:    utils.GetPTR("morgue"),
+			options: &entry.ObjectOptions{
+				Subs: map[string]any{
+					"asset2d_plugins": []any{
+						"24071066-e8c6-4692-95b5-ae2dc3ed075c",
+					},
+				},
+				Private:           utils.GetPTR(false),
+				Visible:           utils.GetPTR(entry.InvisibleObjectVisibleType),
+				DefaultTiles:      []any{},
+				FrameTemplates:    map[string]any{},
+				AllowedSubObjects: []uuid.UUID{},
+			},
+		},
 	}
 
 	for _, item := range items {
