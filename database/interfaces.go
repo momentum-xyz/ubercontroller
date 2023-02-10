@@ -1,4 +1,3 @@
-// TODO: set "updated_at" for all update methods
 package database
 
 import (
