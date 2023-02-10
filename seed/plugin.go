@@ -51,7 +51,7 @@ func seedPlugins(node universe.Node) error {
 			Meta: &entry.PluginMeta{
 				"name": "Miro",
 				"assets2d": []string{
-					"a31722a6-26b7-46bc-97f9-435c380c3ca9",
+					miroPluginAsset2dID,
 					"2a879830-b79e-4c35-accc-05607c51d504",
 				},
 				"scopeName": "plugin_miro",
@@ -63,8 +63,8 @@ func seedPlugins(node universe.Node) error {
 			Meta: &entry.PluginMeta{
 				"name": "Google Drive",
 				"assets2d": []string{
-					"c601404b-61a2-47d5-a5c7-f3c704a8bf58",
-					"0d99e5aa-a627-4353-8bfa-1c0e7053db90",
+					googleDrivePluginAsset2dID,
+					noname4Asset2dID,
 				},
 				"scopeName": "plugin_google_drive",
 				"scriptUrl": "http://localhost/plugins/google-drive/remoteEntry.js",

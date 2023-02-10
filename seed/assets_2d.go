@@ -12,28 +12,28 @@ import (
 func seedAssets2d(node universe.Node) error {
 	items := []*entry.Asset2d{
 		{
-			Asset2dID: uuid.MustParse("2e44539c-88aa-4ad0-a1d4-b58782a0bf15"),
+			Asset2dID: uuid.MustParse(noname1Asset2dID),
 			Options:   &entry.Asset2dOptions{},
 			Meta: &entry.Asset2dMeta{
 				"name": "",
 			},
 		},
 		{
-			Asset2dID: uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+			Asset2dID: uuid.MustParse(noname2Asset2dID),
 			Options:   &entry.Asset2dOptions{},
 			Meta: &entry.Asset2dMeta{
 				"name": "",
 			},
 		},
 		{
-			Asset2dID: uuid.MustParse("00000000-0000-0000-0000-000000000008"),
+			Asset2dID: uuid.MustParse(noname3Asset2dID),
 			Options:   &entry.Asset2dOptions{},
 			Meta: &entry.Asset2dMeta{
 				"name": "",
 			},
 		},
 		{
-			Asset2dID: uuid.MustParse("a31722a6-26b7-46bc-97f9-435c380c3ca9"),
+			Asset2dID: uuid.MustParse(miroPluginAsset2dID),
 			Options: &entry.Asset2dOptions{
 				"exact":    true,
 				"subPath":  "miro",
@@ -47,7 +47,7 @@ func seedAssets2d(node universe.Node) error {
 			},
 		},
 		{
-			Asset2dID: uuid.MustParse("c601404b-61a2-47d5-a5c7-f3c704a8bf58"),
+			Asset2dID: uuid.MustParse(googleDrivePluginAsset2dID),
 			Options: &entry.Asset2dOptions{
 				"exact":    true,
 				"iconName": "drive",
@@ -60,7 +60,7 @@ func seedAssets2d(node universe.Node) error {
 			},
 		},
 		{
-			Asset2dID: uuid.MustParse("0d99e5aa-a627-4353-8bfa-1c0e7053db90"),
+			Asset2dID: uuid.MustParse(noname4Asset2dID),
 			Options: &entry.Asset2dOptions{
 				"exact":    true,
 				"iconName": "drive",
@@ -111,7 +111,7 @@ func seedAssets2d(node universe.Node) error {
 			},
 		},
 		{
-			Asset2dID: uuid.MustParse("140c0f2e-2056-443f-b5a7-4a3c2e6b05da"),
+			Asset2dID: uuid.MustParse(dockingStationAsset2dID),
 			Options:   &entry.Asset2dOptions{},
 			Meta: &entry.Asset2dMeta{
 				"name": "Docking station",
