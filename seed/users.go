@@ -1,16 +1,17 @@
 package seed
 
 import (
-	"fmt"
-
+	"context"
 	"github.com/google/uuid"
+	"github.com/momentum-xyz/ubercontroller/database"
+	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
 // TODO Add to seed.go
-func seedUsers(node universe.Node) error {
+func seedUsers(ctx context.Context, node universe.Node, db database.DB) error {
 	type item struct {
 		id         uuid.UUID
 		userTypeID uuid.UUID
@@ -30,8 +31,28 @@ func seedUsers(node universe.Node) error {
 	}
 
 	for _, item := range items {
-		fmt.Println(item)
-		//node.AddUser()
+
+		entry := &entry.User{
+			UserID:     item.id,
+			UserTypeID: &item.userTypeID,
+			Profile:    &entry.UserProfile{},
+			Auth:       map[string]any{},
+			Options:    nil,
+		}
+
+		if err := db.GetUsersDB().UpsertUser(ctx, entry); err != nil {
+			return errors.WithMessage(err, "failed to upsert user")
+		}
+
+		// TODO Make it work
+		//userItem := user.NewUser(item.id, db)
+		//if err := userItem.Load(); err != nil {
+		//	return errors.WithMessage(err, "failed to load user")
+		//}
+		//
+		//if err := node.AddUser(userItem, true); err != nil {
+		//	return errors.WithMessage(err, "failed to add user to node")
+		//}
 	}
 
 	return nil

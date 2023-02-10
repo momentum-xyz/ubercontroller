@@ -22,7 +22,7 @@ func seedObjectTypes(node universe.Node) error {
 
 	items := []*item{
 		{
-			id:             uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			id:             uuid.MustParse(NodeObjectTypeID),
 			asset2dID:      utils.GetPTR(uuid.MustParse(noname2Asset2dID)),
 			asset3dID:      nil,
 			objectTypeName: "Node",

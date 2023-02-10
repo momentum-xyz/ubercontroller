@@ -1,6 +1,8 @@
 package seed
 
 const (
+	NodeObjectTypeID = "00000000-0000-0000-0000-000000000001"
+
 	videoPluginID       = "308fdacc-8c2d-40dc-bd5f-d1549e3e03ba"
 	imagePluginID       = "ff40fbf0-8c22-437d-b27a-0258f99130fe"
 	textPluginID        = "fc9f2eb7-590a-4a1a-ac75-cd3bfeef28b2"

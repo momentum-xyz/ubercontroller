@@ -111,7 +111,7 @@ func run(ctx context.Context) error {
 		return errors.WithMessage(err, "failed to create node")
 	}
 
-	if err := loadNode(ctx, node, nodeEntry); err != nil {
+	if err := loadNode(ctx, node, nodeEntry, db); err != nil {
 		return errors.WithMessagef(err, "failed to load node: %s", node.GetID())
 	}
 	tm2 := time.Now()
@@ -137,9 +137,9 @@ func run(ctx context.Context) error {
 	return nil
 }
 
-func loadNode(ctx context.Context, node universe.Node, nodeEntry *entry.Node) error {
+func loadNode(ctx context.Context, node universe.Node, nodeEntry *entry.Node, db database.DB) error {
 	if nodeEntry == nil {
-		if err := seed.Node(ctx, node); err != nil {
+		if err := seed.Node(ctx, node, db); err != nil {
 			return errors.WithMessage(err, "failed to seed node")
 		}
 		return nil

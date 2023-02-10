@@ -85,7 +85,7 @@ CREATE TABLE "user"
     user_id      uuid NOT NULL,
     user_type_id uuid NOT NULL,
     profile      jsonb NOT NULL DEFAULT '{}',
-    auth         jsonb NOT NULL,
+--    auth         jsonb NOT NULL,
     updated_at   timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP),
     created_at   timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP),
     options      jsonb NULL,

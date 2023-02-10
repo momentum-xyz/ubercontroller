@@ -3,6 +3,7 @@ package node
 import (
 	"context"
 	"fmt"
+	"github.com/momentum-xyz/ubercontroller/seed"
 	"net/http"
 	"os"
 	"time"
@@ -293,6 +294,23 @@ func (n *Node) Save() error {
 	}
 	if err := n.GetObjectTypes().Save(); err != nil {
 		return errors.WithMessage(err, "failed to save object types")
+	}
+
+	objectType, ok := n.GetObjectTypes().GetObjectType(uuid.MustParse(seed.NodeObjectTypeID))
+	if !ok {
+		return errors.New("failed to get node object_type by ID")
+	}
+
+	if err := n.SetObjectType(objectType, false); err != nil {
+		return errors.WithMessage(err, "failed to set object_type to node")
+	}
+
+	//if err := n.SetParent(n, false); err != nil {
+	//	return errors.WithMessage(err, "failed to set parent for node")
+	//}
+
+	if err := n.save(); err != nil {
+		return errors.WithMessage(err, "failed to save node")
 	}
 
 	return nil

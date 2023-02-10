@@ -1,7 +1,9 @@
 package seed
 
 import (
+	"context"
 	"github.com/google/uuid"
+	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -10,7 +12,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
-func seedUserTypes(node universe.Node) error {
+func seedUserTypes(ctx context.Context, node universe.Node, db database.DB) error {
 	type item struct {
 		id           uuid.UUID
 		userTypeName string
@@ -62,6 +64,10 @@ func seedUserTypes(node universe.Node) error {
 		_, err = userType.SetOptions(modify.MergeWith(item.options), false)
 		if err != nil {
 			return errors.WithMessagef(err, "failed to set user type options: %s", item.id)
+		}
+
+		if err := db.GetUserTypesDB().UpsertUserType(ctx, userType.GetEntry()); err != nil {
+			return errors.WithMessage(err, "failed to upsert user_type")
 		}
 	}
 

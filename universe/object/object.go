@@ -3,6 +3,7 @@ package object
 import (
 	"context"
 	"github.com/momentum-xyz/ubercontroller/config"
+	"github.com/momentum-xyz/ubercontroller/seed"
 	"sync/atomic"
 
 	"github.com/google/uuid"
@@ -363,6 +364,11 @@ func (o *Object) GetEntry() *entry.Object {
 	}
 	if o.asset3d != nil {
 		entry.Asset3dID = utils.GetPTR(o.asset3d.GetID())
+	}
+
+	if o.objectType != nil && o.objectType.GetID() == uuid.MustParse(seed.NodeObjectTypeID) {
+		// TODO Think how to avoid this hack
+		entry.ParentID = utils.GetPTR(o.id) // By convention Node has parentID of itself
 	}
 
 	return entry
