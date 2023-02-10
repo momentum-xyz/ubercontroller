@@ -419,7 +419,6 @@ func (n *Node) getWalletMetadata(wallet string) (*WalletMeta, error) {
 func (n *Node) apiResolveNode(c *gin.Context) {
 	// TODO: actually implement dynamic resolving of world->node
 	type Out struct {
-		Domain string    `json:"domain"` // TODO: deprecated, remove once no usage
 		URL    string    `json:"url"`
 		NodeID uuid.UUID `json:"node_id"`
 	}
@@ -431,13 +430,8 @@ func (n *Node) apiResolveNode(c *gin.Context) {
 		return
 	}
 
-	h := u.Host
-	if h == "" {
-		h = "localhost"
-	}
 	Response := Out{
 		URL:    u.String(),
-		Domain: h,
 		NodeID: n.GetID()}
 
 	c.JSON(http.StatusOK, Response)
