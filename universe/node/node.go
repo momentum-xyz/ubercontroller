@@ -3,14 +3,13 @@ package node
 import (
 	"context"
 	"fmt"
+	"github.com/momentum-xyz/ubercontroller/seed"
 	"net/http"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/hashicorp/go-multierror"
 	influx_api "github.com/influxdata/influxdb-client-go/v2/api"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -275,53 +274,94 @@ func (n *Node) Load() error {
 func (n *Node) Save() error {
 	n.log.Infof("Saving node: %s...", n.GetID())
 
-	var errs *multierror.Error
-	var errsMu sync.Mutex
-	addError := func(err error, msg string) {
-		errsMu.Lock()
-		defer errsMu.Unlock()
-
-		errs = multierror.Append(errs, errors.WithMessage(err, msg))
+	if err := n.GetPlugins().Save(); err != nil {
+		return errors.WithMessage(err, "failed to save plugins")
+	}
+	if err := n.GetAttributeTypes().Save(); err != nil {
+		return errors.WithMessage(err, "failed to save AttributeTypes")
+	}
+	if err := n.GetNodeAttributes().Save(); err != nil {
+		return errors.WithMessage(err, "failed to save NodeAttributes")
+	}
+	if err := n.GetAssets2d().Save(); err != nil {
+		return errors.WithMessage(err, "failed to save assets 2d")
+	}
+	if err := n.GetAssets3d().Save(); err != nil {
+		return errors.WithMessage(err, "failed to save assets 3d")
+	}
+	if err := n.GetUserTypes().Save(); err != nil {
+		return errors.WithMessage(err, "failed to save user types")
+	}
+	if err := n.GetObjectTypes().Save(); err != nil {
+		return errors.WithMessage(err, "failed to save object types")
 	}
 
-	addWGTask := func(wg *sync.WaitGroup, task func() error, errMsg string) {
-		wg.Add(1)
-
-		go func() {
-			defer wg.Done()
-
-			if err := task(); err != nil {
-				addError(err, errMsg)
-			}
-		}()
+	objectType, ok := n.GetObjectTypes().GetObjectType(uuid.MustParse(seed.NodeObjectTypeID))
+	if !ok {
+		return errors.New("failed to get node object_type by ID")
 	}
 
-	// first stage
-	wg := &sync.WaitGroup{}
-	addWGTask(wg, n.GetPlugins().Save, "failed to save plugins")
-	addWGTask(wg, n.GetAssets2d().Save, "failed to save assets 2d")
-	addWGTask(wg, n.GetAssets3d().Save, "failed to save assets 3d")
-	addWGTask(wg, n.GetUserTypes().Save, "failed to save user types")
-	addWGTask(wg, n.GetAttributeTypes().Save, "failed to save attribute types")
-	wg.Wait()
+	if err := n.SetObjectType(objectType, false); err != nil {
+		return errors.WithMessage(err, "failed to set object_type to node")
+	}
 
-	// second stage
-	wg = &sync.WaitGroup{}
-	addWGTask(wg, n.GetObjectTypes().Save, "failed to save object types")
-	wg.Wait()
+	//if err := n.SetParent(n, false); err != nil {
+	//	return errors.WithMessage(err, "failed to set parent for node")
+	//}
 
-	// third stage
-	wg = &sync.WaitGroup{}
-	addWGTask(wg, n.save, "failed to save node data")
-	wg.Wait()
+	if err := n.save(); err != nil {
+		return errors.WithMessage(err, "failed to save node")
+	}
 
-	wg = &sync.WaitGroup{}
-	addWGTask(wg, n.GetWorlds().Save, "failed to save worlds")
-	wg.Wait()
-
-	n.log.Infof("Node saved: %s", n.GetID())
-
-	return errs.ErrorOrNil()
+	return nil
+	//
+	//var errs *multierror.Error
+	//var errsMu sync.Mutex
+	//addError := func(err error, msg string) {
+	//	errsMu.Lock()
+	//	defer errsMu.Unlock()
+	//
+	//	errs = multierror.Append(errs, errors.WithMessage(err, msg))
+	//}
+	//
+	//addWGTask := func(wg *sync.WaitGroup, task func() error, errMsg string) {
+	//	wg.Add(1)
+	//
+	//	go func() {
+	//		defer wg.Done()
+	//
+	//		if err := task(); err != nil {
+	//			addError(err, errMsg)
+	//		}
+	//	}()
+	//}
+	//
+	//// first stage
+	//wg := &sync.WaitGroup{}
+	//addWGTask(wg, n.GetPlugins().Save, "failed to save plugins")
+	//addWGTask(wg, n.GetAssets2d().Save, "failed to save assets 2d")
+	//addWGTask(wg, n.GetAssets3d().Save, "failed to save assets 3d")
+	//addWGTask(wg, n.GetUserTypes().Save, "failed to save user types")
+	//addWGTask(wg, n.GetAttributeTypes().Save, "failed to save attribute types")
+	//wg.Wait()
+	//
+	//// second stage
+	//wg = &sync.WaitGroup{}
+	//addWGTask(wg, n.GetObjectTypes().Save, "failed to save object types")
+	//wg.Wait()
+	//
+	//// third stage
+	//wg = &sync.WaitGroup{}
+	//addWGTask(wg, n.save, "failed to save node data")
+	//wg.Wait()
+	//
+	//wg = &sync.WaitGroup{}
+	//addWGTask(wg, n.GetWorlds().Save, "failed to save worlds")
+	//wg.Wait()
+	//
+	//n.log.Infof("Node saved: %s", n.GetID())
+	//
+	//return errs.ErrorOrNil()
 }
 
 func (n *Node) save() error {

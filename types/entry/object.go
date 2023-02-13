@@ -10,6 +10,7 @@ import (
 type ObjectVisibleType byte
 
 const (
+	InvisibleObjectVisibleType  ObjectVisibleType = 0b00
 	ReactObjectVisibleType      ObjectVisibleType = 0b01
 	UnityObjectVisibleType      ObjectVisibleType = 0b10
 	ReactUnityObjectVisibleType ObjectVisibleType = 0b11
