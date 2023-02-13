@@ -244,6 +244,7 @@ func (n *Node) Load() error {
 		// second stage
 		group, _ = errgroup.WithContext(ctx)
 		group.Go(n.GetObjectAttributes().Load)
+		group.Go(n.GetObjectTypes().Load)
 		if err := group.Wait(); err != nil {
 			return errors.WithMessage(err, "failed to load additional data")
 		}
