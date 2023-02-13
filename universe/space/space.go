@@ -2,7 +2,6 @@ package space
 
 import (
 	"context"
-	"fmt"
 	"sync/atomic"
 
 	"github.com/google/uuid"
@@ -574,11 +573,6 @@ func (s *Space) UpdateSpawnMessage() error {
 		if *effectiveOptions.Visible == entry.ReactSpaceVisibleType || *effectiveOptions.Visible == entry.ReactUnitySpaceVisibleType {
 			visible = true
 		}
-	}
-
-	t := *utils.GetFromAny(effectiveOptions.Minimap, &visible)
-	if s.Parent != nil && s.Parent.GetID() == uuid.MustParse("e7860a2c-0cb0-4dbb-8e95-74fc8070b565") {
-		fmt.Printf("ttt___ %+v %+v %+v %+v \n", s.GetName(), s.GetID(), s.spaceType.GetName(), t)
 	}
 
 	msg := message.GetBuilder().MsgObjectDefinition(
