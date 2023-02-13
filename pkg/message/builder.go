@@ -11,7 +11,7 @@ import (
 	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/momentum-xyz/ubercontroller/logger"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
@@ -21,7 +21,7 @@ type ObjectDefinition struct {
 	AssetType        uuid.UUID
 	AssetFormat      dto.Asset3dType // TODO: Rename AssetType to AssetID, so Type can be used for this.
 	Name             string
-	Position         cmath.SpacePosition
+	Position         cmath.ObjectPosition
 	Editable         bool
 	TetheredToParent bool
 	Minimap          bool
@@ -296,7 +296,7 @@ func (mb *Builder) SetObjectAttributes(id uuid.UUID, attributes map[string]int32
 	offsetObjects := builder.EndVector(len(objectOffsets))
 
 	api.SetObjectAttributesStart(builder)
-	api.SetObjectAttributesAddSpaceId(builder, mb.SerializeGUID(builder, id))
+	api.SetObjectStringsAddObjectId(builder, mb.SerializeGUID(builder, id))
 	api.SetObjectAttributesAddObjects(builder, offsetObjects)
 
 	msgOffset := api.SetObjectAttributesEnd(builder)

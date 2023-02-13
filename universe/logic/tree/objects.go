@@ -1,32 +1,24 @@
-package helper
+package tree
 
 import (
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
+	"github.com/pkg/errors"
+
 	"github.com/momentum-xyz/posbus-protocol/posbus"
-	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/common"
+	"github.com/momentum-xyz/ubercontroller/universe/logic"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
-	"github.com/pkg/errors"
 )
 
 type ObjectTemplate struct {
-	ObjectID         *uuid.UUID           `json:"object_id"`
-	ObjectName       *string              `json:"object_name"`
-	ObjectTypeID     uuid.UUID            `json:"object_type_id"`
-	ParentID         uuid.UUID            `json:"parent_id"`
-	OwnerID          *uuid.UUID           `json:"owner_id"`
-	Asset2dID        *uuid.UUID           `json:"asset_2d_id"`
-	Asset3dID        *uuid.UUID           `json:"asset_3d_id"`
-	Options          *entry.ObjectOptions `json:"options"`
-	Position         *cmath.SpacePosition `json:"position"`
-	Label            *string              `json:"label"`
-	ObjectAttributes []*entry.Attribute   `json:"object_attributes"`
-	Children         []*ObjectTemplate    `json:"children"`
+	entry.Object
+	ObjectName       *string            `json:"object_name"`
+	Label            *string            `json:"label"`
+	ObjectAttributes []*entry.Attribute `json:"object_attributes"`
+	Children         []*ObjectTemplate  `json:"children"`
 }
 
 // TODO: think about rollback
@@ -96,7 +88,7 @@ func RemoveObjectFromParent(parent, object universe.Object, updateDB bool) (bool
 	}
 	object.SetEnabled(false)
 
-	common.GetLogger().Infof("Helper: RemoveObjectFromParent: object removed: %s", object.GetID())
+	logic.GetLogger().Infof("Helper: RemoveObjectFromParent: object removed: %s", object.GetID())
 
 	go func() {
 		for _, child := range object.GetObjects(false) {
@@ -104,7 +96,7 @@ func RemoveObjectFromParent(parent, object universe.Object, updateDB bool) (bool
 			child.SetEnabled(false)
 
 			if _, err := RemoveObjectFromParent(object, child, false); err != nil {
-				common.GetLogger().Error(
+				logic.GetLogger().Error(
 					errors.WithMessagef(
 						err, "Helper: RemoveObjectFromParent: failed to remove child: %s", child.GetID(),
 					),
@@ -116,37 +108,13 @@ func RemoveObjectFromParent(parent, object universe.Object, updateDB bool) (bool
 	return removed, errs.ErrorOrNil()
 }
 
-func CalcObjectSpawnPosition(parentID, userID uuid.UUID) (*cmath.SpacePosition, error) {
-	parent, ok := universe.GetNode().GetObjectFromAllObjects(parentID)
-	if !ok {
-		return nil, errors.Errorf("object parent not found: %s", parentID)
-	}
-
-	var position *cmath.SpacePosition
-	effectiveOptions := parent.GetEffectiveOptions()
-	if effectiveOptions == nil || len(effectiveOptions.ChildPlacements) == 0 {
-		world := parent.GetWorld()
-		if world != nil {
-			user, ok := world.GetUser(userID, true)
-			if ok {
-				fmt.Printf("User rotation: %v", user.GetRotation())
-				//distance := float32(10)
-				position = &cmath.SpacePosition{
-					// TODO: recalc based on euler angles, not lookat: Location: cmath.Add(user.GetPosition(), cmath.MultiplyN(user.GetRotation(), distance)),
-					Location: user.GetPosition(),
-					Rotation: cmath.Vec3{},
-					Scale:    cmath.Vec3{X: 1, Y: 1, Z: 1},
-				}
-			}
-		}
-	}
-
-	return position, nil
-}
-
 // createObjectFromTemplate creates in-memory ready for use object with children from template
 func createObjectFromTemplate(parent universe.Object, objectTemplate *ObjectTemplate) (universe.Object, error) {
 	// TODO: think about rollback
+	if parent == nil {
+		return nil, errors.Errorf("parent is nil")
+	}
+
 	node := universe.GetNode()
 
 	// loading
@@ -174,23 +142,23 @@ func createObjectFromTemplate(parent universe.Object, objectTemplate *ObjectTemp
 	ownerID := objectTemplate.OwnerID
 	objectID := objectTemplate.ObjectID
 	objectName := objectTemplate.ObjectName
-	if ownerID == nil {
-		ownerID = utils.GetPTR(parent.GetOwnerID())
+	if ownerID == uuid.Nil {
+		ownerID = parent.GetOwnerID()
 	}
-	if objectID == nil {
-		objectID = utils.GetPTR(uuid.New())
+	if objectID == uuid.Nil {
+		objectID = uuid.New()
 	}
 	if objectName == nil {
 		objectName = utils.GetPTR(objectID.String())
 	}
 
 	// creating
-	object, err := parent.CreateObject(*objectID)
+	object, err := parent.CreateObject(objectID)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "failed to create object: %s", objectID)
 	}
 
-	if err := object.SetOwnerID(*ownerID, false); err != nil {
+	if err := object.SetOwnerID(ownerID, false); err != nil {
 		return object, errors.WithMessagef(err, "failed to set owner id: %s", ownerID)
 	}
 	if err := object.SetObjectType(objectType, false); err != nil {

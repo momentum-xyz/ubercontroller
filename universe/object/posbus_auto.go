@@ -4,7 +4,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/common/posbus"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/common/posbus"
 	"github.com/pkg/errors"
 )
 

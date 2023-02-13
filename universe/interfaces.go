@@ -70,7 +70,7 @@ type CacheInvalidator interface {
 
 type Node interface {
 	Object
-	LoadSaver
+	Loader
 	APIRegister
 	ObjectsCacher
 
@@ -114,7 +114,7 @@ type Worlds interface {
 
 type World interface {
 	Object
-	LoadSaver
+	Loader
 	ObjectsCacher
 
 	ToObject() Object
@@ -145,10 +145,10 @@ type Object interface {
 	GetOwnerID() uuid.UUID
 	SetOwnerID(ownerID uuid.UUID, updateDB bool) error
 
-	GetPosition() *cmath.SpacePosition
-	GetActualPosition() *cmath.SpacePosition
-	SetPosition(position *cmath.SpacePosition, updateDB bool) error
-	SetActualPosition(pos cmath.SpacePosition, theta float64) error
+	GetPosition() *cmath.ObjectPosition
+	GetActualPosition() *cmath.ObjectPosition
+	SetPosition(position *cmath.ObjectPosition, updateDB bool) error
+	SetActualPosition(pos cmath.ObjectPosition, theta float64) error
 
 	GetOptions() *entry.ObjectOptions
 	GetEffectiveOptions() *entry.ObjectOptions
@@ -312,8 +312,8 @@ type Asset2d interface {
 	IDer
 	Initializer
 
-	GetMeta() *entry.Asset2dMeta
-	SetMeta(meta *entry.Asset2dMeta, updateDB bool) error
+	GetMeta() entry.Asset2dMeta
+	SetMeta(meta entry.Asset2dMeta, updateDB bool) error
 
 	GetOptions() *entry.Asset2dOptions
 	SetOptions(modifyFn modify.Fn[entry.Asset2dOptions], updateDB bool) (*entry.Asset2dOptions, error)
@@ -343,8 +343,8 @@ type Asset3d interface {
 	IDer
 	Initializer
 
-	GetMeta() *entry.Asset3dMeta
-	SetMeta(meta *entry.Asset3dMeta, updateDB bool) error
+	GetMeta() entry.Asset3dMeta
+	SetMeta(meta entry.Asset3dMeta, updateDB bool) error
 
 	GetOptions() *entry.Asset3dOptions
 	SetOptions(modifyFn modify.Fn[entry.Asset3dOptions], updateDB bool) (*entry.Asset3dOptions, error)
@@ -372,8 +372,8 @@ type Plugin interface {
 	IDer
 	Initializer
 
-	GetMeta() *entry.PluginMeta
-	SetMeta(meta *entry.PluginMeta, updateDB bool) error
+	GetMeta() entry.PluginMeta
+	SetMeta(meta entry.PluginMeta, updateDB bool) error
 
 	GetOptions() *entry.PluginOptions
 	SetOptions(modifyFn modify.Fn[entry.PluginOptions], updateDB bool) (*entry.PluginOptions, error)
@@ -477,8 +477,8 @@ type UserType interface {
 	GetName() string
 	SetName(name string, updateDB bool) error
 
-	GetDescription() *string
-	SetDescription(description *string, updateDB bool) error
+	GetDescription() string
+	SetDescription(description string, updateDB bool) error
 
 	GetOptions() *entry.UserOptions
 	SetOptions(modifyFn modify.Fn[entry.UserOptions], updateDB bool) (*entry.UserOptions, error)

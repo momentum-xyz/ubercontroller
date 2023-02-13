@@ -3,7 +3,6 @@ package node
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/momentum-xyz/ubercontroller/universe/common/helper"
 	"net/http"
 	"net/url"
 	"os/exec"
@@ -16,7 +15,8 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/tree"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
@@ -160,15 +160,15 @@ func (n *Node) createWorld(ownerID uuid.UUID, name string) error {
 		return errors.Errorf("failed to get world template attribute value")
 	}
 
-	var worldTemplate helper.WorldTemplate
+	var worldTemplate tree.WorldTemplate
 	if err := utils.MapDecode(*templateValue, &worldTemplate); err != nil {
 		return errors.WithMessage(err, "failed to decode world template")
 	}
-	worldTemplate.ObjectID = &ownerID // User's world (aka Odyssey) should be equal to user ID
+	worldTemplate.ObjectID = ownerID // User's world (aka Odyssey) should be equal to user ID
 	worldTemplate.ObjectName = &name
-	worldTemplate.OwnerID = &ownerID
+	worldTemplate.OwnerID = ownerID
 
-	if _, err := helper.AddWorldFromTemplate(&worldTemplate, true); err != nil {
+	if _, err := tree.AddWorldFromTemplate(&worldTemplate, true); err != nil {
 		return errors.WithMessagef(err, "failed to add world from template: %+v", worldTemplate)
 	}
 
@@ -334,7 +334,7 @@ func (n *Node) mint(jobID uuid.UUID, wallet string, meta NFTMeta, blockHash stri
 // @Success 200 {object} node.apiDriveMintOdysseyCheckJob.Out
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{job_id} [get]
+// @Router /api/v4/objects/{job_id} [get]
 func (n *Node) apiDriveMintOdysseyCheckJob(c *gin.Context) {
 	type Out struct {
 		NodeJSOut *NodeJSOut `json:"nodeJSOut"`

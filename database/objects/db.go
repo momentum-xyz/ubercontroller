@@ -30,13 +30,13 @@ const (
 							object_type_id = $2, owner_id = $3, parent_id = $4, asset_2d_id = $5,
 							asset_3d_id = $6, options = $7, position = $8, updated_at = CURRENT_TIMESTAMP;`
 
-	updateObjectParentIDQuery     = `UPDATE object SET parent_id = $2 WHERE object_id = $1;`
-	updateObjectPositionQuery     = `UPDATE object SET position = $2 WHERE object_id = $1;`
-	updateObjectOwnerIDQuery      = `UPDATE object SET owner_id = $2 WHERE object_id = $1;`
-	updateObjectAsset2dIDQuery    = `UPDATE object SET asset_2d_id = $2 WHERE object_id = $1;`
-	updateObjectAsset3dIDQuery    = `UPDATE object SET asset_3d_id = $2 WHERE object_id = $1;`
-	updateObjectObjectTypeIDQuery = `UPDATE object SET object_type_id = $2 WHERE object_id = $1;`
-	updateObjectOptionsQuery      = `UPDATE object SET options = $2 WHERE object_id = $1;`
+	updateObjectParentIDQuery     = `UPDATE object SET parent_id = $2, updated_at = CURRENT_TIMESTAMP WHERE object_id = $1;`
+	updateObjectPositionQuery     = `UPDATE object SET position = $2, updated_at = CURRENT_TIMESTAMP WHERE object_id = $1;`
+	updateObjectOwnerIDQuery      = `UPDATE object SET owner_id = $2, updated_at = CURRENT_TIMESTAMP WHERE object_id = $1;`
+	updateObjectAsset2dIDQuery    = `UPDATE object SET asset_2d_id = $2, updated_at = CURRENT_TIMESTAMP WHERE object_id = $1;`
+	updateObjectAsset3dIDQuery    = `UPDATE object SET asset_3d_id = $2, updated_at = CURRENT_TIMESTAMP WHERE object_id = $1;`
+	updateObjectObjectTypeIDQuery = `UPDATE object SET object_type_id = $2, updated_at = CURRENT_TIMESTAMP WHERE object_id = $1;`
+	updateObjectOptionsQuery      = `UPDATE object SET options = $2, updated_at = CURRENT_TIMESTAMP WHERE object_id = $1;`
 
 	removeObjectByIDQuery   = `DELETE FROM object WHERE object_id = $1;`
 	removeObjectsByIDsQuery = `DELETE FROM object WHERE object_id = ANY($1);`
@@ -101,7 +101,7 @@ func (db *DB) UpdateObjectParentID(ctx context.Context, objectID uuid.UUID, pare
 	return nil
 }
 
-func (db *DB) UpdateObjectPosition(ctx context.Context, objectID uuid.UUID, position *cmath.SpacePosition) error {
+func (db *DB) UpdateObjectPosition(ctx context.Context, objectID uuid.UUID, position *cmath.ObjectPosition) error {
 	if _, err := db.conn.Exec(ctx, updateObjectPositionQuery, objectID, position); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}

@@ -51,7 +51,7 @@ type ObjectsDB interface {
 	UpsertObjects(ctx context.Context, objects []*entry.Object) error
 
 	UpdateObjectParentID(ctx context.Context, objectID uuid.UUID, parentID uuid.UUID) error
-	UpdateObjectPosition(ctx context.Context, objectID uuid.UUID, position *cmath.SpacePosition) error
+	UpdateObjectPosition(ctx context.Context, objectID uuid.UUID, position *cmath.ObjectPosition) error
 	UpdateObjectOwnerID(ctx context.Context, objectID, ownerID uuid.UUID) error
 	UpdateObjectAsset2dID(ctx context.Context, objectID uuid.UUID, asset2dID *uuid.UUID) error
 	UpdateObjectAsset3dID(ctx context.Context, objectID uuid.UUID, asset3dID *uuid.UUID) error
@@ -85,7 +85,7 @@ type Assets2dDB interface {
 	UpsertAsset(ctx context.Context, asset2d *entry.Asset2d) error
 	UpsertAssets(ctx context.Context, assets2d []*entry.Asset2d) error
 
-	UpdateAssetMeta(ctx context.Context, asset2dID uuid.UUID, meta *entry.Asset2dMeta) error
+	UpdateAssetMeta(ctx context.Context, asset2dID uuid.UUID, meta entry.Asset2dMeta) error
 	UpdateAssetOptions(ctx context.Context, asset2dID uuid.UUID, options *entry.Asset2dOptions) error
 
 	RemoveAssetByID(ctx context.Context, asset2dID uuid.UUID) error
@@ -98,7 +98,7 @@ type Assets3dDB interface {
 	UpsertAsset(ctx context.Context, asset3d *entry.Asset3d) error
 	UpsertAssets(ctx context.Context, assets3d []*entry.Asset3d) error
 
-	UpdateAssetMeta(ctx context.Context, asset3dID uuid.UUID, meta *entry.Asset3dMeta) error
+	UpdateAssetMeta(ctx context.Context, asset3dID uuid.UUID, meta entry.Asset3dMeta) error
 	UpdateAssetOptions(ctx context.Context, asset3dID uuid.UUID, options *entry.Asset3dOptions) error
 
 	RemoveAssetByID(ctx context.Context, asset3dID uuid.UUID) error
@@ -111,7 +111,7 @@ type PluginsDB interface {
 	UpsertPlugin(ctx context.Context, plugin *entry.Plugin) error
 	UpsertPlugins(ctx context.Context, plugins []*entry.Plugin) error
 
-	UpdatePluginMeta(ctx context.Context, pluginID uuid.UUID, meta *entry.PluginMeta) error
+	UpdatePluginMeta(ctx context.Context, pluginID uuid.UUID, meta entry.PluginMeta) error
 	UpdatePluginOptions(ctx context.Context, pluginID uuid.UUID, options *entry.PluginOptions) error
 
 	RemovePluginByID(ctx context.Context, pluginID uuid.UUID) error
@@ -164,7 +164,7 @@ type UserTypesDB interface {
 	UpsertUserTypes(ctx context.Context, userTypes []*entry.UserType) error
 
 	UpdateUserTypeName(ctx context.Context, userTypeID uuid.UUID, name string) error
-	UpdateUserTypeDescription(ctx context.Context, userTypeID uuid.UUID, description *string) error
+	UpdateUserTypeDescription(ctx context.Context, userTypeID uuid.UUID, description string) error
 	UpdateUserTypeOptions(ctx context.Context, userTypeID uuid.UUID, options *entry.UserOptions) error
 
 	RemoveUserTypeByID(ctx context.Context, userTypeID uuid.UUID) error

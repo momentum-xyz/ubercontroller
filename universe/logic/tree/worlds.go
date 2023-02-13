@@ -1,12 +1,13 @@
-package helper
+package tree
 
 import (
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
+
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
-	"github.com/pkg/errors"
 )
 
 type WorldTemplate struct {
@@ -24,20 +25,20 @@ func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (universe
 
 	worldID := worldTemplate.ObjectID
 	worldName := worldTemplate.ObjectName
-	if worldID == nil {
-		worldID = utils.GetPTR(uuid.New())
+	if worldID == uuid.Nil {
+		worldID = uuid.New()
 	}
 	if worldName == nil {
 		worldName = utils.GetPTR(worldID.String())
 	}
 
 	// creating
-	world, err := node.GetWorlds().CreateWorld(*worldID)
+	world, err := node.GetWorlds().CreateWorld(worldID)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "failed to create world: %s", worldID)
 	}
 
-	if err := world.SetOwnerID(*worldTemplate.OwnerID, false); err != nil {
+	if err := world.SetOwnerID(worldTemplate.OwnerID, false); err != nil {
 		return world, errors.WithMessagef(err, "failed to set owner: %s", worldTemplate.OwnerID)
 	}
 	if err := world.SetObjectType(worldObjectType, false); err != nil {
@@ -50,7 +51,7 @@ func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (universe
 	}
 
 	// adding children
-	labelToChild := make(map[string]universe.Object)
+	labelToChildID := make(map[string]any)
 	for _, childTemplate := range worldTemplate.Children {
 		child, err := createObjectFromTemplate(world.ToObject(), childTemplate)
 		if err != nil {
@@ -58,7 +59,7 @@ func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (universe
 		}
 
 		if childTemplate.Label != nil {
-			labelToChild[*childTemplate.Label] = child
+			labelToChildID[*childTemplate.Label] = child.GetID()
 		}
 	}
 
@@ -77,7 +78,7 @@ func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (universe
 			entry.NewAttributePayload(
 				&entry.AttributeValue{
 					"kind":         "basic",
-					"objects":      labelToChild,
+					"objects":      labelToChildID,
 					"attributes":   map[string]any{},
 					"object_types": map[string]any{},
 					"effects":      map[string]any{},

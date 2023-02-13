@@ -7,7 +7,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/pkg/message"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/common/unity"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/common/unity"
 )
 
 func (o *Object) unityAutoOnObjectAttributeChanged(

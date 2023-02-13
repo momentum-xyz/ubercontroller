@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"os"
 	"os/signal"
 	"syscall"
@@ -24,11 +23,12 @@ import (
 	"github.com/momentum-xyz/ubercontroller/seed"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/assets_2d"
 	"github.com/momentum-xyz/ubercontroller/universe/assets_3d"
 	"github.com/momentum-xyz/ubercontroller/universe/attribute_types"
-	"github.com/momentum-xyz/ubercontroller/universe/common"
+	"github.com/momentum-xyz/ubercontroller/universe/logic"
 	"github.com/momentum-xyz/ubercontroller/universe/node"
 	"github.com/momentum-xyz/ubercontroller/universe/object_types"
 	"github.com/momentum-xyz/ubercontroller/universe/plugins"
@@ -85,8 +85,8 @@ func run(ctx context.Context) error {
 	if err := generic.Initialize(ctx); err != nil {
 		return errors.WithMessage(err, "failed to initialize generic package")
 	}
-	if err := common.Initialize(ctx); err != nil {
-		return errors.WithMessage(err, "failed to initialize common package")
+	if err := logic.Initialize(ctx); err != nil {
+		return errors.WithMessage(err, "failed to initialize logic package")
 	}
 
 	pool, err := createDBConnection(ctx, &cfg.Postgres)
@@ -200,6 +200,9 @@ func createNode(ctx context.Context, db database.DB, nodeEntry *entry.Node) (uni
 	if err := assets3d.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize assets 3d")
 	}
+	if err := plugins.Initialize(ctx); err != nil {
+		return nil, errors.WithMessage(err, "failed to initialize plugins")
+	}
 	if err := objectTypes.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize object types")
 	}
@@ -208,9 +211,6 @@ func createNode(ctx context.Context, db database.DB, nodeEntry *entry.Node) (uni
 	}
 	if err := attributeTypes.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize attribute types")
-	}
-	if err := plugins.Initialize(ctx); err != nil {
-		return nil, errors.WithMessage(err, "failed to initialize plugins")
 	}
 	if err := node.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize node")

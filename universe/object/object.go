@@ -20,7 +20,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
@@ -41,7 +41,7 @@ type Object struct {
 	//Mu               sync.RWMutex
 	Mu               deadlock.RWMutex
 	ownerID          uuid.UUID
-	position         *cmath.SpacePosition
+	position         *cmath.ObjectPosition
 	options          *entry.ObjectOptions
 	Parent           universe.Object
 	asset2d          universe.Asset2d
@@ -54,7 +54,7 @@ type Object struct {
 	attributesMsg     *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
 	renderTextureMap  *generic.SyncMap[string, string]
 	textMsg           atomic.Pointer[websocket.PreparedMessage]
-	actualPosition    atomic.Pointer[cmath.SpacePosition]
+	actualPosition    atomic.Pointer[cmath.ObjectPosition]
 	broadcastPipeline chan *websocket.PreparedMessage
 	messageAccept     atomic.Bool
 	numSendsQueued    atomic.Int64
@@ -138,7 +138,7 @@ func (o *Object) Initialize(ctx context.Context) error {
 	o.numSendsQueued.Store(chanIsClosed)
 	o.lockedBy.Store(uuid.Nil)
 
-	newPos := cmath.SpacePosition{Location: *new(cmath.Vec3), Rotation: *new(cmath.Vec3), Scale: *new(cmath.Vec3)}
+	newPos := cmath.ObjectPosition{Location: *new(cmath.Vec3), Rotation: *new(cmath.Vec3), Scale: *new(cmath.Vec3)}
 	o.actualPosition.Store(&newPos)
 
 	return nil
@@ -349,15 +349,15 @@ func (o *Object) GetEntry() *entry.Object {
 
 	entry := &entry.Object{
 		ObjectID: o.id,
-		OwnerID:  &o.ownerID,
+		OwnerID:  o.ownerID,
 		Options:  o.options,
 		Position: o.position,
 	}
 	if o.objectType != nil {
-		entry.ObjectTypeID = utils.GetPTR(o.objectType.GetID())
+		entry.ObjectTypeID = o.objectType.GetID()
 	}
 	if o.Parent != nil {
-		entry.ParentID = utils.GetPTR(o.Parent.GetID())
+		entry.ParentID = o.Parent.GetID()
 	}
 	if o.asset2d != nil {
 		entry.Asset2dID = utils.GetPTR(o.asset2d.GetID())
@@ -455,14 +455,8 @@ func (o *Object) LoadFromEntry(entry *entry.Object, recursive bool) error {
 	group.Go(o.GetObjectAttributes().Load)
 	group.Go(
 		func() error {
-			if err := o.loadSelfData(entry); err != nil {
-				return errors.WithMessage(err, "failed to load self data")
-			}
-			if err := o.loadDependencies(entry); err != nil {
-				return errors.WithMessage(err, "failed to load dependencies")
-			}
-			if err := o.SetPosition(entry.Position, false); err != nil {
-				return errors.WithMessage(err, "failed to set position")
+			if err := o.load(entry); err != nil {
+				return errors.WithMessage(err, "failed to load data")
 			}
 
 			if !recursive {
@@ -536,20 +530,17 @@ func (o *Object) saveObjects(objects map[uuid.UUID]universe.Object) error {
 	return nil
 }
 
-func (o *Object) loadSelfData(entry *entry.Object) error {
-	if err := o.SetOwnerID(*entry.OwnerID, false); err != nil {
+func (o *Object) load(entry *entry.Object) error {
+	node := universe.GetNode()
+
+	if err := o.SetOwnerID(entry.OwnerID, false); err != nil {
 		return errors.WithMessagef(err, "failed to set owner id: %s", entry.OwnerID)
 	}
 	if _, err := o.SetOptions(modify.MergeWith(entry.Options), false); err != nil {
 		return errors.WithMessage(err, "failed to set options")
 	}
-	return nil
-}
 
-func (o *Object) loadDependencies(entry *entry.Object) error {
-	node := universe.GetNode()
-
-	objectType, ok := node.GetObjectTypes().GetObjectType(*entry.ObjectTypeID)
+	objectType, ok := node.GetObjectTypes().GetObjectType(entry.ObjectTypeID)
 	if !ok {
 		return errors.Errorf("failed to get object type: %s", entry.ObjectTypeID)
 	}
@@ -575,6 +566,10 @@ func (o *Object) loadDependencies(entry *entry.Object) error {
 		if err := o.SetAsset3D(asset3d, false); err != nil {
 			return errors.WithMessagef(err, "failed to set asset 3d: %s", entry.Asset3dID)
 		}
+	}
+
+	if err := o.SetPosition(entry.Position, false); err != nil {
+		return errors.WithMessage(err, "failed to set position")
 	}
 
 	return nil
@@ -607,7 +602,7 @@ func (o *Object) UpdateSpawnMessage() error {
 			metaData := struct {
 				Type int `json:"type"`
 			}{}
-			utils.MapDecode(*asset3dMeta, &metaData)
+			utils.MapDecode(asset3dMeta, &metaData)
 			assetFormat = dto.Asset3dType(metaData.Type)
 		}
 	}

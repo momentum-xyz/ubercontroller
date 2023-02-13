@@ -25,7 +25,7 @@ type Calendar struct {
 }
 
 type Event struct {
-	ObjectID *uuid.UUID `json:"spaceId"`
+	ObjectID *uuid.UUID `json:"objectId"`
 	Title    string     `json:"title"`
 	Start    time.Time  `json:"start"`
 	End      time.Time  `json:"end"`
@@ -142,7 +142,7 @@ func findNextEvents(events []Event) []Event {
 func getAllEvents(objects map[uuid.UUID]universe.Object) []Event {
 	attributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Object.Events.Name)
 
-	//a := c.world.GetSpaceAttributesValue(true)
+	//a := c.world.GetObjectAttributesValue(true)
 
 	attributes := make([]*entry.AttributeValue, 0)
 	events := make([]Event, 0)

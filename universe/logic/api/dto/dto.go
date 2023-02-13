@@ -16,23 +16,23 @@ type Plugins map[uuid.UUID]string
 
 type PluginsMeta map[uuid.UUID]PluginMeta
 
-type PluginMeta *entry.PluginMeta
+type PluginMeta entry.PluginMeta
 
 type PluginsOptions map[uuid.UUID]PluginOptions
 
 type PluginOptions *entry.PluginOptions
 
-type SpaceOptions *entry.ObjectOptions
+type ObjectOptions *entry.ObjectOptions
 
-type SpaceSubOptions map[string]any
+type ObjectSubOptions map[string]any
 
-type SpaceAttributes map[uuid.UUID]*entry.ObjectAttribute
+type ObjectAttributes map[uuid.UUID]*entry.ObjectAttribute
 
-type SpaceAttributeValues map[uuid.UUID]*entry.AttributeValue
+type ObjectAttributeValues map[uuid.UUID]*entry.AttributeValue
 
-type SpaceSubAttributes map[string]any
+type ObjectSubAttributes map[string]any
 
-type Asset2dMeta *entry.Asset2dMeta
+type Asset2dMeta entry.Asset2dMeta
 
 type Asset2dOptions *entry.Asset2dOptions
 
@@ -42,19 +42,19 @@ type Asset3dOptions *entry.Asset3dOptions
 
 type Assets3dMeta map[uuid.UUID]Asset3dMeta
 
-type Asset3dMeta *entry.Asset3dMeta
+type Asset3dMeta entry.Asset3dMeta
 
 type ExploreOption struct {
 	ID          uuid.UUID       `json:"id"`
 	Name        string          `json:"name"`
 	Description string          `json:"description"`
-	SubSpaces   []ExploreOption `json:"subSpaces,omitempty"`
+	SubObjects  []ExploreOption `json:"subObjects,omitempty"`
 }
 
 type FlyToMe struct {
 	Pilot     uuid.UUID `json:"pilot"`
 	PilotName string    `json:"pilot_name"`
-	SpaceID   uuid.UUID `json:"space_id"`
+	ObjectID  uuid.UUID `json:"object_id"`
 }
 
 type Profile struct {
@@ -84,17 +84,17 @@ type User struct {
 	Profile    Profile `json:"profile"`
 	JWTToken   *string `json:"token,omitempty"`
 	CreatedAt  string  `json:"createdAt"`
-	UpdatedAt  *string `json:"updatedAt,omitempty"`
+	UpdatedAt  string  `json:"updatedAt,omitempty"`
 	IsGuest    bool    `json:"isGuest"`
 }
 
-type Space struct {
-	OwnerID     string              `json:"owner_id"`
-	ParentID    string              `json:"parent_id"`
-	SpaceTypeID string              `json:"space_type_id"`
-	Asset2dID   string              `json:"asset_2d_id"`
-	Asset3dID   string              `json:"asset_3d_id"`
-	Position    cmath.SpacePosition `json:"position"`
+type Object struct {
+	OwnerID      string               `json:"owner_id"`
+	ParentID     string               `json:"parent_id"`
+	ObjectTypeID string               `json:"object_type_id"`
+	Asset2dID    string               `json:"asset_2d_id"`
+	Asset3dID    string               `json:"asset_3d_id"`
+	Position     cmath.ObjectPosition `json:"position"`
 }
 
 type Asset2d struct {
@@ -113,7 +113,7 @@ type Asset3d struct {
 type Tile struct {
 	ID            string        `json:"id"`
 	Hash          string        `json:"hash"`
-	SpaceID       string        `json:"spaceId"`
+	ObjectID      string        `json:"objectId"`
 	UITypeID      string        `json:"uiTypeId"`
 	OwnerID       string        `json:"owner_id"`
 	UpdatedAt     string        `json:"updatedAt"`
@@ -134,12 +134,12 @@ type TileContent struct {
 }
 
 type Emoji struct {
-	ID      string `json:"id"`
-	Code    string `json:"code"`
-	Hash    string `json:"hash"`
-	Name    string `json:"name"`
-	SpaceID string `json:"spaceId"`
-	Order   int    `json:"order"`
+	ID       string `json:"id"`
+	Code     string `json:"code"`
+	Hash     string `json:"hash"`
+	Name     string `json:"name"`
+	ObjectID string `json:"objectId"`
+	Order    int    `json:"order"`
 }
 
 type Event struct {
@@ -149,8 +149,8 @@ type Event struct {
 	HostedBy    string  `json:"hosted_by"`
 	ImageHash   *string `json:"image_hash,omitempty"`
 	WebLink     *string `json:"web_link,omitempty"`
-	SpaceID     string  `json:"spaceId"`
-	SpaceName   string  `json:"spaceName"`
+	ObjectID    string  `json:"objectId"`
+	ObjectName  string  `json:"objectName"`
 	Start       string  `json:"start"`
 	End         string  `json:"end"`
 	Created     string  `json:"created"`
@@ -169,8 +169,8 @@ type EventForm struct {
 }
 
 type Favorite struct {
-	SpaceID string `json:"spaceId"`
-	Name    string `json:"name"`
+	ObjectID string `json:"objectId"`
+	Name     string `json:"name"`
 }
 
 type Miro struct {
@@ -207,26 +207,26 @@ type Magic struct {
 	CratedAt string `json:"cratedAt"`
 }
 
-type SpaceInfo struct {
-	ID          string    `json:"id"`
-	ParentID    *string   `json:"parentId,omitempty"`
-	SpaceType   SpaceType `json:"spaceType"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	OwnerID     string    `json:"ownerId"`
-	OwnerName   string    `json:"ownerName"`
-	CreateAt    string    `json:"createAt"`
-	UpdatedAt   string    `json:"updatedAt"`
-	IsPrivate   bool      `json:"isPrivate"`
-	IsAdmin     bool      `json:"isAdmin"`
+type ObjectInfo struct {
+	ID          string     `json:"id"`
+	ParentID    *string    `json:"parentId,omitempty"`
+	ObjectType  ObjectType `json:"objectType"`
+	Name        string     `json:"name"`
+	Description string     `json:"description"`
+	OwnerID     string     `json:"ownerId"`
+	OwnerName   string     `json:"ownerName"`
+	CreateAt    string     `json:"createAt"`
+	UpdatedAt   string     `json:"updatedAt"`
+	IsPrivate   bool       `json:"isPrivate"`
+	IsAdmin     bool       `json:"isAdmin"`
 }
 
-type SpaceAncestor struct {
-	SpaceID   string `json:"spaceId"`
-	SpaceName string `json:"spaceName"`
+type ObjectAncestor struct {
+	ObjectID   string `json:"objectId"`
+	ObjectName string `json:"objectName"`
 }
 
-type SpaceMember struct {
+type ObjectMember struct {
 	UserID   string `json:"userId"`
 	UserName string `json:"userName"`
 	IsAdmin  bool   `json:"isAdmin"`
@@ -251,7 +251,7 @@ type Token struct {
 	UpdatedAt       *string                    `json:"updatedAt,omitempty"`
 	Status          *TokenRuleReviewStatusType `json:"status,omitempty"`
 	WorldID         *string                    `json:"worldId,omitempty"`
-	SpaceID         *string                    `json:"spaceId,omitempty"`
+	ObjectID        *string                    `json:"objectId,omitempty"`
 }
 
 type TokenRule struct {
@@ -267,19 +267,19 @@ type TokenRule struct {
 	TokenType        TokenType                 `json:"tokenType"`
 	UserName         *string                   `json:"userName,omitempty"`
 	UserID           *string                   `json:"userId,omitempty"`
-	SpaceName        *string                   `json:"spaceName,omitempty"`
+	ObjectName       *string                   `json:"objectName,omitempty"`
 }
 
 type Validator struct {
-	ID                string  `json:"id"`
-	ParentID          string  `json:"parentId"`
-	SpaceTypeID       string  `json:"spaceTypeId"`
-	OperatorSpaceID   *string `json:"operatorSpaceId,omitempty"`
-	UITypeID          string  `json:"uiTypeId"`
-	OperatorSpaceName string  `json:"operatorSpaceName"`
-	Name              string  `json:"name"`
-	IsFavorited       bool    `json:"isFavorited"`
-	Metadata          struct {
+	ID                 string  `json:"id"`
+	ParentID           string  `json:"parentId"`
+	ObjectTypeID       string  `json:"objectTypeId"`
+	OperatorObjectID   *string `json:"operatorObjectId,omitempty"`
+	UITypeID           string  `json:"uiTypeId"`
+	OperatorObjectName string  `json:"operatorObjectName"`
+	Name               string  `json:"name"`
+	IsFavorited        bool    `json:"isFavorited"`
+	Metadata           struct {
 		KusamaMetadata KusamaMetaData `json:"kusama_metadata"`
 	} `json:"metadata"`
 }
@@ -304,8 +304,8 @@ type KusamaMetaData struct {
 }
 
 type VibeAmount struct {
-	SpaceID string `json:"spaceId"`
-	Amount  int    `json:"amount"`
+	ObjectID string `json:"objectId"`
+	Amount   int    `json:"amount"`
 }
 
 type Plugin struct {

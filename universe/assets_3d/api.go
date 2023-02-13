@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/momentum-xyz/ubercontroller"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api/middleware"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api/middleware"
 )
 
 func (a *Assets3d) RegisterAPI(r *gin.Engine) {
@@ -14,7 +14,7 @@ func (a *Assets3d) RegisterAPI(r *gin.Engine) {
 
 	vx := r.Group(fmt.Sprintf("/api/v%d", ubercontroller.APIMajorVersion))
 	{
-		assets3d := vx.Group("/assets-3d/:spaceID", middleware.VerifyUser(a.log))
+		assets3d := vx.Group("/assets-3d/:objectID", middleware.VerifyUser(a.log))
 		{
 			authorizedAdmin := assets3d.Group("", middleware.AuthorizeAdmin(a.log))
 			{

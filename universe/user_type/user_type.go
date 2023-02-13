@@ -25,7 +25,7 @@ type UserType struct {
 	db          database.DB
 	mu          sync.RWMutex
 	name        string
-	description *string
+	description string
 	options     *entry.UserOptions
 }
 
@@ -77,14 +77,14 @@ func (u *UserType) SetName(name string, updateDB bool) error {
 	return nil
 }
 
-func (u *UserType) GetDescription() *string {
+func (u *UserType) GetDescription() string {
 	u.mu.RLock()
 	defer u.mu.RUnlock()
 
 	return u.description
 }
 
-func (u *UserType) SetDescription(description *string, updateDB bool) error {
+func (u *UserType) SetDescription(description string, updateDB bool) error {
 	u.mu.Lock()
 	defer u.mu.Unlock()
 

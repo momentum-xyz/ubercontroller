@@ -7,30 +7,30 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 	"github.com/pkg/errors"
 )
 
 // @Summary Get a authorization token
-// @Description Request a chat authorization token for current user and given object (world or space)
+// @Description Request a chat authorization token for current user and given object (world or object)
 // @Description The user is required to be connected to the world/object.
 // @Description This also automatically joins the user as a member to the channel, so the join endpoint does not have to be called.
 // @Tags chat
 // @Accept json
 // @Produce json
-// @Param spaceID path string true "World or object ID"
+// @Param objectID path string true "World or object ID"
 // @Success 200 {object} streamchat.apiChannelToken.Response
 // @Failure 400 {object} api.HTTPError
-// @Router /api/v4/streamchat/{spaceID}/token [post]
+// @Router /api/v4/streamchat/{objectID}/token [post]
 func (s *StreamChat) apiChannelToken(c *gin.Context) {
-	space, user, err := s.getRequestContextObjects(c)
+	object, user, err := s.getRequestContextObjects(c)
 	if err != nil {
 		// TODO: better error handling and response
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request", err, s.log)
 		return
 	}
 
-	channel, err := s.GetChannel(c, space)
+	channel, err := s.GetChannel(c, object)
 	if err != nil {
 		err = errors.WithMessage(err, "Streamchat: failed to get channel")
 		api.AbortRequest(c, http.StatusInternalServerError, "get_channel_failed", err, s.log)
@@ -67,18 +67,18 @@ func (s *StreamChat) apiChannelToken(c *gin.Context) {
 // @Tags chat
 // @Accept json
 // @Produce json
-// @Param spaceID path string true "World or object ID"
+// @Param objectID path string true "World or object ID"
 // @Success 204 ""
 // @Failure 400 {object} api.HTTPError
-// @Router /api/v4/streamchat/{spaceID}/join [post]
+// @Router /api/v4/streamchat/{objectID}/join [post]
 func (s *StreamChat) apiChannelJoin(c *gin.Context) {
-	space, user, err := s.getRequestContextObjects(c)
+	object, user, err := s.getRequestContextObjects(c)
 	if err != nil {
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request", err, s.log)
 		return
 	}
 
-	channel, err := s.GetChannel(c, space)
+	channel, err := s.GetChannel(c, object)
 	if err != nil {
 		err = errors.WithMessage(err, "Streamchat: failed to get channel")
 		api.AbortRequest(c, http.StatusInternalServerError, "get_channel_failed", err, s.log)
@@ -98,18 +98,18 @@ func (s *StreamChat) apiChannelJoin(c *gin.Context) {
 // @Tags chat
 // @Accept json
 // @Produce json
-// @Param spaceID path string true "World or object ID"
+// @Param objectID path string true "World or object ID"
 // @Success 204 ""
 // @Failure 400 {object} api.HTTPError
-// @Router /api/v4/streamchat/{spaceID}/leave [post]
+// @Router /api/v4/streamchat/{objectID}/leave [post]
 func (s *StreamChat) apiChannelLeave(c *gin.Context) {
-	space, user, err := s.getRequestContextObjects(c)
+	object, user, err := s.getRequestContextObjects(c)
 	if err != nil {
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request", err, s.log)
 		return
 	}
 
-	channel, err := s.GetChannel(c, space)
+	channel, err := s.GetChannel(c, object)
 	if err != nil {
 		err = errors.WithMessage(err, "Streamchat: failed to get channel")
 		api.AbortRequest(c, http.StatusInternalServerError, "get_channel_failed", err, s.log)
@@ -126,14 +126,14 @@ func (s *StreamChat) apiChannelLeave(c *gin.Context) {
 
 // Get the common objects for these api requests
 // TODO: put these in the actual context in shared middleware?
-func (s *StreamChat) getRequestContextObjects(c *gin.Context) (space universe.Object, user universe.User, err error) {
-	spaceID := c.Param("spaceID")
-	space, err = s.getSpace(spaceID)
+func (s *StreamChat) getRequestContextObjects(c *gin.Context) (object universe.Object, user universe.User, err error) {
+	objectID := c.Param("objectID")
+	object, err = s.getObject(objectID)
 	if err != nil {
 		return
 	}
 
-	user, err = s.getUserFromContext(c, space)
+	user, err = s.getUserFromContext(c, object)
 	if err != nil {
 		return
 	}
@@ -141,32 +141,32 @@ func (s *StreamChat) getRequestContextObjects(c *gin.Context) (space universe.Ob
 
 }
 
-// Get space by UUID string.
-func (s *StreamChat) getSpace(id string) (universe.Object, error) {
-	spaceID, err := uuid.Parse(id)
+// Get object by UUID string.
+func (s *StreamChat) getObject(id string) (universe.Object, error) {
+	objectID, err := uuid.Parse(id)
 	if err != nil {
 		err := errors.WithMessagef(err, "Failed to parse ID %s", id)
 		return nil, err
 	}
-	space, ok := s.node.GetObjectFromAllObjects(spaceID)
+	object, ok := s.node.GetObjectFromAllObjects(objectID)
 	if !ok {
-		err := errors.Errorf("Object not found: %s", spaceID)
+		err := errors.Errorf("Object not found: %s", objectID)
 		return nil, err
 	}
-	return space, nil
+	return object, nil
 }
 
-// Resolve the user object from the request context and the given space.
-func (s *StreamChat) getUserFromContext(ctx *gin.Context, space universe.Object) (universe.User, error) {
+// Resolve the user object from the request context and the given object.
+func (s *StreamChat) getUserFromContext(ctx *gin.Context, object universe.Object) (universe.User, error) {
 
 	userID, err := api.GetUserIDFromContext(ctx)
 	if err != nil {
 		return nil, errors.WithMessage(err, "Streamchat: failed to get userID from context")
 	}
-	// The user needs to be 'in' the space (a.k.a world or object)
-	user, ok := space.GetUser(userID, false)
+	// The user needs to be 'in' the object (a.k.a world or object)
+	user, ok := object.GetUser(userID, false)
 	if !ok {
-		return nil, fmt.Errorf("Streamchat: User %s not found in %s", userID, space.GetID())
+		return nil, fmt.Errorf("Streamchat: User %s not found in %s", userID, object.GetID())
 	}
 	return user, nil
 }

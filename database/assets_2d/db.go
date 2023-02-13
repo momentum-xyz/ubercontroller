@@ -25,8 +25,8 @@ const (
 						DO UPDATE SET
 							meta = $2, options = $3, updated_at = CURRENT_TIMESTAMP;`
 
-	updateAssetMetaQuery    = `UPDATE asset_2d SET meta = $2 WHERE asset_2d_id = $1;`
-	updateAssetOptionsQuery = `UPDATE asset_2d SET options = $2 WHERE asset_2d_id = $1;`
+	updateAssetMetaQuery    = `UPDATE asset_2d SET meta = $2, updated_at = CURRENT_TIMESTAMP WHERE asset_2d_id = $1;`
+	updateAssetOptionsQuery = `UPDATE asset_2d SET options = $2, updated_at = CURRENT_TIMESTAMP WHERE asset_2d_id = $1;`
 
 	removeAssetByIDQuery   = `DELETE FROM asset_2d WHERE asset_2d_id = $1;`
 	removeAssetsByIDsQuery = `DELETE FROM asset_2d WHERE asset_2d_id = ANY($1);`
@@ -96,7 +96,7 @@ func (db *DB) RemoveAssetsByIDs(ctx context.Context, asset2dIDs []uuid.UUID) err
 	return nil
 }
 
-func (db *DB) UpdateAssetMeta(ctx context.Context, asset2dID uuid.UUID, meta *entry.Asset2dMeta) error {
+func (db *DB) UpdateAssetMeta(ctx context.Context, asset2dID uuid.UUID, meta entry.Asset2dMeta) error {
 	if _, err := db.conn.Exec(ctx, updateAssetMetaQuery, asset2dID, meta); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
