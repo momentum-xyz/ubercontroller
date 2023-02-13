@@ -238,42 +238,55 @@ func (s *SpaceType) GetEntry() *entry.SpaceType {
 	return entry
 }
 
-func (s *SpaceType) LoadFromEntry(entry *entry.SpaceType) error {
-	if entry.SpaceTypeID != s.GetID() {
-		return errors.Errorf("space type ids mismatch: %s != %s", entry.SpaceTypeID, s.GetID())
+func (s *SpaceType) LoadFromEntry(row *entry.SpaceType) error {
+	if row.SpaceTypeID != s.GetID() {
+		return errors.Errorf("space type ids mismatch: %s != %s", row.SpaceTypeID, s.GetID())
 	}
 
-	if err := s.SetName(entry.SpaceTypeName, false); err != nil {
+	if err := s.SetName(row.SpaceTypeName, false); err != nil {
 		return errors.WithMessage(err, "failed to set name")
 	}
-	if err := s.SetCategoryName(entry.CategoryName, false); err != nil {
+	if err := s.SetCategoryName(row.CategoryName, false); err != nil {
 		return errors.WithMessage(err, "failed to set category name")
 	}
-	if err := s.SetDescription(entry.Description, false); err != nil {
+	if err := s.SetDescription(row.Description, false); err != nil {
 		return errors.WithMessage(err, "failed to set description")
 	}
-	if _, err := s.SetOptions(modify.MergeWith(entry.Options), false); err != nil {
+
+	// https://momentum.nifty.pm/Yok8v8pw_pmY/task/DEV-32
+	// If minimap not set in DB, set it based on visibility
+	if row.Options.Minimap == nil {
+		if row.Options.Visible != nil {
+			if *row.Options.Visible == entry.ReactSpaceVisibleType || *row.Options.Visible == entry.ReactUnitySpaceVisibleType {
+				row.Options.Minimap = utils.GetPTR(true)
+			} else {
+				row.Options.Minimap = utils.GetPTR(false)
+			}
+		}
+	}
+
+	if _, err := s.SetOptions(modify.MergeWith(row.Options), false); err != nil {
 		return errors.WithMessage(err, "failed to set options")
 	}
 
 	node := universe.GetNode()
-	if entry.Asset2dID != nil {
-		asset2d, ok := node.GetAssets2d().GetAsset2d(*entry.Asset2dID)
+	if row.Asset2dID != nil {
+		asset2d, ok := node.GetAssets2d().GetAsset2d(*row.Asset2dID)
 		if !ok {
-			return errors.Errorf("asset 2d not found: %s", entry.Asset2dID)
+			return errors.Errorf("asset 2d not found: %s", row.Asset2dID)
 		}
 		if err := s.SetAsset2d(asset2d, false); err != nil {
-			return errors.WithMessagef(err, "failed to set asset 2d: %s", entry.Asset2dID)
+			return errors.WithMessagef(err, "failed to set asset 2d: %s", row.Asset2dID)
 		}
 	}
 
-	if entry.Asset3dID != nil {
-		asset3d, ok := node.GetAssets3d().GetAsset3d(*entry.Asset3dID)
+	if row.Asset3dID != nil {
+		asset3d, ok := node.GetAssets3d().GetAsset3d(*row.Asset3dID)
 		if !ok {
-			return errors.Errorf("asset 3d not found: %s", entry.Asset3dID)
+			return errors.Errorf("asset 3d not found: %s", row.Asset3dID)
 		}
 		if err := s.SetAsset3d(asset3d, false); err != nil {
-			return errors.WithMessagef(err, "failed to set asset 3d: %s", entry.Asset3dID)
+			return errors.WithMessagef(err, "failed to set asset 3d: %s", row.Asset3dID)
 		}
 	}
 
