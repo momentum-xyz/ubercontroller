@@ -57,7 +57,7 @@ func seedUserTypes(ctx context.Context, node universe.Node, db database.DB) erro
 			return errors.WithMessagef(err, "failed to set user type name: %s %s", item.id, item.userTypeName)
 		}
 
-		if err := userType.SetDescription(item.description, false); err != nil {
+		if err := userType.SetDescription(*item.description, false); err != nil {
 			return errors.WithMessagef(err, "failed to set user type description: %s", item.id)
 		}
 

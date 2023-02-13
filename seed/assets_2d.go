@@ -14,21 +14,21 @@ func seedAssets2d(node universe.Node) error {
 		{
 			Asset2dID: uuid.MustParse(noname1Asset2dID),
 			Options:   &entry.Asset2dOptions{},
-			Meta: &entry.Asset2dMeta{
+			Meta: entry.Asset2dMeta{
 				"name": "",
 			},
 		},
 		{
 			Asset2dID: uuid.MustParse(noname2Asset2dID),
 			Options:   &entry.Asset2dOptions{},
-			Meta: &entry.Asset2dMeta{
+			Meta: entry.Asset2dMeta{
 				"name": "",
 			},
 		},
 		{
 			Asset2dID: uuid.MustParse(noname3Asset2dID),
 			Options:   &entry.Asset2dOptions{},
-			Meta: &entry.Asset2dMeta{
+			Meta: entry.Asset2dMeta{
 				"name": "",
 			},
 		},
@@ -39,7 +39,7 @@ func seedAssets2d(node universe.Node) error {
 				"subPath":  "miro",
 				"iconName": "miro",
 			},
-			Meta: &entry.Asset2dMeta{
+			Meta: entry.Asset2dMeta{
 				"name":      "miro",
 				"pluginId":  miroPluginID,
 				"scopeName": "plugin_miro",
@@ -52,7 +52,7 @@ func seedAssets2d(node universe.Node) error {
 				"exact":    true,
 				"iconName": "drive",
 			},
-			Meta: &entry.Asset2dMeta{
+			Meta: entry.Asset2dMeta{
 				"name":      "google Drive",
 				"pluginId":  googleDrivePluginID,
 				"scopeName": "plugin_google_drive",
@@ -65,7 +65,7 @@ func seedAssets2d(node universe.Node) error {
 				"exact":    true,
 				"iconName": "drive",
 			},
-			Meta: &entry.Asset2dMeta{
+			Meta: entry.Asset2dMeta{
 				"name":      "google drive Local",
 				"pluginId":  googleDrivePluginID,
 				"scopeName": "plugin_google_drive",
@@ -75,7 +75,7 @@ func seedAssets2d(node universe.Node) error {
 		{
 			Asset2dID: uuid.MustParse("7be0964f-df73-4880-91f5-22eef9967999"),
 			Options:   &entry.Asset2dOptions{},
-			Meta: &entry.Asset2dMeta{
+			Meta: entry.Asset2dMeta{
 				"name":     "image",
 				"pluginId": imagePluginID,
 			},
@@ -83,7 +83,7 @@ func seedAssets2d(node universe.Node) error {
 		{
 			Asset2dID: uuid.MustParse("be0d0ca3-c50b-401a-89d9-0e59fc45c5c2"),
 			Options:   &entry.Asset2dOptions{},
-			Meta: &entry.Asset2dMeta{
+			Meta: entry.Asset2dMeta{
 				"name":     "text",
 				"pluginId": textPluginID,
 			},
@@ -91,7 +91,7 @@ func seedAssets2d(node universe.Node) error {
 		{
 			Asset2dID: uuid.MustParse("bda25d5d-2aab-45b4-9e8a-23579514cec1"),
 			Options:   &entry.Asset2dOptions{},
-			Meta: &entry.Asset2dMeta{
+			Meta: entry.Asset2dMeta{
 				"name":     "video",
 				"pluginId": videoPluginID,
 			},
@@ -103,7 +103,7 @@ func seedAssets2d(node universe.Node) error {
 				"subPath":  "miro",
 				"iconName": "miro",
 			},
-			Meta: &entry.Asset2dMeta{
+			Meta: entry.Asset2dMeta{
 				"name":      "miro local",
 				"pluginId":  miroPluginID,
 				"scopeName": "plugin_miro",
@@ -113,7 +113,7 @@ func seedAssets2d(node universe.Node) error {
 		{
 			Asset2dID: uuid.MustParse(dockingStationAsset2dID),
 			Options:   &entry.Asset2dOptions{},
-			Meta: &entry.Asset2dMeta{
+			Meta: entry.Asset2dMeta{
 				"name": "Docking station",
 			},
 		},

@@ -89,7 +89,7 @@ func seedPlugins(node universe.Node) error {
 		if err != nil {
 			return errors.WithMessagef(err, "failed to create plugin: %s", p.ID)
 		}
-		if err := plugin.SetMeta(p.Meta, false); err != nil {
+		if err := plugin.SetMeta(*p.Meta, false); err != nil {
 			return errors.WithMessagef(err, "failed to set meta: %s", p.Meta)
 		}
 	}

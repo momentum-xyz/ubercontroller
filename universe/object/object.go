@@ -368,7 +368,7 @@ func (o *Object) GetEntry() *entry.Object {
 
 	if o.objectType != nil && o.objectType.GetID() == uuid.MustParse(seed.NodeObjectTypeID) {
 		// TODO Think how to avoid this hack
-		entry.ParentID = utils.GetPTR(o.id) // By convention Node has parentID of itself
+		entry.ParentID = o.id // By convention Node has parentID of itself
 	}
 
 	return entry
