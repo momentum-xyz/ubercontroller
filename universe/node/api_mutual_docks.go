@@ -247,7 +247,7 @@ func getWorldDockingStation(world universe.World) (universe.Object, error) {
 	dockingStationID := world.GetSettings().Objects["docking_station"]
 	dockingStation, ok := world.GetObjectFromAllObjects(dockingStationID)
 	if !ok {
-		return nil, errors.Errorf("failed to get docking station space: %s", dockingStationID)
+		return nil, errors.Errorf("failed to get docking station object: %s", dockingStationID)
 	}
 	return dockingStation, nil
 }

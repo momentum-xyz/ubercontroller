@@ -2,7 +2,6 @@ package node
 
 import (
 	"fmt"
-	"github.com/momentum-xyz/ubercontroller/universe/object"
 	"net/http"
 	"time"
 
@@ -21,7 +20,7 @@ import (
 // @Summary Generate Agora token
 // @Schemes
 // @Description Returns an Agora token
-// @Tags spaces
+// @Tags objects
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object ID"
@@ -29,7 +28,7 @@ import (
 // @Success 200 {object} node.apiGenAgoraToken.Out
 // @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/spaces/{object_id}/agora/token [post]
+// @Router /api/v4/objects/{object_id}/agora/token [post]
 func (n *Node) apiGenAgoraToken(c *gin.Context) {
 	type Body struct {
 		ScreenShare bool `json:"screenshare"`
@@ -51,7 +50,7 @@ func (n *Node) apiGenAgoraToken(c *gin.Context) {
 
 	if _, ok := n.GetObjectFromAllObjects(objectID); !ok {
 		err := errors.Errorf("Node: apiGenAgoraToken: object not found: %s", objectID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 		return
 	}
 
@@ -101,7 +100,7 @@ func (n *Node) apiGenAgoraToken(c *gin.Context) {
 // @Summary Get object by ID
 // @Schemes
 // @Description Returns a object info based on ID and query
-// @Tags spaces
+// @Tags objects
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object ID"
@@ -109,7 +108,7 @@ func (n *Node) apiGenAgoraToken(c *gin.Context) {
 // @Success 202 {object} dto.Object
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{object_id} [get]
+// @Router /api/v4/objects/{object_id} [get]
 func (n *Node) apiGetObject(c *gin.Context) {
 	type InQuery struct {
 		Effective bool `form:"effective"`
@@ -131,10 +130,10 @@ func (n *Node) apiGetObject(c *gin.Context) {
 		return
 	}
 
-	space, ok := n.GetObjectFromAllObjects(objectID)
+	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
 		err := errors.Errorf("Node: apiGetObject: object not found: %s", objectID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 		return
 	}
 
@@ -143,25 +142,25 @@ func (n *Node) apiGetObject(c *gin.Context) {
 	}
 	parent := object.GetParent()
 	position := object.GetActualPosition()
-	spaceType := object.GetObjectType()
+	objectType := object.GetObjectType()
 	if parent != nil {
 		out.ParentID = parent.GetID().String()
 	}
 	if position != nil {
 		out.Position = *position
 	}
-	if spaceType != nil {
-		out.ObjectTypeID = spaceType.GetID().String()
+	if objectType != nil {
+		out.ObjectTypeID = objectType.GetID().String()
 	}
 
 	asset2d := object.GetAsset2D()
 	asset3d := object.GetAsset3D()
 	if inQuery.Effective {
-		if asset2d == nil && spaceType != nil {
-			asset2d = spaceType.GetAsset2d()
+		if asset2d == nil && objectType != nil {
+			asset2d = objectType.GetAsset2d()
 		}
-		if asset3d == nil && spaceType != nil {
-			asset3d = spaceType.GetAsset3d()
+		if asset3d == nil && objectType != nil {
+			asset3d = objectType.GetAsset3d()
 		}
 	}
 	if asset2d != nil {
@@ -177,7 +176,7 @@ func (n *Node) apiGetObject(c *gin.Context) {
 // @Summary Delete a object by ID
 // @Schemes
 // @Description Deletes a object by ID
-// @Tags spaces
+// @Tags objects
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object ID"
@@ -185,7 +184,7 @@ func (n *Node) apiGetObject(c *gin.Context) {
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{object_id} [delete]
+// @Router /api/v4/objects/{object_id} [delete]
 func (n *Node) apiRemoveObject(c *gin.Context) {
 	objectID, err := uuid.Parse(c.Param("objectID"))
 	if err != nil {
@@ -194,14 +193,14 @@ func (n *Node) apiRemoveObject(c *gin.Context) {
 		return
 	}
 
-	space, ok := n.GetObjectFromAllObjects(objectID)
+	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
 		err := errors.Errorf("Node: apiRemoveObject: object not found: %s", objectID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 		return
 	}
 
-	removed, err := tree.RemoveObjectFromParent(object.GetParent(), space, true)
+	removed, err := tree.RemoveObjectFromParent(object.GetParent(), object, true)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiRemoveObject: failed to remove object from parent")
 		api.AbortRequest(c, http.StatusInternalServerError, "remove_failed", err, n.log)
@@ -210,7 +209,7 @@ func (n *Node) apiRemoveObject(c *gin.Context) {
 
 	if !removed {
 		err := errors.Errorf("Node: apiRemoveObject: object not found in parent")
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found_in_parent", err, n.log)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found_in_parent", err, n.log)
 		return
 	}
 
@@ -219,7 +218,7 @@ func (n *Node) apiRemoveObject(c *gin.Context) {
 
 // @Summary Update a object by ID
 // @Description Updates a object by ID, 're-parenting' not supported, returns updated object ID.
-// @Tags spaces
+// @Tags objects
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object ID"
@@ -228,7 +227,7 @@ func (n *Node) apiRemoveObject(c *gin.Context) {
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{object_id} [patch]
+// @Router /api/v4/objects/{object_id} [patch]
 func (n *Node) apiUpdateObject(c *gin.Context) {
 	objectID, err := uuid.Parse(c.Param("objectID"))
 	if err != nil {
@@ -241,7 +240,7 @@ func (n *Node) apiUpdateObject(c *gin.Context) {
 	// not supporting 're-parenting' and changing type'. Have to delete and recreate for that.
 	// Update/edit the positioning is done through unity edit mode.
 	type InBody struct {
-		ObjectName string `json:"space_name"`
+		ObjectName string `json:"object_name"`
 		Asset2dID  string `json:"asset_2d_id"`
 		Asset3dID  string `json:"asset_3d_id"`
 	}
@@ -253,10 +252,10 @@ func (n *Node) apiUpdateObject(c *gin.Context) {
 		return
 	}
 
-	space, ok := n.GetObjectFromAllObjects(objectID)
+	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
 		err := errors.Errorf("Node: apiUpdateObject: object not found: %s", objectID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 		return
 	}
 
@@ -271,14 +270,14 @@ func (n *Node) apiUpdateObject(c *gin.Context) {
 		asset2d, ok = n.GetAssets2d().GetAsset2d(asset2dID)
 		if !ok {
 			err := errors.Errorf("Node: apiUpdateObject: 2D asset not found: %s", asset2dID)
-			api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+			api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 			return
 		}
 	}
 	if asset2d != nil {
 		if err := object.SetAsset2D(asset2d, true); err != nil {
 			err := errors.Errorf("Node: apiUpdateObject: failed to update 2d asset: %s", asset2d.GetID())
-			api.AbortRequest(c, http.StatusInternalServerError, "space_asset_2d", err, n.log)
+			api.AbortRequest(c, http.StatusInternalServerError, "object_asset_2d", err, n.log)
 			return
 		}
 	}
@@ -294,14 +293,14 @@ func (n *Node) apiUpdateObject(c *gin.Context) {
 		asset3d, ok = n.GetAssets3d().GetAsset3d(asset3dID)
 		if !ok {
 			err := errors.Errorf("Node: apiUpdateObject: 3D asset not found: %s", asset3dID)
-			api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+			api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 			return
 		}
 	}
 	if asset3d != nil {
 		if err := object.SetAsset3D(asset3d, true); err != nil {
 			err := errors.Errorf("Node: apiUpdateObject: failed to update 3d asset: %s", asset3d.GetID())
-			api.AbortRequest(c, http.StatusInternalServerError, "space_asset_3d", err, n.log)
+			api.AbortRequest(c, http.StatusInternalServerError, "object_asset_3d", err, n.log)
 			return
 		}
 	}
@@ -309,14 +308,14 @@ func (n *Node) apiUpdateObject(c *gin.Context) {
 	if inBody.ObjectName != "" {
 		if err := object.SetName(inBody.ObjectName, true); err != nil {
 			err := errors.WithMessagef(err, "Node: apiUpdateObject: failed to set object name: %s", inBody.ObjectName)
-			api.AbortRequest(c, http.StatusInternalServerError, "space_name", err, n.log)
+			api.AbortRequest(c, http.StatusInternalServerError, "object_name", err, n.log)
 			return
 		}
 	}
 
 	if err := object.Update(false); err != nil {
-		err = errors.WithMessage(err, "Node: apiUpdateObject: failed to update space")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_space_update", err, n.log)
+		err = errors.WithMessage(err, "Node: apiUpdateObject: failed to update object")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_object_update", err, n.log)
 		return
 	}
 
@@ -333,8 +332,8 @@ func (n *Node) apiUpdateObject(c *gin.Context) {
 
 // @Summary Set object sub option by object ID
 // @Schemes
-// @Description Sets a object sub option by space ID, returns appended space option
-// @Tags spaces
+// @Description Sets a object sub option by object ID, returns appended object option
+// @Tags objects
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object ID"
@@ -343,7 +342,7 @@ func (n *Node) apiUpdateObject(c *gin.Context) {
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{object_id}/options/sub [post]
+// @Router /api/v4/objects/{object_id}/options/sub [post]
 func (n *Node) apiObjectsSetObjectSubOption(c *gin.Context) {
 	type Body struct {
 		SubOptionKey   string `json:"sub_option_key" binding:"required"`
@@ -359,15 +358,15 @@ func (n *Node) apiObjectsSetObjectSubOption(c *gin.Context) {
 
 	objectID, err := uuid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiObjectsSetObjectSubOption: failed to parse space id")
+		err := errors.WithMessage(err, "Node: apiObjectsSetObjectSubOption: failed to parse object id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
 		return
 	}
 
-	space, ok := n.GetObjectFromAllObjects(objectID)
+	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
-		err := errors.Errorf("Node: apiObjectsSetObjectSubOption: space not found: %s", objectID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		err := errors.Errorf("Node: apiObjectsSetObjectSubOption: object not found: %s", objectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 		return
 	}
 
@@ -397,10 +396,10 @@ func (n *Node) apiObjectsSetObjectSubOption(c *gin.Context) {
 	c.JSON(http.StatusAccepted, out)
 }
 
-// @Summary Delete space sub option by space ID
+// @Summary Delete object sub option by object ID
 // @Schemes
-// @Description Deletes a space sub option by space ID
-// @Tags spaces
+// @Description Deletes a object sub option by object ID
+// @Tags objects
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object ID"
@@ -409,7 +408,7 @@ func (n *Node) apiObjectsSetObjectSubOption(c *gin.Context) {
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{object_id}/options/sub [delete]
+// @Router /api/v4/objects/{object_id}/options/sub [delete]
 func (n *Node) apiObjectsRemoveObjectSubOption(c *gin.Context) {
 	type Body struct {
 		SubOptionKey string `json:"sub_option_key" binding:"required"`
@@ -424,15 +423,15 @@ func (n *Node) apiObjectsRemoveObjectSubOption(c *gin.Context) {
 
 	objectID, err := uuid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiObjectsRemoveObjectSubOption: failed to parse space id")
+		err := errors.WithMessage(err, "Node: apiObjectsRemoveObjectSubOption: failed to parse object id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
 		return
 	}
 
-	space, ok := n.GetObjectFromAllObjects(objectID)
+	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
-		err := errors.Errorf("Node: apiObjectsRemoveObjectSubOption: space not found: %s", objectID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		err := errors.Errorf("Node: apiObjectsRemoveObjectSubOption: object not found: %s", objectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 		return
 	}
 
@@ -455,10 +454,10 @@ func (n *Node) apiObjectsRemoveObjectSubOption(c *gin.Context) {
 	c.JSON(http.StatusOK, nil)
 }
 
-// @Summary Get space options by space ID
+// @Summary Get object options by object ID
 // @Schemes
-// @Description Returns a space options based on space ID and query
-// @Tags spaces
+// @Description Returns a object options based on object ID and query
+// @Tags objects
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object ID"
@@ -467,7 +466,7 @@ func (n *Node) apiObjectsRemoveObjectSubOption(c *gin.Context) {
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{object_id}/options [get]
+// @Router /api/v4/objects/{object_id}/options [get]
 func (n *Node) apiObjectsGetObjectOptions(c *gin.Context) {
 	type InQuery struct {
 		Effective bool `form:"effective"`
@@ -484,15 +483,15 @@ func (n *Node) apiObjectsGetObjectOptions(c *gin.Context) {
 
 	objectID, err := uuid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiObjectsGetObjectOptions: failed to parse space id")
+		err := errors.WithMessage(err, "Node: apiObjectsGetObjectOptions: failed to parse object id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
 		return
 	}
 
-	space, ok := n.GetObjectFromAllObjects(objectID)
+	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
-		err := errors.Errorf("Node: apiObjectsGetObjectOptions: space not found: %s", objectID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		err := errors.Errorf("Node: apiObjectsGetObjectOptions: object not found: %s", objectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 		return
 	}
 
@@ -506,10 +505,10 @@ func (n *Node) apiObjectsGetObjectOptions(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// @Summary Get space sub options
+// @Summary Get object sub options
 // @Schemes
-// @Description Returns a space sub options based on query
-// @Tags spaces
+// @Description Returns a object sub options based on query
+// @Tags objects
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object ID"
@@ -518,7 +517,7 @@ func (n *Node) apiObjectsGetObjectOptions(c *gin.Context) {
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{object_id}/options/sub [get]
+// @Router /api/v4/objects/{object_id}/options/sub [get]
 func (n *Node) apiObjectsGetObjectSubOptions(c *gin.Context) {
 	type InQuery struct {
 		Effective    bool   `form:"effective"`
@@ -536,15 +535,15 @@ func (n *Node) apiObjectsGetObjectSubOptions(c *gin.Context) {
 
 	objectID, err := uuid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiObjectsGetObjectSubOptions: failed to parse space id")
+		err := errors.WithMessage(err, "Node: apiObjectsGetObjectSubOptions: failed to parse object id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
 		return
 	}
 
-	space, ok := n.GetObjectFromAllObjects(objectID)
+	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
-		err := errors.Errorf("Node: apiObjectsGetObjectSubOptions: space not found: %s", objectID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		err := errors.Errorf("Node: apiObjectsGetObjectSubOptions: object not found: %s", objectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 		return
 	}
 

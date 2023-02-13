@@ -73,7 +73,7 @@ func (w *Worlds) apiWorldsFlyToMe(c *gin.Context) {
 	fwmDto := dto.FlyToMe{
 		Pilot:     user.GetID(),
 		PilotName: userName,
-		SpaceID:   world.GetID(),
+		ObjectID:  world.GetID(),
 	}
 
 	data, err := json.Marshal(&fwmDto)

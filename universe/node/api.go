@@ -79,11 +79,8 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 			verifiedProfile.PATCH("", n.apiProfileUpdate)
 		}
 
-		verifiedObjects := verified.Group("/spaces")
+		verifiedObjects := verified.Group("/objects")
 		{
-			// TODO: it was created only for tests, fix or remove
-			verifiedObjects.POST("/template", n.apiObjectsCreateObjectFromTemplate)
-
 			verifiedObjects.POST("", n.apiObjectsCreateObject)
 
 			object := verifiedObjects.Group("/:objectID")

@@ -12,7 +12,7 @@ import (
 )
 
 // @Summary Get a authorization token
-// @Description Request a chat authorization token for current user and given object (world or space)
+// @Description Request a chat authorization token for current user and given object (world or object)
 // @Description The user is required to be connected to the world/object.
 // @Description This also automatically joins the user as a member to the channel, so the join endpoint does not have to be called.
 // @Tags chat
@@ -23,14 +23,14 @@ import (
 // @Failure 400 {object} api.HTTPError
 // @Router /api/v4/streamchat/{objectID}/token [post]
 func (s *StreamChat) apiChannelToken(c *gin.Context) {
-	space, user, err := s.getRequestContextObjects(c)
+	object, user, err := s.getRequestContextObjects(c)
 	if err != nil {
 		// TODO: better error handling and response
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request", err, s.log)
 		return
 	}
 
-	channel, err := s.GetChannel(c, space)
+	channel, err := s.GetChannel(c, object)
 	if err != nil {
 		err = errors.WithMessage(err, "Streamchat: failed to get channel")
 		api.AbortRequest(c, http.StatusInternalServerError, "get_channel_failed", err, s.log)
@@ -72,13 +72,13 @@ func (s *StreamChat) apiChannelToken(c *gin.Context) {
 // @Failure 400 {object} api.HTTPError
 // @Router /api/v4/streamchat/{objectID}/join [post]
 func (s *StreamChat) apiChannelJoin(c *gin.Context) {
-	space, user, err := s.getRequestContextObjects(c)
+	object, user, err := s.getRequestContextObjects(c)
 	if err != nil {
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request", err, s.log)
 		return
 	}
 
-	channel, err := s.GetChannel(c, space)
+	channel, err := s.GetChannel(c, object)
 	if err != nil {
 		err = errors.WithMessage(err, "Streamchat: failed to get channel")
 		api.AbortRequest(c, http.StatusInternalServerError, "get_channel_failed", err, s.log)
@@ -103,13 +103,13 @@ func (s *StreamChat) apiChannelJoin(c *gin.Context) {
 // @Failure 400 {object} api.HTTPError
 // @Router /api/v4/streamchat/{objectID}/leave [post]
 func (s *StreamChat) apiChannelLeave(c *gin.Context) {
-	space, user, err := s.getRequestContextObjects(c)
+	object, user, err := s.getRequestContextObjects(c)
 	if err != nil {
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request", err, s.log)
 		return
 	}
 
-	channel, err := s.GetChannel(c, space)
+	channel, err := s.GetChannel(c, object)
 	if err != nil {
 		err = errors.WithMessage(err, "Streamchat: failed to get channel")
 		api.AbortRequest(c, http.StatusInternalServerError, "get_channel_failed", err, s.log)
@@ -128,12 +128,12 @@ func (s *StreamChat) apiChannelLeave(c *gin.Context) {
 // TODO: put these in the actual context in shared middleware?
 func (s *StreamChat) getRequestContextObjects(c *gin.Context) (object universe.Object, user universe.User, err error) {
 	objectID := c.Param("objectID")
-	space, err = s.getSpace(objectID)
+	object, err = s.getObject(objectID)
 	if err != nil {
 		return
 	}
 
-	user, err = s.getUserFromContext(c, space)
+	user, err = s.getUserFromContext(c, object)
 	if err != nil {
 		return
 	}
@@ -142,18 +142,18 @@ func (s *StreamChat) getRequestContextObjects(c *gin.Context) (object universe.O
 }
 
 // Get object by UUID string.
-func (s *StreamChat) getSpace(id string) (universe.Object, error) {
+func (s *StreamChat) getObject(id string) (universe.Object, error) {
 	objectID, err := uuid.Parse(id)
 	if err != nil {
 		err := errors.WithMessagef(err, "Failed to parse ID %s", id)
 		return nil, err
 	}
-	space, ok := s.node.GetObjectFromAllObjects(objectID)
+	object, ok := s.node.GetObjectFromAllObjects(objectID)
 	if !ok {
 		err := errors.Errorf("Object not found: %s", objectID)
 		return nil, err
 	}
-	return space, nil
+	return object, nil
 }
 
 // Resolve the user object from the request context and the given object.

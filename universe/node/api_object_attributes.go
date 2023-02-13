@@ -17,17 +17,17 @@ import (
 // @Summary Get object attribute
 // @Schemes
 // @Description Returns object attribute
-// @Tags spaces
+// @Tags objects
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object ID"
-// @Param query query node.apiGetSpaceAttributesValue.InQuery true "query params"
+// @Param query query node.apiGetObjectAttributesValue.InQuery true "query params"
 // @Success 200 {object} entry.AttributeValue
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{object_id}/attributes [get]
-func (n *Node) apiGetSpaceAttributesValue(c *gin.Context) {
+// @Router /api/v4/objects/{object_id}/attributes [get]
+func (n *Node) apiGetObjectAttributesValue(c *gin.Context) {
 	type InQuery struct {
 		PluginID      string `form:"plugin_id" binding:"required"`
 		AttributeName string `form:"attribute_name" binding:"required"`
@@ -36,36 +36,36 @@ func (n *Node) apiGetSpaceAttributesValue(c *gin.Context) {
 	inQuery := InQuery{}
 
 	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		err := errors.WithMessage(err, "Node: apiGetSpaceAttributesValue: failed to bind query")
+		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: failed to bind query")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
 		return
 	}
 
 	objectID, err := uuid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiGetSpaceAttributesValue: failed to parse object id")
+		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: failed to parse object id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
 		return
 	}
 
 	pluginID, err := uuid.Parse(inQuery.PluginID)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiGetSpaceAttributesValue: failed to parse plugin id")
+		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: failed to parse plugin id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
 		return
 	}
 
-	space, ok := n.GetObjectFromAllObjects(objectID)
+	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
-		err := errors.Errorf("Node: apiGetSpaceAttributesValue: object not found: %s", objectID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		err := errors.Errorf("Node: apiGetObjectAttributesValue: object not found: %s", objectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 		return
 	}
 
 	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
 	out, ok := object.GetObjectAttributes().GetValue(attributeID)
 	if !ok {
-		err := errors.Errorf("Node: apiGetSpaceAttributesValue: object attribute value not found: %s", attributeID)
+		err := errors.Errorf("Node: apiGetObjectAttributesValue: object attribute value not found: %s", attributeID)
 		api.AbortRequest(c, http.StatusNotFound, "attribute_not_found", err, n.log)
 		return
 	}
@@ -76,17 +76,17 @@ func (n *Node) apiGetSpaceAttributesValue(c *gin.Context) {
 // @Summary Get object and all subobject attributes
 // @Schemes
 // @Description Returns object and all subobject attributes
-// @Tags spaces
+// @Tags objects
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object ID"
-// @Param query query node.apiGetSpaceWithChildrenAttributeValues.InQuery true "query params"
-// @Success 200 {object} dto.SpaceAttributeValues
+// @Param query query node.apiGetObjectWithChildrenAttributeValues.InQuery true "query params"
+// @Success 200 {object} dto.ObjectAttributeValues
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{object_id}/attributes-with-children [get]
-func (n *Node) apiGetSpaceWithChildrenAttributeValues(c *gin.Context) {
+// @Router /api/v4/objects/{object_id}/attributes-with-children [get]
+func (n *Node) apiGetObjectWithChildrenAttributeValues(c *gin.Context) {
 	type InQuery struct {
 		PluginID      string `form:"plugin_id" binding:"required"`
 		AttributeName string `form:"attribute_name" binding:"required"`
@@ -95,63 +95,63 @@ func (n *Node) apiGetSpaceWithChildrenAttributeValues(c *gin.Context) {
 	inQuery := InQuery{}
 
 	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		err := errors.WithMessage(err, "Node: apiGetSpaceWithChildrenAttributeValues: failed to bind query")
+		err := errors.WithMessage(err, "Node: apiGetObjectWithChildrenAttributeValues: failed to bind query")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
 		return
 	}
 
 	objectID, err := uuid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiGetSpaceWithChildrenAttributeValues: failed to parse object id")
+		err := errors.WithMessage(err, "Node: apiGetObjectWithChildrenAttributeValues: failed to parse object id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
 		return
 	}
 
 	pluginID, err := uuid.Parse(inQuery.PluginID)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiGetSpaceWithChildrenAttributeValues: failed to parse plugin id")
+		err := errors.WithMessage(err, "Node: apiGetObjectWithChildrenAttributeValues: failed to parse plugin id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
 		return
 	}
 
-	rootSpace, ok := n.GetObjectFromAllObjects(objectID)
+	rootObject, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
-		err := errors.Errorf("Node: apiGetSpaceWithChildrenAttributeValues: object not found: %s", objectID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		err := errors.Errorf("Node: apiGetObjectWithChildrenAttributeValues: object not found: %s", objectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 		return
 	}
 
-	spaces := rootSpace.GetObjects(true)
-	spaces[rootSpace.GetID()] = rootSpace
+	objects := rootObject.GetObjects(true)
+	objects[rootObject.GetID()] = rootObject
 
 	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
-	spaceAttributes := make(dto.SpaceAttributeValues, len(spaces))
-	for _, object := range spaces {
+	objectAttributes := make(dto.ObjectAttributeValues, len(objects))
+	for _, object := range objects {
 		attributeValue, ok := object.GetObjectAttributes().GetValue(attributeID)
 		if !ok || attributeValue == nil {
 			continue
 		}
 
-		spaceAttributes[object.GetID()] = attributeValue
+		objectAttributes[object.GetID()] = attributeValue
 	}
 
-	c.JSON(http.StatusOK, spaceAttributes)
+	c.JSON(http.StatusOK, objectAttributes)
 }
 
 // @Summary Set object attribute
 // @Schemes
 // @Description Sets entire object attribute
-// @Tags spaces
+// @Tags objects
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object ID"
-// @Param body body node.apiSetSpaceAttributesValue.InBody true "body params"
+// @Param body body node.apiSetObjectAttributesValue.InBody true "body params"
 // @Success 202 {object} entry.AttributeValue
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{object_id}/attributes [post]
-func (n *Node) apiSetSpaceAttributesValue(c *gin.Context) {
+// @Router /api/v4/objects/{object_id}/attributes [post]
+func (n *Node) apiSetObjectAttributesValue(c *gin.Context) {
 	type InBody struct {
 		PluginID       string         `json:"plugin_id" binding:"required"`
 		AttributeName  string         `json:"attribute_name" binding:"required"`
@@ -161,29 +161,29 @@ func (n *Node) apiSetSpaceAttributesValue(c *gin.Context) {
 	inBody := InBody{}
 
 	if err := c.ShouldBindJSON(&inBody); err != nil {
-		err = errors.WithMessage(err, "Node: apiSetSpaceAttributesValue: failed to bind json")
+		err = errors.WithMessage(err, "Node: apiSetObjectAttributesValue: failed to bind json")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
 		return
 	}
 
 	objectID, err := uuid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSetSpaceAttributesValue: failed to parse object id")
+		err := errors.WithMessage(err, "Node: apiSetObjectAttributesValue: failed to parse object id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
 		return
 	}
 
 	pluginID, err := uuid.Parse(inBody.PluginID)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSetSpaceAttributesValue: failed to parse plugin id")
+		err := errors.WithMessage(err, "Node: apiSetObjectAttributesValue: failed to parse plugin id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
 		return
 	}
 
-	space, ok := n.GetObjectFromAllObjects(objectID)
+	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
-		err := errors.Errorf("Node: apiSetSpaceAttributesValue: object not found: %s", objectID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		err := errors.Errorf("Node: apiSetObjectAttributesValue: object not found: %s", objectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 		return
 	}
 
@@ -212,7 +212,7 @@ func (n *Node) apiSetSpaceAttributesValue(c *gin.Context) {
 
 	payload, err := object.GetObjectAttributes().Upsert(attributeID, modifyFn, true)
 	if err != nil {
-		err = errors.WithMessage(err, "Node: apiSetSpaceAttributesValue: failed to upsert object attribute")
+		err = errors.WithMessage(err, "Node: apiSetObjectAttributesValue: failed to upsert object attribute")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert", err, n.log)
 		return
 	}
@@ -223,17 +223,17 @@ func (n *Node) apiSetSpaceAttributesValue(c *gin.Context) {
 // @Summary Get object sub attributes
 // @Schemes
 // @Description Returns object sub attributes
-// @Tags spaces
+// @Tags objects
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object ID"
-// @Param query query node.apiGetSpaceAttributeSubValue.InQuery true "query params"
-// @Success 200 {object} dto.SpaceSubAttributes
+// @Param query query node.apiGetObjectAttributeSubValue.InQuery true "query params"
+// @Success 200 {object} dto.ObjectSubAttributes
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{object_id}/attributes/sub [get]
-func (n *Node) apiGetSpaceAttributeSubValue(c *gin.Context) {
+// @Router /api/v4/objects/{object_id}/attributes/sub [get]
+func (n *Node) apiGetObjectAttributeSubValue(c *gin.Context) {
 	type InQuery struct {
 		PluginID        string `form:"plugin_id" binding:"required"`
 		AttributeName   string `form:"attribute_name" binding:"required"`
@@ -243,47 +243,47 @@ func (n *Node) apiGetSpaceAttributeSubValue(c *gin.Context) {
 	inQuery := InQuery{}
 
 	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		err := errors.WithMessage(err, "Node: apiGetSpaceAttributeSubValue: failed to bind query")
+		err := errors.WithMessage(err, "Node: apiGetObjectAttributeSubValue: failed to bind query")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
 		return
 	}
 
 	objectID, err := uuid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiGetSpaceSubAttributes: failed to parse object id")
+		err := errors.WithMessage(err, "Node: apiGetObjectSubAttributes: failed to parse object id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
 		return
 	}
 
 	pluginID, err := uuid.Parse(inQuery.PluginID)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiGetSpaceSubAttributes: failed to parse plugin id")
+		err := errors.WithMessage(err, "Node: apiGetObjectSubAttributes: failed to parse plugin id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
 		return
 	}
 
-	space, ok := n.GetObjectFromAllObjects(objectID)
+	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
-		err := errors.Errorf("Node: apiGetSpaceAttributeSubValue: object not found: %s", objectID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		err := errors.Errorf("Node: apiGetObjectAttributeSubValue: object not found: %s", objectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 		return
 	}
 
 	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
 	attributeValue, ok := object.GetObjectAttributes().GetValue(attributeID)
 	if !ok {
-		err := errors.Errorf("Node: apiGetSpaceAttributeSubValue: attribute value not found: %s", attributeID)
+		err := errors.Errorf("Node: apiGetObjectAttributeSubValue: attribute value not found: %s", attributeID)
 		api.AbortRequest(c, http.StatusNotFound, "attribute_value_not_found", err, n.log)
 		return
 	}
 
 	if attributeValue == nil {
-		err := errors.Errorf("Node: apiGetSpaceAttributeSubValue: attribute value is nil")
+		err := errors.Errorf("Node: apiGetObjectAttributeSubValue: attribute value is nil")
 		api.AbortRequest(c, http.StatusNotFound, "attribute_value_nil", err, n.log)
 		return
 	}
 
-	out := dto.SpaceSubAttributes{
+	out := dto.ObjectSubAttributes{
 		inQuery.SubAttributeKey: (*attributeValue)[inQuery.SubAttributeKey],
 	}
 
@@ -293,17 +293,17 @@ func (n *Node) apiGetSpaceAttributeSubValue(c *gin.Context) {
 // @Summary Set object sub attribute
 // @Schemes
 // @Description Sets a object sub attribute
-// @Tags spaces
+// @Tags objects
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object ID"
-// @Param body body node.apiSetSpaceAttributeSubValue.Body true "body params"
-// @Success 202 {object} dto.SpaceSubAttributes
+// @Param body body node.apiSetObjectAttributeSubValue.Body true "body params"
+// @Success 202 {object} dto.ObjectSubAttributes
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{object_id}/attributes/sub [post]
-func (n *Node) apiSetSpaceAttributeSubValue(c *gin.Context) {
+// @Router /api/v4/objects/{object_id}/attributes/sub [post]
+func (n *Node) apiSetObjectAttributeSubValue(c *gin.Context) {
 	type Body struct {
 		PluginID          string `json:"plugin_id" binding:"required"`
 		AttributeName     string `json:"attribute_name" binding:"required"`
@@ -314,29 +314,29 @@ func (n *Node) apiSetSpaceAttributeSubValue(c *gin.Context) {
 	inBody := Body{}
 
 	if err := c.ShouldBindJSON(&inBody); err != nil {
-		err = errors.WithMessage(err, "Node: apiSetSpaceAttributeSubValue: failed to bind json")
+		err = errors.WithMessage(err, "Node: apiSetObjectAttributeSubValue: failed to bind json")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
 		return
 	}
 
 	objectID, err := uuid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSetSpaceAttributeSubValue: failed to parse object id")
+		err := errors.WithMessage(err, "Node: apiSetObjectAttributeSubValue: failed to parse object id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
 		return
 	}
 
 	pluginID, err := uuid.Parse(inBody.PluginID)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSetSpaceAttributeSubValue: failed to parse plugin id")
+		err := errors.WithMessage(err, "Node: apiSetObjectAttributeSubValue: failed to parse plugin id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
 		return
 	}
 
-	space, ok := n.GetObjectFromAllObjects(objectID)
+	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
-		err := errors.Errorf("Node: apiSetSpaceAttributeSubValue: object not found: %s", objectID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		err := errors.Errorf("Node: apiSetObjectAttributeSubValue: object not found: %s", objectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 		return
 	}
 
@@ -365,12 +365,12 @@ func (n *Node) apiSetSpaceAttributeSubValue(c *gin.Context) {
 
 	payload, err := object.GetObjectAttributes().Upsert(attributeID, modifyFn, true)
 	if err != nil {
-		err = errors.WithMessage(err, "Node: apiSetSpaceAttributeSubValue: failed to upsert object attribute")
+		err = errors.WithMessage(err, "Node: apiSetObjectAttributeSubValue: failed to upsert object attribute")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert", err, n.log)
 		return
 	}
 
-	out := dto.SpaceSubAttributes{
+	out := dto.ObjectSubAttributes{
 		inBody.SubAttributeKey: (*payload.Value)[inBody.SubAttributeKey],
 	}
 
@@ -380,17 +380,17 @@ func (n *Node) apiSetSpaceAttributeSubValue(c *gin.Context) {
 // @Summary Delete object sub attribute
 // @Schemes
 // @Description Deletes a object sub attribute
-// @Tags spaces
+// @Tags objects
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object ID"
-// @Param body body node.apiRemoveSpaceAttributeSubValue.Body true "body params"
+// @Param body body node.apiRemoveObjectAttributeSubValue.Body true "body params"
 // @Success 200 {object} nil
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{object_id}/attributes/sub [delete]
-func (n *Node) apiRemoveSpaceAttributeSubValue(c *gin.Context) {
+// @Router /api/v4/objects/{object_id}/attributes/sub [delete]
+func (n *Node) apiRemoveObjectAttributeSubValue(c *gin.Context) {
 	type Body struct {
 		PluginID        string `json:"plugin_id" binding:"required"`
 		AttributeName   string `json:"attribute_name" binding:"required"`
@@ -400,29 +400,29 @@ func (n *Node) apiRemoveSpaceAttributeSubValue(c *gin.Context) {
 	inBody := Body{}
 
 	if err := c.ShouldBindJSON(&inBody); err != nil {
-		err = errors.WithMessage(err, "Node: apiRemoveSpaceAttributeSubValue: failed to bind json")
+		err = errors.WithMessage(err, "Node: apiRemoveObjectAttributeSubValue: failed to bind json")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
 		return
 	}
 
 	objectID, err := uuid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiRemoveSpaceAttributeSubValue: failed to parse object id")
+		err := errors.WithMessage(err, "Node: apiRemoveObjectAttributeSubValue: failed to parse object id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
 		return
 	}
 
 	pluginID, err := uuid.Parse(inBody.PluginID)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiRemoveSpaceAttributeSubValue: failed to parse plugin id")
+		err := errors.WithMessage(err, "Node: apiRemoveObjectAttributeSubValue: failed to parse plugin id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
 		return
 	}
 
-	space, ok := n.GetObjectFromAllObjects(objectID)
+	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
-		err := errors.Errorf("Node: apiRemoveSpaceAttributeSubValue: object not found: %s", objectID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		err := errors.Errorf("Node: apiRemoveObjectAttributeSubValue: object not found: %s", objectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 		return
 	}
 
@@ -439,7 +439,7 @@ func (n *Node) apiRemoveSpaceAttributeSubValue(c *gin.Context) {
 	}
 
 	if _, err := object.GetObjectAttributes().UpdateValue(attributeID, modifyFn, true); err != nil {
-		err = errors.WithMessage(err, "Node: apiRemoveSpaceAttributeSubValue: failed to update object attribute")
+		err = errors.WithMessage(err, "Node: apiRemoveObjectAttributeSubValue: failed to update object attribute")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_update", err, n.log)
 		return
 	}
@@ -450,17 +450,17 @@ func (n *Node) apiRemoveSpaceAttributeSubValue(c *gin.Context) {
 // @Summary Delete object attribute
 // @Schemes
 // @Description Deletes a object attribute
-// @Tags spaces
+// @Tags objects
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object ID"
-// @Param body body node.apiRemoveSpaceAttributeValue.Body true "body params"
+// @Param body body node.apiRemoveObjectAttributeValue.Body true "body params"
 // @Success 200 {object} nil
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{object_id}/attributes [delete]
-func (n *Node) apiRemoveSpaceAttributeValue(c *gin.Context) {
+// @Router /api/v4/objects/{object_id}/attributes [delete]
+func (n *Node) apiRemoveObjectAttributeValue(c *gin.Context) {
 	type Body struct {
 		PluginID      string `json:"plugin_id" binding:"required"`
 		AttributeName string `json:"attribute_name" binding:"required"`
@@ -468,29 +468,29 @@ func (n *Node) apiRemoveSpaceAttributeValue(c *gin.Context) {
 
 	var inBody Body
 	if err := c.ShouldBindJSON(&inBody); err != nil {
-		err = errors.WithMessage(err, "Node: apiRemoveSpaceAttributeValue: failed to bind json")
+		err = errors.WithMessage(err, "Node: apiRemoveObjectAttributeValue: failed to bind json")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
 		return
 	}
 
 	objectID, err := uuid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiRemoveSpaceAttributeValue: failed to parse space id")
+		err := errors.WithMessage(err, "Node: apiRemoveObjectAttributeValue: failed to parse object id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
 		return
 	}
 
 	pluginID, err := uuid.Parse(inBody.PluginID)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiRemoveSpaceAttributeValue: failed to parse plugin id")
+		err := errors.WithMessage(err, "Node: apiRemoveObjectAttributeValue: failed to parse plugin id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
 		return
 	}
 
-	space, ok := n.GetObjectFromAllObjects(objectID)
+	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
-		err := errors.Errorf("Node: apiRemoveSpaceAttributeValue: space not found: %s", objectID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, n.log)
+		err := errors.Errorf("Node: apiRemoveObjectAttributeValue: object not found: %s", objectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 		return
 	}
 
@@ -498,7 +498,7 @@ func (n *Node) apiRemoveSpaceAttributeValue(c *gin.Context) {
 	if _, err := object.GetObjectAttributes().UpdateValue(
 		attributeID, modify.ReplaceWith[entry.AttributeValue](nil), true,
 	); err != nil {
-		err = errors.WithMessage(err, "Node: apiRemoveSpaceAttributeValue: failed to update space attribute")
+		err = errors.WithMessage(err, "Node: apiRemoveObjectAttributeValue: failed to update object attribute")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_update", err, n.log)
 		return
 	}
