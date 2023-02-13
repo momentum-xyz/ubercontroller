@@ -18,10 +18,10 @@ import (
 // @Tags chat
 // @Accept json
 // @Produce json
-// @Param spaceID path string true "World or object ID"
+// @Param objectID path string true "World or object ID"
 // @Success 200 {object} streamchat.apiChannelToken.Response
 // @Failure 400 {object} api.HTTPError
-// @Router /api/v4/streamchat/{spaceID}/token [post]
+// @Router /api/v4/streamchat/{objectID}/token [post]
 func (s *StreamChat) apiChannelToken(c *gin.Context) {
 	space, user, err := s.getRequestContextObjects(c)
 	if err != nil {
@@ -67,10 +67,10 @@ func (s *StreamChat) apiChannelToken(c *gin.Context) {
 // @Tags chat
 // @Accept json
 // @Produce json
-// @Param spaceID path string true "World or object ID"
+// @Param objectID path string true "World or object ID"
 // @Success 204 ""
 // @Failure 400 {object} api.HTTPError
-// @Router /api/v4/streamchat/{spaceID}/join [post]
+// @Router /api/v4/streamchat/{objectID}/join [post]
 func (s *StreamChat) apiChannelJoin(c *gin.Context) {
 	space, user, err := s.getRequestContextObjects(c)
 	if err != nil {
@@ -98,10 +98,10 @@ func (s *StreamChat) apiChannelJoin(c *gin.Context) {
 // @Tags chat
 // @Accept json
 // @Produce json
-// @Param spaceID path string true "World or object ID"
+// @Param objectID path string true "World or object ID"
 // @Success 204 ""
 // @Failure 400 {object} api.HTTPError
-// @Router /api/v4/streamchat/{spaceID}/leave [post]
+// @Router /api/v4/streamchat/{objectID}/leave [post]
 func (s *StreamChat) apiChannelLeave(c *gin.Context) {
 	space, user, err := s.getRequestContextObjects(c)
 	if err != nil {
@@ -126,9 +126,9 @@ func (s *StreamChat) apiChannelLeave(c *gin.Context) {
 
 // Get the common objects for these api requests
 // TODO: put these in the actual context in shared middleware?
-func (s *StreamChat) getRequestContextObjects(c *gin.Context) (space universe.Object, user universe.User, err error) {
-	spaceID := c.Param("spaceID")
-	space, err = s.getSpace(spaceID)
+func (s *StreamChat) getRequestContextObjects(c *gin.Context) (object universe.Object, user universe.User, err error) {
+	objectID := c.Param("objectID")
+	space, err = s.getSpace(objectID)
 	if err != nil {
 		return
 	}
@@ -141,32 +141,32 @@ func (s *StreamChat) getRequestContextObjects(c *gin.Context) (space universe.Ob
 
 }
 
-// Get space by UUID string.
+// Get object by UUID string.
 func (s *StreamChat) getSpace(id string) (universe.Object, error) {
-	spaceID, err := uuid.Parse(id)
+	objectID, err := uuid.Parse(id)
 	if err != nil {
 		err := errors.WithMessagef(err, "Failed to parse ID %s", id)
 		return nil, err
 	}
-	space, ok := s.node.GetObjectFromAllObjects(spaceID)
+	space, ok := s.node.GetObjectFromAllObjects(objectID)
 	if !ok {
-		err := errors.Errorf("Object not found: %s", spaceID)
+		err := errors.Errorf("Object not found: %s", objectID)
 		return nil, err
 	}
 	return space, nil
 }
 
-// Resolve the user object from the request context and the given space.
-func (s *StreamChat) getUserFromContext(ctx *gin.Context, space universe.Object) (universe.User, error) {
+// Resolve the user object from the request context and the given object.
+func (s *StreamChat) getUserFromContext(ctx *gin.Context, object universe.Object) (universe.User, error) {
 
 	userID, err := api.GetUserIDFromContext(ctx)
 	if err != nil {
 		return nil, errors.WithMessage(err, "Streamchat: failed to get userID from context")
 	}
-	// The user needs to be 'in' the space (a.k.a world or object)
-	user, ok := space.GetUser(userID, false)
+	// The user needs to be 'in' the object (a.k.a world or object)
+	user, ok := object.GetUser(userID, false)
 	if !ok {
-		return nil, fmt.Errorf("Streamchat: User %s not found in %s", userID, space.GetID())
+		return nil, fmt.Errorf("Streamchat: User %s not found in %s", userID, object.GetID())
 	}
 	return user, nil
 }

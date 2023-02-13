@@ -218,7 +218,7 @@ func createWorldPortal(portalName string, from, to universe.World) (universe.Obj
 
 	portalObjectTypeID, err := common.GetPortalObjectTypeID()
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to get portal space type id")
+		return nil, errors.WithMessage(err, "failed to get portal object type id")
 	}
 
 	template := tree.ObjectTemplate{

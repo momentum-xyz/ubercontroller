@@ -8,13 +8,13 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
-func CalcObjectSpawnPosition(parentID, userID uuid.UUID) (*cmath.SpacePosition, error) {
+func CalcObjectSpawnPosition(parentID, userID uuid.UUID) (*cmath.ObjectPosition, error) {
 	parent, ok := universe.GetNode().GetObjectFromAllObjects(parentID)
 	if !ok {
 		return nil, errors.Errorf("object parent not found: %s", parentID)
 	}
 
-	var position *cmath.SpacePosition
+	var position *cmath.ObjectPosition
 	effectiveOptions := parent.GetEffectiveOptions()
 	if effectiveOptions == nil || len(effectiveOptions.ChildPlacements) == 0 {
 		world := parent.GetWorld()
@@ -22,7 +22,7 @@ func CalcObjectSpawnPosition(parentID, userID uuid.UUID) (*cmath.SpacePosition, 
 			user, ok := world.GetUser(userID, true)
 			if ok {
 				//distance := float32(10)
-				position = &cmath.SpacePosition{
+				position = &cmath.ObjectPosition{
 					// TODO: recalc based on euler angles, not lookat: Location: cmath.Add(user.GetPosition(), cmath.MultiplyN(user.GetRotation(), distance)),
 					Location: user.GetPosition(),
 					Rotation: cmath.Vec3{},

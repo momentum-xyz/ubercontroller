@@ -15,7 +15,7 @@ import (
 
 // @Summary Create space
 // @Schemes
-// @Description Creates a space base on body
+// @Description Creates a object base on body
 // @Tags spaces
 // @Accept json
 // @Produce json
@@ -29,12 +29,12 @@ func (n *Node) apiSpacesCreateSpace(c *gin.Context) {
 	// TODO: use "helper.ObjectTemplate" alternative here to have ability to create composite objects
 	// QUESTION: can we automatically clone "helper.ObjectTemplate" definition and add validation tags to it?
 	type InBody struct {
-		SpaceName   string               `json:"space_name" binding:"required"`
-		ParentID    string               `json:"parent_id" binding:"required"`
-		SpaceTypeID string               `json:"space_type_id" binding:"required"`
-		Asset2dID   *string              `json:"asset_2d_id"`
-		Asset3dID   *string              `json:"asset_3d_id"`
-		Position    *cmath.SpacePosition `json:"position"`
+		SpaceName   string                `json:"space_name" binding:"required"`
+		ParentID    string                `json:"parent_id" binding:"required"`
+		SpaceTypeID string                `json:"space_type_id" binding:"required"`
+		Asset2dID   *string               `json:"asset_2d_id"`
+		Asset3dID   *string               `json:"asset_3d_id"`
+		Position    *cmath.ObjectPosition `json:"position"`
 	}
 	var inBody InBody
 
@@ -75,7 +75,7 @@ func (n *Node) apiSpacesCreateSpace(c *gin.Context) {
 	if position == nil {
 		position, err = tree.CalcObjectSpawnPosition(parentID, userID)
 		if err != nil {
-			err := errors.WithMessage(err, "Node: apiSpacesCreateSpace: failed to calc space spawn position")
+			err := errors.WithMessage(err, "Node: apiSpacesCreateSpace: failed to calc object spawn position")
 			api.AbortRequest(c, http.StatusBadRequest, "calc_spawn_position_failed", err, n.log)
 			return
 		}
@@ -83,7 +83,7 @@ func (n *Node) apiSpacesCreateSpace(c *gin.Context) {
 
 	spaceTypeID, err := uuid.Parse(inBody.SpaceTypeID)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSpacesCreateSpace: failed to parse space type id")
+		err := errors.WithMessage(err, "Node: apiSpacesCreateSpace: failed to parse object type id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_type_id", err, n.log)
 		return
 	}
@@ -124,13 +124,13 @@ func (n *Node) apiSpacesCreateSpace(c *gin.Context) {
 
 	object, err := tree.AddObjectFromTemplate(&spaceTemplate, true)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSpacesCreateSpace: failed to add space from template")
+		err := errors.WithMessage(err, "Node: apiSpacesCreateSpace: failed to add object from template")
 		api.AbortRequest(c, http.StatusInternalServerError, "add_space_failed", err, n.log)
 		return
 	}
 
 	type Out struct {
-		SpaceID string `json:"space_id"`
+		SpaceID string `json:"object_id"`
 	}
 	out := Out{
 		SpaceID: object.GetID().String(),
@@ -150,7 +150,7 @@ func (n *Node) apiSpacesCreateSpaceFromTemplate(c *gin.Context) {
 		return
 	}
 
-	spaceID, err := tree.AddObjectFromTemplate(&template, true)
+	objectID, err := tree.AddObjectFromTemplate(&template, true)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -159,6 +159,6 @@ func (n *Node) apiSpacesCreateSpaceFromTemplate(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"space_id": spaceID,
+		"object_id": objectID,
 	})
 }

@@ -16,9 +16,9 @@ func (s *StreamChat) RegisterAPI(r *gin.Engine) {
 		{
 			streamChat := verified.Group("/streamchat")
 			{
-				streamChat.POST("/:spaceID/token", s.apiChannelToken)
-				streamChat.POST("/:spaceID/join", s.apiChannelJoin)
-				streamChat.POST("/:spaceID/leave", s.apiChannelLeave)
+				streamChat.POST("/:objectID/token", s.apiChannelToken)
+				streamChat.POST("/:objectID/join", s.apiChannelJoin)
+				streamChat.POST("/:objectID/leave", s.apiChannelLeave)
 			}
 		}
 	}

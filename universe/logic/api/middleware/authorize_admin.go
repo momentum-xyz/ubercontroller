@@ -17,7 +17,7 @@ func AuthorizeAdmin(log *zap.SugaredLogger) gin.HandlerFunc {
 	userObjects := universe.GetNode().GetUserObjects()
 
 	return func(c *gin.Context) {
-		objectID, err := uuid.Parse(c.Param("spaceID"))
+		objectID, err := uuid.Parse(c.Param("objectID"))
 		if err != nil {
 			err := errors.WithMessage(err, "Middleware: AuthorizeAdmin: failed to parse object id")
 			api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, log)

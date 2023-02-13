@@ -51,7 +51,7 @@ type ObjectsDB interface {
 	UpsertObjects(ctx context.Context, objects []*entry.Object) error
 
 	UpdateObjectParentID(ctx context.Context, objectID uuid.UUID, parentID uuid.UUID) error
-	UpdateObjectPosition(ctx context.Context, objectID uuid.UUID, position *cmath.SpacePosition) error
+	UpdateObjectPosition(ctx context.Context, objectID uuid.UUID, position *cmath.ObjectPosition) error
 	UpdateObjectOwnerID(ctx context.Context, objectID, ownerID uuid.UUID) error
 	UpdateObjectAsset2dID(ctx context.Context, objectID uuid.UUID, asset2dID *uuid.UUID) error
 	UpdateObjectAsset3dID(ctx context.Context, objectID uuid.UUID, asset3dID *uuid.UUID) error

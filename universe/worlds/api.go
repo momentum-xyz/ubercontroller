@@ -18,7 +18,7 @@ func (w *Worlds) RegisterAPI(r *gin.Engine) {
 		{
 			worlds := verified.Group("/worlds")
 			{
-				world := worlds.Group("/:spaceID")
+				world := worlds.Group("/:objectID")
 				{
 					world.GET("/explore", w.apiWorldsGetSpacesWithChildren)
 					world.GET("/explore/search", w.apiWorldsSearchSpaces)
