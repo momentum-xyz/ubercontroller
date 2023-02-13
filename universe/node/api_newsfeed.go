@@ -62,7 +62,7 @@ func (n *Node) apiNewsFeedAddItem(c *gin.Context) {
 			universe.GetSystemPluginID(), universe.ReservedAttributes.Object.NewsFeedItems.Name,
 		), modifyFn, true,
 	); err != nil {
-		err := errors.WithMessage(err, "Node: apiNewsFeedAddItem: failed to upsert node space attribute")
+		err := errors.WithMessage(err, "Node: apiNewsFeedAddItem: failed to upsert node object attribute")
 		api.AbortRequest(c, http.StatusInternalServerError, "upsert_attribute_failed", err, n.log)
 		return
 	}
@@ -84,7 +84,7 @@ func (n *Node) apiNewsFeedGetAll(c *gin.Context) {
 		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Object.NewsFeedItems.Name),
 	)
 	if !ok || value == nil {
-		err := errors.Errorf("Node: apiNewsFeedGetAll: failed to get node space attribute value")
+		err := errors.Errorf("Node: apiNewsFeedGetAll: failed to get node object attribute value")
 		api.AbortRequest(c, http.StatusNotFound, "attribute_not_found", err, n.log)
 		return
 	}

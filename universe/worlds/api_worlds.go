@@ -29,9 +29,9 @@ import (
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/worlds/{space_id}/online-users [get]
+// @Router /api/v4/worlds/{object_id}/online-users [get]
 func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
-	worldID, err := uuid.Parse(c.Param("spaceID"))
+	worldID, err := uuid.Parse(c.Param("objectID"))
 	if err != nil {
 		err := errors.WithMessage(err, "Worlds: apiGetOnlineUsers: failed to parse world id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
@@ -70,63 +70,63 @@ func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, userDTOs)
 }
 
-// @Summary Returns spaces and one level of children
+// @Summary Returns objects and one level of children
 // @Schemes
-// @Description Returns space information and one level of children based on world_id (used in explore widget)
+// @Description Returns object information and one level of children based on world_id (used in explore widget)
 // @Tags worlds
 // @Accept json
 // @Produce json
 // @Param world_id path string true "World ID"
-// @Param query query worlds.apiWorldsGetSpacesWithChildren.Query true "query params"
+// @Param query query worlds.apiWorldsGetObjectsWithChildren.Query true "query params"
 // @Success 200 {object} dto.ExploreOption
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/worlds/{space_id}/explore [get]
-func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
+// @Router /api/v4/worlds/{object_id}/explore [get]
+func (w *Worlds) apiWorldsGetObjectsWithChildren(c *gin.Context) {
 	type Query struct {
-		SpaceID string `form:"space_id" binding:"required"`
+		ObjectID string `form:"object_id" binding:"required"`
 	}
 
 	inQuery := Query{}
 
 	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		err := errors.WithMessage(err, "Worlds: apiWorldsGetSpacesWithChildren: failed to bind query")
+		err := errors.WithMessage(err, "Worlds: apiWorldsGetObjectsWithChildren: failed to bind query")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, w.log)
 		return
 	}
 
-	spaceID, err := uuid.Parse(inQuery.SpaceID)
+	objectID, err := uuid.Parse(inQuery.ObjectID)
 	if err != nil {
-		err := errors.WithMessage(err, "Worlds: apiWorldsGetSpacesWithChildren: failed to parse space id")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_space_id", err, w.log)
+		err := errors.WithMessage(err, "Worlds: apiWorldsGetObjectsWithChildren: failed to parse object id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, w.log)
 		return
 	}
 
-	worldID, err := uuid.Parse(c.Param("spaceID"))
+	worldID, err := uuid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Worlds: apiWorldsGetSpacesWithChildren: failed to parse world id")
+		err := errors.WithMessage(err, "Worlds: apiWorldsGetObjectsWithChildren: failed to parse world id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
 		return
 	}
 
 	world, ok := w.GetWorld(worldID)
 	if !ok {
-		err := errors.Errorf("Worlds: apiWorldsGetSpacesWithChildren: space not found: %s", spaceID)
+		err := errors.Errorf("Worlds: apiWorldsGetObjectsWithChildren: object not found: %s", objectID)
 		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
 		return
 	}
 
-	root, ok := world.GetObjectFromAllObjects(spaceID)
+	root, ok := world.GetObjectFromAllObjects(objectID)
 	if !ok {
-		err := errors.Errorf("Worlds: apiWorldsGetSpacesWithChildren: failed to get space: %s", spaceID)
-		api.AbortRequest(c, http.StatusNotFound, "space_not_found", err, w.log)
+		err := errors.Errorf("Worlds: apiWorldsGetObjectsWithChildren: failed to get object: %s", objectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, w.log)
 		return
 	}
 
 	options, err := w.apiWorldsGetRootOptions(root)
 	if err != nil {
-		err := errors.WithMessage(err, "Worlds: apiWorldsGetSpacesWithChildren: unable to get options for spaces and subspaces")
+		err := errors.WithMessage(err, "Worlds: apiWorldsGetObjectsWithChildren: unable to get options for objects and subobjects")
 		api.AbortRequest(c, http.StatusNotFound, "options_not_found", err, w.log)
 		return
 	}
@@ -135,7 +135,7 @@ func (w *Worlds) apiWorldsGetSpacesWithChildren(c *gin.Context) {
 }
 
 func (w *Worlds) apiWorldsGetRootOptions(root universe.Object) (dto.ExploreOption, error) {
-	spaces := root.GetObjects(false)
+	objects := root.GetObjects(false)
 	var option dto.ExploreOption
 
 	name, description, err := w.apiWorldsResolveNameDescription(root)
@@ -143,7 +143,7 @@ func (w *Worlds) apiWorldsGetRootOptions(root universe.Object) (dto.ExploreOptio
 		return dto.ExploreOption{}, errors.WithMessage(err, "failed to resolve name or description")
 	}
 
-	foundSubSpaces, err := w.apiWorldsGetChildrenOptions(spaces, 0, 2)
+	foundSubObjects, err := w.apiWorldsGetChildrenOptions(objects, 0, 2)
 	if err != nil {
 		return dto.ExploreOption{}, errors.WithMessage(err, "failed to get children")
 	}
@@ -152,35 +152,35 @@ func (w *Worlds) apiWorldsGetRootOptions(root universe.Object) (dto.ExploreOptio
 		ID:          root.GetID(),
 		Name:        name,
 		Description: description,
-		SubSpaces:   foundSubSpaces,
+		SubObjects:  foundSubObjects,
 	}
 
 	return option, nil
 }
 
-func (w *Worlds) apiWorldsGetChildrenOptions(spaces map[uuid.UUID]universe.Object, currentLevel int, maxLevel int) ([]dto.ExploreOption, error) {
-	options := make([]dto.ExploreOption, 0, len(spaces))
+func (w *Worlds) apiWorldsGetChildrenOptions(objects map[uuid.UUID]universe.Object, currentLevel int, maxLevel int) ([]dto.ExploreOption, error) {
+	options := make([]dto.ExploreOption, 0, len(objects))
 	if currentLevel == maxLevel {
 		return options, nil
 	}
 
-	for _, space := range spaces {
-		name, description, err := w.apiWorldsResolveNameDescription(space)
+	for _, object := range objects {
+		name, description, err := w.apiWorldsResolveNameDescription(object)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to resolve name or description")
 		}
 
-		subSpaces := space.GetObjects(false)
-		foundSubSpaces, err := w.apiWorldsGetChildrenOptions(subSpaces, currentLevel+1, maxLevel)
+		subObjects := object.GetObjects(false)
+		foundSubObjects, err := w.apiWorldsGetChildrenOptions(subObjects, currentLevel+1, maxLevel)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to get options")
 		}
 
 		option := dto.ExploreOption{
-			ID:          space.GetID(),
+			ID:          object.GetID(),
 			Name:        name,
 			Description: description,
-			SubSpaces:   foundSubSpaces,
+			SubObjects:  foundSubObjects,
 		}
 
 		options = append(options, option)
@@ -189,31 +189,31 @@ func (w *Worlds) apiWorldsGetChildrenOptions(spaces map[uuid.UUID]universe.Objec
 	return options, nil
 }
 
-func (w *Worlds) apiWorldsResolveNameDescription(space universe.Object) (spaceName string, spaceDescription string, err error) {
+func (w *Worlds) apiWorldsResolveNameDescription(object universe.Object) (objectName string, objectDescription string, err error) {
 	var description string
 	descriptionAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Object.Description.Name)
-	descriptionValue, _ := space.GetObjectAttributes().GetValue(descriptionAttributeID)
+	descriptionValue, _ := object.GetObjectAttributes().GetValue(descriptionAttributeID)
 	if descriptionValue != nil {
 		description = utils.GetFromAnyMap(*descriptionValue, universe.ReservedAttributes.Object.Description.Name, "")
 	}
 
-	return space.GetName(), description, nil
+	return object.GetName(), description, nil
 }
 
-// @Summary Search spaces
+// @Summary Search objects
 // @Schemes
-// @Description Returns spaces information based on a search query and categorizes the results
+// @Description Returns objects information based on a search query and categorizes the results
 // @Tags worlds
 // @Accept json
 // @Produce json
 // @Param world_id path string true "World ID"
-// @Param query query worlds.apiWorldsSearchSpaces.Query true "query params"
+// @Param query query worlds.apiWorldsSearchObjects.Query true "query params"
 // @Success 200 {object} dto.SearchOptions
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/worlds/{space_id}/explore/search [get]
-func (w *Worlds) apiWorldsSearchSpaces(c *gin.Context) {
+// @Router /api/v4/worlds/{object_id}/explore/search [get]
+func (w *Worlds) apiWorldsSearchObjects(c *gin.Context) {
 	type Query struct {
 		SearchQuery string `form:"query" binding:"required"`
 	}
@@ -221,38 +221,38 @@ func (w *Worlds) apiWorldsSearchSpaces(c *gin.Context) {
 	inQuery := Query{}
 
 	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		err := errors.WithMessage(err, "Worlds: apiWorldsSearchSpaces: failed to bind query")
+		err := errors.WithMessage(err, "Worlds: apiWorldsSearchObjects: failed to bind query")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, w.log)
 		return
 	}
 
-	spaceID, err := uuid.Parse(c.Param("spaceID"))
+	objectID, err := uuid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Worlds: apiWorldsSearchSpaces: failed to parse world id")
+		err := errors.WithMessage(err, "Worlds: apiWorldsSearchObjects: failed to parse world id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
 		return
 	}
 
-	world, ok := w.GetWorld(spaceID)
+	world, ok := w.GetWorld(objectID)
 	if !ok {
-		err := errors.Errorf("Worlds: apiWorldsSearchSpaces: space not found: %s", spaceID)
+		err := errors.Errorf("Worlds: apiWorldsSearchObjects: object not found: %s", objectID)
 		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
 		return
 	}
 
-	spaces, err := w.apiWorldsFilterSpaces(inQuery.SearchQuery, world)
+	objects, err := w.apiWorldsFilterObjects(inQuery.SearchQuery, world)
 	if err != nil {
-		err := errors.WithMessage(err, "Worlds: apiWorldsSearchSpaces: failed to filter spaces")
+		err := errors.WithMessage(err, "Worlds: apiWorldsSearchObjects: failed to filter objects")
 		api.AbortRequest(c, http.StatusBadRequest, "failed_to_filter", err, w.log)
 		return
 	}
 
-	c.JSON(http.StatusOK, spaces)
+	c.JSON(http.StatusOK, objects)
 }
 
-func (w *Worlds) apiWorldsFilterSpaces(searchQuery string, world universe.World) (dto.SearchOptions, error) {
-	predicateFn := func(spaceID uuid.UUID, space universe.Object) bool {
-		name, _, err := w.apiWorldsResolveNameDescription(space)
+func (w *Worlds) apiWorldsFilterObjects(searchQuery string, world universe.World) (dto.SearchOptions, error) {
+	predicateFn := func(objectID uuid.UUID, object universe.Object) bool {
+		name, _, err := w.apiWorldsResolveNameDescription(object)
 		if err != nil {
 			return false
 		}
@@ -262,22 +262,22 @@ func (w *Worlds) apiWorldsFilterSpaces(searchQuery string, world universe.World)
 		return strings.Contains(name, searchQuery)
 	}
 
-	spaces := world.FilterAllObjects(predicateFn)
+	objects := world.FilterAllObjects(predicateFn)
 
-	options, err := w.apiWorldsGetChildrenOptions(spaces, 0, 1)
+	options, err := w.apiWorldsGetChildrenOptions(objects, 0, 1)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to get options")
 	}
 
 	group := make(dto.SearchOptions)
 	for _, option := range options {
-		space, ok := world.GetObjectFromAllObjects(option.ID)
+		object, ok := world.GetObjectFromAllObjects(option.ID)
 		if !ok {
-			return nil, errors.Errorf("failed to get space: %T", option.ID)
+			return nil, errors.Errorf("failed to get object: %T", option.ID)
 		}
 
-		spaceType := space.GetObjectType()
-		categoryName := spaceType.GetCategoryName()
+		objectType := object.GetObjectType()
+		categoryName := objectType.GetCategoryName()
 
 		group[categoryName] = append(group[categoryName], option)
 	}
@@ -296,18 +296,18 @@ func (w *Worlds) apiWorldsFilterSpaces(searchQuery string, world universe.World)
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/worlds/{space_id}/teleport-user [post]
+// @Router /api/v4/worlds/{object_id}/teleport-user [post]
 func (w *Worlds) apiWorldsTeleportUser(c *gin.Context) {
-	spaceID, err := uuid.Parse(c.Param("spaceID"))
+	objectID, err := uuid.Parse(c.Param("objectID"))
 	if err != nil {
 		err := errors.WithMessage(err, "Worlds: apiWorldsTeleportUser: failed to parse world id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
 		return
 	}
 
-	world, ok := w.GetWorld(spaceID)
+	world, ok := w.GetWorld(objectID)
 	if !ok {
-		err := errors.Errorf("Worlds: apiWorldsTeleportUser: world not found: %s", spaceID)
+		err := errors.Errorf("Worlds: apiWorldsTeleportUser: world not found: %s", objectID)
 		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
 		return
 	}

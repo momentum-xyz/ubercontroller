@@ -25,18 +25,18 @@ import (
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/worlds/{space_id}/fly-to-me [post]
+// @Router /api/v4/worlds/{object_id}/fly-to-me [post]
 func (w *Worlds) apiWorldsFlyToMe(c *gin.Context) {
-	spaceID, err := uuid.Parse(c.Param("spaceID"))
+	objectID, err := uuid.Parse(c.Param("objectID"))
 	if err != nil {
 		err := errors.WithMessage(err, "Worlds: apiWorldsFlyToMe: failed to parse world id")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
 		return
 	}
 
-	world, ok := w.GetWorld(spaceID)
+	world, ok := w.GetWorld(objectID)
 	if !ok {
-		err := errors.Errorf("Worlds: apiWorldsFlyToMe: world not found: %s", spaceID)
+		err := errors.Errorf("Worlds: apiWorldsFlyToMe: world not found: %s", objectID)
 		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
 		return
 	}
@@ -50,7 +50,7 @@ func (w *Worlds) apiWorldsFlyToMe(c *gin.Context) {
 
 	user, ok := world.GetUser(userID, true)
 	if !ok {
-		err := errors.Errorf("Worlds: apiWorldsFlyToMe: user not present in world: %s", spaceID)
+		err := errors.Errorf("Worlds: apiWorldsFlyToMe: user not present in world: %s", objectID)
 		api.AbortRequest(c, http.StatusNotFound, "user_not_found", err, w.log)
 		return
 	}
@@ -73,7 +73,7 @@ func (w *Worlds) apiWorldsFlyToMe(c *gin.Context) {
 	fwmDto := dto.FlyToMe{
 		Pilot:     user.GetID(),
 		PilotName: userName,
-		SpaceID:   world.GetID(),
+		ObjectID:  world.GetID(),
 	}
 
 	data, err := json.Marshal(&fwmDto)

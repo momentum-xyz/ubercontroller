@@ -18,10 +18,10 @@ func (w *Worlds) RegisterAPI(r *gin.Engine) {
 		{
 			worlds := verified.Group("/worlds")
 			{
-				world := worlds.Group("/:spaceID")
+				world := worlds.Group("/:objectID")
 				{
-					world.GET("/explore", w.apiWorldsGetSpacesWithChildren)
-					world.GET("/explore/search", w.apiWorldsSearchSpaces)
+					world.GET("/explore", w.apiWorldsGetObjectsWithChildren)
+					world.GET("/explore/search", w.apiWorldsSearchObjects)
 					world.GET("/online-users", w.apiGetOnlineUsers)
 
 					authorizedAdmin := world.Group("", middleware.AuthorizeAdmin(w.log))

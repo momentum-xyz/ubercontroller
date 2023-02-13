@@ -218,7 +218,7 @@ func createWorldPortal(portalName string, from, to universe.World) (universe.Obj
 
 	portalObjectTypeID, err := common.GetPortalObjectTypeID()
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to get portal space type id")
+		return nil, errors.WithMessage(err, "failed to get portal object type id")
 	}
 
 	template := tree.ObjectTemplate{
@@ -247,7 +247,7 @@ func getWorldDockingStation(world universe.World) (universe.Object, error) {
 	dockingStationID := world.GetSettings().Objects["docking_station"]
 	dockingStation, ok := world.GetObjectFromAllObjects(dockingStationID)
 	if !ok {
-		return nil, errors.Errorf("failed to get docking station space: %s", dockingStationID)
+		return nil, errors.Errorf("failed to get docking station object: %s", dockingStationID)
 	}
 	return dockingStation, nil
 }

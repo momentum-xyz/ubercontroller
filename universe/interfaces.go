@@ -144,10 +144,10 @@ type Object interface {
 	GetOwnerID() uuid.UUID
 	SetOwnerID(ownerID uuid.UUID, updateDB bool) error
 
-	GetPosition() *cmath.SpacePosition
-	GetActualPosition() *cmath.SpacePosition
-	SetPosition(position *cmath.SpacePosition, updateDB bool) error
-	SetActualPosition(pos cmath.SpacePosition, theta float64) error
+	GetPosition() *cmath.ObjectPosition
+	GetActualPosition() *cmath.ObjectPosition
+	SetPosition(position *cmath.ObjectPosition, updateDB bool) error
+	SetActualPosition(pos cmath.ObjectPosition, theta float64) error
 
 	GetOptions() *entry.ObjectOptions
 	GetEffectiveOptions() *entry.ObjectOptions
