@@ -147,7 +147,7 @@ func (n *Node) createUserFromWalletMeta(ctx context.Context, walletMeta *WalletM
 	if err != nil {
 		return nil, errors.Errorf("failed to get normal user type id")
 	}
-	*userEntry.UserTypeID = normUserTypeID
+	userEntry.UserTypeID = &normUserTypeID
 
 	if err := n.db.GetUsersDB().UpsertUser(ctx, userEntry); err != nil {
 		return nil, errors.WithMessagef(err, "failed to upsert user: %s", userEntry.UserID)
