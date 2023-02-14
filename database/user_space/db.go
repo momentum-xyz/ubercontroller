@@ -23,10 +23,10 @@ const (
 	getUserSpacesByUserIDQuery           = `SELECT * FROM user_space WHERE user_id = $1;`
 	getUserSpacesByUserIDAndSpaceIDQuery = `SELECT * FROM user_space WHERE user_id = $1 AND space_id = $2;`
 	getUserSpaceValueByIDQuery           = `SELECT value FROM user_space WHERE user_id = $1 AND space_id = $2;`
-	getUserSpaceIndirectAdmins           = `SELECT GetIndirectSpaceAdmins($1);`
+	getUserSpaceIndirectAdmins           = `SELECT getinderectspaceadmins($1);`
 
 	checkIsIndirectAdminQuery = `WITH space_admins AS (
-									SELECT GetIndirectSpaceAdmins($2) AS user_id
+									SELECT getinderectspaceadmins($2) AS user_id
 								)
 								SELECT EXISTS(
 									SELECT 1
