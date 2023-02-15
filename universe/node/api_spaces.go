@@ -1,6 +1,8 @@
 package node
 
 import (
+	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/utils"
 	"net/http"
 
 	"github.com/momentum-xyz/ubercontroller/universe/common/helper"
@@ -35,6 +37,7 @@ func (n *Node) apiSpacesCreateSpace(c *gin.Context) {
 		Asset2dID   *string              `json:"asset_2d_id"`
 		Asset3dID   *string              `json:"asset_3d_id"`
 		Position    *cmath.SpacePosition `json:"position"`
+		Minimap     bool                 `json:"minimap"`
 	}
 	var inBody InBody
 
@@ -118,6 +121,9 @@ func (n *Node) apiSpacesCreateSpace(c *gin.Context) {
 		Asset2dID:   asset2dID,
 		Asset3dID:   asset3dID,
 		Position:    position,
+		Options: &entry.SpaceOptions{
+			Minimap: utils.GetPTR(inBody.Minimap),
+		},
 	}
 
 	spaceID, err := helper.AddSpaceFromTemplate(&spaceTemplate, true)

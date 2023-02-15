@@ -103,6 +103,12 @@ func AddSpaceFromTemplate(spaceTemplate *SpaceTemplate, updateDB bool) (uuid.UUI
 		}
 	}
 
+	if spaceTemplate.Options != nil {
+		if _, err := space.SetOptions(modify.MergeWith(spaceTemplate.Options), false); err != nil {
+			return uuid.Nil, errors.WithMessage(err, "failed to set options")
+		}
+	}
+
 	// saving in database
 	if updateDB {
 		if err := parent.AddSpace(space, updateDB); err != nil {
