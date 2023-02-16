@@ -2,7 +2,6 @@ package space
 
 import (
 	"context"
-	"fmt"
 	"sync/atomic"
 
 	"github.com/google/uuid"
@@ -408,17 +407,12 @@ func (s *Space) Stop() error {
 
 func (s *Space) Update(recursive bool) error {
 	s.UpdateSpawnMessage()
-	fmt.Printf("QQ1: %+v\n", s.GetID())
 	if s.GetEnabled() {
-		fmt.Printf("QQ2: %+v\n", s.GetID())
 		world := s.GetWorld()
 		if world != nil {
-			fmt.Printf("QQ3: %+v\n", s.GetID())
-			fmt.Printf("QQ4: %+v %+v\n", s.GetID(), s.spawnMsg.Load())
 			world.Send(s.spawnMsg.Load(), true)
 			s.SendAllAutoAttributes(
 				func(msg *websocket.PreparedMessage) error {
-					fmt.Printf("QQ5: %+v %+v\n", s.GetID(), msg)
 					return world.Send(msg, false)
 				}, false,
 			)
@@ -621,12 +615,12 @@ func (s *Space) SendSpawnMessage(sendFn func(*websocket.PreparedMessage) error, 
 
 func (s *Space) SendAllAutoAttributes(sendFn func(*websocket.PreparedMessage) error, recursive bool) {
 	msg := s.stringMsg.Load()
-	fmt.Printf("QQ4.1: %+v %+v\n", s.GetID(), msg)
 	if msg != nil {
 		sendFn(msg)
 	}
 
 	msg = s.textureMsg.Load()
+
 	if msg != nil {
 		sendFn(msg)
 	}
