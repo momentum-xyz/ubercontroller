@@ -38,7 +38,8 @@ func (s *Space) unityAutoOnSpaceAttributeChanged(
 	//dirty hack to set auto_render_hash value without triggering processing again
 	// TODO: fix it properly later
 	if hash != nil && hash.Hash != "" {
-		return func() error {
+		s.log.Infof("unity-auto stage4.1 for %+v %+v %+v", s.GetID(), attributeID, hash)
+		func() error {
 			s.spaceAttributes.space.Mu.Lock()
 			defer s.spaceAttributes.space.Mu.Unlock()
 
@@ -53,6 +54,7 @@ func (s *Space) unityAutoOnSpaceAttributeChanged(
 			return nil
 		}()
 	}
+	s.log.Infof("unity-auto stage5 for %+v %+v %+v", s.GetID(), attributeID, hash)
 	s.SendUnityAutoAttributeMessage(
 		autoOption, value, func(m *websocket.PreparedMessage) error { return s.GetWorld().Send(m, false) },
 	)

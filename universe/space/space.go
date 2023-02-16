@@ -621,6 +621,7 @@ func (s *Space) SendSpawnMessage(sendFn func(*websocket.PreparedMessage) error, 
 
 func (s *Space) SendAllAutoAttributes(sendFn func(*websocket.PreparedMessage) error, recursive bool) {
 	msg := s.stringMsg.Load()
+	fmt.Printf("QQ4.1: %+v %+v\n", s.GetID(), msg)
 	if msg != nil {
 		sendFn(msg)
 	}
