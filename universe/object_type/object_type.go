@@ -238,42 +238,42 @@ func (ot *ObjectType) GetEntry() *entry.ObjectType {
 	return entry
 }
 
-func (ot *ObjectType) LoadFromEntry(entry *entry.ObjectType) error {
-	if entry.ObjectTypeID != ot.GetID() {
-		return errors.Errorf("object type ids mismatch: %s != %s", entry.ObjectTypeID, ot.GetID())
+func (ot *ObjectType) LoadFromEntry(row *entry.ObjectType) error {
+	if row.ObjectTypeID != ot.GetID() {
+		return errors.Errorf("object type ids mismatch: %s != %s", row.ObjectTypeID, ot.GetID())
 	}
 
-	if err := ot.SetName(entry.ObjectTypeName, false); err != nil {
+	if err := ot.SetName(row.ObjectTypeName, false); err != nil {
 		return errors.WithMessage(err, "failed to set name")
 	}
-	if err := ot.SetCategoryName(entry.CategoryName, false); err != nil {
+	if err := ot.SetCategoryName(row.CategoryName, false); err != nil {
 		return errors.WithMessage(err, "failed to set category name")
 	}
-	if err := ot.SetDescription(entry.Description, false); err != nil {
+	if err := ot.SetDescription(row.Description, false); err != nil {
 		return errors.WithMessage(err, "failed to set description")
 	}
-	if _, err := ot.SetOptions(modify.MergeWith(entry.Options), false); err != nil {
+	if _, err := ot.SetOptions(modify.MergeWith(row.Options), false); err != nil {
 		return errors.WithMessage(err, "failed to set options")
 	}
 
 	node := universe.GetNode()
-	if entry.Asset2dID != nil {
-		asset2d, ok := node.GetAssets2d().GetAsset2d(*entry.Asset2dID)
+	if row.Asset2dID != nil {
+		asset2d, ok := node.GetAssets2d().GetAsset2d(*row.Asset2dID)
 		if !ok {
-			return errors.Errorf("asset 2d not found: %s", entry.Asset2dID)
+			return errors.Errorf("asset 2d not found: %s", row.Asset2dID)
 		}
 		if err := ot.SetAsset2d(asset2d, false); err != nil {
-			return errors.WithMessagef(err, "failed to set asset 2d: %s", entry.Asset2dID)
+			return errors.WithMessagef(err, "failed to set asset 2d: %s", row.Asset2dID)
 		}
 	}
 
-	if entry.Asset3dID != nil {
-		asset3d, ok := node.GetAssets3d().GetAsset3d(*entry.Asset3dID)
+	if row.Asset3dID != nil {
+		asset3d, ok := node.GetAssets3d().GetAsset3d(*row.Asset3dID)
 		if !ok {
-			return errors.Errorf("asset 3d not found: %s", entry.Asset3dID)
+			return errors.Errorf("asset 3d not found: %s", row.Asset3dID)
 		}
 		if err := ot.SetAsset3d(asset3d, false); err != nil {
-			return errors.WithMessagef(err, "failed to set asset 3d: %s", entry.Asset3dID)
+			return errors.WithMessagef(err, "failed to set asset 3d: %s", row.Asset3dID)
 		}
 	}
 

@@ -11,6 +11,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/tree"
+	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 // @Summary Create object
@@ -35,6 +36,7 @@ func (n *Node) apiObjectsCreateObject(c *gin.Context) {
 		Asset2dID    *string               `json:"asset_2d_id"`
 		Asset3dID    *string               `json:"asset_3d_id"`
 		Position     *cmath.ObjectPosition `json:"position"`
+		Minimap      bool                  `json:"minimap"`
 	}
 	var inBody InBody
 
@@ -118,6 +120,9 @@ func (n *Node) apiObjectsCreateObject(c *gin.Context) {
 			Asset2dID:    asset2dID,
 			Asset3dID:    asset3dID,
 			Position:     position,
+			Options: &entry.ObjectOptions{
+				Minimap: utils.GetPTR(inBody.Minimap),
+			},
 		},
 		ObjectName: &inBody.ObjectName,
 	}
