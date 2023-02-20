@@ -71,14 +71,22 @@ func (n *Node) apiUsersCreateMutualDocks(c *gin.Context) {
 
 	abPortalName := userB.UserID.String()
 	baPortalName := userA.UserID.String()
-	if userB.Profile.Name != nil {
+	abPortalImage := ""
+	baPortalImage := ""
+	if userB.Profile != nil && userB.Profile.Name != nil {
 		abPortalName = *userB.Profile.Name
 	}
-	if userA.Profile.Name != nil {
+	if userB.Profile != nil && userB.Profile.AvatarHash != nil {
+		abPortalImage = *userB.Profile.AvatarHash
+	}
+	if userA.Profile != nil && userA.Profile.Name != nil {
 		baPortalName = *userA.Profile.Name
 	}
+	if userA.Profile != nil && userA.Profile.AvatarHash != nil {
+		baPortalImage = *userA.Profile.AvatarHash
+	}
 
-	if _, err := createWorldPortal(abPortalName, worldA, worldB); err != nil {
+	if _, err := createWorldPortal(abPortalName, worldA, worldB, abPortalImage); err != nil {
 		err := errors.WithMessagef(
 			err,
 			"Node: apiUsersCreateMutualDocks: failed to create world portal from %s to %s",
@@ -88,7 +96,7 @@ func (n *Node) apiUsersCreateMutualDocks(c *gin.Context) {
 		return
 	}
 
-	if _, err := createWorldPortal(baPortalName, worldB, worldA); err != nil {
+	if _, err := createWorldPortal(baPortalName, worldB, worldA, baPortalImage); err != nil {
 		err := errors.WithMessagef(
 			err,
 			"Node: apiUsersCreateMutualDocks: failed to create world portal from %s to %s",
@@ -203,7 +211,7 @@ func (n *Node) apiUsersRemoveMutualDocks(c *gin.Context) {
 	c.JSON(http.StatusAccepted, nil)
 }
 
-func createWorldPortal(portalName string, from, to universe.World) (universe.Object, error) {
+func createWorldPortal(portalName string, from, to universe.World, portalImage string) (universe.Object, error) {
 	portals := getWorldPortals(from, to)
 	if len(portals) > 0 {
 		for _, portal := range portals {
