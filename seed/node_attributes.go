@@ -490,6 +490,120 @@ func seedNodeAttributes(node universe.Node) error {
 						},
 					},
 				},
+				"random_spaces": []any{
+					map[string]any{
+						"label": "kiddo_jelly_1",
+						"options": map[string]any{
+							"subs": map[string]any{
+								"visible": 1,
+							},
+						},
+						"position": map[string]any{
+							"scale": map[string]any{
+								"x": 1,
+								"y": 1,
+								"z": 1,
+							},
+							"location": map[string]any{
+								"x": 62.438713,
+								"y": 54.17204,
+								"z": 152.16934,
+							},
+							"rotation": map[string]any{
+								"x": 0,
+								"y": 0,
+								"z": 0,
+							},
+						},
+						"object_name":    "Kiddo Jelly 1",
+						"asset_3d_id":    "a0ef8db2-dfa0-4d17-83bc-e662a2f25e74",
+						"object_type_id": "4ed3a5bb-53f8-4511-941b-07902982c31c",
+					},
+					map[string]any{
+						"label": "kiddo_jelly_2",
+						"options": map[string]any{
+							"subs": map[string]any{
+								"visible": 1,
+							},
+						},
+						"position": map[string]any{
+							"scale": map[string]any{
+								"x": 1,
+								"y": 1,
+								"z": 1,
+							},
+							"location": map[string]any{
+								"x": 62.438713,
+								"y": 54.17204,
+								"z": 152.16934,
+							},
+							"rotation": map[string]any{
+								"x": 0,
+								"y": 0,
+								"z": 0,
+							},
+						},
+						"object_name":    "Kiddo Jelly 2",
+						"asset_3d_id":    "f30cd02f-a51e-4cab-ad66-c25cc6c76c66",
+						"object_type_id": "4ed3a5bb-53f8-4511-941b-07902982c31c",
+					},
+					map[string]any{
+						"label": "mega_jelly",
+						"options": map[string]any{
+							"subs": map[string]any{
+								"visible": 1,
+							},
+						},
+						"position": map[string]any{
+							"scale": map[string]any{
+								"x": 1,
+								"y": 1,
+								"z": 1,
+							},
+							"location": map[string]any{
+								"x": 62.438713,
+								"y": 54.17204,
+								"z": 152.16934,
+							},
+							"rotation": map[string]any{
+								"x": 0,
+								"y": 0,
+								"z": 0,
+							},
+						},
+						"object_name":    "Mega Jelly",
+						"asset_3d_id":    "a76d85b3-7831-429e-ab5a-63d8e69cd380",
+						"object_type_id": "4ed3a5bb-53f8-4511-941b-07902982c31c",
+					},
+					map[string]any{
+						"label": "object_whale",
+						"options": map[string]any{
+							"subs": map[string]any{
+								"visible": 1,
+							},
+						},
+						"position": map[string]any{
+							"scale": map[string]any{
+								"x": 1,
+								"y": 1,
+								"z": 1,
+							},
+							"location": map[string]any{
+								"x": 62.438713,
+								"y": 54.17204,
+								"z": 152.16934,
+							},
+							"rotation": map[string]any{
+								"x": 0,
+								"y": 0,
+								"z": 0,
+							},
+						},
+						"object_name":    "Object Whale",
+						"asset_3d_id":    "355657f1-95af-49a7-817f-aecb431cf4dd",
+						"object_type_id": "4ed3a5bb-53f8-4511-941b-07902982c31c",
+					},
+				},
 				"object_type_id": "a41ee21e-6c56-41b3-81a9-1c86578b6b3c",
 				"object_attributes": []any{
 					map[string]any{
