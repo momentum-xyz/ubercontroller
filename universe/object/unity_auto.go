@@ -37,7 +37,7 @@ func (o *Object) unityAutoOnObjectAttributeChanged(
 	//dirty hack to set auto_render_hash value without triggering processing again
 	// TODO: fix it properly later
 	if hash != nil && hash.Hash != "" {
-		return func() error {
+		func() error {
 			o.objectAttributes.object.Mu.Lock()
 			defer o.objectAttributes.object.Mu.Unlock()
 
