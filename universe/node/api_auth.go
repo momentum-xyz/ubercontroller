@@ -188,28 +188,23 @@ func (n *Node) apiGenToken(c *gin.Context) {
 
 // @Summary Generate jwt guest token
 // @Schemes
-// @Description Returns a new generated token based on params
+// @Description Returns a new generated token for guest users
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param body body node.apiGuestToken.Body true "body params"
 // @Success 200 {object} dto.User
 // @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
 // @Router /api/v4/auth/guest-token [post]
 func (n *Node) apiGuestToken(c *gin.Context) {
-	type Body struct {
-		Name string `json:"name" binding:"required"`
-	}
-	inBody := Body{}
-
-	if err := c.ShouldBindJSON(&inBody); err != nil {
-		err = errors.WithMessage(err, "Node: apiGuestToken: failed to bind json")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+	visitorName, err := api.GenerateGuestName(c, n.db)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiGuestToken: failed to generate visitor name")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_generate_name", err, n.log)
 		return
 	}
 
-	userEntry, err := n.apiCreateGuestUserByName(c, inBody.Name)
+	userEntry, err := n.apiCreateGuestUserByName(c, visitorName)
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiGuestToken: failed create guest user")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_create_guest_user", err, n.log)

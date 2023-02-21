@@ -12,6 +12,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
+	gonanoid "github.com/matoous/go-nanoid/v2"
+	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils"
@@ -124,4 +126,26 @@ func ValidateJWTWithSecret(signedString string, secret []byte) (*jwt.Token, erro
 		}
 		return secret, nil
 	})
+}
+
+func GenerateGuestName(c *gin.Context, db database.DB) (string, error) {
+	visitorNameTemplate := "Visitor_"
+
+	visitorSuffix, err := gonanoid.New(7)
+	if err != nil {
+		return "", errors.WithMessage(err, "failed to generate visitor name")
+	}
+
+	visitorName := visitorNameTemplate + visitorSuffix
+
+	exists, err := db.GetUsersDB().CheckIsUserExistsByName(c, visitorName)
+	if err != nil {
+		return "", errors.WithMessage(err, "failed to check for duplicates")
+	}
+	if exists {
+		// Row exists -> regenerate
+		GenerateGuestName(c, db)
+	}
+
+	return visitorName, nil
 }
