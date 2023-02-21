@@ -68,6 +68,8 @@ type UsersDB interface {
 	GetUserByWallet(ctx context.Context, wallet string) (*entry.User, error)
 	GetUserProfileByUserID(ctx context.Context, userID uuid.UUID) (*entry.UserProfile, error)
 
+	CheckIsUserExistsByName(ctx context.Context, name string) (bool, error)
+
 	UpsertUser(ctx context.Context, user *entry.User) error
 	UpsertUsers(ctx context.Context, user []*entry.User) error
 

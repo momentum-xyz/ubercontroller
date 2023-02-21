@@ -26,7 +26,8 @@ const (
          						                    AND value->'wallet' ? $1
          						                );`
 
-	getUserProfileByUserIDQuery = `SELECT profile FROM "user" WHERE user_id = $1;`
+	checkIsUserExistsByNameQuery = `SELECT EXISTS(SELECT 1 FROM "user" WHERE profile->>'name' = $1);`
+	getUserProfileByUserIDQuery  = `SELECT profile FROM "user" WHERE user_id = $1;`
 
 	upsertUserQuery = `INSERT INTO "user"
     						(user_id, user_type_id, profile, options, created_at, updated_at)
@@ -80,6 +81,14 @@ func (db *DB) GetUserByWallet(ctx context.Context, wallet string) (*entry.User, 
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return &user, nil
+}
+
+func (db *DB) CheckIsUserExistsByName(ctx context.Context, name string) (bool, error) {
+	var exists bool
+	if err := pgxscan.Get(ctx, db.conn, &exists, checkIsUserExistsByNameQuery, name); err != nil {
+		return false, errors.WithMessage(err, "failed to query db")
+	}
+	return exists, nil
 }
 
 func (db *DB) GetUserProfileByUserID(ctx context.Context, userID uuid.UUID) (*entry.UserProfile, error) {
