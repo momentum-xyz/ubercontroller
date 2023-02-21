@@ -233,8 +233,10 @@ func (n *Node) apiGuestToken(c *gin.Context) {
 		Name:       name,
 		JWTToken:   &token,
 		CreatedAt:  userEntry.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:  userEntry.UpdatedAt.Format(time.RFC3339),
 		IsGuest:    true,
+	}
+	if userEntry.UpdatedAt != nil {
+		outUser.UpdatedAt = userEntry.UpdatedAt.Format(time.RFC3339)
 	}
 
 	c.JSON(http.StatusOK, outUser)

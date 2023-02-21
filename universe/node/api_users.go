@@ -106,7 +106,7 @@ func (n *Node) apiCreateGuestUserByName(ctx context.Context, name string) (*entr
 		return nil, errors.WithMessage(err, "failed to GetGuestUserTypeID")
 	}
 
-	*ue.UserTypeID = guestUserTypeID
+	ue.UserTypeID = &guestUserTypeID
 
 	err = n.db.GetUsersDB().UpsertUser(ctx, ue)
 
