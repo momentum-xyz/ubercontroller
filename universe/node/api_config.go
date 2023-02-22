@@ -33,25 +33,24 @@ func (n *Node) apiGetUIClientConfig(c *gin.Context) {
 	}
 
 	var unityClientURLString string
-	if n.CFG.UIClient.UnityClientURL != "" {
-		unityClientURLString = n.CFG.UIClient.UnityClientURL
+	if n.cfg.UIClient.UnityClientURL != "" {
+		unityClientURLString = n.cfg.UIClient.UnityClientURL
 	} else {
 		unityClientURLString = n.cfg.Settings.FrontendURL + "/unity"
 	}
-
 	unityClientURL, err := url.Parse(unityClientURLString)
 	if err != nil {
 		api.AbortRequest(c, http.StatusInternalServerError, "invalid_configuration", err, n.log)
 		return
 	}
 	out := Response{
-		UIClient:                n.CFG.UIClient,
+		UIClient:                n.cfg.UIClient,
 		NodeID:                  n.GetID().String(),
 		UnityClientURL:          unityClientURL.String(),
-		UnityClientLoaderURL:    unityClientURL.JoinPath(n.CFG.UIClient.UnityLoaderFileName).String(),
-		UnityClientDataURL:      unityClientURL.JoinPath(n.CFG.UIClient.UnityDataFileName).String(),
-		UnityClientFrameworkURL: unityClientURL.JoinPath(n.CFG.UIClient.UnityFrameworkFileName).String(),
-		UnityClientCodeURL:      unityClientURL.JoinPath(n.CFG.UIClient.UnityCodeFileName).String(),
+		UnityClientLoaderURL:    unityClientURL.JoinPath(n.cfg.UIClient.UnityLoaderFileName).String(),
+		UnityClientDataURL:      unityClientURL.JoinPath(n.cfg.UIClient.UnityDataFileName).String(),
+		UnityClientFrameworkURL: unityClientURL.JoinPath(n.cfg.UIClient.UnityFrameworkFileName).String(),
+		UnityClientCodeURL:      unityClientURL.JoinPath(n.cfg.UIClient.UnityCodeFileName).String(),
 		RenderServiceURL:        n.cfg.Settings.FrontendURL + "/api/v3/render",
 		BackendEndpointURL:      n.cfg.Settings.FrontendURL + "/api/v3/backend",
 	}
