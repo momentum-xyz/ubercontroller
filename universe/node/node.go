@@ -32,6 +32,7 @@ var _ universe.Node = (*Node)(nil)
 type Node struct {
 	*object.Object
 	ctx        context.Context
+	cfg        *config.Config
 	log        *zap.SugaredLogger
 	db         database.DB
 	router     *gin.Engine
