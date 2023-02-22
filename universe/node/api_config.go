@@ -36,8 +36,9 @@ func (n *Node) apiGetUIClientConfig(c *gin.Context) {
 	if n.CFG.UIClient.UnityClientURL != "" {
 		unityClientURLString = n.CFG.UIClient.UnityClientURL
 	} else {
-		unityClientURLString = n.CFG.UIClient.FrontendURL + "/unity"
+		unityClientURLString = n.cfg.Settings.FrontendURL + "/unity"
 	}
+
 	unityClientURL, err := url.Parse(unityClientURLString)
 	if err != nil {
 		api.AbortRequest(c, http.StatusInternalServerError, "invalid_configuration", err, n.log)
@@ -51,8 +52,8 @@ func (n *Node) apiGetUIClientConfig(c *gin.Context) {
 		UnityClientDataURL:      unityClientURL.JoinPath(n.CFG.UIClient.UnityDataFileName).String(),
 		UnityClientFrameworkURL: unityClientURL.JoinPath(n.CFG.UIClient.UnityFrameworkFileName).String(),
 		UnityClientCodeURL:      unityClientURL.JoinPath(n.CFG.UIClient.UnityCodeFileName).String(),
-		RenderServiceURL:        n.CFG.UIClient.FrontendURL + "/api/v3/render",
-		BackendEndpointURL:      n.CFG.UIClient.FrontendURL + "/api/v3/backend",
+		RenderServiceURL:        n.cfg.Settings.FrontendURL + "/api/v3/render",
+		BackendEndpointURL:      n.cfg.Settings.FrontendURL + "/api/v3/backend",
 	}
 
 	c.JSON(http.StatusOK, out)
