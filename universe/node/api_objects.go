@@ -68,8 +68,8 @@ func (n *Node) apiObjectsCreateObject(c *gin.Context) {
 	}
 
 	if !isAdmin {
-		err := errors.WithMessage(err, "Node: apiObjectsCreateObject: operation is not permitted for user")
-		api.AbortRequest(c, http.StatusUnauthorized, "object_creation_not_permitted", err, n.log)
+		err := errors.New("Node: apiObjectsCreateObject: operation is not permitted for user")
+		api.AbortRequest(c, http.StatusForbidden, "object_creation_not_permitted", err, n.log)
 		return
 	}
 
