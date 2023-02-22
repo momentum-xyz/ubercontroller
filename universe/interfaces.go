@@ -124,6 +124,9 @@ type World interface {
 	GetCalendar() Calendar
 
 	WriteInfluxPoint(point *influxWrite.Point) error
+
+	TempSetSkybox(msg *websocket.PreparedMessage)
+	TempGetSkybox() *websocket.PreparedMessage
 }
 
 type Object interface {
@@ -189,7 +192,7 @@ type Object interface {
 
 	SendSpawnMessage(sendFn func(msg *websocket.PreparedMessage) error, recursive bool)
 	SendAttributes(sendFn func(*websocket.PreparedMessage), recursive bool)
-	SendTextures(sendFn func(msg *websocket.PreparedMessage) error, recursive bool)
+	SendAllAutoAttributes(sendFn func(msg *websocket.PreparedMessage) error, recursive bool)
 
 	LockUnityObject(user User, state uint32) bool
 }
