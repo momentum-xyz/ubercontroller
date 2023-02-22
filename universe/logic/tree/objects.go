@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/posbus-protocol/posbus"
+	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic"
@@ -14,45 +15,149 @@ import (
 )
 
 type ObjectTemplate struct {
-	entry.Object
-	ObjectName       *string            `json:"object_name"`
-	Label            *string            `json:"label"`
-	ObjectAttributes []*entry.Attribute `json:"object_attributes"`
-	Children         []*ObjectTemplate  `json:"children"`
+	ObjectID         *uuid.UUID            `json:"object_id"`
+	ObjectName       *string               `json:"object_name"`
+	ObjectTypeID     uuid.UUID             `json:"object_type_id"`
+	ParentID         uuid.UUID             `json:"parent_id"`
+	OwnerID          *uuid.UUID            `json:"owner_id"`
+	Asset2dID        *uuid.UUID            `json:"asset_2d_id"`
+	Asset3dID        *uuid.UUID            `json:"asset_3d_id"`
+	Options          *entry.ObjectOptions  `json:"options"`
+	Position         *cmath.ObjectPosition `json:"position"`
+	Label            *string               `json:"label"`
+	ObjectAttributes []*entry.Attribute    `json:"object_attributes"`
+	Objects          []*ObjectTemplate     `json:"objects"`
+	RandomObjects    []*ObjectTemplate     `json:"random_objects"`
 }
 
-// TODO: think about rollback
-func AddObjectFromTemplate(objectTemplate *ObjectTemplate, updateDB bool) (universe.Object, error) {
+func AddObjectFromTemplate(objectTemplate *ObjectTemplate, updateDB bool) (uuid.UUID, error) {
+	node := universe.GetNode()
+
 	// loading
-	parent, ok := universe.GetNode().GetObjectFromAllObjects(objectTemplate.ParentID)
+	objectType, ok := node.GetObjectTypes().GetObjectType(objectTemplate.ObjectTypeID)
 	if !ok {
-		return nil, errors.Errorf("parent object not found: %s", objectTemplate.ParentID)
+		return uuid.Nil, errors.Errorf("failed to get object type: %s", objectTemplate.ObjectTypeID)
+	}
+
+	parent, ok := node.GetObjectFromAllObjects(objectTemplate.ParentID)
+	if !ok {
+		return uuid.Nil, errors.Errorf("parent object not found: %s", objectTemplate.ParentID)
+	}
+
+	// TODO: should be available for admin or owner of parent
+	var asset2d universe.Asset2d
+	if objectTemplate.Asset2dID != nil {
+		asset2d, ok = node.GetAssets2d().GetAsset2d(*objectTemplate.Asset2dID)
+		if !ok {
+			return uuid.Nil, errors.Errorf("asset 2d not found: %s", objectTemplate.Asset2dID)
+		}
+	}
+
+	// TODO: should be available for admin or owner of parent
+	var asset3d universe.Asset3d
+	if objectTemplate.Asset3dID != nil {
+		asset3d, ok = node.GetAssets3d().GetAsset3d(*objectTemplate.Asset3dID)
+		if !ok {
+			return uuid.Nil, errors.Errorf("asset 3d not found: %s", objectTemplate.Asset3dID)
+		}
+	}
+
+	objectID := objectTemplate.ObjectID
+	ownerID := objectTemplate.OwnerID
+	objectName := objectTemplate.ObjectName
+	if objectID == nil {
+		objectID = utils.GetPTR(uuid.New())
+	}
+	if ownerID == nil {
+		ownerID = utils.GetPTR(parent.GetOwnerID())
+	}
+	if objectName == nil {
+		objectName = utils.GetPTR(objectID.String())
 	}
 
 	// creating
-	object, err := createObjectFromTemplate(parent, objectTemplate)
+	object, err := parent.CreateObject(*objectID)
 	if err != nil {
-		return nil, errors.WithMessagef(err, "failed to create object from template: %+v", objectTemplate)
+		return uuid.Nil, errors.WithMessagef(err, "failed to create object: %s", objectID)
+	}
+
+	if err := object.SetOwnerID(*ownerID, false); err != nil {
+		return uuid.Nil, errors.WithMessagef(err, "failed to set owner id: %s", ownerID)
+	}
+	if err := object.SetObjectType(objectType, false); err != nil {
+		return uuid.Nil, errors.WithMessagef(err, "failed to set object type: %s", objectTemplate.ObjectTypeID)
+	}
+	if asset2d != nil {
+		if err := object.SetAsset2D(asset2d, false); err != nil {
+			return uuid.Nil, errors.WithMessagef(err, "failed to set asset 2d: %s", objectTemplate.Asset2dID)
+		}
+	}
+	if asset3d != nil {
+		if err := object.SetAsset3D(asset3d, false); err != nil {
+			return uuid.Nil, errors.WithMessagef(err, "failed to set asset 3d: %s", objectTemplate.Asset3dID)
+		}
+	}
+	if objectTemplate.Position != nil {
+		if err := object.SetPosition(objectTemplate.Position, false); err != nil {
+			return uuid.Nil, errors.WithMessagef(err, "failed to set position: %+v", objectTemplate.Position)
+		}
+	}
+
+	if objectTemplate.Options != nil {
+		if _, err := object.SetOptions(modify.MergeWith(objectTemplate.Options), false); err != nil {
+			return uuid.Nil, errors.WithMessage(err, "failed to set options")
+		}
 	}
 
 	// saving in database
 	if updateDB {
-		if err := parent.AddObject(object, true); err != nil {
-			return object, errors.WithMessagef(
-				err, "failed to add object %s to parent %s", object.GetID(), parent.GetID(),
+		if err := parent.AddObject(object, updateDB); err != nil {
+			return uuid.Nil, errors.WithMessage(err, "failed to add object")
+		}
+	}
+
+	// running
+	if err := object.Run(); err != nil {
+		return uuid.Nil, errors.WithMessage(err, "failed to run object")
+	}
+	if err := parent.UpdateChildrenPosition(true); err != nil {
+		return uuid.Nil, errors.WithMessage(err, "failed to update children position")
+	}
+
+	// adding children
+	for i := range objectTemplate.Objects {
+		objectTemplate.Objects[i].ParentID = *objectID
+		if _, err := AddObjectFromTemplate(objectTemplate.Objects[i], updateDB); err != nil {
+			return uuid.Nil, errors.WithMessagef(
+				err, "failed to add object from template: %+v", objectTemplate.Objects[i],
 			)
+		}
+	}
+
+	// enabling
+	object.SetEnabled(true)
+
+	// adding attributes
+	if err := object.SetName(*objectName, true); err != nil {
+		return uuid.Nil, errors.WithMessage(err, "failed to set object name")
+	}
+
+	for i := range objectTemplate.ObjectAttributes {
+		if _, err := object.GetObjectAttributes().Upsert(
+			objectTemplate.ObjectAttributes[i].AttributeID,
+			modify.MergeWith(objectTemplate.ObjectAttributes[i].AttributePayload),
+			updateDB,
+		); err != nil {
+			return uuid.Nil, errors.WithMessagef(err, "failed to upsert object attribute: %+v", objectTemplate.ObjectAttributes[i])
 		}
 	}
 
 	// updating
 	if err := object.Update(true); err != nil {
-		return object, errors.WithMessage(err, "failed to update object")
-	}
-	if err := parent.UpdateChildrenPosition(true); err != nil {
-		return object, errors.WithMessage(err, "failed to update children position")
+		return uuid.Nil, errors.WithMessage(err, "failed to update object")
 	}
 
-	return object, nil
+	return *objectID, nil
 }
 
 func RemoveObjectFromParent(parent, object universe.Object, updateDB bool) (bool, error) {
@@ -98,7 +203,7 @@ func RemoveObjectFromParent(parent, object universe.Object, updateDB bool) (bool
 			if _, err := RemoveObjectFromParent(object, child, false); err != nil {
 				logic.GetLogger().Error(
 					errors.WithMessagef(
-						err, "Helper: RemoveObjectFromParent: failed to remove child: %s", child.GetID(),
+						err, "Helper: RemoveObjectFromParent: failed to remove child from object: %s", child.GetID(),
 					),
 				)
 			}
@@ -106,107 +211,4 @@ func RemoveObjectFromParent(parent, object universe.Object, updateDB bool) (bool
 	}()
 
 	return removed, errs.ErrorOrNil()
-}
-
-// createObjectFromTemplate creates in-memory ready for use object with children from template
-func createObjectFromTemplate(parent universe.Object, objectTemplate *ObjectTemplate) (universe.Object, error) {
-	// TODO: think about rollback
-	if parent == nil {
-		return nil, errors.Errorf("parent is nil")
-	}
-
-	node := universe.GetNode()
-
-	// loading
-	objectType, ok := node.GetObjectTypes().GetObjectType(objectTemplate.ObjectTypeID)
-	if !ok {
-		return nil, errors.Errorf("failed to get object type: %s", objectTemplate.ObjectTypeID)
-	}
-	// TODO: should be available for admin or owner of parent
-	var asset2d universe.Asset2d
-	if objectTemplate.Asset2dID != nil {
-		asset2d, ok = node.GetAssets2d().GetAsset2d(*objectTemplate.Asset2dID)
-		if !ok {
-			return nil, errors.Errorf("asset 2d not found: %s", objectTemplate.Asset2dID)
-		}
-	}
-	// TODO: should be available for admin or owner of parent
-	var asset3d universe.Asset3d
-	if objectTemplate.Asset3dID != nil {
-		asset3d, ok = node.GetAssets3d().GetAsset3d(*objectTemplate.Asset3dID)
-		if !ok {
-			return nil, errors.Errorf("asset 3d not found: %s", objectTemplate.Asset3dID)
-		}
-	}
-
-	ownerID := objectTemplate.OwnerID
-	objectID := objectTemplate.ObjectID
-	objectName := objectTemplate.ObjectName
-	if ownerID == uuid.Nil {
-		ownerID = parent.GetOwnerID()
-	}
-	if objectID == uuid.Nil {
-		objectID = uuid.New()
-	}
-	if objectName == nil {
-		objectName = utils.GetPTR(objectID.String())
-	}
-
-	// creating
-	object, err := parent.CreateObject(objectID)
-	if err != nil {
-		return nil, errors.WithMessagef(err, "failed to create object: %s", objectID)
-	}
-
-	if err := object.SetOwnerID(ownerID, false); err != nil {
-		return object, errors.WithMessagef(err, "failed to set owner id: %s", ownerID)
-	}
-	if err := object.SetObjectType(objectType, false); err != nil {
-		return object, errors.WithMessagef(err, "failed to set object type: %s", objectTemplate.ObjectTypeID)
-	}
-	if asset2d != nil {
-		if err := object.SetAsset2D(asset2d, false); err != nil {
-			return object, errors.WithMessagef(err, "failed to set asset 2d: %s", objectTemplate.Asset2dID)
-		}
-	}
-	if asset3d != nil {
-		if err := object.SetAsset3D(asset3d, false); err != nil {
-			return object, errors.WithMessagef(err, "failed to set asset 3d: %s", objectTemplate.Asset3dID)
-		}
-	}
-	if objectTemplate.Position != nil {
-		if err := object.SetPosition(objectTemplate.Position, false); err != nil {
-			return object, errors.WithMessagef(err, "failed to set position: %+v", objectTemplate.Position)
-		}
-	}
-
-	// running
-	if err := object.Run(); err != nil {
-		return object, errors.WithMessage(err, "failed to run object")
-	}
-
-	// adding children
-	for _, childTemplate := range objectTemplate.Children {
-		if _, err := createObjectFromTemplate(object, childTemplate); err != nil {
-			return object, errors.WithMessagef(err, "failed to create child from template: %+v", childTemplate)
-		}
-	}
-
-	// enabling
-	object.SetEnabled(true)
-
-	// adding attributes
-	if err := object.SetName(*objectName, false); err != nil {
-		return object, errors.WithMessage(err, "failed to set object name")
-	}
-
-	for _, attribute := range objectTemplate.ObjectAttributes {
-		if _, err := object.GetObjectAttributes().Upsert(
-			attribute.AttributeID, modify.MergeWith(attribute.AttributePayload), false,
-		); err != nil {
-			return object, errors.WithMessagef(err, "failed to upsert object attribute: %+v", attribute.AttributeID)
-		}
-	}
-
-	return object, nil
 }

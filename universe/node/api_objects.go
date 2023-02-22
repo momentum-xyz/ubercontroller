@@ -60,9 +60,9 @@ func (n *Node) apiObjectsCreateObject(c *gin.Context) {
 		return
 	}
 
-	isAdmin, err := n.GetUserObjects().CheckIsIndirectAdmin(entry.NewUserObjectID(userID, parentID))
+	isAdmin, err := n.db.GetUserObjectsDB().CheckIsIndirectAdminByID(c, entry.NewUserObjectID(userID, parentID))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiObjectsCreateObject: failed to check is indirect admin")
+		err := errors.WithMessage(err, "Node: apiObjectsCreateObject: failed to check object indirect admin")
 		api.AbortRequest(c, http.StatusBadRequest, "admin_check_failed", err, n.log)
 		return
 	}
@@ -113,21 +113,19 @@ func (n *Node) apiObjectsCreateObject(c *gin.Context) {
 	}
 
 	objectTemplate := tree.ObjectTemplate{
-		Object: entry.Object{
-			ObjectTypeID: objectTypeID,
-			ParentID:     parentID,
-			OwnerID:      userID,
-			Asset2dID:    asset2dID,
-			Asset3dID:    asset3dID,
-			Position:     position,
-			Options: &entry.ObjectOptions{
-				Minimap: utils.GetPTR(inBody.Minimap),
-			},
+		ObjectName:   &inBody.ObjectName,
+		ObjectTypeID: objectTypeID,
+		ParentID:     parentID,
+		OwnerID:      &userID,
+		Asset2dID:    asset2dID,
+		Asset3dID:    asset3dID,
+		Position:     position,
+		Options: &entry.ObjectOptions{
+			Minimap: utils.GetPTR(inBody.Minimap),
 		},
-		ObjectName: &inBody.ObjectName,
 	}
 
-	object, err := tree.AddObjectFromTemplate(&objectTemplate, true)
+	objectID, err := tree.AddObjectFromTemplate(&objectTemplate, true)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiObjectsCreateObject: failed to add object from template")
 		api.AbortRequest(c, http.StatusInternalServerError, "add_object_failed", err, n.log)
@@ -138,7 +136,7 @@ func (n *Node) apiObjectsCreateObject(c *gin.Context) {
 		ObjectID string `json:"object_id"`
 	}
 	out := Out{
-		ObjectID: object.GetID().String(),
+		ObjectID: objectID.String(),
 	}
 
 	c.JSON(http.StatusCreated, out)

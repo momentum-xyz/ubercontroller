@@ -1,6 +1,8 @@
 package tree
 
 import (
+	"math/rand"
+
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
@@ -14,52 +16,64 @@ type WorldTemplate struct {
 	ObjectTemplate
 }
 
-func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (universe.World, error) {
+func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (uuid.UUID, error) {
 	node := universe.GetNode()
 
 	// loading
 	worldObjectType, ok := node.GetObjectTypes().GetObjectType(worldTemplate.ObjectTypeID)
 	if !ok {
-		return nil, errors.Errorf("failed to get world object type: %s", worldTemplate.ObjectTypeID)
+		return uuid.Nil, errors.Errorf("failed to get world object type: %s", worldTemplate.ObjectTypeID)
 	}
 
 	worldID := worldTemplate.ObjectID
-	worldName := worldTemplate.ObjectName
-	if worldID == uuid.Nil {
-		worldID = uuid.New()
+	if worldID == nil {
+		worldID = utils.GetPTR(uuid.New())
 	}
+	worldName := worldTemplate.ObjectName
 	if worldName == nil {
 		worldName = utils.GetPTR(worldID.String())
 	}
 
 	// creating
-	world, err := node.GetWorlds().CreateWorld(worldID)
+	world, err := node.GetWorlds().CreateWorld(*worldID)
 	if err != nil {
-		return nil, errors.WithMessagef(err, "failed to create world: %s", worldID)
+		return uuid.Nil, errors.WithMessagef(err, "failed to create world: %s", worldID)
 	}
 
-	if err := world.SetOwnerID(worldTemplate.OwnerID, false); err != nil {
-		return world, errors.WithMessagef(err, "failed to set owner: %s", worldTemplate.OwnerID)
+	if err := world.SetOwnerID(*worldTemplate.OwnerID, false); err != nil {
+		return uuid.Nil, errors.WithMessagef(err, "failed to set owner: %s", worldTemplate.OwnerID)
 	}
 	if err := world.SetObjectType(worldObjectType, false); err != nil {
-		return nil, errors.WithMessagef(err, "failed to set object type: %s", worldTemplate.ObjectTypeID)
+		return uuid.Nil, errors.WithMessagef(err, "failed to set object type: %s", worldTemplate.ObjectTypeID)
+	}
+
+	// saving in database
+	if updateDB {
+		if err := node.GetWorlds().AddWorld(world, updateDB); err != nil {
+			return uuid.Nil, errors.WithMessage(err, "failed to add world")
+		}
 	}
 
 	// running
 	if err := world.Run(); err != nil {
-		return world, errors.WithMessage(err, "failed to run world")
+		return uuid.Nil, errors.WithMessage(err, "failed to run world")
 	}
 
 	// adding children
-	labelToChildID := make(map[string]any)
-	for _, childTemplate := range worldTemplate.Children {
-		child, err := createObjectFromTemplate(world.ToObject(), childTemplate)
+	objectLabelToID := make(map[string]uuid.UUID)
+	randomObject := worldTemplate.RandomObjects[rand.Intn(len(worldTemplate.RandomObjects))]
+	worldTemplate.Objects = append(worldTemplate.Objects, randomObject)
+	for i := range worldTemplate.Objects {
+		worldTemplate.Objects[i].ParentID = *worldID
+		objectID, err := AddObjectFromTemplate(worldTemplate.Objects[i], updateDB)
 		if err != nil {
-			return world, errors.WithMessagef(err, "failed to create child from template: %+v", childTemplate)
+			return uuid.Nil, errors.WithMessagef(
+				err, "failed to add object from template: %+v", worldTemplate.Objects[i],
+			)
 		}
 
-		if childTemplate.Label != nil {
-			labelToChildID[*childTemplate.Label] = child.GetID()
+		if worldTemplate.Objects[i].Label != nil {
+			objectLabelToID[*worldTemplate.Objects[i].Label] = objectID
 		}
 	}
 
@@ -67,8 +81,8 @@ func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (universe
 	world.SetEnabled(true)
 
 	// adding attributes
-	if err := world.SetName(*worldName, false); err != nil {
-		return world, errors.WithMessage(err, "failed to set world name")
+	if err := world.SetName(*worldName, true); err != nil {
+		return uuid.Nil, errors.WithMessage(err, "failed to set world name")
 	}
 
 	worldTemplate.ObjectAttributes = append(
@@ -78,7 +92,7 @@ func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (universe
 			entry.NewAttributePayload(
 				&entry.AttributeValue{
 					"kind":         "basic",
-					"objects":      labelToChildID,
+					"objects":      objectLabelToID,
 					"attributes":   map[string]any{},
 					"object_types": map[string]any{},
 					"effects":      map[string]any{},
@@ -88,27 +102,22 @@ func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (universe
 		),
 	)
 
-	for _, attribute := range worldTemplate.ObjectAttributes {
+	for i := range worldTemplate.ObjectAttributes {
 		if _, err := world.GetObjectAttributes().Upsert(
-			attribute.AttributeID, modify.MergeWith(attribute.AttributePayload), false,
+			worldTemplate.ObjectAttributes[i].AttributeID,
+			modify.MergeWith(worldTemplate.ObjectAttributes[i].AttributePayload),
+			updateDB,
 		); err != nil {
-			return world, errors.WithMessagef(err, "failed to upsert world attribute: %+v", attribute.AttributeID)
-		}
-	}
-
-	if updateDB {
-		if err := node.GetWorlds().AddWorld(world, true); err != nil {
-			return world, errors.WithMessagef(err, "failed to add to worlds: %s", world.GetID())
+			return uuid.Nil, errors.WithMessagef(
+				err, "failed to upsert world object attribute: %+v", worldTemplate.ObjectAttributes[i],
+			)
 		}
 	}
 
 	// updating
 	if err := world.Update(true); err != nil {
-		return world, errors.WithMessage(err, "failed to update world")
-	}
-	if err := world.UpdateChildrenPosition(true); err != nil {
-		return world, errors.WithMessage(err, "failed to update children position")
+		return uuid.Nil, errors.WithMessage(err, "failed to update world")
 	}
 
-	return world, nil
+	return *worldID, nil
 }
