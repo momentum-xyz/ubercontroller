@@ -14,6 +14,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.15.2
 	github.com/google/flatbuffers v22.11.23+incompatible
 	github.com/google/uuid v1.3.0
+	github.com/matoous/go-nanoid/v2 v2.0.0
 	github.com/gorilla/websocket v1.5.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/influxdata/influxdb-client-go/v2 v2.12.0
@@ -60,7 +61,6 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/lib/pq v1.10.7 // indirect
-	github.com/matoous/go-nanoid/v2 v2.0.0 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/mimoo/StrobeGo v0.0.0-20181016162300-f8f6d4d2b643 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect

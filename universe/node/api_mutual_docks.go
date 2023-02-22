@@ -211,41 +211,53 @@ func (n *Node) apiUsersRemoveMutualDocks(c *gin.Context) {
 	c.JSON(http.StatusAccepted, nil)
 }
 
-func createWorldPortal(portalName string, from, to universe.World, portalImage string) (universe.Object, error) {
+func createWorldPortal(portalName string, from, to universe.World, portalImage string) (uuid.UUID, error) {
+	var objectAttributes []*entry.Attribute
+
 	portals := getWorldPortals(from, to)
 	if len(portals) > 0 {
-		for _, portal := range portals {
-			return portal, nil
+		for portalID, _ := range portals {
+			return portalID, nil
 		}
 	}
 
 	dockingStation, err := getWorldDockingStation(from)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to get docking station")
+		return uuid.Nil, errors.WithMessage(err, "failed to get docking station")
 	}
 
 	portalObjectTypeID, err := common.GetPortalObjectTypeID()
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to get portal object type id")
+		return uuid.Nil, errors.WithMessage(err, "failed to get portal object type id")
+	}
+
+	objectAttributes = append(objectAttributes, entry.NewAttribute(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.World.TeleportDestination.Name),
+		entry.NewAttributePayload(
+			&entry.AttributeValue{
+				universe.ReservedAttributes.World.TeleportDestination.Key: to.GetID().String(),
+			},
+			nil,
+		),
+	))
+
+	if portalImage != "" {
+		objectAttributes = append(objectAttributes, entry.NewAttribute(
+			entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Object.PortalDockFace.Name),
+			entry.NewAttributePayload(
+				&entry.AttributeValue{
+					universe.ReservedAttributes.Object.PortalDockFace.Key: portalImage,
+				},
+				nil,
+			),
+		))
 	}
 
 	template := tree.ObjectTemplate{
-		Object: entry.Object{
-			ObjectTypeID: portalObjectTypeID,
-			ParentID:     dockingStation.GetID(),
-		},
-		ObjectName: &portalName,
-		ObjectAttributes: []*entry.Attribute{
-			entry.NewAttribute(
-				entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.World.TeleportDestination.Name),
-				entry.NewAttributePayload(
-					&entry.AttributeValue{
-						universe.ReservedAttributes.World.TeleportDestination.Key: to.GetID().String(),
-					},
-					nil,
-				),
-			),
-		},
+		ObjectName:       &portalName,
+		ObjectTypeID:     portalObjectTypeID,
+		ParentID:         dockingStation.GetID(),
+		ObjectAttributes: objectAttributes,
 	}
 
 	return tree.AddObjectFromTemplate(&template, true)
