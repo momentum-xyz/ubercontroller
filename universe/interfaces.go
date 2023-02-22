@@ -346,8 +346,8 @@ type Asset3d interface {
 	IDer
 	Initializer
 
-	GetMeta() entry.Asset3dMeta
-	SetMeta(meta entry.Asset3dMeta, updateDB bool) error
+	GetMeta() *entry.Asset3dMeta
+	SetMeta(meta *entry.Asset3dMeta, updateDB bool) error
 
 	GetOptions() *entry.Asset3dOptions
 	SetOptions(modifyFn modify.Fn[entry.Asset3dOptions], updateDB bool) (*entry.Asset3dOptions, error)

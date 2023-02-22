@@ -101,7 +101,7 @@ type Assets3dDB interface {
 	UpsertAsset(ctx context.Context, asset3d *entry.Asset3d) error
 	UpsertAssets(ctx context.Context, assets3d []*entry.Asset3d) error
 
-	UpdateAssetMeta(ctx context.Context, asset3dID uuid.UUID, meta entry.Asset3dMeta) error
+	UpdateAssetMeta(ctx context.Context, asset3dID uuid.UUID, meta *entry.Asset3dMeta) error
 	UpdateAssetOptions(ctx context.Context, asset3dID uuid.UUID, options *entry.Asset3dOptions) error
 
 	RemoveAssetByID(ctx context.Context, asset3dID uuid.UUID) error
