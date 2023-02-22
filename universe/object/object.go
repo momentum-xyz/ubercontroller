@@ -53,7 +53,9 @@ type Object struct {
 	spawnMsg          atomic.Pointer[websocket.PreparedMessage]
 	attributesMsg     *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
 	renderTextureMap  *generic.SyncMap[string, string]
-	textMsg           atomic.Pointer[websocket.PreparedMessage]
+	renderStringMap   *generic.SyncMap[string, string]
+	textureMsg        atomic.Pointer[websocket.PreparedMessage]
+	stringMsg         atomic.Pointer[websocket.PreparedMessage]
 	actualPosition    atomic.Pointer[cmath.ObjectPosition]
 	broadcastPipeline chan *websocket.PreparedMessage
 	messageAccept     atomic.Bool
@@ -73,6 +75,7 @@ func NewObject(id uuid.UUID, db database.DB, world universe.World) *Object {
 		Children:         generic.NewSyncMap[uuid.UUID, universe.Object](0),
 		attributesMsg:    generic.NewSyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]](0),
 		renderTextureMap: generic.NewSyncMap[string, string](0),
+		renderStringMap:  generic.NewSyncMap[string, string](0),
 		world:            world,
 	}
 	object.objectAttributes = newObjectAttributes(object)
@@ -420,7 +423,7 @@ func (o *Object) Update(recursive bool) error {
 		world := o.GetWorld()
 		if world != nil {
 			world.Send(o.spawnMsg.Load(), true)
-			o.SendTextures(
+			o.SendAllAutoAttributes(
 				func(msg *websocket.PreparedMessage) error {
 					return world.Send(msg, true)
 				}, false,
@@ -650,8 +653,13 @@ func (o *Object) SendSpawnMessage(sendFn func(*websocket.PreparedMessage) error,
 
 }
 
-func (o *Object) SendTextures(sendFn func(*websocket.PreparedMessage) error, recursive bool) {
-	msg := o.textMsg.Load()
+func (o *Object) SendAllAutoAttributes(sendFn func(*websocket.PreparedMessage) error, recursive bool) {
+	msg := o.stringMsg.Load()
+	if msg != nil {
+		sendFn(msg)
+	}
+
+	msg = o.textureMsg.Load()
 	if msg != nil {
 		sendFn(msg)
 	}
@@ -664,7 +672,7 @@ func (o *Object) SendTextures(sendFn func(*websocket.PreparedMessage) error, rec
 	defer o.Children.Mu.RUnlock()
 
 	for _, child := range o.Children.Data {
-		child.SendTextures(sendFn, true)
+		child.SendAllAutoAttributes(sendFn, recursive)
 	}
 }
 

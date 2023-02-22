@@ -1,6 +1,7 @@
 package object
 
 import (
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 
@@ -91,6 +92,7 @@ func (o *Object) UpdateAutoTextureMap(
 		sendMap := map[string]int32{option.SlotName: int32(val)}
 		msg = message.GetBuilder().SetObjectAttributes(o.GetID(), sendMap)
 	case entry.UnitySlotTypeString:
+		o.log.Infof("Processing String Slot %+v for %+v \n", option.SlotName, o.GetID())
 		v, ok := (*value)[option.ValueField]
 		if !ok {
 			return nil
@@ -99,6 +101,15 @@ func (o *Object) UpdateAutoTextureMap(
 		if !ok {
 			return nil
 		}
+
+		o.log.Infof("Setting String Slot %+v for %+v to  %+v  \n", option.SlotName, o.GetID(), val)
+
+		o.renderStringMap.Store(option.SlotName, val)
+		func() {
+			o.renderStringMap.Mu.RLock()
+			defer o.renderStringMap.Mu.RUnlock()
+			o.stringMsg.Store(message.GetBuilder().SetObjectStrings(o.GetID(), o.renderStringMap.Data))
+		}()
 
 		sendMap := map[string]string{option.SlotName: val}
 		msg = message.GetBuilder().SetObjectStrings(o.GetID(), sendMap)
@@ -121,7 +132,17 @@ func (o *Object) UpdateAutoTextureMap(
 			o.renderTextureMap.Mu.RLock()
 			defer o.renderTextureMap.Mu.RUnlock()
 
-			o.textMsg.Store(message.GetBuilder().SetObjectTextures(o.GetID(), o.renderTextureMap.Data))
+			o.textureMsg.Store(message.GetBuilder().SetObjectTextures(o.GetID(), o.renderTextureMap.Data))
+			ot := o.GetObjectType()
+			if ot != nil && option.SlotName == "skybox_custom" && ot.GetAsset3d() != nil && ot.GetAsset3d().GetID() == uuid.MustParse("313a597a-8b9a-47a7-9908-52bdc7a21a3e") {
+				o.log.Infof(
+					"unity-auto stage7b :Setting skybox texture for %+v to %+v | %+v from %+v\n", o.world.GetID(), val,
+					option,
+					o.GetID(),
+				)
+				skyBoxTextureMap := map[string]string{option.SlotName: val}
+				o.world.TempSetSkybox(message.GetBuilder().SetObjectTextures(o.GetID(), skyBoxTextureMap))
+			}
 		}()
 
 		sendMap := map[string]string{option.SlotName: val}

@@ -141,7 +141,7 @@ func (w *World) initializeUnity(user universe.User) error {
 	)
 	w.log.Infof("Sent Signal: %+v\n", user.GetID())
 
-	w.SendTextures(user.SendDirectly, true)
+	w.SendAllAutoAttributes(user.SendDirectly, true)
 	w.log.Infof("Sent Textures: %+v\n", user.GetID())
 
 	return nil

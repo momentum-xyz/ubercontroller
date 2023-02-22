@@ -2,7 +2,6 @@ package world
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/config"
 	"sync/atomic"
 	"time"
 
@@ -14,6 +13,7 @@ import (
 
 	"github.com/momentum-xyz/posbus-protocol/posbus"
 
+	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/mplugin"
 	"github.com/momentum-xyz/ubercontroller/pkg/message"
@@ -42,6 +42,15 @@ type World struct {
 	settings            atomic.Pointer[universe.WorldSettings]
 	allObjects          *generic.SyncMap[uuid.UUID, universe.Object]
 	calendar            *calendar.Calendar
+	skyBoxMsg           atomic.Pointer[websocket.PreparedMessage]
+}
+
+func (w *World) TempSetSkybox(msg *websocket.PreparedMessage) {
+	w.skyBoxMsg.Store(msg)
+}
+
+func (w *World) TempGetSkybox() *websocket.PreparedMessage {
+	return w.skyBoxMsg.Load()
 }
 
 func NewWorld(id uuid.UUID, db database.DB) *World {
