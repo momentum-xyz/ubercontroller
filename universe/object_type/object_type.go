@@ -252,6 +252,19 @@ func (ot *ObjectType) LoadFromEntry(row *entry.ObjectType) error {
 	if err := ot.SetDescription(row.Description, false); err != nil {
 		return errors.WithMessage(err, "failed to set description")
 	}
+
+	// https://momentum.nifty.pm/Yok8v8pw_pmY/task/DEV-32
+	// If minimap not set in DB, set it based on visibility
+	if row.Options.Minimap == nil {
+		if row.Options.Visible != nil {
+			if *row.Options.Visible == entry.ReactObjectVisibleType || *row.Options.Visible == entry.ReactUnityObjectVisibleType {
+				row.Options.Minimap = utils.GetPTR(true)
+			} else {
+				row.Options.Minimap = utils.GetPTR(false)
+			}
+		}
+	}
+
 	if _, err := ot.SetOptions(modify.MergeWith(row.Options), false); err != nil {
 		return errors.WithMessage(err, "failed to set options")
 	}

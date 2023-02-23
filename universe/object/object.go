@@ -612,10 +612,12 @@ func (o *Object) UpdateSpawnMessage() error {
 
 	effectiveOptions := o.GetEffectiveOptions()
 
-	// TODO: discuss is it ok to rely on "ReactSpaceVisibleType"?
+	// TODO: discuss is it ok to rely on "ReactObjectVisibleType"?
 	var visible bool
-	if effectiveOptions.Visible != nil && *effectiveOptions.Visible == entry.ReactObjectVisibleType {
-		visible = true
+	if effectiveOptions.Visible != nil {
+		if *effectiveOptions.Visible == entry.ReactObjectVisibleType || *effectiveOptions.Visible == entry.ReactUnityObjectVisibleType {
+			visible = true
+		}
 	}
 
 	msg := message.GetBuilder().MsgObjectDefinition(

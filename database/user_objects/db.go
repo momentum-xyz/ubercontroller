@@ -24,9 +24,9 @@ const (
 	getUserObjectsByObjectIDQuery = `SELECT * FROM user_object WHERE object_id = $1;`
 	getUserObjectValueByIDQuery   = `SELECT value FROM user_object WHERE user_id = $1 AND object_id = $2;`
 
-	getObjectIndirectAdminsQuery  = `SELECT GetIndirectObjectAdmins($1);`
+	getObjectIndirectAdminsQuery  = `SELECT getindirectobjectadmins($1);`
 	checkIsIndirectAdminByIDQuery = `WITH object_admins AS (
-										SELECT GetIndirectObjectAdmins($2) AS user_id
+										SELECT getindirectobjectadmins($2) AS user_id
 									)
 									SELECT EXISTS(
 										SELECT 1
