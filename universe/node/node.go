@@ -3,7 +3,6 @@ package node
 import (
 	"context"
 	"fmt"
-	"github.com/momentum-xyz/ubercontroller/seed"
 	"net/http"
 	"os"
 	"time"
@@ -19,6 +18,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/mplugin"
+	"github.com/momentum-xyz/ubercontroller/seed"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -110,6 +110,7 @@ func (n *Node) Initialize(ctx context.Context) error {
 
 	n.ctx = ctx
 	n.log = log
+	n.cfg = cfg
 
 	consoleWriter := zapcore.Lock(os.Stdout)
 	gin.DefaultWriter = consoleWriter
