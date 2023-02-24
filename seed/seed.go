@@ -3,6 +3,7 @@ package seed
 import (
 	"context"
 	"fmt"
+
 	"github.com/google/uuid"
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/pkg/errors"
@@ -15,7 +16,7 @@ func Node(ctx context.Context, node universe.Node, db database.DB) error {
 	group, _ := errgroup.WithContext(ctx)
 
 	group.Go(func() error {
-		return seedPlugins(node)
+		return seedPlugins(ctx, node)
 	})
 
 	group.Go(func() error {
