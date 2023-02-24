@@ -175,11 +175,6 @@ func seedObjectTypes(node universe.Node) error {
 			categoryName:   "Generic Spaces",
 			description:    utils.GetPTR(""),
 			options: &entry.ObjectOptions{
-				Subs: map[string]any{
-					"asset2d_plugins": []any{
-						"24071066-e8c6-4692-95b5-ae2dc3ed075c",
-					},
-				},
 				Private:           utils.GetPTR(false),
 				Visible:           utils.GetPTR(entry.ReactUnityObjectVisibleType),
 				DefaultTiles:      []any{},
@@ -196,11 +191,6 @@ func seedObjectTypes(node universe.Node) error {
 			categoryName:   "Morgues",
 			description:    utils.GetPTR("morgue"),
 			options: &entry.ObjectOptions{
-				Subs: map[string]any{
-					"asset2d_plugins": []any{
-						"24071066-e8c6-4692-95b5-ae2dc3ed075c",
-					},
-				},
 				Private:           utils.GetPTR(false),
 				Visible:           utils.GetPTR(entry.InvisibleObjectVisibleType),
 				DefaultTiles:      []any{},
