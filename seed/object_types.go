@@ -163,7 +163,7 @@ func seedObjectTypes(node universe.Node) error {
 			description:    utils.GetPTR("Skybox"),
 			options: &entry.ObjectOptions{
 				Editable: utils.GetPTR(false),
-				Visible:  utils.GetPTR(entry.ReactUnityObjectVisibleType),
+				Visible:  utils.GetPTR(entry.UnityObjectVisibleType),
 			},
 		},
 
