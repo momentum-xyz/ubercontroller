@@ -43,76 +43,14 @@ func seedObjectTypes(node universe.Node) error {
 		},
 		{
 			id:             uuid.MustParse("88415343-90db-4d23-a9e7-79a11aaaaf04"),
-			asset2dID:      utils.GetPTR(uuid.MustParse(miroPluginAsset2dID)),
-			asset3dID:      utils.GetPTR(uuid.MustParse(alphaProgramAsset3dID)),
+			asset2dID:      nil,
+			asset3dID:      nil,
 			objectTypeName: "anchor",
 			categoryName:   "Anchors",
 			description:    utils.GetPTR(""),
 			options: &entry.ObjectOptions{
-				Subs: map[string]any{
-					"asset2d_plugins": []any{
-						miroPluginID,
-					},
-				},
 				Private: utils.GetPTR(false),
 				Visible: utils.GetPTR(entry.ReactUnityObjectVisibleType),
-				DefaultTiles: []any{
-					map[string]any{
-						"row":           0,
-						"hash":          "53e9a2811a7a6cd93011a6df7c23edc7",
-						"type":          "tile_type_media",
-						"column":        0,
-						"edited":        1,
-						"render":        1,
-						"content":       map[string]any{},
-						"permanentType": "poster",
-					},
-					map[string]any{
-						"row":           1,
-						"hash":          "69e2b342788fe70273c15b62f618ef22",
-						"type":          "tile_type_media",
-						"column":        0,
-						"edited":        1,
-						"render":        1,
-						"content":       map[string]any{},
-						"permanentType": "meme",
-					},
-					map[string]any{
-						"row":    1,
-						"hash":   "9ae1db04e863bb9d1a572d8a6727c665",
-						"type":   "tile_type_text",
-						"column": 1,
-						"edited": 1,
-						"render": 1,
-						"content": map[string]any{
-							"text":  "Description goes here",
-							"title": "Description",
-						},
-						"permanentType": "description",
-					},
-					map[string]any{
-						"row":    0,
-						"hash":   "fc4d116880460bf808b4487954823e80",
-						"type":   "tile_type_video",
-						"column": 2,
-						"edited": 1,
-						"render": 1,
-						"content": map[string]any{
-							"url": "https://www.youtube.com/watch?v=mwpj70Gcatg",
-						},
-						"permanentType": "video",
-					},
-					map[string]any{
-						"row":           0,
-						"hash":          "3b441ce7b41c54693fbc798ca896c88e",
-						"type":          "tile_type_media",
-						"column":        2,
-						"edited":        1,
-						"render":        1,
-						"content":       map[string]any{},
-						"permanentType": "third",
-					},
-				},
 				ChildPlacements: map[uuid.UUID]*entry.ObjectChildPlacement{
 					uuid.MustParse("00000000-0000-0000-0000-000000000000"): &entry.ObjectChildPlacement{
 						Algo: utils.GetPTR("circular"),
