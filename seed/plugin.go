@@ -98,8 +98,10 @@ func seedPlugins(ctx context.Context, node universe.Node) error {
 			},
 		},
 		{
-			ID:   uuid.MustParse(noname1PluginID),
-			Meta: &entry.PluginMeta{},
+			ID: uuid.MustParse(OdysseyHackatonPluginID),
+			Meta: &entry.PluginMeta{
+				"name": "Odyssey hackaton",
+			},
 		},
 		{
 			ID:   universe.GetKusamaPluginID(),
