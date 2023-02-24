@@ -88,16 +88,11 @@ func seedObjectTypes(node universe.Node) error {
 		{
 			id:             uuid.MustParse("a41ee21e-6c56-41b3-81a9-1c86578b6b3c"),
 			asset2dID:      nil,
-			asset3dID:      utils.GetPTR(uuid.MustParse("b2ef3600-9595-2743-ac9d-0a86c1a327a2")),
+			asset3dID:      nil,
 			objectTypeName: "World",
 			categoryName:   "Worlds",
 			description:    utils.GetPTR("World Type"),
 			options: &entry.ObjectOptions{
-				Subs: map[string]any{
-					"asset2d_plugins": []any{
-						"24071066-e8c6-4692-95b5-ae2dc3ed075c",
-					},
-				},
 				Private:           utils.GetPTR(false),
 				Visible:           utils.GetPTR(entry.ReactUnityObjectVisibleType),
 				DefaultTiles:      []any{},
