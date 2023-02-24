@@ -25,7 +25,7 @@ func seedPlugins(ctx context.Context, node universe.Node) error {
 		return errors.New("failed to get config from context")
 	}
 	baseUrl := cfg.Settings.FrontendURL
-	miroUrl, gdriveUrl, err := generatePluginUrls(baseUrl)
+	miroUrl, gdriveUrl, videoUrl, err := generatePluginUrls(baseUrl)
 	if err != nil {
 		return errors.Wrap(err, "Error generating plugin URLs")
 	}
@@ -87,6 +87,17 @@ func seedPlugins(ctx context.Context, node universe.Node) error {
 			},
 		},
 		{
+			ID: uuid.MustParse(videoPluginID),
+			Meta: &entry.PluginMeta{
+				"name": "Video",
+				"assets2d": []string{
+					videoPluginAsset2dID,
+				},
+				"scopeName": "plugin_video",
+				"scriptUrl": videoUrl,
+			},
+		},
+		{
 			ID:   uuid.MustParse(noname1PluginID),
 			Meta: &entry.PluginMeta{},
 		},
@@ -113,13 +124,18 @@ func seedPlugins(ctx context.Context, node universe.Node) error {
 	return nil
 }
 
-func generatePluginUrls(baseUrl string) (miroUrl string, gdriveUrl string, err error) {
+func generatePluginUrls(baseUrl string) (miroUrl string, gdriveUrl string, videoUrl string, err error) {
 	miroUrl, err = generateScriptUrl(baseUrl, "miro")
 	if err != nil {
 		err = errors.Wrap(err, "Could not generate plugin URL")
 		return
 	}
 	gdriveUrl, err = generateScriptUrl(baseUrl, "google-drive")
+	if err != nil {
+		err = errors.Wrap(err, "Could not generate plugin URL")
+		return
+	}
+	videoUrl, err = generateScriptUrl(baseUrl, "video")
 	if err != nil {
 		err = errors.Wrap(err, "Could not generate plugin URL")
 		return
