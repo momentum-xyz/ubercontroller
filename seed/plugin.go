@@ -104,12 +104,16 @@ func seedPlugins(ctx context.Context, node universe.Node) error {
 			},
 		},
 		{
-			ID:   universe.GetKusamaPluginID(),
-			Meta: &entry.PluginMeta{},
+			ID: universe.GetKusamaPluginID(),
+			Meta: &entry.PluginMeta{
+				"name": "Kusama",
+			},
 		},
 		{
-			ID:   uuid.MustParse(high5PluginID),
-			Meta: &entry.PluginMeta{},
+			ID: uuid.MustParse(high5PluginID),
+			Meta: &entry.PluginMeta{
+				"name": "High five",
+			},
 		},
 	}
 
