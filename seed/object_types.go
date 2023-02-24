@@ -122,7 +122,7 @@ func seedObjectTypes(node universe.Node) error {
 			categoryName:   "Custom",
 			description:    utils.GetPTR("Custom placed objects"),
 			options: &entry.ObjectOptions{
-				Visible: utils.GetPTR(entry.InvisibleObjectVisibleType),
+				Visible: utils.GetPTR(entry.ReactUnityObjectVisibleType),
 			},
 		},
 
