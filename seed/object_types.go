@@ -134,7 +134,7 @@ func seedObjectTypes(node universe.Node) error {
 			categoryName:   "Effects",
 			description:    utils.GetPTR("Effects emitter"),
 			options: &entry.ObjectOptions{
-				Visible: utils.GetPTR(entry.ReactObjectVisibleType),
+				Visible: utils.GetPTR(entry.UnityObjectVisibleType),
 			},
 		},
 
