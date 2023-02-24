@@ -61,19 +61,21 @@ func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (uuid.UUI
 
 	// adding children
 	objectLabelToID := make(map[string]uuid.UUID)
-	randomObject := worldTemplate.RandomObjects[rand.Intn(len(worldTemplate.RandomObjects))]
-	worldTemplate.Objects = append(worldTemplate.Objects, randomObject)
-	for i := range worldTemplate.Objects {
-		worldTemplate.Objects[i].ParentID = *worldID
-		objectID, err := AddObjectFromTemplate(worldTemplate.Objects[i], updateDB)
-		if err != nil {
-			return uuid.Nil, errors.WithMessagef(
-				err, "failed to add object from template: %+v", worldTemplate.Objects[i],
-			)
-		}
+	if len(worldTemplate.RandomObjects) > 0 {
+		randomObject := worldTemplate.RandomObjects[rand.Intn(len(worldTemplate.RandomObjects))]
+		worldTemplate.Objects = append(worldTemplate.Objects, randomObject)
+		for i := range worldTemplate.Objects {
+			worldTemplate.Objects[i].ParentID = *worldID
+			objectID, err := AddObjectFromTemplate(worldTemplate.Objects[i], updateDB)
+			if err != nil {
+				return uuid.Nil, errors.WithMessagef(
+					err, "failed to add object from template: %+v", worldTemplate.Objects[i],
+				)
+			}
 
-		if worldTemplate.Objects[i].Label != nil {
-			objectLabelToID[*worldTemplate.Objects[i].Label] = objectID
+			if worldTemplate.Objects[i].Label != nil {
+				objectLabelToID[*worldTemplate.Objects[i].Label] = objectID
+			}
 		}
 	}
 
