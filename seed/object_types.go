@@ -44,7 +44,7 @@ func seedObjectTypes(node universe.Node) error {
 		{
 			id:             uuid.MustParse("88415343-90db-4d23-a9e7-79a11aaaaf04"),
 			asset2dID:      utils.GetPTR(uuid.MustParse(miroPluginAsset2dID)),
-			asset3dID:      utils.GetPTR(uuid.MustParse(noname1Asset3dID)),
+			asset3dID:      utils.GetPTR(uuid.MustParse(alphaProgramAsset3dID)),
 			objectTypeName: "anchor",
 			categoryName:   "Anchors",
 			description:    utils.GetPTR(""),
