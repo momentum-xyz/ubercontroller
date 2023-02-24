@@ -1,6 +1,8 @@
 package seed
 
 import (
+	"context"
+
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
@@ -9,7 +11,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
-func seedAssets3d(node universe.Node) error {
+func seedAssets3d(ctx context.Context, node universe.Node) error {
 	/*
 		select asset_3d_id, meta
 		from asset_3d

@@ -1,6 +1,7 @@
 package seed
 
 import (
+	"context"
 	"crypto/rand"
 	"math/big"
 
@@ -12,7 +13,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
-func seedNodeAttributes(node universe.Node) error {
+func seedNodeAttributes(ctx context.Context, node universe.Node) error {
 	type item struct {
 		pluginID      uuid.UUID
 		attributeName string

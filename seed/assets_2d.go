@@ -1,6 +1,8 @@
 package seed
 
 import (
+	"context"
+
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
@@ -9,7 +11,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
-func seedAssets2d(node universe.Node) error {
+func seedAssets2d(ctx context.Context, node universe.Node) error {
 	items := []*entry.Asset2d{
 		{
 			Asset2dID: uuid.MustParse(noname1Asset2dID),

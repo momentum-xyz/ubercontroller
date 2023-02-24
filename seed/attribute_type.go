@@ -1,6 +1,8 @@
 package seed
 
 import (
+	"context"
+
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
@@ -9,7 +11,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
-func seedAttributeType(node universe.Node) error {
+func seedAttributeType(ctx context.Context, node universe.Node) error {
 	type item struct {
 		pluginID      uuid.UUID
 		attributeName string
