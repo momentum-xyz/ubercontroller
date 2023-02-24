@@ -1,6 +1,8 @@
 package seed
 
 import (
+	"context"
+
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
@@ -9,7 +11,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
-func seedAttributeType(node universe.Node) error {
+func seedAttributeType(ctx context.Context, node universe.Node) error {
 	type item struct {
 		pluginID      uuid.UUID
 		attributeName string
@@ -19,7 +21,7 @@ func seedAttributeType(node universe.Node) error {
 
 	items := []*item{
 		{
-			pluginID:      uuid.MustParse(noname1PluginID),
+			pluginID:      uuid.MustParse(OdysseyHackatonPluginID),
 			attributeName: "problem",
 			description:   "Problem for space",
 			options: &entry.AttributeOptions{
@@ -28,7 +30,7 @@ func seedAttributeType(node universe.Node) error {
 			},
 		},
 		{
-			pluginID:      uuid.MustParse(noname1PluginID),
+			pluginID:      uuid.MustParse(OdysseyHackatonPluginID),
 			attributeName: "solution",
 			description:   "solution for space",
 			options: &entry.AttributeOptions{
@@ -37,7 +39,7 @@ func seedAttributeType(node universe.Node) error {
 			},
 		},
 		{
-			pluginID:      uuid.MustParse(noname1PluginID),
+			pluginID:      uuid.MustParse(OdysseyHackatonPluginID),
 			attributeName: "tile",
 			description:   "tile for space",
 			options: &entry.AttributeOptions{
@@ -45,7 +47,7 @@ func seedAttributeType(node universe.Node) error {
 			},
 		},
 		{
-			pluginID:      uuid.MustParse(noname1PluginID),
+			pluginID:      uuid.MustParse(OdysseyHackatonPluginID),
 			attributeName: "third",
 			description:   "Third screen for space",
 			options: &entry.AttributeOptions{
@@ -53,7 +55,7 @@ func seedAttributeType(node universe.Node) error {
 			},
 		},
 		{
-			pluginID:      uuid.MustParse(noname1PluginID),
+			pluginID:      uuid.MustParse(OdysseyHackatonPluginID),
 			attributeName: "poster",
 			description:   "Poster for space",
 			options: &entry.AttributeOptions{
@@ -61,7 +63,7 @@ func seedAttributeType(node universe.Node) error {
 			},
 		},
 		{
-			pluginID:      uuid.MustParse(noname1PluginID),
+			pluginID:      uuid.MustParse(OdysseyHackatonPluginID),
 			attributeName: "meme",
 			description:   "Meme for space",
 			options: &entry.AttributeOptions{
@@ -69,7 +71,7 @@ func seedAttributeType(node universe.Node) error {
 			},
 		},
 		{
-			pluginID:      uuid.MustParse(noname1PluginID),
+			pluginID:      uuid.MustParse(OdysseyHackatonPluginID),
 			attributeName: "video",
 			description:   "Video for space",
 			options: &entry.AttributeOptions{

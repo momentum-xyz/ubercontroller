@@ -1,37 +1,31 @@
 package seed
 
 import (
+	"context"
+
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
+	"github.com/momentum-xyz/ubercontroller/config"
+	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
-func seedAssets2d(node universe.Node) error {
+func seedAssets2d(ctx context.Context, node universe.Node) error {
+	cfg := utils.GetFromAny(ctx.Value(types.ConfigContextKey), (*config.Config)(nil))
+	if cfg == nil {
+		return errors.New("failed to get config from context")
+	}
+	baseUrl := cfg.Settings.FrontendURL
+	miroUrl, gdriveUrl, videoUrl, err := generatePluginUrls(baseUrl)
+	if err != nil {
+		return errors.Wrap(err, "Error generating plugin URLs")
+	}
+
 	items := []*entry.Asset2d{
-		{
-			Asset2dID: uuid.MustParse(noname1Asset2dID),
-			Options:   &entry.Asset2dOptions{},
-			Meta: entry.Asset2dMeta{
-				"name": "",
-			},
-		},
-		{
-			Asset2dID: uuid.MustParse(noname2Asset2dID),
-			Options:   &entry.Asset2dOptions{},
-			Meta: entry.Asset2dMeta{
-				"name": "",
-			},
-		},
-		{
-			Asset2dID: uuid.MustParse(noname3Asset2dID),
-			Options:   &entry.Asset2dOptions{},
-			Meta: entry.Asset2dMeta{
-				"name": "",
-			},
-		},
 		{
 			Asset2dID: uuid.MustParse(miroPluginAsset2dID),
 			Options: &entry.Asset2dOptions{
@@ -43,7 +37,7 @@ func seedAssets2d(node universe.Node) error {
 				"name":      "miro",
 				"pluginId":  miroPluginID,
 				"scopeName": "plugin_miro",
-				"scriptUrl": "http://localhost/plugins/miro/remoteEntry.js",
+				"scriptUrl": miroUrl,
 			},
 		},
 		{
@@ -56,20 +50,7 @@ func seedAssets2d(node universe.Node) error {
 				"name":      "google Drive",
 				"pluginId":  googleDrivePluginID,
 				"scopeName": "plugin_google_drive",
-				"scriptUrl": "http://localhost/plugins/google-drive/remoteEntry.js",
-			},
-		},
-		{
-			Asset2dID: uuid.MustParse(noname4Asset2dID),
-			Options: &entry.Asset2dOptions{
-				"exact":    true,
-				"iconName": "drive",
-			},
-			Meta: entry.Asset2dMeta{
-				"name":      "google drive Local",
-				"pluginId":  googleDrivePluginID,
-				"scopeName": "plugin_google_drive",
-				"scriptUrl": "http://localhost:3002/remoteEntry.js",
+				"scriptUrl": gdriveUrl,
 			},
 		},
 		{
@@ -92,22 +73,10 @@ func seedAssets2d(node universe.Node) error {
 			Asset2dID: uuid.MustParse("bda25d5d-2aab-45b4-9e8a-23579514cec1"),
 			Options:   &entry.Asset2dOptions{},
 			Meta: entry.Asset2dMeta{
-				"name":     "video",
-				"pluginId": videoPluginID,
-			},
-		},
-		{
-			Asset2dID: uuid.MustParse("2a879830-b79e-4c35-accc-05607c51d504"),
-			Options: &entry.Asset2dOptions{
-				"exact":    true,
-				"subPath":  "miro",
-				"iconName": "miro",
-			},
-			Meta: entry.Asset2dMeta{
-				"name":      "miro local",
-				"pluginId":  miroPluginID,
-				"scopeName": "plugin_miro",
-				"scriptUrl": "http://localhost:3001/remoteEntry.js",
+				"name":      "video",
+				"pluginId":  videoPluginID,
+				"scopeName": "plugin_google_drive",
+				"scriptUrl": videoUrl,
 			},
 		},
 		{

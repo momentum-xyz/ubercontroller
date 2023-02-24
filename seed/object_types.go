@@ -23,7 +23,7 @@ func seedObjectTypes(node universe.Node) error {
 	items := []*item{
 		{
 			id:             uuid.MustParse(NodeObjectTypeID),
-			asset2dID:      utils.GetPTR(uuid.MustParse(noname2Asset2dID)),
+			asset2dID:      nil,
 			asset3dID:      nil,
 			objectTypeName: "Node",
 			categoryName:   "Nodes",
@@ -43,76 +43,14 @@ func seedObjectTypes(node universe.Node) error {
 		},
 		{
 			id:             uuid.MustParse("88415343-90db-4d23-a9e7-79a11aaaaf04"),
-			asset2dID:      utils.GetPTR(uuid.MustParse(miroPluginAsset2dID)),
-			asset3dID:      utils.GetPTR(uuid.MustParse(noname1Asset3dID)),
+			asset2dID:      nil,
+			asset3dID:      nil,
 			objectTypeName: "anchor",
 			categoryName:   "Anchors",
 			description:    utils.GetPTR(""),
 			options: &entry.ObjectOptions{
-				Subs: map[string]any{
-					"asset2d_plugins": []any{
-						miroPluginID,
-					},
-				},
 				Private: utils.GetPTR(false),
 				Visible: utils.GetPTR(entry.ReactUnityObjectVisibleType),
-				DefaultTiles: []any{
-					map[string]any{
-						"row":           0,
-						"hash":          "53e9a2811a7a6cd93011a6df7c23edc7",
-						"type":          "tile_type_media",
-						"column":        0,
-						"edited":        1,
-						"render":        1,
-						"content":       map[string]any{},
-						"permanentType": "poster",
-					},
-					map[string]any{
-						"row":           1,
-						"hash":          "69e2b342788fe70273c15b62f618ef22",
-						"type":          "tile_type_media",
-						"column":        0,
-						"edited":        1,
-						"render":        1,
-						"content":       map[string]any{},
-						"permanentType": "meme",
-					},
-					map[string]any{
-						"row":    1,
-						"hash":   "9ae1db04e863bb9d1a572d8a6727c665",
-						"type":   "tile_type_text",
-						"column": 1,
-						"edited": 1,
-						"render": 1,
-						"content": map[string]any{
-							"text":  "Description goes here",
-							"title": "Description",
-						},
-						"permanentType": "description",
-					},
-					map[string]any{
-						"row":    0,
-						"hash":   "fc4d116880460bf808b4487954823e80",
-						"type":   "tile_type_video",
-						"column": 2,
-						"edited": 1,
-						"render": 1,
-						"content": map[string]any{
-							"url": "https://www.youtube.com/watch?v=mwpj70Gcatg",
-						},
-						"permanentType": "video",
-					},
-					map[string]any{
-						"row":           0,
-						"hash":          "3b441ce7b41c54693fbc798ca896c88e",
-						"type":          "tile_type_media",
-						"column":        2,
-						"edited":        1,
-						"render":        1,
-						"content":       map[string]any{},
-						"permanentType": "third",
-					},
-				},
 				ChildPlacements: map[uuid.UUID]*entry.ObjectChildPlacement{
 					uuid.MustParse("00000000-0000-0000-0000-000000000000"): &entry.ObjectChildPlacement{
 						Algo: utils.GetPTR("circular"),
@@ -149,17 +87,12 @@ func seedObjectTypes(node universe.Node) error {
 		//
 		{
 			id:             uuid.MustParse("a41ee21e-6c56-41b3-81a9-1c86578b6b3c"),
-			asset2dID:      utils.GetPTR(uuid.MustParse(noname3Asset2dID)),
-			asset3dID:      utils.GetPTR(uuid.MustParse("b2ef3600-9595-2743-ac9d-0a86c1a327a2")),
+			asset2dID:      nil,
+			asset3dID:      nil,
 			objectTypeName: "World",
 			categoryName:   "Worlds",
 			description:    utils.GetPTR("World Type"),
 			options: &entry.ObjectOptions{
-				Subs: map[string]any{
-					"asset2d_plugins": []any{
-						"24071066-e8c6-4692-95b5-ae2dc3ed075c",
-					},
-				},
 				Private:           utils.GetPTR(false),
 				Visible:           utils.GetPTR(entry.ReactUnityObjectVisibleType),
 				DefaultTiles:      []any{},
@@ -189,7 +122,7 @@ func seedObjectTypes(node universe.Node) error {
 			categoryName:   "Custom",
 			description:    utils.GetPTR("Custom placed objects"),
 			options: &entry.ObjectOptions{
-				Visible: utils.GetPTR(entry.InvisibleObjectVisibleType),
+				Visible: utils.GetPTR(entry.ReactUnityObjectVisibleType),
 			},
 		},
 
@@ -201,25 +134,20 @@ func seedObjectTypes(node universe.Node) error {
 			categoryName:   "Effects",
 			description:    utils.GetPTR("Effects emitter"),
 			options: &entry.ObjectOptions{
-				Visible: utils.GetPTR(entry.ReactObjectVisibleType),
+				Visible: utils.GetPTR(entry.UnityObjectVisibleType),
 			},
 		},
 
 		{
 			id:             uuid.MustParse("69d8ae40-df9b-4fc8-af95-32b736d2bbcd"),
-			asset2dID:      utils.GetPTR(uuid.MustParse(noname1Asset2dID)),
+			asset2dID:      nil,
 			asset3dID:      nil,
 			objectTypeName: "Service Space",
 			categoryName:   "Service Spaces",
 			description:    utils.GetPTR(""),
 			options: &entry.ObjectOptions{
-				Subs: map[string]any{
-					"asset2d_plugins": []any{
-						"24071066-e8c6-4692-95b5-ae2dc3ed075c",
-					},
-				},
 				Private:           utils.GetPTR(false),
-				Visible:           utils.GetPTR(entry.ReactObjectVisibleType),
+				Visible:           utils.GetPTR(entry.InvisibleObjectVisibleType),
 				DefaultTiles:      []any{},
 				FrameTemplates:    map[string]any{},
 				AllowedSubObjects: []uuid.UUID{},
@@ -235,23 +163,18 @@ func seedObjectTypes(node universe.Node) error {
 			description:    utils.GetPTR("Skybox"),
 			options: &entry.ObjectOptions{
 				Editable: utils.GetPTR(false),
-				Visible:  utils.GetPTR(entry.ReactUnityObjectVisibleType),
+				Visible:  utils.GetPTR(entry.UnityObjectVisibleType),
 			},
 		},
 
 		{
 			id:             uuid.MustParse("75b56447-c4f1-4020-b8fc-d68704a11d65"),
-			asset2dID:      utils.GetPTR(uuid.MustParse(noname1Asset2dID)),
+			asset2dID:      nil,
 			asset3dID:      nil,
 			objectTypeName: "Generic Space",
 			categoryName:   "Generic Spaces",
 			description:    utils.GetPTR(""),
 			options: &entry.ObjectOptions{
-				Subs: map[string]any{
-					"asset2d_plugins": []any{
-						"24071066-e8c6-4692-95b5-ae2dc3ed075c",
-					},
-				},
 				Private:           utils.GetPTR(false),
 				Visible:           utils.GetPTR(entry.ReactUnityObjectVisibleType),
 				DefaultTiles:      []any{},
@@ -262,17 +185,12 @@ func seedObjectTypes(node universe.Node) error {
 
 		{
 			id:             uuid.MustParse("f9607e55-63e8-4cb1-ae47-66395199975d"),
-			asset2dID:      utils.GetPTR(uuid.MustParse(noname1Asset2dID)),
+			asset2dID:      nil,
 			asset3dID:      nil,
 			objectTypeName: "morgue",
 			categoryName:   "Morgues",
 			description:    utils.GetPTR("morgue"),
 			options: &entry.ObjectOptions{
-				Subs: map[string]any{
-					"asset2d_plugins": []any{
-						"24071066-e8c6-4692-95b5-ae2dc3ed075c",
-					},
-				},
 				Private:           utils.GetPTR(false),
 				Visible:           utils.GetPTR(entry.InvisibleObjectVisibleType),
 				DefaultTiles:      []any{},

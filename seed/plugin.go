@@ -1,17 +1,33 @@
 package seed
 
 import (
+	"context"
+	"net/url"
+
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
+	"github.com/momentum-xyz/ubercontroller/config"
+	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
-func seedPlugins(node universe.Node) error {
+func seedPlugins(ctx context.Context, node universe.Node) error {
 	type pluginItem struct {
 		ID   uuid.UUID
 		Meta *entry.PluginMeta
+	}
+
+	cfg := utils.GetFromAny(ctx.Value(types.ConfigContextKey), (*config.Config)(nil))
+	if cfg == nil {
+		return errors.New("failed to get config from context")
+	}
+	baseUrl := cfg.Settings.FrontendURL
+	miroUrl, gdriveUrl, videoUrl, err := generatePluginUrls(baseUrl)
+	if err != nil {
+		return errors.Wrap(err, "Error generating plugin URLs")
 	}
 
 	data := []*pluginItem{
@@ -55,7 +71,7 @@ func seedPlugins(node universe.Node) error {
 					"2a879830-b79e-4c35-accc-05607c51d504",
 				},
 				"scopeName": "plugin_miro",
-				"scriptUrl": "http://localhost/plugins/miro/remoteEntry.js",
+				"scriptUrl": miroUrl,
 			},
 		},
 		{
@@ -64,23 +80,39 @@ func seedPlugins(node universe.Node) error {
 				"name": "Google Drive",
 				"assets2d": []string{
 					googleDrivePluginAsset2dID,
-					noname4Asset2dID,
 				},
 				"scopeName": "plugin_google_drive",
-				"scriptUrl": "http://localhost/plugins/google-drive/remoteEntry.js",
+				"scriptUrl": gdriveUrl,
 			},
 		},
 		{
-			ID:   uuid.MustParse(noname1PluginID),
-			Meta: &entry.PluginMeta{},
+			ID: uuid.MustParse(videoPluginID),
+			Meta: &entry.PluginMeta{
+				"name": "Video",
+				"assets2d": []string{
+					videoPluginAsset2dID,
+				},
+				"scopeName": "plugin_video",
+				"scriptUrl": videoUrl,
+			},
 		},
 		{
-			ID:   universe.GetKusamaPluginID(),
-			Meta: &entry.PluginMeta{},
+			ID: uuid.MustParse(OdysseyHackatonPluginID),
+			Meta: &entry.PluginMeta{
+				"name": "Odyssey hackaton",
+			},
 		},
 		{
-			ID:   uuid.MustParse(high5PluginID),
-			Meta: &entry.PluginMeta{},
+			ID: universe.GetKusamaPluginID(),
+			Meta: &entry.PluginMeta{
+				"name": "Kusama",
+			},
+		},
+		{
+			ID: uuid.MustParse(high5PluginID),
+			Meta: &entry.PluginMeta{
+				"name": "High five",
+			},
 		},
 	}
 
@@ -95,4 +127,28 @@ func seedPlugins(node universe.Node) error {
 	}
 
 	return nil
+}
+
+func generatePluginUrls(baseUrl string) (miroUrl string, gdriveUrl string, videoUrl string, err error) {
+	miroUrl, err = generateScriptUrl(baseUrl, "miro")
+	if err != nil {
+		err = errors.Wrap(err, "Could not generate plugin URL")
+		return
+	}
+	gdriveUrl, err = generateScriptUrl(baseUrl, "google-drive")
+	if err != nil {
+		err = errors.Wrap(err, "Could not generate plugin URL")
+		return
+	}
+	videoUrl, err = generateScriptUrl(baseUrl, "video")
+	if err != nil {
+		err = errors.Wrap(err, "Could not generate plugin URL")
+		return
+	}
+	return
+}
+
+func generateScriptUrl(baseUrl string, pluginName string) (result string, err error) {
+	result, err = url.JoinPath(baseUrl, "plugins", pluginName, "remoteEntry.js")
+	return
 }
