@@ -23,7 +23,7 @@ func seedObjectTypes(node universe.Node) error {
 	items := []*item{
 		{
 			id:             uuid.MustParse(NodeObjectTypeID),
-			asset2dID:      utils.GetPTR(uuid.MustParse(noname2Asset2dID)),
+			asset2dID:      nil,
 			asset3dID:      nil,
 			objectTypeName: "Node",
 			categoryName:   "Nodes",
@@ -149,7 +149,7 @@ func seedObjectTypes(node universe.Node) error {
 		//
 		{
 			id:             uuid.MustParse("a41ee21e-6c56-41b3-81a9-1c86578b6b3c"),
-			asset2dID:      utils.GetPTR(uuid.MustParse(noname3Asset2dID)),
+			asset2dID:      nil,
 			asset3dID:      utils.GetPTR(uuid.MustParse("b2ef3600-9595-2743-ac9d-0a86c1a327a2")),
 			objectTypeName: "World",
 			categoryName:   "Worlds",
@@ -207,7 +207,7 @@ func seedObjectTypes(node universe.Node) error {
 
 		{
 			id:             uuid.MustParse("69d8ae40-df9b-4fc8-af95-32b736d2bbcd"),
-			asset2dID:      utils.GetPTR(uuid.MustParse(noname1Asset2dID)),
+			asset2dID:      nil,
 			asset3dID:      nil,
 			objectTypeName: "Service Space",
 			categoryName:   "Service Spaces",
@@ -241,7 +241,7 @@ func seedObjectTypes(node universe.Node) error {
 
 		{
 			id:             uuid.MustParse("75b56447-c4f1-4020-b8fc-d68704a11d65"),
-			asset2dID:      utils.GetPTR(uuid.MustParse(noname1Asset2dID)),
+			asset2dID:      nil,
 			asset3dID:      nil,
 			objectTypeName: "Generic Space",
 			categoryName:   "Generic Spaces",
@@ -262,7 +262,7 @@ func seedObjectTypes(node universe.Node) error {
 
 		{
 			id:             uuid.MustParse("f9607e55-63e8-4cb1-ae47-66395199975d"),
-			asset2dID:      utils.GetPTR(uuid.MustParse(noname1Asset2dID)),
+			asset2dID:      nil,
 			asset3dID:      nil,
 			objectTypeName: "morgue",
 			categoryName:   "Morgues",

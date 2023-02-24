@@ -27,27 +27,6 @@ func seedAssets2d(ctx context.Context, node universe.Node) error {
 
 	items := []*entry.Asset2d{
 		{
-			Asset2dID: uuid.MustParse(noname1Asset2dID),
-			Options:   &entry.Asset2dOptions{},
-			Meta: entry.Asset2dMeta{
-				"name": "",
-			},
-		},
-		{
-			Asset2dID: uuid.MustParse(noname2Asset2dID),
-			Options:   &entry.Asset2dOptions{},
-			Meta: entry.Asset2dMeta{
-				"name": "",
-			},
-		},
-		{
-			Asset2dID: uuid.MustParse(noname3Asset2dID),
-			Options:   &entry.Asset2dOptions{},
-			Meta: entry.Asset2dMeta{
-				"name": "",
-			},
-		},
-		{
 			Asset2dID: uuid.MustParse(miroPluginAsset2dID),
 			Options: &entry.Asset2dOptions{
 				"exact":    true,

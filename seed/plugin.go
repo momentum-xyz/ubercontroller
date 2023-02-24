@@ -80,7 +80,6 @@ func seedPlugins(ctx context.Context, node universe.Node) error {
 				"name": "Google Drive",
 				"assets2d": []string{
 					googleDrivePluginAsset2dID,
-					noname4Asset2dID,
 				},
 				"scopeName": "plugin_google_drive",
 				"scriptUrl": gdriveUrl,

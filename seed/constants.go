@@ -20,10 +20,6 @@ const (
 	normalUserTypeID = "00000000-0000-0000-0000-000000000006"
 	guestUserTypeID  = "76802331-37b3-44fa-9010-35008b0cbaec"
 
-	noname1Asset2dID           = "2e44539c-88aa-4ad0-a1d4-b58782a0bf15"
-	noname2Asset2dID           = "00000000-0000-0000-0000-000000000004"
-	noname3Asset2dID           = "00000000-0000-0000-0000-000000000008"
-	noname4Asset2dID           = "0d99e5aa-a627-4353-8bfa-1c0e7053db90"
 	miroPluginAsset2dID        = "a31722a6-26b7-46bc-97f9-435c380c3ca9"
 	googleDrivePluginAsset2dID = "c601404b-61a2-47d5-a5c7-f3c704a8bf58"
 	videoPluginAsset2dID       = "bda25d5d-2aab-45b4-9e8a-23579514cec1"
