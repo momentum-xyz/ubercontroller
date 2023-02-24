@@ -145,7 +145,6 @@ func loadNode(ctx context.Context, node universe.Node, nodeEntry *entry.Node, db
 		if err := seed.Node(ctx, node, db); err != nil {
 			return errors.WithMessage(err, "failed to seed node")
 		}
-		return nil
 	}
 
 	if err := node.Load(); err != nil {
