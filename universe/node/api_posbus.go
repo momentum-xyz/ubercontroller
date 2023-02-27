@@ -106,8 +106,11 @@ func (n *Node) handShake(socketConnection *websocket.Conn) error {
 
 	world, ok := n.GetWorlds().GetWorld(targetWorldId)
 	if !ok {
-		world = n.detectSpawnWorld(userID)
 		n.log.Infof("World is not found! %+v\n", targetWorldId)
+		world = n.detectSpawnWorld(userID)
+		if world == nil {
+			return errors.New("no default world found to spawn")
+		}
 	}
 	n.log.Infof("User will be launched in world %+v \n", world.GetID())
 
