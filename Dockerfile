@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.3
+# syntax=docker/dockerfile:1.4
 FROM golang:1.19-alpine3.16 as build
 
 RUN apk add --update --no-cache gcc binutils-gold musl-dev
@@ -20,6 +20,7 @@ RUN go build -ldflags "-extldflags '-fuse-ld=bfd'" -o ./bin/ubercontroller ./cmd
 # Runtime image
 FROM alpine:3.16 as runtime
 
+
 RUN apk add --update --no-cache python3 make g++
 #temporary, add nodejs and polkadot package
 
@@ -31,6 +32,7 @@ WORKDIR /srv/nodejs/check-nft
 RUN npm i
 
 COPY --from=build /project/bin/ubercontroller /srv/ubercontroller
+COPY --link ./seed/data /srv/seed/data
 
 WORKDIR /srv
 CMD ["/srv/ubercontroller"]
