@@ -39,6 +39,10 @@ func Node(ctx context.Context, node universe.Node, db database.DB) error {
 		return seedUserTypes(groupCtx, node, db)
 	})
 
+	group.Go(func() error {
+		return seedMedia(groupCtx)
+	})
+
 	if err := group.Wait(); err != nil {
 		return errors.WithMessage(err, "failed to seed")
 	}
