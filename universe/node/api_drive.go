@@ -255,7 +255,7 @@ func (n *Node) mint(jobID uuid.UUID, wallet string, meta NFTMeta, blockHash stri
 			item.NodeJSOut = &nodeJSOut
 			store.Store(jobID, item)
 		}
-		log.Error(err)
+		log.Error(item.Error)
 		return
 	}
 
