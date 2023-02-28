@@ -339,6 +339,17 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			description:   "Target World ID to teleport",
 			options:       nil,
 		},
+		{
+			pluginID:      universe.GetSystemPluginID(),
+			attributeName: "object_color",
+			description:   "Holds the object color",
+			options: &entry.AttributeOptions{
+				"unity_auto": map[string]any{
+					"slot_type":    "string",
+					"content_type": "string",
+				},
+			},
+		},
 		//
 		{
 			pluginID:      uuid.MustParse(textPluginID),
