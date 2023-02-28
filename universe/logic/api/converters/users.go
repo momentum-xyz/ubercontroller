@@ -27,7 +27,7 @@ func ToUserDTO(userEntry *entry.User, guestUserTypeID uuid.UUID, includeWallet b
 		UpdatedAt: userEntry.UpdatedAt.Format(time.RFC3339),
 		IsGuest:   false,
 	}
-	if *userEntry.UserTypeID == guestUserTypeID {
+	if userEntry.UserTypeID == guestUserTypeID {
 		userDTO.IsGuest = true
 	}
 	if profileEntry.Name != nil {

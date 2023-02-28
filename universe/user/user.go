@@ -198,11 +198,11 @@ func (u *User) LoadFromEntry(entry *entry.User) error {
 		return errors.Errorf("user ids mismatch: %s != %s", entry.UserID, u.GetID())
 	}
 
-	u.profile = entry.Profile
+	u.profile = &entry.Profile
 	u.options = entry.Options
 
 	node := universe.GetNode()
-	userType, ok := node.GetUserTypes().GetUserType(*entry.UserTypeID)
+	userType, ok := node.GetUserTypes().GetUserType(entry.UserTypeID)
 	if !ok {
 		return errors.Errorf("failed to get user type: %s", entry.UserTypeID)
 	}

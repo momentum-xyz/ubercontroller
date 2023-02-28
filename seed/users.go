@@ -2,9 +2,11 @@ package seed
 
 import (
 	"context"
+
 	"github.com/google/uuid"
-	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/pkg/errors"
+
+	"github.com/momentum-xyz/ubercontroller/database"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -34,8 +36,8 @@ func seedUsers(ctx context.Context, node universe.Node, db database.DB) error {
 
 		entry := &entry.User{
 			UserID:     item.id,
-			UserTypeID: &item.userTypeID,
-			Profile:    &entry.UserProfile{},
+			UserTypeID: item.userTypeID,
+			Profile:    entry.UserProfile{},
 			Auth:       map[string]any{},
 			Options:    nil,
 		}
