@@ -206,7 +206,7 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 		},
 		{
 			pluginID:      universe.GetSystemPluginID(),
-			attributeName: "skybox_custom",
+			attributeName: "active_skybox",
 			description:   "Holds skybox data such as texture",
 			options: &entry.AttributeOptions{
 				"unity_auto": map[string]string{
