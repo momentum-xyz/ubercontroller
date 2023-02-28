@@ -73,16 +73,16 @@ func (n *Node) apiUsersCreateMutualDocks(c *gin.Context) {
 	baPortalName := userA.UserID.String()
 	abPortalImage := ""
 	baPortalImage := ""
-	if userB.Profile != nil && userB.Profile.Name != nil {
+	if userB.Profile.Name != nil {
 		abPortalName = *userB.Profile.Name
 	}
-	if userB.Profile != nil && userB.Profile.AvatarHash != nil {
+	if userB.Profile.AvatarHash != nil {
 		abPortalImage = *userB.Profile.AvatarHash
 	}
-	if userA.Profile != nil && userA.Profile.Name != nil {
+	if userA.Profile.Name != nil {
 		baPortalName = *userA.Profile.Name
 	}
-	if userA.Profile != nil && userA.Profile.AvatarHash != nil {
+	if userA.Profile.AvatarHash != nil {
 		baPortalImage = *userA.Profile.AvatarHash
 	}
 

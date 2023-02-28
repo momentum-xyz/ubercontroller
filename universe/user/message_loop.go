@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/posbus-protocol/posbus"
+
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
@@ -191,10 +192,10 @@ func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
 	var tName string
 	uProfile := u.GetProfile()
 	tProfile := target.GetProfile()
-	if uProfile != nil && uProfile.Name != nil {
+	if uProfile.Name != nil {
 		uName = *uProfile.Name
 	}
-	if tProfile != nil && tProfile.Name != nil {
+	if tProfile.Name != nil {
 		tName = *tProfile.Name
 	}
 

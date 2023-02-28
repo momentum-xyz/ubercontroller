@@ -8,11 +8,11 @@ import (
 
 type User struct {
 	UserID     uuid.UUID      `db:"user_id" json:"user_id"`
-	UserTypeID *uuid.UUID     `db:"user_type_id" json:"user_type_id"`
-	Profile    *UserProfile   `db:"profile" json:"profile"`
+	UserTypeID uuid.UUID      `db:"user_type_id" json:"user_type_id"`
+	Profile    UserProfile    `db:"profile" json:"profile"`
 	Options    *UserOptions   `db:"options" json:"options"`
 	CreatedAt  time.Time      `db:"created_at" json:"created_at"`
-	UpdatedAt  *time.Time     `db:"updated_at" json:"updated_at"`
+	UpdatedAt  time.Time      `db:"updated_at" json:"updated_at"`
 	Auth       map[string]any `db:"auth" json:"auth"`
 }
 
