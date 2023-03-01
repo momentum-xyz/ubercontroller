@@ -8,8 +8,8 @@ let ApiModule
 let UUIDModule
 
 try {
-    ApiModule = require('/usr/local/lib/node_modules/@polkadot/api');
-    UUIDModule = require('/usr/local/lib/node_modules/uuid');
+    ApiModule = require('@polkadot/api');
+    UUIDModule = require('uuid');
 } catch (e) {
     exitWithError(e.message)
 }
