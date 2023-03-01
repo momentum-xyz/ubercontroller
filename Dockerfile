@@ -25,8 +25,6 @@ RUN apk add --update --no-cache python3 make g++
 #temporary, add nodejs and polkadot package
 
 RUN apk add --update --no-cache nodejs npm 
-RUN npm install -g @polkadot/api uuid
-COPY *.js /srv
 COPY ./nodejs /srv/nodejs
 WORKDIR /srv/nodejs/check-nft
 RUN npm i

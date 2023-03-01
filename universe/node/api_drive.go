@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"os/exec"
+	"path"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -207,13 +208,19 @@ func (n *Node) mint(jobID uuid.UUID, wallet string, meta NFTMeta, blockHash stri
 		return
 	}
 
-	output, err := exec.Command("node", "mint.js", wallet, n.CFG.Common.MnemonicPhrase, string(b), blockHash).Output()
+	cmd := exec.Command("node", "mint.js", wallet, n.CFG.Common.MnemonicPhrase, string(b), blockHash)
+	cmd.Dir = path.Join("nodejs", "check-nft")
+	output, err := cmd.Output()
 	if err != nil {
 		err = errors.WithMessage(err, "failed to exec node mint.js")
 		{
 			item.Status = StatusFailed
 			item.Error = err
 			store.Store(jobID, item)
+		}
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			log.Error(string(exitErr.Stderr))
 		}
 		log.Error(err)
 		return
@@ -372,8 +379,14 @@ func (n *Node) apiDriveMintOdysseyCheckJob(c *gin.Context) {
 }
 
 func (n *Node) getWalletMetadata(wallet string) (*WalletMeta, error) {
-	output, err := exec.Command("node", "./nodejs/check-nft/check-nft.js", wallet).Output()
+	cmd := exec.Command("node", "check-nft.js", wallet)
+	cmd.Dir = path.Join("nodejs", "check-nft")
+	output, err := cmd.Output()
 	if err != nil {
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			log.Error(string(exitErr.Stderr))
+		}
 		return nil, errors.WithMessage(err, "failed to execute node script check-nft.js")
 	}
 
