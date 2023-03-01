@@ -35,8 +35,6 @@ SELECT distinct(users_cte.user_id)
 FROM users_cte;
 $$;
 
-alter function getindirectobjectadmins(uuid) owner to root;
-
 --
 --
 --
@@ -66,8 +64,6 @@ select object_id,
 from cte;
 $$;
 
-alter function getobjectancestorsids(uuid, integer) owner to root;
-
 --
 --
 --
@@ -90,9 +86,6 @@ SELECT object.object_id,
        NULL::boolean AS is_admin
 FROM object
 WHERE false;
-
-alter table objects_plus_level_isadmin
-    owner to root;
 
 create function getobjectancestorstableadminrole(t_pid uuid, t_uid uuid) returns SETOF objects_plus_level_isadmin
     language sql
@@ -118,6 +111,4 @@ from cte
          left join user_object on cte.object_id = user_object.object_id
     and user_object.user_id = t_uid;
 $$;
-
-alter function getobjectancestorstableadminrole(uuid, uuid) owner to root;
 
