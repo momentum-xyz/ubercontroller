@@ -83,22 +83,22 @@ func (u *User) GenericMessageHandler(msg []byte) error {
 
 func (u *User) SignalsHandler(s posbus.Signal) error {
 	fmt.Printf("Got Signal %+v\n", s)
-	switch s {
-	case posbus.SignalReady:
-		u.ReleaseSendBuffer()
-		//u.log.Debugf("Got signalReady from %s", u.id.String())
-		//TODO: Do we need it?
-		//if err := u.world.SendWorldData(u); err != nil {
-		//	log.Error(
-		//		errors.WithMessagef(
-		//			err, "User: SignalsHandler: SignalReady: failed to send world data: %s", u.ID,
-		//		),
-		//	)
-		//	u.world.unregisterUser <- u
-		//	return
-		//}
-		//u.connection.EnableWriting()
-	}
+	//switch s {
+	//case posbus.SignalReady:
+	//	u.ReleaseSendBuffer()
+	//	//u.log.Debugf("Got signalReady from %s", u.id.String())
+	//	//TODO: Do we need it?
+	//	//if err := u.world.SendWorldData(u); err != nil {
+	//	//	log.Error(
+	//	//		errors.WithMessagef(
+	//	//			err, "User: SignalsHandler: SignalReady: failed to send world data: %s", u.ID,
+	//	//		),
+	//	//	)
+	//	//	u.world.unregisterUser <- u
+	//	//	return
+	//	//}
+	//	//u.connection.EnableWriting()
+	//}
 
 	return nil
 }

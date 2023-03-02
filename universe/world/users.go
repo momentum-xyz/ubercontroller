@@ -121,6 +121,7 @@ func (w *World) initializeUnity(user universe.User) error {
 	if err := user.SendDirectly(w.metaMsg.Load()); err != nil {
 		return errors.WithMessage(err, "failed to send meta msg")
 	}
+	//user.SendDirectly(w.Object.Ge)
 
 	// TODO: fix circular dependency
 	if err := user.SendDirectly(
@@ -139,12 +140,10 @@ func (w *World) initializeUnity(user universe.User) error {
 	w.SendSpawnMessage(user.SendDirectly, true)
 	w.log.Infof("Sent Spawn: %+v\n", user.GetID())
 	time.Sleep(1 * time.Second)
-	user.SendDirectly(posbus.WrapAsMessage(posbus.SignalType, posbus.SignalSpawn))
-	w.log.Infof("Sent Signal: %+v\n", user.GetID())
 
 	w.SendAllAutoAttributes(user.SendDirectly, true)
 	w.log.Infof("Sent Textures: %+v\n", user.GetID())
-
+	user.ReleaseSendBuffer()
 	return nil
 }
 

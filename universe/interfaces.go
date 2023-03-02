@@ -220,6 +220,7 @@ type User interface {
 	GetLastPosTime() int64
 
 	Update() error
+	ReleaseSendBuffer()
 
 	GetSessionID() uuid.UUID
 	SetConnection(sessionID uuid.UUID, socketConnection *websocket.Conn) error
