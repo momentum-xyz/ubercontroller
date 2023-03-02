@@ -2,12 +2,12 @@ package world
 
 import (
 	"github.com/gorilla/websocket"
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/universe"
 )
@@ -43,7 +43,7 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 			} else {
 				w.log.Infof("World: double-login detected for world %s, user %s", w.GetID(), exUser.GetID())
 
-				exUser.SendDirectly(posbus.NewSignalMsg(posbus.SignalDualConnection).WebsocketMessage())
+				exUser.SendDirectly(posbus.WrapAsMessage(posbus.SignalType, posbus.SignalDualConnection))
 
 				time.Sleep(time.Millisecond * 100)
 			}
@@ -104,7 +104,12 @@ func (w *World) noLockRemoveUser(user universe.User, updateDB bool) (bool, error
 
 	for _, child := range w.allObjects.Data {
 		if child.LockUnityObject(user, 0) {
-			w.Send(posbus.NewSetObjectLockState(user.GetID(), 0).WebsocketMessage(), true)
+			w.Send(
+				posbus.WrapAsMessage(
+					posbus.ObjectLockResultType,
+					posbus.ObjectLockResultData{ID: child.GetID(), Result: 0, LockOwner: user.GetID()},
+				), true,
+			)
 		}
 	}
 
@@ -134,11 +139,7 @@ func (w *World) initializeUnity(user universe.User) error {
 	w.SendSpawnMessage(user.SendDirectly, true)
 	w.log.Infof("Sent Spawn: %+v\n", user.GetID())
 	time.Sleep(1 * time.Second)
-	user.SendDirectly(
-		posbus.NewSignalMsg(
-			posbus.SignalSpawn,
-		).WebsocketMessage(),
-	)
+	user.SendDirectly(posbus.WrapAsMessage(posbus.SignalType, posbus.SignalSpawn))
 	w.log.Infof("Sent Signal: %+v\n", user.GetID())
 
 	w.SendAllAutoAttributes(user.SendDirectly, true)

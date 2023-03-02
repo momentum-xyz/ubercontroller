@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -15,7 +16,6 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
-	"github.com/momentum-xyz/ubercontroller/pkg/message"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -79,6 +79,10 @@ func (u *User) GetPosBuffer() []byte {
 	return u.posMsgBuffer
 }
 
+func (u *User) GetLastPosTime() int64 {
+	return u.lastPositionUpdateTimestamp
+}
+
 func (u *User) GetWorld() universe.World {
 	u.mu.RLock()
 	defer u.mu.RUnlock()
@@ -131,7 +135,7 @@ func (u *User) Initialize(ctx context.Context) error {
 	u.log = log
 	u.bufferSends.Store(true)
 	u.numSendsQueued.Store(chanIsClosed)
-	u.posMsgBuffer = message.NewSendPosBuffer(u.GetID())
+	u.posMsgBuffer = posbus.NewSendPosBuffer(u.GetID())
 	u.pos = (*cmath.Vec3)(unsafe.Add(unsafe.Pointer(&u.posMsgBuffer[0]), 16))
 	u.rotation = (*cmath.Vec3)(unsafe.Add(unsafe.Pointer(&u.posMsgBuffer[0]), 16+3*4))
 
@@ -218,8 +222,7 @@ func (u *User) UpdatePosition(data []byte) error {
 	//u.world.users.positionLock.RLock()
 	copy(u.posMsgBuffer[16:40], data)
 	//u.world.users.positionLock.RUnlock()
-	currentTime := time.Now().Unix()
-	u.lastPositionUpdateTimestamp = currentTime
+	u.lastPositionUpdateTimestamp = time.Now().Unix()
 
 	return nil
 }

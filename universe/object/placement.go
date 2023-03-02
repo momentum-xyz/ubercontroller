@@ -1,12 +1,11 @@
 package object
 
 import (
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"sort"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
-
-	"github.com/momentum-xyz/posbus-protocol/posbus"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/pkg/position_algo"
@@ -72,9 +71,7 @@ func (o *Object) SetActualPosition(pos cmath.ObjectPosition, theta float64) erro
 				world := o.GetWorld()
 				if world != nil {
 					world.Send(
-						posbus.NewSetStaticObjectPositionMsg(
-							o.GetID(), *(o.GetActualPosition()),
-						).WebsocketMessage(),
+						posbus.WrapAsMessage(posbus.SetObjectPositionType, *(o.GetActualPosition())),
 						true,
 					)
 				}
@@ -117,7 +114,7 @@ func (o *Object) SetPosition(position *cmath.ObjectPosition, updateDB bool) erro
 				world := o.GetWorld()
 				if world != nil {
 					world.Send(
-						posbus.NewSetStaticObjectPositionMsg(o.GetID(), *(o.GetActualPosition())).WebsocketMessage(),
+						posbus.WrapAsMessage(posbus.SetObjectPositionType, *(o.GetActualPosition())),
 						true,
 					)
 				}

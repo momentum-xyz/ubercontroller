@@ -3,6 +3,7 @@ package object
 import (
 	"context"
 	"github.com/momentum-xyz/ubercontroller/config"
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/momentum-xyz/ubercontroller/seed"
 	"sync/atomic"
 
@@ -15,7 +16,6 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
-	"github.com/momentum-xyz/ubercontroller/pkg/message"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
@@ -52,10 +52,8 @@ type Object struct {
 
 	spawnMsg          atomic.Pointer[websocket.PreparedMessage]
 	attributesMsg     *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
-	renderTextureMap  *generic.SyncMap[string, string]
-	renderStringMap   *generic.SyncMap[string, string]
-	textureMsg        atomic.Pointer[websocket.PreparedMessage]
-	stringMsg         atomic.Pointer[websocket.PreparedMessage]
+	renderDataMap     *generic.SyncMap[posbus.ObjectDataIndex, interface{}]
+	dataMsg           atomic.Pointer[websocket.PreparedMessage]
 	actualPosition    atomic.Pointer[cmath.ObjectPosition]
 	broadcastPipeline chan *websocket.PreparedMessage
 	messageAccept     atomic.Bool
@@ -69,14 +67,13 @@ type Object struct {
 
 func NewObject(id uuid.UUID, db database.DB, world universe.World) *Object {
 	object := &Object{
-		id:               id,
-		db:               db,
-		Users:            generic.NewSyncMap[uuid.UUID, universe.User](0),
-		Children:         generic.NewSyncMap[uuid.UUID, universe.Object](0),
-		attributesMsg:    generic.NewSyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]](0),
-		renderTextureMap: generic.NewSyncMap[string, string](0),
-		renderStringMap:  generic.NewSyncMap[string, string](0),
-		world:            world,
+		id:            id,
+		db:            db,
+		Users:         generic.NewSyncMap[uuid.UUID, universe.User](0),
+		Children:      generic.NewSyncMap[uuid.UUID, universe.Object](0),
+		attributesMsg: generic.NewSyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]](0),
+		renderDataMap: generic.NewSyncMap[posbus.ObjectDataIndex, interface{}](0),
+		world:         world,
 	}
 	object.objectAttributes = newObjectAttributes(object)
 
@@ -109,11 +106,13 @@ func (o *Object) GetName() string {
 func (o *Object) SetName(name string, updateDB bool) error {
 	if _, err := o.GetObjectAttributes().Upsert(
 		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Object.Name.Name),
-		modify.MergeWith(entry.NewAttributePayload(
-			&entry.AttributeValue{
-				universe.ReservedAttributes.Object.Name.Key: name,
-			},
-			nil),
+		modify.MergeWith(
+			entry.NewAttributePayload(
+				&entry.AttributeValue{
+					universe.ReservedAttributes.Object.Name.Key: name,
+				},
+				nil,
+			),
 		), updateDB,
 	); err != nil {
 		return errors.WithMessage(err, "failed to upsert object attribute")
@@ -488,9 +487,11 @@ func (o *Object) LoadFromEntry(entry *entry.Object, recursive bool) error {
 }
 
 func (o *Object) Save() error {
-	return o.saveObjects(map[uuid.UUID]universe.Object{
-		o.GetID(): o,
-	})
+	return o.saveObjects(
+		map[uuid.UUID]universe.Object{
+			o.GetID(): o,
+		},
+	)
 }
 
 func (o *Object) saveObjects(objects map[uuid.UUID]universe.Object) error {
@@ -618,20 +619,12 @@ func (o *Object) UpdateSpawnMessage() error {
 		visible = true
 	}
 
-	msg := message.GetBuilder().MsgObjectDefinition(
-		message.ObjectDefinition{
-			ObjectID:         o.GetID(),
-			ParentID:         parentID,
-			AssetType:        asset3dID,
-			AssetFormat:      assetFormat,
-			Name:             o.GetName(),
-			Position:         *o.GetActualPosition(),
-			Editable:         *utils.GetFromAny(effectiveOptions.Editable, utils.GetPTR(true)),
-			TetheredToParent: true,
-			Minimap:          *utils.GetFromAny(effectiveOptions.Minimap, &visible),
-			InfoUI:           *utils.GetFromAny(effectiveOptions.InfoUIID, utils.GetPTR(uuid.Nil)),
-		},
-	)
+	mData := make([]posbus.ObjectDefinition, 1)
+	mData[0] = posbus.ObjectDefinition{ID: o.GetID(), ParentID: parentID, AssetType: asset3dID, AssetFormat: assetFormat, Name: o.GetName(), IsEditable: *utils.GetFromAny(
+		effectiveOptions.Editable, utils.GetPTR(true),
+	),
+		ShowOnMiniMap: *utils.GetFromAny(effectiveOptions.Minimap, &visible), ObjectTransform: *o.GetActualPosition()}
+	msg := posbus.WrapAsMessage(posbus.AddObjectsType, mData)
 	o.spawnMsg.Store(msg)
 
 	return nil
@@ -658,12 +651,7 @@ func (o *Object) SendSpawnMessage(sendFn func(*websocket.PreparedMessage) error,
 }
 
 func (o *Object) SendAllAutoAttributes(sendFn func(*websocket.PreparedMessage) error, recursive bool) {
-	msg := o.stringMsg.Load()
-	if msg != nil {
-		sendFn(msg)
-	}
-
-	msg = o.textureMsg.Load()
+	msg := o.dataMsg.Load()
 	if msg != nil {
 		sendFn(msg)
 	}

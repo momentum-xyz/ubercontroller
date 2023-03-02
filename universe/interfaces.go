@@ -2,7 +2,6 @@ package universe
 
 import (
 	"context"
-
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
@@ -218,6 +217,7 @@ type User interface {
 	SetPosition(position cmath.Vec3)
 
 	GetPosBuffer() []byte
+	GetLastPosTime() int64
 
 	Update() error
 
@@ -258,7 +258,9 @@ type Attributes[ID comparable] interface {
 	Upsert(attributeID ID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool) (*entry.AttributePayload, error)
 
 	UpdateValue(attributeID ID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool) (*entry.AttributeValue, error)
-	UpdateOptions(attributeID ID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool) (*entry.AttributeOptions, error)
+	UpdateOptions(attributeID ID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool) (
+		*entry.AttributeOptions, error,
+	)
 
 	Remove(attributeID ID, updateDB bool) (bool, error)
 }

@@ -20,7 +20,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/database/db"
 	"github.com/momentum-xyz/ubercontroller/database/migrations"
 	"github.com/momentum-xyz/ubercontroller/logger"
-	"github.com/momentum-xyz/ubercontroller/pkg/message"
 	"github.com/momentum-xyz/ubercontroller/seed"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -76,7 +75,6 @@ func run(ctx context.Context) error {
 	defer cancel()
 
 	//todo: change to pool
-	message.InitBuilder(20, 1024*32)
 	if err := universe.InitializeIDs(
 		uuid.MustParse("f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0"),
 		uuid.MustParse("86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8"),

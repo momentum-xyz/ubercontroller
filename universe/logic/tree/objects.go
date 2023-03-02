@@ -3,9 +3,9 @@ package tree
 import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -148,7 +148,9 @@ func AddObjectFromTemplate(objectTemplate *ObjectTemplate, updateDB bool) (uuid.
 			modify.MergeWith(objectTemplate.ObjectAttributes[i].AttributePayload),
 			updateDB,
 		); err != nil {
-			return uuid.Nil, errors.WithMessagef(err, "failed to upsert object attribute: %+v", objectTemplate.ObjectAttributes[i])
+			return uuid.Nil, errors.WithMessagef(
+				err, "failed to upsert object attribute: %+v", objectTemplate.ObjectAttributes[i],
+			)
 		}
 	}
 
@@ -175,9 +177,9 @@ func RemoveObjectFromParent(parent, object universe.Object, updateDB bool) (bool
 
 	var errs *multierror.Error
 	if object.GetEnabled() { // we need this check to avoid spam while removing children
-		removeMsg := posbus.NewRemoveStaticObjectsMsg(1)
-		removeMsg.SetObject(0, object.GetID())
-		if err := object.GetWorld().Send(removeMsg.WebsocketMessage(), true); err != nil {
+		msg := posbus.WrapAsMessage(posbus.RemoveObjectsType, []uuid.UUID{object.GetID()})
+
+		if err := object.GetWorld().Send(msg, true); err != nil {
 			errs = multierror.Append(errs, errors.WithMessage(err, "failed to send remove message"))
 		}
 	}

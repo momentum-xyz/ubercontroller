@@ -4,7 +4,7 @@ import (
 	"container/list"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"github.com/momentum-xyz/posbus-protocol/posbus"
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/pkg/errors"
 	"github.com/zakaria-chahboun/cute"
 	"time"

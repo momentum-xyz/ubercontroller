@@ -1,19 +1,16 @@
 package node
 
 import (
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"net/http"
 	"net/url"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
-	flatbuffers "github.com/google/flatbuffers/go"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/posbus-protocol/flatbuff/go/api"
-	"github.com/momentum-xyz/posbus-protocol/posbus"
-	"github.com/momentum-xyz/ubercontroller/pkg/message"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
@@ -42,27 +39,19 @@ func (n *Node) handShake(socketConnection *websocket.Conn) error {
 	}
 
 	msg := posbus.MsgFromBytes(incomingMessage)
-	if msg.Type() != posbus.MsgTypeFlatBufferMessage {
+	if msg.Type() != posbus.HandShakeType {
 		return errors.New("error: wrong message received, not handshake")
 	}
-	msgObj := posbus.MsgFromBytes(incomingMessage).AsFlatBufferMessage()
-	msgType := msgObj.MsgType()
-	if msgType != api.MsgHandshake {
-		return errors.New("error: wrong message type received, not handshake")
+	var handshake posbus.HandShake
+	if msg.DecodeMessage(handshake) != nil {
+		return errors.New("error: wrong message type received, not handshake data")
 	}
 
-	var handshake *api.Handshake
-	unionTable := &flatbuffers.Table{}
-	if msgObj.Msg(unionTable) {
-		handshake = &api.Handshake{}
-		handshake.Init(unionTable.Bytes, unionTable.Pos)
-	}
+	n.log.Debugf("Node: handshake for user %s:", handshake.UserId)
+	n.log.Debugf("Node: handshake version: %d", handshake.HandshakeVersion)
+	n.log.Debugf("Node: protocol version: %d", handshake.ProtocolVersion)
 
-	n.log.Debugf("Node: handshake for user %s:", message.DeserializeGUID(handshake.UserId(nil)))
-	n.log.Debugf("Node: handshake version: %d", handshake.HandshakeVersion())
-	n.log.Debugf("Node: protocol version: %d", handshake.ProtocolVersion())
-
-	token := string(handshake.UserToken())
+	token := string(handshake.Token)
 
 	// TODO: enable token check back!
 	//if err := api.VerifyToken(token, n.cfg.Common.IntrospectURL); err != nil {
@@ -80,12 +69,12 @@ func (n *Node) handShake(socketConnection *websocket.Conn) error {
 	)
 	claims := parsed.Claims.(jwt.MapClaims)
 
-	userID := message.DeserializeGUID(handshake.UserId(nil))
-	sessionID := message.DeserializeGUID(handshake.SessionId(nil))
-	targetWorldId := message.DeserializeGUID(handshake.WorldId(nil))
-	url, err := url.Parse(string(handshake.Url()))
+	userID := handshake.UserId
+	sessionID := handshake.SessionId
+	targetWorldId := handshake.WorldId
+	url, err := url.Parse(handshake.Url)
 	if err != nil {
-		return errors.WithMessagef(err, "failed to parse url: %s", string(handshake.Url()))
+		return errors.WithMessagef(err, "failed to parse url: %s", string(handshake.Url))
 	}
 	n.log.Debugf("Node: url to use: %s", url)
 

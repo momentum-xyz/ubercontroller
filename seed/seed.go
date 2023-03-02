@@ -15,29 +15,41 @@ import (
 func Node(ctx context.Context, node universe.Node, db database.DB) error {
 	group, groupCtx := errgroup.WithContext(ctx)
 
-	group.Go(func() error {
-		return seedPlugins(groupCtx, node)
-	})
+	group.Go(
+		func() error {
+			return seedPlugins(groupCtx, node)
+		},
+	)
 
-	group.Go(func() error {
-		return seedAttributeType(groupCtx, node)
-	})
+	group.Go(
+		func() error {
+			return seedAttributeType(groupCtx, node)
+		},
+	)
 
-	group.Go(func() error {
-		return seedNodeAttributes(groupCtx, node)
-	})
+	group.Go(
+		func() error {
+			return seedNodeAttributes(groupCtx, node)
+		},
+	)
 
-	group.Go(func() error {
-		return seedAssets2d(groupCtx, node)
-	})
+	group.Go(
+		func() error {
+			return seedAssets2d(groupCtx, node)
+		},
+	)
 
-	group.Go(func() error {
-		return seedAssets3d(groupCtx, node)
-	})
+	group.Go(
+		func() error {
+			return seedAssets3d(groupCtx, node)
+		},
+	)
 
-	group.Go(func() error {
-		return seedUserTypes(groupCtx, node, db)
-	})
+	group.Go(
+		func() error {
+			return seedUserTypes(groupCtx, node, db)
+		},
+	)
 
 	if err := group.Wait(); err != nil {
 		return errors.WithMessage(err, "failed to seed")
