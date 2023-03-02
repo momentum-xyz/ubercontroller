@@ -206,7 +206,7 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 		},
 		{
 			pluginID:      universe.GetSystemPluginID(),
-			attributeName: "skybox_custom",
+			attributeName: "active_skybox",
 			description:   "Holds skybox data such as texture",
 			options: &entry.AttributeOptions{
 				"unity_auto": map[string]string{
@@ -338,6 +338,17 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			attributeName: "teleport",
 			description:   "Target World ID to teleport",
 			options:       nil,
+		},
+		{
+			pluginID:      universe.GetSystemPluginID(),
+			attributeName: "object_color",
+			description:   "Holds the object color",
+			options: &entry.AttributeOptions{
+				"unity_auto": map[string]any{
+					"slot_type":    "string",
+					"content_type": "string",
+				},
+			},
 		},
 		//
 		{

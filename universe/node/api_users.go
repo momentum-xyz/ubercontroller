@@ -96,7 +96,7 @@ func (n *Node) apiUsersGetByID(c *gin.Context) {
 func (n *Node) apiCreateGuestUserByName(ctx context.Context, name string) (*entry.User, error) {
 	ue := &entry.User{
 		UserID: uuid.New(),
-		Profile: &entry.UserProfile{
+		Profile: entry.UserProfile{
 			Name: &name,
 		},
 	}
@@ -106,7 +106,7 @@ func (n *Node) apiCreateGuestUserByName(ctx context.Context, name string) (*entr
 		return nil, errors.WithMessage(err, "failed to GetGuestUserTypeID")
 	}
 
-	ue.UserTypeID = &guestUserTypeID
+	ue.UserTypeID = guestUserTypeID
 
 	err = n.db.GetUsersDB().UpsertUser(ctx, ue)
 
@@ -137,7 +137,7 @@ func (n *Node) apiGetOrCreateUserFromWallet(ctx context.Context, wallet string) 
 func (n *Node) createUserFromWalletMeta(ctx context.Context, walletMeta *WalletMeta) (*entry.User, error) {
 	userEntry := &entry.User{
 		UserID: walletMeta.UserID,
-		Profile: &entry.UserProfile{
+		Profile: entry.UserProfile{
 			Name:       &walletMeta.Username,
 			AvatarHash: &walletMeta.Avatar,
 		},
@@ -147,7 +147,7 @@ func (n *Node) createUserFromWalletMeta(ctx context.Context, walletMeta *WalletM
 	if err != nil {
 		return nil, errors.Errorf("failed to get normal user type id")
 	}
-	userEntry.UserTypeID = &normUserTypeID
+	userEntry.UserTypeID = normUserTypeID
 
 	if err := n.db.GetUsersDB().UpsertUser(ctx, userEntry); err != nil {
 		return nil, errors.WithMessagef(err, "failed to upsert user: %s", userEntry.UserID)

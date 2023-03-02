@@ -34,7 +34,7 @@ type ObjectOptions struct {
 	Asset3dOptions    any                                 `db:"asset_3d_options" json:"asset_3d_options,omitempty"`
 	FrameTemplates    map[string]any                      `db:"frame_templates" json:"frame_templates,omitempty"`
 	ChildPlacements   map[uuid.UUID]*ObjectChildPlacement `db:"child_placement" json:"child_placement,omitempty"`
-	AllowedSubObjects []uuid.UUID                         `db:"allowed_sub_objects" json:"allowed_sub_objects,omitempty"`
+	AllowedSubObjects []uuid.UUID                         `db:"allowed_subobjects" json:"allowed_subobjects,omitempty"`
 	DefaultTiles      []any                               `db:"default_tiles" json:"default_tiles,omitempty"`
 	InfoUIID          *uuid.UUID                          `db:"infoui_id" json:"infoui_id,omitempty"`
 	Minimap           *bool                               `db:"minimap" json:"minimap,omitempty"`
