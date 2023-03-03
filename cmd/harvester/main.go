@@ -6,6 +6,7 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/harvester"
 	"github.com/momentum-xyz/ubercontroller/harvester/etherium_adapter"
+	"github.com/momentum-xyz/ubercontroller/harvester/polkadot_adapter"
 )
 
 func main() {
@@ -18,23 +19,28 @@ func main() {
 	var harvForAdapter harvester.BCAdapterAPI
 	harvForAdapter = harv
 
-	// ** Adapter
+	// ** Etherium Adapter
 	etheriumAdapter := etherium_adapter.NewEtheriumAdapter(harvForAdapter)
 	go etheriumAdapter.Run()
+
+	// ** Polkadot Adapter
+	polkadotAdapter := polkadot_adapter.NewPolkadotAdapter(harvForAdapter)
+	go polkadotAdapter.Run()
 
 	// ** Harvester Clients
 	testHandler1 := testHandler1
 	ptrTestHandler1 := &testHandler1
 	harvForClient.Subscribe(harvester.Etherium, harvester.NewBlock, ptrTestHandler1)
+	harvForClient.Subscribe(harvester.Polkadot, harvester.NewBlock, ptrTestHandler1)
 
 	testHandler2 := testHandler2
 	ptrTestHandler2 := &testHandler2
 	harvForClient.Subscribe(harvester.Etherium, harvester.NewBlock, ptrTestHandler2)
 
-	time.Sleep(time.Second * 20)
+	time.Sleep(time.Second * 30)
 	harvForClient.Unsubscribe(harvester.Etherium, harvester.NewBlock, ptrTestHandler2)
 
-	time.Sleep(time.Second * 20)
+	time.Sleep(time.Second * 50)
 }
 
 func testHandler1(p any) {
