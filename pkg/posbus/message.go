@@ -104,46 +104,6 @@ const (
 	TeleportRequestType MsgType = 0x78DA55D9
 )
 
-var mapMessageNameById map[MsgType]string
-var mapMessageIdByName map[string]MsgType
-
-func MessageNameById(id MsgType) string {
-	return mapMessageNameById[id]
-}
-
-func MessageIdByName(name string) MsgType {
-	return mapMessageIdByName[name]
-}
-
-func init() {
-	mapMessageNameById = make(map[MsgType]string)
-	mapMessageIdByName = make(map[string]MsgType)
-	mapMessageNameById[NONEType] = "none"
-	mapMessageNameById[SetUsersPositionsType] = "set_user_position"
-	mapMessageNameById[SendPositionType] = "send_position"
-	mapMessageNameById[GenericMessageType] = "generic_message"
-	mapMessageNameById[HandShakeType] = "handshake"
-	mapMessageNameById[SetWorldType] = "set_world"
-	mapMessageNameById[AddObjectsType] = "add_objects"
-	mapMessageNameById[RemoveObjectsType] = "remove_objects"
-	mapMessageNameById[SetObjectPositionType] = "set_object_position"
-	mapMessageNameById[SetObjectDataType] = "set_object_data"
-	mapMessageNameById[AddUsersType] = "add_users"
-	mapMessageNameById[RemoveUsersType] = "remove_users"
-	mapMessageNameById[SetUserDataType] = "set_user_data"
-	mapMessageNameById[SetObjectLockType] = "set_object_lock"
-	mapMessageNameById[ObjectLockResultType] = "object_lock_result"
-	mapMessageNameById[TriggerVisualEffectsType] = "trigger_visual_effects"
-	mapMessageNameById[UserActionType] = "user_action"
-	mapMessageNameById[SignalType] = "signal"
-	mapMessageNameById[NotificationType] = "notification"
-	mapMessageNameById[TeleportRequestType] = "teleport_request"
-
-	for k, v := range mapMessageNameById {
-		mapMessageIdByName[v] = k
-	}
-}
-
 type ObjectDefinition struct {
 	ID               uuid.UUID
 	ParentID         uuid.UUID
@@ -202,6 +162,54 @@ type ObjectPosition struct {
 type Message struct {
 	buf     []byte
 	msgType MsgType
+}
+
+var mapMessageNameById map[MsgType]string
+var mapMessageIdByName map[string]MsgType
+
+func init() {
+	mapMessageNameById = make(map[MsgType]string)
+	mapMessageIdByName = make(map[string]MsgType)
+	mapMessageNameById[NONEType] = "none"
+	mapMessageNameById[SetUsersPositionsType] = "set_user_position"
+	mapMessageNameById[SendPositionType] = "send_position"
+	mapMessageNameById[GenericMessageType] = "generic_message"
+	mapMessageNameById[HandShakeType] = "handshake"
+	mapMessageNameById[SetWorldType] = "set_world"
+	mapMessageNameById[AddObjectsType] = "add_objects"
+	mapMessageNameById[RemoveObjectsType] = "remove_objects"
+	mapMessageNameById[SetObjectPositionType] = "set_object_position"
+	mapMessageNameById[SetObjectDataType] = "set_object_data"
+	mapMessageNameById[AddUsersType] = "add_users"
+	mapMessageNameById[RemoveUsersType] = "remove_users"
+	mapMessageNameById[SetUserDataType] = "set_user_data"
+	mapMessageNameById[SetObjectLockType] = "set_object_lock"
+	mapMessageNameById[ObjectLockResultType] = "object_lock_result"
+	mapMessageNameById[TriggerVisualEffectsType] = "trigger_visual_effects"
+	mapMessageNameById[UserActionType] = "user_action"
+	mapMessageNameById[SignalType] = "signal"
+	mapMessageNameById[NotificationType] = "notification"
+	mapMessageNameById[TeleportRequestType] = "teleport_request"
+
+	for k, v := range mapMessageNameById {
+		mapMessageIdByName[v] = k
+	}
+}
+
+func MessageNameById(id MsgType) string {
+	name, ok := mapMessageNameById[id]
+	if ok {
+		return name
+	}
+	return "none"
+}
+
+func MessageIdByName(name string) MsgType {
+	id, ok := mapMessageIdByName[name]
+	if ok {
+		return id
+	}
+	return 0
 }
 
 func NewMessage(msgid MsgType) *Message {
