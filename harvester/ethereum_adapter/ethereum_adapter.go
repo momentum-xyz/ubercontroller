@@ -1,4 +1,4 @@
-package etherium_adapter
+package ethereum_adapter
 
 import (
 	"context"
@@ -11,17 +11,17 @@ import (
 	"github.com/momentum-xyz/ubercontroller/harvester"
 )
 
-type EtheriumAdapter struct {
+type EthereumAdapter struct {
 	harv harvester.BCAdapterAPI
 }
 
-func NewEtheriumAdapter(harvester harvester.BCAdapterAPI) *EtheriumAdapter {
-	return &EtheriumAdapter{
+func NewEthereumAdapter(harvester harvester.BCAdapterAPI) *EthereumAdapter {
+	return &EthereumAdapter{
 		harv: harvester,
 	}
 }
 
-func (ea *EtheriumAdapter) Run() {
+func (ea *EthereumAdapter) Run() {
 	//client, err := ethclient.Dial("wss://rinkeby.infura.io/ws")
 	url := "ws://localhost:8546"
 	client, err := ethclient.Dial(url)
@@ -29,7 +29,7 @@ func (ea *EtheriumAdapter) Run() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Connected to Etherium Block Chain: " + url)
+	fmt.Println("Connected to Ethereum Block Chain: " + url)
 
 	ch := make(chan *types.Header)
 
@@ -59,7 +59,7 @@ func (ea *EtheriumAdapter) Run() {
 				block.Number = vLog.Number.Uint64()
 			}
 
-			ea.harv.OnNewBlock(harvester.Etherium, block)
+			ea.harv.OnNewBlock(harvester.Ethereum, block)
 		}
 	}
 }

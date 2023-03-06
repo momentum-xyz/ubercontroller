@@ -2,5 +2,5 @@ package harvester
 
 type BCType string
 
-const Etherium BCType = "etherium"
+const Ethereum BCType = "ethereum"
 const Polkadot BCType = "polkadot"
