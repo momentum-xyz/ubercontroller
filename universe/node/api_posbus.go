@@ -1,9 +1,12 @@
 package node
 
 import (
-	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
+	"fmt"
 	"net/http"
 	"net/url"
+
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
@@ -53,20 +56,22 @@ func (n *Node) handShake(socketConnection *websocket.Conn) error {
 
 	token := string(handshake.Token)
 
-	// TODO: enable token check back!
-	//if err := api.VerifyToken(token, n.cfg.Common.IntrospectURL); err != nil {
-	//	userID := message.DeserializeGUID(handshake.UserId(nil))
-	//	n.log.Errorf("error: wrong PreHandShake (invalid token: %s), aborting connection: %s", userID, err)
-	//	socketConnection.SetWriteDeadline(time.Now().Add(10 * time.Second))
-	//	socketConnection.WritePreparedMessage(posbus.NewSignalMsg(posbus.SignalInvalidToken).WebsocketMessage())
-	//	return nil, false
-	//}
-
-	parsed, _ := jwt.Parse(
+	parsed, err := jwt.Parse(
 		token, func(token *jwt.Token) (interface{}, error) {
-			return []byte(""), nil
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			}
+			secret, err := api.GetJWTSecret()
+			if err != nil {
+				return nil, errors.Wrap(err, "JWT secret")
+			}
+			return secret, nil
 		},
 	)
+	if err != nil {
+		return errors.Wrap(err, "auth token")
+	}
+
 	claims := parsed.Claims.(jwt.MapClaims)
 
 	userID := handshake.UserId
