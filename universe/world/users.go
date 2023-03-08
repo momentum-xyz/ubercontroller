@@ -60,6 +60,7 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 
 	w.log.Infof("AddUser: %+v\n", user.GetID())
 	// effectively replace user if exists
+	user.LockSendBuffer()
 	if err = w.ToObject().AddUser(user, updateDB); err != nil {
 		return errors.WithMessagef(err, "failed to add user %s to world: %s", user.GetID(), w.GetID())
 	}

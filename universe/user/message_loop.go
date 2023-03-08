@@ -66,11 +66,14 @@ func (u *User) UpdateObjectPosition(msg posbus.ObjectPosition) error {
 }
 
 func (u *User) Teleport(target uuid.UUID) error {
-	// TODO: teleport function
-	//if err := u.SwitchWorld(msg.AsSwitchWorld().World()); err != nil {
-	//	u.log.Error(errors.WithMessage(err, "User: OnMessage: failed to switch world"))
-	//}
-	return nil
+	world, ok := universe.GetNode().GetWorlds().GetWorld(target)
+	if !ok {
+		return errors.New("Target world does not exist")
+	}
+	if oldWorld := u.GetWorld(); oldWorld != nil {
+		oldWorld.RemoveUser(u, true)
+	}
+	return world.AddUser(u, true)
 }
 
 func (u *User) GenericMessageHandler(msg []byte) error {
@@ -83,7 +86,12 @@ func (u *User) GenericMessageHandler(msg []byte) error {
 
 func (u *User) SignalsHandler(s posbus.Signal) error {
 	fmt.Printf("Got Signal %+v\n", s)
-	//switch s {
+	switch s {
+	case posbus.SignalLeaveWorld:
+		if oldWorld := u.GetWorld(); oldWorld != nil {
+			oldWorld.RemoveUser(u, true)
+		}
+	}
 	//case posbus.SignalReady:
 	//	u.ReleaseSendBuffer()
 	//	//u.log.Debugf("Got signalReady from %s", u.id.String())

@@ -221,6 +221,7 @@ type User interface {
 
 	Update() error
 	ReleaseSendBuffer()
+	LockSendBuffer()
 
 	GetSessionID() uuid.UUID
 	SetConnection(sessionID uuid.UUID, socketConnection *websocket.Conn) error

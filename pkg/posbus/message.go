@@ -22,6 +22,7 @@ const (
 	SignalReady
 	SignalInvalidToken
 	SignalSpawn
+	SignalLeaveWorld
 )
 
 type Trigger uint32

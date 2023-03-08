@@ -8,6 +8,4 @@ type HandShake struct {
 	Token            string
 	UserId           uuid.UUID
 	SessionId        uuid.UUID
-	Url              string
-	WorldId          uuid.UUID
 }

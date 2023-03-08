@@ -2,11 +2,9 @@ package node
 
 import (
 	"fmt"
-	"net/http"
-	"net/url"
-
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
@@ -76,12 +74,6 @@ func (n *Node) handShake(socketConnection *websocket.Conn) error {
 
 	userID := handshake.UserId
 	sessionID := handshake.SessionId
-	targetWorldId := handshake.WorldId
-	url, err := url.Parse(handshake.Url)
-	if err != nil {
-		return errors.WithMessagef(err, "failed to parse url: %s", string(handshake.Url))
-	}
-	n.log.Debugf("Node: url to use: %s", url)
 
 	userIDClaim, err := uuid.Parse(utils.GetFromAnyMap(claims, "sub", ""))
 	if err != nil {
@@ -96,17 +88,18 @@ func (n *Node) handShake(socketConnection *websocket.Conn) error {
 		return errors.WithMessagef(err, "failed to load user from entry: %s", userID)
 	}
 	user.SetConnection(sessionID, socketConnection)
-	user.Run()
+	return user.Run()
 
-	world, ok := n.GetWorlds().GetWorld(targetWorldId)
-	if !ok {
-		n.log.Infof("World is not found! %+v\n", targetWorldId)
-		world = n.detectSpawnWorld(userID)
-		if world == nil {
-			return errors.New("no default world found to spawn")
-		}
-	}
-	n.log.Infof("User will be launched in world %+v \n", world.GetID())
+	//world, ok := n.GetWorlds().GetWorld(targetWorldId)
+	//if !ok {
+	//	n.log.Infof("World is not found! %+v\n", targetWorldId)
+	//	world = n.detectSpawnWorld(userID)
+	//	if world == nil {
+	//		return errors.New("no default world found to spawn")
+	//	}
+	//}
+	//n.log.Infof("User will be launched in world %+v \n", world.GetID())
+	//
+	//return world.AddUser(user, true)
 
-	return world.AddUser(user, true)
 }

@@ -38,6 +38,10 @@ func (u *User) ReleaseSendBuffer() {
 	u.log.Infof("User: ReleaseSendBuffer: messages waterfall opened: %s", u.GetID())
 }
 
+func (u *User) LockSendBuffer() {
+	u.bufferSends.Store(true)
+}
+
 func (u *User) readPump() {
 	u.log.Infof("User: start of read pump: %s", u.GetID())
 
