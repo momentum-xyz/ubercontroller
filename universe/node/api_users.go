@@ -121,9 +121,17 @@ func (n *Node) apiGetOrCreateUserFromWallet(ctx context.Context, wallet string) 
 		return userEntry, 0, nil
 	}
 
-	walletMeta, err := n.getWalletMetadata(wallet)
-	if err != nil {
-		return nil, http.StatusForbidden, errors.WithMessage(err, "failed to get wallet meta")
+	// walletMeta, err := n.getWalletMetadata(wallet)
+	// if err != nil {
+	// 	return nil, http.StatusForbidden, errors.WithMessage(err, "failed to get wallet meta")
+	// }
+
+	// Temp create empty user
+	walletMeta := &WalletMeta{
+		Wallet:   wallet,
+		UserID:   uuid.New(),
+		Username: "",
+		Avatar:   "",
 	}
 
 	userEntry, err = n.createUserFromWalletMeta(ctx, walletMeta)

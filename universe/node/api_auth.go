@@ -97,6 +97,7 @@ func (n *Node) apiGenChallenge(c *gin.Context) {
 func (n *Node) apiGenToken(c *gin.Context) {
 	type InBody struct {
 		Wallet          string `json:"wallet" binding:"required"`
+		Network         string `json:"network"`
 		SignedChallenge string `json:"signedChallenge" binding:"required"`
 	}
 	var inBody InBody
@@ -128,9 +129,17 @@ func (n *Node) apiGenToken(c *gin.Context) {
 		return
 	}
 
-	valid, err := api.VerifyPolkadotSignature(inBody.Wallet, challenge, inBody.SignedChallenge)
+	valid, err := func() (bool, error) {
+		switch inBody.Network {
+		case "ethereum":
+			return api.VerifyEthereumSignature(inBody.Wallet, challenge, inBody.SignedChallenge)
+		default:
+			return api.VerifyPolkadotSignature(inBody.Wallet, challenge, inBody.SignedChallenge)
+		}
+	}()
+
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiGenToken: failed to verify polkadot signature")
+		err := errors.WithMessage(err, "Node: apiGenToken: failed to verify wallet signature")
 		api.AbortRequest(c, http.StatusBadRequest, "signature_validation_failed", err, n.log)
 		return
 	}
