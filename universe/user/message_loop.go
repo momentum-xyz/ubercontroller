@@ -12,8 +12,8 @@ import (
 
 func (u *User) OnMessage(msg *posbus.Message) error {
 	switch msg.Type() {
-	case posbus.SendPositionType:
-		if err := u.UpdatePosition(msg.AsSendPos()); err != nil {
+	case posbus.TypeSendPosition:
+		if err := u.UpdatePosition(msg.Msg()); err != nil {
 			return errors.WithMessage(err, "failed to handle: send position")
 		}
 
@@ -21,29 +21,29 @@ func (u *User) OnMessage(msg *posbus.Message) error {
 	//	if err := u.InteractionHandler(msg.AsTriggerInteraction()); err != nil {
 	//		return errors.WithMessage(err, "failed to handle: interaction")
 	//	}
-	case posbus.GenericMessageType:
+	case posbus.TypeGenericMessage:
 		if err := u.GenericMessageHandler(msg.Msg()); err != nil {
 			return errors.WithMessage(err, "failed to handle: relay to controller")
 		}
-	case posbus.TeleportRequestType:
+	case posbus.TypeTeleportRequest:
 		var targetID uuid.UUID
 		err := msg.DecodeTo(targetID)
 		if err != nil {
 			return errors.WithMessage(err, "failed to decode: teleport")
 		}
 		return u.Teleport(targetID)
-	case posbus.SignalType:
+	case posbus.TypeSignal:
 		var signal posbus.Signal
 		err := msg.DecodeTo(signal)
 		if err != nil {
 			return errors.WithMessage(err, "failed to decode: signal")
 		}
 		return u.SignalsHandler(signal)
-	//case posbus.SetObjectPositionType:
+	//case posbus.TypeSetObjectPosition:
 	//	if err := u.UpdateObjectPosition(msg.Msg()); err != nil {
 	//		return errors.WithMessage(err, "failed to update object position")
 	//	}
-	case posbus.SetObjectLockType:
+	case posbus.TypeSetObjectLock:
 		var lock posbus.SetObjectLock
 		err := msg.DecodeTo(lock)
 		if err != nil {
@@ -177,7 +177,7 @@ func (u *User) LockObject(lock posbus.SetObjectLock) error {
 
 	lock.State = newState
 
-	return u.GetWorld().Send(posbus.WrapAsMessage(posbus.SetObjectLockType, lock).WSMessage(), true)
+	return u.GetWorld().Send(posbus.NewMessageFromData(posbus.TypeSetObjectLock, lock).WSMessage(), true)
 }
 
 //func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {

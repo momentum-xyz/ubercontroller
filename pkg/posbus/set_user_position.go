@@ -1,38 +1,38 @@
 package posbus
 
 import (
+	"encoding/binary"
 	"github.com/google/uuid"
-	"github.com/gorilla/websocket"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 const UserPositionsMessageSize = MsgUUIDTypeSize + MsgOnePosSize*6
 
-type SetUserPositionsMessage struct {
-	*Message
+type SetUserPositionsBuffer struct {
 	maxUsers  int
 	posBuffer []byte
-	nUsers    int
+	nUsers    uint32
 }
 
-func NewSetUserPositionsMsg(maxUsers int) *SetUserPositionsMessage {
-	obj := &SetUserPositionsMessage{Message: NewMessage(SetUsersPositionsType), maxUsers: maxUsers}
-	obj.posBuffer = make([]byte, UserPositionsMessageSize*maxUsers)
+func StartUserPositionsBuffer(maxUsers int) *SetUserPositionsBuffer {
+	obj := &SetUserPositionsBuffer{maxUsers: maxUsers}
+	obj.posBuffer = make([]byte, MsgArrTypeSize+UserPositionsMessageSize*maxUsers)
 	obj.nUsers = 0
 	return obj
 }
 
-func (m *SetUserPositionsMessage) AddPosition(data []byte) {
+func (m *SetUserPositionsBuffer) AddPosition(data []byte) {
 	start := MsgArrTypeSize + m.nUsers*UserPositionsMessageSize
 	copy(m.posBuffer[start:], data)
 	m.nUsers++
 }
 
-func (m *SetUserPositionsMessage) Finalize() *websocket.PreparedMessage {
-	m.makeBuffer(len(m.posBuffer))
-	copy(m.Msg(), m.posBuffer)
-	omsg, _ := websocket.NewPreparedMessage(websocket.BinaryMessage, m.Buf())
-	return omsg
+func (m *SetUserPositionsBuffer) Finalize() {
+	binary.LittleEndian.PutUint32(m.posBuffer, m.nUsers)
+}
+
+func (m *SetUserPositionsBuffer) Buf() []byte {
+	return m.posBuffer[:MsgArrTypeSize+m.nUsers*UserPositionsMessageSize]
 }
 
 func NewSendPosBuffer(id uuid.UUID) []byte {

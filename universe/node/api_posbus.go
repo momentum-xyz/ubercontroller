@@ -39,8 +39,8 @@ func (n *Node) handShake(socketConnection *websocket.Conn) error {
 		return errors.WithMessagef(err, "error: wrong PreHandShake (1), aborting connection")
 	}
 
-	msg := posbus.MsgFromBytes(incomingMessage)
-	if msg.Type() != posbus.HandShakeType {
+	msg := posbus.BytesToMessage(incomingMessage)
+	if msg.Type() != posbus.TypeHandShake {
 		return errors.New("error: wrong message received, not handshake")
 	}
 	var handshake posbus.HandShake

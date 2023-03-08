@@ -76,7 +76,7 @@ func (u *User) readPump() {
 		if messageType != websocket.BinaryMessage {
 			u.log.Errorf("User: read pump: wrong incoming message type: %d: %s", messageType, u.GetID())
 		} else {
-			if err := u.OnMessage(posbus.MsgFromBytes(message)); err != nil {
+			if err := u.OnMessage(posbus.BytesToMessage(message)); err != nil {
 				u.log.Warn(errors.WithMessagef(err, "User: read pump: failed to handle message: %s", u.GetID()))
 			}
 		}

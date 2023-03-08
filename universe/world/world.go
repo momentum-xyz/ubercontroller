@@ -199,14 +199,14 @@ func (w *World) broadcastPositions() {
 	flag := false
 	w.Users.Mu.RLock()
 	numClients := len(w.Users.Data)
-	msg := posbus.NewSetUserPositionsMsg(numClients)
+	positionsBuffer := posbus.StartUserPositionsBuffer(numClients)
 	currentTime := time.Now().Unix()
 
 	if numClients > 0 {
 		flag = true
 		for _, u := range w.Users.Data {
 			if u.GetLastPosTime() > w.lastPosUpdate || (currentTime-u.GetLastPosTime() >= MaxPosUpdateInterval) {
-				msg.AddPosition(u.GetPosBuffer())
+				positionsBuffer.AddPosition(u.GetPosBuffer())
 			}
 		}
 	}
@@ -214,7 +214,8 @@ func (w *World) broadcastPositions() {
 
 	w.Users.Mu.RUnlock()
 	if flag {
-		w.Send(msg.WSMessage(), true)
+		positionsBuffer.Finalize()
+		w.Send(posbus.NewMessageFromBuffer(posbus.TypeSetUsersPositions, positionsBuffer.Buf()).WSMessage(), true)
 	}
 }
 
@@ -299,9 +300,9 @@ func (w *World) UpdateWorldMetadata() error {
 	}
 
 	w.metaMsg.Store(
-		posbus.WrapAsMessage(
-			posbus.SetWorldType,
-			posbus.SetWorld{ID: w.GetID(), Name: w.GetName(), Avatar: w.metaData.AvatarController, Avatar3DAssetID: w.metaData.AvatarController, Owner: w.GetOwnerID()},
+		posbus.NewMessageFromData(
+			posbus.TypeSetWorld,
+			posbus.SetWorldData{ID: w.GetID(), Name: w.GetName(), Avatar: w.metaData.AvatarController, Avatar3DAssetID: w.metaData.AvatarController, Owner: w.GetOwnerID()},
 		).WSMessage(),
 	)
 

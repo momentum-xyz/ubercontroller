@@ -43,7 +43,11 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 			} else {
 				w.log.Infof("World: double-login detected for world %s, user %s", w.GetID(), exUser.GetID())
 
-				exUser.SendDirectly(posbus.WrapAsMessage(posbus.SignalType, posbus.SignalDualConnection).WSMessage())
+				exUser.SendDirectly(
+					posbus.NewMessageFromData(
+						posbus.TypeSignal, posbus.SignalDualConnection,
+					).WSMessage(),
+				)
 
 				time.Sleep(time.Millisecond * 100)
 			}
@@ -106,8 +110,8 @@ func (w *World) noLockRemoveUser(user universe.User, updateDB bool) (bool, error
 	for _, child := range w.allObjects.Data {
 		if child.LockUnityObject(user, 0) {
 			w.Send(
-				posbus.WrapAsMessage(
-					posbus.ObjectLockResultType,
+				posbus.NewMessageFromData(
+					posbus.TypeObjectLockResult,
 					posbus.ObjectLockResultData{ID: child.GetID(), Result: 0, LockOwner: user.GetID()},
 				).WSMessage(), true,
 			)
@@ -127,7 +131,7 @@ func (w *World) initializeUnity(user universe.User) error {
 	// TODO: fix circular dependency
 	if err := user.SendDirectly(
 		posbus.NewSendPositionMsg(
-			user.GetPosition(), user.GetRotation(), cmath.Vec3{X: 0, Y: 0, Z: 0},
+			user.GetPosition(), user.GetRotation(),
 		).WSMessage(),
 	); err != nil {
 		return errors.WithMessage(err, "failed to send position")

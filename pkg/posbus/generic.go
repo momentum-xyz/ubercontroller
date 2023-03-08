@@ -11,5 +11,5 @@ type RelayToReactData struct {
 
 func NewRelayToReactMsg(topic string, data []byte) *Message {
 
-	return WrapAsMessage(GenericMessageType, RelayToReactData{Topic: topic, Data: data})
+	return NewMessageFromData(TypeGenericMessage, RelayToReactData{Topic: topic, Data: data})
 }
