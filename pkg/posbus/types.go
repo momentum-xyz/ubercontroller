@@ -124,7 +124,7 @@ type UserDefinition struct {
 	ID              uuid.UUID
 	Name            string
 	Avatar          uuid.UUID
-	ObjectTransform cmath.ObjectPosition
+	ObjectTransform cmath.UserPosition
 	IsGuest         bool
 }
 
