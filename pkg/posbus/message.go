@@ -11,6 +11,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"log"
+	"reflect"
 )
 
 type Signal uint32
@@ -165,35 +166,38 @@ type Message struct {
 }
 
 var mapMessageNameById map[MsgType]string
+var mapMessageDataTypeById map[MsgType]reflect.Type
 var mapMessageIdByName map[string]MsgType
+
+func addToMaps[T any](id MsgType, name string, v T) {
+	mapMessageNameById[id] = name
+	mapMessageIdByName[name] = id
+	mapMessageDataTypeById[id] = reflect.TypeOf(v)
+}
 
 func init() {
 	mapMessageNameById = make(map[MsgType]string)
 	mapMessageIdByName = make(map[string]MsgType)
-	mapMessageNameById[NONEType] = "none"
-	mapMessageNameById[SetUsersPositionsType] = "set_user_position"
-	mapMessageNameById[SendPositionType] = "send_position"
-	mapMessageNameById[GenericMessageType] = "generic_message"
-	mapMessageNameById[HandShakeType] = "handshake"
-	mapMessageNameById[SetWorldType] = "set_world"
-	mapMessageNameById[AddObjectsType] = "add_objects"
-	mapMessageNameById[RemoveObjectsType] = "remove_objects"
-	mapMessageNameById[SetObjectPositionType] = "set_object_position"
-	mapMessageNameById[SetObjectDataType] = "set_object_data"
-	mapMessageNameById[AddUsersType] = "add_users"
-	mapMessageNameById[RemoveUsersType] = "remove_users"
-	mapMessageNameById[SetUserDataType] = "set_user_data"
-	mapMessageNameById[SetObjectLockType] = "set_object_lock"
-	mapMessageNameById[ObjectLockResultType] = "object_lock_result"
-	mapMessageNameById[TriggerVisualEffectsType] = "trigger_visual_effects"
-	mapMessageNameById[UserActionType] = "user_action"
-	mapMessageNameById[SignalType] = "signal"
-	mapMessageNameById[NotificationType] = "notification"
-	mapMessageNameById[TeleportRequestType] = "teleport_request"
-
-	for k, v := range mapMessageNameById {
-		mapMessageIdByName[v] = k
-	}
+	addToMaps(NONEType, "none", -1)
+	addToMaps(SetUsersPositionsType, "set_user_position", -1)
+	addToMaps(SendPositionType, "send_position", -1)
+	addToMaps(GenericMessageType, "generic_message", []byte{})
+	addToMaps(HandShakeType, "handshake", HandShake{})
+	addToMaps(SetWorldType, "set_world", SetWorld{})
+	addToMaps(AddObjectsType, "add_objects", []ObjectDefinition{})
+	addToMaps(RemoveObjectsType, "remove_objects", []uuid.UUID{})
+	addToMaps(SetObjectPositionType, "set_object_position", cmath.ObjectPosition{})
+	addToMaps(SetObjectDataType, "set_object_data", ObjectData{})
+	addToMaps(AddUsersType, "add_users", UserDefinition{})
+	addToMaps(RemoveUsersType, "remove_users", []uuid.UUID{})
+	addToMaps(SetUserDataType, "set_user_data", UserDefinition{})
+	addToMaps(SetObjectLockType, "set_object_lock", SetObjectLock{})
+	addToMaps(ObjectLockResultType, "object_lock_result", ObjectLockResultData{})
+	addToMaps(TriggerVisualEffectsType, "trigger_visual_effects", -1)
+	addToMaps(UserActionType, "user_action", -1)
+	addToMaps(SignalType, "signal", int(0))
+	addToMaps(NotificationType, "notification", -1)
+	addToMaps(TeleportRequestType, "teleport_request", uuid.UUID{})
 }
 
 func MessageNameById(id MsgType) string {
