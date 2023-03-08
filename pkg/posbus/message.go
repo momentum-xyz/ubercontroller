@@ -178,6 +178,7 @@ func addToMaps[T any](id MsgType, name string, v T) {
 func init() {
 	mapMessageNameById = make(map[MsgType]string)
 	mapMessageIdByName = make(map[string]MsgType)
+	mapMessageDataTypeById = make(map[MsgType]reflect.Type)
 	addToMaps(NONEType, "none", -1)
 	addToMaps(SetUsersPositionsType, "set_user_position", -1)
 	addToMaps(SendPositionType, "send_position", -1)
@@ -206,6 +207,14 @@ func MessageNameById(id MsgType) string {
 		return name
 	}
 	return "none"
+}
+
+func MessageDataTypeById(id MsgType) reflect.Type {
+	t, ok := mapMessageDataTypeById[id]
+	if ok {
+		return t
+	}
+	return nil
 }
 
 func MessageIdByName(name string) MsgType {
