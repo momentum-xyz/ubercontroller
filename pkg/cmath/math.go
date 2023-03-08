@@ -17,6 +17,11 @@ type ObjectPosition struct {
 	Scale    Vec3 `db:"scale" json:"scale"`
 }
 
+type UserPosition struct {
+	Location Vec3 `db:"location" json:"location"`
+	Rotation Vec3 `db:"rotation" json:"rotation"`
+}
+
 func (v *Vec3) Plus(v2 Vec3) {
 	v.X += v2.X
 	v.Y += v2.Y
