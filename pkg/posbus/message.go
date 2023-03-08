@@ -293,7 +293,7 @@ func WrapAsMessage(msgid MsgType, data interface{}) *Message {
 func (m *Message) Decode() (interface{}, error) {
 	v := reflect.New(MessageDataTypeById(m.Type())).Interface()
 	err := m.DecodeTo(v)
-	return m.DecodeTo(v), err
+	return v, err
 }
 
 func (m *Message) DecodeTo(result interface{}) error {
