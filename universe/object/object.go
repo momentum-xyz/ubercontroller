@@ -625,7 +625,7 @@ func (o *Object) UpdateSpawnMessage() error {
 	),
 		ShowOnMiniMap: *utils.GetFromAny(effectiveOptions.Minimap, &visible), ObjectTransform: *o.GetActualPosition()}
 	msg := posbus.WrapAsMessage(posbus.AddObjectsType, mData)
-	o.spawnMsg.Store(msg)
+	o.spawnMsg.Store(msg.WSMessage())
 
 	return nil
 }

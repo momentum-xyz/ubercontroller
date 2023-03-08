@@ -1,9 +1,5 @@
 package posbus
 
-import (
-	"github.com/gorilla/websocket"
-)
-
 type GenericMessage struct {
 	*Message
 }
@@ -13,7 +9,7 @@ type RelayToReactData struct {
 	Data  []byte
 }
 
-func NewRelayToReactMsg(topic string, data []byte) *websocket.PreparedMessage {
+func NewRelayToReactMsg(topic string, data []byte) *Message {
 
 	return WrapAsMessage(GenericMessageType, RelayToReactData{Topic: topic, Data: data})
 }

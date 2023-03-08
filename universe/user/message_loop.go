@@ -27,14 +27,14 @@ func (u *User) OnMessage(msg *posbus.Message) error {
 		}
 	case posbus.TeleportRequestType:
 		var targetID uuid.UUID
-		err := msg.DecodeMessage(targetID)
+		err := msg.DecodeTo(targetID)
 		if err != nil {
 			return errors.WithMessage(err, "failed to decode: teleport")
 		}
 		return u.Teleport(targetID)
 	case posbus.SignalType:
 		var signal posbus.Signal
-		err := msg.DecodeMessage(signal)
+		err := msg.DecodeTo(signal)
 		if err != nil {
 			return errors.WithMessage(err, "failed to decode: signal")
 		}
@@ -45,7 +45,7 @@ func (u *User) OnMessage(msg *posbus.Message) error {
 	//	}
 	case posbus.SetObjectLockType:
 		var lock posbus.SetObjectLock
-		err := msg.DecodeMessage(lock)
+		err := msg.DecodeTo(lock)
 		if err != nil {
 			return errors.WithMessage(err, "failed to decode: set object lock")
 		}
@@ -169,7 +169,7 @@ func (u *User) LockObject(lock posbus.SetObjectLock) error {
 
 	lock.State = newState
 
-	return u.GetWorld().Send(posbus.WrapAsMessage(posbus.SetObjectLockType, lock), true)
+	return u.GetWorld().Send(posbus.WrapAsMessage(posbus.SetObjectLockType, lock).WSMessage(), true)
 }
 
 //func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
@@ -184,7 +184,7 @@ func (u *User) LockObject(lock posbus.SetObjectLock) error {
 //		u.Send(
 //			posbus.NewSimpleNotificationMsg(
 //				posbus.DestinationReact, posbus.NotificationTextMessage, 0, "Target user not found",
-//			).WebsocketMessage(),
+//			).WSMessage(),
 //		)
 //		return errors.Errorf("failed to get target: %s", targetID)
 //	}
@@ -217,14 +217,14 @@ func (u *User) LockObject(lock posbus.SetObjectLock) error {
 //	u.Send(
 //		posbus.NewSimpleNotificationMsg(
 //			posbus.DestinationReact, posbus.NotificationHighFive, 0, tName,
-//		).WebsocketMessage(),
+//		).WSMessage(),
 //	)
-//	target.Send(posbus.NewRelayToReactMsg("high5", high5Data).WebsocketMessage())
+//	target.Send(posbus.NewRelayToReactMsg("high5", high5Data).WSMessage())
 //
 //	effectsEmitterID := world.GetSettings().Objects["effects_emitter"]
 //	effect := posbus.NewTriggerTransitionalBridgingEffectsOnPositionMsg(1)
 //	effect.SetEffect(0, effectsEmitterID, u.GetPosition(), target.GetPosition(), 1001)
-//	u.GetWorld().Send(effect.WebsocketMessage(), false)
+//	u.GetWorld().Send(effect.WSMessage(), false)
 //
 //	go u.SendHighFiveStats(target)
 //

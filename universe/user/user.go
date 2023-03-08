@@ -229,7 +229,7 @@ func (u *User) UpdatePosition(data []byte) error {
 
 func (u *User) TeleportToWorld(id uuid.UUID) {
 	//url := universe.GetNode().ResolveNodeByWorldID(id)
-	//u.Send(posbus.NewTeleportRequest(id, url).WebsocketMessage())
+	//u.Send(posbus.NewTeleportRequest(id, url).WSMessage())
 	//u.close(true)
 
 }

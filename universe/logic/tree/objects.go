@@ -177,7 +177,7 @@ func RemoveObjectFromParent(parent, object universe.Object, updateDB bool) (bool
 
 	var errs *multierror.Error
 	if object.GetEnabled() { // we need this check to avoid spam while removing children
-		msg := posbus.WrapAsMessage(posbus.RemoveObjectsType, []uuid.UUID{object.GetID()})
+		msg := posbus.WrapAsMessage(posbus.RemoveObjectsType, []uuid.UUID{object.GetID()}).WSMessage()
 
 		if err := object.GetWorld().Send(msg, true); err != nil {
 			errs = multierror.Append(errs, errors.WithMessage(err, "failed to send remove message"))

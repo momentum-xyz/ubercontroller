@@ -71,7 +71,7 @@ func (o *Object) SetActualPosition(pos cmath.ObjectPosition, theta float64) erro
 				world := o.GetWorld()
 				if world != nil {
 					world.Send(
-						posbus.WrapAsMessage(posbus.SetObjectPositionType, *(o.GetActualPosition())),
+						posbus.WrapAsMessage(posbus.SetObjectPositionType, *(o.GetActualPosition())).WSMessage(),
 						true,
 					)
 				}
@@ -114,7 +114,7 @@ func (o *Object) SetPosition(position *cmath.ObjectPosition, updateDB bool) erro
 				world := o.GetWorld()
 				if world != nil {
 					world.Send(
-						posbus.WrapAsMessage(posbus.SetObjectPositionType, *(o.GetActualPosition())),
+						posbus.WrapAsMessage(posbus.SetObjectPositionType, *(o.GetActualPosition())).WSMessage(),
 						true,
 					)
 				}

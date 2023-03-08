@@ -214,7 +214,7 @@ func (w *World) broadcastPositions() {
 
 	w.Users.Mu.RUnlock()
 	if flag {
-		w.Send(msg.WebsocketMessage(), true)
+		w.Send(msg.WSMessage(), true)
 	}
 }
 
@@ -302,7 +302,7 @@ func (w *World) UpdateWorldMetadata() error {
 		posbus.WrapAsMessage(
 			posbus.SetWorldType,
 			posbus.SetWorld{ID: w.GetID(), Name: w.GetName(), Avatar: w.metaData.AvatarController, Avatar3DAssetID: w.metaData.AvatarController, Owner: w.GetOwnerID()},
-		),
+		).WSMessage(),
 	)
 
 	return nil

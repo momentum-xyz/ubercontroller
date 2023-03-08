@@ -83,7 +83,7 @@ func (c *Calendar) tick(eventID string) error {
 	if err != nil {
 		return errors.WithMessagef(err, "failed to marshal message payload")
 	}
-	m := posbus.NewRelayToReactMsg(topic, data)
+	m := posbus.NewRelayToReactMsg(topic, data).WSMessage()
 	c.world.Send(m, false)
 
 	go c.update()

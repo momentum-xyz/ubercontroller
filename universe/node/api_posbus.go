@@ -46,7 +46,7 @@ func (n *Node) handShake(socketConnection *websocket.Conn) error {
 		return errors.New("error: wrong message received, not handshake")
 	}
 	var handshake posbus.HandShake
-	if msg.DecodeMessage(handshake) != nil {
+	if msg.DecodeTo(handshake) != nil {
 		return errors.New("error: wrong message type received, not handshake data")
 	}
 

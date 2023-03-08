@@ -266,7 +266,7 @@ func (m *Message) makeBuffer(len int) {
 	binary.LittleEndian.PutUint32(m.buf[MsgTypeSize+len:], uint32(^m.msgType))
 }
 
-func (m *Message) WebsocketMessage() *websocket.PreparedMessage {
+func (m *Message) WSMessage() *websocket.PreparedMessage {
 	omsg, _ := websocket.NewPreparedMessage(websocket.BinaryMessage, m.Buf())
 	return omsg
 }
@@ -277,7 +277,7 @@ func MsgFromBytes(b []byte) *Message {
 	}
 }
 
-func WrapAsMessage(msgid MsgType, data interface{}) *websocket.PreparedMessage {
+func WrapAsMessage(msgid MsgType, data interface{}) *Message {
 	obj := &Message{msgType: msgid}
 	var mData bytes.Buffer // Stand-in for a network connection
 	enc := gob.NewEncoder(&mData)
@@ -287,12 +287,16 @@ func WrapAsMessage(msgid MsgType, data interface{}) *websocket.PreparedMessage {
 	}
 	obj.makeBuffer(mData.Len())
 	mData.Read(obj.Msg())
-	//copy(mData.Bytes(), )
-	omsg, _ := websocket.NewPreparedMessage(websocket.BinaryMessage, obj.Buf())
-	return omsg
+	return obj
 }
 
-func (m *Message) DecodeMessage(result interface{}) error {
+func (m *Message) Decode() (interface{}, error) {
+	v := reflect.New(MessageDataTypeById(m.Type())).Interface()
+	err := m.DecodeTo(v)
+	return m.DecodeTo(v), err
+}
+
+func (m *Message) DecodeTo(result interface{}) error {
 	var mData bytes.Buffer
 	mData.Write(m.Msg())
 	dec := gob.NewDecoder(&mData)
