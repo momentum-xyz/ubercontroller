@@ -184,8 +184,8 @@ func (o *ObjectData) MarshalJSON() ([]byte, error) {
 
 	return json.Marshal(
 		&struct {
-			ID      uuid.UUID                         `json:id"`
-			Entries map[string]map[string]interface{} `json:entries"`
+			ID      uuid.UUID                         `json:"id"`
+			Entries map[string]map[string]interface{} `json:"entries"`
 		}{
 			ID:      o.ID,
 			Entries: q,
