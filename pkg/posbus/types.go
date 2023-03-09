@@ -104,40 +104,40 @@ const (
 )
 
 type HandShake struct {
-	HandshakeVersion int
-	ProtocolVersion  int
-	Token            string
-	UserId           uuid.UUID
-	SessionId        uuid.UUID
+	HandshakeVersion int       `json:"handshake_version"`
+	ProtocolVersion  int       `json:"protocol_version"`
+	Token            string    `json:"token"`
+	UserId           uuid.UUID `json:"user_id"`
+	SessionId        uuid.UUID `json:"session_id"`
 }
 
 type ObjectDefinition struct {
-	ID               uuid.UUID
-	ParentID         uuid.UUID
-	AssetType        uuid.UUID
-	AssetFormat      dto.Asset3dType // TODO: Rename AssetType to AssetID, so Type can be used for this.
-	Name             string
-	ObjectTransform  cmath.ObjectTransform
-	IsEditable       bool
-	TetheredToParent bool
-	ShowOnMiniMap    bool
+	ID               uuid.UUID             `json:"id"`
+	ParentID         uuid.UUID             `json:"parent_id"`
+	AssetType        uuid.UUID             `json:"asset_type"`
+	AssetFormat      dto.Asset3dType       `json:"asset_format"` // TODO: Rename AssetType to AssetID, so Type can be used for this.
+	Name             string                `json:"name"`
+	ObjectTransform  cmath.ObjectTransform `json:"object_transform"`
+	IsEditable       bool                  `json:"is_editable"`
+	TetheredToParent bool                  `json:"tethered_to_parent"`
+	ShowOnMiniMap    bool                  `json:"show_on_minimap"`
 	//InfoUI           uuid.UUID
 }
 
 type UserDefinition struct {
-	ID              uuid.UUID
-	Name            string
-	Avatar          uuid.UUID
-	ObjectTransform cmath.UserTransform
-	IsGuest         bool
+	ID              uuid.UUID           `json:"id"`
+	Name            string              `json:"name"`
+	Avatar          uuid.UUID           `json:"avatar"`
+	ObjectTransform cmath.UserTransform `json:"object_transform"`
+	IsGuest         bool                `json:"is_guest"`
 }
 
 type SetWorldData struct {
-	ID              uuid.UUID
-	Name            string
-	Avatar          uuid.UUID
-	Owner           uuid.UUID
-	Avatar3DAssetID uuid.UUID
+	ID              uuid.UUID `json:"id"`
+	Name            string    `json:"name"`
+	Avatar          uuid.UUID `json:"avatar"`
+	Owner           uuid.UUID `json:"owner"`
+	Avatar3DAssetID uuid.UUID `json:"avatar_3d_asset_id"`
 }
 
 type ObjectDataIndex struct {
@@ -151,19 +151,19 @@ type ObjectData struct {
 }
 
 type SetObjectLock struct {
-	ID    uuid.UUID
-	State uint32
+	ID    uuid.UUID `json:"id"`
+	State uint32    `json:"state"`
 }
 
 type ObjectLockResultData struct {
-	ID        uuid.UUID
-	Result    uint32
-	LockOwner uuid.UUID
+	ID        uuid.UUID `json:"id"`
+	Result    uint32    `json:"result"`
+	LockOwner uuid.UUID `json:"lock_owner"`
 }
 
 type ObjectPosition struct {
-	ID              uuid.UUID
-	ObjectTransform cmath.ObjectTransform
+	ID              uuid.UUID             `json:"id"`
+	ObjectTransform cmath.ObjectTransform `json:"object_transform"`
 }
 
 type Message struct {

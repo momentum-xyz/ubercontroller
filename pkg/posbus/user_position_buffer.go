@@ -10,8 +10,8 @@ import (
 const UserTransformMessageSize = MsgUUIDTypeSize + cmath.Float32Bytes*6
 
 type UserPosition struct {
-	ID        uuid.UUID
-	Transform cmath.UserTransform
+	ID        uuid.UUID           `json:"id"`
+	Transform cmath.UserTransform `json:"transform"`
 }
 
 type UserTransformBuffer struct {
