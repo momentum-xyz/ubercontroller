@@ -5,6 +5,16 @@ type Harvester struct {
 	Adapters *Callbacks
 }
 
+func (h *Harvester) SubscribeForWallet(bcType BCType, wallet, callback Callback) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (h *Harvester) SubscribeForWalletAndContract(bcType BCType, wallet, callback Callback) {
+	//TODO implement me
+	panic("implement me")
+}
+
 type BCBlock struct {
 	Hash   string
 	Number uint64
@@ -22,6 +32,8 @@ type HarvesterAPI interface {
 	OnBalanceChange()
 	Subscribe(bcType BCType, eventName HarvesterEvent, callback Callback)
 	Unsubscribe(bcType BCType, eventName HarvesterEvent, callback Callback)
+	SubscribeForWallet(bcType BCType, wallet, callback Callback)
+	SubscribeForWalletAndContract(bcType BCType, wallet, callback Callback)
 }
 
 func NewHarvester() *Harvester {

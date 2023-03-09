@@ -6,7 +6,6 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/harvester"
 	"github.com/momentum-xyz/ubercontroller/harvester/ethereum_adapter"
-	"github.com/momentum-xyz/ubercontroller/harvester/polkadot_adapter"
 )
 
 func main() {
@@ -24,8 +23,8 @@ func main() {
 	go ethereumAdapter.Run()
 
 	// ** Polkadot Adapter
-	polkadotAdapter := polkadot_adapter.NewPolkadotAdapter(harvForAdapter)
-	go polkadotAdapter.Run()
+	//polkadotAdapter := polkadot_adapter.NewPolkadotAdapter(harvForAdapter)
+	//go polkadotAdapter.Run()
 
 	// ** Harvester Clients
 	testHandler1 := testHandler1
