@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	influxWrite "github.com/influxdata/influxdb-client-go/v2/api/write"
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -212,7 +213,7 @@ type User interface {
 
 	GetProfile() *entry.UserProfile
 
-	GetTransofrm() *cmath.UserTransform
+	GetTransform() *cmath.UserTransform
 	SetTransform(cmath.UserTransform)
 
 	GetPosition() cmath.Vec3
@@ -233,6 +234,7 @@ type User interface {
 	SendDirectly(message *websocket.PreparedMessage) error
 
 	AddInfluxTags(prefix string, point *influxWrite.Point) *influxWrite.Point
+	GetUserDefinition() *posbus.UserDefinition
 }
 
 // UserObjects ignores "updateDB" flag

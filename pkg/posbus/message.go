@@ -35,9 +35,11 @@ func init() {
 	addToMaps(TypeRemoveObjects, "remove_objects", []uuid.UUID{})
 	addToMaps(TypeSetObjectPosition, "set_object_position", cmath.ObjectTransform{})
 	addToMaps(TypeSetObjectData, "set_object_data", ObjectData{})
-	addToMaps(TypeAddUsers, "add_users", UserDefinition{})
+
+	addToMaps(TypeAddUsers, "add_users", []UserDefinition{})
 	addToMaps(TypeRemoveUsers, "remove_users", []uuid.UUID{})
 	addToMaps(TypeSetUserData, "set_user_data", UserDefinition{})
+
 	addToMaps(TypeSetObjectLock, "set_object_lock", SetObjectLock{})
 	addToMaps(TypeObjectLockResult, "object_lock_result", ObjectLockResultData{})
 	addToMaps(TypeTriggerVisualEffects, "trigger_visual_effects", -1)

@@ -15,7 +15,7 @@ type Vec3 struct {
 	Z float32 `json:"z" db:"z"`
 }
 
-// TODO: rename to "ObjectTransform"
+// TODO: rename to "Transform"
 type ObjectTransform struct {
 	Position Vec3 `db:"location" json:"location"`
 	Rotation Vec3 `db:"rotation" json:"rotation"`

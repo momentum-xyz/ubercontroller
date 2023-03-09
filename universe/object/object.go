@@ -623,7 +623,7 @@ func (o *Object) UpdateSpawnMessage() error {
 	mData[0] = posbus.ObjectDefinition{ID: o.GetID(), ParentID: parentID, AssetType: asset3dID, AssetFormat: assetFormat, Name: o.GetName(), IsEditable: *utils.GetFromAny(
 		effectiveOptions.Editable, utils.GetPTR(true),
 	),
-		ShowOnMiniMap: *utils.GetFromAny(effectiveOptions.Minimap, &visible), ObjectTransform: *o.GetActualTransform()}
+		ShowOnMiniMap: *utils.GetFromAny(effectiveOptions.Minimap, &visible), Transform: *o.GetActualTransform()}
 	msg := posbus.NewMessageFromData(posbus.TypeAddObjects, mData)
 	o.spawnMsg.Store(msg.WSMessage())
 

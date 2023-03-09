@@ -117,7 +117,7 @@ type ObjectDefinition struct {
 	AssetType        uuid.UUID             `json:"asset_type"`
 	AssetFormat      dto.Asset3dType       `json:"asset_format"` // TODO: Rename AssetType to AssetID, so Type can be used for this.
 	Name             string                `json:"name"`
-	ObjectTransform  cmath.ObjectTransform `json:"object_transform"`
+	Transform        cmath.ObjectTransform `json:"transform"`
 	IsEditable       bool                  `json:"is_editable"`
 	TetheredToParent bool                  `json:"tethered_to_parent"`
 	ShowOnMiniMap    bool                  `json:"show_on_minimap"`
@@ -125,11 +125,11 @@ type ObjectDefinition struct {
 }
 
 type UserDefinition struct {
-	ID              uuid.UUID           `json:"id"`
-	Name            string              `json:"name"`
-	Avatar          uuid.UUID           `json:"avatar"`
-	ObjectTransform cmath.UserTransform `json:"object_transform"`
-	IsGuest         bool                `json:"is_guest"`
+	ID        uuid.UUID           `json:"id"`
+	Name      string              `json:"name"`
+	Avatar    uuid.UUID           `json:"avatar"`
+	Transform cmath.UserTransform `json:"transform"`
+	IsGuest   bool                `json:"is_guest"`
 }
 
 type SetWorldData struct {

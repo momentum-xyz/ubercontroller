@@ -70,6 +70,10 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 	}
 
 	err = w.initializeUnity(user)
+	w.Send(
+		posbus.NewMessageFromData(posbus.TypeAddUsers, []posbus.UserDefinition{*user.GetUserDefinition()}).WSMessage(),
+		true,
+	)
 	return err
 }
 
@@ -118,6 +122,11 @@ func (w *World) noLockRemoveUser(user universe.User, updateDB bool) (bool, error
 		}
 	}
 
+	w.Send(
+		posbus.NewMessageFromData(posbus.TypeRemoveUsers, []uuid.UUID{user.GetID()}).WSMessage(),
+		true,
+	)
+
 	return true, nil
 }
 
@@ -132,7 +141,7 @@ func (w *World) initializeUnity(user universe.User) error {
 	if err := user.SendDirectly(
 		posbus.NewMessageFromBuffer(
 			posbus.TypeSendTransform,
-			user.GetTransofrm().Bytes(),
+			user.GetTransform().Bytes(),
 		).WSMessage(),
 	); err != nil {
 		return errors.WithMessage(err, "failed to send position")

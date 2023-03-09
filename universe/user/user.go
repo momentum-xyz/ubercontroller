@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -62,13 +63,13 @@ func (u *User) GetID() uuid.UUID {
 	return u.id
 }
 
-//func (u *User) GetTransofrm() cmath.UserTransform {
+//func (u *User) GetTransform() cmath.UserTransform {
 //	t := cmath.NewUserTransform()
 //	t.CopyTo(&u.transform)
 //	return t
 //}
 
-func (u *User) GetTransofrm() *cmath.UserTransform {
+func (u *User) GetTransform() *cmath.UserTransform {
 	return &u.transform
 }
 
@@ -86,6 +87,16 @@ func (u *User) GetPosition() cmath.Vec3 {
 
 func (u *User) GetRotation() cmath.Vec3 {
 	return *u.transform.Rotation
+}
+
+func (u *User) GetUserDefinition() *posbus.UserDefinition {
+	d := new(posbus.UserDefinition)
+	d.Transform = u.transform
+	d.ID = u.id
+	guestUserTypeID, _ := common.GetGuestUserTypeID()
+	d.IsGuest = u.userType.GetID() == guestUserTypeID
+	d.Name = *u.profile.Name
+	return d
 }
 
 func (u *User) GetPosBuffer() []byte {
