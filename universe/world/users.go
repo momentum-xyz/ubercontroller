@@ -130,8 +130,9 @@ func (w *World) initializeUnity(user universe.User) error {
 
 	// TODO: fix circular dependency
 	if err := user.SendDirectly(
-		posbus.NewSendPositionMsg(
-			user.GetPosition(), user.GetRotation(),
+		posbus.NewMessageFromBuffer(
+			posbus.TypeSendPosition,
+			user.GetTransofrm().Bytes(),
 		).WSMessage(),
 	); err != nil {
 		return errors.WithMessage(err, "failed to send position")

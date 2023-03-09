@@ -31,8 +31,9 @@ type User struct {
 	// The websocket connection.
 	conn *websocket.Conn
 
-	pos          *cmath.Vec3 // going to data part to posMsgBuffer content for simple access
-	rotation     *cmath.Vec3 // going to data part to posMsgBuffer content for simple access
+	transform cmath.UserTransform
+	//pos          *cmath.Vec3 // going to data part to posMsgBuffer content for simple access
+	//rotation     *cmath.Vec3 // going to data part to posMsgBuffer content for simple access
 	posMsgBuffer []byte
 
 	lastPositionUpdateTimestamp int64
@@ -61,18 +62,30 @@ func (u *User) GetID() uuid.UUID {
 	return u.id
 }
 
+//func (u *User) GetTransofrm() cmath.UserTransform {
+//	t := cmath.NewUserTransform()
+//	t.CopyTo(&u.transform)
+//	return t
+//}
+
+func (u *User) GetTransofrm() *cmath.UserTransform {
+	return &u.transform
+}
+
+func (u *User) SetTransform(t cmath.UserTransform) {
+	t.CopyTo(&u.transform)
+}
+
 func (u *User) SetPosition(p cmath.Vec3) {
-	(*u.pos).X = p.X
-	(*u.pos).Y = p.Y
-	(*u.pos).Z = p.Z
+	(*u.transform.Position) = p
 }
 
 func (u *User) GetPosition() cmath.Vec3 {
-	return *u.pos
+	return *u.transform.Position
 }
 
 func (u *User) GetRotation() cmath.Vec3 {
-	return *u.rotation
+	return *u.transform.Rotation
 }
 
 func (u *User) GetPosBuffer() []byte {
@@ -136,9 +149,8 @@ func (u *User) Initialize(ctx context.Context) error {
 	u.bufferSends.Store(true)
 	u.numSendsQueued.Store(chanIsClosed)
 	u.posMsgBuffer = posbus.NewSendPosBuffer(u.GetID())
-	u.pos = (*cmath.Vec3)(unsafe.Add(unsafe.Pointer(&u.posMsgBuffer[0]), 16))
-	u.rotation = (*cmath.Vec3)(unsafe.Add(unsafe.Pointer(&u.posMsgBuffer[0]), 16+3*4))
-
+	u.transform.Position = (*cmath.Vec3)(unsafe.Add(unsafe.Pointer(&u.posMsgBuffer[0]), 16))
+	u.transform.Rotation = (*cmath.Vec3)(unsafe.Add(unsafe.Pointer(&u.posMsgBuffer[0]), 16+3*4))
 	return nil
 }
 
@@ -227,9 +239,9 @@ func (u *User) UpdatePosition(data []byte) error {
 	return nil
 }
 
-func (u *User) TeleportToWorld(id uuid.UUID) {
-	//url := universe.GetNode().ResolveNodeByWorldID(id)
-	//u.Send(posbus.NewTeleportRequest(id, url).WSMessage())
-	//u.close(true)
-
-}
+//func (u *User) TeleportToWorld(id uuid.UUID) {
+//	//url := universe.GetNode().ResolveNodeByWorldID(id)
+//	//u.Send(posbus.NewTeleportRequest(id, url).WSMessage())
+//	//u.close(true)
+//
+//}

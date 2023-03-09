@@ -41,7 +41,7 @@ type Object struct {
 	//Mu               sync.RWMutex
 	Mu               deadlock.RWMutex
 	ownerID          uuid.UUID
-	position         *cmath.ObjectPosition
+	transform        *cmath.ObjectTransform
 	options          *entry.ObjectOptions
 	Parent           universe.Object
 	asset2d          universe.Asset2d
@@ -54,7 +54,7 @@ type Object struct {
 	attributesMsg     *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
 	renderDataMap     *generic.SyncMap[posbus.ObjectDataIndex, interface{}]
 	dataMsg           atomic.Pointer[websocket.PreparedMessage]
-	actualPosition    atomic.Pointer[cmath.ObjectPosition]
+	actualPosition    atomic.Pointer[cmath.ObjectTransform]
 	broadcastPipeline chan *websocket.PreparedMessage
 	messageAccept     atomic.Bool
 	numSendsQueued    atomic.Int64
@@ -140,7 +140,7 @@ func (o *Object) Initialize(ctx context.Context) error {
 	o.numSendsQueued.Store(chanIsClosed)
 	o.lockedBy.Store(uuid.Nil)
 
-	newPos := cmath.ObjectPosition{Location: *new(cmath.Vec3), Rotation: *new(cmath.Vec3), Scale: *new(cmath.Vec3)}
+	newPos := cmath.ObjectTransform{Position: *new(cmath.Vec3), Rotation: *new(cmath.Vec3), Scale: *new(cmath.Vec3)}
 	o.actualPosition.Store(&newPos)
 
 	return nil
@@ -353,7 +353,7 @@ func (o *Object) GetEntry() *entry.Object {
 		ObjectID: o.id,
 		OwnerID:  o.ownerID,
 		Options:  o.options,
-		Position: o.position,
+		Position: o.transform,
 	}
 	if o.objectType != nil {
 		entry.ObjectTypeID = o.objectType.GetID()
@@ -572,8 +572,8 @@ func (o *Object) load(entry *entry.Object) error {
 		}
 	}
 
-	if err := o.SetPosition(entry.Position, false); err != nil {
-		return errors.WithMessage(err, "failed to set position")
+	if err := o.SetTransform(entry.Position, false); err != nil {
+		return errors.WithMessage(err, "failed to set transform")
 	}
 
 	return nil
@@ -623,7 +623,7 @@ func (o *Object) UpdateSpawnMessage() error {
 	mData[0] = posbus.ObjectDefinition{ID: o.GetID(), ParentID: parentID, AssetType: asset3dID, AssetFormat: assetFormat, Name: o.GetName(), IsEditable: *utils.GetFromAny(
 		effectiveOptions.Editable, utils.GetPTR(true),
 	),
-		ShowOnMiniMap: *utils.GetFromAny(effectiveOptions.Minimap, &visible), ObjectTransform: *o.GetActualPosition()}
+		ShowOnMiniMap: *utils.GetFromAny(effectiveOptions.Minimap, &visible), ObjectTransform: *o.GetActualTransform()}
 	msg := posbus.NewMessageFromData(posbus.TypeAddObjects, mData)
 	o.spawnMsg.Store(msg.WSMessage())
 

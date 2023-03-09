@@ -15,19 +15,19 @@ import (
 )
 
 type ObjectTemplate struct {
-	ObjectID         *uuid.UUID            `json:"object_id"`
-	ObjectName       *string               `json:"object_name"`
-	ObjectTypeID     uuid.UUID             `json:"object_type_id"`
-	ParentID         uuid.UUID             `json:"parent_id"`
-	OwnerID          *uuid.UUID            `json:"owner_id"`
-	Asset2dID        *uuid.UUID            `json:"asset_2d_id"`
-	Asset3dID        *uuid.UUID            `json:"asset_3d_id"`
-	Options          *entry.ObjectOptions  `json:"options"`
-	Position         *cmath.ObjectPosition `json:"position"`
-	Label            *string               `json:"label"`
-	ObjectAttributes []*entry.Attribute    `json:"object_attributes"`
-	Objects          []*ObjectTemplate     `json:"objects"`
-	RandomObjects    []*ObjectTemplate     `json:"random_objects"`
+	ObjectID         *uuid.UUID             `json:"object_id"`
+	ObjectName       *string                `json:"object_name"`
+	ObjectTypeID     uuid.UUID              `json:"object_type_id"`
+	ParentID         uuid.UUID              `json:"parent_id"`
+	OwnerID          *uuid.UUID             `json:"owner_id"`
+	Asset2dID        *uuid.UUID             `json:"asset_2d_id"`
+	Asset3dID        *uuid.UUID             `json:"asset_3d_id"`
+	Options          *entry.ObjectOptions   `json:"options"`
+	Position         *cmath.ObjectTransform `json:"position"`
+	Label            *string                `json:"label"`
+	ObjectAttributes []*entry.Attribute     `json:"object_attributes"`
+	Objects          []*ObjectTemplate      `json:"objects"`
+	RandomObjects    []*ObjectTemplate      `json:"random_objects"`
 }
 
 func AddObjectFromTemplate(objectTemplate *ObjectTemplate, updateDB bool) (uuid.UUID, error) {
@@ -98,7 +98,7 @@ func AddObjectFromTemplate(objectTemplate *ObjectTemplate, updateDB bool) (uuid.
 		}
 	}
 	if objectTemplate.Position != nil {
-		if err := object.SetPosition(objectTemplate.Position, false); err != nil {
+		if err := object.SetTransform(objectTemplate.Position, false); err != nil {
 			return uuid.Nil, errors.WithMessagef(err, "failed to set position: %+v", objectTemplate.Position)
 		}
 	}

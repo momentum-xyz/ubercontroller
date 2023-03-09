@@ -54,7 +54,6 @@ const (
 	MsgTypeSize      = 4
 	MsgArrTypeSize   = 4
 	MsgUUIDTypeSize  = 16
-	MsgOnePosSize    = 4
 	MsgLockStateSize = 4
 )
 
@@ -113,7 +112,7 @@ type ObjectDefinition struct {
 	AssetType        uuid.UUID
 	AssetFormat      dto.Asset3dType // TODO: Rename AssetType to AssetID, so Type can be used for this.
 	Name             string
-	ObjectTransform  cmath.ObjectPosition
+	ObjectTransform  cmath.ObjectTransform
 	IsEditable       bool
 	TetheredToParent bool
 	ShowOnMiniMap    bool
@@ -124,7 +123,7 @@ type UserDefinition struct {
 	ID              uuid.UUID
 	Name            string
 	Avatar          uuid.UUID
-	ObjectTransform cmath.UserPosition
+	ObjectTransform cmath.UserTransform
 	IsGuest         bool
 }
 
@@ -159,7 +158,7 @@ type ObjectLockResultData struct {
 
 type ObjectPosition struct {
 	ID              uuid.UUID
-	ObjectTransform cmath.ObjectPosition
+	ObjectTransform cmath.ObjectTransform
 }
 
 type Message struct {

@@ -30,13 +30,13 @@ func (n *Node) apiObjectsCreateObject(c *gin.Context) {
 	// TODO: use "helper.ObjectTemplate" alternative here to have ability to create composite objects
 	// QUESTION: can we automatically clone "helper.ObjectTemplate" definition and add validation tags to it?
 	type InBody struct {
-		ObjectName   string                `json:"object_name" binding:"required"`
-		ParentID     string                `json:"parent_id" binding:"required"`
-		ObjectTypeID string                `json:"object_type_id" binding:"required"`
-		Asset2dID    *string               `json:"asset_2d_id"`
-		Asset3dID    *string               `json:"asset_3d_id"`
-		Position     *cmath.ObjectPosition `json:"position"`
-		Minimap      bool                  `json:"minimap"`
+		ObjectName   string                 `json:"object_name" binding:"required"`
+		ParentID     string                 `json:"parent_id" binding:"required"`
+		ObjectTypeID string                 `json:"object_type_id" binding:"required"`
+		Asset2dID    *string                `json:"asset_2d_id"`
+		Asset3dID    *string                `json:"asset_3d_id"`
+		Position     *cmath.ObjectTransform `json:"position"`
+		Minimap      bool                   `json:"minimap"`
 	}
 	var inBody InBody
 
@@ -147,21 +147,27 @@ func (n *Node) apiObjectsCreateObjectFromTemplate(c *gin.Context) {
 	var template tree.ObjectTemplate
 
 	if err := c.ShouldBindJSON(&template); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		c.AbortWithStatusJSON(
+			http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			},
+		)
 		return
 	}
 
 	objectID, err := tree.AddObjectFromTemplate(&template, true)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		c.AbortWithStatusJSON(
+			http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			},
+		)
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		"object_id": objectID,
-	})
+	c.JSON(
+		http.StatusCreated, gin.H{
+			"object_id": objectID,
+		},
+	)
 }

@@ -33,7 +33,7 @@ func init() {
 	addToMaps(TypeSetWorld, "set_world", SetWorldData{})
 	addToMaps(TypeAddObjects, "add_objects", []ObjectDefinition{})
 	addToMaps(TypeRemoveObjects, "remove_objects", []uuid.UUID{})
-	addToMaps(TypeSetObjectPosition, "set_object_position", cmath.ObjectPosition{})
+	addToMaps(TypeSetObjectPosition, "set_object_position", cmath.ObjectTransform{})
 	addToMaps(TypeSetObjectData, "set_object_data", ObjectData{})
 	addToMaps(TypeAddUsers, "add_users", UserDefinition{})
 	addToMaps(TypeRemoveUsers, "remove_users", []uuid.UUID{})

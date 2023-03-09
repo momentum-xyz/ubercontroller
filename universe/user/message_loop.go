@@ -14,7 +14,7 @@ func (u *User) OnMessage(msg *posbus.Message) error {
 	switch msg.Type() {
 	case posbus.TypeSendPosition:
 		if err := u.UpdatePosition(msg.Msg()); err != nil {
-			return errors.WithMessage(err, "failed to handle: send position")
+			return errors.WithMessage(err, "failed to handle: send transform")
 		}
 
 	//case posbus.T:
@@ -41,7 +41,7 @@ func (u *User) OnMessage(msg *posbus.Message) error {
 		return u.SignalsHandler(signal)
 	//case posbus.TypeSetObjectPosition:
 	//	if err := u.UpdateObjectPosition(msg.Msg()); err != nil {
-	//		return errors.WithMessage(err, "failed to update object position")
+	//		return errors.WithMessage(err, "failed to update object transform")
 	//	}
 	case posbus.TypeSetObjectLock:
 		var lock posbus.SetObjectLock
@@ -62,7 +62,7 @@ func (u *User) UpdateObjectPosition(msg posbus.ObjectPosition) error {
 	if !ok {
 		return errors.Errorf("object not found: %s", msg.ID)
 	}
-	return object.SetPosition(utils.GetPTR(msg.ObjectTransform), true)
+	return object.SetTransform(utils.GetPTR(msg.ObjectTransform), true)
 }
 
 func (u *User) Teleport(target uuid.UUID) error {
@@ -231,7 +231,7 @@ func (u *User) LockObject(lock posbus.SetObjectLock) error {
 //
 //	effectsEmitterID := world.GetSettings().Objects["effects_emitter"]
 //	effect := posbus.NewTriggerTransitionalBridgingEffectsOnPositionMsg(1)
-//	effect.SetEffect(0, effectsEmitterID, u.GetPosition(), target.GetPosition(), 1001)
+//	effect.SetEffect(0, effectsEmitterID, u.GetTransform(), target.GetTransform(), 1001)
 //	u.GetWorld().Send(effect.WSMessage(), false)
 //
 //	go u.SendHighFiveStats(target)

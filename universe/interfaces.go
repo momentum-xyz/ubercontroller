@@ -147,10 +147,10 @@ type Object interface {
 	GetOwnerID() uuid.UUID
 	SetOwnerID(ownerID uuid.UUID, updateDB bool) error
 
-	GetPosition() *cmath.ObjectPosition
-	GetActualPosition() *cmath.ObjectPosition
-	SetPosition(position *cmath.ObjectPosition, updateDB bool) error
-	SetActualPosition(pos cmath.ObjectPosition, theta float64) error
+	GetTransform() *cmath.ObjectTransform
+	GetActualTransform() *cmath.ObjectTransform
+	SetTransform(position *cmath.ObjectTransform, updateDB bool) error
+	SetActualTransform(pos cmath.ObjectTransform, theta float64) error
 
 	GetOptions() *entry.ObjectOptions
 	GetEffectiveOptions() *entry.ObjectOptions
@@ -211,6 +211,9 @@ type User interface {
 	SetUserType(userType UserType, updateDB bool) error
 
 	GetProfile() *entry.UserProfile
+
+	GetTransofrm() *cmath.UserTransform
+	SetTransform(cmath.UserTransform)
 
 	GetPosition() cmath.Vec3
 	GetRotation() cmath.Vec3

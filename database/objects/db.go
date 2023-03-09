@@ -101,7 +101,7 @@ func (db *DB) UpdateObjectParentID(ctx context.Context, objectID uuid.UUID, pare
 	return nil
 }
 
-func (db *DB) UpdateObjectPosition(ctx context.Context, objectID uuid.UUID, position *cmath.ObjectPosition) error {
+func (db *DB) UpdateObjectPosition(ctx context.Context, objectID uuid.UUID, position *cmath.ObjectTransform) error {
 	if _, err := db.conn.Exec(ctx, updateObjectPositionQuery, objectID, position); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}

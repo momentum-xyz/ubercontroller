@@ -3,10 +3,11 @@ package posbus
 import (
 	"encoding/binary"
 	"github.com/google/uuid"
+	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
-const UserPositionsMessageSize = MsgUUIDTypeSize + MsgOnePosSize*6
+const UserPositionsMessageSize = MsgUUIDTypeSize + cmath.Float32Bytes*6
 
 type SetUserPositionsBuffer struct {
 	maxUsers  int

@@ -57,7 +57,7 @@ func (o *Object) GetPlacements() map[uuid.UUID]position_algo.Algo {
 	return pls
 }
 
-func (o *Object) SetActualPosition(pos cmath.ObjectPosition, theta float64) error {
+func (o *Object) SetActualTransform(pos cmath.ObjectTransform, theta float64) error {
 	o.Mu.Lock()
 	defer o.Mu.Unlock()
 
@@ -71,7 +71,7 @@ func (o *Object) SetActualPosition(pos cmath.ObjectPosition, theta float64) erro
 				world := o.GetWorld()
 				if world != nil {
 					world.Send(
-						posbus.NewMessageFromData(posbus.TypeSetObjectPosition, *(o.GetActualPosition())).WSMessage(),
+						posbus.NewMessageFromData(posbus.TypeSetObjectPosition, *(o.GetActualTransform())).WSMessage(),
 						true,
 					)
 				}
@@ -82,18 +82,18 @@ func (o *Object) SetActualPosition(pos cmath.ObjectPosition, theta float64) erro
 	return nil
 }
 
-func (o *Object) GetPosition() *cmath.ObjectPosition {
+func (o *Object) GetTransform() *cmath.ObjectTransform {
 	o.Mu.RLock()
 	defer o.Mu.RUnlock()
 
-	return o.position
+	return o.transform
 }
 
-func (o *Object) GetActualPosition() *cmath.ObjectPosition {
+func (o *Object) GetActualTransform() *cmath.ObjectTransform {
 	return o.actualPosition.Load()
 }
 
-func (o *Object) SetPosition(position *cmath.ObjectPosition, updateDB bool) error {
+func (o *Object) SetTransform(position *cmath.ObjectTransform, updateDB bool) error {
 	o.Mu.Lock()
 	defer o.Mu.Unlock()
 
@@ -104,9 +104,9 @@ func (o *Object) SetPosition(position *cmath.ObjectPosition, updateDB bool) erro
 	}
 
 	// TODO: unclear how we have to do it, in case if one or another is nil
-	o.position = position
-	if o.position != nil {
-		o.actualPosition.Store(o.position)
+	o.transform = position
+	if o.transform != nil {
+		o.actualPosition.Store(o.transform)
 
 		if o.enabled.Load() {
 			go func() {
@@ -114,7 +114,7 @@ func (o *Object) SetPosition(position *cmath.ObjectPosition, updateDB bool) erro
 				world := o.GetWorld()
 				if world != nil {
 					world.Send(
-						posbus.NewMessageFromData(posbus.TypeSetObjectPosition, *(o.GetActualPosition())).WSMessage(),
+						posbus.NewMessageFromData(posbus.TypeSetObjectPosition, *(o.GetActualTransform())).WSMessage(),
 						true,
 					)
 				}
@@ -138,7 +138,7 @@ func (o *Object) UpdateChildrenPosition(recursive bool) error {
 	defer o.Children.Mu.RUnlock()
 
 	for _, child := range o.Children.Data {
-		if child.GetPosition() == nil {
+		if child.GetTransform() == nil {
 			objectTypeID := child.GetObjectType().GetID()
 			if _, ok := pls[objectTypeID]; !ok {
 				objectTypeID = uuid.Nil
@@ -154,7 +154,7 @@ func (o *Object) UpdateChildrenPosition(recursive bool) error {
 		sort.Slice(lpm, func(i, j int) bool { return lpm[i].ClockSequence() < lpm[j].ClockSequence() })
 		//fmt.Println("pls4b", o.GetID(), lpm)
 		for i, k := range lpm {
-			pos, theta := pls[u].CalcPos(o.theta, *o.GetActualPosition(), i, len(lpm))
+			pos, theta := pls[u].CalcPos(o.theta, *o.GetActualTransform(), i, len(lpm))
 			//fmt.Printf(" Position: %o |  %+v\n", o.GetID(), pos)
 
 			child, ok := o.Children.Data[k]
@@ -163,8 +163,8 @@ func (o *Object) UpdateChildrenPosition(recursive bool) error {
 				o.log.Errorf("Object: UpdatePosition: failed to get object: %s", k)
 				continue
 			}
-			if err := child.SetActualPosition(pos, theta); err != nil {
-				o.log.Errorf("Object: UpdatePosition: failed to update position: %s", k)
+			if err := child.SetActualTransform(pos, theta); err != nil {
+				o.log.Errorf("Object: UpdatePosition: failed to update transform: %s", k)
 			}
 
 			if !recursive {
