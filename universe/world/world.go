@@ -199,7 +199,7 @@ func (w *World) broadcastPositions() {
 	flag := false
 	w.Users.Mu.RLock()
 	numClients := len(w.Users.Data)
-	positionsBuffer := posbus.StartUserPositionsBuffer(numClients)
+	positionsBuffer := posbus.StartUserTransformBuffer(numClients)
 	currentTime := time.Now().Unix()
 
 	if numClients > 0 {
@@ -215,7 +215,7 @@ func (w *World) broadcastPositions() {
 	w.Users.Mu.RUnlock()
 	if flag {
 		positionsBuffer.Finalize()
-		w.Send(posbus.NewMessageFromBuffer(posbus.TypeSetUsersPositions, positionsBuffer.Buf()).WSMessage(), true)
+		w.Send(posbus.NewMessageFromBuffer(posbus.TypeSetUsersTransforms, positionsBuffer.Buf()).WSMessage(), true)
 	}
 }
 

@@ -12,7 +12,7 @@ import (
 
 func (u *User) OnMessage(msg *posbus.Message) error {
 	switch msg.Type() {
-	case posbus.TypeSendPosition:
+	case posbus.TypeSendTransform:
 		if err := u.UpdatePosition(msg.Msg()); err != nil {
 			return errors.WithMessage(err, "failed to handle: send transform")
 		}

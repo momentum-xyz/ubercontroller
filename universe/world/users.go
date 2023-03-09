@@ -131,7 +131,7 @@ func (w *World) initializeUnity(user universe.User) error {
 	// TODO: fix circular dependency
 	if err := user.SendDirectly(
 		posbus.NewMessageFromBuffer(
-			posbus.TypeSendPosition,
+			posbus.TypeSendTransform,
 			user.GetTransofrm().Bytes(),
 		).WSMessage(),
 	); err != nil {

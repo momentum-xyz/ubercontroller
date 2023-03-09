@@ -69,12 +69,12 @@ type MsgType uint32
 
 /* can use fmt.Sprintf("%x", int) to display hex */
 const (
-	NONEType              MsgType = 0x00000000
-	TypeSetUsersPositions MsgType = 0x285954B8
-	TypeSendPosition      MsgType = 0xF878C4BF
-	TypeGenericMessage    MsgType = 0xF508E4A3
-	TypeHandShake         MsgType = 0x7C41941A
-	TypeSetWorld          MsgType = 0xCCDF2E49
+	NONEType               MsgType = 0x00000000
+	TypeSetUsersTransforms MsgType = 0x285954B8
+	TypeSendTransform      MsgType = 0xF878C4BF
+	TypeGenericMessage     MsgType = 0xF508E4A3
+	TypeHandShake          MsgType = 0x7C41941A
+	TypeSetWorld           MsgType = 0xCCDF2E49
 
 	TypeAddObjects        MsgType = 0x2452A9C1
 	TypeRemoveObjects     MsgType = 0x6BF88C24

@@ -148,7 +148,7 @@ func (u *User) Initialize(ctx context.Context) error {
 	u.log = log
 	u.bufferSends.Store(true)
 	u.numSendsQueued.Store(chanIsClosed)
-	u.posMsgBuffer = posbus.NewSendPosBuffer(u.GetID())
+	u.posMsgBuffer = posbus.NewSendTransformBuffer(u.GetID())
 	u.transform.Position = (*cmath.Vec3)(unsafe.Add(unsafe.Pointer(&u.posMsgBuffer[0]), 16))
 	u.transform.Rotation = (*cmath.Vec3)(unsafe.Add(unsafe.Pointer(&u.posMsgBuffer[0]), 16+3*4))
 	return nil
