@@ -27,14 +27,14 @@ func (u *User) OnMessage(msg *posbus.Message) error {
 		}
 	case posbus.TypeTeleportRequest:
 		var targetID uuid.UUID
-		err := msg.DecodeTo(targetID)
+		err := msg.DecodeTo(&targetID)
 		if err != nil {
 			return errors.WithMessage(err, "failed to decode: teleport")
 		}
 		return u.Teleport(targetID)
 	case posbus.TypeSignal:
 		var signal posbus.Signal
-		err := msg.DecodeTo(signal)
+		err := msg.DecodeTo(&signal)
 		if err != nil {
 			return errors.WithMessage(err, "failed to decode: signal")
 		}
@@ -45,7 +45,7 @@ func (u *User) OnMessage(msg *posbus.Message) error {
 	//	}
 	case posbus.TypeSetObjectLock:
 		var lock posbus.SetObjectLock
-		err := msg.DecodeTo(lock)
+		err := msg.DecodeTo(&lock)
 		if err != nil {
 			return errors.WithMessage(err, "failed to decode: set object lock")
 		}
@@ -68,6 +68,7 @@ func (u *User) UpdateObjectPosition(msg posbus.ObjectPosition) error {
 func (u *User) Teleport(target uuid.UUID) error {
 	world, ok := universe.GetNode().GetWorlds().GetWorld(target)
 	if !ok {
+		u.Send(posbus.NewMessageFromData(posbus.TypeSignal, posbus.SignalWorldDoesNotExist).WSMessage())
 		return errors.New("Target world does not exist")
 	}
 	if oldWorld := u.GetWorld(); oldWorld != nil {
@@ -227,7 +228,7 @@ func (u *User) LockObject(lock posbus.SetObjectLock) error {
 //			posbus.DestinationReact, posbus.NotificationHighFive, 0, tName,
 //		).WSMessage(),
 //	)
-//	target.Send(posbus.NewRelayToReactMsg("high5", high5Data).WSMessage())
+//	target.Send(posbus.NewGenericMessage("high5", high5Data).WSMessage())
 //
 //	effectsEmitterID := world.GetSettings().Objects["effects_emitter"]
 //	effect := posbus.NewTriggerTransitionalBridgingEffectsOnPositionMsg(1)

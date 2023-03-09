@@ -16,6 +16,10 @@ const (
 	SignalInvalidToken
 	SignalSpawn
 	SignalLeaveWorld
+	SignalConnectionFailed
+	SignalConnected
+	SignalConnectionClosed
+	SignalWorldDoesNotExist
 )
 
 type Trigger uint32

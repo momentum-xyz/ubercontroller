@@ -35,16 +35,16 @@ func (n *Node) apiPosBusHandler(c *gin.Context) {
 // handShake TODO: it's "god" method needs to be simplified // antst: agree :)
 func (n *Node) handShake(socketConnection *websocket.Conn) error {
 	mt, incomingMessage, err := socketConnection.ReadMessage()
+
 	if err != nil || mt != websocket.BinaryMessage {
 		return errors.WithMessagef(err, "error: wrong PreHandShake (1), aborting connection")
 	}
-
 	msg := posbus.BytesToMessage(incomingMessage)
 	if msg.Type() != posbus.TypeHandShake {
 		return errors.New("error: wrong message received, not handshake")
 	}
 	var handshake posbus.HandShake
-	if msg.DecodeTo(handshake) != nil {
+	if err = msg.DecodeTo(&handshake); err != nil {
 		return errors.New("error: wrong message type received, not handshake data")
 	}
 

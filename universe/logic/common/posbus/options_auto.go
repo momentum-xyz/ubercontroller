@@ -1,7 +1,6 @@
 package posbus
 
 import (
-	"encoding/json"
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 
 	"github.com/gorilla/websocket"
@@ -47,17 +46,12 @@ func GetOptionAutoMessage(
 		return nil, nil
 	}
 
-	data, err := json.Marshal(
-		&AttributeValueChangedMessage{
-			Type: changeType,
-			Data: AttributeValueChangedMessageData{
-				AttributeName: attributeID.Name,
-				Value:         value,
-			},
+	data := AttributeValueChangedMessage{
+		Type: changeType,
+		Data: AttributeValueChangedMessageData{
+			AttributeName: attributeID.Name,
+			Value:         value,
 		},
-	)
-	if err != nil {
-		return nil, errors.WithMessagef(err, "failed to marshal message payload")
 	}
 
 	topic := option.Topic
@@ -66,7 +60,7 @@ func GetOptionAutoMessage(
 	}
 	switch option.SendTo {
 	case entry.ReactPosBusDestinationType:
-		return posbus.NewRelayToReactMsg(topic, data).WSMessage(), nil
+		return posbus.NewGenericMessage(topic, data).WSMessage(), nil
 	}
 
 	return nil, errors.Errorf("send to type is not supported yet: %d", option.SendTo)

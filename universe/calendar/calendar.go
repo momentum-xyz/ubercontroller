@@ -2,7 +2,6 @@ package calendar
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"time"
 
@@ -79,11 +78,11 @@ func (c *Calendar) tick(eventID string) error {
 		return nil
 	}
 	topic := "notify-gathering-start"
-	data, err := json.Marshal(&e)
-	if err != nil {
-		return errors.WithMessagef(err, "failed to marshal message payload")
-	}
-	m := posbus.NewRelayToReactMsg(topic, data).WSMessage()
+	//data, err := json.Marshal(&e)
+	//if err != nil {
+	//	return errors.WithMessagef(err, "failed to marshal message payload")
+	//}
+	m := posbus.NewGenericMessage(topic, e).WSMessage()
 	c.world.Send(m, false)
 
 	go c.update()

@@ -1,7 +1,6 @@
 package worlds
 
 import (
-	"encoding/json"
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"net/http"
 
@@ -75,14 +74,14 @@ func (w *Worlds) apiWorldsFlyToMe(c *gin.Context) {
 		ObjectID:  world.GetID(),
 	}
 
-	data, err := json.Marshal(&fwmDto)
-	if err != nil {
-		err = errors.WithMessage(err, "Worlds: apiWorldsFlyToMe: failed to marshal dto")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_marshal", err, w.log)
-		return
-	}
+	//data, err := json.Marshal(&fwmDto)
+	//if err != nil {
+	//	err = errors.WithMessage(err, "Worlds: apiWorldsFlyToMe: failed to marshal dto")
+	//	api.AbortRequest(c, http.StatusInternalServerError, "failed_to_marshal", err, w.log)
+	//	return
+	//}
 
-	msg := posbus.NewRelayToReactMsg(string(dto.FlyToMeTrigger), data).WSMessage()
+	msg := posbus.NewGenericMessage(string(dto.FlyToMeTrigger), fwmDto).WSMessage()
 
 	if err := world.Send(msg, false); err != nil {
 		err = errors.WithMessage(err, "Worlds: apiWorldsFlyToMe: failed to dispatch event")
