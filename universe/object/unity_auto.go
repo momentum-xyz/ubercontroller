@@ -125,11 +125,17 @@ func (o *Object) UpdateAutoTextureMap(
 		o.renderDataMap.Mu.RLock()
 		defer o.renderDataMap.Mu.RUnlock()
 		o.renderDataMap.Data[dataIndex] = data
-		o.dataMsg.Store(posbus.NewMessageFromData(posbus.TypeSetObjectData, o.renderDataMap.Data).WSMessage())
+		o.dataMsg.Store(
+			posbus.NewMessageFromData(
+				posbus.TypeSetObjectData, posbus.ObjectData{ID: o.GetID(), Entries: o.renderDataMap.Data},
+			).WSMessage(),
+		)
 	}()
 
 	// prepare message for this atomic update
 	sendMap := map[posbus.ObjectDataIndex]interface{}{dataIndex: data}
-	msg := posbus.NewMessageFromData(posbus.TypeSetObjectData, sendMap).WSMessage()
+	msg := posbus.NewMessageFromData(
+		posbus.TypeSetObjectData, posbus.ObjectData{ID: o.GetID(), Entries: sendMap},
+	).WSMessage()
 	return msg
 }
