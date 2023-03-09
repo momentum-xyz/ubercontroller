@@ -1,6 +1,7 @@
 package posbus
 
 import (
+	"encoding/json"
 	"github.com/google/uuid"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -168,4 +169,26 @@ type ObjectPosition struct {
 type Message struct {
 	buf     []byte
 	msgType MsgType
+}
+
+func (o *ObjectData) MarshalJSON() ([]byte, error) {
+	q := make(map[string]map[string]interface{})
+	for k, v := range o.Entries {
+		t, ok := q[string(k.Kind)]
+		if !ok {
+			t = make(map[string]interface{})
+		}
+		t[k.SlotName] = v
+		q[string(k.Kind)] = t
+	}
+
+	return json.Marshal(
+		&struct {
+			ID      uuid.UUID                         `json:id"`
+			Entries map[string]map[string]interface{} `json:entries"`
+		}{
+			ID:      o.ID,
+			Entries: q,
+		},
+	)
 }
