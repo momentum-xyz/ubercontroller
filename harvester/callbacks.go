@@ -8,17 +8,17 @@ type Callback *func(p any)
 
 type Callbacks struct {
 	Mu   sync.RWMutex
-	Data map[BCType]map[HarvesterEvent]map[Callback]bool
+	Data map[string]map[HarvesterEvent]map[Callback]bool
 }
 
 func NewCallbacks() *Callbacks {
 	return &Callbacks{
 		Mu:   sync.RWMutex{},
-		Data: make(map[BCType]map[HarvesterEvent]map[Callback]bool),
+		Data: make(map[string]map[HarvesterEvent]map[Callback]bool),
 	}
 }
 
-func (c *Callbacks) Add(bcType BCType, event HarvesterEvent, f Callback) {
+func (c *Callbacks) Add(bcType string, event HarvesterEvent, f Callback) {
 	c.Mu.Lock()
 	defer c.Mu.Unlock()
 
@@ -32,7 +32,7 @@ func (c *Callbacks) Add(bcType BCType, event HarvesterEvent, f Callback) {
 	c.Data[bcType][event][f] = true
 }
 
-func (c *Callbacks) Remove(bcType BCType, event HarvesterEvent, f Callback) {
+func (c *Callbacks) Remove(bcType string, event HarvesterEvent, f Callback) {
 	c.Mu.Lock()
 	defer c.Mu.Unlock()
 
@@ -41,7 +41,7 @@ func (c *Callbacks) Remove(bcType BCType, event HarvesterEvent, f Callback) {
 	}
 }
 
-func (c *Callbacks) Trigger(bcType BCType, event HarvesterEvent, p any) {
+func (c *Callbacks) Trigger(bcType string, event HarvesterEvent, p any) {
 	if _, ok := c.Data[bcType][event]; ok == false {
 		return
 	}

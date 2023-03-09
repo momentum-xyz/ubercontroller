@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"time"
@@ -35,7 +36,7 @@ func main() {
 
 	// ** Ethereum Adapter
 	ethereumAdapter := ethereum_adapter.NewEthereumAdapter(harvForAdapter)
-	go ethereumAdapter.Run()
+	ethereumAdapter.Run()
 
 	// ** Harvester Clients
 	testHandler1 := testHandler1
@@ -47,10 +48,31 @@ func main() {
 	ptrTestHandler2 := &testHandler2
 	harvForClient.Subscribe(harvester.Ethereum, harvester.NewBlock, ptrTestHandler2)
 
+	wallet := "9592b70a5a6c8ece2ef55547c3f07f1862372fd1"
+	contract := "de0b295669a9fd93d5f28d9ec85e40f4cb697bae"
+	contract2 := "de0b295669a9fd93d5f28d9ec85e40f4cb697ccc"
+
+	err = harv.SubscribeForWalletAndContract(harvester.Ethereum, HexToAddress(wallet), HexToAddress(contract), ptrTestHandler2)
+	if err != nil {
+		panic(err)
+	}
+	err = harv.SubscribeForWalletAndContract(harvester.Ethereum, HexToAddress(wallet), HexToAddress(contract2), ptrTestHandler2)
+	if err != nil {
+		panic(err)
+	}
+
 	time.Sleep(time.Second * 30)
 	harvForClient.Unsubscribe(harvester.Ethereum, harvester.NewBlock, ptrTestHandler2)
 
 	time.Sleep(time.Second * 50)
+}
+
+func HexToAddress(s string) []byte {
+	b, err := hex.DecodeString(s)
+	if err != nil {
+		panic(err)
+	}
+	return b
 }
 
 func testHandler1(p any) {

@@ -60,28 +60,31 @@ func (a *EthereumAdapter) Run() {
 		log.Fatal(err)
 	}
 
-	for {
-		select {
-		case err := <-sub.Err():
-			log.Fatal(err)
-		case vLog := <-ch:
+	go func() {
+		for {
+			select {
+			case err := <-sub.Err():
+				log.Fatal(err)
+			case vLog := <-ch:
 
-			//fmt.Println(vLog.Number)
-			//fmt.Println(vLog.ReceiptHash)
-			//fmt.Println(vLog.ParentHash)
-			//fmt.Println(vLog.Root)
-			//fmt.Println(vLog.TxHash)
-			//fmt.Println(vLog.Hash())
+				//fmt.Println(vLog.Number)
+				//fmt.Println(vLog.ReceiptHash)
+				//fmt.Println(vLog.ParentHash)
+				//fmt.Println(vLog.Root)
+				//fmt.Println(vLog.TxHash)
+				//fmt.Println(vLog.Hash())
 
-			block := &harvester.BCBlock{
-				Hash: vLog.Hash().String(),
+				block := &harvester.BCBlock{
+					Hash: vLog.Hash().String(),
+				}
+
+				if vLog.Number != nil {
+					block.Number = vLog.Number.Uint64()
+				}
+
+				a.harv.OnNewBlock(harvester.Ethereum, block)
 			}
-
-			if vLog.Number != nil {
-				block.Number = vLog.Number.Uint64()
-			}
-
-			a.harv.OnNewBlock(harvester.Ethereum, block)
 		}
-	}
+	}()
+
 }

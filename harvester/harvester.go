@@ -13,14 +13,24 @@ type Harvester struct {
 	bc       map[string]*BlockChain
 }
 
-func (h *Harvester) SubscribeForWallet(bcType BCType, wallet, callback Callback) {
+func (h *Harvester) SubscribeForWallet(bcType string, wallet, callback Callback) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (h *Harvester) SubscribeForWalletAndContract(bcType BCType, wallet, callback Callback) {
+func (h *Harvester) SubscribeForWalletAndContract(bcType string, wallet []byte, contract []byte, callback Callback) error {
 	//TODO implement me
-	panic("implement me")
+	//panic("implement me")
+
+	bc, ok := h.bc[bcType]
+	if !ok {
+		return errors.New("failed to find blockchain:" + bcType)
+	}
+
+	bc.SubscribeForWalletAndContract(wallet, contract)
+	bc.SaveBalancesToDB()
+
+	return nil
 }
 
 type BCBlock struct {
@@ -30,16 +40,18 @@ type BCBlock struct {
 
 type BCAdapterAPI interface {
 	RegisterBCAdapter(uuid uuid.UUID, bcType string, rpcURL string, bcAdapter BCAdapter) error
-	OnNewBlock(bcType BCType, block *BCBlock)
+	OnNewBlock(bcType string, block *BCBlock)
 }
 
 type HarvesterAPI interface {
 	OnBalanceChange()
-	Subscribe(bcType BCType, eventName HarvesterEvent, callback Callback)
-	Unsubscribe(bcType BCType, eventName HarvesterEvent, callback Callback)
-	SubscribeForWallet(bcType BCType, wallet, callback Callback)
-	SubscribeForWalletAndContract(bcType BCType, wallet, callback Callback)
+	Subscribe(bcType string, eventName HarvesterEvent, callback Callback)
+	Unsubscribe(bcType string, eventName HarvesterEvent, callback Callback)
+	SubscribeForWallet(bcType string, wallet, callback Callback)
+	SubscribeForWalletAndContract(bcType string, wallet []byte, contract []byte, callback Callback) error
 }
+
+type Address []byte
 
 func NewHarvester(db *pgxpool.Pool) *Harvester {
 	return &Harvester{
@@ -57,7 +69,7 @@ func (h *Harvester) OnBalanceChange() {
 
 }
 
-func (h *Harvester) OnNewBlock(bcType BCType, block *BCBlock) {
+func (h *Harvester) OnNewBlock(bcType string, block *BCBlock) {
 	//fmt.Printf("On new block: %+v %+v \n", block.Hash, block.Number)
 	h.clients.Trigger(bcType, NewBlock, block)
 }
@@ -75,10 +87,10 @@ func (h *Harvester) Run() error {
 	return nil
 }
 
-func (h *Harvester) Subscribe(bcType BCType, eventName HarvesterEvent, callback Callback) {
+func (h *Harvester) Subscribe(bcType string, eventName HarvesterEvent, callback Callback) {
 	h.clients.Add(bcType, eventName, callback)
 }
 
-func (h *Harvester) Unsubscribe(bcType BCType, eventName HarvesterEvent, callback Callback) {
+func (h *Harvester) Unsubscribe(bcType string, eventName HarvesterEvent, callback Callback) {
 	h.clients.Remove(bcType, eventName, callback)
 }

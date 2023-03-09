@@ -27,6 +27,7 @@ type BlockChain struct {
 	rpcURL                   string
 	db                       *pgxpool.Pool
 	adapter                  BCAdapter
+	m                        map[string]map[string]*entry.Balance
 }
 
 func NewBlockchain(db *pgxpool.Pool, adapter BCAdapter, uuid uuid.UUID, name string, rpcURL string) *BlockChain {
@@ -36,6 +37,7 @@ func NewBlockchain(db *pgxpool.Pool, adapter BCAdapter, uuid uuid.UUID, name str
 		rpcURL:  rpcURL,
 		db:      db,
 		adapter: adapter,
+		m:       make(map[string]map[string]*entry.Balance),
 	}
 }
 
@@ -46,6 +48,52 @@ func (b *BlockChain) ToEntry() *entry.Blockchain {
 		BlockchainName:           b.name,
 		RPCURL:                   b.rpcURL,
 	}
+}
+
+func (b *BlockChain) SubscribeForWalletAndContract(wallet []byte, contract []byte) {
+	walletStr := string(wallet)
+	contractStr := string(contract)
+
+	_, ok := b.m[walletStr]
+	if !ok {
+		b.m[walletStr] = make(map[string]*entry.Balance)
+	}
+
+	_, ok = b.m[walletStr][contractStr]
+	if ok {
+		// Already subscribed
+		fmt.Printf("Already subscribed wallet:%s, contract:%s \n", walletStr, contractStr)
+		return
+	}
+
+	b.m[walletStr][contractStr] = &entry.Balance{
+		WalletID:                 wallet,
+		ContractID:               contract,
+		BlockchainID:             b.uuid,
+		LastProcessedBlockNumber: 0,
+		Balance:                  0,
+	}
+
+}
+
+func (b *BlockChain) SaveBalancesToDB() error {
+	wallets := make([]Address, 0)
+	contracts := make([]Address, 0)
+	balances := make([]*entry.Balance, 0)
+
+	for wallet, value := range b.m {
+		wallets = append(wallets, Address(wallet))
+		for contract, balance := range value {
+			contracts = append(contracts, Address(contract))
+			balances = append(balances, balance)
+		}
+	}
+
+	fmt.Println(wallets)
+	fmt.Println(contracts)
+	fmt.Println(balances)
+
+	return nil
 }
 
 func (b *BlockChain) LoadFromDB() error {
