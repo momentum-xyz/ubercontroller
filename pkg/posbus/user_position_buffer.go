@@ -41,13 +41,24 @@ func (utb *UserTransformBuffer) Buf() []byte {
 	return utb.posBuffer[:MsgArrTypeSize+utb.nUsers*UserTransformMessageSize]
 }
 
-func (utb *UserTransformBuffer) Decode() []cmath.UserTransform {
-	t := make([]cmath.UserTransform, utb.nUsers)
+func (utb *UserTransformBuffer) Decode() []struct {
+	ID        uuid.UUID
+	Transofrm cmath.UserTransform
+} {
+	t := make(
+		[]struct {
+			ID        uuid.UUID
+			Transofrm cmath.UserTransform
+		}, utb.nUsers,
+	)
 	start := MsgArrTypeSize
 	for i := 0; i < utb.nUsers; i++ {
-		t[i].Position = &cmath.Vec3{}
-		t[i].Rotation = &cmath.Vec3{}
-		t[i].CopyFromBuffer(utb.posBuffer[start:])
+		//t[i].ID=uuid.UUID(utb.posBuffer[start:start+16])
+		copy(t[i].ID[:], utb.posBuffer[start:start+16])
+		start += 16
+		t[i].Transofrm.Position = &cmath.Vec3{}
+		t[i].Transofrm.Rotation = &cmath.Vec3{}
+		t[i].Transofrm.CopyFromBuffer(utb.posBuffer[start:])
 		start += UserTransformMessageSize
 	}
 	return t
