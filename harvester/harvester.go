@@ -1,8 +1,13 @@
 package harvester
 
+import (
+	"github.com/jackc/pgx/v4/pgxpool"
+)
+
 type Harvester struct {
 	clients  *Callbacks
 	Adapters *Callbacks
+	db       *pgxpool.Pool
 }
 
 func (h *Harvester) SubscribeForWallet(bcType BCType, wallet, callback Callback) {
@@ -36,10 +41,15 @@ type HarvesterAPI interface {
 	SubscribeForWalletAndContract(bcType BCType, wallet, callback Callback)
 }
 
-func NewHarvester() *Harvester {
+func NewHarvester(db *pgxpool.Pool) *Harvester {
 	return &Harvester{
 		clients: NewCallbacks(),
+		db:      db,
 	}
+}
+
+func (h *Harvester) Init() {
+
 }
 
 func (h *Harvester) OnBalanceChange() {

@@ -1,9 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"time"
 
+	"github.com/jackc/pgx/v4/pgxpool"
+	"go.uber.org/zap"
+
+	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/harvester"
 	"github.com/momentum-xyz/ubercontroller/harvester/ethereum_adapter"
 )
@@ -11,8 +17,17 @@ import (
 func main() {
 	fmt.Println("Harvester Debugger")
 
+	cfg := config.GetConfig()
+	logger, _ := zap.NewProduction()
+	pgConfig, err := cfg.Postgres.GenConfig(logger)
+	pool, err := pgxpool.ConnectConfig(context.Background(), pgConfig)
+	if err != nil {
+		log.Fatal("failed to create db pool")
+	}
+	defer pool.Close()
+
 	// ** Harvester
-	harv := harvester.NewHarvester()
+	harv := harvester.NewHarvester(pool)
 	var harvForClient harvester.HarvesterAPI
 	harvForClient = harv
 	var harvForAdapter harvester.BCAdapterAPI
@@ -21,10 +36,6 @@ func main() {
 	// ** Ethereum Adapter
 	ethereumAdapter := ethereum_adapter.NewEthereumAdapter(harvForAdapter)
 	go ethereumAdapter.Run()
-
-	// ** Polkadot Adapter
-	//polkadotAdapter := polkadot_adapter.NewPolkadotAdapter(harvForAdapter)
-	//go polkadotAdapter.Run()
 
 	// ** Harvester Clients
 	testHandler1 := testHandler1

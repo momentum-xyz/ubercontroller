@@ -23,7 +23,8 @@ func NewEthereumAdapter(harvester harvester.BCAdapterAPI) *EthereumAdapter {
 
 func (ea *EthereumAdapter) Run() {
 	//client, err := ethclient.Dial("wss://rinkeby.infura.io/ws")
-	url := "ws://localhost:8546"
+	//url := "ws://localhost:8546"
+	url := "wss://eth.llamarpc.com"
 	//url := "wss://ethg.antst.net:8546"
 	client, err := ethclient.Dial(url)
 	if err != nil {
