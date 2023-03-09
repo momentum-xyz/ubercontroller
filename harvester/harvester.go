@@ -1,13 +1,16 @@
 package harvester
 
 import (
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/pkg/errors"
 )
 
 type Harvester struct {
 	clients  *Callbacks
 	Adapters *Callbacks
 	db       *pgxpool.Pool
+	bc       map[string]*BlockChain
 }
 
 func (h *Harvester) SubscribeForWallet(bcType BCType, wallet, callback Callback) {
@@ -26,11 +29,8 @@ type BCBlock struct {
 }
 
 type BCAdapterAPI interface {
-	RegisterBCAdapter(bcType BCType, bcAdapter BCAdapter)
+	RegisterBCAdapter(uuid uuid.UUID, bcType string, rpcURL string, bcAdapter BCAdapter) error
 	OnNewBlock(bcType BCType, block *BCBlock)
-}
-
-type BCAdapter interface {
 }
 
 type HarvesterAPI interface {
@@ -45,6 +45,7 @@ func NewHarvester(db *pgxpool.Pool) *Harvester {
 	return &Harvester{
 		clients: NewCallbacks(),
 		db:      db,
+		bc:      make(map[string]*BlockChain),
 	}
 }
 
@@ -61,7 +62,13 @@ func (h *Harvester) OnNewBlock(bcType BCType, block *BCBlock) {
 	h.clients.Trigger(bcType, NewBlock, block)
 }
 
-func (h *Harvester) RegisterBCAdapter(bcType BCType, bcAdapter BCAdapter) {
+func (h *Harvester) RegisterBCAdapter(uuid uuid.UUID, bcType string, rpcURL string, adapter BCAdapter) error {
+	h.bc[bcType] = NewBlockchain(h.db, adapter, uuid, bcType, rpcURL)
+	if err := h.bc[bcType].LoadFromDB(); err != nil {
+		return errors.WithMessage(err, "failed to load from DB")
+	}
+
+	return nil
 }
 
 func (h *Harvester) Run() error {
