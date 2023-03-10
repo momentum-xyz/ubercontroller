@@ -196,14 +196,12 @@ func (w *World) stopObjects() error {
 }
 
 func (w *World) broadcastPositions() {
-	flag := false
 	w.Users.Mu.RLock()
 	numClients := len(w.Users.Data)
 	positionsBuffer := posbus.StartUserTransformBuffer(numClients)
 	currentTime := time.Now().Unix()
 
 	if numClients > 0 {
-		flag = true
 		for _, u := range w.Users.Data {
 			if u.GetLastPosTime() > w.lastPosUpdate || (currentTime-u.GetLastPosTime() >= MaxPosUpdateInterval) {
 				positionsBuffer.AddPosition(u.GetPosBuffer())
@@ -213,7 +211,7 @@ func (w *World) broadcastPositions() {
 	w.lastPosUpdate = currentTime
 
 	w.Users.Mu.RUnlock()
-	if flag {
+	if positionsBuffer.NumUsers() > 0 {
 		positionsBuffer.Finalize()
 		w.Send(posbus.NewMessageFromBuffer(posbus.TypeSetUsersTransforms, positionsBuffer.Buf()).WSMessage(), true)
 	}

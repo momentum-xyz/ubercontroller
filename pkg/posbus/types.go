@@ -8,10 +8,10 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 )
 
-type Signal uint32
+type SignalType uint32
 
 const (
-	SignalNone Signal = iota
+	SignalNone SignalType = iota
 	SignalDualConnection
 	SignalReady
 	SignalInvalidToken
@@ -109,6 +109,30 @@ type HandShake struct {
 	Token            string    `json:"token"`
 	UserId           uuid.UUID `json:"user_id"`
 	SessionId        uuid.UUID `json:"session_id"`
+}
+
+type AddObjects struct {
+	Objects []ObjectDefinition `json:"objects"`
+}
+
+type RemoveObjects struct {
+	Objects []uuid.UUID `json:"objects"`
+}
+
+type AddUsers struct {
+	Users []UserDefinition `json:"users"`
+}
+
+type RemoveUsers struct {
+	Users []uuid.UUID `json:"users"`
+}
+
+type Signal struct {
+	Value SignalType `json:"value"`
+}
+
+type TeleportRequest struct {
+	Target uuid.UUID `json:"target"`
 }
 
 type ObjectDefinition struct {

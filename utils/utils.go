@@ -55,6 +55,27 @@ func MapDecode(input, output interface{}) error {
 	return decoder.Decode(input)
 }
 
+func MapEncode(input, output interface{}) error {
+	config := &mapstructure.DecoderConfig{
+		TagName: "json",
+		//DecodeHook: mapstructure.ComposeDecodeHookFunc(
+		//	handleNilAnonymousNestedStruct(),
+		//	stringToUUIDHookFunc(),
+		//	stringToTimeHookFunc(),
+		//	mapToStringHookFunc(),
+		//),
+		Squash: true,
+		Result: output,
+	}
+
+	decoder, err := mapstructure.NewDecoder(config)
+	if err != nil {
+		return err
+	}
+
+	return decoder.Decode(input)
+}
+
 // handleNilAnonymousNestedStruct needed to fix "unsupported type for squash: ptr" mapstructure error
 func handleNilAnonymousNestedStruct() mapstructure.DecodeHookFunc {
 	return func(from reflect.Value, to reflect.Value) (interface{}, error) {

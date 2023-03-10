@@ -26,12 +26,12 @@ func (u *User) OnMessage(msg *posbus.Message) error {
 			return errors.WithMessage(err, "failed to handle: relay to controller")
 		}
 	case posbus.TypeTeleportRequest:
-		var targetID uuid.UUID
-		err := msg.DecodeTo(&targetID)
+		var tr posbus.TeleportRequest
+		err := msg.DecodeTo(&tr)
 		if err != nil {
 			return errors.WithMessage(err, "failed to decode: teleport")
 		}
-		return u.Teleport(targetID)
+		return u.Teleport(tr.Target)
 	case posbus.TypeSignal:
 		var signal posbus.Signal
 		err := msg.DecodeTo(&signal)
@@ -68,7 +68,11 @@ func (u *User) UpdateObjectPosition(msg posbus.ObjectPosition) error {
 func (u *User) Teleport(target uuid.UUID) error {
 	world, ok := universe.GetNode().GetWorlds().GetWorld(target)
 	if !ok {
-		u.Send(posbus.NewMessageFromData(posbus.TypeSignal, posbus.SignalWorldDoesNotExist).WSMessage())
+		u.Send(
+			posbus.NewMessageFromData(
+				posbus.TypeSignal, posbus.Signal{Value: posbus.SignalWorldDoesNotExist},
+			).WSMessage(),
+		)
 		return errors.New("Target world does not exist")
 	}
 	if oldWorld := u.GetWorld(); oldWorld != nil {
@@ -87,7 +91,7 @@ func (u *User) GenericMessageHandler(msg []byte) error {
 
 func (u *User) SignalsHandler(s posbus.Signal) error {
 	fmt.Printf("Got Signal %+v\n", s)
-	switch s {
+	switch s.Value {
 	case posbus.SignalLeaveWorld:
 		if oldWorld := u.GetWorld(); oldWorld != nil {
 			oldWorld.RemoveUser(u, true)

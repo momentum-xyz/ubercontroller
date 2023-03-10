@@ -624,7 +624,7 @@ func (o *Object) UpdateSpawnMessage() error {
 		effectiveOptions.Editable, utils.GetPTR(true),
 	),
 		ShowOnMiniMap: *utils.GetFromAny(effectiveOptions.Minimap, &visible), Transform: *o.GetActualTransform()}
-	msg := posbus.NewMessageFromData(posbus.TypeAddObjects, mData)
+	msg := posbus.NewMessageFromData(posbus.TypeAddObjects, posbus.AddObjects{Objects: mData})
 	o.spawnMsg.Store(msg.WSMessage())
 
 	return nil

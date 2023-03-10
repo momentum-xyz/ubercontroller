@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/gob"
-	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"log"
@@ -31,22 +30,22 @@ func init() {
 	addToMaps(TypeGenericMessage, "generic_message", []byte{})
 	addToMaps(TypeHandShake, "handshake", HandShake{})
 	addToMaps(TypeSetWorld, "set_world", SetWorldData{})
-	addToMaps(TypeAddObjects, "add_objects", []ObjectDefinition{})
-	addToMaps(TypeRemoveObjects, "remove_objects", []uuid.UUID{})
+	addToMaps(TypeAddObjects, "add_objects", AddObjects{})
+	addToMaps(TypeRemoveObjects, "remove_objects", RemoveObjects{})
 	addToMaps(TypeSetObjectPosition, "set_object_position", cmath.ObjectTransform{})
 	addToMaps(TypeSetObjectData, "set_object_data", ObjectData{})
 
-	addToMaps(TypeAddUsers, "add_users", []UserDefinition{})
-	addToMaps(TypeRemoveUsers, "remove_users", []uuid.UUID{})
+	addToMaps(TypeAddUsers, "add_users", AddUsers{})
+	addToMaps(TypeRemoveUsers, "remove_users", RemoveUsers{})
 	addToMaps(TypeSetUserData, "set_user_data", UserDefinition{})
 
 	addToMaps(TypeSetObjectLock, "set_object_lock", SetObjectLock{})
 	addToMaps(TypeObjectLockResult, "object_lock_result", ObjectLockResultData{})
 	addToMaps(TypeTriggerVisualEffects, "trigger_visual_effects", -1)
 	addToMaps(TypeUserAction, "user_action", -1)
-	addToMaps(TypeSignal, "signal", int(0))
+	addToMaps(TypeSignal, "signal", Signal{})
 	addToMaps(TypeNotification, "notification", -1)
-	addToMaps(TypeTeleportRequest, "teleport_request", uuid.UUID{})
+	addToMaps(TypeTeleportRequest, "teleport_request", TeleportRequest{})
 }
 
 func MessageNameById(id MsgType) string {

@@ -9,9 +9,13 @@ import (
 
 const UserTransformMessageSize = MsgUUIDTypeSize + cmath.Float32Bytes*6
 
-type UserPosition struct {
+type UserTransform struct {
 	ID        uuid.UUID           `json:"id"`
 	Transform cmath.UserTransform `json:"transform"`
+}
+
+type SetUsersTransforms struct {
+	Value []UserTransform `json:"value"`
 }
 
 type UserTransformBuffer struct {
@@ -41,9 +45,13 @@ func (utb *UserTransformBuffer) Buf() []byte {
 	return utb.posBuffer[:MsgArrTypeSize+utb.nUsers*UserTransformMessageSize]
 }
 
-func (utb *UserTransformBuffer) Decode() []UserPosition {
+func (utb *UserTransformBuffer) NumUsers() int {
+	return utb.nUsers
+}
+
+func (utb *UserTransformBuffer) Decode() SetUsersTransforms {
 	t := make(
-		[]UserPosition, utb.nUsers,
+		[]UserTransform, utb.nUsers,
 	)
 	start := MsgArrTypeSize
 	for i := 0; i < utb.nUsers; i++ {
@@ -54,7 +62,7 @@ func (utb *UserTransformBuffer) Decode() []UserPosition {
 		t[i].Transform.CopyFromBuffer(utb.posBuffer[start:])
 		start += UserTransformMessageSize
 	}
-	return t
+	return SetUsersTransforms{Value: t}
 }
 
 func BytesToUserTransformBuffer(buf []byte) *UserTransformBuffer {

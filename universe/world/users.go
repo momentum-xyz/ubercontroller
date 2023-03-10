@@ -45,7 +45,7 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 
 				exUser.SendDirectly(
 					posbus.NewMessageFromData(
-						posbus.TypeSignal, posbus.SignalDualConnection,
+						posbus.TypeSignal, posbus.Signal{Value: posbus.SignalDualConnection},
 					).WSMessage(),
 				)
 
@@ -68,12 +68,14 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 	if err = w.ToObject().AddUser(user, updateDB); err != nil {
 		return errors.WithMessagef(err, "failed to add user %s to world: %s", user.GetID(), w.GetID())
 	}
-
-	err = w.initializeUnity(user)
 	w.Send(
-		posbus.NewMessageFromData(posbus.TypeAddUsers, []posbus.UserDefinition{*user.GetUserDefinition()}).WSMessage(),
+		posbus.NewMessageFromData(
+			posbus.TypeAddUsers, posbus.AddUsers{Users: []posbus.UserDefinition{*user.GetUserDefinition()}},
+		).WSMessage(),
 		true,
 	)
+
+	err = w.initializeUnity(user)
 	return err
 }
 
@@ -123,7 +125,9 @@ func (w *World) noLockRemoveUser(user universe.User, updateDB bool) (bool, error
 	}
 
 	w.Send(
-		posbus.NewMessageFromData(posbus.TypeRemoveUsers, []uuid.UUID{user.GetID()}).WSMessage(),
+		posbus.NewMessageFromData(
+			posbus.TypeRemoveUsers, posbus.RemoveUsers{Users: []uuid.UUID{user.GetID()}},
+		).WSMessage(),
 		true,
 	)
 
@@ -154,7 +158,7 @@ func (w *World) initializeUnity(user universe.User) error {
 
 	w.SendSpawnMessage(user.SendDirectly, true)
 	w.log.Infof("Sent Spawn: %+v\n", user.GetID())
-	time.Sleep(1 * time.Second)
+	//time.Sleep(1 * time.Second)
 
 	w.SendAllAutoAttributes(user.SendDirectly, true)
 	w.log.Infof("Sent Textures: %+v\n", user.GetID())
