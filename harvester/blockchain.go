@@ -6,6 +6,7 @@ import (
 
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 
@@ -76,7 +77,7 @@ func (b *BlockChain) SubscribeForWalletAndContract(wallet []byte, contract []byt
 
 }
 
-func (b *BlockChain) SaveBalancesToDB() error {
+func (b *BlockChain) SaveBalancesToDB() (err error) {
 	wallets := make([]Address, 0)
 	contracts := make([]Address, 0)
 	balances := make([]*entry.Balance, 0)
@@ -92,6 +93,55 @@ func (b *BlockChain) SaveBalancesToDB() error {
 	fmt.Println(wallets)
 	fmt.Println(contracts)
 	fmt.Println(balances)
+
+	tx, err := b.db.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return errors.WithMessage(err, "failed to begin transaction")
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback(context.TODO())
+		} else {
+			tx.Commit(context.TODO())
+		}
+	}()
+
+	sql := `INSERT INTO wallet (wallet_id, blockchain_id)
+			VALUES ($1, $2)
+			ON CONFLICT (blockchain_id, wallet_id) DO NOTHING `
+	for _, w := range wallets {
+		_, err = tx.Exec(context.Background(), sql, w, b.uuid)
+		if err != nil {
+			err = errors.WithMessage(err, "failed to insert wallet to DB")
+			return err
+		}
+	}
+
+	sql = `INSERT INTO contract (contract_id, name)
+			VALUES ($1, $2)
+			ON CONFLICT (contract_id) DO NOTHING`
+	for _, c := range contracts {
+		_, err = tx.Exec(context.TODO(), sql, c, "")
+		if err != nil {
+			err = errors.WithMessage(err, "failed to insert contract to DB")
+			return err
+		}
+	}
+
+	sql = `INSERT INTO balance (wallet_id, contract_id, blockchain_id, balance, last_processed_block_number)
+			VALUES ($1, $2, $3, $4, $5)
+			ON CONFLICT (wallet_id, contract_id, blockchain_id)
+				DO UPDATE SET balance                     = $4,
+							  last_processed_block_number = $5`
+
+	for _, b := range balances {
+		_, err = tx.Exec(context.TODO(), sql,
+			b.WalletID, b.ContractID, b.BlockchainID, b.Balance, b.LastProcessedBlockNumber)
+		if err != nil {
+			err = errors.WithMessage(err, "failed to insert balance to DB")
+			return err
+		}
+	}
 
 	return nil
 }
