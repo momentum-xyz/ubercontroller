@@ -3,7 +3,9 @@ package harvester
 import (
 	"context"
 	"fmt"
+	"math/big"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
@@ -52,8 +54,8 @@ func (b *BlockChain) ToEntry() *entry.Blockchain {
 }
 
 func (b *BlockChain) SubscribeForWalletAndContract(wallet []byte, contract []byte) {
-	walletStr := string(wallet)
-	contractStr := string(contract)
+	walletStr := hexutil.Encode(wallet)
+	contractStr := hexutil.Encode(contract)
 
 	_, ok := b.m[walletStr]
 	if !ok {
@@ -75,6 +77,17 @@ func (b *BlockChain) SubscribeForWalletAndContract(wallet []byte, contract []byt
 		Balance:                  0,
 	}
 
+	b.getBalanceFromBC(walletStr, contractStr)
+
+}
+
+func (b *BlockChain) getBalanceFromBC(walletStr string, contractStr string) (*big.Int, error) {
+	n, err := b.adapter.GetLastBlockNumber()
+	if err != nil {
+		return nil, err
+	}
+	balance, err := b.adapter.GetBalance(walletStr, contractStr, n)
+	return balance, nil
 }
 
 func (b *BlockChain) SaveBalancesToDB() (err error) {

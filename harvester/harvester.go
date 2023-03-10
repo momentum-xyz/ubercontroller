@@ -19,9 +19,6 @@ func (h *Harvester) SubscribeForWallet(bcType string, wallet, callback Callback)
 }
 
 func (h *Harvester) SubscribeForWalletAndContract(bcType string, wallet []byte, contract []byte, callback Callback) error {
-	//TODO implement me
-	//panic("implement me")
-
 	bc, ok := h.bc[bcType]
 	if !ok {
 		return errors.New("failed to find blockchain:" + bcType)
