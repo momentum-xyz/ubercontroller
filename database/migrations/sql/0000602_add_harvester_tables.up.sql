@@ -28,9 +28,6 @@ create table wallet
 create unique index wallet_blockchain_id_uindex
     on wallet (blockchain_id);
 
-create unique index wallet_wallet_id_uindex
-    on wallet (wallet_id);
-
 -- auto-generated definition
 create table contract
 (
