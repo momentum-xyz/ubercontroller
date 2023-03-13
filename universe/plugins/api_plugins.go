@@ -9,8 +9,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
@@ -63,11 +63,7 @@ func (p *Plugins) apiGetPlugins(c *gin.Context) {
 		}
 
 		if inQuery.Type != "" {
-			meta := plugin.GetMeta()
-			if meta == nil {
-				return false
-			}
-			metaType := utils.GetFromAnyMap(*meta, "type", "")
+			metaType := utils.GetFromAnyMap(plugin.GetMeta(), "type", "")
 			if metaType != inQuery.Type {
 				return false
 			}
@@ -84,14 +80,9 @@ func (p *Plugins) apiGetPlugins(c *gin.Context) {
 	}
 
 	out := make(dto.Plugins, len(plugins))
-	for i := range plugins {
-		meta := plugins[i].GetMeta()
-		if meta == nil {
-			continue
-		}
-
-		name := utils.GetFromAnyMap(*meta, "name", "")
-		out[plugins[i].GetID()] = name
+	for _, plugin := range plugins {
+		name := utils.GetFromAnyMap(plugin.GetMeta(), "name", "")
+		out[plugin.GetID()] = name
 	}
 
 	c.JSON(http.StatusOK, out)
@@ -128,14 +119,14 @@ func (p *Plugins) apiSearchPlugins(c *gin.Context) {
 		}
 
 		if inQuery.Type != "" {
-			metaType := utils.GetFromAnyMap(*meta, "type", "")
+			metaType := utils.GetFromAnyMap(meta, "type", "")
 			if metaType != inQuery.Type {
 				return false
 			}
 		}
 
 		if inQuery.Name != "" {
-			metaName := utils.GetFromAnyMap(*meta, "name", "")
+			metaName := utils.GetFromAnyMap(meta, "name", "")
 			if metaName != "" &&
 				strings.Contains(strings.ToLower(metaName), strings.ToLower(inQuery.Name)) {
 				return true
@@ -143,7 +134,7 @@ func (p *Plugins) apiSearchPlugins(c *gin.Context) {
 		}
 
 		if inQuery.Description != "" {
-			metaDescription := utils.GetFromAnyMap(*meta, "description", "")
+			metaDescription := utils.GetFromAnyMap(meta, "description", "")
 			if metaDescription != "" &&
 				strings.Contains(strings.ToLower(metaDescription), strings.ToLower(inQuery.Description)) {
 				return true
@@ -161,12 +152,9 @@ func (p *Plugins) apiSearchPlugins(c *gin.Context) {
 	}
 
 	out := make(dto.Plugins, len(plugins))
-	for i := range plugins {
-		var name string
-		if meta := plugins[i].GetMeta(); meta != nil {
-			name = utils.GetFromAnyMap(*meta, "name", "")
-		}
-		out[plugins[i].GetID()] = name
+	for _, plugin := range plugins {
+		name := utils.GetFromAnyMap(plugin.GetMeta(), "name", "")
+		out[plugin.GetID()] = name
 	}
 
 	c.JSON(http.StatusOK, out)
@@ -212,7 +200,7 @@ func (p *Plugins) apiGetPluginsMeta(c *gin.Context) {
 			return
 		}
 
-		out[pluginID] = plugin.GetMeta()
+		out[pluginID] = dto.PluginMeta(plugin.GetMeta())
 	}
 
 	c.JSON(http.StatusOK, out)

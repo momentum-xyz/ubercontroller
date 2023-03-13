@@ -116,34 +116,34 @@ func (a *AttributeTypes) AddAttributeTypes(attributeTypes []universe.AttributeTy
 	return nil
 }
 
-// TODO: update node/space attributes
-func (a *AttributeTypes) RemoveAttributeType(attributeType universe.AttributeType, updateDB bool) error {
+// TODO: update node/object attributes
+func (a *AttributeTypes) RemoveAttributeType(attributeType universe.AttributeType, updateDB bool) (bool, error) {
 	a.attributeTypes.Mu.Lock()
 	defer a.attributeTypes.Mu.Unlock()
 
 	if _, ok := a.attributeTypes.Data[attributeType.GetID()]; !ok {
-		return errors.Errorf("attribute type not found")
+		return false, nil
 	}
 
 	if updateDB {
 		if err := a.db.GetAttributeTypesDB().RemoveAttributeTypeByID(a.ctx, attributeType.GetID()); err != nil {
-			return errors.WithMessage(err, "failed to update db")
+			return false, errors.WithMessage(err, "failed to update db")
 		}
 	}
 
 	delete(a.attributeTypes.Data, attributeType.GetID())
 
-	return nil
+	return true, nil
 }
 
-// TODO: update node/space attributes
-func (a *AttributeTypes) RemoveAttributeTypes(attributeTypes []universe.AttributeType, updateDB bool) error {
+// TODO: update node/object attributes
+func (a *AttributeTypes) RemoveAttributeTypes(attributeTypes []universe.AttributeType, updateDB bool) (bool, error) {
 	a.attributeTypes.Mu.Lock()
 	defer a.attributeTypes.Mu.Unlock()
 
 	for i := range attributeTypes {
 		if _, ok := a.attributeTypes.Data[attributeTypes[i].GetID()]; !ok {
-			return errors.Errorf("attribute type not found: %s", attributeTypes[i].GetID())
+			return false, nil
 		}
 	}
 
@@ -153,7 +153,7 @@ func (a *AttributeTypes) RemoveAttributeTypes(attributeTypes []universe.Attribut
 			ids[i] = attributeTypes[i].GetID()
 		}
 		if err := a.db.GetAttributeTypesDB().RemoveAttributeTypesByIDs(a.ctx, ids); err != nil {
-			return errors.WithMessage(err, "failed to update db")
+			return false, errors.WithMessage(err, "failed to update db")
 		}
 	}
 
@@ -161,7 +161,7 @@ func (a *AttributeTypes) RemoveAttributeTypes(attributeTypes []universe.Attribut
 		delete(a.attributeTypes.Data, attributeTypes[i].GetID())
 	}
 
-	return nil
+	return true, nil
 }
 
 func (a *AttributeTypes) Load() error {
@@ -172,13 +172,13 @@ func (a *AttributeTypes) Load() error {
 		return errors.WithMessage(err, "failed to get attribute types")
 	}
 
-	for i := range entries {
-		attributeType, err := a.CreateAttributeType(entries[i].AttributeTypeID)
+	for _, atEntry := range entries {
+		attributeType, err := a.CreateAttributeType(atEntry.AttributeTypeID)
 		if err != nil {
-			return errors.WithMessagef(err, "failed to create new attribute type: %s", entries[i].AttributeTypeID)
+			return errors.WithMessagef(err, "failed to create new attribute type: %s", atEntry.AttributeTypeID)
 		}
-		if err := attributeType.LoadFromEntry(entries[i]); err != nil {
-			return errors.WithMessagef(err, "failed to load attribute type from entry: %s", entries[i].AttributeTypeID)
+		if err := attributeType.LoadFromEntry(atEntry); err != nil {
+			return errors.WithMessagef(err, "failed to load attribute type from entry: %s", atEntry.AttributeTypeID)
 		}
 	}
 
@@ -204,7 +204,7 @@ func (a *AttributeTypes) Save() error {
 		return errors.WithMessage(err, "failed to upsert attribute types")
 	}
 
-	a.log.Info("Attribute types saved")
+	a.log.Infof("Attribute types saved: %d", len(a.attributeTypes.Data))
 
 	return nil
 }

@@ -100,12 +100,12 @@ func (p *Plugins) AddPlugins(plugins []universe.Plugin, updateDB bool) error {
 	panic("implement me")
 }
 
-func (p *Plugins) RemovePlugin(plugin universe.Plugin, updateDB bool) error {
+func (p *Plugins) RemovePlugin(plugin universe.Plugin, updateDB bool) (bool, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (p *Plugins) RemovePlugins(plugins []universe.Plugin, updateDB bool) error {
+func (p *Plugins) RemovePlugins(plugins []universe.Plugin, updateDB bool) (bool, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -160,7 +160,7 @@ func (p *Plugins) Save() error {
 		return errors.WithMessage(err, "failed to upsert plugins")
 	}
 
-	p.log.Info("Plugins saved")
+	p.log.Infof("Plugins saved: %d", len(p.plugins.Data))
 
 	return nil
 }

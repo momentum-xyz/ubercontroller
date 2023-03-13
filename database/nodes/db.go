@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	getNodeQuery = `SELECT * FROM space WHERE space_id = parent_id;`
+	getNodeQuery = `SELECT * FROM object WHERE object_id = parent_id;`
 )
 
 var _ database.NodesDB = (*DB)(nil)

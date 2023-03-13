@@ -2,6 +2,7 @@ package world
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"sync/atomic"
 	"time"
 
@@ -11,37 +12,39 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/momentum-xyz/posbus-protocol/posbus"
-
+	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/mplugin"
-	"github.com/momentum-xyz/ubercontroller/pkg/message"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/calendar"
-	"github.com/momentum-xyz/ubercontroller/universe/space"
+	"github.com/momentum-xyz/ubercontroller/universe/object"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 var _ universe.World = (*World)(nil)
 
+// MaxPosUpdateInterval : send user position at least ones per 5 min, even if user is not moving
+const MaxPosUpdateInterval = 60 * 5
+
 type World struct {
-	*space.Space
+	*object.Object
 	ctx              context.Context
-	cancel           context.CancelFunc
 	log              *zap.SugaredLogger
 	db               database.DB
+	cancel           context.CancelFunc
 	pluginController *mplugin.PluginController
 	//corePluginInstance  mplugin.PluginInstance
 	corePluginInterface mplugin.PluginInterface
 	metaMsg             atomic.Pointer[websocket.PreparedMessage]
 	metaData            Metadata
 	settings            atomic.Pointer[universe.WorldSettings]
-	allSpaces           *generic.SyncMap[uuid.UUID, universe.Space]
+	allObjects          *generic.SyncMap[uuid.UUID, universe.Object]
 	calendar            *calendar.Calendar
 	skyBoxMsg           atomic.Pointer[websocket.PreparedMessage]
+	lastPosUpdate       int64
 }
 
 func (w *World) TempSetSkybox(msg *websocket.PreparedMessage) {
@@ -54,20 +57,16 @@ func (w *World) TempGetSkybox() *websocket.PreparedMessage {
 
 func NewWorld(id uuid.UUID, db database.DB) *World {
 	world := &World{
-		db:        db,
-		allSpaces: generic.NewSyncMap[uuid.UUID, universe.Space](0),
+		db:         db,
+		allObjects: generic.NewSyncMap[uuid.UUID, universe.Object](0),
 	}
-	world.Space = space.NewSpace(id, db, world)
+	world.Object = object.NewObject(id, db, world)
 	world.settings.Store(&universe.WorldSettings{})
 	world.pluginController = mplugin.NewPluginController(id)
 	//world.corePluginInstance, _ = world.pluginController.AddPlugin(world.GetID(), world.corePluginInitFunc)
 	world.pluginController.AddPlugin(universe.GetSystemPluginID(), world.corePluginInitFunc)
 	world.calendar = calendar.NewCalendar(world)
 	return world
-}
-
-func (w *World) GetID() uuid.UUID {
-	return w.Space.GetID()
 }
 
 func (w *World) corePluginInitFunc(pi mplugin.PluginInterface) (mplugin.PluginInstance, error) {
@@ -81,6 +80,10 @@ func (w *World) Initialize(ctx context.Context) error {
 	if log == nil {
 		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
 	}
+	cfg := utils.GetFromAny(ctx.Value(types.ConfigContextKey), (*config.Config)(nil))
+	if cfg == nil {
+		return errors.Errorf("failed to get config from context: %T", ctx.Value(types.ConfigContextKey))
+	}
 
 	w.ctx, w.cancel = context.WithCancel(ctx)
 	w.log = log
@@ -89,11 +92,11 @@ func (w *World) Initialize(ctx context.Context) error {
 		return errors.WithMessage(err, "failed to initialize calendar")
 	}
 
-	return w.Space.Initialize(ctx)
+	return w.ToObject().Initialize(ctx)
 }
 
-func (w *World) ToSpace() universe.Space {
-	return w.Space
+func (w *World) ToObject() universe.Object {
+	return w.Object
 }
 
 func (w *World) GetSettings() *universe.WorldSettings {
@@ -104,23 +107,23 @@ func (w *World) GetCalendar() universe.Calendar {
 	return w.calendar
 }
 
-func (w *World) SetParent(parent universe.Space, updateDB bool) error {
+func (w *World) SetParent(parent universe.Object, updateDB bool) error {
 	if parent == nil {
 		return errors.Errorf("parent is nil")
 	} else if parent.GetID() != universe.GetNode().GetID() {
 		return errors.Errorf("parent is not the node")
 	}
 
-	w.Space.Mu.Lock()
-	defer w.Space.Mu.Unlock()
+	w.Object.Mu.Lock()
+	defer w.Object.Mu.Unlock()
 
 	if updateDB {
-		if err := w.db.GetSpacesDB().UpdateSpaceParentID(w.ctx, w.GetID(), parent.GetID()); err != nil {
+		if err := w.db.GetObjectsDB().UpdateObjectParentID(w.ctx, w.GetID(), parent.GetID()); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
 
-	w.Space.Parent = parent
+	w.Object.Parent = parent
 
 	return nil
 }
@@ -128,8 +131,8 @@ func (w *World) SetParent(parent universe.Space, updateDB bool) error {
 func (w *World) Run() error {
 	go func() {
 		go func() {
-			if err := w.runSpaces(); err != nil {
-				w.log.Error(errors.WithMessagef(err, "World: Run: failed to run spaces: %s", w.GetID()))
+			if err := w.runObjects(); err != nil {
+				w.log.Error(errors.WithMessagef(err, "World: Run: failed to run objects: %s", w.GetID()))
 			}
 		}()
 		go w.calendar.Run()
@@ -138,20 +141,14 @@ func (w *World) Run() error {
 		defer func() {
 			w.calendar.Stop()
 			ticker.Stop()
-			if err := w.stopSpaces(); err != nil {
-				w.log.Error(errors.WithMessagef(err, "World: Run: failed to stop spaces: %s", w.GetID()))
+			if err := w.stopObjects(); err != nil {
+				w.log.Error(errors.WithMessagef(err, "World: Run: failed to stop objects: %s", w.GetID()))
 			}
 		}()
 
 		for {
 			select {
-			//case message := <-cu.broadcast:
-			// v := reflect.ValueOf(cu.broadcast)
-			// fmt.Println(color.Red, "Bcast", wc.users.Num(), v.Len(), color.Reset)
-			//go cu.PerformBroadcast(message)
-			// logger.Logln(4, "BcastE")
 			case <-ticker.C:
-				// fmt.Println(color.Red, "Ticker", color.Reset)
 				go w.broadcastPositions()
 			case <-w.ctx.Done():
 				return
@@ -167,65 +164,68 @@ func (w *World) Stop() error {
 	return nil
 }
 
-func (w *World) runSpaces() error {
-	w.allSpaces.Mu.RLock()
-	defer w.allSpaces.Mu.RUnlock()
+func (w *World) runObjects() error {
+	w.allObjects.Mu.RLock()
+	defer w.allObjects.Mu.RUnlock()
 
 	var errs *multierror.Error
-	for _, space := range w.allSpaces.Data {
-		if err := space.Run(); err != nil {
-			errs = multierror.Append(errs, errors.WithMessagef(err, "failed to run space: %s", space.GetID()))
+	for _, object := range w.allObjects.Data {
+		if err := object.Run(); err != nil {
+			errs = multierror.Append(errs, errors.WithMessagef(err, "failed to run object: %s", object.GetID()))
 		}
-		space.SetEnabled(true)
+		object.SetEnabled(true)
 	}
 
 	return errs.ErrorOrNil()
 }
 
 // TODO: optimize
-func (w *World) stopSpaces() error {
-	w.allSpaces.Mu.RLock()
-	defer w.allSpaces.Mu.RUnlock()
+func (w *World) stopObjects() error {
+	w.allObjects.Mu.RLock()
+	defer w.allObjects.Mu.RUnlock()
 
 	var errs *multierror.Error
-	for _, space := range w.allSpaces.Data {
-		if err := space.Stop(); err != nil {
-			errs = multierror.Append(errs, errors.WithMessagef(err, "failed to stop space: %s", space.GetID()))
+	for _, object := range w.allObjects.Data {
+		if err := object.Stop(); err != nil {
+			errs = multierror.Append(errs, errors.WithMessagef(err, "failed to stop object: %s", object.GetID()))
 		}
-		space.SetEnabled(false)
+		object.SetEnabled(false)
 	}
 
 	return errs.ErrorOrNil()
 }
 
 func (w *World) broadcastPositions() {
-	flag := false
 	w.Users.Mu.RLock()
 	numClients := len(w.Users.Data)
-	msg := posbus.NewUserPositionsMsg(numClients)
+	positionsBuffer := posbus.StartUserTransformBuffer(numClients)
+	currentTime := time.Now().Unix()
+
 	if numClients > 0 {
-		flag = true
-		i := 0
 		for _, u := range w.Users.Data {
-			msg.SetPosition(i, u.GetPosBuffer())
-			i++
+			if u.GetLastPosTime() > w.lastPosUpdate || (currentTime-u.GetLastPosTime() >= MaxPosUpdateInterval) {
+				positionsBuffer.AddPosition(u.GetPosBuffer())
+			}
 		}
 	}
+	w.lastPosUpdate = currentTime
+
 	w.Users.Mu.RUnlock()
-	if flag {
-		w.Send(msg.WebsocketMessage(), true)
+	if positionsBuffer.NumUsers() > 0 {
+		positionsBuffer.Finalize()
+		w.Send(posbus.NewMessageFromBuffer(posbus.TypeSetUsersTransforms, positionsBuffer.Buf()).WSMessage(), true)
 	}
 }
 
 func (w *World) Load() error {
 	w.log.Infof("Loading world: %s...", w.GetID())
 
-	entry, err := w.db.GetSpacesDB().GetSpaceByID(w.ctx, w.GetID())
+	worldEntry, err := w.db.GetObjectsDB().GetObjectByID(w.ctx, w.GetID())
 	if err != nil {
-		return errors.WithMessage(err, "failed to get space by id")
+		return errors.WithMessage(err, "failed to get object by id")
 	}
 
-	if err := w.LoadFromEntry(entry, true); err != nil {
+	if err := w.LoadFromEntry(worldEntry, true); err != nil {
 		return errors.WithMessage(err, "failed to load from entry")
 	}
 	if err := w.UpdateChildrenPosition(true); err != nil {
@@ -240,6 +240,18 @@ func (w *World) Load() error {
 	return nil
 }
 
+func (w *World) Save() error {
+	w.log.Infof("Saving world: %s...", w.GetID())
+
+	if err := w.ToObject().Save(); err != nil {
+		return errors.WithMessage(err, "failed to save world object")
+	}
+
+	w.log.Infof("World saved: %s", w.GetID())
+
+	return nil
+}
+
 func (w *World) Update(recursive bool) error {
 	if err := w.UpdateWorldMetadata(); err != nil {
 		w.log.Error(errors.WithMessagef(err, "World: Update: failed to update world metadata: %s", w.GetID()))
@@ -248,15 +260,15 @@ func (w *World) Update(recursive bool) error {
 		w.log.Error(errors.WithMessagef(err, "World: Update: failed to update world settings: %s", w.GetID()))
 	}
 
-	return w.Space.Update(recursive)
+	return w.ToObject().Update(recursive)
 }
 
 func (w *World) UpdateWorldSettings() error {
-	value, ok := w.GetSpaceAttributes().GetValue(
+	value, ok := w.GetObjectAttributes().GetValue(
 		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.World.Settings.Name),
 	)
 	if !ok || value == nil {
-		return errors.Errorf("space attribute not found")
+		return errors.Errorf("object attribute not found")
 	}
 
 	var settings universe.WorldSettings
@@ -270,7 +282,7 @@ func (w *World) UpdateWorldSettings() error {
 }
 
 func (w *World) UpdateWorldMetadata() error {
-	meta, ok := w.GetSpaceAttributes().GetValue(
+	meta, ok := w.GetObjectAttributes().GetValue(
 		entry.NewAttributeID(
 			uuid.UUID(w.corePluginInterface.GetId()), universe.ReservedAttributes.World.Meta.Name,
 		),
@@ -285,38 +297,12 @@ func (w *World) UpdateWorldMetadata() error {
 		w.metaData = Metadata{}
 	}
 
-	//TODO: Ut is all ugly with circular deps
-	dec := make([]message.DecorationMetadata, len(w.metaData.Decorations))
-	for i, decoration := range w.metaData.Decorations {
-		dec[i].AssetID = decoration.AssetID
-		dec[i].Position = decoration.Position
-	}
-
 	w.metaMsg.Store(
-		message.GetBuilder().MsgSetWorld(
-			w.GetID(), w.GetName(), w.metaData.AvatarController, w.metaData.SkyboxController, w.metaData.LOD,
-			dec,
-		),
+		posbus.NewMessageFromData(
+			posbus.TypeSetWorld,
+			posbus.SetWorldData{ID: w.GetID(), Name: w.GetName(), Avatar: w.metaData.AvatarController, Avatar3DAssetID: w.metaData.AvatarController, Owner: w.GetOwnerID()},
+		).WSMessage(),
 	)
-
-	return nil
-}
-
-func (w *World) Save() error {
-	w.log.Infof("Saving world: %s", w.GetID())
-
-	spaces := w.GetAllSpaces()
-
-	entries := make([]*entry.Space, 0, len(spaces))
-	for _, space := range spaces {
-		entries = append(entries, space.GetEntry())
-	}
-
-	if err := w.db.GetSpacesDB().UpsertSpaces(w.ctx, entries); err != nil {
-		return errors.WithMessage(err, "failed to upsert spaces")
-	}
-
-	w.log.Infof("World saved: %s", w.GetID())
 
 	return nil
 }

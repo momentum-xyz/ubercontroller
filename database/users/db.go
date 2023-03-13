@@ -23,7 +23,8 @@ const (
          						                    /* Kusama plugin id */
          						                	WHERE plugin_id = '86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8'
          						                    AND attribute_name = 'wallet'
-         						                    AND value->'wallet' ? $1);`
+         						                    AND value->'wallet' ? $1
+         						                );`
 	getWalletByUserID = `SELECT value -> 'wallet' ->> 0 AS wallet
 						FROM user_attribute
 						WHERE user_id = $1
@@ -32,13 +33,6 @@ const (
 	checkIsUserExistsByNameQuery = `SELECT EXISTS(SELECT 1 FROM "user" WHERE profile->>'name' = $1);`
 	getUserProfileByUserIDQuery  = `SELECT profile FROM "user" WHERE user_id = $1;`
 
-	removeUserByIDQuery   = `DELETE FROM "user" WHERE user_id = $1;`
-	removeUsersByIDsQuery = `DELETE FROM "user" WHERE user_id = ANY($1);`
-
-	updateUserUserTypeIDQuery = `UPDATE "user" SET user_type_id = $2 WHERE user_id = $1;`
-	updateUserOptionsQuery    = `UPDATE "user" SET options = $2 WHERE user_id = $1;`
-	updateUserProfileQuery    = `UPDATE "user" SET profile = $2 WHERE user_id = $1;`
-
 	upsertUserQuery = `INSERT INTO "user"
     						(user_id, user_type_id, profile, options, created_at, updated_at)
 						VALUES
@@ -46,6 +40,13 @@ const (
 						ON CONFLICT (user_id)
 						DO UPDATE SET
 							user_type_id = $2, profile = $3, options = $4, updated_at = CURRENT_TIMESTAMP;`
+
+	updateUserUserTypeIDQuery = `UPDATE "user" SET user_type_id = $2, updated_at = CURRENT_TIMESTAMP WHERE user_id = $1;`
+	updateUserOptionsQuery    = `UPDATE "user" SET options = $2, updated_at = CURRENT_TIMESTAMP WHERE user_id = $1;`
+	updateUserProfileQuery    = `UPDATE "user" SET profile = $2, updated_at = CURRENT_TIMESTAMP WHERE user_id = $1;`
+
+	removeUserByIDQuery   = `DELETE FROM "user" WHERE user_id = $1;`
+	removeUsersByIDsQuery = `DELETE FROM "user" WHERE user_id = ANY($1);`
 )
 
 var _ database.UsersDB = (*DB)(nil)

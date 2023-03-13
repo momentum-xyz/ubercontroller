@@ -8,13 +8,33 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/momentum-xyz/ubercontroller/universe/common"
-
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/zakaria-chahboun/cute"
 	"go.uber.org/zap"
+
+	"github.com/momentum-xyz/ubercontroller/config"
+	"github.com/momentum-xyz/ubercontroller/database"
+	"github.com/momentum-xyz/ubercontroller/database/db"
+	"github.com/momentum-xyz/ubercontroller/database/migrations"
+	"github.com/momentum-xyz/ubercontroller/logger"
+	"github.com/momentum-xyz/ubercontroller/seed"
+	"github.com/momentum-xyz/ubercontroller/types"
+	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/types/generic"
+	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/universe/assets_2d"
+	"github.com/momentum-xyz/ubercontroller/universe/assets_3d"
+	"github.com/momentum-xyz/ubercontroller/universe/attribute_types"
+	"github.com/momentum-xyz/ubercontroller/universe/logic"
+	"github.com/momentum-xyz/ubercontroller/universe/node"
+	"github.com/momentum-xyz/ubercontroller/universe/object_types"
+	"github.com/momentum-xyz/ubercontroller/universe/plugins"
+	"github.com/momentum-xyz/ubercontroller/universe/user_types"
+	"github.com/momentum-xyz/ubercontroller/universe/worlds"
+	"github.com/momentum-xyz/ubercontroller/utils"
 
 	assets2dDB "github.com/momentum-xyz/ubercontroller/database/assets_2d"
 	assets3dDB "github.com/momentum-xyz/ubercontroller/database/assets_3d"
@@ -22,35 +42,17 @@ import (
 	commonDB "github.com/momentum-xyz/ubercontroller/database/common"
 	nodeAttributesDB "github.com/momentum-xyz/ubercontroller/database/node_attributes"
 	nodesDB "github.com/momentum-xyz/ubercontroller/database/nodes"
+	objectAttributesDB "github.com/momentum-xyz/ubercontroller/database/object_attributes"
+	objectTypesDB "github.com/momentum-xyz/ubercontroller/database/object_types"
+	objectUserAttributesDB "github.com/momentum-xyz/ubercontroller/database/object_user_attributes"
+	objectsDB "github.com/momentum-xyz/ubercontroller/database/objects"
 	pluginsDB "github.com/momentum-xyz/ubercontroller/database/plugins"
-	spaceAttributesDB "github.com/momentum-xyz/ubercontroller/database/space_attributes"
-	spaceTypesDB "github.com/momentum-xyz/ubercontroller/database/space_types"
-	spaceUserAttributesDB "github.com/momentum-xyz/ubercontroller/database/space_user_attributes"
-	spacesDB "github.com/momentum-xyz/ubercontroller/database/spaces"
 	userAttributesDB "github.com/momentum-xyz/ubercontroller/database/user_attributes"
-	userSpaceDB "github.com/momentum-xyz/ubercontroller/database/user_space"
+	userObjectsDB "github.com/momentum-xyz/ubercontroller/database/user_objects"
 	userTypesDB "github.com/momentum-xyz/ubercontroller/database/user_types"
 	userUserAttributesDB "github.com/momentum-xyz/ubercontroller/database/user_user_attributes"
 	usersDB "github.com/momentum-xyz/ubercontroller/database/users"
 	worldsDB "github.com/momentum-xyz/ubercontroller/database/worlds"
-	"github.com/momentum-xyz/ubercontroller/utils"
-
-	"github.com/momentum-xyz/ubercontroller/config"
-	"github.com/momentum-xyz/ubercontroller/database"
-	"github.com/momentum-xyz/ubercontroller/database/db"
-	"github.com/momentum-xyz/ubercontroller/database/migrations"
-	"github.com/momentum-xyz/ubercontroller/logger"
-	"github.com/momentum-xyz/ubercontroller/pkg/message"
-	"github.com/momentum-xyz/ubercontroller/types"
-	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/assets_2d"
-	"github.com/momentum-xyz/ubercontroller/universe/assets_3d"
-	"github.com/momentum-xyz/ubercontroller/universe/attribute_types"
-	"github.com/momentum-xyz/ubercontroller/universe/node"
-	"github.com/momentum-xyz/ubercontroller/universe/plugins"
-	"github.com/momentum-xyz/ubercontroller/universe/space_types"
-	"github.com/momentum-xyz/ubercontroller/universe/user_types"
-	"github.com/momentum-xyz/ubercontroller/universe/worlds"
 )
 
 var log = logger.L()
@@ -73,15 +75,17 @@ func run(ctx context.Context) error {
 	defer cancel()
 
 	//todo: change to pool
-	message.InitBuilder(20, 1024*32)
 	if err := universe.InitializeIDs(
 		uuid.MustParse("f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0"),
 		uuid.MustParse("86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8"),
 	); err != nil {
 		return errors.WithMessage(err, "failed to initialize universe")
 	}
-	if err := common.Initialize(ctx); err != nil {
-		return errors.WithMessage(err, "failed to initialize common package")
+	if err := generic.Initialize(ctx); err != nil {
+		return errors.WithMessage(err, "failed to initialize generic package")
+	}
+	if err := logic.Initialize(ctx); err != nil {
+		return errors.WithMessage(err, "failed to initialize logic package")
 	}
 
 	pool, err := createDBConnection(ctx, &cfg.Postgres)
@@ -96,12 +100,17 @@ func run(ctx context.Context) error {
 		return errors.WithMessage(err, "failed to create db")
 	}
 
-	node, err := createNode(ctx, db)
+	nodeEntry, err := GetNodeEntry(ctx, db)
+	if err != nil {
+		return errors.WithMessage(err, "failed to get node entry")
+	}
+
+	node, err := createNode(ctx, db, nodeEntry)
 	if err != nil {
 		return errors.WithMessage(err, "failed to create node")
 	}
 
-	if err := node.Load(); err != nil {
+	if err := loadNode(ctx, node, nodeEntry, db); err != nil {
 		return errors.WithMessagef(err, "failed to load node: %s", node.GetID())
 	}
 	tm2 := time.Now()
@@ -129,28 +138,54 @@ func run(ctx context.Context) error {
 	return nil
 }
 
-func createNode(ctx context.Context, db database.DB) (universe.Node, error) {
+func loadNode(ctx context.Context, node universe.Node, nodeEntry *entry.Node, db database.DB) error {
+	if nodeEntry == nil {
+		if err := seed.Node(ctx, node, db); err != nil {
+			return errors.WithMessage(err, "failed to seed node")
+		}
+	}
+
+	if err := node.Load(); err != nil {
+		return errors.WithMessage(err, "failed to load node")
+	}
+
+	return nil
+}
+
+func GetNodeEntry(ctx context.Context, db database.DB) (*entry.Node, error) {
+	nodeEntry, err := db.GetNodesDB().GetNode(ctx)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, errors.WithMessage(err, "failed to get node")
+	}
+
+	return nodeEntry, nil
+}
+
+func createNode(ctx context.Context, db database.DB, nodeEntry *entry.Node) (universe.Node, error) {
 	worlds := worlds.NewWorlds(db)
 	assets2d := assets_2d.NewAssets2d(db)
 	assets3d := assets_3d.NewAssets3d(db)
 	plugins := plugins.NewPlugins(db)
-	spaceTypes := space_types.NewSpaceTypes(db)
+	objectTypes := object_types.NewObjectTypes(db)
 	userTypes := user_types.NewUserTypes(db)
 	attributeTypes := attribute_types.NewAttributeTypes(db)
 
-	nodeEntry, err := db.GetNodesDB().GetNode(ctx)
-	if err != nil {
-		return nil, errors.WithMessage(err, "failed to get node")
+	objectID := uuid.New()
+	if nodeEntry != nil {
+		objectID = nodeEntry.ObjectID
 	}
 
 	node := node.NewNode(
-		nodeEntry.SpaceID,
+		objectID,
 		db,
 		worlds,
 		assets2d,
 		assets3d,
 		plugins,
-		spaceTypes,
+		objectTypes,
 		userTypes,
 		attributeTypes,
 	)
@@ -165,17 +200,17 @@ func createNode(ctx context.Context, db database.DB) (universe.Node, error) {
 	if err := assets3d.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize assets 3d")
 	}
-	if err := spaceTypes.Initialize(ctx); err != nil {
-		return nil, errors.WithMessage(err, "failed to initialize space types")
+	if err := plugins.Initialize(ctx); err != nil {
+		return nil, errors.WithMessage(err, "failed to initialize plugins")
+	}
+	if err := objectTypes.Initialize(ctx); err != nil {
+		return nil, errors.WithMessage(err, "failed to initialize object types")
 	}
 	if err := userTypes.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize user types")
 	}
 	if err := attributeTypes.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize attribute types")
-	}
-	if err := plugins.Initialize(ctx); err != nil {
-		return nil, errors.WithMessage(err, "failed to initialize plugins")
 	}
 	if err := node.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize node")
@@ -204,24 +239,24 @@ func createDBConnection(ctx context.Context, cfg *config.Postgres) (*pgxpool.Poo
 
 func createDB(conn *pgxpool.Pool) (database.DB, error) {
 	common := commonDB.NewDB(conn)
-	spaces := spacesDB.NewDB(conn, common)
+	objects := objectsDB.NewDB(conn, common)
 	return db.NewDB(
 		conn,
 		common,
 		nodesDB.NewDB(conn, common),
-		worldsDB.NewDB(conn, common, spaces),
-		spaces,
+		worldsDB.NewDB(conn, common, objects),
+		objects,
 		usersDB.NewDB(conn, common),
 		assets2dDB.NewDB(conn, common),
 		assets3dDB.NewDB(conn, common),
 		pluginsDB.NewDB(conn, common),
-		userSpaceDB.NewDB(conn, common),
-		spaceTypesDB.NewDB(conn, common),
+		userObjectsDB.NewDB(conn, common),
+		objectTypesDB.NewDB(conn, common),
 		userTypesDB.NewDB(conn, common),
 		attributesTypeDB.NewDB(conn, common),
 		nodeAttributesDB.NewDB(conn, common),
-		spaceAttributesDB.NewDB(conn, common),
-		spaceUserAttributesDB.NewDB(conn, common),
+		objectAttributesDB.NewDB(conn, common),
+		objectUserAttributesDB.NewDB(conn, common),
 		userAttributesDB.NewDB(conn, common),
 		userUserAttributesDB.NewDB(conn, common),
 	), nil

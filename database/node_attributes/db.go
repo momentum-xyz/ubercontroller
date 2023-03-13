@@ -15,17 +15,10 @@ import (
 )
 
 const (
-	getNodeAttributesQuery                   = `SELECT * FROM node_attribute;`
-	getNodeAttributeByPluginIDAndName        = `SELECT * FROM node_attribute WHERE plugin_id = $1 AND attribute_name = $2;`
-	getNodeAttributeValueByPluginIDAndName   = `SELECT value FROM node_attribute WHERE plugin_id = $1 AND attribute_name = $2;`
-	getNodeAttributeOptionsByPluginIDAndName = `SELECT options FROM node_attribute WHERE plugin_id = $1 AND attribute_name = $2;`
-
-	updateNodeAttributeValueQuery             = `UPDATE node_attribute SET value = $3 WHERE plugin_id = $1 AND attribute_name = $2;`
-	updateNodeAttributeOptionsQuery           = `UPDATE node_attribute SET options = $3 WHERE plugin_id = $1 AND attribute_name = $2;`
-	removeNodeAttributeByNameQuery            = `DELETE FROM node_attribute WHERE attribute_name = $1;`
-	removeNodeAttributesByNamesQuery          = `DELETE FROM node_attribute WHERE attribute_name = ANY($1);`
-	removeNodeAttributesByPluginIdQuery       = `DELETE FROM node_attribute WHERE plugin_id = $1;`
-	removeNodeAttributeByPluginIdAndNameQuery = `DELETE FROM node_attribute WHERE plugin_id = $1 AND attribute_name = $2;`
+	getNodeAttributesQuery                    = `SELECT * FROM node_attribute;`
+	getNodeAttributeByAttributeIDQuery        = `SELECT * FROM node_attribute WHERE plugin_id = $1 AND attribute_name = $2;`
+	getNodeAttributeValueByAttributeIDQuery   = `SELECT value FROM node_attribute WHERE plugin_id = $1 AND attribute_name = $2;`
+	getNodeAttributeOptionsByAttributeIDQuery = `SELECT options FROM node_attribute WHERE plugin_id = $1 AND attribute_name = $2;`
 
 	upsertNodeAttributeQuery = `INSERT INTO node_attribute
 									(plugin_id, attribute_name, value, options)
@@ -34,6 +27,14 @@ const (
 								ON CONFLICT (plugin_id, attribute_name)
 								DO UPDATE SET
 									value = $3, options = $4;`
+
+	updateNodeAttributeValueQuery   = `UPDATE node_attribute SET value = $3 WHERE plugin_id = $1 AND attribute_name = $2;`
+	updateNodeAttributeOptionsQuery = `UPDATE node_attribute SET options = $3 WHERE plugin_id = $1 AND attribute_name = $2;`
+
+	removeNodeAttributesByNameQuery       = `DELETE FROM node_attribute WHERE attribute_name = $1;`
+	removeNodeAttributesByNamesQuery      = `DELETE FROM node_attribute WHERE attribute_name = ANY($1);`
+	removeNodeAttributesByPluginIDQuery   = `DELETE FROM node_attribute WHERE plugin_id = $1;`
+	removeNodeAttributeByAttributeIDQuery = `DELETE FROM node_attribute WHERE plugin_id = $1 AND attribute_name = $2;`
 )
 
 var _ database.NodeAttributesDB = (*DB)(nil)
@@ -63,7 +64,7 @@ func (db *DB) GetNodeAttributeByAttributeID(
 ) (*entry.NodeAttribute, error) {
 	var attr entry.NodeAttribute
 	if err := pgxscan.Get(
-		ctx, db.conn, &attr, getNodeAttributeByPluginIDAndName,
+		ctx, db.conn, &attr, getNodeAttributeByAttributeIDQuery,
 		attributeID.PluginID, attributeID.Name,
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
@@ -76,7 +77,7 @@ func (db *DB) GetNodeAttributeValueByAttributeID(
 ) (*entry.AttributeValue, error) {
 	var value entry.AttributeValue
 	err := db.conn.QueryRow(ctx,
-		getNodeAttributeValueByPluginIDAndName,
+		getNodeAttributeValueByAttributeIDQuery,
 		attributeID.PluginID,
 		attributeID.Name).Scan(&value)
 	if err != nil {
@@ -90,7 +91,7 @@ func (db *DB) GetNodeAttributeOptionsByAttributeID(
 ) (*entry.AttributeOptions, error) {
 	var options entry.AttributeOptions
 	err := db.conn.QueryRow(ctx,
-		getNodeAttributeOptionsByPluginIDAndName,
+		getNodeAttributeOptionsByAttributeIDQuery,
 		attributeID.PluginID,
 		attributeID.Name).Scan(&options)
 	if err != nil {
@@ -125,7 +126,7 @@ func (db *DB) UpsertNodeAttributes(ctx context.Context, nodeAttributes []*entry.
 	for i := 0; i < batch.Len(); i++ {
 		if _, err := batchRes.Exec(); err != nil {
 			errs = multierror.Append(errs,
-				errors.WithMessagef(err, "failed to exec db for: %s", nodeAttributes[i].Name),
+				errors.WithMessagef(err, "failed to exec db for: %+v", nodeAttributes[i].NodeAttributeID),
 			)
 		}
 	}
@@ -133,8 +134,8 @@ func (db *DB) UpsertNodeAttributes(ctx context.Context, nodeAttributes []*entry.
 	return errs.ErrorOrNil()
 }
 
-func (db *DB) RemoveNodeAttributeByName(ctx context.Context, name string) error {
-	if _, err := db.conn.Exec(ctx, removeNodeAttributeByNameQuery, name); err != nil {
+func (db *DB) RemoveNodeAttributesByName(ctx context.Context, name string) error {
+	if _, err := db.conn.Exec(ctx, removeNodeAttributesByNameQuery, name); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
@@ -148,7 +149,7 @@ func (db *DB) RemoveNodeAttributesByNames(ctx context.Context, names []string) e
 }
 
 func (db *DB) RemoveNodeAttributesByPluginID(ctx context.Context, pluginID uuid.UUID) error {
-	if _, err := db.conn.Exec(ctx, removeNodeAttributesByPluginIdQuery, pluginID); err != nil {
+	if _, err := db.conn.Exec(ctx, removeNodeAttributesByPluginIDQuery, pluginID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
@@ -156,7 +157,7 @@ func (db *DB) RemoveNodeAttributesByPluginID(ctx context.Context, pluginID uuid.
 
 func (db *DB) RemoveNodeAttributeByAttributeID(ctx context.Context, attributeID entry.AttributeID) error {
 	if _, err := db.conn.Exec(
-		ctx, removeNodeAttributeByPluginIdAndNameQuery, attributeID.PluginID, attributeID.Name,
+		ctx, removeNodeAttributeByAttributeIDQuery, attributeID.PluginID, attributeID.Name,
 	); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}

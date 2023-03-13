@@ -43,7 +43,7 @@ type IOTWorker struct {
 	log   *zap.SugaredLogger
 	send  chan *websocket.PreparedMessage
 	world universe.World
-	cubey universe.Space
+	cubey universe.Object
 }
 
 func NewIOTWorker(ws *websocket.Conn, ctx context.Context) *IOTWorker {
@@ -58,7 +58,7 @@ func NewIOTWorker(ws *websocket.Conn, ctx context.Context) *IOTWorker {
 	iw.log = log
 	iw.send = make(chan *websocket.PreparedMessage, 10)
 	iw.world, _ = universe.GetNode().GetWorlds().GetWorld(uuid.MustParse("4ecdc743-150e-466a-983f-011e0aa2f116"))
-	iw.cubey, _ = iw.world.GetSpace(uuid.MustParse("12741349-98a6-4c56-847d-86c4af4fc38f"), true)
+	iw.cubey, _ = iw.world.GetObject(uuid.MustParse("12741349-98a6-4c56-847d-86c4af4fc38f"), true)
 	//iw.log.Infof("w: %+v, s:%+v\n", iw.world, iw.cubey)
 	return &iw
 }
@@ -161,12 +161,12 @@ func (iot *IOTWorker) AcceptMessage(message []byte) error {
 				err := json.Unmarshal([]byte(msg.Data.(string)), &irot)
 				if err == nil {
 					iot.log.Infof("irot: %+v\n", irot)
-					opos := iot.cubey.GetActualPosition()
+					opos := iot.cubey.GetActualTransform()
 					irot.X *= 50
 					irot.Y *= 50
 					irot.Z *= 50
 					opos.Rotation.Plus(irot)
-					iot.cubey.SetPosition(opos, true)
+					iot.cubey.SetTransform(opos, true)
 				}
 				//rot := opos.Rotation
 

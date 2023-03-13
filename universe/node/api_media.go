@@ -7,8 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/ubercontroller/universe/common/api"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 )
 
 // @Summary Uploads an image to the media manager
@@ -38,7 +38,7 @@ func (n *Node) apiMediaUploadImage(c *gin.Context) {
 
 	defer openedFile.Close()
 
-	req, err := http.NewRequest("POST", n.cfg.Common.RenderInternalURL+"/render/addimage", openedFile)
+	req, err := http.NewRequest("POST", n.CFG.Common.RenderInternalURL+"/render/addimage", openedFile)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiMediaUploadImage: failed to create post request")
 		api.AbortRequest(c, http.StatusBadRequest, "failed_to_create_request", err, n.log)

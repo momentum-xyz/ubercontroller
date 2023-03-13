@@ -7,12 +7,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/ubercontroller/universe/common/helper"
-	"github.com/momentum-xyz/ubercontroller/utils"
-
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/tree"
+	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
 // @Summary Create mutual docks
@@ -70,14 +71,22 @@ func (n *Node) apiUsersCreateMutualDocks(c *gin.Context) {
 
 	abPortalName := userB.UserID.String()
 	baPortalName := userA.UserID.String()
-	if userB.Profile != nil && userB.Profile.Name != nil {
+	abPortalImage := ""
+	baPortalImage := ""
+	if userB.Profile.Name != nil {
 		abPortalName = *userB.Profile.Name
 	}
-	if userA.Profile != nil && userA.Profile.Name != nil {
+	if userB.Profile.AvatarHash != nil {
+		abPortalImage = *userB.Profile.AvatarHash
+	}
+	if userA.Profile.Name != nil {
 		baPortalName = *userA.Profile.Name
 	}
+	if userA.Profile.AvatarHash != nil {
+		baPortalImage = *userA.Profile.AvatarHash
+	}
 
-	if _, err := createWorldPortal(abPortalName, worldA, worldB); err != nil {
+	if _, err := createWorldPortal(abPortalName, worldA, worldB, abPortalImage); err != nil {
 		err := errors.WithMessagef(
 			err,
 			"Node: apiUsersCreateMutualDocks: failed to create world portal from %s to %s",
@@ -87,7 +96,7 @@ func (n *Node) apiUsersCreateMutualDocks(c *gin.Context) {
 		return
 	}
 
-	if _, err := createWorldPortal(baPortalName, worldB, worldA); err != nil {
+	if _, err := createWorldPortal(baPortalName, worldB, worldA, baPortalImage); err != nil {
 		err := errors.WithMessagef(
 			err,
 			"Node: apiUsersCreateMutualDocks: failed to create world portal from %s to %s",
@@ -97,23 +106,27 @@ func (n *Node) apiUsersCreateMutualDocks(c *gin.Context) {
 		return
 	}
 
-	permissions := []*entry.UserSpace{
-		{
-			SpaceID: worldA.GetID(),
-			UserID:  userB.UserID,
-			Value:   map[string]any{"role": "admin"},
-		},
-		{
-			SpaceID: worldB.GetID(),
-			UserID:  userA.UserID,
-			Value:   map[string]any{"role": "admin"},
-		},
+	permissions := []*entry.UserObject{
+		entry.NewUserObject(
+			entry.NewUserObjectID(userA.UserID, worldB.GetID()),
+			&entry.UserObjectValue{"role": "admin"},
+		),
+		entry.NewUserObject(
+			entry.NewUserObjectID(userB.UserID, worldA.GetID()),
+			&entry.UserObjectValue{"role": "admin"},
+		),
 	}
 
-	if err := n.db.GetUserSpaceDB().UpsertUserSpaces(n.ctx, permissions); err != nil {
-		err := errors.WithMessage(err, "Node: apiUsersCreateMutualDocks: failed to upsert user spaces")
-		api.AbortRequest(c, http.StatusInternalServerError, "upsert_user_spaces_failed", err, n.log)
-		return
+	for i := range permissions {
+		if _, err := n.GetUserObjects().Upsert(
+			permissions[i].UserObjectID, modify.MergeWith(permissions[i].Value), true,
+		); err != nil {
+			err := errors.WithMessagef(
+				err, "Node: apiUsersCreateMutualDocks: failed to upsert user object: %+v", permissions[i].UserObjectID,
+			)
+			api.AbortRequest(c, http.StatusInternalServerError, "upsert_user_object_failed", err, n.log)
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, nil)
@@ -175,7 +188,7 @@ func (n *Node) apiUsersRemoveMutualDocks(c *gin.Context) {
 	portalsA := getWorldPortals(worldA, worldB)
 	portalsB := getWorldPortals(worldB, worldA)
 	for _, portal := range utils.MergeMaps(portalsA, portalsB) {
-		if _, err := helper.RemoveSpaceFromParent(portal.GetParent(), portal, true); err != nil {
+		if _, err := tree.RemoveObjectFromParent(portal.GetParent(), portal, true); err != nil {
 			err := errors.WithMessagef(
 				err, "Node: apiUsersRemoveMutualDocks: failed to remove portal: %s", portal.GetID(),
 			)
@@ -184,27 +197,23 @@ func (n *Node) apiUsersRemoveMutualDocks(c *gin.Context) {
 		}
 	}
 
-	permissions := []*entry.UserSpace{
-		{
-			SpaceID: worldA.GetID(),
-			UserID:  userB.UserID,
-		},
-		{
-			SpaceID: worldB.GetID(),
-			UserID:  userA.UserID,
-		},
+	permissions := []entry.UserObjectID{
+		entry.NewUserObjectID(userA.UserID, worldB.GetID()),
+		entry.NewUserObjectID(userB.UserID, worldA.GetID()),
 	}
 
-	if err := n.db.GetUserSpaceDB().RemoveUserSpaces(n.ctx, permissions); err != nil {
-		err := errors.WithMessage(err, "Node: apiUsersRemoveMutualDocks: failed to remove user spaces")
-		api.AbortRequest(c, http.StatusInternalServerError, "user_spaces_remove_failed", err, n.log)
+	if _, err := n.GetUserObjects().RemoveMany(permissions, true); err != nil {
+		err := errors.WithMessage(err, "Node: apiUsersRemoveMutualDocks: failed to remove user objects")
+		api.AbortRequest(c, http.StatusInternalServerError, "user_objects_remove_failed", err, n.log)
 		return
 	}
 
 	c.JSON(http.StatusAccepted, nil)
 }
 
-func createWorldPortal(portalName string, from, to universe.World) (uuid.UUID, error) {
+func createWorldPortal(portalName string, from, to universe.World, portalImage string) (uuid.UUID, error) {
+	var objectAttributes []*entry.Attribute
+
 	portals := getWorldPortals(from, to)
 	if len(portals) > 0 {
 		for portalID, _ := range portals {
@@ -217,41 +226,53 @@ func createWorldPortal(portalName string, from, to universe.World) (uuid.UUID, e
 		return uuid.Nil, errors.WithMessage(err, "failed to get docking station")
 	}
 
-	portalSpaceTypeID, err := helper.GetPortalSpaceTypeID()
+	portalObjectTypeID, err := common.GetPortalObjectTypeID()
 	if err != nil {
-		return uuid.Nil, errors.WithMessage(err, "failed to get portal space type id")
+		return uuid.Nil, errors.WithMessage(err, "failed to get portal object type id")
 	}
 
-	template := helper.SpaceTemplate{
-		SpaceName:   &portalName,
-		SpaceTypeID: portalSpaceTypeID,
-		ParentID:    dockingStation.GetID(),
-		SpaceAttributes: []*entry.Attribute{
-			entry.NewAttribute(
-				entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.World.TeleportDestination.Name),
-				entry.NewAttributePayload(
-					&entry.AttributeValue{
-						universe.ReservedAttributes.World.TeleportDestination.Key: to.GetID().String(),
-					},
-					nil,
-				),
+	objectAttributes = append(objectAttributes, entry.NewAttribute(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.World.TeleportDestination.Name),
+		entry.NewAttributePayload(
+			&entry.AttributeValue{
+				universe.ReservedAttributes.World.TeleportDestination.Key: to.GetID().String(),
+			},
+			nil,
+		),
+	))
+
+	if portalImage != "" {
+		objectAttributes = append(objectAttributes, entry.NewAttribute(
+			entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Object.PortalDockFace.Name),
+			entry.NewAttributePayload(
+				&entry.AttributeValue{
+					universe.ReservedAttributes.Object.PortalDockFace.Key: portalImage,
+				},
+				nil,
 			),
-		},
+		))
 	}
 
-	return helper.AddSpaceFromTemplate(&template, true)
+	template := tree.ObjectTemplate{
+		ObjectName:       &portalName,
+		ObjectTypeID:     portalObjectTypeID,
+		ParentID:         dockingStation.GetID(),
+		ObjectAttributes: objectAttributes,
+	}
+
+	return tree.AddObjectFromTemplate(&template, true)
 }
 
-func getWorldDockingStation(world universe.World) (universe.Space, error) {
-	dockingStationID := world.GetSettings().Spaces["docking_station"]
-	dockingStation, ok := world.GetSpaceFromAllSpaces(dockingStationID)
+func getWorldDockingStation(world universe.World) (universe.Object, error) {
+	dockingStationID := world.GetSettings().Objects["docking_station"]
+	dockingStation, ok := world.GetObjectFromAllObjects(dockingStationID)
 	if !ok {
-		return nil, errors.Errorf("failed to get docking station space: %s", dockingStationID)
+		return nil, errors.Errorf("failed to get docking station object: %s", dockingStationID)
 	}
 	return dockingStation, nil
 }
 
-func getWorldPortals(from, to universe.World) map[uuid.UUID]universe.Space {
+func getWorldPortals(from, to universe.World) map[uuid.UUID]universe.Object {
 	dockingStation, err := getWorldDockingStation(from)
 	if err != nil {
 		return nil
@@ -261,8 +282,8 @@ func getWorldPortals(from, to universe.World) map[uuid.UUID]universe.Space {
 	attributeID := entry.NewAttributeID(
 		universe.GetSystemPluginID(), universe.ReservedAttributes.World.TeleportDestination.Name,
 	)
-	findPortalFn := func(spaceID uuid.UUID, space universe.Space) bool {
-		value, ok := space.GetSpaceAttributes().GetValue(attributeID)
+	findPortalFn := func(objectID uuid.UUID, object universe.Object) bool {
+		value, ok := object.GetObjectAttributes().GetValue(attributeID)
 		if !ok || value == nil {
 			return false
 		}
@@ -275,5 +296,5 @@ func getWorldPortals(from, to universe.World) map[uuid.UUID]universe.Space {
 		return false
 	}
 
-	return dockingStation.FilterSpaces(findPortalFn, false)
+	return dockingStation.FilterObjects(findPortalFn, false)
 }

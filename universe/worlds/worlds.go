@@ -2,14 +2,8 @@ package worlds
 
 import (
 	"context"
-	"sync"
-
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
-	"github.com/pkg/errors"
-	"go.uber.org/zap"
-	"golang.org/x/sync/errgroup"
-
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types"
@@ -17,6 +11,8 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/world"
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
 )
 
 var _ universe.Worlds = (*Worlds)(nil)
@@ -94,7 +90,7 @@ func (w *Worlds) AddWorld(world universe.World, updateDB bool) error {
 	w.worlds.Mu.Lock()
 	defer w.worlds.Mu.Unlock()
 
-	if err := world.SetParent(node, updateDB); err != nil {
+	if err := world.SetParent(node, false); err != nil {
 		return errors.WithMessagef(err, "failed to set parent %s to world %s", node.GetID(), world.GetID())
 	}
 
@@ -106,102 +102,57 @@ func (w *Worlds) AddWorld(world universe.World, updateDB bool) error {
 
 	w.worlds.Data[world.GetID()] = world
 
-	return node.AddSpaceToAllSpaces(world.ToSpace())
+	return node.AddObjectToAllObjects(world.ToObject())
 }
 
+// TODO: optimize
 func (w *Worlds) AddWorlds(worlds []universe.World, updateDB bool) error {
-	w.worlds.Mu.Lock()
-	defer w.worlds.Mu.Unlock()
-
-	if updateDB {
-		group, _ := errgroup.WithContext(w.ctx)
-		for i := range worlds {
-			world := worlds[i]
-
-			group.Go(func() error {
-				if err := world.Save(); err != nil {
-					return errors.WithMessagef(err, "failed to save world: %s", world.GetID())
-				}
-				return nil
-			})
-		}
-		if err := group.Wait(); err != nil {
-			return errors.WithMessage(err, "failed to update db")
+	for _, world := range worlds {
+		if err := w.AddWorld(world, updateDB); err != nil {
+			return errors.WithMessagef(err, "failed to add world: %s", world.GetID())
 		}
 	}
-
-	for i := range worlds {
-		w.worlds.Data[worlds[i].GetID()] = worlds[i]
-	}
-
 	return nil
 }
 
 // TODO: introduce "helper.RemoveWorld()" method and fix this one
-func (w *Worlds) RemoveWorld(world universe.World, updateDB bool) error {
+func (w *Worlds) RemoveWorld(world universe.World, updateDB bool) (bool, error) {
 	w.worlds.Mu.Lock()
 	defer w.worlds.Mu.Unlock()
 
 	if _, ok := w.worlds.Data[world.GetID()]; !ok {
-		return errors.Errorf("world not found")
+		return false, nil
 	}
 
 	if updateDB {
-		spaces := world.GetAllSpaces()
-		ids := make([]uuid.UUID, 0, len(spaces))
-		for _, space := range spaces {
-			ids = append(ids, space.GetID())
-		}
-		if err := w.db.GetSpacesDB().RemoveSpacesByIDs(w.ctx, ids); err != nil {
-			return errors.WithMessage(err, "failed to remove spaces by ids")
-		}
+		panic("not implemented")
 	}
 
 	delete(w.worlds.Data, world.GetID())
 
-	return nil
+	return true, nil
 }
 
 // TODO: introduce "helper.RemoveWorld()" method and fix this one
-func (w *Worlds) RemoveWorlds(worlds []universe.World, updateDB bool) error {
+func (w *Worlds) RemoveWorlds(worlds []universe.World, updateDB bool) (bool, error) {
 	w.worlds.Mu.Lock()
 	defer w.worlds.Mu.Unlock()
 
-	for i := range worlds {
-		if _, ok := w.worlds.Data[worlds[i].GetID()]; !ok {
-			return errors.Errorf("world not found: %s", worlds[i].GetID())
+	for _, world := range worlds {
+		if _, ok := w.worlds.Data[world.GetID()]; !ok {
+			return false, nil
 		}
 	}
 
 	if updateDB {
-		group, _ := errgroup.WithContext(w.ctx)
-		for i := range worlds {
-			world := worlds[i]
-
-			group.Go(func() error {
-				spaces := world.GetAllSpaces()
-				ids := make([]uuid.UUID, 0, len(spaces))
-				for i := range spaces {
-					ids = append(ids, spaces[i].GetID())
-				}
-
-				if err := w.db.GetSpacesDB().RemoveSpacesByIDs(w.ctx, ids); err != nil {
-					return errors.WithMessagef(err, "failed to remove spaces by ids: %s", world.GetID())
-				}
-
-				return nil
-			})
-		}
-		if err := group.Wait(); err != nil {
-			return errors.WithMessage(err, "failed to update db")
-		}
+		panic("not implemented")
 	}
 
-	for i := range worlds {
-		delete(w.worlds.Data, worlds[i].GetID())
+	for _, world := range worlds {
+		delete(w.worlds.Data, world.GetID())
 	}
 
-	return nil
+	return true, nil
 }
 
 func (w *Worlds) Run() error {
@@ -241,39 +192,11 @@ func (w *Worlds) Load() error {
 	if err != nil {
 		return errors.WithMessage(err, "failed to get world ids from db")
 	}
-	worldsCount := len(worldIDs)
 
-	// modify batchSize when database consumption per world loading will be changed
-	batchSize := int(w.cfg.Postgres.MAXCONNS)
-	for len(worldIDs) > 0 {
-		batch := worldIDs
-		if len(worldIDs) > batchSize {
-			batch = worldIDs[:batchSize]
-			worldIDs = worldIDs[batchSize:]
-		} else {
-			worldIDs = nil
-		}
-
-		if err := w.loadBatch(batch); err != nil {
-			return errors.WithMessage(err, "failed to load worlds batch")
-		}
-	}
-
-	universe.GetNode().AddAPIRegister(w)
-
-	w.log.Infof("Worlds loaded: %d", worldsCount)
-
-	return nil
-}
-
-func (w *Worlds) loadBatch(worldIDs []uuid.UUID) error {
-	w.log.Info("Loading worlds batch...")
-
-	group, _ := errgroup.WithContext(w.ctx)
-	for i := range worldIDs {
-		worldID := worldIDs[i]
-
-		group.Go(func() error {
+	butcher := generic.NewButcher(worldIDs)
+	if err := butcher.HandleItems(
+		int(w.cfg.Postgres.MAXCONNS), // modify batchSize when database consumption while loading will be changed
+		func(worldID uuid.UUID) error {
 			world, err := w.CreateWorld(worldID)
 			if err != nil {
 				return errors.WithMessagef(err, "failed to create new world: %s", worldID)
@@ -281,15 +204,15 @@ func (w *Worlds) loadBatch(worldIDs []uuid.UUID) error {
 			if err := world.Load(); err != nil {
 				return errors.WithMessagef(err, "failed to load world: %s", worldID)
 			}
-
 			return nil
-		})
-	}
-	if err := group.Wait(); err != nil {
-		return err
+		},
+	); err != nil {
+		return errors.WithMessage(err, "failed to load worlds")
 	}
 
-	w.log.Infof("Worlds batch loaded: %d", w.worlds.Len())
+	universe.GetNode().AddAPIRegister(w)
+
+	w.log.Infof("Worlds loaded: %d", butcher.Len())
 
 	return nil
 }
@@ -297,30 +220,20 @@ func (w *Worlds) loadBatch(worldIDs []uuid.UUID) error {
 func (w *Worlds) Save() error {
 	w.log.Info("Saving worlds...")
 
-	var wg sync.WaitGroup
-	var errs *multierror.Error
-	var errsMu sync.Mutex
-
 	w.worlds.Mu.RLock()
 	defer w.worlds.Mu.RUnlock()
 
-	for i := range w.worlds.Data {
-		wg.Add(1)
-
-		go func(world universe.World) {
-			defer wg.Done()
-
-			if err := world.Save(); err != nil {
-				errsMu.Lock()
-				defer errsMu.Unlock()
-				errs = multierror.Append(errs, errors.WithMessagef(err, "failed to save world: %s", world.GetID()))
-			}
-		}(w.worlds.Data[i])
+	var count int
+	var errs *multierror.Error
+	for _, world := range w.worlds.Data {
+		if err := world.Save(); err != nil {
+			errs = multierror.Append(errs, errors.WithMessagef(err, "failed to save world: %s", world.GetID()))
+			continue
+		}
+		count++
 	}
 
-	wg.Wait()
-
-	w.log.Info("Worlds saved")
+	w.log.Infof("Worlds saved: %d", count)
 
 	return errs.ErrorOrNil()
 }

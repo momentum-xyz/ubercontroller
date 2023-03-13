@@ -3,10 +3,10 @@ package node
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/momentum-xyz/ubercontroller/universe/common/helper"
 	"net/http"
 	"net/url"
 	"os/exec"
+	"path"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -16,7 +16,8 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/tree"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
@@ -40,7 +41,7 @@ type StoreItem struct {
 
 type NFTMeta struct {
 	Name  string `json:"name" binding:"required"`
-	Image string `json:"image" binding:"required"`
+	Image string `json:"image"`
 }
 
 type WalletMeta struct {
@@ -160,15 +161,15 @@ func (n *Node) createWorld(ownerID uuid.UUID, name string) error {
 		return errors.Errorf("failed to get world template attribute value")
 	}
 
-	var worldTemplate helper.WorldTemplate
+	var worldTemplate tree.WorldTemplate
 	if err := utils.MapDecode(*templateValue, &worldTemplate); err != nil {
 		return errors.WithMessage(err, "failed to decode world template")
 	}
-	worldTemplate.SpaceID = &ownerID // User's world (aka Odyssey) should be equal to user ID
-	worldTemplate.SpaceName = &name
+	worldTemplate.ObjectID = &ownerID // User's world (aka Odyssey) should be equal to user ID
+	worldTemplate.ObjectName = &name
 	worldTemplate.OwnerID = &ownerID
 
-	if _, err := helper.AddWorldFromTemplate(&worldTemplate, true); err != nil {
+	if _, err := tree.AddWorldFromTemplate(&worldTemplate, true); err != nil {
 		return errors.WithMessagef(err, "failed to add world from template: %+v", worldTemplate)
 	}
 
@@ -207,13 +208,19 @@ func (n *Node) mint(jobID uuid.UUID, wallet string, meta NFTMeta, blockHash stri
 		return
 	}
 
-	output, err := exec.Command("node", "mint.js", wallet, n.cfg.Common.MnemonicPhrase, string(b), blockHash).Output()
+	cmd := exec.Command("node", "mint.js", wallet, n.CFG.Common.MnemonicPhrase, string(b), blockHash)
+	cmd.Dir = path.Join("nodejs", "check-nft")
+	output, err := cmd.Output()
 	if err != nil {
 		err = errors.WithMessage(err, "failed to exec node mint.js")
 		{
 			item.Status = StatusFailed
 			item.Error = err
 			store.Store(jobID, item)
+		}
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			log.Error(string(exitErr.Stderr))
 		}
 		log.Error(err)
 		return
@@ -255,7 +262,7 @@ func (n *Node) mint(jobID uuid.UUID, wallet string, meta NFTMeta, blockHash stri
 			item.NodeJSOut = &nodeJSOut
 			store.Store(jobID, item)
 		}
-		log.Error(err)
+		log.Error(item.Error)
 		return
 	}
 
@@ -334,7 +341,7 @@ func (n *Node) mint(jobID uuid.UUID, wallet string, meta NFTMeta, blockHash stri
 // @Success 200 {object} node.apiDriveMintOdysseyCheckJob.Out
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/spaces/{job_id} [get]
+// @Router /api/v4/objects/{job_id} [get]
 func (n *Node) apiDriveMintOdysseyCheckJob(c *gin.Context) {
 	type Out struct {
 		NodeJSOut *NodeJSOut `json:"nodeJSOut"`
@@ -372,8 +379,14 @@ func (n *Node) apiDriveMintOdysseyCheckJob(c *gin.Context) {
 }
 
 func (n *Node) getWalletMetadata(wallet string) (*WalletMeta, error) {
-	output, err := exec.Command("node", "./nodejs/check-nft/check-nft.js", wallet).Output()
+	cmd := exec.Command("node", "check-nft.js", wallet)
+	cmd.Dir = path.Join("nodejs", "check-nft")
+	output, err := cmd.Output()
 	if err != nil {
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			log.Error(string(exitErr.Stderr))
+		}
 		return nil, errors.WithMessage(err, "failed to execute node script check-nft.js")
 	}
 
@@ -417,17 +430,21 @@ func (n *Node) getWalletMetadata(wallet string) (*WalletMeta, error) {
 // @Router /api/v4/drive/resolve-node [get]
 func (n *Node) apiResolveNode(c *gin.Context) {
 	type Out struct {
-		Domain string    `json:"domain"`
+		URL    string    `json:"url"`
 		NodeID uuid.UUID `json:"node_id"`
 	}
 
-	u, _ := url.Parse(n.cfg.UIClient.FrontendURL)
-	h := u.Hostname()
-	if h == "" {
-		h = "localhost"
+	u, err := url.ParseRequestURI(n.cfg.Settings.FrontendURL)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiDriveResolveNode: failed to parse url from config")
+		api.AbortRequest(c, http.StatusInternalServerError, "invalid_request_param", err, n.log)
+		return
 	}
-	Response := Out{Domain: h, NodeID: n.GetID()}
+
+	Response := Out{
+		URL:    u.String(),
+		NodeID: n.GetID(),
+	}
 
 	c.JSON(http.StatusOK, Response)
-
 }

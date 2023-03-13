@@ -2,22 +2,22 @@ package world
 
 import (
 	"github.com/gorilla/websocket"
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
 func (w *World) GetUser(userID uuid.UUID, recursive bool) (universe.User, bool) {
-	return w.Space.GetUser(userID, false)
+	return w.ToObject().GetUser(userID, false)
 }
 
 func (w *World) GetUsers(recursive bool) map[uuid.UUID]universe.User {
-	return w.Space.GetUsers(false)
+	return w.ToObject().GetUsers(false)
 }
 
 func (w *World) AddUser(user universe.User, updateDB bool) error {
@@ -43,7 +43,11 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 			} else {
 				w.log.Infof("World: double-login detected for world %s, user %s", w.GetID(), exUser.GetID())
 
-				exUser.SendDirectly(posbus.NewSignalMsg(posbus.SignalDualConnection).WebsocketMessage())
+				exUser.SendDirectly(
+					posbus.NewMessageFromData(
+						posbus.TypeSignal, posbus.Signal{Value: posbus.SignalDualConnection},
+					).WSMessage(),
+				)
 
 				time.Sleep(time.Millisecond * 100)
 			}
@@ -60,15 +64,22 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 
 	w.log.Infof("AddUser: %+v\n", user.GetID())
 	// effectively replace user if exists
-	if err = w.Space.AddUser(user, updateDB); err != nil {
+	user.LockSendBuffer()
+	if err = w.ToObject().AddUser(user, updateDB); err != nil {
 		return errors.WithMessagef(err, "failed to add user %s to world: %s", user.GetID(), w.GetID())
 	}
+	w.Send(
+		posbus.NewMessageFromData(
+			posbus.TypeAddUsers, posbus.AddUsers{Users: []posbus.UserDefinition{*user.GetUserDefinition()}},
+		).WSMessage(),
+		true,
+	)
 
 	err = w.initializeUnity(user)
 	return err
 }
 
-func (w *World) RemoveUser(user universe.User, updateDB bool) error {
+func (w *World) RemoveUser(user universe.User, updateDB bool) (bool, error) {
 	w.Users.Mu.Lock()
 	defer w.Users.Mu.Unlock()
 
@@ -76,34 +87,51 @@ func (w *World) RemoveUser(user universe.User, updateDB bool) error {
 }
 
 func (w *World) Send(msg *websocket.PreparedMessage, recursive bool) error {
-	return w.Space.Send(msg, false)
+	return w.ToObject().Send(msg, false)
 }
 
 func (w *World) GetUserSpawnPosition(userID uuid.UUID) cmath.Vec3 {
 	return cmath.Vec3{X: 40, Y: 40, Z: 40}
 }
 
-func (w *World) noLockRemoveUser(user universe.User, updateDB bool) error {
+func (w *World) noLockRemoveUser(user universe.User, updateDB bool) (bool, error) {
 	if user.GetWorld().GetID() != w.GetID() {
-		return errors.Errorf("worlds mismatch: %s != %s", user.GetWorld().GetID(), w.GetID())
+		return false, errors.Errorf("worlds mismatch: %s != %s", user.GetWorld().GetID(), w.GetID())
 	}
-	user.SetWorld(nil)
-	delete(w.Users.Data, user.GetID())
 
+	if _, ok := w.Users.Data[user.GetID()]; !ok {
+		return false, nil
+	}
+
+	user.SetWorld(nil)
 	user.Stop()
+
+	delete(w.Users.Data, user.GetID())
 
 	// clean up all locks hold by this user,
 	// temporarily here.
-	w.allSpaces.Mu.RLock()
-	defer w.allSpaces.Mu.RUnlock()
+	w.allObjects.Mu.RLock()
+	defer w.allObjects.Mu.RUnlock()
 
-	for _, child := range w.allSpaces.Data {
+	for _, child := range w.allObjects.Data {
 		if child.LockUnityObject(user, 0) {
-			w.Send(posbus.NewSetObjectLockState(user.GetID(), 0).WebsocketMessage(), true)
+			w.Send(
+				posbus.NewMessageFromData(
+					posbus.TypeObjectLockResult,
+					posbus.ObjectLockResultData{ID: child.GetID(), Result: 0, LockOwner: user.GetID()},
+				).WSMessage(), true,
+			)
 		}
 	}
 
-	return nil
+	w.Send(
+		posbus.NewMessageFromData(
+			posbus.TypeRemoveUsers, posbus.RemoveUsers{Users: []uuid.UUID{user.GetID()}},
+		).WSMessage(),
+		true,
+	)
+
+	return true, nil
 }
 
 func (w *World) initializeUnity(user universe.User) error {
@@ -111,12 +139,14 @@ func (w *World) initializeUnity(user universe.User) error {
 	if err := user.SendDirectly(w.metaMsg.Load()); err != nil {
 		return errors.WithMessage(err, "failed to send meta msg")
 	}
+	//user.SendDirectly(w.Object.Ge)
 
 	// TODO: fix circular dependency
 	if err := user.SendDirectly(
-		posbus.NewSendPositionMsg(
-			user.GetPosition(), user.GetRotation(), cmath.Vec3{X: 0, Y: 0, Z: 0},
-		).WebsocketMessage(),
+		posbus.NewMessageFromBuffer(
+			posbus.TypeSendTransform,
+			user.GetTransform().Bytes(),
+		).WSMessage(),
 	); err != nil {
 		return errors.WithMessage(err, "failed to send position")
 	}
@@ -129,23 +159,10 @@ func (w *World) initializeUnity(user universe.User) error {
 	w.SendSpawnMessage(user.SendDirectly, true)
 	w.log.Infof("Sent Spawn: %+v\n", user.GetID())
 	//time.Sleep(1 * time.Second)
-	user.SendDirectly(
-		posbus.NewSignalMsg(
-			posbus.SignalSpawn,
-		).WebsocketMessage(),
-	)
-	w.log.Infof("Sent Signal: %+v\n", user.GetID())
-
-	sm := w.TempGetSkybox()
-	if sm != nil {
-		w.log.Infof("SKYBOX: Sending texture to  %+v\n", user.GetID().String())
-		user.SendDirectly(sm)
-	}
 
 	w.SendAllAutoAttributes(user.SendDirectly, true)
 	w.log.Infof("Sent Textures: %+v\n", user.GetID())
 	user.ReleaseSendBuffer()
-	//w.log.Infof("Opened waterfall: %+v\n", user.GetID())
 	return nil
 }
 

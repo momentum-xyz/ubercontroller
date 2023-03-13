@@ -14,22 +14,22 @@ const (
 	RemovedAttributeChangeType AttributeChangeType = "attribute_removed"
 )
 
-type SpaceFilterPredicateFn func(spaceID uuid.UUID, space Space) bool
+type ObjectFilterPredicateFn func(objectID uuid.UUID, object Object) bool
 type WorldsFilterPredicateFn func(worldID uuid.UUID, world World) bool
-type SpacesFilterPredicateFn func(spaceID uuid.UUID, space Space) bool
+type ObjectsFilterPredicateFn func(objectID uuid.UUID, object Object) bool
 type Assets2dFilterPredicateFn func(asset2dID uuid.UUID, asset2d Asset2d) bool
 type Assets3dFilterPredicateFn func(asset3dID uuid.UUID, asset3d Asset3d) bool
 type PluginsFilterPredicateFn func(pluginID uuid.UUID, plugin Plugin) bool
 type AttributeTypesFilterPredicateFn func(attributeTypeID entry.AttributeTypeID, attributeType AttributeType) bool
-type SpaceTypesFilterPredicateFn func(spaceTypeID uuid.UUID, spaceType SpaceType) bool
+type ObjectTypesFilterPredicateFn func(objectTypeID uuid.UUID, objectType ObjectType) bool
 type UserTypesFilterPredicateFn func(userTypeID uuid.UUID, userType UserType) bool
 
 type WorldSettings struct {
-	Kind       string               `db:"kind" json:"kind"`
-	Spaces     map[string]uuid.UUID `db:"spaces" json:"spaces"`
-	Attributes map[string]uuid.UUID `db:"spaces" json:"attributes"`
-	SpaceTypes map[string]uuid.UUID `db:"space_types" json:"space_types"`
-	Effects    map[string]uuid.UUID `db:"effects" json:"effects"`
+	Kind        string               `db:"kind" json:"kind"`
+	Objects     map[string]uuid.UUID `db:"objects" json:"objects"`
+	Attributes  map[string]uuid.UUID `db:"attributes" json:"attributes"`
+	ObjectTypes map[string]uuid.UUID `db:"object_types" json:"object_types"`
+	Effects     map[string]uuid.UUID `db:"effects" json:"effects"`
 }
 
 type ReservedAttribute struct {
@@ -40,22 +40,23 @@ type ReservedAttribute struct {
 var (
 	ReservedAttributes = struct {
 		Node struct {
-			GuestUserType   ReservedAttribute
-			NormalUserType  ReservedAttribute
-			PortalSpaceType ReservedAttribute
-			WorldTemplate   ReservedAttribute
-			JWTKey          ReservedAttribute
+			GuestUserType    ReservedAttribute
+			NormalUserType   ReservedAttribute
+			PortalObjectType ReservedAttribute
+			WorldTemplate    ReservedAttribute
+			JWTKey           ReservedAttribute
 		}
 		World struct {
 			Meta                ReservedAttribute
 			Settings            ReservedAttribute
 			TeleportDestination ReservedAttribute
 		}
-		Space struct {
-			Name          ReservedAttribute
-			Description   ReservedAttribute
-			NewsFeedItems ReservedAttribute
-			Events        ReservedAttribute
+		Object struct {
+			Name           ReservedAttribute
+			Description    ReservedAttribute
+			NewsFeedItems  ReservedAttribute
+			PortalDockFace ReservedAttribute
+			Events         ReservedAttribute
 		}
 		Kusama struct {
 			User struct {
@@ -68,11 +69,11 @@ var (
 		}
 	}{
 		Node: struct {
-			GuestUserType   ReservedAttribute
-			NormalUserType  ReservedAttribute
-			PortalSpaceType ReservedAttribute
-			WorldTemplate   ReservedAttribute
-			JWTKey          ReservedAttribute
+			GuestUserType    ReservedAttribute
+			NormalUserType   ReservedAttribute
+			PortalObjectType ReservedAttribute
+			WorldTemplate    ReservedAttribute
+			JWTKey           ReservedAttribute
 		}{
 			GuestUserType: ReservedAttribute{
 				Name: "node_settings",
@@ -82,9 +83,9 @@ var (
 				Name: "node_settings",
 				Key:  "normal_user_type",
 			},
-			PortalSpaceType: ReservedAttribute{
+			PortalObjectType: ReservedAttribute{
 				Name: "node_settings",
-				Key:  "docking_hub_space_type",
+				Key:  "docking_hub_object_type",
 			},
 			WorldTemplate: ReservedAttribute{
 				Name: "world_template",
@@ -110,11 +111,12 @@ var (
 				Key:  "DestinationWorldID",
 			},
 		},
-		Space: struct {
-			Name          ReservedAttribute
-			Description   ReservedAttribute
-			NewsFeedItems ReservedAttribute
-			Events        ReservedAttribute
+		Object: struct {
+			Name           ReservedAttribute
+			Description    ReservedAttribute
+			NewsFeedItems  ReservedAttribute
+			PortalDockFace ReservedAttribute
+			Events         ReservedAttribute
 		}{
 			Name: ReservedAttribute{
 				Name: "name",
@@ -126,6 +128,10 @@ var (
 			NewsFeedItems: ReservedAttribute{
 				Name: "news_feed",
 				Key:  "items",
+			},
+			PortalDockFace: ReservedAttribute{
+				Name: "dock_face",
+				Key:  "render_hash",
 			},
 			Events: ReservedAttribute{
 				Name: "events",

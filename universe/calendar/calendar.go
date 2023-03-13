@@ -2,14 +2,12 @@ package calendar
 
 import (
 	"context"
-	"encoding/json"
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/pkg/errors"
-
-	"github.com/momentum-xyz/posbus-protocol/posbus"
 
 	"github.com/momentum-xyz/ubercontroller/logger"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -25,11 +23,11 @@ type Calendar struct {
 }
 
 type Event struct {
-	SpaceID *uuid.UUID `json:"spaceId"`
-	Title   string     `json:"title"`
-	Start   time.Time  `json:"start"`
-	End     time.Time  `json:"end"`
-	EventID string     `json:"eventId"`
+	ObjectID *uuid.UUID `json:"objectId"`
+	Title    string     `json:"title"`
+	Start    time.Time  `json:"start"`
+	End      time.Time  `json:"end"`
+	EventID  string     `json:"eventId"`
 }
 
 var log = logger.L()
@@ -55,9 +53,9 @@ func (c *Calendar) Run() error {
 }
 
 func (c *Calendar) update() {
-	spaces := c.world.GetAllSpaces()
+	objects := c.world.GetAllObjects()
 
-	events := getAllEvents(spaces)
+	events := getAllEvents(objects)
 	nextEvents := findNextEvents(events)
 
 	c.timerSet.StopAll()
@@ -80,11 +78,11 @@ func (c *Calendar) tick(eventID string) error {
 		return nil
 	}
 	topic := "notify-gathering-start"
-	data, err := json.Marshal(&e)
-	if err != nil {
-		return errors.WithMessagef(err, "failed to marshal message payload")
-	}
-	m := posbus.NewRelayToReactMsg(topic, data).WebsocketMessage()
+	//data, err := json.Marshal(&e)
+	//if err != nil {
+	//	return errors.WithMessagef(err, "failed to marshal message payload")
+	//}
+	m := posbus.NewGenericMessage(topic, e).WSMessage()
 	c.world.Send(m, false)
 
 	go c.update()
@@ -93,8 +91,8 @@ func (c *Calendar) tick(eventID string) error {
 }
 
 func (c *Calendar) getEventByID(eventID string) *Event {
-	spaces := c.world.GetAllSpaces()
-	events := getAllEvents(spaces)
+	objects := c.world.GetAllObjects()
+	events := getAllEvents(objects)
 	for _, e := range events {
 		if e.EventID == eventID {
 			return &e
@@ -139,17 +137,17 @@ func findNextEvents(events []Event) []Event {
 	return result2
 }
 
-func getAllEvents(spaces map[uuid.UUID]universe.Space) []Event {
-	attributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Space.Events.Name)
+func getAllEvents(objects map[uuid.UUID]universe.Object) []Event {
+	attributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Object.Events.Name)
 
-	//a := c.world.GetSpaceAttributesValue(true)
+	//a := c.world.GetObjectAttributesValue(true)
 
 	attributes := make([]*entry.AttributeValue, 0)
 	events := make([]Event, 0)
-	for spaceID, _ := range spaces {
-		space := spaces[spaceID]
+	for objectID, _ := range objects {
+		object := objects[objectID]
 
-		attributeValue, ok := space.GetSpaceAttributes().GetValue(attributeID)
+		attributeValue, ok := object.GetObjectAttributes().GetValue(attributeID)
 		if !ok {
 			continue
 		}
@@ -158,7 +156,7 @@ func getAllEvents(spaces map[uuid.UUID]universe.Space) []Event {
 			attributes = append(attributes, attributeValue)
 			attribute := *attributeValue
 			for _, event := range attribute {
-				e, err := getEvent(&spaceID, event)
+				e, err := getEvent(&objectID, event)
 				if err != nil {
 					log.Error(err)
 				}
@@ -172,8 +170,8 @@ func getAllEvents(spaces map[uuid.UUID]universe.Space) []Event {
 	return events
 }
 
-func getEvent(spaceID *uuid.UUID, item any) (*Event, error) {
-	e := &Event{SpaceID: spaceID}
+func getEvent(objectID *uuid.UUID, item any) (*Event, error) {
+	e := &Event{ObjectID: objectID}
 
 	err := utils.MapDecode(item, e)
 
@@ -185,7 +183,7 @@ func (*Calendar) Stop() error {
 }
 
 func (c *Calendar) OnAttributeUpsert(attributeID entry.AttributeID, value any) {
-	if attributeID.PluginID == universe.GetSystemPluginID() && attributeID.Name == universe.ReservedAttributes.Space.Events.Name {
+	if attributeID.PluginID == universe.GetSystemPluginID() && attributeID.Name == universe.ReservedAttributes.Object.Events.Name {
 		go c.update()
 	}
 }

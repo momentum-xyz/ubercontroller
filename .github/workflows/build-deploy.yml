@@ -6,6 +6,7 @@ on:
       - develop
       - master
       - release/*
+      - v2
 
     tags:
       - v[0-9]+.[0-9]+.[0-9]+*
@@ -35,6 +36,17 @@ jobs:
         with:
           version: ${{ env.VERSION }}
           k8s-credentials: ${{ secrets[secrets.REF_K8S_DEV2] }}
+  dev-v2-deploy:
+    runs-on: self-hosted
+    needs: build
+    if: github.ref == 'refs/heads/v2'
+    concurrency: dev-v2-deploy-${{ github.ref }}
+    steps:
+      - id: deploy-dev-v2
+        uses: momentum-xyz/deploy-action@2234fcebf5b59abe7f7f812d275abb547886ab14  # v1.1.0
+        with:
+          version: ${{ needs.build.outputs.version }}
+          k8s-credentials: ${{ secrets[vars.REF_K8S_DEV_V2] }}
   ops-deploy:
     runs-on: ubuntu-latest
     needs: build

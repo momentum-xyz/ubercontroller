@@ -8,7 +8,7 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
@@ -44,7 +44,7 @@ func (n *Node) apiNewsFeedAddItem(c *gin.Context) {
 			current.Value = entry.NewAttributeValue()
 		}
 
-		items := utils.GetFromAnyMap(*current.Value, universe.ReservedAttributes.Space.NewsFeedItems.Key, []any(nil))
+		items := utils.GetFromAnyMap(*current.Value, universe.ReservedAttributes.Object.NewsFeedItems.Key, []any(nil))
 
 		items = append(inBody.Items, items...)
 
@@ -52,17 +52,17 @@ func (n *Node) apiNewsFeedAddItem(c *gin.Context) {
 			items = items[:newsFeedLimit]
 		}
 
-		(*current.Value)[universe.ReservedAttributes.Space.NewsFeedItems.Key] = items
+		(*current.Value)[universe.ReservedAttributes.Object.NewsFeedItems.Key] = items
 
 		return current, nil
 	}
 
-	if _, err := n.GetSpaceAttributes().Upsert(
+	if _, err := n.GetObjectAttributes().Upsert(
 		entry.NewAttributeID(
-			universe.GetSystemPluginID(), universe.ReservedAttributes.Space.NewsFeedItems.Name,
+			universe.GetSystemPluginID(), universe.ReservedAttributes.Object.NewsFeedItems.Name,
 		), modifyFn, true,
 	); err != nil {
-		err := errors.WithMessage(err, "Node: apiNewsFeedAddItem: failed to upsert node space attribute")
+		err := errors.WithMessage(err, "Node: apiNewsFeedAddItem: failed to upsert node object attribute")
 		api.AbortRequest(c, http.StatusInternalServerError, "upsert_attribute_failed", err, n.log)
 		return
 	}
@@ -80,11 +80,11 @@ func (n *Node) apiNewsFeedAddItem(c *gin.Context) {
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/newsfeed [get]
 func (n *Node) apiNewsFeedGetAll(c *gin.Context) {
-	value, ok := n.GetSpaceAttributes().GetValue(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Space.NewsFeedItems.Name),
+	value, ok := n.GetObjectAttributes().GetValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Object.NewsFeedItems.Name),
 	)
 	if !ok || value == nil {
-		err := errors.Errorf("Node: apiNewsFeedGetAll: failed to get node space attribute value")
+		err := errors.Errorf("Node: apiNewsFeedGetAll: failed to get node object attribute value")
 		api.AbortRequest(c, http.StatusNotFound, "attribute_not_found", err, n.log)
 		return
 	}
@@ -93,7 +93,7 @@ func (n *Node) apiNewsFeedGetAll(c *gin.Context) {
 		Items []any `json:"items"`
 	}
 	out := Out{
-		Items: utils.GetFromAnyMap(*value, universe.ReservedAttributes.Space.NewsFeedItems.Key, []any(nil)),
+		Items: utils.GetFromAnyMap(*value, universe.ReservedAttributes.Object.NewsFeedItems.Key, []any(nil)),
 	}
 
 	c.JSON(http.StatusOK, out)

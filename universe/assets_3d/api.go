@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/momentum-xyz/ubercontroller"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api/middleware"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api/middleware"
 )
 
 func (a *Assets3d) RegisterAPI(r *gin.Engine) {
@@ -14,9 +14,9 @@ func (a *Assets3d) RegisterAPI(r *gin.Engine) {
 
 	vx := r.Group(fmt.Sprintf("/api/v%d", ubercontroller.APIMajorVersion))
 	{
-		assets3d := vx.Group("/assets-3d/:spaceID", middleware.VerifyUser(a.log))
+		assets3d := vx.Group("/assets-3d/:objectID", middleware.VerifyUser(a.log))
 		{
-			authorizedAdmin := assets3d.Group("", middleware.AuthorizeAdmin(a.log, a.db))
+			authorizedAdmin := assets3d.Group("", middleware.AuthorizeAdmin(a.log))
 			{
 				authorizedAdmin.POST("", a.apiAddAssets3d)
 				authorizedAdmin.POST("/upload", a.apiUploadAsset3d)
@@ -27,7 +27,6 @@ func (a *Assets3d) RegisterAPI(r *gin.Engine) {
 			assets3d.GET("/meta", a.apiGetAssets3dMeta)
 			assets3d.GET("/options", a.apiGetAssets3dOptions)
 			assets3d.DELETE("/:asset3dID", a.apiRemoveAsset3dByID)
-			// TODO maybe this EP for admins only
 			assets3d.PATCH("/:asset3dID", a.apiUpdateAsset3dByID)
 		}
 	}

@@ -13,8 +13,8 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api/dto"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 )
@@ -25,11 +25,11 @@ import (
 // @Tags assets3d
 // @Accept json
 // @Produce json
-// @Param space_id path string true "Space ID"
+// @Param object_id path string true "Object ID"
 // @Param query query assets_3d.apiGetAssets3d.InQuery true "query params"
 // @Success 200 {array} dto.Asset3d
 // @Failure 400 {object} api.HTTPError
-// @Router /api/v4/assets-3d/{space_id} [get]
+// @Router /api/v4/assets-3d/{object_id} [get]
 func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 	type InQuery struct {
 		Category string `form:"category" json:"category"`
@@ -83,12 +83,11 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 // @Tags assets3d
 // @Accept json
 // @Produce json
-// @Param space_id path string true "Space ID"
 // @Param body body assets_3d.apiAddAssets3d.InBody true "body params"
 // @Success 200 {object} nil
 // @Failure 400	{object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/assets-3d/{space_id} [post]
+// @Router /api/v4/assets-3d/{object_id} [post]
 func (a *Assets3d) apiAddAssets3d(c *gin.Context) {
 	type InBody struct {
 		Assets3dIDs []string `form:"assets3d_ids[]" binding:"required"`
@@ -135,16 +134,17 @@ func (a *Assets3d) apiAddAssets3d(c *gin.Context) {
 // @Tags assets3d
 // @Accept multipart/form-data
 // @Produce json
-// @Param space_id path string true "Space ID"
+// @Param object_id path string true "Object ID"
 // @Success 202 {object} dto.Asset3d
 // @Failure 400	{object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/assets-3d/{space_id}/upload [post]
+// @Router /api/v4/assets-3d/{object_id}/upload [post]
 // TODO: swag doc for multipart, it does not get *multipart.FileHeader
 func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 	type InBody struct {
-		File *multipart.FileHeader `form:"asset"`
-		Name string                `form:"name"`
+		File        *multipart.FileHeader `form:"asset"`
+		Name        string                `form:"name"`
+		PreviewHash *string               `form:"preview_hash"`
 	}
 	var request InBody
 	if err := c.ShouldBind(&request); err != nil {
@@ -153,6 +153,10 @@ func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 		return
 	}
 	assetFile := request.File
+	if assetFile == nil {
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_open", errors.New("Assets3d: apiUploadAsset3d: no file in request"), a.log)
+		return
+	}
 
 	openedFile, err := assetFile.Open()
 	if err != nil {
@@ -217,6 +221,10 @@ func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 		"name":     name,
 	}
 
+	if request.PreviewHash != nil {
+		meta["preview_hash"] = request.PreviewHash
+	}
+
 	if err := newAsset.SetMeta(&meta, true); err != nil {
 		err = errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to set meta")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_meta", err, a.log)
@@ -243,12 +251,11 @@ func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 // @Tags assets3d
 // @Accept json
 // @Produce json
-// @Param space_id path string true "Space ID"
 // @Param body body assets_3d.apiRemoveAssets3dByIDs.InBody true "body params"
 // @Success 200 {object} nil
 // @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/assets-3d/{space_id} [delete]
+// @Router /api/v4/assets-3d/{object_id} [delete]
 func (a *Assets3d) apiRemoveAssets3dByIDs(c *gin.Context) {
 	type InBody struct {
 		Assets3dIDs []string `form:"assets3d_ids[]" binding:"required"`
@@ -256,7 +263,7 @@ func (a *Assets3d) apiRemoveAssets3dByIDs(c *gin.Context) {
 	var inBody InBody
 
 	if err := c.ShouldBindJSON(&inBody); err != nil {
-		err = errors.WithMessage(err, "Assets3d: apiRemoveAssets3dByIDs: failed to bind json")
+		err := errors.WithMessage(err, "Assets3d: apiRemoveAssets3dByIDs: failed to bind json")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, a.log)
 		return
 	}
@@ -265,16 +272,22 @@ func (a *Assets3d) apiRemoveAssets3dByIDs(c *gin.Context) {
 	for i := range inBody.Assets3dIDs {
 		uid, err := uuid.Parse(inBody.Assets3dIDs[i])
 		if err != nil {
-			err = errors.WithMessage(err, "Assets3d: apiRemoveAssets3dByIDs: failed to parse uuid")
+			err := errors.WithMessage(err, "Assets3d: apiRemoveAssets3dByIDs: failed to parse uuid")
 			api.AbortRequest(c, http.StatusInternalServerError, "invalid_uuid_parse", err, a.log)
 			return
 		}
 		uids[i] = uid
 	}
 
-	if err := a.RemoveAssets3dByIDs(uids, true); err != nil {
-		err = errors.WithMessage(err, "Assets3d: apiRemoveAssets3dByIDs: failed to remove assets3d")
+	removed, err := a.RemoveAssets3dByIDs(uids, true)
+	if err != nil {
+		err := errors.WithMessage(err, "Assets3d: apiRemoveAssets3dByIDs: failed to remove assets3d")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_remove_assets3d_by_ids", err, a.log)
+		return
+	}
+	if !removed {
+		err := errors.WithMessage(err, "Assets3d: apiRemoveAssets3dByIDs: failed to remove assets3d")
+		api.AbortRequest(c, http.StatusNotFound, "assets3d_not_removed", err, a.log)
 		return
 	}
 
@@ -287,12 +300,11 @@ func (a *Assets3d) apiRemoveAssets3dByIDs(c *gin.Context) {
 // @Tags assets3d
 // @Accept json
 // @Produce json
-// @Param space_id path string true "Space ID"
 // @Param query query assets_3d.apiGetAssets3dOptions.InQuery true "query params"
 // @Success 200 {object} dto.Assets3dOptions
 // @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/{space_id}/assets-3d/options [get]
+// @Router /api/v4/assets-3d/{object_id}/options [get]
 func (a *Assets3d) apiGetAssets3dOptions(c *gin.Context) {
 	type InQuery struct {
 		Assets3dIDs []string `form:"assets3d_ids[]" binding:"required"`
@@ -334,12 +346,11 @@ func (a *Assets3d) apiGetAssets3dOptions(c *gin.Context) {
 // @Tags assets3d
 // @Accept json
 // @Produce json
-// @Param space_id path string true "Space ID"
 // @Param query query assets_3d.apiGetAssets3dMeta.InQuery true "query params"
 // @Success 200 {object} dto.Assets3dMeta
 // @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/assets-3d/{space_id}/meta [get]
+// @Router /api/v4/assets-3d/{object_id}/meta [get]
 func (a *Assets3d) apiGetAssets3dMeta(c *gin.Context) {
 	type InQuery struct {
 		Assets3dIDs []string `form:"assets3d_ids[]" binding:"required"`
@@ -369,7 +380,7 @@ func (a *Assets3d) apiGetAssets3dMeta(c *gin.Context) {
 			return
 		}
 
-		out[asset3dID] = gotAsset3d.GetMeta()
+		out[asset3dID] = dto.Asset3dMeta(gotAsset3d.GetMeta())
 	}
 
 	c.JSON(http.StatusOK, out)
@@ -380,23 +391,27 @@ func (a *Assets3d) apiGetAssets3dMeta(c *gin.Context) {
 // @Description Deletes 3d asset by its id
 // @Tags assets3d
 // @Accept json
-// @Param space_id path string true "Space ID"
-// @Param asset3d_id path string true "Asset 3D ID"
 // @Produce json
 // @Success 200 {object} nil
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/assets-3d/{space_id}/{asset3d_id} [delete]
+// @Router /api/v4/assets-3d/{object_id}/{asset3d_id} [delete]
 func (a *Assets3d) apiRemoveAsset3dByID(c *gin.Context) {
 	uid, err := uuid.Parse(c.Param("asset3dID"))
 	if err != nil {
-		err = errors.WithMessage(err, "Assets3d: apiRemoveAsset3dByID: failed to parse uuid")
+		err := errors.WithMessage(err, "Assets3d: apiRemoveAsset3dByID: failed to parse uuid")
 		api.AbortRequest(c, http.StatusInternalServerError, "invalid_uuid_parse", err, a.log)
 		return
 	}
 
-	if err := a.RemoveAsset3dByID(uid, true); err != nil {
-		err = errors.WithMessage(err, "Assets3d: apiRemoveAsset3dByID: failed to remove asset3d")
+	removed, err := a.RemoveAsset3dByID(uid, true)
+	if err != nil {
+		err := errors.WithMessage(err, "Assets3d: apiRemoveAsset3dByID: failed to remove asset3d")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_remove_asset3d_by_id", err, a.log)
+		return
+	}
+	if !removed {
+		err := errors.WithMessage(err, "Assets3d: apiRemoveAsset3dByID: failed to remove asset3d")
+		api.AbortRequest(c, http.StatusNotFound, "asset3d_not_removed", err, a.log)
 		return
 	}
 
@@ -409,13 +424,13 @@ func (a *Assets3d) apiRemoveAsset3dByID(c *gin.Context) {
 // @Tags assets3d
 // @Accept json
 // @Produce json
-// @Param space_id path string true "Space ID"
+// @Param object_id path string true "Object ID"
 // @Param asset3d_id path string true "Asset 3D ID"
 // @Param body body assets_3d.apiUpdateAsset3dByID.InBody true "body params"
 // @Success 200 {object} dto.Asset3d
 // @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/assets-3d/{space_id}/{asset3d_id} [patch]
+// @Router /api/v4/assets-3d/{object_id}/{asset3d_id} [patch]
 func (a *Assets3d) apiUpdateAsset3dByID(c *gin.Context) {
 	type InBody struct {
 		Meta entry.Asset3dMeta `json:"meta" binding:"required"`

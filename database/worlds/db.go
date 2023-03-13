@@ -2,7 +2,6 @@ package worlds
 
 import (
 	"context"
-
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -13,25 +12,27 @@ import (
 )
 
 const (
-	getWorldIDsQuery = `SELECT space_id FROM space WHERE space_id != parent_id
-						AND parent_id = (SELECT space_id FROM space WHERE space_id = parent_id);`
-	getWorldsQuery = `SELECT * FROM space WHERE space_id != parent_id
-						AND parent_id = (SELECT space_id FROM space WHERE space_id = parent_id);`
+	getWorldIDsQuery = `SELECT object_id FROM object
+                 			WHERE parent_id = (SELECT object_id FROM object WHERE object_id = parent_id)
+                 			AND object_id != parent_id;`
+	getWorldsQuery = `SELECT * FROM object
+         					WHERE parent_id = (SELECT object_id FROM object WHERE object_id = parent_id)
+         					AND object_id != parent_id;`
 )
 
 var _ database.WorldsDB = (*DB)(nil)
 
 type DB struct {
-	conn   *pgxpool.Pool
-	common database.CommonDB
-	spaces database.SpacesDB
+	conn    *pgxpool.Pool
+	common  database.CommonDB
+	objects database.ObjectsDB
 }
 
-func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB, spacesDB database.SpacesDB) *DB {
+func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB, objectsDB database.ObjectsDB) *DB {
 	return &DB{
-		conn:   conn,
-		common: commonDB,
-		spaces: spacesDB,
+		conn:    conn,
+		common:  commonDB,
+		objects: objectsDB,
 	}
 }
 
@@ -43,8 +44,8 @@ func (db *DB) GetWorldIDs(ctx context.Context) ([]uuid.UUID, error) {
 	return ids, nil
 }
 
-func (db *DB) GetWorlds(ctx context.Context) ([]*entry.Space, error) {
-	var worlds []*entry.Space
+func (db *DB) GetWorlds(ctx context.Context) ([]*entry.Object, error) {
+	var worlds []*entry.Object
 	if err := pgxscan.Select(ctx, db.conn, &worlds, getWorldsQuery); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}

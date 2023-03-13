@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/momentum-xyz/ubercontroller"
-	"github.com/momentum-xyz/ubercontroller/universe/common/api/middleware"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api/middleware"
 )
 
 func (w *Worlds) RegisterAPI(r *gin.Engine) {
@@ -18,13 +18,13 @@ func (w *Worlds) RegisterAPI(r *gin.Engine) {
 		{
 			worlds := verified.Group("/worlds")
 			{
-				world := worlds.Group("/:spaceID")
+				world := worlds.Group("/:objectID")
 				{
-					world.GET("/explore", w.apiWorldsGetSpacesWithChildren)
-					world.GET("/explore/search", w.apiWorldsSearchSpaces)
+					world.GET("/explore", w.apiWorldsGetObjectsWithChildren)
+					world.GET("/explore/search", w.apiWorldsSearchObjects)
 					world.GET("/online-users", w.apiGetOnlineUsers)
 
-					authorizedAdmin := world.Group("", middleware.AuthorizeAdmin(w.log, w.db))
+					authorizedAdmin := world.Group("", middleware.AuthorizeAdmin(w.log))
 					{
 						authorizedAdmin.POST("/fly-to-me", w.apiWorldsFlyToMe)
 						authorizedAdmin.POST("/teleport-user", w.apiWorldsTeleportUser)

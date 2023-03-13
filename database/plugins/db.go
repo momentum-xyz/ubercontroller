@@ -17,12 +17,6 @@ import (
 const (
 	getPluginsQuery = `SELECT * FROM plugin;`
 
-	removePluginByIDQuery   = `DELETE FROM plugin WHERE plugin_id = $1;`
-	removePluginsByIDsQuery = `DELETE FROM plugin WHERE plugin_id = ANY($1);`
-
-	updatePluginMetaQuery    = `UPDATE plugin SET meta = $2 WHERE plugin_id = $1;`
-	updatePluginOptionsQuery = `UPDATE plugin SET options = $2 WHERE plugin_id = $1;`
-
 	upsertPluginQuery = `INSERT INTO plugin
 								(plugin_id, meta, options, created_at, updated_at)
 							VALUES
@@ -30,6 +24,12 @@ const (
 							ON CONFLICT (plugin_id)
 							DO UPDATE SET
 								meta = $2, options = $3, updated_at = CURRENT_TIMESTAMP;`
+
+	updatePluginMetaQuery    = `UPDATE plugin SET meta = $2, updated_at = CURRENT_TIMESTAMP WHERE plugin_id = $1;`
+	updatePluginOptionsQuery = `UPDATE plugin SET options = $2, updated_at = CURRENT_TIMESTAMP WHERE plugin_id = $1;`
+
+	removePluginByIDQuery   = `DELETE FROM plugin WHERE plugin_id = $1;`
+	removePluginsByIDsQuery = `DELETE FROM plugin WHERE plugin_id = ANY($1);`
 )
 
 var _ database.PluginsDB = (*DB)(nil)
@@ -100,7 +100,7 @@ func (db *DB) RemovePluginsByIDs(ctx context.Context, PluginIDs []uuid.UUID) err
 	return nil
 }
 
-func (db *DB) UpdatePluginMeta(ctx context.Context, pluginID uuid.UUID, meta *entry.PluginMeta) error {
+func (db *DB) UpdatePluginMeta(ctx context.Context, pluginID uuid.UUID, meta entry.PluginMeta) error {
 	if _, err := db.conn.Exec(ctx, updatePluginMetaQuery, pluginID, meta); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}

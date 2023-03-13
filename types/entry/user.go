@@ -7,12 +7,13 @@ import (
 )
 
 type User struct {
-	UserID     uuid.UUID    `db:"user_id"`
-	UserTypeID *uuid.UUID   `db:"user_type_id"`
-	Profile    *UserProfile `db:"profile"`
-	Options    *UserOptions `db:"options"`
-	CreatedAt  time.Time    `db:"created_at"`
-	UpdatedAt  *time.Time   `db:"updated_at"`
+	UserID     uuid.UUID      `db:"user_id" json:"user_id"`
+	UserTypeID uuid.UUID      `db:"user_type_id" json:"user_type_id"`
+	Profile    UserProfile    `db:"profile" json:"profile"`
+	Options    *UserOptions   `db:"options" json:"options"`
+	CreatedAt  time.Time      `db:"created_at" json:"created_at"`
+	UpdatedAt  time.Time      `db:"updated_at" json:"updated_at"`
+	Auth       map[string]any `db:"auth" json:"auth"`
 }
 
 type UserOptions struct {
@@ -30,13 +31,13 @@ type UserProfile struct {
 
 type UserAttributeID struct {
 	AttributeID
-	UserID uuid.UUID `db:"user_id"`
+	UserID uuid.UUID `db:"user_id" json:"user_id"`
 }
 
 type UserUserAttributeID struct {
 	AttributeID
-	SourceUserID uuid.UUID `db:"source_user_id"`
-	TargetUserID uuid.UUID `db:"target_user_id"`
+	SourceUserID uuid.UUID `db:"source_user_id" json:"source_user_id"`
+	TargetUserID uuid.UUID `db:"target_user_id" json:"target_user_id"`
 }
 
 type UserAttribute struct {

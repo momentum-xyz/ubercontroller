@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	influxWrite "github.com/influxdata/influxdb-client-go/v2/api/write"
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -16,13 +17,13 @@ type IDer interface {
 	GetID() uuid.UUID
 }
 
+type Initializer interface {
+	Initialize(ctx context.Context) error
+}
+
 type Enabler interface {
 	GetEnabled() bool
 	SetEnabled(enabled bool)
-}
-
-type Initializer interface {
-	Initialize(ctx context.Context) error
 }
 
 type Runner interface {
@@ -55,38 +56,40 @@ type APIRegister interface {
 	RegisterAPI(r *gin.Engine)
 }
 
-type SpaceCacher interface {
-	GetAllSpaces() map[uuid.UUID]Space
-	GetSpaceFromAllSpaces(spaceID uuid.UUID) (Space, bool)
-	FilterAllSpaces(predicateFn SpacesFilterPredicateFn) map[uuid.UUID]Space
-	AddSpaceToAllSpaces(space Space) error
-	RemoveSpaceFromAllSpaces(space Space) (bool, error)
+type ObjectsCacher interface {
+	GetAllObjects() map[uuid.UUID]Object
+	GetObjectFromAllObjects(objectID uuid.UUID) (Object, bool)
+	FilterAllObjects(predicateFn ObjectsFilterPredicateFn) map[uuid.UUID]Object
+	AddObjectToAllObjects(object Object) error
+	RemoveObjectFromAllObjects(object Object) (bool, error)
 }
 
-type DropCacher interface {
-	DropCache()
+type CacheInvalidator interface {
+	InvalidateCache()
 }
 
 type Node interface {
-	Space
-	LoadSaver
+	Object
+	Loader
 	APIRegister
-	SpaceCacher
+	ObjectsCacher
 
-	ToSpace() Space
+	ToObject() Object
 
 	GetWorlds() Worlds
 	GetAssets2d() Assets2d
 	GetAssets3d() Assets3d
-	GetSpaceTypes() SpaceTypes
+	GetObjectTypes() ObjectTypes
 	GetUserTypes() UserTypes
 	GetAttributeTypes() AttributeTypes
 	GetPlugins() Plugins
 
+	GetUserObjects() UserObjects
+
 	GetNodeAttributes() NodeAttributes
 	GetUserAttributes() UserAttributes
 	GetUserUserAttributes() UserUserAttributes
-	GetSpaceUserAttributes() SpaceUserAttributes
+	GetObjectUserAttributes() ObjectUserAttributes
 
 	AddAPIRegister(register APIRegister)
 
@@ -105,16 +108,16 @@ type Worlds interface {
 	FilterWorlds(predicateFn WorldsFilterPredicateFn) map[uuid.UUID]World
 	AddWorld(world World, updateDB bool) error
 	AddWorlds(worlds []World, updateDB bool) error
-	RemoveWorld(world World, updateDB bool) error
-	RemoveWorlds(worlds []World, updateDB bool) error
+	RemoveWorld(world World, updateDB bool) (bool, error)
+	RemoveWorlds(worlds []World, updateDB bool) (bool, error)
 }
 
 type World interface {
-	Space
-	LoadSaver
-	SpaceCacher
+	Object
+	Loader
+	ObjectsCacher
 
-	ToSpace() Space
+	ToObject() Object
 
 	GetSettings() *WorldSettings
 
@@ -126,32 +129,33 @@ type World interface {
 	TempGetSkybox() *websocket.PreparedMessage
 }
 
-type Space interface {
+type Object interface {
 	IDer
 	Enabler
 	Initializer
 	RunStopper
-	DropCacher
+	Saver
+	CacheInvalidator
 
 	GetWorld() World
 
 	GetName() string
 	SetName(name string, updateDB bool) error
 
-	GetParent() Space
-	SetParent(parent Space, updateDB bool) error
+	GetParent() Object
+	SetParent(parent Object, updateDB bool) error
 
 	GetOwnerID() uuid.UUID
 	SetOwnerID(ownerID uuid.UUID, updateDB bool) error
 
-	GetPosition() *cmath.SpacePosition
-	GetActualPosition() *cmath.SpacePosition
-	SetPosition(position *cmath.SpacePosition, updateDB bool) error
-	SetActualPosition(pos cmath.SpacePosition, theta float64) error
+	GetTransform() *cmath.ObjectTransform
+	GetActualTransform() *cmath.ObjectTransform
+	SetTransform(position *cmath.ObjectTransform, updateDB bool) error
+	SetActualTransform(pos cmath.ObjectTransform, theta float64) error
 
-	GetOptions() *entry.SpaceOptions
-	GetEffectiveOptions() *entry.SpaceOptions
-	SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool) (*entry.SpaceOptions, error)
+	GetOptions() *entry.ObjectOptions
+	GetEffectiveOptions() *entry.ObjectOptions
+	SetOptions(modifyFn modify.Fn[entry.ObjectOptions], updateDB bool) (*entry.ObjectOptions, error)
 
 	GetAsset2D() Asset2d
 	SetAsset2D(asset2d Asset2d, updateDB bool) error
@@ -159,30 +163,30 @@ type Space interface {
 	GetAsset3D() Asset3d
 	SetAsset3D(asset3d Asset3d, updateDB bool) error
 
-	GetSpaceType() SpaceType
-	SetSpaceType(spaceType SpaceType, updateDB bool) error
+	GetObjectType() ObjectType
+	SetObjectType(objectType ObjectType, updateDB bool) error
 
-	GetSpaceAttributes() SpaceAttributes
+	GetObjectAttributes() ObjectAttributes
 
-	GetEntry() *entry.Space
-	LoadFromEntry(entry *entry.Space, recursive bool) error
+	GetEntry() *entry.Object
+	LoadFromEntry(entry *entry.Object, recursive bool) error
 
 	Update(recursive bool) error
 	UpdateChildrenPosition(recursive bool) error
 
-	CreateSpace(spaceID uuid.UUID) (Space, error)
-	GetSpace(spaceID uuid.UUID, recursive bool) (Space, bool)
-	GetSpaces(recursive bool) map[uuid.UUID]Space
-	FilterSpaces(predicateFn SpacesFilterPredicateFn, recursive bool) map[uuid.UUID]Space
-	AddSpace(space Space, updateDB bool) error
-	AddSpaces(spaces []Space, updateDB bool) error
-	RemoveSpace(space Space, recursive, updateDB bool) (bool, error)
-	RemoveSpaces(spaces []Space, recursive, updateDB bool) (bool, error)
+	CreateObject(objectID uuid.UUID) (Object, error)
+	GetObject(objectID uuid.UUID, recursive bool) (Object, bool)
+	GetObjects(recursive bool) map[uuid.UUID]Object
+	FilterObjects(predicateFn ObjectsFilterPredicateFn, recursive bool) map[uuid.UUID]Object
+	AddObject(object Object, updateDB bool) error
+	AddObjects(objects []Object, updateDB bool) error
+	RemoveObject(object Object, recursive, updateDB bool) (bool, error)
+	RemoveObjects(objects []Object, recursive, updateDB bool) (bool, error)
 
 	GetUser(userID uuid.UUID, recursive bool) (User, bool)
 	GetUsers(recursive bool) map[uuid.UUID]User
 	AddUser(user User, updateDB bool) error
-	RemoveUser(user User, updateDB bool) error
+	RemoveUser(user User, updateDB bool) (bool, error)
 
 	Send(msg *websocket.PreparedMessage, recursive bool) error
 
@@ -201,21 +205,27 @@ type User interface {
 	GetWorld() World
 	SetWorld(world World)
 
-	GetSpace() Space
-	SetSpace(space Space)
+	GetObject() Object
+	SetObject(object Object)
 
 	GetUserType() UserType
 	SetUserType(userType UserType, updateDB bool) error
 
 	GetProfile() *entry.UserProfile
 
+	GetTransform() *cmath.UserTransform
+	SetTransform(cmath.UserTransform)
+
 	GetPosition() cmath.Vec3
 	GetRotation() cmath.Vec3
 	SetPosition(position cmath.Vec3)
 
 	GetPosBuffer() []byte
+	GetLastPosTime() int64
 
 	Update() error
+	ReleaseSendBuffer()
+	LockSendBuffer()
 
 	GetSessionID() uuid.UUID
 	SetConnection(sessionID uuid.UUID, socketConnection *websocket.Conn) error
@@ -223,9 +233,27 @@ type User interface {
 	Send(message *websocket.PreparedMessage) error
 	SendDirectly(message *websocket.PreparedMessage) error
 
-	ReleaseSendBuffer()
-
 	AddInfluxTags(prefix string, point *influxWrite.Point) *influxWrite.Point
+	GetUserDefinition() *posbus.UserDefinition
+}
+
+// UserObjects ignores "updateDB" flag
+type UserObjects interface {
+	GetValue(userObjectID entry.UserObjectID) (*entry.UserObjectValue, bool)
+
+	GetObjectIndirectAdmins(objectID uuid.UUID) ([]*uuid.UUID, bool)
+	CheckIsIndirectAdmin(userObjectID entry.UserObjectID) (bool, error)
+
+	Upsert(
+		userObjectID entry.UserObjectID, modifyFn modify.Fn[entry.UserObjectValue], updateDB bool,
+	) (*entry.UserObjectValue, error)
+
+	UpdateValue(
+		userObjectID entry.UserObjectID, modifyFn modify.Fn[entry.UserObjectValue], updateDB bool,
+	) (*entry.UserObjectValue, error)
+
+	Remove(userObjectID entry.UserObjectID, updateDB bool) (bool, error)
+	RemoveMany(userObjectIDs []entry.UserObjectID, updateDB bool) (bool, error)
 }
 
 type Attributes[ID comparable] interface {
@@ -245,13 +273,19 @@ type Attributes[ID comparable] interface {
 }
 
 type NodeAttributes interface {
+	LoadSaver
 	Attributes[entry.AttributeID]
+
+	GetAll() map[entry.AttributeID]*entry.AttributePayload
 
 	Len() int
 }
 
-type SpaceAttributes interface {
+type ObjectAttributes interface {
+	LoadSaver
 	Attributes[entry.AttributeID]
+
+	GetAll() map[entry.AttributeID]*entry.AttributePayload
 
 	Len() int
 }
@@ -266,9 +300,9 @@ type UserUserAttributes interface {
 	Attributes[entry.UserUserAttributeID]
 }
 
-// SpaceUserAttributes ignores "updateDB" flag
-type SpaceUserAttributes interface {
-	Attributes[entry.SpaceUserAttributeID]
+// ObjectUserAttributes ignores "updateDB" flag
+type ObjectUserAttributes interface {
+	Attributes[entry.ObjectUserAttributeID]
 }
 
 type Assets2d interface {
@@ -282,16 +316,16 @@ type Assets2d interface {
 	FilterAssets2d(predicateFn Assets2dFilterPredicateFn) map[uuid.UUID]Asset2d
 	AddAsset2d(asset2d Asset2d, updateDB bool) error
 	AddAssets2d(assets2d []Asset2d, updateDB bool) error
-	RemoveAsset2d(asset2d Asset2d, updateDB bool) error
-	RemoveAssets2d(assets2d []Asset2d, updateDB bool) error
+	RemoveAsset2d(asset2d Asset2d, updateDB bool) (bool, error)
+	RemoveAssets2d(assets2d []Asset2d, updateDB bool) (bool, error)
 }
 
 type Asset2d interface {
 	IDer
 	Initializer
 
-	GetMeta() *entry.Asset2dMeta
-	SetMeta(meta *entry.Asset2dMeta, updateDB bool) error
+	GetMeta() entry.Asset2dMeta
+	SetMeta(meta entry.Asset2dMeta, updateDB bool) error
 
 	GetOptions() *entry.Asset2dOptions
 	SetOptions(modifyFn modify.Fn[entry.Asset2dOptions], updateDB bool) (*entry.Asset2dOptions, error)
@@ -311,10 +345,10 @@ type Assets3d interface {
 	FilterAssets3d(predicateFn Assets3dFilterPredicateFn) map[uuid.UUID]Asset3d
 	AddAsset3d(asset3d Asset3d, updateDB bool) error
 	AddAssets3d(assets3d []Asset3d, updateDB bool) error
-	RemoveAsset3d(asset3d Asset3d, updateDB bool) error
-	RemoveAssets3d(assets3d []Asset3d, updateDB bool) error
-	RemoveAsset3dByID(asset3dID uuid.UUID, updateDB bool) error
-	RemoveAssets3dByIDs(assets3dIDs []uuid.UUID, updateDB bool) error
+	RemoveAsset3d(asset3d Asset3d, updateDB bool) (bool, error)
+	RemoveAssets3d(assets3d []Asset3d, updateDB bool) (bool, error)
+	RemoveAsset3dByID(assets3dID uuid.UUID, updateDB bool) (bool, error)
+	RemoveAssets3dByIDs(assets3dIDs []uuid.UUID, updateDB bool) (bool, error)
 }
 
 type Asset3d interface {
@@ -342,16 +376,16 @@ type Plugins interface {
 	FilterPlugins(predicateFn PluginsFilterPredicateFn) map[uuid.UUID]Plugin
 	AddPlugin(plugin Plugin, updateDB bool) error
 	AddPlugins(plugins []Plugin, updateDB bool) error
-	RemovePlugin(plugin Plugin, updateDB bool) error
-	RemovePlugins(plugins []Plugin, updateDB bool) error
+	RemovePlugin(plugin Plugin, updateDB bool) (bool, error)
+	RemovePlugins(plugins []Plugin, updateDB bool) (bool, error)
 }
 
 type Plugin interface {
 	IDer
 	Initializer
 
-	GetMeta() *entry.PluginMeta
-	SetMeta(meta *entry.PluginMeta, updateDB bool) error
+	GetMeta() entry.PluginMeta
+	SetMeta(meta entry.PluginMeta, updateDB bool) error
 
 	GetOptions() *entry.PluginOptions
 	SetOptions(modifyFn modify.Fn[entry.PluginOptions], updateDB bool) (*entry.PluginOptions, error)
@@ -371,8 +405,8 @@ type AttributeTypes interface {
 	FilterAttributeTypes(predicateFn AttributeTypesFilterPredicateFn) map[entry.AttributeTypeID]AttributeType
 	AddAttributeType(attributeType AttributeType, updateDB bool) error
 	AddAttributeTypes(attributeTypes []AttributeType, updateDB bool) error
-	RemoveAttributeType(attributeType AttributeType, updateDB bool) error
-	RemoveAttributeTypes(attributeTypes []AttributeType, updateDB bool) error
+	RemoveAttributeType(attributeType AttributeType, updateDB bool) (bool, error)
+	RemoveAttributeTypes(attributeTypes []AttributeType, updateDB bool) (bool, error)
 }
 
 type AttributeType interface {
@@ -392,22 +426,22 @@ type AttributeType interface {
 	LoadFromEntry(entry *entry.AttributeType) error
 }
 
-type SpaceTypes interface {
+type ObjectTypes interface {
 	Initializer
 	LoadSaver
 	APIRegister
 
-	CreateSpaceType(spaceTypeID uuid.UUID) (SpaceType, error)
-	GetSpaceType(spaceTypeID uuid.UUID) (SpaceType, bool)
-	GetSpaceTypes() map[uuid.UUID]SpaceType
-	FilterSpaceTypes(predicateFn SpaceTypesFilterPredicateFn) map[uuid.UUID]SpaceType
-	AddSpaceType(spaceType SpaceType, updateDB bool) error
-	AddSpaceTypes(spaceTypes []SpaceType, updateDB bool) error
-	RemoveSpaceType(spaceType SpaceType, updateDB bool) error
-	RemoveSpaceTypes(spaceTypes []SpaceType, updateDB bool) error
+	CreateObjectType(objectTypeID uuid.UUID) (ObjectType, error)
+	GetObjectType(objectTypeID uuid.UUID) (ObjectType, bool)
+	GetObjectTypes() map[uuid.UUID]ObjectType
+	FilterObjectTypes(predicateFn ObjectTypesFilterPredicateFn) map[uuid.UUID]ObjectType
+	AddObjectType(objectType ObjectType, updateDB bool) error
+	AddObjectTypes(objectTypes []ObjectType, updateDB bool) error
+	RemoveObjectType(objectType ObjectType, updateDB bool) (bool, error)
+	RemoveObjectTypes(objectTypes []ObjectType, updateDB bool) (bool, error)
 }
 
-type SpaceType interface {
+type ObjectType interface {
 	IDer
 	Initializer
 
@@ -420,8 +454,8 @@ type SpaceType interface {
 	GetDescription() *string
 	SetDescription(description *string, updateDB bool) error
 
-	GetOptions() *entry.SpaceOptions
-	SetOptions(modifyFn modify.Fn[entry.SpaceOptions], updateDB bool) (*entry.SpaceOptions, error)
+	GetOptions() *entry.ObjectOptions
+	SetOptions(modifyFn modify.Fn[entry.ObjectOptions], updateDB bool) (*entry.ObjectOptions, error)
 
 	GetAsset2d() Asset2d
 	SetAsset2d(asset2d Asset2d, updateDB bool) error
@@ -429,8 +463,8 @@ type SpaceType interface {
 	GetAsset3d() Asset3d
 	SetAsset3d(asset3d Asset3d, updateDB bool) error
 
-	GetEntry() *entry.SpaceType
-	LoadFromEntry(entry *entry.SpaceType) error
+	GetEntry() *entry.ObjectType
+	LoadFromEntry(entry *entry.ObjectType) error
 }
 
 type UserTypes interface {
@@ -442,10 +476,10 @@ type UserTypes interface {
 	GetUserType(userTypeID uuid.UUID) (UserType, bool)
 	GetUserTypes() map[uuid.UUID]UserType
 	FilterUserTypes(predicateFn UserTypesFilterPredicateFn) map[uuid.UUID]UserType
-	AddUserType(spaceType UserType, updateDB bool) error
-	AddUserTypes(spaceTypes []UserType, updateDB bool) error
-	RemoveUserType(spaceType UserType, updateDB bool) error
-	RemoveUserTypes(spaceTypes []UserType, updateDB bool) error
+	AddUserType(userType UserType, updateDB bool) error
+	AddUserTypes(userTypes []UserType, updateDB bool) error
+	RemoveUserType(userType UserType, updateDB bool) (bool, error)
+	RemoveUserTypes(userTypes []UserType, updateDB bool) (bool, error)
 }
 
 type UserType interface {
@@ -455,8 +489,8 @@ type UserType interface {
 	GetName() string
 	SetName(name string, updateDB bool) error
 
-	GetDescription() *string
-	SetDescription(description *string, updateDB bool) error
+	GetDescription() string
+	SetDescription(description string, updateDB bool) error
 
 	GetOptions() *entry.UserOptions
 	SetOptions(modifyFn modify.Fn[entry.UserOptions], updateDB bool) (*entry.UserOptions, error)

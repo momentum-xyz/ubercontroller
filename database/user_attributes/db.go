@@ -17,26 +17,13 @@ import (
 
 const (
 	getUserAttributesQuery           = `SELECT * FROM user_attribute;`
-	getUserAttributesQueryByUserID   = `SELECT * FROM user_attribute WHERE user_id = $1;`
 	getUserAttributeByIDQuery        = `SELECT * FROM user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
+	getUserAttributesByUserIDQuery   = `SELECT * FROM user_attribute WHERE user_id = $1;`
 	getUserAttributePayloadByIDQuery = `SELECT value, options FROM user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
 	getUserAttributeValueByIDQuery   = `SELECT value FROM user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
 	getUserAttributeOptionsByIDQuery = `SELECT options FROM user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
 
 	getUserAttributesCountQuery = `SELECT COUNT(*) FROM user_attribute;`
-
-	removeUserAttributeByIDQuery                 = `DELETE FROM user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
-	removeUserAttributesByNameQuery              = `DELETE FROM user_attribute WHERE attribute_name = $1;`
-	removeUserAttributesByNamesQuery             = `DELETE FROM user_attribute WHERE attribute_name = ANY($1);`
-	removeUserAttributesByPluginIDQuery          = `DELETE FROM user_attribute WHERE plugin_id = $1;`
-	removeUserAttributesByPluginIDAndNameQuery   = `DELETE FROM user_attribute WHERE plugin_id = $1 AND attribute_name = $2;`
-	removeUserAttributesByUserIDQuery            = `DELETE FROM user_attribute WHERE user_id = $1;`
-	removeUserAttributeByNameAndUserIDQuery      = `DELETE FROM user_attribute WHERE attribute_name = $1 AND user_id = $2;`
-	removeUserAttributesByNamesAndUserIDQuery    = `DELETE FROM user_attribute WHERE attribute_name = ANY($1)  AND user_id = $2;`
-	removeUserAttributesByPluginIDAndUserIDQuery = `DELETE FROM user_attribute WHERE plugin_id = $1 AND user_id = $2;`
-
-	updateUserAttributeValueQuery   = `UPDATE user_attribute SET value = $4 WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
-	updateUserAttributeOptionsQuery = `UPDATE user_attribute SET options = $4 WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
 
 	upsertUserAttributeQuery = `INSERT INTO user_attribute
 									(plugin_id, attribute_name, user_id, value, options)
@@ -45,6 +32,19 @@ const (
 								ON CONFLICT (plugin_id, attribute_name, user_id)
 								DO UPDATE SET
 									value = $4, options = $5;`
+
+	updateUserAttributeValueQuery   = `UPDATE user_attribute SET value = $4 WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
+	updateUserAttributeOptionsQuery = `UPDATE user_attribute SET options = $4 WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
+
+	removeUserAttributeByIDQuery                 = `DELETE FROM user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
+	removeUserAttributesByNameQuery              = `DELETE FROM user_attribute WHERE attribute_name = $1;`
+	removeUserAttributesByNamesQuery             = `DELETE FROM user_attribute WHERE attribute_name = ANY($1);`
+	removeUserAttributesByPluginIDQuery          = `DELETE FROM user_attribute WHERE plugin_id = $1;`
+	removeUserAttributesByAttributeIDQuery       = `DELETE FROM user_attribute WHERE plugin_id = $1 AND attribute_name = $2;`
+	removeUserAttributesByUserIDQuery            = `DELETE FROM user_attribute WHERE user_id = $1;`
+	removeUserAttributesByNameAndUserIDQuery     = `DELETE FROM user_attribute WHERE attribute_name = $1 AND user_id = $2;`
+	removeUserAttributesByNamesAndUserIDQuery    = `DELETE FROM user_attribute WHERE attribute_name = ANY($1)  AND user_id = $2;`
+	removeUserAttributesByPluginIDAndUserIDQuery = `DELETE FROM user_attribute WHERE plugin_id = $1 AND user_id = $2;`
 )
 
 var _ database.UserAttributesDB = (*DB)(nil)
@@ -74,7 +74,7 @@ func (db *DB) GetUserAttributesByUserID(
 	ctx context.Context, userID uuid.UUID,
 ) ([]*entry.UserAttribute, error) {
 	var attributes []*entry.UserAttribute
-	if err := pgxscan.Select(ctx, db.conn, &attributes, getUserAttributesQueryByUserID, userID); err != nil {
+	if err := pgxscan.Select(ctx, db.conn, &attributes, getUserAttributesByUserIDQuery, userID); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return attributes, nil
@@ -184,7 +184,7 @@ func (db *DB) UpsertUserAttribute(
 	return payload, nil
 }
 
-func (db *DB) RemoveUserAttributeByName(ctx context.Context, name string) error {
+func (db *DB) RemoveUserAttributesByName(ctx context.Context, name string) error {
 	res, err := db.conn.Exec(ctx, removeUserAttributesByNameQuery, name)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
@@ -217,10 +217,10 @@ func (db *DB) RemoveUserAttributesByPluginID(ctx context.Context, pluginID uuid.
 	return nil
 }
 
-func (db *DB) RemoveUserAttributeByAttributeID(
+func (db *DB) RemoveUserAttributesByAttributeID(
 	ctx context.Context, attributeID entry.AttributeID,
 ) error {
-	res, err := db.conn.Exec(ctx, removeUserAttributesByPluginIDAndNameQuery, attributeID.PluginID, attributeID.Name)
+	res, err := db.conn.Exec(ctx, removeUserAttributesByAttributeIDQuery, attributeID.PluginID, attributeID.Name)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
@@ -230,7 +230,7 @@ func (db *DB) RemoveUserAttributeByAttributeID(
 	return nil
 }
 
-func (db *DB) RemoveUserAttributeByUserID(ctx context.Context, userID uuid.UUID) error {
+func (db *DB) RemoveUserAttributesByUserID(ctx context.Context, userID uuid.UUID) error {
 	res, err := db.conn.Exec(ctx, removeUserAttributesByUserIDQuery, userID)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
@@ -241,10 +241,10 @@ func (db *DB) RemoveUserAttributeByUserID(ctx context.Context, userID uuid.UUID)
 	return nil
 }
 
-func (db *DB) RemoveUserAttributeByNameAndUserID(
+func (db *DB) RemoveUserAttributesByNameAndUserID(
 	ctx context.Context, name string, userID uuid.UUID,
 ) error {
-	res, err := db.conn.Exec(ctx, removeUserAttributeByNameAndUserIDQuery, name, userID)
+	res, err := db.conn.Exec(ctx, removeUserAttributesByNameAndUserIDQuery, name, userID)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
@@ -254,7 +254,7 @@ func (db *DB) RemoveUserAttributeByNameAndUserID(
 	return nil
 }
 
-func (db *DB) RemoveUserAttributeByNamesAndUserID(
+func (db *DB) RemoveUserAttributesByNamesAndUserID(
 	ctx context.Context, names []string, userID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeUserAttributesByNamesAndUserIDQuery, names, userID)
@@ -267,7 +267,7 @@ func (db *DB) RemoveUserAttributeByNamesAndUserID(
 	return nil
 }
 
-func (db *DB) RemoveUserAttributeByPluginIDAndUserID(
+func (db *DB) RemoveUserAttributesByPluginIDAndUserID(
 	ctx context.Context, pluginID uuid.UUID, userID uuid.UUID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeUserAttributesByPluginIDAndUserIDQuery, pluginID, userID)

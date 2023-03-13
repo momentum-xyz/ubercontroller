@@ -6,7 +6,7 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/common/posbus"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/common/posbus"
 )
 
 func (n *Node) posBusAutoOnUserAttributeChanged(
@@ -139,35 +139,35 @@ func (n *Node) posBusAutoOnUserUserAttributeChanged(
 	return errs.ErrorOrNil()
 }
 
-func (n *Node) posBusAutoOnSpaceUserAttributeChanged(
-	changeType universe.AttributeChangeType, spaceUserAttributeID entry.SpaceUserAttributeID, value *entry.AttributeValue,
-	effectiveOptions *entry.AttributeOptions,
+func (n *Node) posBusAutoOnObjectUserAttributeChanged(
+	changeType universe.AttributeChangeType, objectUserAttributeID entry.ObjectUserAttributeID,
+	value *entry.AttributeValue, effectiveOptions *entry.AttributeOptions,
 ) error {
 	autoOption, err := posbus.GetOptionAutoOption(effectiveOptions)
 	if err != nil {
-		return errors.WithMessagef(err, "failed to get auto option: %+v", spaceUserAttributeID)
+		return errors.WithMessagef(err, "failed to get auto option: %+v", objectUserAttributeID)
 	}
-	autoMessage, err := posbus.GetOptionAutoMessage(autoOption, changeType, spaceUserAttributeID.AttributeID, value)
+	autoMessage, err := posbus.GetOptionAutoMessage(autoOption, changeType, objectUserAttributeID.AttributeID, value)
 	if err != nil {
-		return errors.WithMessagef(err, "failed to get auto message: %+v", spaceUserAttributeID)
+		return errors.WithMessagef(err, "failed to get auto message: %+v", objectUserAttributeID)
 	}
 	if autoMessage == nil {
 		return nil
 	}
 
-	space, ok := n.GetSpaceFromAllSpaces(spaceUserAttributeID.SpaceID)
+	object, ok := n.GetObjectFromAllObjects(objectUserAttributeID.ObjectID)
 	if !ok {
-		return errors.Errorf("space not found: %s", spaceUserAttributeID.SpaceID)
+		return errors.Errorf("object not found: %s", objectUserAttributeID.ObjectID)
 	}
 
 	var errs *multierror.Error
 	for i := range autoOption.Scope {
 		switch autoOption.Scope[i] {
 		case entry.WorldPosBusAutoScopeAttributeOption:
-			world := space.GetWorld()
+			world := object.GetWorld()
 			if world == nil {
 				errs = multierror.Append(
-					errs, errors.Errorf("failed to get space world: %s", autoOption.Scope[i]),
+					errs, errors.Errorf("failed to get object world: %s", autoOption.Scope[i]),
 				)
 				continue
 			}
@@ -178,8 +178,8 @@ func (n *Node) posBusAutoOnSpaceUserAttributeChanged(
 					),
 				)
 			}
-		case entry.SpacePosBusAutoScopeAttributeOption:
-			if err := space.Send(autoMessage, false); err != nil {
+		case entry.ObjectPosBusAutoScopeAttributeOption:
+			if err := object.Send(autoMessage, false); err != nil {
 				errs = multierror.Append(
 					errs, errors.WithMessagef(
 						err, "failed to send message: %s", autoOption.Scope[i],
@@ -187,7 +187,7 @@ func (n *Node) posBusAutoOnSpaceUserAttributeChanged(
 				)
 			}
 		case entry.UserPosBusAutoScopeAttributeOption:
-			user, ok := space.GetUser(spaceUserAttributeID.UserID, false)
+			user, ok := object.GetUser(objectUserAttributeID.UserID, false)
 			if !ok {
 				continue
 			}

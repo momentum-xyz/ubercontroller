@@ -14,6 +14,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.15.2
 	github.com/google/flatbuffers v22.11.23+incompatible
 	github.com/google/uuid v1.3.0
+	github.com/matoous/go-nanoid/v2 v2.0.0
 	github.com/gorilla/websocket v1.5.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/influxdata/influxdb-client-go/v2 v2.12.0
@@ -23,7 +24,6 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/matoous/go-nanoid/v2 v2.0.0
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/momentum-xyz/posbus-protocol v0.1.24
 	github.com/pborman/getopt/v2 v2.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/sasha-s/go-deadlock v0.3.1

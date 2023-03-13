@@ -4,9 +4,12 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
+
+var _ universe.NodeAttributes = (*nodeAttributes)(nil)
 
 type nodeAttributes struct {
 	node *Node
@@ -18,6 +21,59 @@ func newNodeAttributes(node *Node) *nodeAttributes {
 		node: node,
 		data: make(map[entry.AttributeID]*entry.AttributePayload),
 	}
+}
+
+func (na *nodeAttributes) GetAll() map[entry.AttributeID]*entry.AttributePayload {
+	na.node.Mu.RLock()
+	defer na.node.Mu.RUnlock()
+
+	attributes := make(map[entry.AttributeID]*entry.AttributePayload, len(na.data))
+	for id, payload := range na.data {
+		attributes[id] = payload
+	}
+
+	return attributes
+}
+
+func (na *nodeAttributes) Load() error {
+	na.node.log.Infof("Loading node attributes: %s...", na.node.GetID())
+
+	entries, err := na.node.db.GetNodeAttributesDB().GetNodeAttributes(na.node.ctx)
+	if err != nil {
+		return errors.WithMessage(err, "failed to get node attributes")
+	}
+
+	for i := range entries {
+		if _, err := na.Upsert(
+			entries[i].AttributeID, modify.MergeWith(entries[i].AttributePayload), false,
+		); err != nil {
+			return errors.WithMessagef(err, "failed to upsert node attribute: %+v", entries[i].NodeAttributeID)
+		}
+	}
+
+	na.node.log.Infof("Node attributes loaded: %s: %d", na.node.GetID(), na.Len())
+
+	return nil
+}
+
+func (na *nodeAttributes) Save() error {
+	na.node.log.Infof("Saving node attributes: %s...", na.node.GetID())
+
+	na.node.Mu.RLock()
+	defer na.node.Mu.RUnlock()
+
+	attributes := make([]*entry.NodeAttribute, 0, len(na.data))
+	for id, payload := range na.data {
+		attributes = append(attributes, entry.NewNodeAttribute(entry.NewNodeAttributeID(id), payload))
+	}
+
+	if err := na.node.db.GetNodeAttributesDB().UpsertNodeAttributes(na.node.ctx, attributes); err != nil {
+		return errors.WithMessage(err, "failed to upsert node attributes")
+	}
+
+	na.node.log.Infof("Node attributes saved: %s: %d", na.node.GetID(), len(na.data))
+
+	return nil
 }
 
 func (na *nodeAttributes) GetPayload(attributeID entry.AttributeID) (*entry.AttributePayload, bool) {
@@ -173,7 +229,7 @@ func (na *nodeAttributes) Remove(attributeID entry.AttributeID, updateDB bool) (
 
 	if updateDB {
 		if err := na.node.db.GetNodeAttributesDB().RemoveNodeAttributeByAttributeID(na.node.ctx, attributeID); err != nil {
-			return false, errors.WithMessagef(err, "failed to remove space attribute")
+			return false, errors.WithMessagef(err, "failed to remove node attribute")
 		}
 	}
 
@@ -187,26 +243,4 @@ func (na *nodeAttributes) Len() int {
 	defer na.node.Mu.RUnlock()
 
 	return len(na.data)
-}
-
-func (n *Node) loadNodeAttributes() error {
-	n.log.Infof("Loading node attributes: %s...", n.GetID())
-
-	entries, err := n.db.GetNodeAttributesDB().GetNodeAttributes(n.ctx)
-	if err != nil {
-		return errors.WithMessage(err, "failed to get node attributes")
-	}
-
-	attributes := n.GetNodeAttributes()
-	for i := range entries {
-		if _, err := attributes.Upsert(
-			entries[i].AttributeID, modify.MergeWith(entries[i].AttributePayload), false,
-		); err != nil {
-			return errors.WithMessagef(err, "failed to upsert node attribute: %+v", entries[i].NodeAttributeID)
-		}
-	}
-
-	n.log.Infof("Node attributes loaded: %s: %d", n.GetID(), attributes.Len())
-
-	return nil
 }
