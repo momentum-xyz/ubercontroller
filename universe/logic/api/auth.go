@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/ChainSafe/go-schnorrkel"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
@@ -81,6 +83,38 @@ func VerifyPolkadotSignature(wallet, challenge, signature string) (bool, error) 
 	transcript := schnorrkel.NewSigningContext(trContext, trMessage.Bytes())
 
 	return pub.Verify(sig, transcript)
+}
+
+func signHash(data []byte) []byte {
+	msg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(data), data)
+	return crypto.Keccak256([]byte(msg))
+}
+
+func VerifyEthereumSignature(address, challenge, signature string) (bool, error) {
+	if !strings.HasPrefix(signature, "0x") {
+		signature = "0x" + signature
+	}
+	sigBytes := hexutil.MustDecode(signature)
+	if len(sigBytes) <= 64 || (sigBytes[64] != 27 && sigBytes[64] != 28) {
+		return false, errors.New("unsupported signature format")
+	}
+
+	sigBytes[64] -= 27
+
+	msgBytes := signHash([]byte(challenge))
+
+	pubKey, err := crypto.SigToPub(msgBytes, sigBytes)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to recover public key")
+	}
+
+	recoveredAddr := crypto.PubkeyToAddress(*pubKey).Hex()
+
+	if recoveredAddr != address {
+		return false, errors.New("the challenge was not signed by the correct address")
+	}
+
+	return true, nil
 }
 
 // CreateJWTToken saves a jwt token with the given userID as subject
