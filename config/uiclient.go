@@ -16,6 +16,7 @@ type UIClient struct {
 	UnityFrameworkFileName        string `yaml:"unity_framework_file_name" json:"UNITY_FRAMEWORK_FILE_NAME" envconfig:"UNITY_FRAMEWORK_FILE_NAME"`
 	UnityDataFileName             string `yaml:"unity_data_file_name" json:"UNITY_DATA_FILE_NAME" envconfig:"UNITY_DATA_FILE_NAME"`
 	UnityCodeFileName             string `yaml:"unity_code_file_name" json:"UNITY_CODE_FILE_NAME" envconfig:"UNITY_CODE_FILE_NAME"`
+	UnityAddressablesURL          string `yaml:"unity_addressables_url" json:"UNITY_CLIENT_ADDRESSABLES_URL" envconfig:"UNITY_CLIENT_ADDRESSABLES_URL"`
 }
 
 func (c *UIClient) Init() {
