@@ -104,7 +104,7 @@ func VerifyEthereumSignature(address, challenge, signature string) (bool, error)
 	msgBytes := signHash([]byte(challenge))
 
 	pubKey, err := crypto.SigToPub(msgBytes, sigBytes)
-	if err != nil {
+	if err != nil || pubKey == nil {
 		return false, errors.Wrap(err, "failed to recover public key")
 	}
 
