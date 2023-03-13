@@ -25,9 +25,6 @@ create table wallet
         primary key (blockchain_id, wallet_id)
 );
 
-create unique index wallet_blockchain_id_uindex
-    on wallet (blockchain_id);
-
 -- auto-generated definition
 create table contract
 (
@@ -43,10 +40,7 @@ create unique index contract_contract_id_uindex
 -- auto-generated definition
 create table balance
 (
-    wallet_id                   bytea       not null
-        constraint balance_wallet_wallet_id_fk
-            references wallet (wallet_id)
-            on update cascade on delete cascade,
+    wallet_id                   bytea       not null,
     contract_id                 bytea       not null
         constraint balance_contract_contract_id_fk
             references contract
@@ -58,7 +52,9 @@ create table balance
     balance                     numeric(78) not null,
     last_processed_block_number bigint      not null,
     constraint balance_pk
-        primary key (wallet_id, contract_id, blockchain_id)
+        primary key (wallet_id, contract_id, blockchain_id),
+    FOREIGN KEY (blockchain_id, wallet_id) REFERENCES wallet (blockchain_id, wallet_id)
+
 );
 
 
