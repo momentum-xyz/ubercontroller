@@ -95,7 +95,7 @@ func VerifyEthereumSignature(address, challenge, signature string) (bool, error)
 		signature = "0x" + signature
 	}
 	sigBytes := hexutil.MustDecode(signature)
-	if sigBytes[64] != 27 && sigBytes[64] != 28 {
+	if len(sigBytes) <= 64 || (sigBytes[64] != 27 && sigBytes[64] != 28) {
 		return false, errors.New("unsupported signature format")
 	}
 
