@@ -1,19 +1,17 @@
 package node
 
 import (
+	"fmt"
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 	"net/http"
-	"net/url"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
-	flatbuffers "github.com/google/flatbuffers/go"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/posbus-protocol/flatbuff/go/api"
-	"github.com/momentum-xyz/posbus-protocol/posbus"
-	"github.com/momentum-xyz/ubercontroller/pkg/message"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
@@ -37,57 +35,45 @@ func (n *Node) apiPosBusHandler(c *gin.Context) {
 // handShake TODO: it's "god" method needs to be simplified // antst: agree :)
 func (n *Node) handShake(socketConnection *websocket.Conn) error {
 	mt, incomingMessage, err := socketConnection.ReadMessage()
+
 	if err != nil || mt != websocket.BinaryMessage {
 		return errors.WithMessagef(err, "error: wrong PreHandShake (1), aborting connection")
 	}
-
-	msg := posbus.MsgFromBytes(incomingMessage)
-	if msg.Type() != posbus.MsgTypeFlatBufferMessage {
+	msg := posbus.BytesToMessage(incomingMessage)
+	if msg.Type() != posbus.TypeHandShake {
 		return errors.New("error: wrong message received, not handshake")
 	}
-	msgObj := posbus.MsgFromBytes(incomingMessage).AsFlatBufferMessage()
-	msgType := msgObj.MsgType()
-	if msgType != api.MsgHandshake {
-		return errors.New("error: wrong message type received, not handshake")
+	var handshake posbus.HandShake
+	if err = msg.DecodeTo(&handshake); err != nil {
+		return errors.New("error: wrong message type received, not handshake data")
 	}
 
-	var handshake *api.Handshake
-	unionTable := &flatbuffers.Table{}
-	if msgObj.Msg(unionTable) {
-		handshake = &api.Handshake{}
-		handshake.Init(unionTable.Bytes, unionTable.Pos)
-	}
+	n.log.Debugf("Node: handshake for user %s:", handshake.UserId)
+	n.log.Debugf("Node: handshake version: %d", handshake.HandshakeVersion)
+	n.log.Debugf("Node: protocol version: %d", handshake.ProtocolVersion)
 
-	n.log.Debugf("Node: handshake for user %s:", message.DeserializeGUID(handshake.UserId(nil)))
-	n.log.Debugf("Node: handshake version: %d", handshake.HandshakeVersion())
-	n.log.Debugf("Node: protocol version: %d", handshake.ProtocolVersion())
+	token := string(handshake.Token)
 
-	token := string(handshake.UserToken())
-
-	// TODO: enable token check back!
-	//if err := api.VerifyToken(token, n.cfg.Common.IntrospectURL); err != nil {
-	//	userID := message.DeserializeGUID(handshake.UserId(nil))
-	//	n.log.Errorf("error: wrong PreHandShake (invalid token: %s), aborting connection: %s", userID, err)
-	//	socketConnection.SetWriteDeadline(time.Now().Add(10 * time.Second))
-	//	socketConnection.WritePreparedMessage(posbus.NewSignalMsg(posbus.SignalInvalidToken).WebsocketMessage())
-	//	return nil, false
-	//}
-
-	parsed, _ := jwt.Parse(
+	parsed, err := jwt.Parse(
 		token, func(token *jwt.Token) (interface{}, error) {
-			return []byte(""), nil
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			}
+			secret, err := api.GetJWTSecret()
+			if err != nil {
+				return nil, errors.Wrap(err, "JWT secret")
+			}
+			return secret, nil
 		},
 	)
+	if err != nil {
+		return errors.Wrap(err, "auth token")
+	}
+
 	claims := parsed.Claims.(jwt.MapClaims)
 
-	userID := message.DeserializeGUID(handshake.UserId(nil))
-	sessionID := message.DeserializeGUID(handshake.SessionId(nil))
-	targetWorldId := message.DeserializeGUID(handshake.WorldId(nil))
-	url, err := url.Parse(string(handshake.Url()))
-	if err != nil {
-		return errors.WithMessagef(err, "failed to parse url: %s", string(handshake.Url()))
-	}
-	n.log.Debugf("Node: url to use: %s", url)
+	userID := handshake.UserId
+	sessionID := handshake.SessionId
 
 	userIDClaim, err := uuid.Parse(utils.GetFromAnyMap(claims, "sub", ""))
 	if err != nil {
@@ -102,17 +88,18 @@ func (n *Node) handShake(socketConnection *websocket.Conn) error {
 		return errors.WithMessagef(err, "failed to load user from entry: %s", userID)
 	}
 	user.SetConnection(sessionID, socketConnection)
-	user.Run()
+	return user.Run()
 
-	world, ok := n.GetWorlds().GetWorld(targetWorldId)
-	if !ok {
-		n.log.Infof("World is not found! %+v\n", targetWorldId)
-		world = n.detectSpawnWorld(userID)
-		if world == nil {
-			return errors.New("no default world found to spawn")
-		}
-	}
-	n.log.Infof("User will be launched in world %+v \n", world.GetID())
+	//world, ok := n.GetWorlds().GetWorld(targetWorldId)
+	//if !ok {
+	//	n.log.Infof("World is not found! %+v\n", targetWorldId)
+	//	world = n.detectSpawnWorld(userID)
+	//	if world == nil {
+	//		return errors.New("no default world found to spawn")
+	//	}
+	//}
+	//n.log.Infof("User will be launched in world %+v \n", world.GetID())
+	//
+	//return world.AddUser(user, true)
 
-	return world.AddUser(user, true)
 }

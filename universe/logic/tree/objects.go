@@ -3,9 +3,9 @@ package tree
 import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/posbus-protocol/posbus"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -15,19 +15,19 @@ import (
 )
 
 type ObjectTemplate struct {
-	ObjectID         *uuid.UUID            `json:"object_id"`
-	ObjectName       *string               `json:"object_name"`
-	ObjectTypeID     uuid.UUID             `json:"object_type_id"`
-	ParentID         uuid.UUID             `json:"parent_id"`
-	OwnerID          *uuid.UUID            `json:"owner_id"`
-	Asset2dID        *uuid.UUID            `json:"asset_2d_id"`
-	Asset3dID        *uuid.UUID            `json:"asset_3d_id"`
-	Options          *entry.ObjectOptions  `json:"options"`
-	Position         *cmath.ObjectPosition `json:"position"`
-	Label            *string               `json:"label"`
-	ObjectAttributes []*entry.Attribute    `json:"object_attributes"`
-	Objects          []*ObjectTemplate     `json:"objects"`
-	RandomObjects    []*ObjectTemplate     `json:"random_objects"`
+	ObjectID         *uuid.UUID             `json:"object_id"`
+	ObjectName       *string                `json:"object_name"`
+	ObjectTypeID     uuid.UUID              `json:"object_type_id"`
+	ParentID         uuid.UUID              `json:"parent_id"`
+	OwnerID          *uuid.UUID             `json:"owner_id"`
+	Asset2dID        *uuid.UUID             `json:"asset_2d_id"`
+	Asset3dID        *uuid.UUID             `json:"asset_3d_id"`
+	Options          *entry.ObjectOptions   `json:"options"`
+	Position         *cmath.ObjectTransform `json:"position"`
+	Label            *string                `json:"label"`
+	ObjectAttributes []*entry.Attribute     `json:"object_attributes"`
+	Objects          []*ObjectTemplate      `json:"objects"`
+	RandomObjects    []*ObjectTemplate      `json:"random_objects"`
 }
 
 func AddObjectFromTemplate(objectTemplate *ObjectTemplate, updateDB bool) (uuid.UUID, error) {
@@ -98,7 +98,7 @@ func AddObjectFromTemplate(objectTemplate *ObjectTemplate, updateDB bool) (uuid.
 		}
 	}
 	if objectTemplate.Position != nil {
-		if err := object.SetPosition(objectTemplate.Position, false); err != nil {
+		if err := object.SetTransform(objectTemplate.Position, false); err != nil {
 			return uuid.Nil, errors.WithMessagef(err, "failed to set position: %+v", objectTemplate.Position)
 		}
 	}
@@ -148,7 +148,9 @@ func AddObjectFromTemplate(objectTemplate *ObjectTemplate, updateDB bool) (uuid.
 			modify.MergeWith(objectTemplate.ObjectAttributes[i].AttributePayload),
 			updateDB,
 		); err != nil {
-			return uuid.Nil, errors.WithMessagef(err, "failed to upsert object attribute: %+v", objectTemplate.ObjectAttributes[i])
+			return uuid.Nil, errors.WithMessagef(
+				err, "failed to upsert object attribute: %+v", objectTemplate.ObjectAttributes[i],
+			)
 		}
 	}
 
@@ -175,9 +177,11 @@ func RemoveObjectFromParent(parent, object universe.Object, updateDB bool) (bool
 
 	var errs *multierror.Error
 	if object.GetEnabled() { // we need this check to avoid spam while removing children
-		removeMsg := posbus.NewRemoveStaticObjectsMsg(1)
-		removeMsg.SetObject(0, object.GetID())
-		if err := object.GetWorld().Send(removeMsg.WebsocketMessage(), true); err != nil {
+		msg := posbus.NewMessageFromData(
+			posbus.TypeRemoveObjects, posbus.RemoveObjects{[]uuid.UUID{object.GetID()}},
+		).WSMessage()
+
+		if err := object.GetWorld().Send(msg, true); err != nil {
 			errs = multierror.Append(errs, errors.WithMessage(err, "failed to send remove message"))
 		}
 	}

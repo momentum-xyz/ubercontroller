@@ -2,6 +2,7 @@ package world
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"sync/atomic"
 	"time"
 
@@ -11,12 +12,9 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/momentum-xyz/posbus-protocol/posbus"
-
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/mplugin"
-	"github.com/momentum-xyz/ubercontroller/pkg/message"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
@@ -27,6 +25,9 @@ import (
 )
 
 var _ universe.World = (*World)(nil)
+
+// MaxPosUpdateInterval : send user position at least ones per 5 min, even if user is not moving
+const MaxPosUpdateInterval = 60 * 5
 
 type World struct {
 	*object.Object
@@ -43,6 +44,7 @@ type World struct {
 	allObjects          *generic.SyncMap[uuid.UUID, universe.Object]
 	calendar            *calendar.Calendar
 	skyBoxMsg           atomic.Pointer[websocket.PreparedMessage]
+	lastPosUpdate       int64
 }
 
 func (w *World) TempSetSkybox(msg *websocket.PreparedMessage) {
@@ -194,21 +196,24 @@ func (w *World) stopObjects() error {
 }
 
 func (w *World) broadcastPositions() {
-	flag := false
 	w.Users.Mu.RLock()
 	numClients := len(w.Users.Data)
-	msg := posbus.NewUserPositionsMsg(numClients)
+	positionsBuffer := posbus.StartUserTransformBuffer(numClients)
+	currentTime := time.Now().Unix()
+
 	if numClients > 0 {
-		flag = true
-		i := 0
 		for _, u := range w.Users.Data {
-			msg.SetPosition(i, u.GetPosBuffer())
-			i++
+			if u.GetLastPosTime() > w.lastPosUpdate || (currentTime-u.GetLastPosTime() >= MaxPosUpdateInterval) {
+				positionsBuffer.AddPosition(u.GetPosBuffer())
+			}
 		}
 	}
+	w.lastPosUpdate = currentTime
+
 	w.Users.Mu.RUnlock()
-	if flag {
-		w.Send(msg.WebsocketMessage(), true)
+	if positionsBuffer.NumUsers() > 0 {
+		positionsBuffer.Finalize()
+		w.Send(posbus.NewMessageFromBuffer(posbus.TypeSetUsersTransforms, positionsBuffer.Buf()).WSMessage(), true)
 	}
 }
 
@@ -292,18 +297,11 @@ func (w *World) UpdateWorldMetadata() error {
 		w.metaData = Metadata{}
 	}
 
-	//TODO: Ut is all ugly with circular deps
-	dec := make([]message.DecorationMetadata, len(w.metaData.Decorations))
-	for i, decoration := range w.metaData.Decorations {
-		dec[i].AssetID = decoration.AssetID
-		dec[i].Position = decoration.Position
-	}
-
 	w.metaMsg.Store(
-		message.GetBuilder().MsgSetWorld(
-			w.GetID(), w.GetName(), w.metaData.AvatarController, w.metaData.SkyboxController, w.metaData.LOD,
-			dec,
-		),
+		posbus.NewMessageFromData(
+			posbus.TypeSetWorld,
+			posbus.SetWorldData{ID: w.GetID(), Name: w.GetName(), Avatar: w.metaData.AvatarController, Avatar3DAssetID: w.metaData.AvatarController, Owner: w.GetOwnerID()},
+		).WSMessage(),
 	)
 
 	return nil

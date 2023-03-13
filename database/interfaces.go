@@ -51,7 +51,7 @@ type ObjectsDB interface {
 	UpsertObjects(ctx context.Context, objects []*entry.Object) error
 
 	UpdateObjectParentID(ctx context.Context, objectID uuid.UUID, parentID uuid.UUID) error
-	UpdateObjectPosition(ctx context.Context, objectID uuid.UUID, position *cmath.ObjectPosition) error
+	UpdateObjectPosition(ctx context.Context, objectID uuid.UUID, position *cmath.ObjectTransform) error
 	UpdateObjectOwnerID(ctx context.Context, objectID, ownerID uuid.UUID) error
 	UpdateObjectAsset2dID(ctx context.Context, objectID uuid.UUID, asset2dID *uuid.UUID) error
 	UpdateObjectAsset3dID(ctx context.Context, objectID uuid.UUID, asset3dID *uuid.UUID) error
@@ -198,16 +198,22 @@ type AttributeTypesDB interface {
 type NodeAttributesDB interface {
 	GetNodeAttributes(ctx context.Context) ([]*entry.NodeAttribute, error)
 	GetNodeAttributeByAttributeID(ctx context.Context, attributeID entry.AttributeID) (*entry.NodeAttribute, error)
-	GetNodeAttributeValueByAttributeID(ctx context.Context, attributeID entry.AttributeID) (*entry.AttributeValue, error)
+	GetNodeAttributeValueByAttributeID(ctx context.Context, attributeID entry.AttributeID) (
+		*entry.AttributeValue, error,
+	)
 	GetNodeAttributeOptionsByAttributeID(
-		ctx context.Context, attributeID entry.AttributeID) (*entry.AttributeOptions, error,
+		ctx context.Context, attributeID entry.AttributeID,
+	) (
+		*entry.AttributeOptions, error,
 	)
 
 	UpsertNodeAttribute(ctx context.Context, nodeAttribute *entry.NodeAttribute) error
 	UpsertNodeAttributes(ctx context.Context, nodeAttributes []*entry.NodeAttribute) error
 
 	UpdateNodeAttributeValue(ctx context.Context, attributeID entry.AttributeID, value *entry.AttributeValue) error
-	UpdateNodeAttributeOptions(ctx context.Context, attributeID entry.AttributeID, options *entry.AttributeOptions) error
+	UpdateNodeAttributeOptions(
+		ctx context.Context, attributeID entry.AttributeID, options *entry.AttributeOptions,
+	) error
 
 	RemoveNodeAttributeByAttributeID(ctx context.Context, attributeID entry.AttributeID) error
 	RemoveNodeAttributesByName(ctx context.Context, name string) error
@@ -217,7 +223,9 @@ type NodeAttributesDB interface {
 
 type ObjectAttributesDB interface {
 	GetObjectAttributes(ctx context.Context) ([]*entry.ObjectAttribute, error)
-	GetObjectAttributeByID(ctx context.Context, objectAttributeID entry.ObjectAttributeID) (*entry.ObjectAttribute, error)
+	GetObjectAttributeByID(ctx context.Context, objectAttributeID entry.ObjectAttributeID) (
+		*entry.ObjectAttribute, error,
+	)
 	GetObjectAttributesByObjectID(ctx context.Context, objectID uuid.UUID) ([]*entry.ObjectAttribute, error)
 	GetObjectAttributesByAttributeID(
 		ctx context.Context, attributeID entry.AttributeID,
@@ -314,9 +322,13 @@ type UserAttributesDB interface {
 	GetUserAttributes(ctx context.Context) ([]*entry.UserAttribute, error)
 	GetUserAttributeByID(ctx context.Context, userAttributeID entry.UserAttributeID) (*entry.UserAttribute, error)
 	GetUserAttributesByUserID(ctx context.Context, userID uuid.UUID) ([]*entry.UserAttribute, error)
-	GetUserAttributePayloadByID(ctx context.Context, userAttributeID entry.UserAttributeID) (*entry.AttributePayload, error)
+	GetUserAttributePayloadByID(ctx context.Context, userAttributeID entry.UserAttributeID) (
+		*entry.AttributePayload, error,
+	)
 	GetUserAttributeValueByID(ctx context.Context, userAttributeID entry.UserAttributeID) (*entry.AttributeValue, error)
-	GetUserAttributeOptionsByID(ctx context.Context, userAttributeID entry.UserAttributeID) (*entry.AttributeOptions, error)
+	GetUserAttributeOptionsByID(ctx context.Context, userAttributeID entry.UserAttributeID) (
+		*entry.AttributeOptions, error,
+	)
 
 	GetUserAttributesCount(ctx context.Context) (int64, error)
 

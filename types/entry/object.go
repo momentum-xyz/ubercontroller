@@ -17,16 +17,16 @@ const (
 )
 
 type Object struct {
-	ObjectID     uuid.UUID             `db:"object_id" json:"object_id"`
-	ObjectTypeID uuid.UUID             `db:"object_type_id" json:"object_type_id"`
-	OwnerID      uuid.UUID             `db:"owner_id" json:"owner_id"`
-	ParentID     uuid.UUID             `db:"parent_id" json:"parent_id"`
-	Asset2dID    *uuid.UUID            `db:"asset_2d_id" json:"asset_2d_id"`
-	Asset3dID    *uuid.UUID            `db:"asset_3d_id" json:"asset_3d_id"`
-	Options      *ObjectOptions        `db:"options" json:"options"`
-	Position     *cmath.ObjectPosition `db:"position" json:"position"`
-	CreatedAt    time.Time             `db:"created_at" json:"created_at"`
-	UpdatedAt    time.Time             `db:"updated_at" json:"updated_at"`
+	ObjectID     uuid.UUID              `db:"object_id" json:"object_id"`
+	ObjectTypeID uuid.UUID              `db:"object_type_id" json:"object_type_id"`
+	OwnerID      uuid.UUID              `db:"owner_id" json:"owner_id"`
+	ParentID     uuid.UUID              `db:"parent_id" json:"parent_id"`
+	Asset2dID    *uuid.UUID             `db:"asset_2d_id" json:"asset_2d_id"`
+	Asset3dID    *uuid.UUID             `db:"asset_3d_id" json:"asset_3d_id"`
+	Options      *ObjectOptions         `db:"options" json:"options"`
+	Position     *cmath.ObjectTransform `db:"position" json:"position"`
+	CreatedAt    time.Time              `db:"created_at" json:"created_at"`
+	UpdatedAt    time.Time              `db:"updated_at" json:"updated_at"`
 }
 
 type ObjectOptions struct {
@@ -78,7 +78,9 @@ func NewObjectAttribute(objectAttributeID ObjectAttributeID, payload *AttributeP
 	}
 }
 
-func NewObjectUserAttribute(objectUserAttributeID ObjectUserAttributeID, payload *AttributePayload) *ObjectUserAttribute {
+func NewObjectUserAttribute(
+	objectUserAttributeID ObjectUserAttributeID, payload *AttributePayload,
+) *ObjectUserAttribute {
 	return &ObjectUserAttribute{
 		ObjectUserAttributeID: objectUserAttributeID,
 		AttributePayload:      payload,

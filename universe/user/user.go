@@ -2,6 +2,8 @@ package user
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -15,7 +17,6 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
-	"github.com/momentum-xyz/ubercontroller/pkg/message"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -31,8 +32,9 @@ type User struct {
 	// The websocket connection.
 	conn *websocket.Conn
 
-	pos          *cmath.Vec3 // going to data part to posMsgBuffer content for simple access
-	rotation     *cmath.Vec3 // going to data part to posMsgBuffer content for simple access
+	transform cmath.UserTransform
+	//pos          *cmath.Vec3 // going to data part to posMsgBuffer content for simple access
+	//rotation     *cmath.Vec3 // going to data part to posMsgBuffer content for simple access
 	posMsgBuffer []byte
 
 	lastPositionUpdateTimestamp int64
@@ -61,22 +63,48 @@ func (u *User) GetID() uuid.UUID {
 	return u.id
 }
 
+//func (u *User) GetTransform() cmath.UserTransform {
+//	t := cmath.NewUserTransform()
+//	t.CopyTo(&u.transform)
+//	return t
+//}
+
+func (u *User) GetTransform() *cmath.UserTransform {
+	return &u.transform
+}
+
+func (u *User) SetTransform(t cmath.UserTransform) {
+	t.CopyTo(&u.transform)
+}
+
 func (u *User) SetPosition(p cmath.Vec3) {
-	(*u.pos).X = p.X
-	(*u.pos).Y = p.Y
-	(*u.pos).Z = p.Z
+	(*u.transform.Position) = p
 }
 
 func (u *User) GetPosition() cmath.Vec3 {
-	return *u.pos
+	return *u.transform.Position
 }
 
 func (u *User) GetRotation() cmath.Vec3 {
-	return *u.rotation
+	return *u.transform.Rotation
+}
+
+func (u *User) GetUserDefinition() *posbus.UserDefinition {
+	d := new(posbus.UserDefinition)
+	d.Transform = u.transform
+	d.ID = u.id
+	guestUserTypeID, _ := common.GetGuestUserTypeID()
+	d.IsGuest = u.userType.GetID() == guestUserTypeID
+	d.Name = *u.profile.Name
+	return d
 }
 
 func (u *User) GetPosBuffer() []byte {
 	return u.posMsgBuffer
+}
+
+func (u *User) GetLastPosTime() int64 {
+	return u.lastPositionUpdateTimestamp
 }
 
 func (u *User) GetWorld() universe.World {
@@ -131,10 +159,9 @@ func (u *User) Initialize(ctx context.Context) error {
 	u.log = log
 	u.bufferSends.Store(true)
 	u.numSendsQueued.Store(chanIsClosed)
-	u.posMsgBuffer = message.NewSendPosBuffer(u.GetID())
-	u.pos = (*cmath.Vec3)(unsafe.Add(unsafe.Pointer(&u.posMsgBuffer[0]), 16))
-	u.rotation = (*cmath.Vec3)(unsafe.Add(unsafe.Pointer(&u.posMsgBuffer[0]), 16+3*4))
-
+	u.posMsgBuffer = posbus.NewSendTransformBuffer(u.GetID())
+	u.transform.Position = (*cmath.Vec3)(unsafe.Add(unsafe.Pointer(&u.posMsgBuffer[0]), 16))
+	u.transform.Rotation = (*cmath.Vec3)(unsafe.Add(unsafe.Pointer(&u.posMsgBuffer[0]), 16+3*4))
 	return nil
 }
 
@@ -218,15 +245,14 @@ func (u *User) UpdatePosition(data []byte) error {
 	//u.world.users.positionLock.RLock()
 	copy(u.posMsgBuffer[16:40], data)
 	//u.world.users.positionLock.RUnlock()
-	currentTime := time.Now().Unix()
-	u.lastPositionUpdateTimestamp = currentTime
+	u.lastPositionUpdateTimestamp = time.Now().Unix()
 
 	return nil
 }
 
-func (u *User) TeleportToWorld(id uuid.UUID) {
-	//url := universe.GetNode().ResolveNodeByWorldID(id)
-	//u.Send(posbus.NewTeleportRequest(id, url).WebsocketMessage())
-	//u.close(true)
-
-}
+//func (u *User) TeleportToWorld(id uuid.UUID) {
+//	//url := universe.GetNode().ResolveNodeByWorldID(id)
+//	//u.Send(posbus.NewTeleportRequest(id, url).WSMessage())
+//	//u.close(true)
+//
+//}

@@ -1,11 +1,10 @@
 package object
 
 import (
-	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/ubercontroller/pkg/message"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/common/unity"
@@ -78,7 +77,8 @@ func (o *Object) UpdateAutoTextureMap(
 		return nil
 	}
 
-	var msg *websocket.PreparedMessage
+	dataIndex := posbus.ObjectDataIndex{SlotName: option.SlotName, Kind: option.SlotType}
+	var data interface{}
 	switch option.SlotType {
 	case entry.UnitySlotTypeNumber:
 		v, ok := (*value)[option.ValueField]
@@ -89,8 +89,7 @@ func (o *Object) UpdateAutoTextureMap(
 		if !ok {
 			return nil
 		}
-		sendMap := map[string]int32{option.SlotName: int32(val)}
-		msg = message.GetBuilder().SetObjectAttributes(o.GetID(), sendMap)
+		data = int32(val)
 	case entry.UnitySlotTypeString:
 		o.log.Infof("Processing String Slot %+v for %+v \n", option.SlotName, o.GetID())
 		v, ok := (*value)[option.ValueField]
@@ -104,15 +103,7 @@ func (o *Object) UpdateAutoTextureMap(
 
 		o.log.Infof("Setting String Slot %+v for %+v to  %+v  \n", option.SlotName, o.GetID(), val)
 
-		o.renderStringMap.Store(option.SlotName, val)
-		func() {
-			o.renderStringMap.Mu.RLock()
-			defer o.renderStringMap.Mu.RUnlock()
-			o.stringMsg.Store(message.GetBuilder().SetObjectStrings(o.GetID(), o.renderStringMap.Data))
-		}()
-
-		sendMap := map[string]string{option.SlotName: val}
-		msg = message.GetBuilder().SetObjectStrings(o.GetID(), sendMap)
+		data = val
 	case entry.UnitySlotTypeTexture:
 		valField := "auto_render_hash"
 		if option.ContentType == "image" {
@@ -126,28 +117,25 @@ func (o *Object) UpdateAutoTextureMap(
 		if !ok {
 			return nil
 		}
-
-		o.renderTextureMap.Store(option.SlotName, val)
-		func() {
-			o.renderTextureMap.Mu.RLock()
-			defer o.renderTextureMap.Mu.RUnlock()
-
-			o.textureMsg.Store(message.GetBuilder().SetObjectTextures(o.GetID(), o.renderTextureMap.Data))
-			ot := o.GetObjectType()
-			if ot != nil && option.SlotName == "skybox_custom" && ot.GetAsset3d() != nil && ot.GetAsset3d().GetID() == uuid.MustParse("313a597a-8b9a-47a7-9908-52bdc7a21a3e") {
-				o.log.Infof(
-					"unity-auto stage7b :Setting skybox texture for %+v to %+v | %+v from %+v\n", o.world.GetID(), val,
-					option,
-					o.GetID(),
-				)
-				skyBoxTextureMap := map[string]string{option.SlotName: val}
-				o.world.TempSetSkybox(message.GetBuilder().SetObjectTextures(o.GetID(), skyBoxTextureMap))
-			}
-		}()
-
-		sendMap := map[string]string{option.SlotName: val}
-		msg = message.GetBuilder().SetObjectTextures(o.GetID(), sendMap)
-
+		data = val
 	}
+
+	// store to the full list and update message (one which send on spawn)
+	func() {
+		o.renderDataMap.Mu.RLock()
+		defer o.renderDataMap.Mu.RUnlock()
+		o.renderDataMap.Data[dataIndex] = data
+		o.dataMsg.Store(
+			posbus.NewMessageFromData(
+				posbus.TypeSetObjectData, posbus.ObjectData{ID: o.GetID(), Entries: o.renderDataMap.Data},
+			).WSMessage(),
+		)
+	}()
+
+	// prepare message for this atomic update
+	sendMap := map[posbus.ObjectDataIndex]interface{}{dataIndex: data}
+	msg := posbus.NewMessageFromData(
+		posbus.TypeSetObjectData, posbus.ObjectData{ID: o.GetID(), Entries: sendMap},
+	).WSMessage()
 	return msg
 }

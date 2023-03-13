@@ -4,7 +4,7 @@ import (
 	"container/list"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"github.com/momentum-xyz/posbus-protocol/posbus"
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/pkg/errors"
 	"github.com/zakaria-chahboun/cute"
 	"time"
@@ -36,6 +36,10 @@ func (u *User) StartIOPumps() {
 func (u *User) ReleaseSendBuffer() {
 	u.bufferSends.Store(false)
 	u.log.Infof("User: ReleaseSendBuffer: messages waterfall opened: %s", u.GetID())
+}
+
+func (u *User) LockSendBuffer() {
+	u.bufferSends.Store(true)
 }
 
 func (u *User) readPump() {
@@ -72,7 +76,7 @@ func (u *User) readPump() {
 		if messageType != websocket.BinaryMessage {
 			u.log.Errorf("User: read pump: wrong incoming message type: %d: %s", messageType, u.GetID())
 		} else {
-			if err := u.OnMessage(posbus.MsgFromBytes(message)); err != nil {
+			if err := u.OnMessage(posbus.BytesToMessage(message)); err != nil {
 				u.log.Warn(errors.WithMessagef(err, "User: read pump: failed to handle message: %s", u.GetID()))
 			}
 		}

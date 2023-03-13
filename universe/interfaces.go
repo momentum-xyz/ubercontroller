@@ -2,11 +2,11 @@ package universe
 
 import (
 	"context"
-
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	influxWrite "github.com/influxdata/influxdb-client-go/v2/api/write"
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -148,10 +148,10 @@ type Object interface {
 	GetOwnerID() uuid.UUID
 	SetOwnerID(ownerID uuid.UUID, updateDB bool) error
 
-	GetPosition() *cmath.ObjectPosition
-	GetActualPosition() *cmath.ObjectPosition
-	SetPosition(position *cmath.ObjectPosition, updateDB bool) error
-	SetActualPosition(pos cmath.ObjectPosition, theta float64) error
+	GetTransform() *cmath.ObjectTransform
+	GetActualTransform() *cmath.ObjectTransform
+	SetTransform(position *cmath.ObjectTransform, updateDB bool) error
+	SetActualTransform(pos cmath.ObjectTransform, theta float64) error
 
 	GetOptions() *entry.ObjectOptions
 	GetEffectiveOptions() *entry.ObjectOptions
@@ -213,13 +213,19 @@ type User interface {
 
 	GetProfile() *entry.UserProfile
 
+	GetTransform() *cmath.UserTransform
+	SetTransform(cmath.UserTransform)
+
 	GetPosition() cmath.Vec3
 	GetRotation() cmath.Vec3
 	SetPosition(position cmath.Vec3)
 
 	GetPosBuffer() []byte
+	GetLastPosTime() int64
 
 	Update() error
+	ReleaseSendBuffer()
+	LockSendBuffer()
 
 	GetSessionID() uuid.UUID
 	SetConnection(sessionID uuid.UUID, socketConnection *websocket.Conn) error
@@ -228,6 +234,7 @@ type User interface {
 	SendDirectly(message *websocket.PreparedMessage) error
 
 	AddInfluxTags(prefix string, point *influxWrite.Point) *influxWrite.Point
+	GetUserDefinition() *posbus.UserDefinition
 }
 
 // UserObjects ignores "updateDB" flag
@@ -258,7 +265,9 @@ type Attributes[ID comparable] interface {
 	Upsert(attributeID ID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool) (*entry.AttributePayload, error)
 
 	UpdateValue(attributeID ID, modifyFn modify.Fn[entry.AttributeValue], updateDB bool) (*entry.AttributeValue, error)
-	UpdateOptions(attributeID ID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool) (*entry.AttributeOptions, error)
+	UpdateOptions(attributeID ID, modifyFn modify.Fn[entry.AttributeOptions], updateDB bool) (
+		*entry.AttributeOptions, error,
+	)
 
 	Remove(attributeID ID, updateDB bool) (bool, error)
 }

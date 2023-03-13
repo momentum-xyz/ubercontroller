@@ -141,7 +141,7 @@ func (n *Node) apiGetObject(c *gin.Context) {
 		OwnerID: object.GetOwnerID().String(),
 	}
 	parent := object.GetParent()
-	position := object.GetActualPosition()
+	position := object.GetActualTransform()
 	objectType := object.GetObjectType()
 	if parent != nil {
 		out.ParentID = parent.GetID().String()
