@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"log"
 	"time"
@@ -48,15 +47,23 @@ func main() {
 	ptrTestHandler2 := &testHandler2
 	harvForClient.Subscribe(harvester.Ethereum, harvester.NewBlock, ptrTestHandler2)
 
-	wallet := "9592b70a5a6c8ece2ef55547c3f07f1862372fd1"
-	contract := "de0b295669a9fd93d5f28d9ec85e40f4cb697bae"
-	contract2 := "de0b295669a9fd93d5f28d9ec85e40f4cb697ccc"
+	wallet1 := "0x9592b70a5a6c8ece2ef55547c3f07f1862372fd1"
+	contract1 := "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae"
+	contract2 := "0xde0b295669a9fd93d5f28d9ec85e40f4cb697ccc"
 
-	err = harv.SubscribeForWalletAndContract(harvester.Ethereum, HexToAddress(wallet), HexToAddress(contract), ptrTestHandler2)
+	wallet2 := "0x9Dd3f13cbacf6bd96E9757eCaceDf5236ffF787f"
+	contract3 := "0x3af33bEF05C2dCb3C7288b77fe1C8d2AeBA4d789"
+
+	err = harv.SubscribeForWalletAndContract(harvester.Ethereum, harvester.HexToAddress(wallet1), harvester.HexToAddress(contract1), ptrTestHandler2)
 	if err != nil {
 		panic(err)
 	}
-	err = harv.SubscribeForWalletAndContract(harvester.Ethereum, HexToAddress(wallet), HexToAddress(contract2), ptrTestHandler2)
+	err = harv.SubscribeForWalletAndContract(harvester.Ethereum, harvester.HexToAddress(wallet1), harvester.HexToAddress(contract2), ptrTestHandler2)
+	if err != nil {
+		panic(err)
+	}
+
+	err = harv.SubscribeForWalletAndContract(harvester.Ethereum, harvester.HexToAddress(wallet2), harvester.HexToAddress(contract3), ptrTestHandler2)
 	if err != nil {
 		panic(err)
 	}
@@ -65,14 +72,6 @@ func main() {
 	harvForClient.Unsubscribe(harvester.Ethereum, harvester.NewBlock, ptrTestHandler2)
 
 	time.Sleep(time.Second * 50)
-}
-
-func HexToAddress(s string) []byte {
-	b, err := hex.DecodeString(s)
-	if err != nil {
-		panic(err)
-	}
-	return b
 }
 
 func testHandler1(p any) {

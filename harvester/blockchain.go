@@ -96,9 +96,9 @@ func (b *BlockChain) SaveBalancesToDB() (err error) {
 	balances := make([]*entry.Balance, 0)
 
 	for wallet, value := range b.m {
-		wallets = append(wallets, Address(wallet))
+		wallets = append(wallets, HexToAddress(wallet))
 		for contract, balance := range value {
-			contracts = append(contracts, Address(contract))
+			contracts = append(contracts, HexToAddress(contract))
 			balances = append(balances, balance)
 		}
 	}
@@ -120,7 +120,7 @@ func (b *BlockChain) SaveBalancesToDB() (err error) {
 	}()
 
 	sql := `INSERT INTO wallet (wallet_id, blockchain_id)
-			VALUES ($1, $2)
+			VALUES ($1::bytea, $2)
 			ON CONFLICT (blockchain_id, wallet_id) DO NOTHING `
 	for _, w := range wallets {
 		_, err = tx.Exec(context.Background(), sql, w, b.uuid)

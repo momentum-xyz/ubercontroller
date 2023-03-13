@@ -1,6 +1,8 @@
 package harvester
 
 import (
+	"encoding/hex"
+
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -90,4 +92,12 @@ func (h *Harvester) Subscribe(bcType string, eventName HarvesterEvent, callback 
 
 func (h *Harvester) Unsubscribe(bcType string, eventName HarvesterEvent, callback Callback) {
 	h.clients.Remove(bcType, eventName, callback)
+}
+
+func HexToAddress(s string) []byte {
+	b, err := hex.DecodeString(s[2:])
+	if err != nil {
+		panic(err)
+	}
+	return b
 }
