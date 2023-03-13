@@ -2,6 +2,7 @@ package harvester
 
 import (
 	"encoding/hex"
+	"math/big"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -25,6 +26,9 @@ func (h *Harvester) SubscribeForWalletAndContract(bcType string, wallet []byte, 
 	if !ok {
 		return errors.New("failed to find blockchain:" + bcType)
 	}
+
+	//event := hexutil.Encode(wallet) + "_" + hexutil.Encode(contract)
+	h.clients.Add(bcType, BalanceChange, callback)
 
 	bc.SubscribeForWalletAndContract(wallet, contract)
 	bc.SaveBalancesToDB()
@@ -74,12 +78,16 @@ func (h *Harvester) OnNewBlock(bcType string, block *BCBlock) {
 }
 
 func (h *Harvester) RegisterBCAdapter(uuid uuid.UUID, bcType string, rpcURL string, adapter BCAdapter) error {
-	h.bc[bcType] = NewBlockchain(h.db, adapter, uuid, bcType, rpcURL)
+	h.bc[bcType] = NewBlockchain(h.db, adapter, uuid, bcType, rpcURL, h.updateHook)
 	if err := h.bc[bcType].LoadFromDB(); err != nil {
 		return errors.WithMessage(err, "failed to load from DB")
 	}
 
 	return nil
+}
+
+func (h *Harvester) updateHook(bcType string, wallet string, contract string, blockNumber uint64, balance *big.Int) {
+	h.clients.Trigger(bcType, BalanceChange, []any{wallet, contract, balance})
 }
 
 func (h *Harvester) Run() error {

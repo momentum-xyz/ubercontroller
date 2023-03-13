@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
+	"github.com/sasha-s/go-deadlock"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 )
@@ -31,16 +32,22 @@ type BlockChain struct {
 	db                       *pgxpool.Pool
 	adapter                  BCAdapter
 	m                        map[string]map[string]*entry.Balance
+	mu                       deadlock.RWMutex
+	onUpdateWalletContract   UpdateWalletContractHook
 }
 
-func NewBlockchain(db *pgxpool.Pool, adapter BCAdapter, uuid uuid.UUID, name string, rpcURL string) *BlockChain {
+type UpdateWalletContractHook func(bcType string, wallet string, contract string, blockNumber uint64, balance *big.Int)
+
+func NewBlockchain(db *pgxpool.Pool, adapter BCAdapter, uuid uuid.UUID, name string, rpcURL string, onUpdateWalletContract UpdateWalletContractHook) *BlockChain {
 	return &BlockChain{
-		uuid:    uuid,
-		name:    name,
-		rpcURL:  rpcURL,
-		db:      db,
-		adapter: adapter,
-		m:       make(map[string]map[string]*entry.Balance),
+		uuid:                   uuid,
+		name:                   name,
+		rpcURL:                 rpcURL,
+		db:                     db,
+		adapter:                adapter,
+		m:                      make(map[string]map[string]*entry.Balance),
+		mu:                     deadlock.RWMutex{},
+		onUpdateWalletContract: onUpdateWalletContract,
 	}
 }
 
@@ -56,6 +63,9 @@ func (b *BlockChain) ToEntry() *entry.Blockchain {
 func (b *BlockChain) SubscribeForWalletAndContract(wallet []byte, contract []byte) {
 	walletStr := hexutil.Encode(wallet)
 	contractStr := hexutil.Encode(contract)
+
+	b.mu.Lock()
+	defer b.mu.Unlock()
 
 	_, ok := b.m[walletStr]
 	if !ok {
@@ -78,30 +88,38 @@ func (b *BlockChain) SubscribeForWalletAndContract(wallet []byte, contract []byt
 	}
 
 	b.getBalanceFromBC(walletStr, contractStr)
+}
+
+func (b *BlockChain) update(walletStr string, contractStr string, blockNumber uint64, balance *big.Int) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
 
 }
 
-func (b *BlockChain) getBalanceFromBC(walletStr string, contractStr string) (*big.Int, error) {
+func (b *BlockChain) getBalanceFromBC(walletStr string, contractStr string) (*big.Int, uint64, error) {
 	n, err := b.adapter.GetLastBlockNumber()
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	balance, err := b.adapter.GetBalance(walletStr, contractStr, n)
-	return balance, nil
+	return balance, n, nil
 }
 
 func (b *BlockChain) SaveBalancesToDB() (err error) {
 	wallets := make([]Address, 0)
 	contracts := make([]Address, 0)
-	balances := make([]*entry.Balance, 0)
+	// Save balance by value to quickly unlock mutex, otherwise have to unlock util DB transaction finished
+	balances := make([]entry.Balance, 0)
 
+	b.mu.RLock()
 	for wallet, value := range b.m {
 		wallets = append(wallets, HexToAddress(wallet))
 		for contract, balance := range value {
 			contracts = append(contracts, HexToAddress(contract))
-			balances = append(balances, balance)
+			balances = append(balances, *balance)
 		}
 	}
+	b.mu.RUnlock()
 
 	fmt.Println(wallets)
 	fmt.Println(contracts)
