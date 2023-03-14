@@ -23,6 +23,7 @@ ON CONFLICT (blockchain_id) DO UPDATE SET last_processed_block_number=$2,
                                           blockchain_name=$3,
                                           rpc_url=$4,
                                           updated_at=NOW();`
+const getAllBalances = `SELECT * FROM balance`
 
 type BlockChain struct {
 	uuid                     uuid.UUID
@@ -60,6 +61,19 @@ func (b *BlockChain) ToEntry() *entry.Blockchain {
 	}
 }
 
+func (b *BlockChain) LoadBalancesFromDB() error {
+	//b.db.Query().
+	balances := make([]*entry.Balance, 0)
+	if err := pgxscan.Select(context.TODO(), b.db, &balances, getAllBalances); err != nil {
+		return errors.WithMessage(err, "failed to query DB")
+	}
+	fmt.Println(balances)
+	for _, bal := range balances {
+		fmt.Println((*big.Int)(bal.Balance).String())
+	}
+	return nil
+}
+
 func (b *BlockChain) SubscribeForWalletAndContract(wallet []byte, contract []byte) {
 	walletStr := hexutil.Encode(wallet)
 	contractStr := hexutil.Encode(contract)
@@ -84,8 +98,10 @@ func (b *BlockChain) SubscribeForWalletAndContract(wallet []byte, contract []byt
 		ContractID:               contract,
 		BlockchainID:             b.uuid,
 		LastProcessedBlockNumber: 0,
-		Balance:                  0,
+		Balance:                  &entry.BigInt{},
 	}
+
+	b.m[walletStr][contractStr].Balance = (*entry.BigInt)(big.NewInt(777))
 
 	b.getBalanceFromBC(walletStr, contractStr)
 }

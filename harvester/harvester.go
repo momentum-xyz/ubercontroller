@@ -32,6 +32,7 @@ func (h *Harvester) SubscribeForWalletAndContract(bcType string, wallet []byte, 
 
 	bc.SubscribeForWalletAndContract(wallet, contract)
 	bc.SaveBalancesToDB()
+	bc.LoadBalancesFromDB()
 
 	return nil
 }
