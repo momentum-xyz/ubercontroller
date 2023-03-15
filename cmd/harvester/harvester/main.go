@@ -27,25 +27,26 @@ func main() {
 	defer pool.Close()
 
 	// ** Harvester
-	harv := harvester.NewHarvester(pool)
-	var harvForClient harvester.HarvesterAPI
-	harvForClient = harv
-	var harvForAdapter harvester.BCAdapterAPI
-	harvForAdapter = harv
+	var harv harvester.IHarvester
+	harv = harvester.NewHarvester(pool)
 
 	// ** Ethereum Adapter
-	ethereumAdapter := ethereum_adapter.NewEthereumAdapter(harvForAdapter)
+	ethereumAdapter := ethereum_adapter.NewEthereumAdapter()
 	ethereumAdapter.Run()
+	id, name, url := ethereumAdapter.GetInfo()
+	if err := harv.RegisterAdapter(id, name, url, ethereumAdapter); err != nil {
+		log.Fatal(err)
+	}
 
 	// ** Harvester Clients
 	testHandler1 := testHandler1
 	ptrTestHandler1 := &testHandler1
-	harvForClient.Subscribe(harvester.Ethereum, harvester.NewBlock, ptrTestHandler1)
-	harvForClient.Subscribe(harvester.Polkadot, harvester.NewBlock, ptrTestHandler1)
+	harv.Subscribe(harvester.Ethereum, harvester.NewBlock, ptrTestHandler1)
+	harv.Subscribe(harvester.Polkadot, harvester.NewBlock, ptrTestHandler1)
 
 	testHandler2 := testHandler2
 	ptrTestHandler2 := &testHandler2
-	harvForClient.Subscribe(harvester.Ethereum, harvester.NewBlock, ptrTestHandler2)
+	harv.Subscribe(harvester.Ethereum, harvester.NewBlock, ptrTestHandler2)
 
 	wallet1 := "0x9592b70a5a6c8ece2ef55547c3f07f1862372fd1"
 	contract1 := "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae"
@@ -69,7 +70,7 @@ func main() {
 	}
 
 	time.Sleep(time.Second * 30)
-	harvForClient.Unsubscribe(harvester.Ethereum, harvester.NewBlock, ptrTestHandler2)
+	harv.Unsubscribe(harvester.Ethereum, harvester.NewBlock, ptrTestHandler2)
 
 	time.Sleep(time.Second * 50)
 }

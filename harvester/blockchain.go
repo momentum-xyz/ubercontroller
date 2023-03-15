@@ -31,7 +31,7 @@ type BlockChain struct {
 	lastProcessedBlockNumber uint64
 	rpcURL                   string
 	db                       *pgxpool.Pool
-	adapter                  BCAdapter
+	adapter                  Adapter
 	m                        map[string]map[string]*entry.Balance
 	mu                       deadlock.RWMutex
 	onUpdateWalletContract   UpdateWalletContractHook
@@ -39,7 +39,7 @@ type BlockChain struct {
 
 type UpdateWalletContractHook func(bcType string, wallet string, contract string, blockNumber uint64, balance *big.Int)
 
-func NewBlockchain(db *pgxpool.Pool, adapter BCAdapter, uuid uuid.UUID, name string, rpcURL string, onUpdateWalletContract UpdateWalletContractHook) *BlockChain {
+func NewBlockchain(db *pgxpool.Pool, adapter Adapter, uuid uuid.UUID, name string, rpcURL string, onUpdateWalletContract UpdateWalletContractHook) *BlockChain {
 	return &BlockChain{
 		uuid:                   uuid,
 		name:                   name,
@@ -62,12 +62,10 @@ func (b *BlockChain) ToEntry() *entry.Blockchain {
 }
 
 func (b *BlockChain) LoadBalancesFromDB() error {
-	//b.db.Query().
 	balances := make([]*entry.Balance, 0)
 	if err := pgxscan.Select(context.TODO(), b.db, &balances, getAllBalances); err != nil {
 		return errors.WithMessage(err, "failed to query DB")
 	}
-	fmt.Println(balances)
 	for _, bal := range balances {
 		fmt.Println((*big.Int)(bal.Balance).String())
 	}
@@ -137,9 +135,9 @@ func (b *BlockChain) SaveBalancesToDB() (err error) {
 	}
 	b.mu.RUnlock()
 
-	fmt.Println(wallets)
-	fmt.Println(contracts)
-	fmt.Println(balances)
+	//fmt.Println(wallets)
+	//fmt.Println(contracts)
+	//fmt.Println(balances)
 
 	tx, err := b.db.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {

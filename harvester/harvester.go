@@ -10,10 +10,9 @@ import (
 )
 
 type Harvester struct {
-	clients  *Callbacks
-	Adapters *Callbacks
-	db       *pgxpool.Pool
-	bc       map[string]*BlockChain
+	clients *Callbacks
+	db      *pgxpool.Pool
+	bc      map[string]*BlockChain
 }
 
 func (h *Harvester) SubscribeForWallet(bcType string, wallet, callback Callback) {
@@ -27,7 +26,6 @@ func (h *Harvester) SubscribeForWalletAndContract(bcType string, wallet []byte, 
 		return errors.New("failed to find blockchain:" + bcType)
 	}
 
-	//event := hexutil.Encode(wallet) + "_" + hexutil.Encode(contract)
 	h.clients.Add(bcType, BalanceChange, callback)
 
 	bc.SubscribeForWalletAndContract(wallet, contract)
@@ -35,24 +33,6 @@ func (h *Harvester) SubscribeForWalletAndContract(bcType string, wallet []byte, 
 	bc.LoadBalancesFromDB()
 
 	return nil
-}
-
-type BCBlock struct {
-	Hash   string
-	Number uint64
-}
-
-type BCAdapterAPI interface {
-	RegisterBCAdapter(uuid uuid.UUID, bcType string, rpcURL string, bcAdapter BCAdapter) error
-	OnNewBlock(bcType string, block *BCBlock)
-}
-
-type HarvesterAPI interface {
-	OnBalanceChange()
-	Subscribe(bcType string, eventName HarvesterEvent, callback Callback)
-	Unsubscribe(bcType string, eventName HarvesterEvent, callback Callback)
-	SubscribeForWallet(bcType string, wallet, callback Callback)
-	SubscribeForWalletAndContract(bcType string, wallet []byte, contract []byte, callback Callback) error
 }
 
 type Address []byte
@@ -78,7 +58,7 @@ func (h *Harvester) OnNewBlock(bcType string, block *BCBlock) {
 	h.clients.Trigger(bcType, NewBlock, block)
 }
 
-func (h *Harvester) RegisterBCAdapter(uuid uuid.UUID, bcType string, rpcURL string, adapter BCAdapter) error {
+func (h *Harvester) RegisterAdapter(uuid uuid.UUID, bcType string, rpcURL string, adapter Adapter) error {
 	h.bc[bcType] = NewBlockchain(h.db, adapter, uuid, bcType, rpcURL, h.updateHook)
 	if err := h.bc[bcType].LoadFromDB(); err != nil {
 		return errors.WithMessage(err, "failed to load from DB")
@@ -95,11 +75,11 @@ func (h *Harvester) Run() error {
 	return nil
 }
 
-func (h *Harvester) Subscribe(bcType string, eventName HarvesterEvent, callback Callback) {
+func (h *Harvester) Subscribe(bcType string, eventName Event, callback Callback) {
 	h.clients.Add(bcType, eventName, callback)
 }
 
-func (h *Harvester) Unsubscribe(bcType string, eventName HarvesterEvent, callback Callback) {
+func (h *Harvester) Unsubscribe(bcType string, eventName Event, callback Callback) {
 	h.clients.Remove(bcType, eventName, callback)
 }
 

@@ -18,7 +18,7 @@ import (
 )
 
 type EthereumAdapter struct {
-	harv      harvester.BCAdapterAPI
+	listener  harvester.AdapterListener
 	uuid      uuid.UUID
 	rpcURL    string
 	httpURL   string
@@ -27,14 +27,21 @@ type EthereumAdapter struct {
 	rpcClient *rpc.Client
 }
 
-func NewEthereumAdapter(harv harvester.BCAdapterAPI) *EthereumAdapter {
+func NewEthereumAdapter() *EthereumAdapter {
 	return &EthereumAdapter{
-		harv:    harv,
 		uuid:    uuid.MustParse("ccccaaaa-1111-2222-3333-111111111111"),
 		rpcURL:  "wss://eth.llamarpc.com",
 		httpURL: "https://eth.llamarpc.com",
 		name:    "ethereum",
 	}
+}
+
+func (a *EthereumAdapter) GetInfo() (uuid uuid.UUID, name string, rpcURL string) {
+	return a.uuid, a.name, a.rpcURL
+}
+
+func (a *EthereumAdapter) RegisterNewBlockListener(f harvester.AdapterListener) {
+	a.listener = f
 }
 
 func (a *EthereumAdapter) GetLastBlockNumber() (uint64, error) {
@@ -70,7 +77,6 @@ func (a *EthereumAdapter) GetBalance(wallet string, contract string, blockNumber
 		log.Fatal(err)
 	}
 
-	fmt.Println(balance)
 	return balance, nil
 }
 
@@ -87,14 +93,6 @@ func (a *EthereumAdapter) Run() {
 	}
 
 	a.client = client
-
-	if err := a.harv.RegisterBCAdapter(a.uuid, a.name, a.rpcURL, a); err != nil {
-		log.Fatal(err)
-	}
-
-	//client, err := ethclient.Dial("wss://rinkeby.infura.io/ws")
-	//url := "ws://localhost:8546"
-	//url := "wss://ethg.antst.net:8546"
 
 	fmt.Println("Connected to Ethereum Block Chain: " + a.rpcURL)
 
@@ -127,7 +125,9 @@ func (a *EthereumAdapter) Run() {
 					block.Number = vLog.Number.Uint64()
 				}
 
-				a.harv.OnNewBlock(harvester.Ethereum, block)
+				if a.listener != nil {
+					a.listener(block)
+				}
 			}
 		}
 	}()
