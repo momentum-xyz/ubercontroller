@@ -2,9 +2,9 @@ package seed
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 	"net/url"
 
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/config"
@@ -16,7 +16,7 @@ import (
 
 func seedPlugins(ctx context.Context, node universe.Node) error {
 	type pluginItem struct {
-		ID   uuid.UUID
+		ID   mid.ID
 		Meta *entry.PluginMeta
 	}
 
@@ -38,32 +38,32 @@ func seedPlugins(ctx context.Context, node universe.Node) error {
 			},
 		},
 		{
-			ID: uuid.MustParse("2b92edbc-5ef5-4028-89a6-d510f8583887"),
+			ID: mid.MustParse("2b92edbc-5ef5-4028-89a6-d510f8583887"),
 			Meta: &entry.PluginMeta{
 				"name":        "Event Calendar",
 				"description": "Event calendar plugin",
 			},
 		},
 		{
-			ID: uuid.MustParse(videoPluginID),
+			ID: mid.MustParse(videoPluginID),
 			Meta: &entry.PluginMeta{
 				"name": "Video",
 			},
 		},
 		{
-			ID: uuid.MustParse(imagePluginID),
+			ID: mid.MustParse(imagePluginID),
 			Meta: &entry.PluginMeta{
 				"name": "Image",
 			},
 		},
 		{
-			ID: uuid.MustParse(textPluginID),
+			ID: mid.MustParse(textPluginID),
 			Meta: &entry.PluginMeta{
 				"name": "Text",
 			},
 		},
 		{
-			ID: uuid.MustParse(miroPluginID),
+			ID: mid.MustParse(miroPluginID),
 			Meta: &entry.PluginMeta{
 				"name": "Miro",
 				"assets2d": []string{
@@ -75,7 +75,7 @@ func seedPlugins(ctx context.Context, node universe.Node) error {
 			},
 		},
 		{
-			ID: uuid.MustParse(googleDrivePluginID),
+			ID: mid.MustParse(googleDrivePluginID),
 			Meta: &entry.PluginMeta{
 				"name": "Google Drive",
 				"assets2d": []string{
@@ -86,7 +86,7 @@ func seedPlugins(ctx context.Context, node universe.Node) error {
 			},
 		},
 		{
-			ID: uuid.MustParse(videoPluginID),
+			ID: mid.MustParse(videoPluginID),
 			Meta: &entry.PluginMeta{
 				"name": "Video",
 				"assets2d": []string{
@@ -97,7 +97,7 @@ func seedPlugins(ctx context.Context, node universe.Node) error {
 			},
 		},
 		{
-			ID: uuid.MustParse(OdysseyHackatonPluginID),
+			ID: mid.MustParse(OdysseyHackatonPluginID),
 			Meta: &entry.PluginMeta{
 				"name": "Odyssey hackaton",
 			},
@@ -109,7 +109,7 @@ func seedPlugins(ctx context.Context, node universe.Node) error {
 			},
 		},
 		{
-			ID: uuid.MustParse(high5PluginID),
+			ID: mid.MustParse(high5PluginID),
 			Meta: &entry.PluginMeta{
 				"name": "High five",
 			},

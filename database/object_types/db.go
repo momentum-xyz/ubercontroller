@@ -2,9 +2,9 @@ package object_types
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 
 	"github.com/georgysavva/scany/pgxscan"
-	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -93,42 +93,42 @@ func (db *DB) UpsertObjectTypes(ctx context.Context, objectTypes []*entry.Object
 	return errs.ErrorOrNil()
 }
 
-func (db *DB) RemoveObjectTypeByID(ctx context.Context, objectTypeID uuid.UUID) error {
+func (db *DB) RemoveObjectTypeByID(ctx context.Context, objectTypeID mid.ID) error {
 	if _, err := db.conn.Exec(ctx, removeObjectTypeByIDQuery, objectTypeID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) RemoveObjectTypesByIDs(ctx context.Context, objectTypeIDs []uuid.UUID) error {
+func (db *DB) RemoveObjectTypesByIDs(ctx context.Context, objectTypeIDs []mid.ID) error {
 	if _, err := db.conn.Exec(ctx, removeObjectTypesByIDsQuery, objectTypeIDs); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) UpdateObjectTypeName(ctx context.Context, objectTypeID uuid.UUID, name string) error {
+func (db *DB) UpdateObjectTypeName(ctx context.Context, objectTypeID mid.ID, name string) error {
 	if _, err := db.conn.Exec(ctx, updateObjectTypeNameQuery, objectTypeID, name); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) UpdateObjectTypeCategoryName(ctx context.Context, objectTypeID uuid.UUID, categoryName string) error {
+func (db *DB) UpdateObjectTypeCategoryName(ctx context.Context, objectTypeID mid.ID, categoryName string) error {
 	if _, err := db.conn.Exec(ctx, updateObjectTypeCategoryNameQuery, objectTypeID, categoryName); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) UpdateObjectTypeDescription(ctx context.Context, objectTypeID uuid.UUID, description *string) error {
+func (db *DB) UpdateObjectTypeDescription(ctx context.Context, objectTypeID mid.ID, description *string) error {
 	if _, err := db.conn.Exec(ctx, updateObjectTypeDescriptionQuery, objectTypeID, description); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) UpdateObjectTypeOptions(ctx context.Context, objectTypeID uuid.UUID, options *entry.ObjectOptions) error {
+func (db *DB) UpdateObjectTypeOptions(ctx context.Context, objectTypeID mid.ID, options *entry.ObjectOptions) error {
 	if _, err := db.conn.Exec(ctx, updateObjectTypeOptionsQuery, objectTypeID, options); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}

@@ -3,18 +3,18 @@ package utils
 import (
 	"encoding/hex"
 	"github.com/c0mm4nd/go-ripemd"
-	"github.com/google/uuid"
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 )
 
-var salt uuid.UUID
-var nodeId uuid.UUID
+var salt mid.ID
+var nodeId mid.ID
 
-func SetAnonymizer(n uuid.UUID, s uuid.UUID) {
+func SetAnonymizer(n mid.ID, s mid.ID) {
 	nodeId = n
 	salt = s
 }
 
-func AnonymizeUUID(userId uuid.UUID) string {
+func AnonymizeUUID(userId mid.ID) string {
 	hash := ripemd.New128()
 	for i := 0; i < 16; i += 2 {
 		hash.Write(userId[i : i+2])

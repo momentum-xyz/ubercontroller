@@ -1,14 +1,13 @@
 package entry
 
 import (
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type User struct {
-	UserID     uuid.UUID      `db:"user_id" json:"user_id"`
-	UserTypeID uuid.UUID      `db:"user_type_id" json:"user_type_id"`
+	UserID     mid.ID         `db:"user_id" json:"user_id"`
+	UserTypeID mid.ID         `db:"user_type_id" json:"user_type_id"`
 	Profile    UserProfile    `db:"profile" json:"profile"`
 	Options    *UserOptions   `db:"options" json:"options"`
 	CreatedAt  time.Time      `db:"created_at" json:"created_at"`
@@ -31,13 +30,13 @@ type UserProfile struct {
 
 type UserAttributeID struct {
 	AttributeID
-	UserID uuid.UUID `db:"user_id" json:"user_id"`
+	UserID mid.ID `db:"user_id" json:"user_id"`
 }
 
 type UserUserAttributeID struct {
 	AttributeID
-	SourceUserID uuid.UUID `db:"source_user_id" json:"source_user_id"`
-	TargetUserID uuid.UUID `db:"target_user_id" json:"target_user_id"`
+	SourceUserID mid.ID `db:"source_user_id" json:"source_user_id"`
+	TargetUserID mid.ID `db:"target_user_id" json:"target_user_id"`
 }
 
 type UserAttribute struct {
@@ -64,14 +63,14 @@ func NewUserUserAttribute(userUserAttributeID UserUserAttributeID, payload *Attr
 	}
 }
 
-func NewUserAttributeID(attributeID AttributeID, userID uuid.UUID) UserAttributeID {
+func NewUserAttributeID(attributeID AttributeID, userID mid.ID) UserAttributeID {
 	return UserAttributeID{
 		AttributeID: attributeID,
 		UserID:      userID,
 	}
 }
 
-func NewUserUserAttributeID(attributeID AttributeID, sourceUserID, targetUserID uuid.UUID) UserUserAttributeID {
+func NewUserUserAttributeID(attributeID AttributeID, sourceUserID, targetUserID mid.ID) UserUserAttributeID {
 	return UserUserAttributeID{
 		AttributeID:  attributeID,
 		SourceUserID: sourceUserID,

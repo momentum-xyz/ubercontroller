@@ -3,11 +3,11 @@ package harvester
 import (
 	"context"
 	"fmt"
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/georgysavva/scany/pgxscan"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -25,7 +25,7 @@ ON CONFLICT (blockchain_id) DO UPDATE SET last_processed_block_number=$2,
                                           updated_at=NOW();`
 
 type BlockChain struct {
-	uuid                     uuid.UUID
+	uuid                     mid.ID
 	name                     string
 	lastProcessedBlockNumber uint64
 	rpcURL                   string
@@ -38,7 +38,10 @@ type BlockChain struct {
 
 type UpdateWalletContractHook func(bcType string, wallet string, contract string, blockNumber uint64, balance *big.Int)
 
-func NewBlockchain(db *pgxpool.Pool, adapter BCAdapter, uuid uuid.UUID, name string, rpcURL string, onUpdateWalletContract UpdateWalletContractHook) *BlockChain {
+func NewBlockchain(
+	db *pgxpool.Pool, adapter BCAdapter, uuid mid.ID, name string, rpcURL string,
+	onUpdateWalletContract UpdateWalletContractHook,
+) *BlockChain {
 	return &BlockChain{
 		uuid:                   uuid,
 		name:                   name,
@@ -166,8 +169,10 @@ func (b *BlockChain) SaveBalancesToDB() (err error) {
 							  last_processed_block_number = $5`
 
 	for _, b := range balances {
-		_, err = tx.Exec(context.TODO(), sql,
-			b.WalletID, b.ContractID, b.BlockchainID, b.Balance, b.LastProcessedBlockNumber)
+		_, err = tx.Exec(
+			context.TODO(), sql,
+			b.WalletID, b.ContractID, b.BlockchainID, b.Balance, b.LastProcessedBlockNumber,
+		)
 		if err != nil {
 			err = errors.WithMessage(err, "failed to insert balance to DB")
 			return err
@@ -199,8 +204,10 @@ func (b *BlockChain) LoadFromDB() error {
 
 func (b *BlockChain) SaveToDB() error {
 	val := b.ToEntry()
-	_, err := b.db.Exec(context.Background(), insertOrUpdate,
-		val.BlockchainID, val.LastProcessedBlockNumber, val.BlockchainName, val.RPCURL)
+	_, err := b.db.Exec(
+		context.Background(), insertOrUpdate,
+		val.BlockchainID, val.LastProcessedBlockNumber, val.BlockchainName, val.RPCURL,
+	)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec DB query")
 	}

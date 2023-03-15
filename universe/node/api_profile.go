@@ -3,11 +3,11 @@ package node
 import (
 	"context"
 	"encoding/json"
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 	"net/http"
 	"os/exec"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -16,12 +16,12 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
-var updateProfileStore = generic.NewSyncMap[uuid.UUID, UpdateProfileStoreItem](0)
+var updateProfileStore = generic.NewSyncMap[mid.ID, UpdateProfileStoreItem](0)
 
 type UpdateProfileStoreItem struct {
 	Status      string
 	NodeJSOut   *NodeJSOut
-	UserID      uuid.UUID
+	UserID      mid.ID
 	UserProfile *entry.UserProfile
 	Error       error
 }
@@ -41,13 +41,13 @@ func (n *Node) apiProfileUpdateCheckJob(c *gin.Context) {
 	type Out struct {
 		NodeJSOut *NodeJSOut         `json:"nodeJSOut"`
 		Status    string             `json:"status"`
-		JobID     uuid.UUID          `json:"job_id"`
-		UserID    uuid.UUID          `json:"user_id"`
+		JobID     mid.ID             `json:"job_id"`
+		UserID    mid.ID             `json:"user_id"`
 		Error     *string            `json:"error"`
 		Profile   *entry.UserProfile `json:"profile"`
 	}
 
-	jobID, err := uuid.Parse(c.Param("jobID"))
+	jobID, err := mid.Parse(c.Param("jobID"))
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiProfileUpdateCheckJob: failed to parse uuid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_param", err, n.log)
@@ -109,14 +109,14 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 
 	userID, err := api.GetUserIDFromContext(c)
 	if err != nil {
-		err = errors.WithMessage(err, "Node: apiProfileUpdate: failed to get user id from context")
+		err = errors.WithMessage(err, "Node: apiProfileUpdate: failed to get user mid from context")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
 		return
 	}
 
 	userProfile, err := n.db.GetUsersDB().GetUserProfileByUserID(c, userID)
 	if err != nil {
-		err = errors.WithMessage(err, "Node: apiProfileUpdate: failed to get user profile by user id")
+		err = errors.WithMessage(err, "Node: apiProfileUpdate: failed to get user profile by user mid")
 		api.AbortRequest(c, http.StatusNotFound, "not_found", err, n.log)
 		return
 	}
@@ -149,8 +149,8 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 	userProfile.OnBoarded = utils.GetPTR(true)
 
 	type Out struct {
-		JobID  *uuid.UUID `json:"job_id"`
-		UserID uuid.UUID  `json:"user_id"`
+		JobID  *mid.ID `json:"job_id"`
+		UserID mid.ID  `json:"user_id"`
 	}
 
 	if !shouldUpdateNFT {
@@ -170,7 +170,7 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 		return
 	}
 
-	jobID := uuid.New()
+	jobID := mid.New()
 	updateProfileStore.Store(
 		jobID, UpdateProfileStoreItem{
 			Status:    StatusInProgress,
@@ -190,7 +190,9 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-func (n *Node) updateUserProfileWorker(ctx context.Context, jobID uuid.UUID, userID uuid.UUID, userProfile *entry.UserProfile) {
+func (n *Node) updateUserProfileWorker(
+	ctx context.Context, jobID mid.ID, userID mid.ID, userProfile *entry.UserProfile,
+) {
 	item := UpdateProfileStoreItem{
 		Status:    "",
 		NodeJSOut: nil,
@@ -234,7 +236,9 @@ func (n *Node) updateUserProfileWorker(ctx context.Context, jobID uuid.UUID, use
 		return
 	}
 
-	output, err := exec.Command("node", "./nodejs/check-nft/update-nft.js", *wallet, n.cfg.Common.MnemonicPhrase, string(b), userID.String()).Output()
+	output, err := exec.Command(
+		"node", "./nodejs/check-nft/update-nft.js", *wallet, n.cfg.Common.MnemonicPhrase, string(b), userID.String(),
+	).Output()
 	if err != nil {
 		err = errors.WithMessage(err, "failed to execute node script update-nft.js")
 		{

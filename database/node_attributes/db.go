@@ -2,9 +2,9 @@ package node_attributes
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 
 	"github.com/georgysavva/scany/pgxscan"
-	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -76,10 +76,12 @@ func (db *DB) GetNodeAttributeValueByAttributeID(
 	ctx context.Context, attributeID entry.AttributeID,
 ) (*entry.AttributeValue, error) {
 	var value entry.AttributeValue
-	err := db.conn.QueryRow(ctx,
+	err := db.conn.QueryRow(
+		ctx,
 		getNodeAttributeValueByAttributeIDQuery,
 		attributeID.PluginID,
-		attributeID.Name).Scan(&value)
+		attributeID.Name,
+	).Scan(&value)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
@@ -90,10 +92,12 @@ func (db *DB) GetNodeAttributeOptionsByAttributeID(
 	ctx context.Context, attributeID entry.AttributeID,
 ) (*entry.AttributeOptions, error) {
 	var options entry.AttributeOptions
-	err := db.conn.QueryRow(ctx,
+	err := db.conn.QueryRow(
+		ctx,
 		getNodeAttributeOptionsByAttributeIDQuery,
 		attributeID.PluginID,
-		attributeID.Name).Scan(&options)
+		attributeID.Name,
+	).Scan(&options)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
@@ -125,7 +129,8 @@ func (db *DB) UpsertNodeAttributes(ctx context.Context, nodeAttributes []*entry.
 	var errs *multierror.Error
 	for i := 0; i < batch.Len(); i++ {
 		if _, err := batchRes.Exec(); err != nil {
-			errs = multierror.Append(errs,
+			errs = multierror.Append(
+				errs,
 				errors.WithMessagef(err, "failed to exec db for: %+v", nodeAttributes[i].NodeAttributeID),
 			)
 		}
@@ -148,7 +153,7 @@ func (db *DB) RemoveNodeAttributesByNames(ctx context.Context, names []string) e
 	return nil
 }
 
-func (db *DB) RemoveNodeAttributesByPluginID(ctx context.Context, pluginID uuid.UUID) error {
+func (db *DB) RemoveNodeAttributesByPluginID(ctx context.Context, pluginID mid.ID) error {
 	if _, err := db.conn.Exec(ctx, removeNodeAttributesByPluginIDQuery, pluginID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}

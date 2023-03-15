@@ -2,10 +2,10 @@ package streamchat
 
 import (
 	"fmt"
+	idt "github.com/momentum-xyz/ubercontroller/utils/mid"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 	"github.com/pkg/errors"
@@ -143,7 +143,7 @@ func (s *StreamChat) getRequestContextObjects(c *gin.Context) (object universe.O
 
 // Get object by UUID string.
 func (s *StreamChat) getObject(id string) (universe.Object, error) {
-	objectID, err := uuid.Parse(id)
+	objectID, err := idt.Parse(id)
 	if err != nil {
 		err := errors.WithMessagef(err, "Failed to parse ID %s", id)
 		return nil, err

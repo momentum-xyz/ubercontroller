@@ -2,9 +2,9 @@ package asset_2d
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 	"sync"
 
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -26,7 +26,7 @@ type Asset2d struct {
 	entry *entry.Asset2d
 }
 
-func NewAsset2d(id uuid.UUID, db database.DB) *Asset2d {
+func NewAsset2d(id mid.ID, db database.DB) *Asset2d {
 	return &Asset2d{
 		db: db,
 		entry: &entry.Asset2d{
@@ -35,7 +35,7 @@ func NewAsset2d(id uuid.UUID, db database.DB) *Asset2d {
 	}
 }
 
-func (a *Asset2d) GetID() uuid.UUID {
+func (a *Asset2d) GetID() mid.ID {
 	return a.entry.Asset2dID
 }
 

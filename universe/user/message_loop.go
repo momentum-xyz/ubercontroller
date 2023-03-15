@@ -2,8 +2,8 @@ package user
 
 import (
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -65,7 +65,7 @@ func (u *User) UpdateObjectPosition(msg posbus.ObjectPosition) error {
 	return object.SetTransform(utils.GetPTR(msg.ObjectTransform), true)
 }
 
-func (u *User) Teleport(target uuid.UUID) error {
+func (u *User) Teleport(target mid.ID) error {
 	world, ok := universe.GetNode().GetWorlds().GetWorld(target)
 	if !ok {
 		u.Send(
@@ -99,7 +99,7 @@ func (u *User) SignalsHandler(s posbus.Signal) error {
 	}
 	//case posbus.SignalReady:
 	//	u.ReleaseSendBuffer()
-	//	//u.log.Debugf("Got signalReady from %s", u.id.String())
+	//	//u.log.Debugf("Got signalReady from %s", u.mid.String())
 	//	//TODO: Do we need it?
 	//	//if err := u.world.SendWorldData(u); err != nil {
 	//	//	log.Error(

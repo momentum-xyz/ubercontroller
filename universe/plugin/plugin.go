@@ -2,10 +2,10 @@ package plugin
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 	"plugin"
 	"sync"
 
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -26,7 +26,7 @@ type Plugin struct {
 	db  database.DB
 	mu  sync.RWMutex
 
-	id                uuid.UUID
+	id                mid.ID
 	meta              entry.PluginMeta
 	options           *entry.PluginOptions
 	object            *plugin.Plugin
@@ -34,7 +34,7 @@ type Plugin struct {
 	definedAttributes *[]string
 }
 
-func NewPlugin(id uuid.UUID, db database.DB) *Plugin {
+func NewPlugin(id mid.ID, db database.DB) *Plugin {
 	return &Plugin{
 		db:      db,
 		id:      id,
@@ -54,7 +54,7 @@ func (p *Plugin) Initialize(ctx context.Context) error {
 	return nil
 }
 
-func (p *Plugin) GetID() uuid.UUID {
+func (p *Plugin) GetID() mid.ID {
 	return p.id
 }
 

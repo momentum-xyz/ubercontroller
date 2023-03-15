@@ -1,16 +1,15 @@
 package entry
 
 import (
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 	"time"
-
-	"github.com/google/uuid"
 
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 type UserObjectID struct {
-	UserID   uuid.UUID `db:"user_id" json:"user_id"`
-	ObjectID uuid.UUID `db:"object_id" json:"object_id"`
+	UserID   mid.ID `db:"user_id" json:"user_id"`
+	ObjectID mid.ID `db:"object_id" json:"object_id"`
 }
 
 type UserObject struct {
@@ -27,7 +26,7 @@ func NewUserObject(userObjectID UserObjectID, value *UserObjectValue) *UserObjec
 	}
 }
 
-func NewUserObjectID(userID uuid.UUID, objectID uuid.UUID) UserObjectID {
+func NewUserObjectID(userID mid.ID, objectID mid.ID) UserObjectID {
 	return UserObjectID{
 		UserID:   userID,
 		ObjectID: objectID,

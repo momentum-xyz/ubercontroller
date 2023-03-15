@@ -2,8 +2,8 @@ package seed
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/config"
@@ -27,7 +27,7 @@ func seedAssets2d(ctx context.Context, node universe.Node) error {
 
 	items := []*entry.Asset2d{
 		{
-			Asset2dID: uuid.MustParse(miroPluginAsset2dID),
+			Asset2dID: mid.MustParse(miroPluginAsset2dID),
 			Options: &entry.Asset2dOptions{
 				"exact":    true,
 				"subPath":  "miro",
@@ -41,7 +41,7 @@ func seedAssets2d(ctx context.Context, node universe.Node) error {
 			},
 		},
 		{
-			Asset2dID: uuid.MustParse(googleDrivePluginAsset2dID),
+			Asset2dID: mid.MustParse(googleDrivePluginAsset2dID),
 			Options: &entry.Asset2dOptions{
 				"exact":    true,
 				"iconName": "drive",
@@ -54,7 +54,7 @@ func seedAssets2d(ctx context.Context, node universe.Node) error {
 			},
 		},
 		{
-			Asset2dID: uuid.MustParse("7be0964f-df73-4880-91f5-22eef9967999"),
+			Asset2dID: mid.MustParse("7be0964f-df73-4880-91f5-22eef9967999"),
 			Options:   &entry.Asset2dOptions{},
 			Meta: entry.Asset2dMeta{
 				"name":     "image",
@@ -62,7 +62,7 @@ func seedAssets2d(ctx context.Context, node universe.Node) error {
 			},
 		},
 		{
-			Asset2dID: uuid.MustParse("be0d0ca3-c50b-401a-89d9-0e59fc45c5c2"),
+			Asset2dID: mid.MustParse("be0d0ca3-c50b-401a-89d9-0e59fc45c5c2"),
 			Options:   &entry.Asset2dOptions{},
 			Meta: entry.Asset2dMeta{
 				"name":     "text",
@@ -70,7 +70,7 @@ func seedAssets2d(ctx context.Context, node universe.Node) error {
 			},
 		},
 		{
-			Asset2dID: uuid.MustParse("bda25d5d-2aab-45b4-9e8a-23579514cec1"),
+			Asset2dID: mid.MustParse("bda25d5d-2aab-45b4-9e8a-23579514cec1"),
 			Options:   &entry.Asset2dOptions{},
 			Meta: entry.Asset2dMeta{
 				"name":      "video",
@@ -80,7 +80,7 @@ func seedAssets2d(ctx context.Context, node universe.Node) error {
 			},
 		},
 		{
-			Asset2dID: uuid.MustParse(dockingStationAsset2dID),
+			Asset2dID: mid.MustParse(dockingStationAsset2dID),
 			Options:   &entry.Asset2dOptions{},
 			Meta: entry.Asset2dMeta{
 				"name": "Docking station",

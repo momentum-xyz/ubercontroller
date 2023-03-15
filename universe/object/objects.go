@@ -1,8 +1,8 @@
 package object
 
 import (
-	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -12,7 +12,7 @@ const (
 	chanIsClosed = -0x3FFFFFFFFFFFFFFF
 )
 
-func (o *Object) CreateObject(objectID uuid.UUID) (universe.Object, error) {
+func (o *Object) CreateObject(objectID mid.ID) (universe.Object, error) {
 	object := NewObject(objectID, o.db, o.GetWorld())
 
 	if err := object.Initialize(o.ctx); err != nil {
@@ -25,7 +25,9 @@ func (o *Object) CreateObject(objectID uuid.UUID) (universe.Object, error) {
 	return object, nil
 }
 
-func (o *Object) FilterObjects(predicateFn universe.ObjectsFilterPredicateFn, recursive bool) map[uuid.UUID]universe.Object {
+func (o *Object) FilterObjects(
+	predicateFn universe.ObjectsFilterPredicateFn, recursive bool,
+) map[mid.ID]universe.Object {
 	objects := o.Children.Filter(predicateFn)
 
 	if !recursive {
@@ -44,7 +46,7 @@ func (o *Object) FilterObjects(predicateFn universe.ObjectsFilterPredicateFn, re
 	return objects
 }
 
-func (o *Object) GetObject(objectID uuid.UUID, recursive bool) (universe.Object, bool) {
+func (o *Object) GetObject(objectID mid.ID, recursive bool) (universe.Object, bool) {
 	object, ok := o.Children.Load(objectID)
 	if ok {
 		return object, true
@@ -69,11 +71,11 @@ func (o *Object) GetObject(objectID uuid.UUID, recursive bool) (universe.Object,
 
 // GetObjects return map with all nested children if recursive is true,
 // otherwise the method return map with children dependent only to current object.
-func (o *Object) GetObjects(recursive bool) map[uuid.UUID]universe.Object {
+func (o *Object) GetObjects(recursive bool) map[mid.ID]universe.Object {
 	o.Children.Mu.RLock()
 	defer o.Children.Mu.RUnlock()
 
-	objects := make(map[uuid.UUID]universe.Object, len(o.Children.Data))
+	objects := make(map[mid.ID]universe.Object, len(o.Children.Data))
 	for id, child := range o.Children.Data {
 		objects[id] = child
 

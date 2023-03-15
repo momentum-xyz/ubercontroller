@@ -2,14 +2,13 @@ package mplugin
 
 import (
 	"github.com/hashicorp/go-multierror"
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 	"sync"
-
-	"github.com/google/uuid"
 )
 
-type HookID uuid.UUID
+type HookID mid.ID
 
-type PluginID uuid.UUID
+type PluginID mid.ID
 
 type HookEntry[A any] struct {
 	hook     func(A) error
@@ -32,7 +31,7 @@ func (s *HookEntries[A]) Add(hook func(A) error, pluginID PluginID) HookID {
 	s.Mu.Lock()
 	defer s.Mu.Unlock()
 
-	hookID := HookID(uuid.New())
+	hookID := HookID(mid.New())
 	s.Data[hookID] = HookEntry[A]{
 		hook:     hook,
 		pluginID: pluginID,

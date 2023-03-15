@@ -1,11 +1,11 @@
 package plugins
 
 import (
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -37,18 +37,18 @@ func (p *Plugins) apiGetPlugins(c *gin.Context) {
 		return
 	}
 
-	ids := make([]uuid.UUID, len(inQuery.IDs))
+	ids := make([]mid.ID, len(inQuery.IDs))
 	for i := range inQuery.IDs {
-		id, err := uuid.Parse(inQuery.IDs[i])
+		id, err := mid.Parse(inQuery.IDs[i])
 		if err != nil {
-			err = errors.WithMessagef(err, "Plugins: apiGetPlugins: failed to parse id: %s", inQuery.IDs[i])
+			err = errors.WithMessagef(err, "Plugins: apiGetPlugins: failed to parse mid: %s", inQuery.IDs[i])
 			api.AbortRequest(c, http.StatusBadRequest, "failed_to_parse_id", err, p.log)
 			return
 		}
 		ids[i] = id
 	}
 
-	filterFn := func(pluginID uuid.UUID, plugin universe.Plugin) bool {
+	filterFn := func(pluginID mid.ID, plugin universe.Plugin) bool {
 		if len(ids) > 0 {
 			var found bool
 			for i := range ids {
@@ -72,7 +72,7 @@ func (p *Plugins) apiGetPlugins(c *gin.Context) {
 		return true
 	}
 
-	var plugins map[uuid.UUID]universe.Plugin
+	var plugins map[mid.ID]universe.Plugin
 	if len(inQuery.IDs) == 0 && inQuery.Type == "" {
 		plugins = p.GetPlugins()
 	} else {
@@ -112,7 +112,7 @@ func (p *Plugins) apiSearchPlugins(c *gin.Context) {
 		return
 	}
 
-	filterFn := func(pluginID uuid.UUID, plugin universe.Plugin) bool {
+	filterFn := func(pluginID mid.ID, plugin universe.Plugin) bool {
 		meta := plugin.GetMeta()
 		if meta == nil {
 			return false
@@ -144,7 +144,7 @@ func (p *Plugins) apiSearchPlugins(c *gin.Context) {
 		return inQuery.Name == "" && inQuery.Description == ""
 	}
 
-	var plugins map[uuid.UUID]universe.Plugin
+	var plugins map[mid.ID]universe.Plugin
 	if inQuery.Name == "" && inQuery.Type == "" && inQuery.Description == "" {
 		plugins = p.GetPlugins()
 	} else {
@@ -186,7 +186,7 @@ func (p *Plugins) apiGetPluginsMeta(c *gin.Context) {
 	out := make(dto.PluginsMeta, len(inQuery.IDs))
 
 	for _, id := range inQuery.IDs {
-		pluginID, err := uuid.Parse(id)
+		pluginID, err := mid.Parse(id)
 		if err != nil {
 			err = errors.WithMessagef(err, "Plugins: apiGetPluginsMeta: failed to parse uuid: %s", id)
 			api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_uuid", err, p.log)
@@ -195,7 +195,7 @@ func (p *Plugins) apiGetPluginsMeta(c *gin.Context) {
 
 		plugin, ok := p.GetPlugin(pluginID)
 		if !ok {
-			err = errors.Errorf("Plugins: apiGetPluginsMeta: failed to get plugin by id: %s", pluginID)
+			err = errors.Errorf("Plugins: apiGetPluginsMeta: failed to get plugin by mid: %s", pluginID)
 			api.AbortRequest(c, http.StatusNotFound, "plugin_not_found", err, p.log)
 			return
 		}
@@ -232,7 +232,7 @@ func (p *Plugins) apiGetPluginsOptions(c *gin.Context) {
 	out := make(dto.PluginsOptions, len(inQuery.IDs))
 
 	for _, id := range inQuery.IDs {
-		pluginID, err := uuid.Parse(id)
+		pluginID, err := mid.Parse(id)
 		if err != nil {
 			err := errors.WithMessagef(err, "Plugins: apiGetPluginsOptions: failed to parse uuid: %s", id)
 			api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_uuid", err, p.log)
@@ -241,7 +241,7 @@ func (p *Plugins) apiGetPluginsOptions(c *gin.Context) {
 
 		plugin, ok := p.GetPlugin(pluginID)
 		if !ok {
-			err = errors.Errorf("Plugins: apiGetPluginsOptions: failed to get plugin by id: %s", pluginID)
+			err = errors.Errorf("Plugins: apiGetPluginsOptions: failed to get plugin by mid: %s", pluginID)
 			api.AbortRequest(c, http.StatusNotFound, "plugin_not_found", err, p.log)
 			return
 		}

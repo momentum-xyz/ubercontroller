@@ -2,8 +2,8 @@ package assets_2d
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -22,13 +22,13 @@ type Assets2d struct {
 	ctx    context.Context
 	log    *zap.SugaredLogger
 	db     database.DB
-	assets *generic.SyncMap[uuid.UUID, universe.Asset2d]
+	assets *generic.SyncMap[mid.ID, universe.Asset2d]
 }
 
 func NewAssets2d(db database.DB) *Assets2d {
 	return &Assets2d{
 		db:     db,
-		assets: generic.NewSyncMap[uuid.UUID, universe.Asset2d](0),
+		assets: generic.NewSyncMap[mid.ID, universe.Asset2d](0),
 	}
 }
 
@@ -44,7 +44,7 @@ func (a *Assets2d) Initialize(ctx context.Context) error {
 	return nil
 }
 
-func (a *Assets2d) CreateAsset2d(asset2dID uuid.UUID) (universe.Asset2d, error) {
+func (a *Assets2d) CreateAsset2d(asset2dID mid.ID) (universe.Asset2d, error) {
 	asset2d := asset_2d.NewAsset2d(asset2dID, a.db)
 
 	if err := asset2d.Initialize(a.ctx); err != nil {
@@ -57,20 +57,20 @@ func (a *Assets2d) CreateAsset2d(asset2dID uuid.UUID) (universe.Asset2d, error) 
 	return asset2d, nil
 }
 
-func (a *Assets2d) FilterAssets2d(predicateFn universe.Assets2dFilterPredicateFn) map[uuid.UUID]universe.Asset2d {
+func (a *Assets2d) FilterAssets2d(predicateFn universe.Assets2dFilterPredicateFn) map[mid.ID]universe.Asset2d {
 	return a.assets.Filter(predicateFn)
 }
 
-func (a *Assets2d) GetAsset2d(asset2dID uuid.UUID) (universe.Asset2d, bool) {
+func (a *Assets2d) GetAsset2d(asset2dID mid.ID) (universe.Asset2d, bool) {
 	asset, ok := a.assets.Load(asset2dID)
 	return asset, ok
 }
 
-func (a *Assets2d) GetAssets2d() map[uuid.UUID]universe.Asset2d {
+func (a *Assets2d) GetAssets2d() map[mid.ID]universe.Asset2d {
 	a.assets.Mu.RLock()
 	defer a.assets.Mu.RUnlock()
 
-	assets := make(map[uuid.UUID]universe.Asset2d, len(a.assets.Data))
+	assets := make(map[mid.ID]universe.Asset2d, len(a.assets.Data))
 
 	for id, asset := range a.assets.Data {
 		assets[id] = asset
@@ -145,7 +145,7 @@ func (a *Assets2d) RemoveAssets2d(assets2d []universe.Asset2d, updateDB bool) (b
 	}
 
 	if updateDB {
-		ids := make([]uuid.UUID, len(assets2d))
+		ids := make([]mid.ID, len(assets2d))
 		for i := range assets2d {
 			ids[i] = assets2d[i].GetID()
 		}

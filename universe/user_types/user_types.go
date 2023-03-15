@@ -2,8 +2,8 @@ package user_types
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -22,13 +22,13 @@ type UserTypes struct {
 	ctx       context.Context
 	log       *zap.SugaredLogger
 	db        database.DB
-	userTypes *generic.SyncMap[uuid.UUID, universe.UserType]
+	userTypes *generic.SyncMap[mid.ID, universe.UserType]
 }
 
 func NewUserTypes(db database.DB) *UserTypes {
 	return &UserTypes{
 		db:        db,
-		userTypes: generic.NewSyncMap[uuid.UUID, universe.UserType](0),
+		userTypes: generic.NewSyncMap[mid.ID, universe.UserType](0),
 	}
 }
 
@@ -44,7 +44,7 @@ func (u *UserTypes) Initialize(ctx context.Context) error {
 	return nil
 }
 
-func (u *UserTypes) CreateUserType(userTypeID uuid.UUID) (universe.UserType, error) {
+func (u *UserTypes) CreateUserType(userTypeID mid.ID) (universe.UserType, error) {
 	userType := user_type.NewUserType(userTypeID, u.db)
 
 	if err := userType.Initialize(u.ctx); err != nil {
@@ -57,20 +57,20 @@ func (u *UserTypes) CreateUserType(userTypeID uuid.UUID) (universe.UserType, err
 	return userType, nil
 }
 
-func (u *UserTypes) FilterUserTypes(predicateFn universe.UserTypesFilterPredicateFn) map[uuid.UUID]universe.UserType {
+func (u *UserTypes) FilterUserTypes(predicateFn universe.UserTypesFilterPredicateFn) map[mid.ID]universe.UserType {
 	return u.userTypes.Filter(predicateFn)
 }
 
-func (u *UserTypes) GetUserType(userTypeID uuid.UUID) (universe.UserType, bool) {
+func (u *UserTypes) GetUserType(userTypeID mid.ID) (universe.UserType, bool) {
 	userType, ok := u.userTypes.Load(userTypeID)
 	return userType, ok
 }
 
-func (u *UserTypes) GetUserTypes() map[uuid.UUID]universe.UserType {
+func (u *UserTypes) GetUserTypes() map[mid.ID]universe.UserType {
 	u.userTypes.Mu.RLock()
 	defer u.userTypes.Mu.RUnlock()
 
-	userTypes := make(map[uuid.UUID]universe.UserType, len(u.userTypes.Data))
+	userTypes := make(map[mid.ID]universe.UserType, len(u.userTypes.Data))
 
 	for id, userType := range u.userTypes.Data {
 		userTypes[id] = userType
@@ -145,7 +145,7 @@ func (u *UserTypes) RemoveUserTypes(userTypes []universe.UserType, updateDB bool
 	}
 
 	if updateDB {
-		ids := make([]uuid.UUID, len(userTypes))
+		ids := make([]mid.ID, len(userTypes))
 		for i := range userTypes {
 			ids[i] = userTypes[i].GetID()
 		}

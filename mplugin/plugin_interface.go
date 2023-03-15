@@ -1,24 +1,22 @@
 package mplugin
 
-import (
-	"github.com/google/uuid"
-)
+import "github.com/momentum-xyz/ubercontroller/utils/mid"
 
 type internalPluginInterface struct {
 	id       PluginID
-	secretId uuid.UUID
-	worldId  uuid.UUID
+	secretId mid.ID
+	worldId  mid.ID
 	pc       *PluginController
 }
 
 func (p internalPluginInterface) getPluginController() *PluginController {
 	return p.pc
 }
-func (p internalPluginInterface) GetSecret() uuid.UUID {
+func (p internalPluginInterface) GetSecret() mid.ID {
 	return p.secretId
 }
 
-func (p internalPluginInterface) GetWorld() uuid.UUID {
+func (p internalPluginInterface) GetWorld() mid.ID {
 	return p.worldId
 }
 

@@ -2,10 +2,10 @@ package user_attributes
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 	"sync"
 
 	"github.com/georgysavva/scany/pgxscan"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -71,7 +71,7 @@ func (db *DB) GetUserAttributes(ctx context.Context) ([]*entry.UserAttribute, er
 }
 
 func (db *DB) GetUserAttributesByUserID(
-	ctx context.Context, userID uuid.UUID,
+	ctx context.Context, userID mid.ID,
 ) ([]*entry.UserAttribute, error) {
 	var attributes []*entry.UserAttribute
 	if err := pgxscan.Select(ctx, db.conn, &attributes, getUserAttributesByUserIDQuery, userID); err != nil {
@@ -99,7 +99,8 @@ func (db *DB) GetUserAttributePayloadByID(
 	ctx context.Context, userAttributeID entry.UserAttributeID,
 ) (*entry.AttributePayload, error) {
 	var payload entry.AttributePayload
-	if err := pgxscan.Get(ctx, db.conn, &payload,
+	if err := pgxscan.Get(
+		ctx, db.conn, &payload,
 		getUserAttributePayloadByIDQuery, userAttributeID.PluginID, userAttributeID.Name, userAttributeID.UserID,
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
@@ -111,11 +112,13 @@ func (db *DB) GetUserAttributeValueByID(
 	ctx context.Context, userAttributeID entry.UserAttributeID,
 ) (*entry.AttributeValue, error) {
 	var value entry.AttributeValue
-	err := db.conn.QueryRow(ctx,
+	err := db.conn.QueryRow(
+		ctx,
 		getUserAttributeValueByIDQuery,
 		userAttributeID.PluginID,
 		userAttributeID.Name,
-		userAttributeID.UserID).Scan(&value)
+		userAttributeID.UserID,
+	).Scan(&value)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
@@ -128,11 +131,13 @@ func (db *DB) GetUserAttributeOptionsByID(
 ) (*entry.AttributeOptions, error) {
 	var options entry.AttributeOptions
 
-	err := db.conn.QueryRow(ctx,
+	err := db.conn.QueryRow(
+		ctx,
 		getUserAttributeOptionsByIDQuery,
 		userAttributeID.PluginID,
 		userAttributeID.Name,
-		userAttributeID.UserID).Scan(&options)
+		userAttributeID.UserID,
+	).Scan(&options)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
@@ -158,7 +163,7 @@ func (db *DB) UpsertUserAttribute(
 	payload, err := db.GetUserAttributePayloadByID(ctx, userAttributeID)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
-			return nil, errors.WithMessage(err, "failed to get attribute payload by id")
+			return nil, errors.WithMessage(err, "failed to get attribute payload by mid")
 		}
 	}
 
@@ -206,7 +211,7 @@ func (db *DB) RemoveUserAttributesByNames(ctx context.Context, names []string) e
 	return nil
 }
 
-func (db *DB) RemoveUserAttributesByPluginID(ctx context.Context, pluginID uuid.UUID) error {
+func (db *DB) RemoveUserAttributesByPluginID(ctx context.Context, pluginID mid.ID) error {
 	res, err := db.conn.Exec(ctx, removeUserAttributesByPluginIDQuery, pluginID)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
@@ -230,7 +235,7 @@ func (db *DB) RemoveUserAttributesByAttributeID(
 	return nil
 }
 
-func (db *DB) RemoveUserAttributesByUserID(ctx context.Context, userID uuid.UUID) error {
+func (db *DB) RemoveUserAttributesByUserID(ctx context.Context, userID mid.ID) error {
 	res, err := db.conn.Exec(ctx, removeUserAttributesByUserIDQuery, userID)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
@@ -242,7 +247,7 @@ func (db *DB) RemoveUserAttributesByUserID(ctx context.Context, userID uuid.UUID
 }
 
 func (db *DB) RemoveUserAttributesByNameAndUserID(
-	ctx context.Context, name string, userID uuid.UUID,
+	ctx context.Context, name string, userID mid.ID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeUserAttributesByNameAndUserIDQuery, name, userID)
 	if err != nil {
@@ -255,7 +260,7 @@ func (db *DB) RemoveUserAttributesByNameAndUserID(
 }
 
 func (db *DB) RemoveUserAttributesByNamesAndUserID(
-	ctx context.Context, names []string, userID uuid.UUID,
+	ctx context.Context, names []string, userID mid.ID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeUserAttributesByNamesAndUserIDQuery, names, userID)
 	if err != nil {
@@ -268,7 +273,7 @@ func (db *DB) RemoveUserAttributesByNamesAndUserID(
 }
 
 func (db *DB) RemoveUserAttributesByPluginIDAndUserID(
-	ctx context.Context, pluginID uuid.UUID, userID uuid.UUID,
+	ctx context.Context, pluginID mid.ID, userID mid.ID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeUserAttributesByPluginIDAndUserIDQuery, pluginID, userID)
 	if err != nil {
@@ -304,7 +309,7 @@ func (db *DB) UpdateUserAttributeValue(
 
 	value, err := db.GetUserAttributeValueByID(ctx, userAttributeID)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to get value by id")
+		return nil, errors.WithMessage(err, "failed to get value by mid")
 	}
 
 	value, err = modifyFn(value)
@@ -313,7 +318,8 @@ func (db *DB) UpdateUserAttributeValue(
 	}
 
 	if _, err := db.conn.Exec(
-		ctx, updateUserAttributeValueQuery, userAttributeID.PluginID, userAttributeID.Name, userAttributeID.UserID, value,
+		ctx, updateUserAttributeValueQuery, userAttributeID.PluginID, userAttributeID.Name, userAttributeID.UserID,
+		value,
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to exec db")
 	}
@@ -329,7 +335,7 @@ func (db *DB) UpdateUserAttributeOptions(
 
 	options, err := db.GetUserAttributeOptionsByID(ctx, userAttributeID)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to get options by id")
+		return nil, errors.WithMessage(err, "failed to get options by mid")
 	}
 
 	options, err = modifyFn(options)
@@ -338,7 +344,8 @@ func (db *DB) UpdateUserAttributeOptions(
 	}
 
 	if _, err := db.conn.Exec(
-		ctx, updateUserAttributeOptionsQuery, userAttributeID.PluginID, userAttributeID.Name, userAttributeID.UserID, options,
+		ctx, updateUserAttributeOptionsQuery, userAttributeID.PluginID, userAttributeID.Name, userAttributeID.UserID,
+		options,
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to exec db")
 	}

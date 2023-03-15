@@ -1,8 +1,8 @@
 package entry
 
-import "github.com/google/uuid"
+import "github.com/momentum-xyz/ubercontroller/utils/mid"
 
 type Wallet struct {
-	WalletID     []byte    `db:"wallet_id"`
-	BlockchainID uuid.UUID `db:"blockchain_id"`
+	WalletID     []byte `db:"wallet_id"`
+	BlockchainID mid.ID `db:"blockchain_id"`
 }

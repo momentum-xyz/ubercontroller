@@ -1,20 +1,19 @@
 package seed
 
 import (
-	"github.com/google/uuid"
-
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 )
 
 func seedObjects(node universe.Node) error {
 	type item struct {
-		id          uuid.UUID
-		spaceTypeID uuid.UUID
-		ownerID     uuid.UUID
-		parentID    uuid.UUID
-		asset2dID   uuid.UUID
-		asset3dID   *uuid.UUID
+		id          mid.ID
+		spaceTypeID mid.ID
+		ownerID     mid.ID
+		parentID    mid.ID
+		asset2dID   mid.ID
+		asset3dID   *mid.ID
 		options     *entry.ObjectOptions
 		position    *map[string]any
 	}

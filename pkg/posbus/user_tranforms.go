@@ -2,15 +2,15 @@ package posbus
 
 import (
 	"encoding/binary"
-	"github.com/google/uuid"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 )
 
 const UserTransformMessageSize = MsgUUIDTypeSize + cmath.Float32Bytes*6
 
 type UserTransform struct {
-	ID        uuid.UUID           `json:"id"`
+	ID        mid.ID              `json:"mid"`
 	Transform cmath.UserTransform `json:"transform"`
 }
 
@@ -79,7 +79,7 @@ func BytesToUserTransformBuffer(buf []byte) *UserTransformBuffer {
 	return &b
 }
 
-func NewSendTransformBuffer(id uuid.UUID) []byte {
+func NewSendTransformBuffer(id mid.ID) []byte {
 	buf := make([]byte, UserTransformMessageSize)
 	copy(buf[:MsgUUIDTypeSize], utils.BinID(id))
 	return buf

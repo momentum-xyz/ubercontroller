@@ -1,13 +1,13 @@
 package node
 
 import (
-	"github.com/google/uuid"
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
-func (n *Node) CreateObject(ojbectID uuid.UUID) (universe.Object, error) {
+func (n *Node) CreateObject(ojbectID mid.ID) (universe.Object, error) {
 	return nil, errors.Errorf("not permitted for node")
 }
 
@@ -15,8 +15,8 @@ func (n *Node) SetParent(parent universe.Object, updateDB bool) error {
 	return errors.Errorf("not permitted for node")
 }
 
-func (n *Node) GetAllObjects() map[uuid.UUID]universe.Object {
-	objects := map[uuid.UUID]universe.Object{
+func (n *Node) GetAllObjects() map[mid.ID]universe.Object {
+	objects := map[mid.ID]universe.Object{
 		n.GetID(): n.ToObject(),
 	}
 
@@ -29,8 +29,8 @@ func (n *Node) GetAllObjects() map[uuid.UUID]universe.Object {
 	return objects
 }
 
-func (n *Node) FilterAllObjects(predicateFn universe.ObjectsFilterPredicateFn) map[uuid.UUID]universe.Object {
-	objects := make(map[uuid.UUID]universe.Object)
+func (n *Node) FilterAllObjects(predicateFn universe.ObjectsFilterPredicateFn) map[mid.ID]universe.Object {
+	objects := make(map[mid.ID]universe.Object)
 	if predicateFn(n.GetID(), n.ToObject()) {
 		objects[n.GetID()] = n.ToObject()
 	}
@@ -44,7 +44,7 @@ func (n *Node) FilterAllObjects(predicateFn universe.ObjectsFilterPredicateFn) m
 	return objects
 }
 
-func (n *Node) GetObjectFromAllObjects(objectID uuid.UUID) (universe.Object, bool) {
+func (n *Node) GetObjectFromAllObjects(objectID mid.ID) (universe.Object, bool) {
 	if objectID == n.GetID() {
 		return n.ToObject(), true
 	}

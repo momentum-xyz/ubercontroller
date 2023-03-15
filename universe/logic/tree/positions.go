@@ -1,14 +1,14 @@
 package tree
 
 import (
-	"github.com/google/uuid"
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
-func CalcObjectSpawnPosition(parentID, userID uuid.UUID) (*cmath.ObjectTransform, error) {
+func CalcObjectSpawnPosition(parentID, userID mid.ID) (*cmath.ObjectTransform, error) {
 	parent, ok := universe.GetNode().GetObjectFromAllObjects(parentID)
 	if !ok {
 		return nil, errors.Errorf("object parent not found: %s", parentID)

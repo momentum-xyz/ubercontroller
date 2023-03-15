@@ -1,13 +1,12 @@
 package entry
 
 import (
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type Plugin struct {
-	PluginID  uuid.UUID      `db:"plugin_id" json:"plugin_id"`
+	PluginID  mid.ID         `db:"plugin_id" json:"plugin_id"`
 	Meta      PluginMeta     `db:"meta" json:"meta"`
 	Options   *PluginOptions `db:"options" json:"options"`
 	CreatedAt time.Time      `db:"created_at" json:"created_at"`

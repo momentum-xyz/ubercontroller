@@ -2,13 +2,13 @@ package main
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -76,8 +76,8 @@ func run(ctx context.Context) error {
 
 	//todo: change to pool
 	if err := universe.InitializeIDs(
-		uuid.MustParse("f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0"),
-		uuid.MustParse("86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8"),
+		mid.MustParse("f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0"),
+		mid.MustParse("86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8"),
 	); err != nil {
 		return errors.WithMessage(err, "failed to initialize universe")
 	}
@@ -173,7 +173,7 @@ func createNode(ctx context.Context, db database.DB, nodeEntry *entry.Node) (uni
 	userTypes := user_types.NewUserTypes(db)
 	attributeTypes := attribute_types.NewAttributeTypes(db)
 
-	objectID := uuid.New()
+	objectID := mid.New()
 	if nodeEntry != nil {
 		objectID = nodeEntry.ObjectID
 	}

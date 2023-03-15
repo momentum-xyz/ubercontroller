@@ -3,20 +3,20 @@ package world
 import (
 	"github.com/gorilla/websocket"
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
-func (w *World) GetUser(userID uuid.UUID, recursive bool) (universe.User, bool) {
+func (w *World) GetUser(userID mid.ID, recursive bool) (universe.User, bool) {
 	return w.ToObject().GetUser(userID, false)
 }
 
-func (w *World) GetUsers(recursive bool) map[uuid.UUID]universe.User {
+func (w *World) GetUsers(recursive bool) map[mid.ID]universe.User {
 	return w.ToObject().GetUsers(false)
 }
 
@@ -90,7 +90,7 @@ func (w *World) Send(msg *websocket.PreparedMessage, recursive bool) error {
 	return w.ToObject().Send(msg, false)
 }
 
-func (w *World) GetUserSpawnPosition(userID uuid.UUID) cmath.Vec3 {
+func (w *World) GetUserSpawnPosition(userID mid.ID) cmath.Vec3 {
 	return cmath.Vec3{X: 40, Y: 40, Z: 40}
 }
 
@@ -126,7 +126,7 @@ func (w *World) noLockRemoveUser(user universe.User, updateDB bool) (bool, error
 
 	w.Send(
 		posbus.NewMessageFromData(
-			posbus.TypeRemoveUsers, posbus.RemoveUsers{Users: []uuid.UUID{user.GetID()}},
+			posbus.TypeRemoveUsers, posbus.RemoveUsers{Users: []mid.ID{user.GetID()}},
 		).WSMessage(),
 		true,
 	)
@@ -166,7 +166,7 @@ func (w *World) initializeUnity(user universe.User) error {
 	return nil
 }
 
-//func (w *World) SpawnUser(userID uuid.UUID, sessionID uuid.UUID, socketConnection *websocket.Conn) {
+//func (w *World) SpawnUser(userID mid.ID, sessionID mid.ID, socketConnection *websocket.Conn) {
 //
 //	if exclient, ok := h.clients[x.ID]; ok && exclient.quiueID != x.quiueID {
 //		if exclient.SessionID == x.SessionID {

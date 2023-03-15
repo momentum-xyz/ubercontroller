@@ -1,10 +1,10 @@
 package node
 
 import (
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -211,7 +211,7 @@ func (n *Node) apiUsersRemoveMutualDocks(c *gin.Context) {
 	c.JSON(http.StatusAccepted, nil)
 }
 
-func createWorldPortal(portalName string, from, to universe.World, portalImage string) (uuid.UUID, error) {
+func createWorldPortal(portalName string, from, to universe.World, portalImage string) (mid.ID, error) {
 	var objectAttributes []*entry.Attribute
 
 	portals := getWorldPortals(from, to)
@@ -223,34 +223,42 @@ func createWorldPortal(portalName string, from, to universe.World, portalImage s
 
 	dockingStation, err := getWorldDockingStation(from)
 	if err != nil {
-		return uuid.Nil, errors.WithMessage(err, "failed to get docking station")
+		return mid.Nil, errors.WithMessage(err, "failed to get docking station")
 	}
 
 	portalObjectTypeID, err := common.GetPortalObjectTypeID()
 	if err != nil {
-		return uuid.Nil, errors.WithMessage(err, "failed to get portal object type id")
+		return mid.Nil, errors.WithMessage(err, "failed to get portal object type mid")
 	}
 
-	objectAttributes = append(objectAttributes, entry.NewAttribute(
-		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.World.TeleportDestination.Name),
-		entry.NewAttributePayload(
-			&entry.AttributeValue{
-				universe.ReservedAttributes.World.TeleportDestination.Key: to.GetID().String(),
-			},
-			nil,
-		),
-	))
-
-	if portalImage != "" {
-		objectAttributes = append(objectAttributes, entry.NewAttribute(
-			entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Object.PortalDockFace.Name),
+	objectAttributes = append(
+		objectAttributes, entry.NewAttribute(
+			entry.NewAttributeID(
+				universe.GetSystemPluginID(), universe.ReservedAttributes.World.TeleportDestination.Name,
+			),
 			entry.NewAttributePayload(
 				&entry.AttributeValue{
-					universe.ReservedAttributes.Object.PortalDockFace.Key: portalImage,
+					universe.ReservedAttributes.World.TeleportDestination.Key: to.GetID().String(),
 				},
 				nil,
 			),
-		))
+		),
+	)
+
+	if portalImage != "" {
+		objectAttributes = append(
+			objectAttributes, entry.NewAttribute(
+				entry.NewAttributeID(
+					universe.GetSystemPluginID(), universe.ReservedAttributes.Object.PortalDockFace.Name,
+				),
+				entry.NewAttributePayload(
+					&entry.AttributeValue{
+						universe.ReservedAttributes.Object.PortalDockFace.Key: portalImage,
+					},
+					nil,
+				),
+			),
+		)
 	}
 
 	template := tree.ObjectTemplate{
@@ -272,7 +280,7 @@ func getWorldDockingStation(world universe.World) (universe.Object, error) {
 	return dockingStation, nil
 }
 
-func getWorldPortals(from, to universe.World) map[uuid.UUID]universe.Object {
+func getWorldPortals(from, to universe.World) map[mid.ID]universe.Object {
 	dockingStation, err := getWorldDockingStation(from)
 	if err != nil {
 		return nil
@@ -282,7 +290,7 @@ func getWorldPortals(from, to universe.World) map[uuid.UUID]universe.Object {
 	attributeID := entry.NewAttributeID(
 		universe.GetSystemPluginID(), universe.ReservedAttributes.World.TeleportDestination.Name,
 	)
-	findPortalFn := func(objectID uuid.UUID, object universe.Object) bool {
+	findPortalFn := func(objectID mid.ID, object universe.Object) bool {
 		value, ok := object.GetObjectAttributes().GetValue(attributeID)
 		if !ok || value == nil {
 			return false

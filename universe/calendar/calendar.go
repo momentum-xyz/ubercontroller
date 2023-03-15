@@ -3,9 +3,8 @@ package calendar
 import (
 	"context"
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 	"time"
-
-	"github.com/google/uuid"
 
 	"github.com/pkg/errors"
 
@@ -23,11 +22,11 @@ type Calendar struct {
 }
 
 type Event struct {
-	ObjectID *uuid.UUID `json:"objectId"`
-	Title    string     `json:"title"`
-	Start    time.Time  `json:"start"`
-	End      time.Time  `json:"end"`
-	EventID  string     `json:"eventId"`
+	ObjectID *mid.ID   `json:"objectId"`
+	Title    string    `json:"title"`
+	Start    time.Time `json:"start"`
+	End      time.Time `json:"end"`
+	EventID  string    `json:"eventId"`
 }
 
 var log = logger.L()
@@ -137,7 +136,7 @@ func findNextEvents(events []Event) []Event {
 	return result2
 }
 
-func getAllEvents(objects map[uuid.UUID]universe.Object) []Event {
+func getAllEvents(objects map[mid.ID]universe.Object) []Event {
 	attributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Object.Events.Name)
 
 	//a := c.world.GetObjectAttributesValue(true)
@@ -170,7 +169,7 @@ func getAllEvents(objects map[uuid.UUID]universe.Object) []Event {
 	return events
 }
 
-func getEvent(objectID *uuid.UUID, item any) (*Event, error) {
+func getEvent(objectID *mid.ID, item any) (*Event, error) {
 	e := &Event{ObjectID: objectID}
 
 	err := utils.MapDecode(item, e)

@@ -2,9 +2,9 @@ package assets_2d
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 
 	"github.com/georgysavva/scany/pgxscan"
-	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -82,28 +82,28 @@ func (db *DB) UpsertAssets(ctx context.Context, assets2d []*entry.Asset2d) error
 	return errs.ErrorOrNil()
 }
 
-func (db *DB) RemoveAssetByID(ctx context.Context, asset2dID uuid.UUID) error {
+func (db *DB) RemoveAssetByID(ctx context.Context, asset2dID mid.ID) error {
 	if _, err := db.conn.Exec(ctx, removeAssetByIDQuery, asset2dID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) RemoveAssetsByIDs(ctx context.Context, asset2dIDs []uuid.UUID) error {
+func (db *DB) RemoveAssetsByIDs(ctx context.Context, asset2dIDs []mid.ID) error {
 	if _, err := db.conn.Exec(ctx, removeAssetsByIDsQuery, asset2dIDs); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) UpdateAssetMeta(ctx context.Context, asset2dID uuid.UUID, meta entry.Asset2dMeta) error {
+func (db *DB) UpdateAssetMeta(ctx context.Context, asset2dID mid.ID, meta entry.Asset2dMeta) error {
 	if _, err := db.conn.Exec(ctx, updateAssetMetaQuery, asset2dID, meta); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) UpdateAssetOptions(ctx context.Context, asset2dID uuid.UUID, asset2dOptions *entry.Asset2dOptions) error {
+func (db *DB) UpdateAssetOptions(ctx context.Context, asset2dID mid.ID, asset2dOptions *entry.Asset2dOptions) error {
 	if _, err := db.conn.Exec(ctx, updateAssetOptionsQuery, asset2dID, asset2dOptions); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}

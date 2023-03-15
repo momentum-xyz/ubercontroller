@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
-	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 
@@ -75,9 +75,9 @@ func (n *Node) handShake(socketConnection *websocket.Conn) error {
 	userID := handshake.UserId
 	sessionID := handshake.SessionId
 
-	userIDClaim, err := uuid.Parse(utils.GetFromAnyMap(claims, "sub", ""))
+	userIDClaim, err := mid.Parse(utils.GetFromAnyMap(claims, "sub", ""))
 	if err != nil {
-		return errors.WithMessagef(err, "failed to parse id claim: %s", userID)
+		return errors.WithMessagef(err, "failed to parse mid claim: %s", userID)
 	}
 	if !((userID == userIDClaim) || (userIDClaim.String() == "69e1d7f6-3130-4005-9969-31edf9af9445") || (userIDClaim.String() == "eb50bbc8-ba4e-46a3-a480-a9b30141ce91")) {
 		return nil

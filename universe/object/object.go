@@ -5,9 +5,9 @@ import (
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/momentum-xyz/ubercontroller/seed"
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 	"sync/atomic"
 
-	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 	"github.com/sasha-s/go-deadlock"
@@ -29,18 +29,18 @@ import (
 var _ universe.Object = (*Object)(nil)
 
 type Object struct {
-	id       uuid.UUID
+	id       mid.ID
 	world    universe.World
 	ctx      context.Context
 	log      *zap.SugaredLogger
 	CFG      *config.Config
 	db       database.DB
 	enabled  atomic.Bool
-	Users    *generic.SyncMap[uuid.UUID, universe.User]
-	Children *generic.SyncMap[uuid.UUID, universe.Object]
+	Users    *generic.SyncMap[mid.ID, universe.User]
+	Children *generic.SyncMap[mid.ID, universe.Object]
 	//Mu               sync.RWMutex
 	Mu               deadlock.RWMutex
-	ownerID          uuid.UUID
+	ownerID          mid.ID
 	transform        *cmath.ObjectTransform
 	options          *entry.ObjectOptions
 	Parent           universe.Object
@@ -65,12 +65,12 @@ type Object struct {
 	theta float64
 }
 
-func NewObject(id uuid.UUID, db database.DB, world universe.World) *Object {
+func NewObject(id mid.ID, db database.DB, world universe.World) *Object {
 	object := &Object{
 		id:            id,
 		db:            db,
-		Users:         generic.NewSyncMap[uuid.UUID, universe.User](0),
-		Children:      generic.NewSyncMap[uuid.UUID, universe.Object](0),
+		Users:         generic.NewSyncMap[mid.ID, universe.User](0),
+		Children:      generic.NewSyncMap[mid.ID, universe.Object](0),
 		attributesMsg: generic.NewSyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]](0),
 		renderDataMap: generic.NewSyncMap[posbus.ObjectDataIndex, interface{}](0),
 		world:         world,
@@ -80,7 +80,7 @@ func NewObject(id uuid.UUID, db database.DB, world universe.World) *Object {
 	return object
 }
 
-func (o *Object) GetID() uuid.UUID {
+func (o *Object) GetID() mid.ID {
 	return o.id
 }
 
@@ -138,7 +138,7 @@ func (o *Object) Initialize(ctx context.Context) error {
 	o.log = log
 	o.CFG = cfg
 	o.numSendsQueued.Store(chanIsClosed)
-	o.lockedBy.Store(uuid.Nil)
+	o.lockedBy.Store(mid.Nil)
 
 	newPos := cmath.ObjectTransform{Position: *new(cmath.Vec3), Rotation: *new(cmath.Vec3), Scale: *new(cmath.Vec3)}
 	o.actualPosition.Store(&newPos)
@@ -184,14 +184,14 @@ func (o *Object) SetParent(parent universe.Object, updateDB bool) error {
 	return nil
 }
 
-func (o *Object) GetOwnerID() uuid.UUID {
+func (o *Object) GetOwnerID() mid.ID {
 	o.Mu.RLock()
 	defer o.Mu.RUnlock()
 
 	return o.ownerID
 }
 
-func (o *Object) SetOwnerID(ownerID uuid.UUID, updateDB bool) error {
+func (o *Object) SetOwnerID(ownerID mid.ID, updateDB bool) error {
 	o.Mu.Lock()
 	defer o.Mu.Unlock()
 
@@ -218,7 +218,7 @@ func (o *Object) SetAsset2D(asset2d universe.Asset2d, updateDB bool) error {
 	defer o.Mu.Unlock()
 
 	if updateDB {
-		var asset2dID *uuid.UUID
+		var asset2dID *mid.ID
 		if asset2d != nil {
 			asset2dID = utils.GetPTR(asset2d.GetID())
 		}
@@ -244,7 +244,7 @@ func (o *Object) SetAsset3D(asset3d universe.Asset3d, updateDB bool) error {
 	defer o.Mu.Unlock()
 
 	if updateDB {
-		var asset3dID *uuid.UUID
+		var asset3dID *mid.ID
 		if asset3d != nil {
 			asset3dID = utils.GetPTR(asset3d.GetID())
 		}
@@ -368,7 +368,7 @@ func (o *Object) GetEntry() *entry.Object {
 		entry.Asset3dID = utils.GetPTR(o.asset3d.GetID())
 	}
 
-	if o.objectType != nil && o.objectType.GetID() == uuid.MustParse(seed.NodeObjectTypeID) {
+	if o.objectType != nil && o.objectType.GetID() == mid.MustParse(seed.NodeObjectTypeID) {
 		// TODO Think how to avoid this hack
 		entry.ParentID = o.id // By convention Node has parentID of itself
 	}
@@ -467,7 +467,7 @@ func (o *Object) LoadFromEntry(entry *entry.Object, recursive bool) error {
 
 			entries, err := o.db.GetObjectsDB().GetObjectsByParentID(ctx, o.GetID())
 			if err != nil {
-				return errors.WithMessagef(err, "failed to get objects by parent id: %s", o.GetID())
+				return errors.WithMessagef(err, "failed to get objects by parent mid: %s", o.GetID())
 			}
 
 			for _, childEntry := range entries {
@@ -488,13 +488,13 @@ func (o *Object) LoadFromEntry(entry *entry.Object, recursive bool) error {
 
 func (o *Object) Save() error {
 	return o.saveObjects(
-		map[uuid.UUID]universe.Object{
+		map[mid.ID]universe.Object{
 			o.GetID(): o,
 		},
 	)
 }
 
-func (o *Object) saveObjects(objects map[uuid.UUID]universe.Object) error {
+func (o *Object) saveObjects(objects map[mid.ID]universe.Object) error {
 	if len(objects) < 1 {
 		return nil
 	}
@@ -538,7 +538,7 @@ func (o *Object) load(entry *entry.Object) error {
 	node := universe.GetNode()
 
 	if err := o.SetOwnerID(entry.OwnerID, false); err != nil {
-		return errors.WithMessagef(err, "failed to set owner id: %s", entry.OwnerID)
+		return errors.WithMessagef(err, "failed to set owner mid: %s", entry.OwnerID)
 	}
 	if _, err := o.SetOptions(modify.MergeWith(entry.Options), false); err != nil {
 		return errors.WithMessage(err, "failed to set options")
@@ -585,13 +585,13 @@ func (o *Object) UpdateSpawnMessage() error {
 		return errors.Errorf("world is empty")
 	}
 
-	parentID := uuid.Nil
+	parentID := mid.Nil
 	parent := o.GetParent()
 	if parent != nil {
 		parentID = parent.GetID()
 	}
 
-	asset3dID := uuid.Nil
+	asset3dID := mid.Nil
 	asset3d := o.GetAsset3D()
 	objectType := o.GetObjectType()
 	assetFormat := dto.AddressableAssetType
@@ -704,8 +704,8 @@ func (o *Object) SetAttributesMsg(kind, name string, msg *websocket.PreparedMess
 
 func (o *Object) LockUnityObject(user universe.User, state uint32) bool {
 	if state == 1 {
-		return o.lockedBy.CompareAndSwap(uuid.Nil, user.GetID())
+		return o.lockedBy.CompareAndSwap(mid.Nil, user.GetID())
 	} else {
-		return o.lockedBy.CompareAndSwap(user.GetID(), uuid.Nil)
+		return o.lockedBy.CompareAndSwap(user.GetID(), mid.Nil)
 	}
 }

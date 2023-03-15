@@ -3,8 +3,8 @@ package worlds
 import (
 	"context"
 	"github.com/georgysavva/scany/pgxscan"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/database"
@@ -36,8 +36,8 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB, objectsDB database.Ob
 	}
 }
 
-func (db *DB) GetWorldIDs(ctx context.Context) ([]uuid.UUID, error) {
-	var ids []uuid.UUID
+func (db *DB) GetWorldIDs(ctx context.Context) ([]mid.ID, error) {
+	var ids []mid.ID
 	if err := pgxscan.Select(ctx, db.conn, &ids, getWorldIDsQuery); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}

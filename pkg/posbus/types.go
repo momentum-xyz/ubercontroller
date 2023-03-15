@@ -2,10 +2,10 @@ package posbus
 
 import (
 	"encoding/json"
-	"github.com/google/uuid"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 )
 
 type SignalType uint32
@@ -104,11 +104,11 @@ const (
 )
 
 type HandShake struct {
-	HandshakeVersion int       `json:"handshake_version"`
-	ProtocolVersion  int       `json:"protocol_version"`
-	Token            string    `json:"token"`
-	UserId           uuid.UUID `json:"user_id"`
-	SessionId        uuid.UUID `json:"session_id"`
+	HandshakeVersion int    `json:"handshake_version"`
+	ProtocolVersion  int    `json:"protocol_version"`
+	Token            string `json:"token"`
+	UserId           mid.ID `json:"user_id"`
+	SessionId        mid.ID `json:"session_id"`
 }
 
 type AddObjects struct {
@@ -116,7 +116,7 @@ type AddObjects struct {
 }
 
 type RemoveObjects struct {
-	Objects []uuid.UUID `json:"objects"`
+	Objects []mid.ID `json:"objects"`
 }
 
 type AddUsers struct {
@@ -124,7 +124,7 @@ type AddUsers struct {
 }
 
 type RemoveUsers struct {
-	Users []uuid.UUID `json:"users"`
+	Users []mid.ID `json:"users"`
 }
 
 type Signal struct {
@@ -132,36 +132,36 @@ type Signal struct {
 }
 
 type TeleportRequest struct {
-	Target uuid.UUID `json:"target"`
+	Target mid.ID `json:"target"`
 }
 
 type ObjectDefinition struct {
-	ID               uuid.UUID             `json:"id"`
-	ParentID         uuid.UUID             `json:"parent_id"`
-	AssetType        uuid.UUID             `json:"asset_type"`
+	ID               mid.ID                `json:"mid"`
+	ParentID         mid.ID                `json:"parent_id"`
+	AssetType        mid.ID                `json:"asset_type"`
 	AssetFormat      dto.Asset3dType       `json:"asset_format"` // TODO: Rename AssetType to AssetID, so Type can be used for this.
 	Name             string                `json:"name"`
 	Transform        cmath.ObjectTransform `json:"transform"`
 	IsEditable       bool                  `json:"is_editable"`
 	TetheredToParent bool                  `json:"tethered_to_parent"`
 	ShowOnMiniMap    bool                  `json:"show_on_minimap"`
-	//InfoUI           uuid.UUID
+	//InfoUI           mid.ID
 }
 
 type UserDefinition struct {
-	ID        uuid.UUID           `json:"id"`
+	ID        mid.ID              `json:"mid"`
 	Name      string              `json:"name"`
-	Avatar    uuid.UUID           `json:"avatar"`
+	Avatar    mid.ID              `json:"avatar"`
 	Transform cmath.UserTransform `json:"transform"`
 	IsGuest   bool                `json:"is_guest"`
 }
 
 type SetWorldData struct {
-	ID              uuid.UUID `json:"id"`
-	Name            string    `json:"name"`
-	Avatar          uuid.UUID `json:"avatar"`
-	Owner           uuid.UUID `json:"owner"`
-	Avatar3DAssetID uuid.UUID `json:"avatar_3d_asset_id"`
+	ID              mid.ID `json:"mid"`
+	Name            string `json:"name"`
+	Avatar          mid.ID `json:"avatar"`
+	Owner           mid.ID `json:"owner"`
+	Avatar3DAssetID mid.ID `json:"avatar_3d_asset_id"`
 }
 
 type ObjectDataIndex struct {
@@ -170,23 +170,23 @@ type ObjectDataIndex struct {
 }
 
 type ObjectData struct {
-	ID      uuid.UUID
+	ID      mid.ID
 	Entries map[ObjectDataIndex]interface{}
 }
 
 type SetObjectLock struct {
-	ID    uuid.UUID `json:"id"`
-	State uint32    `json:"state"`
+	ID    mid.ID `json:"mid"`
+	State uint32 `json:"state"`
 }
 
 type ObjectLockResultData struct {
-	ID        uuid.UUID `json:"id"`
-	Result    uint32    `json:"result"`
-	LockOwner uuid.UUID `json:"lock_owner"`
+	ID        mid.ID `json:"mid"`
+	Result    uint32 `json:"result"`
+	LockOwner mid.ID `json:"lock_owner"`
 }
 
 type ObjectPosition struct {
-	ID              uuid.UUID             `json:"id"`
+	ID              mid.ID                `json:"mid"`
 	ObjectTransform cmath.ObjectTransform `json:"object_transform"`
 }
 
@@ -208,7 +208,7 @@ func (o *ObjectData) MarshalJSON() ([]byte, error) {
 
 	return json.Marshal(
 		&struct {
-			ID      uuid.UUID                         `json:"id"`
+			ID      mid.ID                            `json:"mid"`
 			Entries map[string]map[string]interface{} `json:"entries"`
 		}{
 			ID:      o.ID,

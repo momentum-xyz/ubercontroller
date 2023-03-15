@@ -2,10 +2,10 @@ package object_user_attributes
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/utils/mid"
 	"sync"
 
 	"github.com/georgysavva/scany/pgxscan"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -122,7 +122,8 @@ func (db *DB) GetObjectUserAttributeValueByID(
 	if err := db.conn.QueryRow(
 		ctx, getObjectUserAttributeValueByIDQuery,
 		objectUserAttributeID.PluginID, objectUserAttributeID.Name,
-		objectUserAttributeID.ObjectID, objectUserAttributeID.UserID).
+		objectUserAttributeID.ObjectID, objectUserAttributeID.UserID,
+	).
 		Scan(&value); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
@@ -136,7 +137,8 @@ func (db *DB) GetObjectUserAttributeOptionsByID(
 	if err := db.conn.QueryRow(
 		ctx, getObjectUserAttributeOptionsByIDQuery,
 		objectUserAttributeID.PluginID, objectUserAttributeID.Name,
-		objectUserAttributeID.ObjectID, objectUserAttributeID.UserID).
+		objectUserAttributeID.ObjectID, objectUserAttributeID.UserID,
+	).
 		Scan(&options); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
@@ -144,7 +146,7 @@ func (db *DB) GetObjectUserAttributeOptionsByID(
 }
 
 func (db *DB) GetObjectUserAttributesByObjectID(
-	ctx context.Context, objectID uuid.UUID,
+	ctx context.Context, objectID mid.ID,
 ) ([]*entry.ObjectUserAttribute, error) {
 	var attributes []*entry.ObjectUserAttribute
 	if err := pgxscan.Select(ctx, db.conn, &attributes, getObjectUserAttributesByObjectIDQuery, objectID); err != nil {
@@ -154,7 +156,7 @@ func (db *DB) GetObjectUserAttributesByObjectID(
 }
 
 func (db *DB) GetObjectUserAttributesByUserID(
-	ctx context.Context, userID uuid.UUID,
+	ctx context.Context, userID mid.ID,
 ) ([]*entry.ObjectUserAttribute, error) {
 	var attributes []*entry.ObjectUserAttribute
 	if err := pgxscan.Select(ctx, db.conn, &attributes, getObjectUserAttributesByUserIDQuery, userID); err != nil {
@@ -164,7 +166,7 @@ func (db *DB) GetObjectUserAttributesByUserID(
 }
 
 func (db *DB) GetObjectUserAttributesByObjectIDAndUserID(
-	ctx context.Context, objectID uuid.UUID, userID uuid.UUID,
+	ctx context.Context, objectID mid.ID, userID mid.ID,
 ) ([]*entry.ObjectUserAttribute, error) {
 	var attributes []*entry.ObjectUserAttribute
 	if err := pgxscan.Select(
@@ -206,7 +208,7 @@ func (db *DB) UpsertObjectUserAttribute(
 	payload, err := db.GetObjectUserAttributePayloadByID(ctx, objectUserAttributeID)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
-			return nil, errors.WithMessage(err, "failed to get attribute payload by id")
+			return nil, errors.WithMessage(err, "failed to get attribute payload by mid")
 		}
 	}
 
@@ -256,7 +258,7 @@ func (db *DB) RemoveObjectUserAttributesByNames(ctx context.Context, names []str
 	return nil
 }
 
-func (db *DB) RemoveObjectUserAttributesByPluginID(ctx context.Context, pluginID uuid.UUID) error {
+func (db *DB) RemoveObjectUserAttributesByPluginID(ctx context.Context, pluginID mid.ID) error {
 	res, err := db.conn.Exec(ctx, removeObjectUserAttributesByPluginIDQuery, pluginID)
 	if err != nil {
 		return errors.WithMessage(err, "failed to exec db")
@@ -281,7 +283,7 @@ func (db *DB) RemoveObjectUserAttributesByAttributeID(
 }
 
 func (db *DB) RemoveObjectUserAttributesByObjectID(
-	ctx context.Context, objectID uuid.UUID,
+	ctx context.Context, objectID mid.ID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeObjectUserAttributesByObjectIDQuery, objectID)
 	if err != nil {
@@ -294,7 +296,7 @@ func (db *DB) RemoveObjectUserAttributesByObjectID(
 }
 
 func (db *DB) RemoveObjectUserAttributesByNameAndObjectID(
-	ctx context.Context, name string, objectID uuid.UUID,
+	ctx context.Context, name string, objectID mid.ID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeObjectUserAttributesByNameAndObjectIDQuery, name, objectID)
 	if err != nil {
@@ -307,7 +309,7 @@ func (db *DB) RemoveObjectUserAttributesByNameAndObjectID(
 }
 
 func (db *DB) RemoveObjectUserAttributesByNamesAndObjectID(
-	ctx context.Context, names []string, objectID uuid.UUID,
+	ctx context.Context, names []string, objectID mid.ID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeObjectUserAttributesByNamesAndObjectIDQuery, names, objectID)
 	if err != nil {
@@ -320,7 +322,7 @@ func (db *DB) RemoveObjectUserAttributesByNamesAndObjectID(
 }
 
 func (db *DB) RemoveObjectUserAttributesByUserID(
-	ctx context.Context, userID uuid.UUID,
+	ctx context.Context, userID mid.ID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeObjectUserAttributesByUserIDQuery, userID)
 	if err != nil {
@@ -333,7 +335,7 @@ func (db *DB) RemoveObjectUserAttributesByUserID(
 }
 
 func (db *DB) RemoveObjectUserAttributesByNameAndUserID(
-	ctx context.Context, name string, userID uuid.UUID,
+	ctx context.Context, name string, userID mid.ID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeObjectUserAttributesByNameAndUserIDQuery, name, userID)
 	if err != nil {
@@ -346,7 +348,7 @@ func (db *DB) RemoveObjectUserAttributesByNameAndUserID(
 }
 
 func (db *DB) RemoveObjectUserAttributesByNamesAndUserID(
-	ctx context.Context, names []string, userID uuid.UUID,
+	ctx context.Context, names []string, userID mid.ID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeObjectUserAttributesByNamesAndUserIDQuery, names, userID)
 	if err != nil {
@@ -359,7 +361,7 @@ func (db *DB) RemoveObjectUserAttributesByNamesAndUserID(
 }
 
 func (db *DB) RemoveObjectUserAttributesByObjectIDAndUserID(
-	ctx context.Context, objectID uuid.UUID, userID uuid.UUID,
+	ctx context.Context, objectID mid.ID, userID mid.ID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeObjectUserAttributesByObjectIDAndUserIDQuery, objectID, userID)
 	if err != nil {
@@ -372,7 +374,7 @@ func (db *DB) RemoveObjectUserAttributesByObjectIDAndUserID(
 }
 
 func (db *DB) RemoveObjectUserAttributesByNameAndObjectIDAndUserID(
-	ctx context.Context, name string, objectID uuid.UUID, userID uuid.UUID,
+	ctx context.Context, name string, objectID mid.ID, userID mid.ID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeObjectUserAttributesByNameAndObjectIDAndUserIDQuery, name, objectID, userID)
 	if err != nil {
@@ -385,7 +387,7 @@ func (db *DB) RemoveObjectUserAttributesByNameAndObjectIDAndUserID(
 }
 
 func (db *DB) RemoveObjectUserAttributesByNamesAndObjectIDAndUserID(
-	ctx context.Context, names []string, objectID uuid.UUID, userID uuid.UUID,
+	ctx context.Context, names []string, objectID mid.ID, userID mid.ID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeObjectUserAttributesByNamesAndObjectIDAndUserIDQuery, names, objectID, userID)
 	if err != nil {
@@ -398,7 +400,7 @@ func (db *DB) RemoveObjectUserAttributesByNamesAndObjectIDAndUserID(
 }
 
 func (db *DB) RemoveObjectUserAttributesByPluginIDAndObjectID(
-	ctx context.Context, pluginID uuid.UUID, objectID uuid.UUID,
+	ctx context.Context, pluginID mid.ID, objectID mid.ID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeObjectUserAttributesByPluginIDAndObjectIDQuery, pluginID, objectID)
 	if err != nil {
@@ -427,7 +429,7 @@ func (db *DB) RemoveObjectUserAttributesByObjectAttributeID(
 }
 
 func (db *DB) RemoveObjectUserAttributesByPluginIDAndUserID(
-	ctx context.Context, pluginID uuid.UUID, userID uuid.UUID,
+	ctx context.Context, pluginID mid.ID, userID mid.ID,
 ) error {
 	res, err := db.conn.Exec(ctx, removeObjectUserAttributesByPluginIDAndUserIDQuery, pluginID, userID)
 	if err != nil {
@@ -455,7 +457,7 @@ func (db *DB) RemoveObjectUserAttributesByUserAttributeID(
 	return nil
 }
 func (db *DB) RemoveObjectUserAttributesByPluginIDAndObjectIDAndUserID(
-	ctx context.Context, pluginID uuid.UUID, objectID uuid.UUID, userID uuid.UUID,
+	ctx context.Context, pluginID mid.ID, objectID mid.ID, userID mid.ID,
 ) error {
 	res, err := db.conn.Exec(
 		ctx, removeObjectUserAttributesByPluginIDAndObjectIDAndUserIDQuery,
@@ -495,7 +497,7 @@ func (db *DB) UpdateObjectUserAttributeValue(
 
 	value, err := db.GetObjectUserAttributeValueByID(ctx, objectUserAttributeID)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to get value by id")
+		return nil, errors.WithMessage(err, "failed to get value by mid")
 	}
 
 	value, err = modifyFn(value)
@@ -523,7 +525,7 @@ func (db *DB) UpdateObjectUserAttributeOptions(
 
 	options, err := db.GetObjectUserAttributeOptionsByID(ctx, objectUserAttributeID)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to get options by id")
+		return nil, errors.WithMessage(err, "failed to get options by mid")
 	}
 
 	options, err = modifyFn(options)
