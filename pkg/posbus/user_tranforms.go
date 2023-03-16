@@ -56,12 +56,12 @@ func (utb *UserTransformBuffer) Decode() SetUsersTransforms {
 	)
 	start := MsgArrTypeSize
 	for i := 0; i < utb.nUsers; i++ {
-		copy(t[i].ID[:], utb.posBuffer[start:start+16])
-		start += 16
+		copy(t[i].ID[:], utb.posBuffer[start:start+MsgUUIDTypeSize])
+		start += MsgUUIDTypeSize
 		t[i].Transform.Position = &cmath.Vec3{}
 		t[i].Transform.Rotation = &cmath.Vec3{}
 		t[i].Transform.CopyFromBuffer(utb.posBuffer[start:])
-		start += UserTransformMessageSize
+		start += cmath.Float32Bytes * 6
 	}
 	return SetUsersTransforms{Value: t}
 }
