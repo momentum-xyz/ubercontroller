@@ -2,8 +2,8 @@ package assets_3d
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -24,13 +24,13 @@ type Assets3d struct {
 	log    *zap.SugaredLogger
 	cfg    *config.Config
 	db     database.DB
-	assets *generic.SyncMap[uuid.UUID, universe.Asset3d]
+	assets *generic.SyncMap[umid.UMID, universe.Asset3d]
 }
 
 func NewAssets3d(db database.DB) *Assets3d {
 	return &Assets3d{
 		db:     db,
-		assets: generic.NewSyncMap[uuid.UUID, universe.Asset3d](0),
+		assets: generic.NewSyncMap[umid.UMID, universe.Asset3d](0),
 	}
 }
 
@@ -52,7 +52,7 @@ func (a *Assets3d) Initialize(ctx context.Context) error {
 	return nil
 }
 
-func (a *Assets3d) CreateAsset3d(asset3dID uuid.UUID) (universe.Asset3d, error) {
+func (a *Assets3d) CreateAsset3d(asset3dID umid.UMID) (universe.Asset3d, error) {
 	asset3d := asset_3d.NewAsset3d(asset3dID, a.db)
 
 	if err := asset3d.Initialize(a.ctx); err != nil {
@@ -65,20 +65,20 @@ func (a *Assets3d) CreateAsset3d(asset3dID uuid.UUID) (universe.Asset3d, error) 
 	return asset3d, nil
 }
 
-func (a *Assets3d) FilterAssets3d(predicateFn universe.Assets3dFilterPredicateFn) map[uuid.UUID]universe.Asset3d {
+func (a *Assets3d) FilterAssets3d(predicateFn universe.Assets3dFilterPredicateFn) map[umid.UMID]universe.Asset3d {
 	return a.assets.Filter(predicateFn)
 }
 
-func (a *Assets3d) GetAsset3d(asset3dID uuid.UUID) (universe.Asset3d, bool) {
+func (a *Assets3d) GetAsset3d(asset3dID umid.UMID) (universe.Asset3d, bool) {
 	asset, ok := a.assets.Load(asset3dID)
 	return asset, ok
 }
 
-func (a *Assets3d) GetAssets3d() map[uuid.UUID]universe.Asset3d {
+func (a *Assets3d) GetAssets3d() map[umid.UMID]universe.Asset3d {
 	a.assets.Mu.RLock()
 	defer a.assets.Mu.RUnlock()
 
-	assets := make(map[uuid.UUID]universe.Asset3d, len(a.assets.Data))
+	assets := make(map[umid.UMID]universe.Asset3d, len(a.assets.Data))
 
 	for id, asset := range a.assets.Data {
 		assets[id] = asset
@@ -153,7 +153,7 @@ func (a *Assets3d) RemoveAssets3d(assets3d []universe.Asset3d, updateDB bool) (b
 	}
 
 	if updateDB {
-		ids := make([]uuid.UUID, 0, len(assets3d))
+		ids := make([]umid.UMID, 0, len(assets3d))
 		for i := range assets3d {
 			ids[i] = assets3d[i].GetID()
 		}
@@ -169,7 +169,7 @@ func (a *Assets3d) RemoveAssets3d(assets3d []universe.Asset3d, updateDB bool) (b
 	return true, nil
 }
 
-func (a *Assets3d) RemoveAsset3dByID(asset3dID uuid.UUID, updateDB bool) (bool, error) {
+func (a *Assets3d) RemoveAsset3dByID(asset3dID umid.UMID, updateDB bool) (bool, error) {
 	a.assets.Mu.Lock()
 	defer a.assets.Mu.Unlock()
 
@@ -188,7 +188,7 @@ func (a *Assets3d) RemoveAsset3dByID(asset3dID uuid.UUID, updateDB bool) (bool, 
 	return true, nil
 }
 
-func (a *Assets3d) RemoveAssets3dByIDs(assets3dIDs []uuid.UUID, updateDB bool) (bool, error) {
+func (a *Assets3d) RemoveAssets3dByIDs(assets3dIDs []umid.UMID, updateDB bool) (bool, error) {
 	a.assets.Mu.Lock()
 	defer a.assets.Mu.Unlock()
 

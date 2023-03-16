@@ -2,10 +2,10 @@ package plugins
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"golang.org/x/sync/errgroup"
 
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -24,13 +24,13 @@ type Plugins struct {
 	ctx     context.Context
 	log     *zap.SugaredLogger
 	db      database.DB
-	plugins *generic.SyncMap[uuid.UUID, universe.Plugin]
+	plugins *generic.SyncMap[umid.UMID, universe.Plugin]
 }
 
 func NewPlugins(db database.DB) *Plugins {
 	return &Plugins{
 		db:      db,
-		plugins: generic.NewSyncMap[uuid.UUID, universe.Plugin](0),
+		plugins: generic.NewSyncMap[umid.UMID, universe.Plugin](0),
 	}
 }
 
@@ -46,7 +46,7 @@ func (p *Plugins) Initialize(ctx context.Context) error {
 	return nil
 }
 
-func (p *Plugins) CreatePlugin(pluginId uuid.UUID) (universe.Plugin, error) {
+func (p *Plugins) CreatePlugin(pluginId umid.UMID) (universe.Plugin, error) {
 	plugin := plugin.NewPlugin(pluginId, p.db)
 
 	if err := plugin.Initialize(p.ctx); err != nil {
@@ -59,19 +59,19 @@ func (p *Plugins) CreatePlugin(pluginId uuid.UUID) (universe.Plugin, error) {
 	return plugin, nil
 }
 
-func (p *Plugins) FilterPlugins(predicateFn universe.PluginsFilterPredicateFn) map[uuid.UUID]universe.Plugin {
+func (p *Plugins) FilterPlugins(predicateFn universe.PluginsFilterPredicateFn) map[umid.UMID]universe.Plugin {
 	return p.plugins.Filter(predicateFn)
 }
 
-func (p *Plugins) GetPlugin(pluginID uuid.UUID) (universe.Plugin, bool) {
+func (p *Plugins) GetPlugin(pluginID umid.UMID) (universe.Plugin, bool) {
 	return p.plugins.Load(pluginID)
 }
 
-func (p *Plugins) GetPlugins() map[uuid.UUID]universe.Plugin {
+func (p *Plugins) GetPlugins() map[umid.UMID]universe.Plugin {
 	p.plugins.Mu.RLock()
 	defer p.plugins.Mu.RUnlock()
 
-	plugins := make(map[uuid.UUID]universe.Plugin, len(p.plugins.Data))
+	plugins := make(map[umid.UMID]universe.Plugin, len(p.plugins.Data))
 
 	for id, plugin := range p.plugins.Data {
 		plugins[id] = plugin
@@ -122,17 +122,19 @@ func (p *Plugins) Load() error {
 	for i := range entries {
 		pluginEntry := entries[i]
 
-		group.Go(func() error {
-			plugin, err := p.CreatePlugin(pluginEntry.PluginID)
-			if err != nil {
-				return errors.WithMessagef(err, "failed to create new plugin: %s", pluginEntry.PluginID)
-			}
-			if err := plugin.LoadFromEntry(pluginEntry); err != nil {
-				return errors.WithMessagef(err, "failed to load plugin from entry: %s", pluginEntry.PluginID)
-			}
+		group.Go(
+			func() error {
+				plugin, err := p.CreatePlugin(pluginEntry.PluginID)
+				if err != nil {
+					return errors.WithMessagef(err, "failed to create new plugin: %s", pluginEntry.PluginID)
+				}
+				if err := plugin.LoadFromEntry(pluginEntry); err != nil {
+					return errors.WithMessagef(err, "failed to load plugin from entry: %s", pluginEntry.PluginID)
+				}
 
-			return nil
-		})
+				return nil
+			},
+		)
 	}
 	if err := group.Wait(); err != nil {
 		return err

@@ -2,7 +2,6 @@ package worlds
 
 import (
 	"context"
-	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
@@ -11,6 +10,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/world"
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
@@ -22,13 +22,13 @@ type Worlds struct {
 	log    *zap.SugaredLogger
 	cfg    *config.Config
 	db     database.DB
-	worlds *generic.SyncMap[uuid.UUID, universe.World]
+	worlds *generic.SyncMap[umid.UMID, universe.World]
 }
 
 func NewWorlds(db database.DB) *Worlds {
 	return &Worlds{
 		db:     db,
-		worlds: generic.NewSyncMap[uuid.UUID, universe.World](0),
+		worlds: generic.NewSyncMap[umid.UMID, universe.World](0),
 	}
 }
 
@@ -49,7 +49,7 @@ func (w *Worlds) Initialize(ctx context.Context) error {
 	return nil
 }
 
-func (w *Worlds) CreateWorld(worldID uuid.UUID) (universe.World, error) {
+func (w *Worlds) CreateWorld(worldID umid.UMID) (universe.World, error) {
 	world := world.NewWorld(worldID, w.db)
 
 	if err := world.Initialize(w.ctx); err != nil {
@@ -62,20 +62,20 @@ func (w *Worlds) CreateWorld(worldID uuid.UUID) (universe.World, error) {
 	return world, nil
 }
 
-func (w *Worlds) FilterWorlds(predicateFn universe.WorldsFilterPredicateFn) map[uuid.UUID]universe.World {
+func (w *Worlds) FilterWorlds(predicateFn universe.WorldsFilterPredicateFn) map[umid.UMID]universe.World {
 	return w.worlds.Filter(predicateFn)
 }
 
-func (w *Worlds) GetWorld(worldID uuid.UUID) (universe.World, bool) {
+func (w *Worlds) GetWorld(worldID umid.UMID) (universe.World, bool) {
 	world, ok := w.worlds.Load(worldID)
 	return world, ok
 }
 
-func (w *Worlds) GetWorlds() map[uuid.UUID]universe.World {
+func (w *Worlds) GetWorlds() map[umid.UMID]universe.World {
 	w.worlds.Mu.RLock()
 	defer w.worlds.Mu.RUnlock()
 
-	worlds := make(map[uuid.UUID]universe.World, len(w.worlds.Data))
+	worlds := make(map[umid.UMID]universe.World, len(w.worlds.Data))
 
 	for id, world := range w.worlds.Data {
 		worlds[id] = world
@@ -196,7 +196,7 @@ func (w *Worlds) Load() error {
 	butcher := generic.NewButcher(worldIDs)
 	if err := butcher.HandleItems(
 		int(w.cfg.Postgres.MAXCONNS), // modify batchSize when database consumption while loading will be changed
-		func(worldID uuid.UUID) error {
+		func(worldID umid.UMID) error {
 			world, err := w.CreateWorld(worldID)
 			if err != nil {
 				return errors.WithMessagef(err, "failed to create new world: %s", worldID)

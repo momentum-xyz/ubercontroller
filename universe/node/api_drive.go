@@ -3,13 +3,13 @@ package node
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"net/http"
 	"net/url"
 	"os/exec"
 	"path"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/logger"
@@ -28,7 +28,7 @@ type NodeJSOut struct {
 }
 
 type NodeJSOutData struct {
-	UserID uuid.UUID `json:"userID"`
+	UserID umid.UMID `json:"userID"`
 	Name   string    `json:"name"`
 	Image  string    `json:"image"`
 }
@@ -46,7 +46,7 @@ type NFTMeta struct {
 
 type WalletMeta struct {
 	Wallet   string
-	UserID   uuid.UUID
+	UserID   umid.UMID
 	Username string
 	Avatar   string
 }
@@ -56,7 +56,7 @@ const StatusDone = "done"
 const StatusFailed = "failed"
 
 var log = logger.L()
-var store = generic.NewSyncMap[uuid.UUID, StoreItem](0)
+var store = generic.NewSyncMap[umid.UMID, StoreItem](0)
 
 // @Summary Get wallet metadata
 // @Schemes
@@ -115,7 +115,7 @@ func (n *Node) apiDriveMintOdyssey(c *gin.Context) {
 		return
 	}
 
-	jobID := uuid.New()
+	jobID := umid.New()
 
 	store.Store(
 		jobID, StoreItem{
@@ -127,7 +127,7 @@ func (n *Node) apiDriveMintOdyssey(c *gin.Context) {
 	go n.mint(jobID, inBody.Wallet, inBody.Meta, inBody.BlockHash)
 
 	type Out struct {
-		JobID uuid.UUID `json:"job_id"`
+		JobID umid.UMID `json:"job_id"`
 	}
 	out := Out{
 		JobID: jobID,
@@ -141,7 +141,7 @@ func (n *Node) apiDriveTest(c *gin.Context) {
 		Data any `json:"data"`
 	}
 
-	err := n.createWorld(uuid.MustParse("e18d6d31-f62e-4dd0-ae62-a985135a1a34"), "Test World")
+	err := n.createWorld(umid.MustParse("e18d6d31-f62e-4dd0-ae62-a985135a1a34"), "Test World")
 	if err != nil {
 		log.Error(err)
 	}
@@ -153,7 +153,7 @@ func (n *Node) apiDriveTest(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-func (n *Node) createWorld(ownerID uuid.UUID, name string) error {
+func (n *Node) createWorld(ownerID umid.UMID, name string) error {
 	templateValue, ok := n.GetNodeAttributes().GetValue(
 		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Node.WorldTemplate.Name),
 	)
@@ -165,7 +165,7 @@ func (n *Node) createWorld(ownerID uuid.UUID, name string) error {
 	if err := utils.MapDecode(*templateValue, &worldTemplate); err != nil {
 		return errors.WithMessage(err, "failed to decode world template")
 	}
-	worldTemplate.ObjectID = &ownerID // User's world (aka Odyssey) should be equal to user ID
+	worldTemplate.ObjectID = &ownerID // User's world (aka Odyssey) should be equal to user UMID
 	worldTemplate.ObjectName = &name
 	worldTemplate.OwnerID = &ownerID
 
@@ -176,7 +176,7 @@ func (n *Node) createWorld(ownerID uuid.UUID, name string) error {
 	return nil
 }
 
-func (n *Node) mint(jobID uuid.UUID, wallet string, meta NFTMeta, blockHash string) {
+func (n *Node) mint(jobID umid.UMID, wallet string, meta NFTMeta, blockHash string) {
 	// node src/mint.js 5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty //Alice '{"name":"Test Name", "image":"link"}'
 
 	item := StoreItem{
@@ -331,13 +331,13 @@ func (n *Node) mint(jobID uuid.UUID, wallet string, meta NFTMeta, blockHash stri
 	fmt.Println("***")
 }
 
-// @Summary Get Mint Odyssey Job ID
+// @Summary Get Mint Odyssey Job UMID
 // @Schemes
-// @Description Returns Mint Odyssey Job ID status
+// @Description Returns Mint Odyssey Job UMID status
 // @Tags drive
 // @Accept json
 // @Produce json
-// @Param job_id path string true "Job ID"
+// @Param job_id path string true "Job UMID"
 // @Success 200 {object} node.apiDriveMintOdysseyCheckJob.Out
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
@@ -346,11 +346,11 @@ func (n *Node) apiDriveMintOdysseyCheckJob(c *gin.Context) {
 	type Out struct {
 		NodeJSOut *NodeJSOut `json:"nodeJSOut"`
 		Status    string     `json:"status"`
-		JobID     uuid.UUID  `json:"job_id"`
+		JobID     umid.UMID  `json:"job_id"`
 		Error     *string    `json:"error"`
 	}
 
-	jobID, err := uuid.Parse(c.Param("jobID"))
+	jobID, err := umid.Parse(c.Param("jobID"))
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiDriveMintOdysseyCheckJob: failed to parse uuid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_param", err, n.log)
@@ -404,9 +404,9 @@ func (n *Node) getWalletMetadata(wallet string) (*WalletMeta, error) {
 		return nil, errors.Errorf("invalid data: len %d != 4", len(data))
 	}
 
-	userID, err := uuid.Parse(utils.GetFromAny(data[0], ""))
+	userID, err := umid.Parse(utils.GetFromAny(data[0], ""))
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to parse user id")
+		return nil, errors.WithMessage(err, "failed to parse user umid")
 	}
 
 	meta := &WalletMeta{
@@ -431,7 +431,7 @@ func (n *Node) getWalletMetadata(wallet string) (*WalletMeta, error) {
 func (n *Node) apiResolveNode(c *gin.Context) {
 	type Out struct {
 		URL    string    `json:"url"`
-		NodeID uuid.UUID `json:"node_id"`
+		NodeID umid.UMID `json:"node_id"`
 	}
 
 	u, err := url.ParseRequestURI(n.cfg.Settings.FrontendURL)

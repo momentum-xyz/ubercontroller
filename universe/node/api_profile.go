@@ -3,11 +3,11 @@ package node
 import (
 	"context"
 	"encoding/json"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"net/http"
 	"os/exec"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -16,23 +16,23 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
-var updateProfileStore = generic.NewSyncMap[uuid.UUID, UpdateProfileStoreItem](0)
+var updateProfileStore = generic.NewSyncMap[umid.UMID, UpdateProfileStoreItem](0)
 
 type UpdateProfileStoreItem struct {
 	Status      string
 	NodeJSOut   *NodeJSOut
-	UserID      uuid.UUID
+	UserID      umid.UMID
 	UserProfile *entry.UserProfile
 	Error       error
 }
 
-// @Summary Check update user profile job by Job ID
+// @Summary Check update user profile job by Job UMID
 // @Schemes
-// @Description Returns Update Profile Job ID status
+// @Description Returns Update Profile Job UMID status
 // @Tags profile
 // @Accept json
 // @Produce json
-// @Param job_id path string true "Job ID"
+// @Param job_id path string true "Job UMID"
 // @Success 200 {object} node.apiProfileUpdateCheckJob.Out
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
@@ -41,13 +41,13 @@ func (n *Node) apiProfileUpdateCheckJob(c *gin.Context) {
 	type Out struct {
 		NodeJSOut *NodeJSOut         `json:"nodeJSOut"`
 		Status    string             `json:"status"`
-		JobID     uuid.UUID          `json:"job_id"`
-		UserID    uuid.UUID          `json:"user_id"`
+		JobID     umid.UMID          `json:"job_id"`
+		UserID    umid.UMID          `json:"user_id"`
 		Error     *string            `json:"error"`
 		Profile   *entry.UserProfile `json:"profile"`
 	}
 
-	jobID, err := uuid.Parse(c.Param("jobID"))
+	jobID, err := umid.Parse(c.Param("jobID"))
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiProfileUpdateCheckJob: failed to parse uuid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_param", err, n.log)
@@ -109,14 +109,14 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 
 	userID, err := api.GetUserIDFromContext(c)
 	if err != nil {
-		err = errors.WithMessage(err, "Node: apiProfileUpdate: failed to get user id from context")
+		err = errors.WithMessage(err, "Node: apiProfileUpdate: failed to get user umid from context")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
 		return
 	}
 
 	userProfile, err := n.db.GetUsersDB().GetUserProfileByUserID(c, userID)
 	if err != nil {
-		err = errors.WithMessage(err, "Node: apiProfileUpdate: failed to get user profile by user id")
+		err = errors.WithMessage(err, "Node: apiProfileUpdate: failed to get user profile by user umid")
 		api.AbortRequest(c, http.StatusNotFound, "not_found", err, n.log)
 		return
 	}
@@ -149,8 +149,8 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 	userProfile.OnBoarded = utils.GetPTR(true)
 
 	type Out struct {
-		JobID  *uuid.UUID `json:"job_id"`
-		UserID uuid.UUID  `json:"user_id"`
+		JobID  *umid.UMID `json:"job_id"`
+		UserID umid.UMID  `json:"user_id"`
 	}
 
 	if !shouldUpdateNFT {
@@ -170,7 +170,7 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 		return
 	}
 
-	jobID := uuid.New()
+	jobID := umid.New()
 	updateProfileStore.Store(
 		jobID, UpdateProfileStoreItem{
 			Status:    StatusInProgress,
@@ -190,7 +190,9 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-func (n *Node) updateUserProfileWorker(ctx context.Context, jobID uuid.UUID, userID uuid.UUID, userProfile *entry.UserProfile) {
+func (n *Node) updateUserProfileWorker(
+	ctx context.Context, jobID umid.UMID, userID umid.UMID, userProfile *entry.UserProfile,
+) {
 	item := UpdateProfileStoreItem{
 		Status:    "",
 		NodeJSOut: nil,
@@ -234,7 +236,9 @@ func (n *Node) updateUserProfileWorker(ctx context.Context, jobID uuid.UUID, use
 		return
 	}
 
-	output, err := exec.Command("node", "./nodejs/check-nft/update-nft.js", *wallet, n.cfg.Common.MnemonicPhrase, string(b), userID.String()).Output()
+	output, err := exec.Command(
+		"node", "./nodejs/check-nft/update-nft.js", *wallet, n.cfg.Common.MnemonicPhrase, string(b), userID.String(),
+	).Output()
 	if err != nil {
 		err = errors.WithMessage(err, "failed to execute node script update-nft.js")
 		{

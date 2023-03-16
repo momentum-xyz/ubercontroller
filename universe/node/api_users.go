@@ -2,10 +2,10 @@ package node
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -31,7 +31,7 @@ import (
 func (n *Node) apiUsersGetMe(c *gin.Context) {
 	userID, err := api.GetUserIDFromContext(c)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiUsersGetMe: failed to get user id from context")
+		err := errors.WithMessage(err, "Node: apiUsersGetMe: failed to get user umid from context")
 		api.AbortRequest(c, http.StatusInternalServerError, "get_user_id_failed", err, n.log)
 		return
 	}
@@ -67,9 +67,9 @@ func (n *Node) apiUsersGetMe(c *gin.Context) {
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/users/{user_id} [get]
 func (n *Node) apiUsersGetByID(c *gin.Context) {
-	userID, err := uuid.Parse(c.Param("userID"))
+	userID, err := umid.Parse(c.Param("userID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiUsersGetByID: failed to parse user id")
+		err := errors.WithMessage(err, "Node: apiUsersGetByID: failed to parse user umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
 		return
 	}
@@ -95,7 +95,7 @@ func (n *Node) apiUsersGetByID(c *gin.Context) {
 
 func (n *Node) apiCreateGuestUserByName(ctx context.Context, name string) (*entry.User, error) {
 	ue := &entry.User{
-		UserID: uuid.New(),
+		UserID: umid.New(),
 		Profile: entry.UserProfile{
 			Name: &name,
 		},
@@ -129,7 +129,7 @@ func (n *Node) apiGetOrCreateUserFromWallet(ctx context.Context, wallet string) 
 	// Temp create empty user
 	walletMeta := &WalletMeta{
 		Wallet:   wallet,
-		UserID:   uuid.New(),
+		UserID:   umid.New(),
 		Username: "",
 		Avatar:   "",
 	}
@@ -153,7 +153,7 @@ func (n *Node) createUserFromWalletMeta(ctx context.Context, walletMeta *WalletM
 
 	normUserTypeID, err := common.GetNormalUserTypeID()
 	if err != nil {
-		return nil, errors.Errorf("failed to get normal user type id")
+		return nil, errors.Errorf("failed to get normal user type umid")
 	}
 	userEntry.UserTypeID = normUserTypeID
 
@@ -186,7 +186,8 @@ func (n *Node) createUserFromWalletMeta(ctx context.Context, walletMeta *WalletM
 			newPayload,
 			merge.NewTrigger(walletAddressKeyPath, merge.AppendTriggerFn),
 			merge.NewTrigger(walletAddressKeyPath, merge.UniqueTriggerFn),
-		)); err != nil {
+		),
+	); err != nil {
 		// TODO: think about rollback
 		return nil, errors.WithMessagef(
 			err, "failed to upsert user attribute for user: %s", userEntry.UserID,

@@ -2,9 +2,9 @@ package user_types
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/georgysavva/scany/pgxscan"
-	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -89,21 +89,21 @@ func (db *DB) UpsertUserTypes(ctx context.Context, userTypes []*entry.UserType) 
 	return errs.ErrorOrNil()
 }
 
-func (db *DB) RemoveUserTypeByID(ctx context.Context, userTypeID uuid.UUID) error {
+func (db *DB) RemoveUserTypeByID(ctx context.Context, userTypeID umid.UMID) error {
 	if _, err := db.conn.Exec(ctx, removeUserTypeByIDQuery, userTypeID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) RemoveUserTypesByIDs(ctx context.Context, userTypeIDs []uuid.UUID) error {
+func (db *DB) RemoveUserTypesByIDs(ctx context.Context, userTypeIDs []umid.UMID) error {
 	if _, err := db.conn.Exec(ctx, removeUserTypesByIDsQuery, userTypeIDs); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) UpdateUserTypeName(ctx context.Context, userTypeID uuid.UUID, name string) error {
+func (db *DB) UpdateUserTypeName(ctx context.Context, userTypeID umid.UMID, name string) error {
 	if _, err := db.conn.Exec(ctx, updateUserTypeNameQuery, userTypeID, name); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
@@ -111,7 +111,7 @@ func (db *DB) UpdateUserTypeName(ctx context.Context, userTypeID uuid.UUID, name
 }
 
 func (db *DB) UpdateUserTypeDescription(
-	ctx context.Context, userTypeID uuid.UUID, description string,
+	ctx context.Context, userTypeID umid.UMID, description string,
 ) error {
 	if _, err := db.conn.Exec(ctx, updateUserTypeDescriptionQuery, userTypeID, description); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
@@ -120,7 +120,7 @@ func (db *DB) UpdateUserTypeDescription(
 }
 
 func (db *DB) UpdateUserTypeOptions(
-	ctx context.Context, userTypeID uuid.UUID, options *entry.UserOptions,
+	ctx context.Context, userTypeID umid.UMID, options *entry.UserOptions,
 ) error {
 	if _, err := db.conn.Exec(ctx, updateUserTypeOptionsQuery, userTypeID, options); err != nil {
 		return errors.WithMessage(err, "failed to exec db")

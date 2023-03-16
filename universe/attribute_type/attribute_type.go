@@ -2,11 +2,11 @@ package attribute_type
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"sync"
 
 	"github.com/momentum-xyz/ubercontroller/universe"
 
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -58,7 +58,7 @@ func (a *AttributeType) GetName() string {
 	return a.id.Name
 }
 
-func (a *AttributeType) GetPluginID() uuid.UUID {
+func (a *AttributeType) GetPluginID() umid.UMID {
 	return a.id.PluginID
 }
 

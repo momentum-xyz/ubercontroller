@@ -3,6 +3,7 @@ package ethereum_adapter
 import (
 	"context"
 	"fmt"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"log"
 	"math/big"
 	"strings"
@@ -11,7 +12,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/harvester"
@@ -19,7 +19,7 @@ import (
 
 type EthereumAdapter struct {
 	harv      harvester.BCAdapterAPI
-	uuid      uuid.UUID
+	uuid      umid.UMID
 	rpcURL    string
 	httpURL   string
 	name      string
@@ -30,7 +30,7 @@ type EthereumAdapter struct {
 func NewEthereumAdapter(harv harvester.BCAdapterAPI) *EthereumAdapter {
 	return &EthereumAdapter{
 		harv:    harv,
-		uuid:    uuid.MustParse("ccccaaaa-1111-2222-3333-111111111111"),
+		uuid:    umid.MustParse("ccccaaaa-1111-2222-3333-111111111111"),
 		rpcURL:  "wss://eth.llamarpc.com",
 		httpURL: "https://eth.llamarpc.com",
 		name:    "ethereum",

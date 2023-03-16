@@ -58,3 +58,4 @@ config.yaml
 __debug_bin
 /database/migrations/data/data.go
 build/
+.mus.go

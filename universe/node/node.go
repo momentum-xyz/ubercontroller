@@ -3,12 +3,12 @@ package node
 import (
 	"context"
 	"fmt"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	influx_api "github.com/influxdata/influxdb-client-go/v2/api"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -53,7 +53,7 @@ type Node struct {
 	userUserAttributes   *userUserAttributes
 	objectUserAttributes *objectUserAttributes
 
-	objectIDToWorld *generic.SyncMap[uuid.UUID, universe.World] // TODO: introduce GC for lost Worlds and Objects
+	objectIDToWorld *generic.SyncMap[umid.UMID, universe.World] // TODO: introduce GC for lost Worlds and Objects
 
 	chatService *streamchat.StreamChat
 
@@ -64,7 +64,7 @@ type Node struct {
 }
 
 func NewNode(
-	id uuid.UUID,
+	id umid.UMID,
 	db database.DB,
 	worlds universe.Worlds,
 	assets2D universe.Assets2d,
@@ -84,7 +84,7 @@ func NewNode(
 		objectTypes:     objectTypes,
 		userTypes:       userTypes,
 		attributeTypes:  attributeTypes,
-		objectIDToWorld: generic.NewSyncMap[uuid.UUID, universe.World](0),
+		objectIDToWorld: generic.NewSyncMap[umid.UMID, universe.World](0),
 	}
 	node.userObjects = newUserObjects(node)
 	node.nodeAttributes = newNodeAttributes(node)
@@ -116,7 +116,7 @@ func (n *Node) Initialize(ctx context.Context) error {
 	gin.DefaultWriter = consoleWriter
 
 	//TODO: hash salt once it is present in the DB
-	utils.SetAnonymizer(n.GetID(), uuid.Nil)
+	utils.SetAnonymizer(n.GetID(), umid.Nil)
 
 	r := gin.New()
 	r.Use(gin.LoggerWithWriter(consoleWriter, "/health"))
@@ -301,9 +301,9 @@ func (n *Node) Save() error {
 		return errors.WithMessage(err, "failed to save object types")
 	}
 
-	objectType, ok := n.GetObjectTypes().GetObjectType(uuid.MustParse(seed.NodeObjectTypeID))
+	objectType, ok := n.GetObjectTypes().GetObjectType(umid.MustParse(seed.NodeObjectTypeID))
 	if !ok {
-		return errors.New("failed to get node object_type by ID")
+		return errors.New("failed to get node object_type by UMID")
 	}
 
 	if err := n.SetObjectType(objectType, false); err != nil {

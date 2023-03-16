@@ -2,9 +2,9 @@ package harvester
 
 import (
 	"encoding/hex"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"math/big"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 )
@@ -21,7 +21,9 @@ func (h *Harvester) SubscribeForWallet(bcType string, wallet, callback Callback)
 	panic("implement me")
 }
 
-func (h *Harvester) SubscribeForWalletAndContract(bcType string, wallet []byte, contract []byte, callback Callback) error {
+func (h *Harvester) SubscribeForWalletAndContract(
+	bcType string, wallet []byte, contract []byte, callback Callback,
+) error {
 	bc, ok := h.bc[bcType]
 	if !ok {
 		return errors.New("failed to find blockchain:" + bcType)
@@ -42,7 +44,7 @@ type BCBlock struct {
 }
 
 type BCAdapterAPI interface {
-	RegisterBCAdapter(uuid uuid.UUID, bcType string, rpcURL string, bcAdapter BCAdapter) error
+	RegisterBCAdapter(uuid umid.UMID, bcType string, rpcURL string, bcAdapter BCAdapter) error
 	OnNewBlock(bcType string, block *BCBlock)
 }
 
@@ -77,7 +79,7 @@ func (h *Harvester) OnNewBlock(bcType string, block *BCBlock) {
 	h.clients.Trigger(bcType, NewBlock, block)
 }
 
-func (h *Harvester) RegisterBCAdapter(uuid uuid.UUID, bcType string, rpcURL string, adapter BCAdapter) error {
+func (h *Harvester) RegisterBCAdapter(uuid umid.UMID, bcType string, rpcURL string, adapter BCAdapter) error {
 	h.bc[bcType] = NewBlockchain(h.db, adapter, uuid, bcType, rpcURL, h.updateHook)
 	if err := h.bc[bcType].LoadFromDB(); err != nil {
 		return errors.WithMessage(err, "failed to load from DB")
