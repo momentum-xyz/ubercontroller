@@ -1,25 +1,25 @@
 package universe
 
-import "github.com/momentum-xyz/ubercontroller/utils/mid"
+import "github.com/momentum-xyz/ubercontroller/utils/umid"
 
 // TODO: redesign all this stuff
 
 var ids = struct {
-	systemPluginID mid.ID
-	kusamaPluginID mid.ID
+	systemPluginID umid.UMID
+	kusamaPluginID umid.UMID
 }{}
 
-func InitializeIDs(systemPluginID, kusamaPluginID mid.ID) error {
+func InitializeIDs(systemPluginID, kusamaPluginID umid.UMID) error {
 	ids.systemPluginID = systemPluginID
 	ids.kusamaPluginID = kusamaPluginID
 
 	return nil
 }
 
-func GetSystemPluginID() mid.ID {
+func GetSystemPluginID() umid.UMID {
 	return ids.systemPluginID
 }
 
-func GetKusamaPluginID() mid.ID {
+func GetKusamaPluginID() umid.UMID {
 	return ids.kusamaPluginID
 }

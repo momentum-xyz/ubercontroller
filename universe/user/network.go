@@ -4,7 +4,7 @@ import (
 	"container/list"
 	"github.com/gorilla/websocket"
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"github.com/pkg/errors"
 	"github.com/zakaria-chahboun/cute"
 	"time"
@@ -175,13 +175,13 @@ func (u *User) Send(m *websocket.PreparedMessage) error {
 	return nil
 }
 
-func (u *User) SetConnection(id mid.ID, socketConnection *websocket.Conn) error {
+func (u *User) SetConnection(id umid.UMID, socketConnection *websocket.Conn) error {
 	u.sessionID = id
 	u.conn = socketConnection
 	return nil
 }
 
-func (u *User) GetSessionID() mid.ID {
+func (u *User) GetSessionID() umid.UMID {
 	return u.sessionID
 }
 

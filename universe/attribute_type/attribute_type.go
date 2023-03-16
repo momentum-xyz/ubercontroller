@@ -2,7 +2,7 @@ package attribute_type
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"sync"
 
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -58,7 +58,7 @@ func (a *AttributeType) GetName() string {
 	return a.id.Name
 }
 
-func (a *AttributeType) GetPluginID() mid.ID {
+func (a *AttributeType) GetPluginID() umid.UMID {
 	return a.id.PluginID
 }
 

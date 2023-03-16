@@ -2,7 +2,7 @@ package object_attributes
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/hashicorp/go-multierror"
@@ -90,7 +90,7 @@ func (db *DB) GetObjectAttributeByID(
 	return &attribute, nil
 }
 
-func (db *DB) GetObjectAttributesByObjectID(ctx context.Context, objectID mid.ID) ([]*entry.ObjectAttribute, error) {
+func (db *DB) GetObjectAttributesByObjectID(ctx context.Context, objectID umid.UMID) ([]*entry.ObjectAttribute, error) {
 	var attributes []*entry.ObjectAttribute
 	if err := pgxscan.Select(ctx, db.conn, &attributes, getObjectAttributesByObjectIDQuery, objectID); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
@@ -146,7 +146,7 @@ func (db *DB) RemoveObjectAttributesByNames(ctx context.Context, names []string)
 	return nil
 }
 
-func (db *DB) RemoveObjectAttributesByPluginID(ctx context.Context, pluginID mid.ID) error {
+func (db *DB) RemoveObjectAttributesByPluginID(ctx context.Context, pluginID umid.UMID) error {
 	if _, err := db.conn.Exec(ctx, removeObjectAttributesByPluginIDQuery, pluginID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
@@ -162,7 +162,7 @@ func (db *DB) RemoveObjectAttributesByAttributeID(ctx context.Context, attribute
 	return nil
 }
 
-func (db *DB) RemoveObjectAttributesByObjectID(ctx context.Context, objectID mid.ID) error {
+func (db *DB) RemoveObjectAttributesByObjectID(ctx context.Context, objectID umid.UMID) error {
 	if _, err := db.conn.Exec(
 		ctx, removeObjectAttributesByObjectIDQuery, objectID,
 	); err != nil {
@@ -171,7 +171,7 @@ func (db *DB) RemoveObjectAttributesByObjectID(ctx context.Context, objectID mid
 	return nil
 }
 
-func (db *DB) RemoveObjectAttributesByNameAndObjectID(ctx context.Context, name string, objectID mid.ID) error {
+func (db *DB) RemoveObjectAttributesByNameAndObjectID(ctx context.Context, name string, objectID umid.UMID) error {
 	if _, err := db.conn.Exec(
 		ctx, removeObjectAttributesByNameAndObjectIDQuery, name, objectID,
 	); err != nil {
@@ -181,7 +181,7 @@ func (db *DB) RemoveObjectAttributesByNameAndObjectID(ctx context.Context, name 
 }
 
 func (db *DB) RemoveObjectAttributesByNamesAndObjectID(
-	ctx context.Context, names []string, objectID mid.ID,
+	ctx context.Context, names []string, objectID umid.UMID,
 ) error {
 	if _, err := db.conn.Exec(
 		ctx, removeObjectAttributesByNamesAndObjectIDQuery, names, objectID,
@@ -192,7 +192,7 @@ func (db *DB) RemoveObjectAttributesByNamesAndObjectID(
 }
 
 func (db *DB) RemoveObjectAttributesByPluginIDAndObjectID(
-	ctx context.Context, pluginID mid.ID, objectID mid.ID,
+	ctx context.Context, pluginID umid.UMID, objectID umid.UMID,
 ) error {
 	if _, err := db.conn.Exec(
 		ctx, removeObjectAttributesByPluginIDAndObjectIDQuery, pluginID, objectID,

@@ -2,7 +2,7 @@ package node
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -31,7 +31,7 @@ import (
 func (n *Node) apiUsersGetMe(c *gin.Context) {
 	userID, err := api.GetUserIDFromContext(c)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiUsersGetMe: failed to get user mid from context")
+		err := errors.WithMessage(err, "Node: apiUsersGetMe: failed to get user umid from context")
 		api.AbortRequest(c, http.StatusInternalServerError, "get_user_id_failed", err, n.log)
 		return
 	}
@@ -67,9 +67,9 @@ func (n *Node) apiUsersGetMe(c *gin.Context) {
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/users/{user_id} [get]
 func (n *Node) apiUsersGetByID(c *gin.Context) {
-	userID, err := mid.Parse(c.Param("userID"))
+	userID, err := umid.Parse(c.Param("userID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiUsersGetByID: failed to parse user mid")
+		err := errors.WithMessage(err, "Node: apiUsersGetByID: failed to parse user umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
 		return
 	}
@@ -95,7 +95,7 @@ func (n *Node) apiUsersGetByID(c *gin.Context) {
 
 func (n *Node) apiCreateGuestUserByName(ctx context.Context, name string) (*entry.User, error) {
 	ue := &entry.User{
-		UserID: mid.New(),
+		UserID: umid.New(),
 		Profile: entry.UserProfile{
 			Name: &name,
 		},
@@ -129,7 +129,7 @@ func (n *Node) apiGetOrCreateUserFromWallet(ctx context.Context, wallet string) 
 	// Temp create empty user
 	walletMeta := &WalletMeta{
 		Wallet:   wallet,
-		UserID:   mid.New(),
+		UserID:   umid.New(),
 		Username: "",
 		Avatar:   "",
 	}
@@ -153,7 +153,7 @@ func (n *Node) createUserFromWalletMeta(ctx context.Context, walletMeta *WalletM
 
 	normUserTypeID, err := common.GetNormalUserTypeID()
 	if err != nil {
-		return nil, errors.Errorf("failed to get normal user type mid")
+		return nil, errors.Errorf("failed to get normal user type umid")
 	}
 	userEntry.UserTypeID = normUserTypeID
 

@@ -2,7 +2,7 @@ package node_attributes
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/hashicorp/go-multierror"
@@ -153,7 +153,7 @@ func (db *DB) RemoveNodeAttributesByNames(ctx context.Context, names []string) e
 	return nil
 }
 
-func (db *DB) RemoveNodeAttributesByPluginID(ctx context.Context, pluginID mid.ID) error {
+func (db *DB) RemoveNodeAttributesByPluginID(ctx context.Context, pluginID umid.UMID) error {
 	if _, err := db.conn.Exec(ctx, removeNodeAttributesByPluginIDQuery, pluginID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}

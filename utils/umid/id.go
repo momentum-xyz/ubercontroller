@@ -1,58 +1,62 @@
-package mid
+//go:generate go run gen/mus.go
+
+package umid
 
 import (
 	"database/sql/driver"
 	"encoding/binary"
 	"github.com/gofrs/uuid/v5"
+	_ "github.com/ymz-ncnk/muserrs"
+	_ "github.com/ymz-ncnk/musgo/v2"
 )
 
-var Nil = ID{}
+var Nil = UMID{}
 
-type ID uuid.UUID
+type UMID uuid.UUID
 
-func Parse(s string) (ID, error) {
+func Parse(s string) (UMID, error) {
 	//r, e := uuid.Parse(s)
 	r, e := uuid.FromString(s)
-	return ID(r), e
+	return UMID(r), e
 }
 
-func ParseBytes(b []byte) (ID, error) {
+func ParseBytes(b []byte) (UMID, error) {
 	//r, e := uuid.ParseBytes(b)
 	r, e := uuid.FromBytes(b)
-	return ID(r), e
+	return UMID(r), e
 }
 
-func MustParse(s string) ID {
-	//return ID(uuid.MustParse(s))
-	return ID(uuid.Must(uuid.FromString(s)))
+func MustParse(s string) UMID {
+	//return UMID(uuid.MustParse(s))
+	return UMID(uuid.Must(uuid.FromString(s)))
 
 }
 
-func (id ID) MarshalText() ([]byte, error) {
+func (id UMID) MarshalText() ([]byte, error) {
 	return uuid.UUID(id).MarshalText()
 }
 
 // UnmarshalText implements encoding.TextUnmarshaler.
-func (id *ID) UnmarshalText(data []byte) error {
+func (id *UMID) UnmarshalText(data []byte) error {
 	return (*uuid.UUID)(id).UnmarshalText(data)
 }
 
 // MarshalBinary implements encoding.BinaryMarshaler.
-func (id ID) MarshalBinary() ([]byte, error) {
+func (id UMID) MarshalBinary() ([]byte, error) {
 	return uuid.UUID(id).MarshalBinary()
 }
 
 // UnmarshalBinary implements encoding.BinaryUnmarshaler.
-func (id *ID) UnmarshalBinary(data []byte) error {
+func (id *UMID) UnmarshalBinary(data []byte) error {
 	return (*uuid.UUID)(id).UnmarshalBinary(data)
 }
 
-func FromBytes(b []byte) (id ID, err error) {
+func FromBytes(b []byte) (id UMID, err error) {
 	r, e := uuid.FromBytes(b)
-	return ID(r), e
+	return UMID(r), e
 }
 
-func Must(id ID, err error) ID {
+func Must(id UMID, err error) UMID {
 	if err != nil {
 		panic(err)
 	}
@@ -61,39 +65,39 @@ func Must(id ID, err error) ID {
 
 // String returns the string form of uuid, xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 // , or "" if uuid is invalid.
-func (id ID) String() string {
+func (id UMID) String() string {
 	return uuid.UUID(id).String()
 }
 
 //// URN returns the RFC 2141 URN form of uuid,
 //// urn:uuid:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,  or "" if uuid is invalid.
-//func (mid ID) URN() string {
-//	return uuid.ID(mid).URN()
+//func (umid UMID) URN() string {
+//	return uuid.UMID(umid).URN()
 //}
 
-func (id ID) Variant() byte {
+func (id UMID) Variant() byte {
 	return uuid.UUID(id).Variant()
 }
 
 // Version returns the version of uuid.
-func (id ID) Version() byte {
+func (id UMID) Version() byte {
 	return uuid.UUID(id).Version()
 }
 
-func (id *ID) Scan(src interface{}) error {
+func (id *UMID) Scan(src interface{}) error {
 	return (*uuid.UUID)(id).Scan(src)
 }
 
-func (id ID) Value() (driver.Value, error) {
+func (id UMID) Value() (driver.Value, error) {
 	return uuid.UUID(id).Value()
 }
 
-func New() ID {
+func New() UMID {
 	r, _ := uuid.NewV7()
-	return ID(r)
+	return UMID(r)
 }
 
-func (id ID) ClockSequence() int {
-	//	return uuid.UUID(mid).ClockSequence()
+func (id UMID) ClockSequence() int {
+	//	return uuid.UUID(umid).ClockSequence()
 	return int(binary.BigEndian.Uint16(id[8:10])) & 0x3fff
 }

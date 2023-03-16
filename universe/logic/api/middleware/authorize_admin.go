@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -17,16 +17,16 @@ func AuthorizeAdmin(log *zap.SugaredLogger) gin.HandlerFunc {
 	userObjects := universe.GetNode().GetUserObjects()
 
 	return func(c *gin.Context) {
-		objectID, err := mid.Parse(c.Param("objectID"))
+		objectID, err := umid.Parse(c.Param("objectID"))
 		if err != nil {
-			err := errors.WithMessage(err, "Middleware: AuthorizeAdmin: failed to parse object mid")
+			err := errors.WithMessage(err, "Middleware: AuthorizeAdmin: failed to parse object umid")
 			api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, log)
 			return
 		}
 
 		userID, err := api.GetUserIDFromContext(c)
 		if err != nil {
-			err := errors.WithMessage(err, "Middleware: AuthorizeAdmin: failed to get user mid from context")
+			err := errors.WithMessage(err, "Middleware: AuthorizeAdmin: failed to get user umid from context")
 			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_user_id", err, log)
 			return
 		}

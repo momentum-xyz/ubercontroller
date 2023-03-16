@@ -1,11 +1,11 @@
 package mplugin
 
-import "github.com/momentum-xyz/ubercontroller/utils/mid"
+import "github.com/momentum-xyz/ubercontroller/utils/umid"
 
 type PluginInterface interface {
 	GetId() PluginID
-	GetWorld() mid.ID
-	GetSecret() mid.ID
+	GetWorld() umid.UMID
+	GetSecret() umid.UMID
 	// TODO: make sure it is either non private or removed
 	getPluginController() *PluginController
 	//SubscribeHook(name string, hook any) (HookID, error)

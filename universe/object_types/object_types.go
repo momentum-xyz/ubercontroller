@@ -2,7 +2,7 @@ package object_types
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -22,13 +22,13 @@ type ObjectTypes struct {
 	ctx         context.Context
 	log         *zap.SugaredLogger
 	db          database.DB
-	objectTypes *generic.SyncMap[mid.ID, universe.ObjectType]
+	objectTypes *generic.SyncMap[umid.UMID, universe.ObjectType]
 }
 
 func NewObjectTypes(db database.DB) *ObjectTypes {
 	return &ObjectTypes{
 		db:          db,
-		objectTypes: generic.NewSyncMap[mid.ID, universe.ObjectType](0),
+		objectTypes: generic.NewSyncMap[umid.UMID, universe.ObjectType](0),
 	}
 }
 
@@ -44,7 +44,7 @@ func (ot *ObjectTypes) Initialize(ctx context.Context) error {
 	return nil
 }
 
-func (ot *ObjectTypes) CreateObjectType(objectTypeID mid.ID) (universe.ObjectType, error) {
+func (ot *ObjectTypes) CreateObjectType(objectTypeID umid.UMID) (universe.ObjectType, error) {
 	objectType := object_type.NewObjectType(objectTypeID, ot.db)
 
 	if err := objectType.Initialize(ot.ctx); err != nil {
@@ -57,19 +57,19 @@ func (ot *ObjectTypes) CreateObjectType(objectTypeID mid.ID) (universe.ObjectTyp
 	return objectType, nil
 }
 
-func (ot *ObjectTypes) FilterObjectTypes(predicateFn universe.ObjectTypesFilterPredicateFn) map[mid.ID]universe.ObjectType {
+func (ot *ObjectTypes) FilterObjectTypes(predicateFn universe.ObjectTypesFilterPredicateFn) map[umid.UMID]universe.ObjectType {
 	return ot.objectTypes.Filter(predicateFn)
 }
 
-func (ot *ObjectTypes) GetObjectType(objectTypeID mid.ID) (universe.ObjectType, bool) {
+func (ot *ObjectTypes) GetObjectType(objectTypeID umid.UMID) (universe.ObjectType, bool) {
 	return ot.objectTypes.Load(objectTypeID)
 }
 
-func (ot *ObjectTypes) GetObjectTypes() map[mid.ID]universe.ObjectType {
+func (ot *ObjectTypes) GetObjectTypes() map[umid.UMID]universe.ObjectType {
 	ot.objectTypes.Mu.RLock()
 	defer ot.objectTypes.Mu.RUnlock()
 
-	objectTypes := make(map[mid.ID]universe.ObjectType, len(ot.objectTypes.Data))
+	objectTypes := make(map[umid.UMID]universe.ObjectType, len(ot.objectTypes.Data))
 
 	for id, objectType := range ot.objectTypes.Data {
 		objectTypes[id] = objectType
@@ -144,7 +144,7 @@ func (ot *ObjectTypes) RemoveObjectTypes(objectTypes []universe.ObjectType, upda
 	}
 
 	if updateDB {
-		ids := make([]mid.ID, len(objectTypes))
+		ids := make([]umid.UMID, len(objectTypes))
 		for i := range objectTypes {
 			ids[i] = objectTypes[i].GetID()
 		}

@@ -3,7 +3,7 @@ package ethereum_adapter
 import (
 	"context"
 	"fmt"
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"log"
 	"math/big"
 	"strings"
@@ -19,7 +19,7 @@ import (
 
 type EthereumAdapter struct {
 	harv      harvester.BCAdapterAPI
-	uuid      mid.ID
+	uuid      umid.UMID
 	rpcURL    string
 	httpURL   string
 	name      string
@@ -30,7 +30,7 @@ type EthereumAdapter struct {
 func NewEthereumAdapter(harv harvester.BCAdapterAPI) *EthereumAdapter {
 	return &EthereumAdapter{
 		harv:    harv,
-		uuid:    mid.MustParse("ccccaaaa-1111-2222-3333-111111111111"),
+		uuid:    umid.MustParse("ccccaaaa-1111-2222-3333-111111111111"),
 		rpcURL:  "wss://eth.llamarpc.com",
 		httpURL: "https://eth.llamarpc.com",
 		name:    "ethereum",

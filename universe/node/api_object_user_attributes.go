@@ -1,7 +1,7 @@
 package node
 
 import (
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -19,7 +19,7 @@ import (
 // @Tags objects
 // @Accept json
 // @Produce json
-// @Param object_id path string true "Object ID"
+// @Param object_id path string true "Object UMID"
 // @Param query query node.apiGetObjectAttributesValue.InQuery true "query params"
 // @Success 200 {object} entry.AttributeValue
 // @Failure 500 {object} api.HTTPError
@@ -40,23 +40,23 @@ func (n *Node) apiGetObjectUserAttributesValue(c *gin.Context) {
 		return
 	}
 
-	objectID, err := mid.Parse(c.Param("objectID"))
+	objectID, err := umid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributesValue: failed to parse object mid")
+		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributesValue: failed to parse object umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
 		return
 	}
 
-	userID, err := mid.Parse(c.Param("userID"))
+	userID, err := umid.Parse(c.Param("userID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSetObjectUserAttributesValue: failed to parse user mid")
+		err := errors.WithMessage(err, "Node: apiSetObjectUserAttributesValue: failed to parse user umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
 		return
 	}
 
-	pluginID, err := mid.Parse(inQuery.PluginID)
+	pluginID, err := umid.Parse(inQuery.PluginID)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributesValue: failed to parse plugin mid")
+		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributesValue: failed to parse plugin umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
 		return
 	}
@@ -79,7 +79,7 @@ func (n *Node) apiGetObjectUserAttributesValue(c *gin.Context) {
 // @Tags objects
 // @Accept json
 // @Produce json
-// @Param object_id path string true "Object ID"
+// @Param object_id path string true "Object UMID"
 // @Param body body node.apiSetObjectAttributesValue.InBody true "body params"
 // @Success 202 {object} entry.AttributeValue
 // @Failure 500 {object} api.HTTPError
@@ -101,23 +101,23 @@ func (n *Node) apiSetObjectUserAttributesValue(c *gin.Context) {
 		return
 	}
 
-	objectID, err := mid.Parse(c.Param("objectID"))
+	objectID, err := umid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSetObjectUserAttributesValue: failed to parse object mid")
+		err := errors.WithMessage(err, "Node: apiSetObjectUserAttributesValue: failed to parse object umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
 		return
 	}
 
-	userID, err := mid.Parse(c.Param("userID"))
+	userID, err := umid.Parse(c.Param("userID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSetObjectUserAttributesValue: failed to parse user mid")
+		err := errors.WithMessage(err, "Node: apiSetObjectUserAttributesValue: failed to parse user umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
 		return
 	}
 
-	pluginID, err := mid.Parse(inBody.PluginID)
+	pluginID, err := umid.Parse(inBody.PluginID)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSetObjectUserAttributesValue: failed to parse plugin mid")
+		err := errors.WithMessage(err, "Node: apiSetObjectUserAttributesValue: failed to parse plugin umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
 		return
 	}
@@ -162,7 +162,7 @@ func (n *Node) apiSetObjectUserAttributesValue(c *gin.Context) {
 // @Tags objects
 // @Accept json
 // @Produce json
-// @Param object_id path string true "Object ID"
+// @Param object_id path string true "Object UMID"
 // @Param query query node.apiGetObjectAttributeSubValue.InQuery true "query params"
 // @Success 200 {object} dto.ObjectSubAttributes
 // @Failure 500 {object} api.HTTPError
@@ -184,23 +184,23 @@ func (n *Node) apiGetObjectUserAttributeSubValue(c *gin.Context) {
 		return
 	}
 
-	objectID, err := mid.Parse(c.Param("objectID"))
+	objectID, err := umid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeSubValue: failed to parse object mid")
+		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeSubValue: failed to parse object umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
 		return
 	}
 
-	userID, err := mid.Parse(c.Param("userID"))
+	userID, err := umid.Parse(c.Param("userID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeSubValue: failed to parse user mid")
+		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeSubValue: failed to parse user umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
 		return
 	}
 
-	pluginID, err := mid.Parse(inQuery.PluginID)
+	pluginID, err := umid.Parse(inQuery.PluginID)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeSubValue: failed to parse plugin mid")
+		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeSubValue: failed to parse plugin umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
 		return
 	}
@@ -235,7 +235,7 @@ func (n *Node) apiGetObjectUserAttributeSubValue(c *gin.Context) {
 // @Tags objects
 // @Accept json
 // @Produce json
-// @Param object_id path string true "Object ID"
+// @Param object_id path string true "Object UMID"
 // @Param body body node.apiSetObjectAttributeSubValue.Body true "body params"
 // @Success 202 {object} dto.ObjectSubAttributes
 // @Failure 500 {object} api.HTTPError
@@ -258,23 +258,23 @@ func (n *Node) apiSetObjectUserAttributeSubValue(c *gin.Context) {
 		return
 	}
 
-	objectID, err := mid.Parse(c.Param("objectID"))
+	objectID, err := umid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSetObjectUserAttributeSubValue: failed to parse object mid")
+		err := errors.WithMessage(err, "Node: apiSetObjectUserAttributeSubValue: failed to parse object umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
 		return
 	}
 
-	userID, err := mid.Parse(c.Param("userID"))
+	userID, err := umid.Parse(c.Param("userID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSetObjectUserAttributeSubValue: failed to parse user mid")
+		err := errors.WithMessage(err, "Node: apiSetObjectUserAttributeSubValue: failed to parse user umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
 		return
 	}
 
-	pluginID, err := mid.Parse(inBody.PluginID)
+	pluginID, err := umid.Parse(inBody.PluginID)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSetObjectUserAttributeSubValue: failed to parse plugin mid")
+		err := errors.WithMessage(err, "Node: apiSetObjectUserAttributeSubValue: failed to parse plugin umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
 		return
 	}
@@ -323,7 +323,7 @@ func (n *Node) apiSetObjectUserAttributeSubValue(c *gin.Context) {
 // @Tags objects
 // @Accept json
 // @Produce json
-// @Param object_id path string true "Object ID"
+// @Param object_id path string true "Object UMID"
 // @Param body body node.apiRemoveObjectAttributeSubValue.Body true "body params"
 // @Success 200 {object} nil
 // @Failure 500 {object} api.HTTPError
@@ -345,23 +345,23 @@ func (n *Node) apiRemoveObjectUserAttributeSubValue(c *gin.Context) {
 		return
 	}
 
-	objectID, err := mid.Parse(c.Param("objectID"))
+	objectID, err := umid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiRemoveObjectUserAttributeSubValue: failed to parse object mid")
+		err := errors.WithMessage(err, "Node: apiRemoveObjectUserAttributeSubValue: failed to parse object umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
 		return
 	}
 
-	userID, err := mid.Parse(c.Param("userID"))
+	userID, err := umid.Parse(c.Param("userID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSetObjectUserAttributeSubValue: failed to parse user mid")
+		err := errors.WithMessage(err, "Node: apiSetObjectUserAttributeSubValue: failed to parse user umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
 		return
 	}
 
-	pluginID, err := mid.Parse(inBody.PluginID)
+	pluginID, err := umid.Parse(inBody.PluginID)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiRemoveObjectUserAttributeSubValue: failed to parse plugin mid")
+		err := errors.WithMessage(err, "Node: apiRemoveObjectUserAttributeSubValue: failed to parse plugin umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
 		return
 	}
@@ -396,7 +396,7 @@ func (n *Node) apiRemoveObjectUserAttributeSubValue(c *gin.Context) {
 // @Tags objects
 // @Accept json
 // @Produce json
-// @Param object_id path string true "Object ID"
+// @Param object_id path string true "Object UMID"
 // @Param body body node.apiRemoveObjectAttributeValue.Body true "body params"
 // @Success 200 {object} nil
 // @Failure 500 {object} api.HTTPError
@@ -416,23 +416,23 @@ func (n *Node) apiRemoveObjectUserAttributeValue(c *gin.Context) {
 		return
 	}
 
-	objectID, err := mid.Parse(c.Param("objectID"))
+	objectID, err := umid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiRemoveObjectUserAttributeValue: failed to parse object mid")
+		err := errors.WithMessage(err, "Node: apiRemoveObjectUserAttributeValue: failed to parse object umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
 		return
 	}
 
-	userID, err := mid.Parse(c.Param("userID"))
+	userID, err := umid.Parse(c.Param("userID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSetObjectUserAttributeSubValue: failed to parse user mid")
+		err := errors.WithMessage(err, "Node: apiSetObjectUserAttributeSubValue: failed to parse user umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
 		return
 	}
 
-	pluginID, err := mid.Parse(inBody.PluginID)
+	pluginID, err := umid.Parse(inBody.PluginID)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiRemoveObjectUserAttributeValue: failed to parse plugin mid")
+		err := errors.WithMessage(err, "Node: apiRemoveObjectUserAttributeValue: failed to parse plugin umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
 		return
 	}
@@ -457,9 +457,9 @@ func (n *Node) apiRemoveObjectUserAttributeValue(c *gin.Context) {
 // @Tags objects
 // @Accept json
 // @Produce json
-// @Param object_id path string true "Object ID"
+// @Param object_id path string true "Object UMID"
 // @Param query query node.apiGetObjectAllUsersAttributeValuesList.InQuery true "query params"
-// @Success 200 {object} map[mid.ID]entry.AttributeValue
+// @Success 200 {object} map[umid.UMID]entry.AttributeValue
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
@@ -478,16 +478,16 @@ func (n *Node) apiGetObjectAllUsersAttributeValuesList(c *gin.Context) {
 		return
 	}
 
-	objectID, err := mid.Parse(c.Param("objectID"))
+	objectID, err := umid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiGetObjectAllUsersAttributeValuesList: failed to parse object mid")
+		err := errors.WithMessage(err, "Node: apiGetObjectAllUsersAttributeValuesList: failed to parse object umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
 		return
 	}
 
-	pluginID, err := mid.Parse(inQuery.PluginID)
+	pluginID, err := umid.Parse(inQuery.PluginID)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiGetObjectAllUsersAttributeValuesList: failed to parse plugin mid")
+		err := errors.WithMessage(err, "Node: apiGetObjectAllUsersAttributeValuesList: failed to parse plugin umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
 		return
 	}
@@ -503,7 +503,7 @@ func (n *Node) apiGetObjectAllUsersAttributeValuesList(c *gin.Context) {
 		return
 	}
 
-	out := make(map[mid.ID]*entry.AttributeValue)
+	out := make(map[umid.UMID]*entry.AttributeValue)
 	for i := range sua {
 		if sua[i].AttributePayload == nil || sua[i].AttributePayload.Value == nil {
 			continue

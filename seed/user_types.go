@@ -3,7 +3,7 @@ package seed
 import (
 	"context"
 	"github.com/momentum-xyz/ubercontroller/database"
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -14,7 +14,7 @@ import (
 
 func seedUserTypes(ctx context.Context, node universe.Node, db database.DB) error {
 	type item struct {
-		id           mid.ID
+		id           umid.UMID
 		userTypeName string
 		description  *string
 		options      *entry.UserOptions
@@ -22,7 +22,7 @@ func seedUserTypes(ctx context.Context, node universe.Node, db database.DB) erro
 
 	items := []*item{
 		{
-			id:           mid.MustParse("00000000-0000-0000-0000-000000000002"),
+			id:           umid.MustParse("00000000-0000-0000-0000-000000000002"),
 			userTypeName: "Deity",
 			description:  utils.GetPTR("They rule the world"),
 			options: &entry.UserOptions{
@@ -30,7 +30,7 @@ func seedUserTypes(ctx context.Context, node universe.Node, db database.DB) erro
 			},
 		},
 		{
-			id:           mid.MustParse(normalUserTypeID),
+			id:           umid.MustParse(normalUserTypeID),
 			userTypeName: "User",
 			description:  utils.GetPTR("Momentum user"),
 			options: &entry.UserOptions{
@@ -38,7 +38,7 @@ func seedUserTypes(ctx context.Context, node universe.Node, db database.DB) erro
 			},
 		},
 		{
-			id:           mid.MustParse(guestUserTypeID),
+			id:           umid.MustParse(guestUserTypeID),
 			userTypeName: "Temporary User",
 			description:  utils.GetPTR("Temporary Momentum user"),
 			options: &entry.UserOptions{

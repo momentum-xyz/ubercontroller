@@ -3,7 +3,7 @@ package tree
 import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
@@ -15,13 +15,13 @@ import (
 )
 
 type ObjectTemplate struct {
-	ObjectID         *mid.ID                `json:"object_id"`
+	ObjectID         *umid.UMID             `json:"object_id"`
 	ObjectName       *string                `json:"object_name"`
-	ObjectTypeID     mid.ID                 `json:"object_type_id"`
-	ParentID         mid.ID                 `json:"parent_id"`
-	OwnerID          *mid.ID                `json:"owner_id"`
-	Asset2dID        *mid.ID                `json:"asset_2d_id"`
-	Asset3dID        *mid.ID                `json:"asset_3d_id"`
+	ObjectTypeID     umid.UMID              `json:"object_type_id"`
+	ParentID         umid.UMID              `json:"parent_id"`
+	OwnerID          *umid.UMID             `json:"owner_id"`
+	Asset2dID        *umid.UMID             `json:"asset_2d_id"`
+	Asset3dID        *umid.UMID             `json:"asset_3d_id"`
 	Options          *entry.ObjectOptions   `json:"options"`
 	Position         *cmath.ObjectTransform `json:"position"`
 	Label            *string                `json:"label"`
@@ -30,18 +30,18 @@ type ObjectTemplate struct {
 	RandomObjects    []*ObjectTemplate      `json:"random_objects"`
 }
 
-func AddObjectFromTemplate(objectTemplate *ObjectTemplate, updateDB bool) (mid.ID, error) {
+func AddObjectFromTemplate(objectTemplate *ObjectTemplate, updateDB bool) (umid.UMID, error) {
 	node := universe.GetNode()
 
 	// loading
 	objectType, ok := node.GetObjectTypes().GetObjectType(objectTemplate.ObjectTypeID)
 	if !ok {
-		return mid.Nil, errors.Errorf("failed to get object type: %s", objectTemplate.ObjectTypeID)
+		return umid.Nil, errors.Errorf("failed to get object type: %s", objectTemplate.ObjectTypeID)
 	}
 
 	parent, ok := node.GetObjectFromAllObjects(objectTemplate.ParentID)
 	if !ok {
-		return mid.Nil, errors.Errorf("parent object not found: %s", objectTemplate.ParentID)
+		return umid.Nil, errors.Errorf("parent object not found: %s", objectTemplate.ParentID)
 	}
 
 	// TODO: should be available for admin or owner of parent
@@ -49,7 +49,7 @@ func AddObjectFromTemplate(objectTemplate *ObjectTemplate, updateDB bool) (mid.I
 	if objectTemplate.Asset2dID != nil {
 		asset2d, ok = node.GetAssets2d().GetAsset2d(*objectTemplate.Asset2dID)
 		if !ok {
-			return mid.Nil, errors.Errorf("asset 2d not found: %s", objectTemplate.Asset2dID)
+			return umid.Nil, errors.Errorf("asset 2d not found: %s", objectTemplate.Asset2dID)
 		}
 	}
 
@@ -58,7 +58,7 @@ func AddObjectFromTemplate(objectTemplate *ObjectTemplate, updateDB bool) (mid.I
 	if objectTemplate.Asset3dID != nil {
 		asset3d, ok = node.GetAssets3d().GetAsset3d(*objectTemplate.Asset3dID)
 		if !ok {
-			return mid.Nil, errors.Errorf("asset 3d not found: %s", objectTemplate.Asset3dID)
+			return umid.Nil, errors.Errorf("asset 3d not found: %s", objectTemplate.Asset3dID)
 		}
 	}
 
@@ -66,7 +66,7 @@ func AddObjectFromTemplate(objectTemplate *ObjectTemplate, updateDB bool) (mid.I
 	ownerID := objectTemplate.OwnerID
 	objectName := objectTemplate.ObjectName
 	if objectID == nil {
-		objectID = utils.GetPTR(mid.New())
+		objectID = utils.GetPTR(umid.New())
 	}
 	if ownerID == nil {
 		ownerID = utils.GetPTR(parent.GetOwnerID())
@@ -78,57 +78,57 @@ func AddObjectFromTemplate(objectTemplate *ObjectTemplate, updateDB bool) (mid.I
 	// creating
 	object, err := parent.CreateObject(*objectID)
 	if err != nil {
-		return mid.Nil, errors.WithMessagef(err, "failed to create object: %s", objectID)
+		return umid.Nil, errors.WithMessagef(err, "failed to create object: %s", objectID)
 	}
 
 	if err := object.SetOwnerID(*ownerID, false); err != nil {
-		return mid.Nil, errors.WithMessagef(err, "failed to set owner mid: %s", ownerID)
+		return umid.Nil, errors.WithMessagef(err, "failed to set owner umid: %s", ownerID)
 	}
 	if err := object.SetObjectType(objectType, false); err != nil {
-		return mid.Nil, errors.WithMessagef(err, "failed to set object type: %s", objectTemplate.ObjectTypeID)
+		return umid.Nil, errors.WithMessagef(err, "failed to set object type: %s", objectTemplate.ObjectTypeID)
 	}
 	if asset2d != nil {
 		if err := object.SetAsset2D(asset2d, false); err != nil {
-			return mid.Nil, errors.WithMessagef(err, "failed to set asset 2d: %s", objectTemplate.Asset2dID)
+			return umid.Nil, errors.WithMessagef(err, "failed to set asset 2d: %s", objectTemplate.Asset2dID)
 		}
 	}
 	if asset3d != nil {
 		if err := object.SetAsset3D(asset3d, false); err != nil {
-			return mid.Nil, errors.WithMessagef(err, "failed to set asset 3d: %s", objectTemplate.Asset3dID)
+			return umid.Nil, errors.WithMessagef(err, "failed to set asset 3d: %s", objectTemplate.Asset3dID)
 		}
 	}
 	if objectTemplate.Position != nil {
 		if err := object.SetTransform(objectTemplate.Position, false); err != nil {
-			return mid.Nil, errors.WithMessagef(err, "failed to set position: %+v", objectTemplate.Position)
+			return umid.Nil, errors.WithMessagef(err, "failed to set position: %+v", objectTemplate.Position)
 		}
 	}
 
 	if objectTemplate.Options != nil {
 		if _, err := object.SetOptions(modify.MergeWith(objectTemplate.Options), false); err != nil {
-			return mid.Nil, errors.WithMessage(err, "failed to set options")
+			return umid.Nil, errors.WithMessage(err, "failed to set options")
 		}
 	}
 
 	// saving in database
 	if updateDB {
 		if err := parent.AddObject(object, updateDB); err != nil {
-			return mid.Nil, errors.WithMessage(err, "failed to add object")
+			return umid.Nil, errors.WithMessage(err, "failed to add object")
 		}
 	}
 
 	// running
 	if err := object.Run(); err != nil {
-		return mid.Nil, errors.WithMessage(err, "failed to run object")
+		return umid.Nil, errors.WithMessage(err, "failed to run object")
 	}
 	if err := parent.UpdateChildrenPosition(true); err != nil {
-		return mid.Nil, errors.WithMessage(err, "failed to update children position")
+		return umid.Nil, errors.WithMessage(err, "failed to update children position")
 	}
 
 	// adding children
 	for i := range objectTemplate.Objects {
 		objectTemplate.Objects[i].ParentID = *objectID
 		if _, err := AddObjectFromTemplate(objectTemplate.Objects[i], updateDB); err != nil {
-			return mid.Nil, errors.WithMessagef(
+			return umid.Nil, errors.WithMessagef(
 				err, "failed to add object from template: %+v", objectTemplate.Objects[i],
 			)
 		}
@@ -139,7 +139,7 @@ func AddObjectFromTemplate(objectTemplate *ObjectTemplate, updateDB bool) (mid.I
 
 	// adding attributes
 	if err := object.SetName(*objectName, true); err != nil {
-		return mid.Nil, errors.WithMessage(err, "failed to set object name")
+		return umid.Nil, errors.WithMessage(err, "failed to set object name")
 	}
 
 	for i := range objectTemplate.ObjectAttributes {
@@ -148,7 +148,7 @@ func AddObjectFromTemplate(objectTemplate *ObjectTemplate, updateDB bool) (mid.I
 			modify.MergeWith(objectTemplate.ObjectAttributes[i].AttributePayload),
 			updateDB,
 		); err != nil {
-			return mid.Nil, errors.WithMessagef(
+			return umid.Nil, errors.WithMessagef(
 				err, "failed to upsert object attribute: %+v", objectTemplate.ObjectAttributes[i],
 			)
 		}
@@ -156,7 +156,7 @@ func AddObjectFromTemplate(objectTemplate *ObjectTemplate, updateDB bool) (mid.I
 
 	// updating
 	if err := object.Update(true); err != nil {
-		return mid.Nil, errors.WithMessage(err, "failed to update object")
+		return umid.Nil, errors.WithMessage(err, "failed to update object")
 	}
 
 	return *objectID, nil
@@ -178,7 +178,7 @@ func RemoveObjectFromParent(parent, object universe.Object, updateDB bool) (bool
 	var errs *multierror.Error
 	if object.GetEnabled() { // we need this check to avoid spam while removing children
 		msg := posbus.NewMessageFromData(
-			posbus.TypeRemoveObjects, posbus.RemoveObjects{[]mid.ID{object.GetID()}},
+			posbus.TypeRemoveObjects, posbus.RemoveObjects{[]umid.UMID{object.GetID()}},
 		).WSMessage()
 
 		if err := object.GetWorld().Send(msg, true); err != nil {

@@ -3,7 +3,7 @@ package harvester
 import (
 	"context"
 	"fmt"
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -25,7 +25,7 @@ ON CONFLICT (blockchain_id) DO UPDATE SET last_processed_block_number=$2,
                                           updated_at=NOW();`
 
 type BlockChain struct {
-	uuid                     mid.ID
+	uuid                     umid.UMID
 	name                     string
 	lastProcessedBlockNumber uint64
 	rpcURL                   string
@@ -39,7 +39,7 @@ type BlockChain struct {
 type UpdateWalletContractHook func(bcType string, wallet string, contract string, blockNumber uint64, balance *big.Int)
 
 func NewBlockchain(
-	db *pgxpool.Pool, adapter BCAdapter, uuid mid.ID, name string, rpcURL string,
+	db *pgxpool.Pool, adapter BCAdapter, uuid umid.UMID, name string, rpcURL string,
 	onUpdateWalletContract UpdateWalletContractHook,
 ) *BlockChain {
 	return &BlockChain{

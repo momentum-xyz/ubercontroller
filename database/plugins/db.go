@@ -2,7 +2,7 @@ package plugins
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/hashicorp/go-multierror"
@@ -86,21 +86,21 @@ func (db *DB) UpsertPlugins(ctx context.Context, plugins []*entry.Plugin) error 
 	return errs.ErrorOrNil()
 }
 
-func (db *DB) RemovePluginByID(ctx context.Context, PluginID mid.ID) error {
+func (db *DB) RemovePluginByID(ctx context.Context, PluginID umid.UMID) error {
 	if _, err := db.conn.Exec(ctx, removePluginByIDQuery, PluginID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) RemovePluginsByIDs(ctx context.Context, PluginIDs []mid.ID) error {
+func (db *DB) RemovePluginsByIDs(ctx context.Context, PluginIDs []umid.UMID) error {
 	if _, err := db.conn.Exec(ctx, removePluginsByIDsQuery, PluginIDs); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) UpdatePluginMeta(ctx context.Context, pluginID mid.ID, meta entry.PluginMeta) error {
+func (db *DB) UpdatePluginMeta(ctx context.Context, pluginID umid.UMID, meta entry.PluginMeta) error {
 	if _, err := db.conn.Exec(ctx, updatePluginMetaQuery, pluginID, meta); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
@@ -108,7 +108,7 @@ func (db *DB) UpdatePluginMeta(ctx context.Context, pluginID mid.ID, meta entry.
 }
 
 func (db *DB) UpdatePluginOptions(
-	ctx context.Context, pluginID mid.ID, options *entry.PluginOptions,
+	ctx context.Context, pluginID umid.UMID, options *entry.PluginOptions,
 ) error {
 	if _, err := db.conn.Exec(ctx, updatePluginOptionsQuery, pluginID, options); err != nil {
 		return errors.WithMessage(err, "failed to exec db")

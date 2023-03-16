@@ -2,7 +2,7 @@ package universe
 
 import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 type AttributeChangeType string
@@ -13,22 +13,22 @@ const (
 	RemovedAttributeChangeType AttributeChangeType = "attribute_removed"
 )
 
-type ObjectFilterPredicateFn func(objectID mid.ID, object Object) bool
-type WorldsFilterPredicateFn func(worldID mid.ID, world World) bool
-type ObjectsFilterPredicateFn func(objectID mid.ID, object Object) bool
-type Assets2dFilterPredicateFn func(asset2dID mid.ID, asset2d Asset2d) bool
-type Assets3dFilterPredicateFn func(asset3dID mid.ID, asset3d Asset3d) bool
-type PluginsFilterPredicateFn func(pluginID mid.ID, plugin Plugin) bool
+type ObjectFilterPredicateFn func(objectID umid.UMID, object Object) bool
+type WorldsFilterPredicateFn func(worldID umid.UMID, world World) bool
+type ObjectsFilterPredicateFn func(objectID umid.UMID, object Object) bool
+type Assets2dFilterPredicateFn func(asset2dID umid.UMID, asset2d Asset2d) bool
+type Assets3dFilterPredicateFn func(asset3dID umid.UMID, asset3d Asset3d) bool
+type PluginsFilterPredicateFn func(pluginID umid.UMID, plugin Plugin) bool
 type AttributeTypesFilterPredicateFn func(attributeTypeID entry.AttributeTypeID, attributeType AttributeType) bool
-type ObjectTypesFilterPredicateFn func(objectTypeID mid.ID, objectType ObjectType) bool
-type UserTypesFilterPredicateFn func(userTypeID mid.ID, userType UserType) bool
+type ObjectTypesFilterPredicateFn func(objectTypeID umid.UMID, objectType ObjectType) bool
+type UserTypesFilterPredicateFn func(userTypeID umid.UMID, userType UserType) bool
 
 type WorldSettings struct {
-	Kind        string            `db:"kind" json:"kind"`
-	Objects     map[string]mid.ID `db:"objects" json:"objects"`
-	Attributes  map[string]mid.ID `db:"attributes" json:"attributes"`
-	ObjectTypes map[string]mid.ID `db:"object_types" json:"object_types"`
-	Effects     map[string]mid.ID `db:"effects" json:"effects"`
+	Kind        string               `db:"kind" json:"kind"`
+	Objects     map[string]umid.UMID `db:"objects" json:"objects"`
+	Attributes  map[string]umid.UMID `db:"attributes" json:"attributes"`
+	ObjectTypes map[string]umid.UMID `db:"object_types" json:"object_types"`
+	Effects     map[string]umid.UMID `db:"effects" json:"effects"`
 }
 
 type ReservedAttribute struct {

@@ -2,7 +2,7 @@ package node
 
 import (
 	"fmt"
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/pkg/errors"
 
@@ -11,7 +11,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/user"
 )
 
-func (n *Node) LoadUser(userID mid.ID) (universe.User, error) {
+func (n *Node) LoadUser(userID umid.UMID) (universe.User, error) {
 	user := user.NewUser(userID, n.db)
 	if err := user.Initialize(n.ctx); err != nil {
 		return nil, errors.WithMessagef(err, "failed to initialize user: %s", userID)

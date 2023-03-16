@@ -2,7 +2,7 @@ package objects
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/hashicorp/go-multierror"
@@ -56,7 +56,7 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 	}
 }
 
-func (db *DB) GetObjectByID(ctx context.Context, objectID mid.ID) (*entry.Object, error) {
+func (db *DB) GetObjectByID(ctx context.Context, objectID umid.UMID) (*entry.Object, error) {
 	var object entry.Object
 	if err := pgxscan.Get(ctx, db.conn, &object, getObjectByIDQuery, objectID); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
@@ -64,15 +64,15 @@ func (db *DB) GetObjectByID(ctx context.Context, objectID mid.ID) (*entry.Object
 	return &object, nil
 }
 
-func (db *DB) GetObjectIDsByParentID(ctx context.Context, parentID mid.ID) ([]mid.ID, error) {
-	var ids []mid.ID
+func (db *DB) GetObjectIDsByParentID(ctx context.Context, parentID umid.UMID) ([]umid.UMID, error) {
+	var ids []umid.UMID
 	if err := pgxscan.Select(ctx, db.conn, &ids, getObjectIDsByParentIDQuery, parentID); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return ids, nil
 }
 
-func (db *DB) GetObjectsByParentID(ctx context.Context, parentID mid.ID) ([]*entry.Object, error) {
+func (db *DB) GetObjectsByParentID(ctx context.Context, parentID umid.UMID) ([]*entry.Object, error) {
 	var objects []*entry.Object
 	if err := pgxscan.Select(ctx, db.conn, &objects, getObjectsByParentIDQuery, parentID); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
@@ -80,63 +80,63 @@ func (db *DB) GetObjectsByParentID(ctx context.Context, parentID mid.ID) ([]*ent
 	return objects, nil
 }
 
-func (db *DB) RemoveObjectByID(ctx context.Context, objectID mid.ID) error {
+func (db *DB) RemoveObjectByID(ctx context.Context, objectID umid.UMID) error {
 	if _, err := db.conn.Exec(ctx, removeObjectByIDQuery, objectID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) RemoveObjectsByIDs(ctx context.Context, objectIDs []mid.ID) error {
+func (db *DB) RemoveObjectsByIDs(ctx context.Context, objectIDs []umid.UMID) error {
 	if _, err := db.conn.Exec(ctx, removeObjectsByIDsQuery, objectIDs); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) UpdateObjectParentID(ctx context.Context, objectID mid.ID, parentID mid.ID) error {
+func (db *DB) UpdateObjectParentID(ctx context.Context, objectID umid.UMID, parentID umid.UMID) error {
 	if _, err := db.conn.Exec(ctx, updateObjectParentIDQuery, objectID, parentID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) UpdateObjectPosition(ctx context.Context, objectID mid.ID, position *cmath.ObjectTransform) error {
+func (db *DB) UpdateObjectPosition(ctx context.Context, objectID umid.UMID, position *cmath.ObjectTransform) error {
 	if _, err := db.conn.Exec(ctx, updateObjectPositionQuery, objectID, position); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) UpdateObjectOwnerID(ctx context.Context, objectID, ownerID mid.ID) error {
+func (db *DB) UpdateObjectOwnerID(ctx context.Context, objectID, ownerID umid.UMID) error {
 	if _, err := db.conn.Exec(ctx, updateObjectOwnerIDQuery, objectID, ownerID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) UpdateObjectAsset2dID(ctx context.Context, objectID mid.ID, asset2dID *mid.ID) error {
+func (db *DB) UpdateObjectAsset2dID(ctx context.Context, objectID umid.UMID, asset2dID *umid.UMID) error {
 	if _, err := db.conn.Exec(ctx, updateObjectAsset2dIDQuery, objectID, asset2dID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) UpdateObjectAsset3dID(ctx context.Context, objectID mid.ID, asset3dID *mid.ID) error {
+func (db *DB) UpdateObjectAsset3dID(ctx context.Context, objectID umid.UMID, asset3dID *umid.UMID) error {
 	if _, err := db.conn.Exec(ctx, updateObjectAsset3dIDQuery, objectID, asset3dID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) UpdateObjectObjectTypeID(ctx context.Context, objectID, objectTypeID mid.ID) error {
+func (db *DB) UpdateObjectObjectTypeID(ctx context.Context, objectID, objectTypeID umid.UMID) error {
 	if _, err := db.conn.Exec(ctx, updateObjectObjectTypeIDQuery, objectID, objectTypeID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) UpdateObjectOptions(ctx context.Context, objectID mid.ID, options *entry.ObjectOptions) error {
+func (db *DB) UpdateObjectOptions(ctx context.Context, objectID umid.UMID, options *entry.ObjectOptions) error {
 	if _, err := db.conn.Exec(ctx, updateObjectOptionsQuery, objectID, options); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}

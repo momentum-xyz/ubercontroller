@@ -2,7 +2,7 @@ package plugins
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"golang.org/x/sync/errgroup"
 
@@ -24,13 +24,13 @@ type Plugins struct {
 	ctx     context.Context
 	log     *zap.SugaredLogger
 	db      database.DB
-	plugins *generic.SyncMap[mid.ID, universe.Plugin]
+	plugins *generic.SyncMap[umid.UMID, universe.Plugin]
 }
 
 func NewPlugins(db database.DB) *Plugins {
 	return &Plugins{
 		db:      db,
-		plugins: generic.NewSyncMap[mid.ID, universe.Plugin](0),
+		plugins: generic.NewSyncMap[umid.UMID, universe.Plugin](0),
 	}
 }
 
@@ -46,7 +46,7 @@ func (p *Plugins) Initialize(ctx context.Context) error {
 	return nil
 }
 
-func (p *Plugins) CreatePlugin(pluginId mid.ID) (universe.Plugin, error) {
+func (p *Plugins) CreatePlugin(pluginId umid.UMID) (universe.Plugin, error) {
 	plugin := plugin.NewPlugin(pluginId, p.db)
 
 	if err := plugin.Initialize(p.ctx); err != nil {
@@ -59,19 +59,19 @@ func (p *Plugins) CreatePlugin(pluginId mid.ID) (universe.Plugin, error) {
 	return plugin, nil
 }
 
-func (p *Plugins) FilterPlugins(predicateFn universe.PluginsFilterPredicateFn) map[mid.ID]universe.Plugin {
+func (p *Plugins) FilterPlugins(predicateFn universe.PluginsFilterPredicateFn) map[umid.UMID]universe.Plugin {
 	return p.plugins.Filter(predicateFn)
 }
 
-func (p *Plugins) GetPlugin(pluginID mid.ID) (universe.Plugin, bool) {
+func (p *Plugins) GetPlugin(pluginID umid.UMID) (universe.Plugin, bool) {
 	return p.plugins.Load(pluginID)
 }
 
-func (p *Plugins) GetPlugins() map[mid.ID]universe.Plugin {
+func (p *Plugins) GetPlugins() map[umid.UMID]universe.Plugin {
 	p.plugins.Mu.RLock()
 	defer p.plugins.Mu.RUnlock()
 
-	plugins := make(map[mid.ID]universe.Plugin, len(p.plugins.Data))
+	plugins := make(map[umid.UMID]universe.Plugin, len(p.plugins.Data))
 
 	for id, plugin := range p.plugins.Data {
 		plugins[id] = plugin

@@ -3,7 +3,7 @@ package api
 import (
 	"bytes"
 	"fmt"
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"strings"
 	"time"
 
@@ -34,26 +34,26 @@ func GetTokenFromContext(c *gin.Context) (jwt.Token, error) {
 	return utils.GetFromAny(value, jwt.Token{}), nil
 }
 
-func GetUserIDFromContext(c *gin.Context) (mid.ID, error) {
+func GetUserIDFromContext(c *gin.Context) (umid.UMID, error) {
 	token, err := GetTokenFromContext(c)
 	if err != nil {
-		return mid.Nil, errors.WithMessage(err, "failed to get token from context")
+		return umid.Nil, errors.WithMessage(err, "failed to get token from context")
 	}
 	userID, err := GetUserIDFromToken(token)
 	if err != nil {
-		return mid.Nil, errors.WithMessage(err, "failed to get user mid from token")
+		return umid.Nil, errors.WithMessage(err, "failed to get user umid from token")
 	}
 	return userID, nil
 }
 
-func GetUserIDFromToken(token jwt.Token) (mid.ID, error) {
+func GetUserIDFromToken(token jwt.Token) (umid.UMID, error) {
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return mid.Nil, errors.New("failed to get token claims")
+		return umid.Nil, errors.New("failed to get token claims")
 	}
-	userID, err := mid.Parse(utils.GetFromAnyMap(claims, "sub", "")) // TODO! proper jwt parsing
+	userID, err := umid.Parse(utils.GetFromAnyMap(claims, "sub", "")) // TODO! proper jwt parsing
 	if err != nil {
-		return mid.Nil, errors.WithMessage(err, "failed to parse user mid")
+		return umid.Nil, errors.WithMessage(err, "failed to parse user umid")
 	}
 	return userID, nil
 }
@@ -61,7 +61,7 @@ func GetUserIDFromToken(token jwt.Token) (mid.ID, error) {
 func GenerateChallenge(wallet string) (string, error) {
 	return fmt.Sprintf(
 		"Please sign this message with the private key for address %s to prove that you own it. %s",
-		wallet, mid.New().String(),
+		wallet, umid.New().String(),
 	), nil
 }
 
@@ -119,7 +119,7 @@ func VerifyEthereumSignature(address, challenge, signature string) (bool, error)
 
 // CreateJWTToken saves a jwt token with the given userID as subject
 // and signed with the given secret
-func CreateJWTToken(userID mid.ID) (string, error) {
+func CreateJWTToken(userID umid.UMID) (string, error) {
 	claims := jwt.StandardClaims{
 		IssuedAt:  time.Now().Unix(),
 		ExpiresAt: time.Now().Add(7 * 24 * time.Hour).Unix(),

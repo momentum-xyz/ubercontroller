@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"fmt"
+	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"math/rand"
 	"os"
 	"os/signal"
@@ -67,6 +69,8 @@ func main() {
 }
 
 func run(ctx context.Context) error {
+	v := cmath.Vec3{}
+	fmt.Println(v.SizeMUS())
 	cfg := config.GetConfig()
 
 	ctx = context.WithValue(ctx, types.LoggerContextKey, log)
@@ -76,8 +80,8 @@ func run(ctx context.Context) error {
 
 	//todo: change to pool
 	if err := universe.InitializeIDs(
-		mid.MustParse("f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0"),
-		mid.MustParse("86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8"),
+		umid.MustParse("f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0"),
+		umid.MustParse("86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8"),
 	); err != nil {
 		return errors.WithMessage(err, "failed to initialize universe")
 	}
@@ -173,7 +177,7 @@ func createNode(ctx context.Context, db database.DB, nodeEntry *entry.Node) (uni
 	userTypes := user_types.NewUserTypes(db)
 	attributeTypes := attribute_types.NewAttributeTypes(db)
 
-	objectID := mid.New()
+	objectID := umid.New()
 	if nodeEntry != nil {
 		objectID = nodeEntry.ObjectID
 	}

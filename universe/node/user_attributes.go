@@ -141,7 +141,7 @@ func (ua *userAttributes) Remove(userAttributeID entry.UserAttributeID, updateDB
 		if errors.Is(err, pgx.ErrNoRows) {
 			return false, nil
 		}
-		return false, errors.WithMessage(err, "failed to remove user attribute by mid")
+		return false, errors.WithMessage(err, "failed to remove user attribute by umid")
 	}
 
 	if ua.node.GetEnabled() {

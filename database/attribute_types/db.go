@@ -2,7 +2,7 @@ package attribute_types
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/hashicorp/go-multierror"
@@ -105,7 +105,7 @@ func (db *DB) RemoveAttributeTypesByNames(ctx context.Context, names []string) e
 	return nil
 }
 
-func (db *DB) RemoveAttributeTypesByPluginID(ctx context.Context, pluginID mid.ID) error {
+func (db *DB) RemoveAttributeTypesByPluginID(ctx context.Context, pluginID umid.UMID) error {
 	if _, err := db.conn.Exec(ctx, removeAttributeTypesByPluginIDQuery, pluginID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}

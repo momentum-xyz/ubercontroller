@@ -4,12 +4,12 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/hashicorp/go-multierror"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"github.com/pkg/errors"
 	"github.com/zakaria-chahboun/cute"
 )
 
-func (o *Object) GetUser(userID mid.ID, recursive bool) (universe.User, bool) {
+func (o *Object) GetUser(userID umid.UMID, recursive bool) (universe.User, bool) {
 	user, ok := o.Users.Load(userID)
 	if ok {
 		return user, true
@@ -33,9 +33,9 @@ func (o *Object) GetUser(userID mid.ID, recursive bool) (universe.User, bool) {
 
 // GetUsers return map with all nested users if recursive is true,
 // otherwise the method return map with users dependent only to current object.
-func (o *Object) GetUsers(recursive bool) map[mid.ID]universe.User {
+func (o *Object) GetUsers(recursive bool) map[umid.UMID]universe.User {
 	o.Users.Mu.RLock()
-	users := make(map[mid.ID]universe.User, len(o.Users.Data))
+	users := make(map[umid.UMID]universe.User, len(o.Users.Data))
 	for id, user := range o.Users.Data {
 		users[id] = user
 	}
@@ -95,7 +95,7 @@ func (o *Object) RemoveUser(user universe.User, updateDB bool) (bool, error) {
 	return true, nil
 }
 
-func (o *Object) SendToUser(userID mid.ID, msg *websocket.PreparedMessage, recursive bool) error {
+func (o *Object) SendToUser(userID umid.UMID, msg *websocket.PreparedMessage, recursive bool) error {
 	return errors.Errorf("implement me")
 }
 

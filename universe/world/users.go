@@ -3,7 +3,7 @@ package world
 import (
 	"github.com/gorilla/websocket"
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"time"
 
 	"github.com/pkg/errors"
@@ -12,11 +12,11 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
-func (w *World) GetUser(userID mid.ID, recursive bool) (universe.User, bool) {
+func (w *World) GetUser(userID umid.UMID, recursive bool) (universe.User, bool) {
 	return w.ToObject().GetUser(userID, false)
 }
 
-func (w *World) GetUsers(recursive bool) map[mid.ID]universe.User {
+func (w *World) GetUsers(recursive bool) map[umid.UMID]universe.User {
 	return w.ToObject().GetUsers(false)
 }
 
@@ -90,7 +90,7 @@ func (w *World) Send(msg *websocket.PreparedMessage, recursive bool) error {
 	return w.ToObject().Send(msg, false)
 }
 
-func (w *World) GetUserSpawnPosition(userID mid.ID) cmath.Vec3 {
+func (w *World) GetUserSpawnPosition(userID umid.UMID) cmath.Vec3 {
 	return cmath.Vec3{X: 40, Y: 40, Z: 40}
 }
 
@@ -126,7 +126,7 @@ func (w *World) noLockRemoveUser(user universe.User, updateDB bool) (bool, error
 
 	w.Send(
 		posbus.NewMessageFromData(
-			posbus.TypeRemoveUsers, posbus.RemoveUsers{Users: []mid.ID{user.GetID()}},
+			posbus.TypeRemoveUsers, posbus.RemoveUsers{Users: []umid.UMID{user.GetID()}},
 		).WSMessage(),
 		true,
 	)
@@ -166,13 +166,13 @@ func (w *World) initializeUnity(user universe.User) error {
 	return nil
 }
 
-//func (w *World) SpawnUser(userID mid.ID, sessionID mid.ID, socketConnection *websocket.Conn) {
+//func (w *World) SpawnUser(userID umid.UMID, sessionID umid.UMID, socketConnection *websocket.Conn) {
 //
-//	if exclient, ok := h.clients[x.ID]; ok && exclient.quiueID != x.quiueID {
+//	if exclient, ok := h.clients[x.UMID]; ok && exclient.quiueID != x.quiueID {
 //		if exclient.SessionID == x.SessionID {
 //			h.unregister <- exclient
 //		} else {
-//			Logln(0, "Double-login detected for", x.ID)
+//			Logln(0, "Double-login detected for", x.UMID)
 //			msg := make([]byte, 24)
 //			binary.LittleEndian.PutUint64(msg[0:8], msgSignal)
 //			binary.LittleEndian.PutUint64(msg[8:16], SignalDualConn)
@@ -191,27 +191,27 @@ func (w *World) initializeUnity(user universe.User) error {
 //	}
 //	defer func() {
 //		// Logln(4, "Reg Done")
-//		Logf(0, "Spawned %s on %s", x.ID, x.hub.ID)
+//		Logf(0, "Spawned %s on %s", x.UMID, x.hub.UMID)
 //	}()
 //
-//	Logln(1, "Registering user: "+x.ID.String())
+//	Logln(1, "Registering user: "+x.UMID.String())
 //	x.send = make(chan *websocket.PreparedMessage, 32)
 //
-//	binid, _ := x.ID.MarshalBinary()
+//	binid, _ := x.UMID.MarshalBinary()
 //
 //	copy(x.UnityBitsID[0:16], UnityUUID(binid))
 //
 //	x.pos = make([]byte, outPosMessageSize)
 //	copy(x.pos[0:16], x.UnityBitsID[0:16])
 //
-//	x.send <- NewMessage(msgWorld, []byte(h.ID.String()))
+//	x.send <- NewMessage(msgWorld, []byte(h.UMID.String()))
 //	Logln(4, x.ipos)
 //	bpos := PackPos(x.ipos)
 //	x.send <- NewMessage(msgSelfPos, bpos)
 //	copy(x.pos[16:28], bpos[0:12])
 //	x.hub = h
 //	go x.IOPump()
-//	h.clients[x.ID] = x
-//	Logln(1, "Registration done: "+x.ID.String())
+//	h.clients[x.UMID] = x
+//	Logln(1, "Registration done: "+x.UMID.String())
 //
 //}

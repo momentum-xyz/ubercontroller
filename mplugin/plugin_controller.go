@@ -1,7 +1,7 @@
 package mplugin
 
 import (
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"reflect"
 
 	"github.com/pkg/errors"
@@ -22,24 +22,24 @@ import (
 //}
 
 type PluginController struct {
-	secretList      map[PluginID]mid.ID
+	secretList      map[PluginID]umid.UMID
 	pluginInstances map[PluginID]internalPluginInterface
 	hooksMap        *generic.SyncMap[string, any]
-	parent          mid.ID
-	loadedPlugins   *generic.SyncMap[mid.ID, PluginInstance]
+	parent          umid.UMID
+	loadedPlugins   *generic.SyncMap[umid.UMID, PluginInstance]
 }
 
-func NewPluginController(parent mid.ID) *PluginController {
+func NewPluginController(parent umid.UMID) *PluginController {
 	pc := PluginController{parent: parent,
 		pluginInstances: make(map[PluginID]internalPluginInterface),
 		hooksMap:        generic.NewSyncMap[string, any](0),
-		secretList:      make(map[PluginID]mid.ID),
-		loadedPlugins:   generic.NewSyncMap[mid.ID, PluginInstance](0),
+		secretList:      make(map[PluginID]umid.UMID),
+		loadedPlugins:   generic.NewSyncMap[umid.UMID, PluginInstance](0),
 	}
 	return &pc
 }
 
-func (p *PluginController) AddPlugin(pluginID mid.ID, f NewInstanceFunction) (PluginInstance, error) {
+func (p *PluginController) AddPlugin(pluginID umid.UMID, f NewInstanceFunction) (PluginInstance, error) {
 	pi := p.NewPluginInterface(PluginID(pluginID))
 	instance, err := f(pi)
 	if err != nil {
@@ -65,13 +65,13 @@ func registerHook[A any](p *PluginController, name string, F A) (*HookEntries[A]
 }
 
 func (p *PluginController) NewPluginInterface(id PluginID) PluginInterface {
-	secret := mid.New()
+	secret := umid.New()
 	p.secretList[id] = secret
 	pi := internalPluginInterface{id: id, secretId: secret, worldId: p.parent, pc: p}
 	return &pi
 }
 
-func (p *PluginController) ValidPlugin(id PluginID, secret mid.ID) bool {
+func (p *PluginController) ValidPlugin(id PluginID, secret umid.UMID) bool {
 	if s, ok := p.secretList[id]; ok && s == secret {
 		return true
 	}
@@ -101,18 +101,18 @@ func subscribeHook[A any](plugin PluginInterface, name string, hook func(A) erro
 	if plugin.getPluginController().ValidPlugin(plugin.GetId(), plugin.GetSecret()) {
 		hooks, ok := plugin.getPluginController().hooksMap.Load(name)
 		if !ok {
-			return HookID(mid.Nil), errors.Errorf("hook %q is not registered", name)
+			return HookID(umid.Nil), errors.Errorf("hook %q is not registered", name)
 		}
 
 		list, ok := hooks.(*HookEntries[A])
 		if !ok {
-			return HookID(mid.Nil), errors.Errorf("invalid hook type for %q", name)
+			return HookID(umid.Nil), errors.Errorf("invalid hook type for %q", name)
 		}
 
 		//ft, err := p.checkIfFunction(hook, list.ArgType)
 
 		//if err != nil {
-		//	return HookID(mid.Nil), errors.WithMessage(
+		//	return HookID(umid.Nil), errors.WithMessage(
 		//		err,
 		//		"invalid hook type for: '"+name+"', type:"+ft.String()+" expected: func("+list.ArgType.String()+") error",
 		//	)
@@ -120,7 +120,7 @@ func subscribeHook[A any](plugin PluginInterface, name string, hook func(A) erro
 		//fmt.Println("hook")
 		return list.Add(hook, plugin.GetId()), nil
 	}
-	return HookID(mid.Nil), errors.New("Plugin is not authorized")
+	return HookID(umid.Nil), errors.New("Plugin is not authorized")
 }
 
 func (p *PluginController) UnsubscribeAllHooks(plugin PluginInterface) error {

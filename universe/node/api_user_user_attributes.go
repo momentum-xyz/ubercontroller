@@ -1,7 +1,7 @@
 package node
 
 import (
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -37,23 +37,23 @@ func (n *Node) apiSetUserUserSubAttributeValue(c *gin.Context) {
 		return
 	}
 
-	userID, err := mid.Parse(c.Param("userID"))
+	userID, err := umid.Parse(c.Param("userID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSetUserUserSubAttributeValue: failed to parse user mid")
+		err := errors.WithMessage(err, "Node: apiSetUserUserSubAttributeValue: failed to parse user umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
 		return
 	}
 
-	targetID, err := mid.Parse(c.Param("targetID"))
+	targetID, err := umid.Parse(c.Param("targetID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSetUserUserSubAttributeValue: failed to parse user mid")
+		err := errors.WithMessage(err, "Node: apiSetUserUserSubAttributeValue: failed to parse user umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_target_id", err, n.log)
 		return
 	}
 
-	pluginID, err := mid.Parse(inBody.PluginID)
+	pluginID, err := umid.Parse(inBody.PluginID)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSetUserUserSubAttributeValue: failed to parse plugin mid")
+		err := errors.WithMessage(err, "Node: apiSetUserUserSubAttributeValue: failed to parse plugin umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
 		return
 	}

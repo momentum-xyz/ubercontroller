@@ -4,13 +4,13 @@ import (
 	"encoding/binary"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/utils"
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 const UserTransformMessageSize = MsgUUIDTypeSize + cmath.Float32Bytes*6
 
 type UserTransform struct {
-	ID        mid.ID              `json:"mid"`
+	ID        umid.UMID           `json:"umid"`
 	Transform cmath.UserTransform `json:"transform"`
 }
 
@@ -79,7 +79,7 @@ func BytesToUserTransformBuffer(buf []byte) *UserTransformBuffer {
 	return &b
 }
 
-func NewSendTransformBuffer(id mid.ID) []byte {
+func NewSendTransformBuffer(id umid.UMID) []byte {
 	buf := make([]byte, UserTransformMessageSize)
 	copy(buf[:MsgUUIDTypeSize], utils.BinID(id))
 	return buf

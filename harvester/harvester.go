@@ -2,7 +2,7 @@ package harvester
 
 import (
 	"encoding/hex"
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"math/big"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -44,7 +44,7 @@ type BCBlock struct {
 }
 
 type BCAdapterAPI interface {
-	RegisterBCAdapter(uuid mid.ID, bcType string, rpcURL string, bcAdapter BCAdapter) error
+	RegisterBCAdapter(uuid umid.UMID, bcType string, rpcURL string, bcAdapter BCAdapter) error
 	OnNewBlock(bcType string, block *BCBlock)
 }
 
@@ -79,7 +79,7 @@ func (h *Harvester) OnNewBlock(bcType string, block *BCBlock) {
 	h.clients.Trigger(bcType, NewBlock, block)
 }
 
-func (h *Harvester) RegisterBCAdapter(uuid mid.ID, bcType string, rpcURL string, adapter BCAdapter) error {
+func (h *Harvester) RegisterBCAdapter(uuid umid.UMID, bcType string, rpcURL string, adapter BCAdapter) error {
 	h.bc[bcType] = NewBlockchain(h.db, adapter, uuid, bcType, rpcURL, h.updateHook)
 	if err := h.bc[bcType].LoadFromDB(); err != nil {
 		return errors.WithMessage(err, "failed to load from DB")

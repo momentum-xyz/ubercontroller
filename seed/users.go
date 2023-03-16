@@ -2,7 +2,7 @@ package seed
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/pkg/errors"
 
@@ -15,8 +15,8 @@ import (
 // TODO Add to seed.go
 func seedUsers(ctx context.Context, node universe.Node, db database.DB) error {
 	type item struct {
-		id         mid.ID
-		userTypeID mid.ID
+		id         umid.UMID
+		userTypeID umid.UMID
 		profile    entry.UserProfile
 		options    *entry.UserOptions
 	}
@@ -25,8 +25,8 @@ func seedUsers(ctx context.Context, node universe.Node, db database.DB) error {
 	// 2 Node Admin (User)
 	items := []*item{
 		{
-			id:         mid.MustParse("00000000-0000-0000-0000-000000000003"),
-			userTypeID: mid.MustParse("00000000-0000-0000-0000-000000000002"),
+			id:         umid.MustParse("00000000-0000-0000-0000-000000000003"),
+			userTypeID: umid.MustParse("00000000-0000-0000-0000-000000000002"),
 			profile:    entry.UserProfile{},
 			options:    nil,
 		},
@@ -47,7 +47,7 @@ func seedUsers(ctx context.Context, node universe.Node, db database.DB) error {
 		}
 
 		// TODO Make it work
-		//userItem := user.NewUser(item.mid, db)
+		//userItem := user.NewUser(item.umid, db)
 		//if err := userItem.Load(); err != nil {
 		//	return errors.WithMessage(err, "failed to load user")
 		//}

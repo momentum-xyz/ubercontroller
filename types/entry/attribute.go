@@ -2,7 +2,7 @@ package entry
 
 import (
 	"github.com/momentum-xyz/ubercontroller/utils"
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 type PosBusDestinationType byte
@@ -81,7 +81,7 @@ func NewAttribute(attributeID AttributeID, payload *AttributePayload) *Attribute
 	}
 }
 
-func NewAttributeID(pluginID mid.ID, name string) AttributeID {
+func NewAttributeID(pluginID umid.UMID, name string) AttributeID {
 	return AttributeID{
 		PluginID: pluginID,
 		Name:     name,

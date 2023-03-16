@@ -2,7 +2,7 @@ package worlds
 
 import (
 	"fmt"
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"net/http"
 	"strings"
 
@@ -24,16 +24,16 @@ import (
 // @Tags worlds
 // @Accept json
 // @Produce json
-// @Param worldID path string true "World ID"
+// @Param worldID path string true "World UMID"
 // @Success 200 {array} dto.User
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/worlds/{object_id}/online-users [get]
 func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
-	worldID, err := mid.Parse(c.Param("objectID"))
+	worldID, err := umid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Worlds: apiGetOnlineUsers: failed to parse world mid")
+		err := errors.WithMessage(err, "Worlds: apiGetOnlineUsers: failed to parse world umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
 		return
 	}
@@ -46,7 +46,7 @@ func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
 	}
 
 	users := world.GetUsers(true)
-	userIDs := make([]mid.ID, 0, len(users))
+	userIDs := make([]umid.UMID, 0, len(users))
 	for userID, _ := range users {
 		userIDs = append(userIDs, userID)
 	}
@@ -76,7 +76,7 @@ func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
 // @Tags worlds
 // @Accept json
 // @Produce json
-// @Param world_id path string true "World ID"
+// @Param world_id path string true "World UMID"
 // @Param query query worlds.apiWorldsGetObjectsWithChildren.Query true "query params"
 // @Success 200 {object} dto.ExploreOption
 // @Failure 500 {object} api.HTTPError
@@ -96,16 +96,16 @@ func (w *Worlds) apiWorldsGetObjectsWithChildren(c *gin.Context) {
 		return
 	}
 
-	objectID, err := mid.Parse(inQuery.ObjectID)
+	objectID, err := umid.Parse(inQuery.ObjectID)
 	if err != nil {
-		err := errors.WithMessage(err, "Worlds: apiWorldsGetObjectsWithChildren: failed to parse object mid")
+		err := errors.WithMessage(err, "Worlds: apiWorldsGetObjectsWithChildren: failed to parse object umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, w.log)
 		return
 	}
 
-	worldID, err := mid.Parse(c.Param("objectID"))
+	worldID, err := umid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Worlds: apiWorldsGetObjectsWithChildren: failed to parse world mid")
+		err := errors.WithMessage(err, "Worlds: apiWorldsGetObjectsWithChildren: failed to parse world umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
 		return
 	}
@@ -161,7 +161,7 @@ func (w *Worlds) apiWorldsGetRootOptions(root universe.Object) (dto.ExploreOptio
 }
 
 func (w *Worlds) apiWorldsGetChildrenOptions(
-	objects map[mid.ID]universe.Object, currentLevel int, maxLevel int,
+	objects map[umid.UMID]universe.Object, currentLevel int, maxLevel int,
 ) ([]dto.ExploreOption, error) {
 	options := make([]dto.ExploreOption, 0, len(objects))
 	if currentLevel == maxLevel {
@@ -214,7 +214,7 @@ func (w *Worlds) apiWorldsResolveNameDescription(object universe.Object) (
 // @Tags worlds
 // @Accept json
 // @Produce json
-// @Param world_id path string true "World ID"
+// @Param world_id path string true "World UMID"
 // @Param query query worlds.apiWorldsSearchObjects.Query true "query params"
 // @Success 200 {object} dto.SearchOptions
 // @Failure 500 {object} api.HTTPError
@@ -234,9 +234,9 @@ func (w *Worlds) apiWorldsSearchObjects(c *gin.Context) {
 		return
 	}
 
-	objectID, err := mid.Parse(c.Param("objectID"))
+	objectID, err := umid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Worlds: apiWorldsSearchObjects: failed to parse world mid")
+		err := errors.WithMessage(err, "Worlds: apiWorldsSearchObjects: failed to parse world umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
 		return
 	}
@@ -259,7 +259,7 @@ func (w *Worlds) apiWorldsSearchObjects(c *gin.Context) {
 }
 
 func (w *Worlds) apiWorldsFilterObjects(searchQuery string, world universe.World) (dto.SearchOptions, error) {
-	predicateFn := func(objectID mid.ID, object universe.Object) bool {
+	predicateFn := func(objectID umid.UMID, object universe.Object) bool {
 		name, _, err := w.apiWorldsResolveNameDescription(object)
 		if err != nil {
 			return false
@@ -299,16 +299,16 @@ func (w *Worlds) apiWorldsFilterObjects(searchQuery string, world universe.World
 // @Tags worlds
 // @Accept json
 // @Produce json
-// @Param world_id path string true "World ID"
+// @Param world_id path string true "World UMID"
 // @Success 200 {object} nil
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/worlds/{object_id}/teleport-user [post]
 func (w *Worlds) apiWorldsTeleportUser(c *gin.Context) {
-	objectID, err := mid.Parse(c.Param("objectID"))
+	objectID, err := umid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Worlds: apiWorldsTeleportUser: failed to parse world mid")
+		err := errors.WithMessage(err, "Worlds: apiWorldsTeleportUser: failed to parse world umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
 		return
 	}
@@ -331,14 +331,14 @@ func (w *Worlds) apiWorldsTeleportUser(c *gin.Context) {
 
 	userID, err := api.GetUserIDFromToken(token)
 	if err != nil {
-		err = errors.WithMessage(err, "Worlds: apiWorldsTeleportUser: failed to get user mid from token")
+		err = errors.WithMessage(err, "Worlds: apiWorldsTeleportUser: failed to get user umid from token")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_user_id", err, w.log)
 		return
 	}
 
 	userEntry, err := w.db.GetUsersDB().GetUserByID(c, userID)
 	if err != nil {
-		err = errors.WithMessage(err, "Worlds: apiWorldsTeleportUser: failed to get user by mid")
+		err = errors.WithMessage(err, "Worlds: apiWorldsTeleportUser: failed to get user by umid")
 		api.AbortRequest(c, http.StatusNotFound, "user_not_found", err, w.log)
 		return
 	}

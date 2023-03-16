@@ -3,7 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"reflect"
 	"runtime"
 	"strconv"
@@ -14,7 +14,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func BinID(id mid.ID) []byte {
+func BinID(id umid.UMID) []byte {
 	binID, err := id.MarshalBinary()
 	if err != nil {
 		log.Errorf("Utils: BinID: failed to marshal binary: %+v", errors.WithStack(err))
@@ -110,11 +110,11 @@ func stringToUUIDHookFunc() mapstructure.DecodeHookFunc {
 		if f.Kind() != reflect.String {
 			return data, nil
 		}
-		if t != reflect.TypeOf(mid.ID{}) {
+		if t != reflect.TypeOf(umid.UMID{}) {
 			return data, nil
 		}
 
-		return mid.Parse(data.(string))
+		return umid.Parse(data.(string))
 	}
 }
 
@@ -153,7 +153,7 @@ func GoroutineID() int {
 	idField := strings.Fields(strings.TrimPrefix(string(buf[:n]), "goroutine "))[0]
 	id, err := strconv.Atoi(idField)
 	if err != nil {
-		panic(fmt.Sprintf("cannot get goroutine mid: %v", err))
+		panic(fmt.Sprintf("cannot get goroutine umid: %v", err))
 	}
 	return id
 }

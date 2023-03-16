@@ -2,7 +2,7 @@ package seed
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/pkg/errors"
 
@@ -13,7 +13,7 @@ import (
 
 func seedAttributeType(ctx context.Context, node universe.Node) error {
 	type item struct {
-		pluginID      mid.ID
+		pluginID      umid.UMID
 		attributeName string
 		description   string
 		options       *entry.AttributeOptions
@@ -21,7 +21,7 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 
 	items := []*item{
 		{
-			pluginID:      mid.MustParse(OdysseyHackatonPluginID),
+			pluginID:      umid.MustParse(OdysseyHackatonPluginID),
 			attributeName: "problem",
 			description:   "Problem for space",
 			options: &entry.AttributeOptions{
@@ -30,7 +30,7 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			},
 		},
 		{
-			pluginID:      mid.MustParse(OdysseyHackatonPluginID),
+			pluginID:      umid.MustParse(OdysseyHackatonPluginID),
 			attributeName: "solution",
 			description:   "solution for space",
 			options: &entry.AttributeOptions{
@@ -39,7 +39,7 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			},
 		},
 		{
-			pluginID:      mid.MustParse(OdysseyHackatonPluginID),
+			pluginID:      umid.MustParse(OdysseyHackatonPluginID),
 			attributeName: "tile",
 			description:   "tile for space",
 			options: &entry.AttributeOptions{
@@ -47,7 +47,7 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			},
 		},
 		{
-			pluginID:      mid.MustParse(OdysseyHackatonPluginID),
+			pluginID:      umid.MustParse(OdysseyHackatonPluginID),
 			attributeName: "third",
 			description:   "Third screen for space",
 			options: &entry.AttributeOptions{
@@ -55,7 +55,7 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			},
 		},
 		{
-			pluginID:      mid.MustParse(OdysseyHackatonPluginID),
+			pluginID:      umid.MustParse(OdysseyHackatonPluginID),
 			attributeName: "poster",
 			description:   "Poster for space",
 			options: &entry.AttributeOptions{
@@ -63,7 +63,7 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			},
 		},
 		{
-			pluginID:      mid.MustParse(OdysseyHackatonPluginID),
+			pluginID:      umid.MustParse(OdysseyHackatonPluginID),
 			attributeName: "meme",
 			description:   "Meme for space",
 			options: &entry.AttributeOptions{
@@ -71,7 +71,7 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			},
 		},
 		{
-			pluginID:      mid.MustParse(OdysseyHackatonPluginID),
+			pluginID:      umid.MustParse(OdysseyHackatonPluginID),
 			attributeName: "video",
 			description:   "Video for space",
 			options: &entry.AttributeOptions{
@@ -81,7 +81,7 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 		},
 		//
 		{
-			pluginID:      mid.MustParse(miroPluginID),
+			pluginID:      umid.MustParse(miroPluginID),
 			attributeName: "state",
 			description:   "Miro state",
 			options: &entry.AttributeOptions{
@@ -92,14 +92,14 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			},
 		},
 		{
-			pluginID:      mid.MustParse(miroPluginID),
+			pluginID:      umid.MustParse(miroPluginID),
 			attributeName: "config",
 			description:   "Miro configuration",
 			options:       nil,
 		},
 		//
 		{
-			pluginID:      mid.MustParse(videoPluginID),
+			pluginID:      umid.MustParse(videoPluginID),
 			attributeName: "state",
 			description:   "State of the video tile",
 			options: &entry.AttributeOptions{
@@ -113,7 +113,7 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 		},
 		//
 		{
-			pluginID:      mid.MustParse(high5PluginID),
+			pluginID:      umid.MustParse(high5PluginID),
 			attributeName: "count",
 			description:   "High5s given",
 			options:       nil,
@@ -133,13 +133,13 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 		},
 		//
 		{
-			pluginID:      mid.MustParse(googleDrivePluginID),
+			pluginID:      umid.MustParse(googleDrivePluginID),
 			attributeName: "config",
 			description:   "Google Drive configuration",
 			options:       nil,
 		},
 		{
-			pluginID:      mid.MustParse(googleDrivePluginID),
+			pluginID:      umid.MustParse(googleDrivePluginID),
 			attributeName: "state",
 			description:   "Google Drive state",
 			options: &entry.AttributeOptions{
@@ -336,7 +336,7 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 		{
 			pluginID:      universe.GetSystemPluginID(),
 			attributeName: "teleport",
-			description:   "Target World ID to teleport",
+			description:   "Target World UMID to teleport",
 			options:       nil,
 		},
 		{
@@ -352,7 +352,7 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 		},
 		//
 		{
-			pluginID:      mid.MustParse(textPluginID),
+			pluginID:      umid.MustParse(textPluginID),
 			attributeName: "state",
 			description:   "State of the text tile",
 			options: &entry.AttributeOptions{
@@ -419,7 +419,7 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 		//
 		//
 		{
-			pluginID:      mid.MustParse(imagePluginID),
+			pluginID:      umid.MustParse(imagePluginID),
 			attributeName: "state",
 			description:   "State of the image tile",
 			options: &entry.AttributeOptions{

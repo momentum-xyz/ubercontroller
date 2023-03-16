@@ -2,7 +2,7 @@ package user_type
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -19,7 +19,7 @@ import (
 var _ universe.UserType = (*UserType)(nil)
 
 type UserType struct {
-	id          mid.ID
+	id          umid.UMID
 	ctx         context.Context
 	log         *zap.SugaredLogger
 	db          database.DB
@@ -29,7 +29,7 @@ type UserType struct {
 	options     *entry.UserOptions
 }
 
-func NewUserType(id mid.ID, db database.DB) *UserType {
+func NewUserType(id umid.UMID, db database.DB) *UserType {
 	return &UserType{
 		id: id,
 		db: db,
@@ -39,7 +39,7 @@ func NewUserType(id mid.ID, db database.DB) *UserType {
 	}
 }
 
-func (u *UserType) GetID() mid.ID {
+func (u *UserType) GetID() umid.UMID {
 	return u.id
 }
 

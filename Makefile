@@ -3,7 +3,13 @@ DOCKER_TAG="develop"
 
 all: build
 
-build:
+gen:
+	go generate ./...
+
+gen-clean:
+	find . -name "*.mus.go" | xargs rm
+
+build: gen
 	go build -trimpath -o ./bin/ubercontroller ./cmd/service
 	cd plugins && make
 

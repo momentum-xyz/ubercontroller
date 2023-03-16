@@ -4,7 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
-	"github.com/momentum-xyz/ubercontroller/utils/mid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"github.com/pkg/errors"
 	"net/http"
 )
@@ -15,14 +15,14 @@ import (
 // @Tags assets2d
 // @Accept json
 // @Produce json
-// @Param asset2dID path string true "Asset2d ID"
+// @Param asset2dID path string true "Asset2d UMID"
 // @Success 200 {array} dto.Asset2d
 // @Failure 400 {object} api.HTTPError
 // @Router /api/v4/assets-2d [get]
 func (a *Assets2d) apiGetAsset2d(c *gin.Context) {
-	asset2dID, err := mid.Parse(c.Param("asset2dID"))
+	asset2dID, err := umid.Parse(c.Param("asset2dID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Assets2d: apiGetAsset2d: failed to parse asset 2d mid")
+		err := errors.WithMessage(err, "Assets2d: apiGetAsset2d: failed to parse asset 2d umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_asset_2d_id", err, a.log)
 		return
 	}
