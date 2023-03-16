@@ -14,6 +14,7 @@ type BCBlock struct {
 type BCDiff struct {
 	From   string
 	To     string
+	Token  string
 	Amount *big.Int
 }
 

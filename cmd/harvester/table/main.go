@@ -35,6 +35,12 @@ func main() {
 	wallet := "0x0c3A3040075dd985F141800a1392a0Db81A09cAd"
 	t.AddWalletContract(wallet, token)
 
+	wallet2 := "0x2813fd17ea95b2655a7228383c5236e31090419e"
+	token2 := "0xdefa4e8a7bcba345f687a2f1456f5edd9ce97202"
+	//wallet2Receiver := "0x3f363b4e038a6e43ce8321c50f3efbf460196d4b"
+	//amount := "33190774000000000000000"
+	t.AddWalletContract(wallet2, token2)
+
 	time.Sleep(time.Second * 3)
 	fmt.Println(t)
 }

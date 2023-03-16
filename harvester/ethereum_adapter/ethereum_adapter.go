@@ -183,6 +183,7 @@ func (a *EthereumAdapter) onNewBlock(b *harvester.BCBlock) {
 			diff.From = strings.ToLower(a.GetTransactionMessage(tx).From.Hex())
 
 			diff.To = strings.ToLower(methodInput["_to"].(common.Address).Hex())
+			diff.Token = strings.ToLower(tx.To().Hex())
 			diff.Amount = methodInput["_value"].(*big.Int)
 			diffs = append(diffs, diff)
 		}
@@ -193,6 +194,7 @@ func (a *EthereumAdapter) onNewBlock(b *harvester.BCBlock) {
 			diff := &harvester.BCDiff{}
 			diff.From = strings.ToLower(methodInput["_from"].(common.Address).Hex())
 			diff.To = strings.ToLower(methodInput["_to"].(common.Address).Hex())
+			diff.Token = strings.ToLower(tx.To().Hex())
 			diff.Amount = methodInput["_value"].(*big.Int)
 			diffs = append(diffs, diff)
 		}
