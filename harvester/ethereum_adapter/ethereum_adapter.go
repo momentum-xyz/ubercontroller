@@ -33,10 +33,12 @@ type EthereumAdapter struct {
 
 func NewEthereumAdapter() *EthereumAdapter {
 	return &EthereumAdapter{
-		umid:    umid.MustParse("ccccaaaa-1111-2222-3333-111111111111"),
-		rpcURL:  "wss://eth.llamarpc.com",
+		umid:   umid.MustParse("ccccaaaa-1111-2222-3333-111111111111"),
+		rpcURL: "wss://eth.llamarpc.com",
+		//rpcURL: "wss://ethereum-mainnet-rpc.allthatnode.com",
 		httpURL: "https://eth.llamarpc.com",
-		name:    "ethereum",
+		//httpURL: "https://ethereum-mainnet-rpc.allthatnode.com",
+		name: "ethereum",
 	}
 }
 
@@ -216,8 +218,20 @@ func (a *EthereumAdapter) onNewBlock(b *harvester.BCBlock) {
 		//fmt.Println(receipt.Status) // 1
 	}
 
-	//fmt.Println(diffs)
-	a.listener(b, diffs)
+	amount := big.NewInt(0)
+	amount.SetString("33190774000000000000000", 10)
+
+	mockDiffs := []*harvester.BCDiff{
+		&harvester.BCDiff{
+			From:   "0x2813fd17ea95b2655a7228383c5236e31090419e",
+			To:     "0x3f363b4e038a6e43ce8321c50f3efbf460196d4b",
+			Token:  "0xdefa4e8a7bcba345f687a2f1456f5edd9ce97202",
+			Amount: amount,
+		},
+	}
+
+	a.listener(b, mockDiffs)
+	//a.listener(b, diffs)
 }
 
 // refer

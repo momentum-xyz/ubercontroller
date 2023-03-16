@@ -31,9 +31,9 @@ func main() {
 
 	t := harvester.NewTable(pool, a, func(p any) {})
 
-	token := "0x85F17Cf997934a597031b2E18a9aB6ebD4B9f6a4"
-	wallet := "0x0c3A3040075dd985F141800a1392a0Db81A09cAd"
-	t.AddWalletContract(wallet, token)
+	//token := "0x85F17Cf997934a597031b2E18a9aB6ebD4B9f6a4"
+	//wallet := "0x0c3A3040075dd985F141800a1392a0Db81A09cAd"
+	//t.AddWalletContract(wallet, token)
 
 	wallet2 := "0x2813fd17ea95b2655a7228383c5236e31090419e"
 	token2 := "0xdefa4e8a7bcba345f687a2f1456f5edd9ce97202"

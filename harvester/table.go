@@ -3,6 +3,7 @@ package harvester
 import (
 	"fmt"
 	"math/big"
+	"strings"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -34,6 +35,9 @@ func (t *Table) listener(block *BCBlock, diffs []*BCDiff) {
 }
 
 func (t *Table) AddWalletContract(wallet string, contract string) {
+	wallet = strings.ToLower(wallet)
+	contract = strings.ToLower(contract)
+
 	t.mu.Lock()
 	_, ok := t.data[contract]
 	if !ok {
@@ -49,6 +53,9 @@ func (t *Table) AddWalletContract(wallet string, contract string) {
 }
 
 func (t *Table) syncBalance(wallet string, contract string) {
+	wallet = strings.ToLower(wallet)
+	contract = strings.ToLower(contract)
+
 	t.mu.RLock()
 	blockNumber, err := t.adapter.GetLastBlockNumber()
 	t.mu.RUnlock()
