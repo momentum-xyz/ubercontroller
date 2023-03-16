@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"math/rand"
 	"os"
@@ -69,8 +67,6 @@ func main() {
 }
 
 func run(ctx context.Context) error {
-	v := cmath.Vec3{}
-	fmt.Println(v.SizeMUS())
 	cfg := config.GetConfig()
 
 	ctx = context.WithValue(ctx, types.LoggerContextKey, log)

@@ -13,7 +13,8 @@ COPY . ./
 
 
 # extra ldflag to make sure it works with alpine/musl
-RUN go build -trimpath -ldflags "-extldflags '-fuse-ld=bfd'" -o ./bin/ubercontroller ./cmd/service
+
+RUN go generate ./... && go build -trimpath -ldflags "-extldflags '-fuse-ld=bfd'" -o ./bin/ubercontroller ./cmd/service
 #RUN go build -o ./bin/ubercontroller ./cmd/service
 
 
