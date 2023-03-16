@@ -1,6 +1,6 @@
 module github.com/momentum-xyz/ubercontroller
 
-go 1.19
+go 1.20
 
 require (
 	github.com/AgoraIO-Community/go-tokenbuilder v1.0.0
