@@ -2,6 +2,7 @@ package posbus
 
 import (
 	"encoding/binary"
+
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
@@ -10,7 +11,7 @@ import (
 const UserTransformMessageSize = MsgUUIDTypeSize + cmath.Float32Bytes*6
 
 type UserTransform struct {
-	ID        umid.UMID           `json:"umid"`
+	ID        umid.UMID           `json:"id"`
 	Transform cmath.UserTransform `json:"transform"`
 }
 
