@@ -45,7 +45,7 @@ type Assets3dMeta map[umid.UMID]Asset3dMeta
 type Asset3dMeta *entry.Asset3dMeta
 
 type ExploreOption struct {
-	ID          umid.UMID       `json:"umid"`
+	ID          umid.UMID       `json:"id"`
 	Name        string          `json:"name"`
 	Description string          `json:"description"`
 	SubObjects  []ExploreOption `json:"subObjects,omitempty"`
@@ -77,7 +77,7 @@ type HashResponse struct {
 }
 
 type User struct {
-	ID         string  `json:"umid"`
+	ID         string  `json:"id"`
 	UserTypeID string  `json:"userTypeId"`
 	Name       string  `json:"name"`
 	Wallet     *string `json:"wallet,omitempty"`
@@ -103,7 +103,7 @@ type Asset2d struct {
 }
 
 type Asset3d struct {
-	ID        string      `json:"umid"`
+	ID        string      `json:"id"`
 	Name      string      `json:"name,omitempty"`
 	Meta      Asset3dMeta `json:"meta,omitempty"`
 	CreatedAt string      `json:"createdAt,omitempty"`
@@ -111,7 +111,7 @@ type Asset3d struct {
 }
 
 type Tile struct {
-	ID            string        `json:"umid"`
+	ID            string        `json:"id"`
 	Hash          string        `json:"hash"`
 	ObjectID      string        `json:"objectId"`
 	UITypeID      string        `json:"uiTypeId"`
@@ -134,7 +134,7 @@ type TileContent struct {
 }
 
 type Emoji struct {
-	ID       string `json:"umid"`
+	ID       string `json:"id"`
 	Code     string `json:"code"`
 	Hash     string `json:"hash"`
 	Name     string `json:"name"`
@@ -143,7 +143,7 @@ type Emoji struct {
 }
 
 type Event struct {
-	ID          string  `json:"umid"`
+	ID          string  `json:"id"`
 	Title       string  `json:"title"`
 	Description string  `json:"description"`
 	HostedBy    string  `json:"hosted_by"`
@@ -174,7 +174,7 @@ type Favorite struct {
 }
 
 type Miro struct {
-	ID          string `json:"umid"`
+	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	ViewLink    string `json:"viewLink"`
@@ -182,7 +182,7 @@ type Miro struct {
 }
 
 type GoogleDrive struct {
-	ID   string `json:"umid"`
+	ID   string `json:"id"`
 	Name string `json:"name"`
 	URL  string `json:"url"`
 }
@@ -194,11 +194,11 @@ type Broadcast struct {
 }
 
 type Magic struct {
-	ID   string    `json:"umid"`
+	ID   string    `json:"id"`
 	Key  string    `json:"key"`
 	Type MagicType `json:"type"`
 	Data struct {
-		ID       string  `json:"umid"`
+		ID       string  `json:"id"`
 		EventID  *string `json:"eventId,omitempty"`
 		Position *any    `json:"position,omitempty"`
 	} `json:"data"`
@@ -208,7 +208,7 @@ type Magic struct {
 }
 
 type ObjectInfo struct {
-	ID          string     `json:"umid"`
+	ID          string     `json:"id"`
 	ParentID    *string    `json:"parentId,omitempty"`
 	ObjectType  ObjectType `json:"objectType"`
 	Name        string     `json:"name"`
@@ -238,12 +238,12 @@ type StageModeUser struct {
 }
 
 type TokenInfo struct {
-	ID   string `json:"umid"`
+	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
 type Token struct {
-	ID              string                     `json:"umid"`
+	ID              string                     `json:"id"`
 	Name            string                     `json:"name"`
 	ContractAddress *string                    `json:"contractAddress,omitempty"`
 	TokenType       *TokenType                 `json:"tokenType,omitempty"`
@@ -255,7 +255,7 @@ type Token struct {
 }
 
 type TokenRule struct {
-	ID               string                    `json:"umid"`
+	ID               string                    `json:"id"`
 	Status           TokenRuleReviewStatusType `json:"status"`
 	CreatedAt        *string                   `json:"createdAt,omitempty"`
 	TokenGroupUserID *string                   `json:"tokenGroupUserId,omitempty"`
@@ -271,7 +271,7 @@ type TokenRule struct {
 }
 
 type Validator struct {
-	ID                 string  `json:"umid"`
+	ID                 string  `json:"id"`
 	ParentID           string  `json:"parentId"`
 	ObjectTypeID       string  `json:"objectTypeId"`
 	OperatorObjectID   *string `json:"operatorObjectId,omitempty"`
