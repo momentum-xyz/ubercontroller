@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"fmt"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"strings"
 	"time"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
 	gonanoid "github.com/matoous/go-nanoid/v2"
@@ -34,26 +34,26 @@ func GetTokenFromContext(c *gin.Context) (jwt.Token, error) {
 	return utils.GetFromAny(value, jwt.Token{}), nil
 }
 
-func GetUserIDFromContext(c *gin.Context) (uuid.UUID, error) {
+func GetUserIDFromContext(c *gin.Context) (umid.UMID, error) {
 	token, err := GetTokenFromContext(c)
 	if err != nil {
-		return uuid.Nil, errors.WithMessage(err, "failed to get token from context")
+		return umid.Nil, errors.WithMessage(err, "failed to get token from context")
 	}
 	userID, err := GetUserIDFromToken(token)
 	if err != nil {
-		return uuid.Nil, errors.WithMessage(err, "failed to get user id from token")
+		return umid.Nil, errors.WithMessage(err, "failed to get user umid from token")
 	}
 	return userID, nil
 }
 
-func GetUserIDFromToken(token jwt.Token) (uuid.UUID, error) {
+func GetUserIDFromToken(token jwt.Token) (umid.UMID, error) {
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return uuid.Nil, errors.New("failed to get token claims")
+		return umid.Nil, errors.New("failed to get token claims")
 	}
-	userID, err := uuid.Parse(utils.GetFromAnyMap(claims, "sub", "")) // TODO! proper jwt parsing
+	userID, err := umid.Parse(utils.GetFromAnyMap(claims, "sub", "")) // TODO! proper jwt parsing
 	if err != nil {
-		return uuid.Nil, errors.WithMessage(err, "failed to parse user id")
+		return umid.Nil, errors.WithMessage(err, "failed to parse user umid")
 	}
 	return userID, nil
 }
@@ -61,7 +61,7 @@ func GetUserIDFromToken(token jwt.Token) (uuid.UUID, error) {
 func GenerateChallenge(wallet string) (string, error) {
 	return fmt.Sprintf(
 		"Please sign this message with the private key for address %s to prove that you own it. %s",
-		wallet, uuid.New().String(),
+		wallet, umid.New().String(),
 	), nil
 }
 
@@ -104,7 +104,7 @@ func VerifyEthereumSignature(address, challenge, signature string) (bool, error)
 	msgBytes := signHash([]byte(challenge))
 
 	pubKey, err := crypto.SigToPub(msgBytes, sigBytes)
-	if err != nil {
+	if err != nil || pubKey == nil {
 		return false, errors.Wrap(err, "failed to recover public key")
 	}
 
@@ -119,7 +119,7 @@ func VerifyEthereumSignature(address, challenge, signature string) (bool, error)
 
 // CreateJWTToken saves a jwt token with the given userID as subject
 // and signed with the given secret
-func CreateJWTToken(userID uuid.UUID) (string, error) {
+func CreateJWTToken(userID umid.UMID) (string, error) {
 	claims := jwt.StandardClaims{
 		IssuedAt:  time.Now().Unix(),
 		ExpiresAt: time.Now().Add(7 * 24 * time.Hour).Unix(),
@@ -154,12 +154,14 @@ func GetJWTSecret() ([]byte, error) {
 }
 
 func ValidateJWTWithSecret(signedString string, secret []byte) (*jwt.Token, error) {
-	return jwt.Parse(signedString, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Invalid token %v", token.Header["alg"])
-		}
-		return secret, nil
-	})
+	return jwt.Parse(
+		signedString, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("Invalid token %v", token.Header["alg"])
+			}
+			return secret, nil
+		},
+	)
 }
 
 func GenerateGuestName(c *gin.Context, db database.DB) (string, error) {

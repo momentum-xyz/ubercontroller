@@ -1,9 +1,9 @@
+//go:generate go run gen/mus.go
 package dto
 
 import (
-	"github.com/google/uuid"
-
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 )
@@ -12,13 +12,13 @@ type ExploreOptions []ExploreOption
 
 type SearchOptions map[string][]ExploreOption
 
-type Plugins map[uuid.UUID]string
+type Plugins map[umid.UMID]string
 
-type PluginsMeta map[uuid.UUID]PluginMeta
+type PluginsMeta map[umid.UMID]PluginMeta
 
 type PluginMeta entry.PluginMeta
 
-type PluginsOptions map[uuid.UUID]PluginOptions
+type PluginsOptions map[umid.UMID]PluginOptions
 
 type PluginOptions *entry.PluginOptions
 
@@ -26,9 +26,9 @@ type ObjectOptions *entry.ObjectOptions
 
 type ObjectSubOptions map[string]any
 
-type ObjectAttributes map[uuid.UUID]*entry.ObjectAttribute
+type ObjectAttributes map[umid.UMID]*entry.ObjectAttribute
 
-type ObjectAttributeValues map[uuid.UUID]*entry.AttributeValue
+type ObjectAttributeValues map[umid.UMID]*entry.AttributeValue
 
 type ObjectSubAttributes map[string]any
 
@@ -36,25 +36,25 @@ type Asset2dMeta entry.Asset2dMeta
 
 type Asset2dOptions *entry.Asset2dOptions
 
-type Assets3dOptions map[uuid.UUID]Asset3dOptions
+type Assets3dOptions map[umid.UMID]Asset3dOptions
 
 type Asset3dOptions *entry.Asset3dOptions
 
-type Assets3dMeta map[uuid.UUID]Asset3dMeta
+type Assets3dMeta map[umid.UMID]Asset3dMeta
 
 type Asset3dMeta *entry.Asset3dMeta
 
 type ExploreOption struct {
-	ID          uuid.UUID       `json:"id"`
+	ID          umid.UMID       `json:"id"`
 	Name        string          `json:"name"`
 	Description string          `json:"description"`
 	SubObjects  []ExploreOption `json:"subObjects,omitempty"`
 }
 
 type FlyToMe struct {
-	Pilot     uuid.UUID `json:"pilot"`
+	Pilot     umid.UMID `json:"pilot"`
 	PilotName string    `json:"pilot_name"`
-	ObjectID  uuid.UUID `json:"object_id"`
+	ObjectID  umid.UMID `json:"object_id"`
 }
 
 type Profile struct {

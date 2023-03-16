@@ -1,8 +1,8 @@
 package node
 
 import (
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -30,7 +30,7 @@ func (uo *userObjects) GetValue(userObjectID entry.UserObjectID) (*entry.UserObj
 	return value, true
 }
 
-func (uo *userObjects) GetObjectIndirectAdmins(objectID uuid.UUID) ([]*uuid.UUID, bool) {
+func (uo *userObjects) GetObjectIndirectAdmins(objectID umid.UMID) ([]*umid.UMID, bool) {
 	admins, err := uo.node.db.GetUserObjectsDB().GetObjectIndirectAdmins(uo.node.ctx, objectID)
 	if err != nil {
 		return nil, false
@@ -41,7 +41,7 @@ func (uo *userObjects) GetObjectIndirectAdmins(objectID uuid.UUID) ([]*uuid.UUID
 func (uo *userObjects) CheckIsIndirectAdmin(userObjectID entry.UserObjectID) (bool, error) {
 	isAdmin, err := uo.node.db.GetUserObjectsDB().CheckIsIndirectAdminByID(uo.node.ctx, userObjectID)
 	if err != nil {
-		return false, errors.WithMessage(err, "failed to check is indirect admin by id")
+		return false, errors.WithMessage(err, "failed to check is indirect admin by umid")
 	}
 	return isAdmin, nil
 }
@@ -71,7 +71,7 @@ func (uo *userObjects) Remove(userObjectID entry.UserObjectID, updateDB bool) (b
 		if errors.Is(err, pgx.ErrNoRows) {
 			return false, nil
 		}
-		return false, errors.WithMessage(err, "failed to remove user object by id")
+		return false, errors.WithMessage(err, "failed to remove user object by umid")
 	}
 	return true, nil
 }

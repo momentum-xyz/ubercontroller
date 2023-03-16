@@ -2,8 +2,8 @@ package seed
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/database"
@@ -15,8 +15,8 @@ import (
 // TODO Add to seed.go
 func seedUsers(ctx context.Context, node universe.Node, db database.DB) error {
 	type item struct {
-		id         uuid.UUID
-		userTypeID uuid.UUID
+		id         umid.UMID
+		userTypeID umid.UMID
 		profile    entry.UserProfile
 		options    *entry.UserOptions
 	}
@@ -25,8 +25,8 @@ func seedUsers(ctx context.Context, node universe.Node, db database.DB) error {
 	// 2 Node Admin (User)
 	items := []*item{
 		{
-			id:         uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-			userTypeID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+			id:         umid.MustParse("00000000-0000-0000-0000-000000000003"),
+			userTypeID: umid.MustParse("00000000-0000-0000-0000-000000000002"),
 			profile:    entry.UserProfile{},
 			options:    nil,
 		},
@@ -47,7 +47,7 @@ func seedUsers(ctx context.Context, node universe.Node, db database.DB) error {
 		}
 
 		// TODO Make it work
-		//userItem := user.NewUser(item.id, db)
+		//userItem := user.NewUser(item.umid, db)
 		//if err := userItem.Load(); err != nil {
 		//	return errors.WithMessage(err, "failed to load user")
 		//}

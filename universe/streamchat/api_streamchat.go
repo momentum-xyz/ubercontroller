@@ -2,10 +2,10 @@ package streamchat
 
 import (
 	"fmt"
+	idt "github.com/momentum-xyz/ubercontroller/utils/umid"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 	"github.com/pkg/errors"
@@ -18,7 +18,7 @@ import (
 // @Tags chat
 // @Accept json
 // @Produce json
-// @Param objectID path string true "World or object ID"
+// @Param objectID path string true "World or object UMID"
 // @Success 200 {object} streamchat.apiChannelToken.Response
 // @Failure 400 {object} api.HTTPError
 // @Router /api/v4/streamchat/{objectID}/token [post]
@@ -63,11 +63,11 @@ func (s *StreamChat) apiChannelToken(c *gin.Context) {
 }
 
 // @Summary Join a chat channel.
-// @Description Join the chat channel (as a member) for the given world or object ID.
+// @Description Join the chat channel (as a member) for the given world or object UMID.
 // @Tags chat
 // @Accept json
 // @Produce json
-// @Param objectID path string true "World or object ID"
+// @Param objectID path string true "World or object UMID"
 // @Success 204 ""
 // @Failure 400 {object} api.HTTPError
 // @Router /api/v4/streamchat/{objectID}/join [post]
@@ -94,11 +94,11 @@ func (s *StreamChat) apiChannelJoin(c *gin.Context) {
 }
 
 // @Summary Leave a chat channel.
-// @Description Leave the chat channel (as a member) for the given world or object ID.
+// @Description Leave the chat channel (as a member) for the given world or object UMID.
 // @Tags chat
 // @Accept json
 // @Produce json
-// @Param objectID path string true "World or object ID"
+// @Param objectID path string true "World or object UMID"
 // @Success 204 ""
 // @Failure 400 {object} api.HTTPError
 // @Router /api/v4/streamchat/{objectID}/leave [post]
@@ -143,9 +143,9 @@ func (s *StreamChat) getRequestContextObjects(c *gin.Context) (object universe.O
 
 // Get object by UUID string.
 func (s *StreamChat) getObject(id string) (universe.Object, error) {
-	objectID, err := uuid.Parse(id)
+	objectID, err := idt.Parse(id)
 	if err != nil {
-		err := errors.WithMessagef(err, "Failed to parse ID %s", id)
+		err := errors.WithMessagef(err, "Failed to parse UMID %s", id)
 		return nil, err
 	}
 	object, ok := s.node.GetObjectFromAllObjects(objectID)

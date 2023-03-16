@@ -2,9 +2,9 @@ package object
 
 import (
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"sort"
 
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
@@ -41,11 +41,11 @@ func (o *Object) GetPlacement(placementMap *entry.ObjectChildPlacement) (positio
 	return par, nil
 }
 
-func (o *Object) GetPlacements() map[uuid.UUID]position_algo.Algo {
+func (o *Object) GetPlacements() map[umid.UMID]position_algo.Algo {
 	//fmt.Printf("eopts %+v\n:", o.GetEffectiveOptions().ChildPlacements)
 	placements := o.GetEffectiveOptions().ChildPlacements
 	//fmt.Println(len(placements))
-	pls := make(map[uuid.UUID]position_algo.Algo)
+	pls := make(map[umid.UMID]position_algo.Algo)
 	for sId, placement := range placements {
 		if p, err := o.GetPlacement(placement); err != nil {
 			o.log.Error(errors.WithMessage(err, "Object: UpdateMetaFromMap: failed to fill placement"))
@@ -129,9 +129,9 @@ func (o *Object) UpdateChildrenPosition(recursive bool) error {
 	//fmt.Println("pls1", o.GetID())
 	pls := o.GetPlacements()
 	//fmt.Printf("pls1a:%+v : %+v\n", o.GetID(), pls)
-	ChildMap := make(map[uuid.UUID][]uuid.UUID)
+	ChildMap := make(map[umid.UMID][]umid.UMID)
 	for u := range pls {
-		ChildMap[u] = make([]uuid.UUID, 0)
+		ChildMap[u] = make([]umid.UMID, 0)
 	}
 	//fmt.Println("pls2", o.GetID())
 	o.Children.Mu.RLock()
@@ -141,7 +141,7 @@ func (o *Object) UpdateChildrenPosition(recursive bool) error {
 		if child.GetTransform() == nil {
 			objectTypeID := child.GetObjectType().GetID()
 			if _, ok := pls[objectTypeID]; !ok {
-				objectTypeID = uuid.Nil
+				objectTypeID = umid.Nil
 			}
 			ChildMap[objectTypeID] = append(ChildMap[objectTypeID], child.GetID())
 		}

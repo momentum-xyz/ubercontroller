@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.4
-FROM golang:1.19-alpine3.16 as build
+FROM golang:1.20-alpine3.17 as build
 
 RUN apk add --update --no-cache gcc binutils-gold musl-dev
 
@@ -13,7 +13,8 @@ COPY . ./
 
 
 # extra ldflag to make sure it works with alpine/musl
-RUN go build -trimpath -ldflags "-extldflags '-fuse-ld=bfd'" -o ./bin/ubercontroller ./cmd/service
+
+RUN go generate ./... && go build -trimpath -ldflags "-extldflags '-fuse-ld=bfd'" -o ./bin/ubercontroller ./cmd/service
 #RUN go build -o ./bin/ubercontroller ./cmd/service
 
 

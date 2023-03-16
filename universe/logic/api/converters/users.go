@@ -1,9 +1,8 @@
 package converters
 
 import (
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"time"
-
-	"github.com/google/uuid"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -11,7 +10,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
-func ToUserDTO(userEntry *entry.User, guestUserTypeID uuid.UUID, includeWallet bool) *dto.User {
+func ToUserDTO(userEntry *entry.User, guestUserTypeID umid.UMID, includeWallet bool) *dto.User {
 	profileEntry := userEntry.Profile
 
 	userDTO := dto.User{
@@ -58,7 +57,7 @@ func ToUserDTO(userEntry *entry.User, guestUserTypeID uuid.UUID, includeWallet b
 	return &userDTO
 }
 
-func ToUserDTOs(userEntries []*entry.User, guestUserTypeID uuid.UUID, includeWallet bool) []*dto.User {
+func ToUserDTOs(userEntries []*entry.User, guestUserTypeID umid.UMID, includeWallet bool) []*dto.User {
 	userDTOs := make([]*dto.User, len(userEntries))
 	for i := range userEntries {
 		userDTOs[i] = ToUserDTO(userEntries[i], guestUserTypeID, includeWallet)

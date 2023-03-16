@@ -2,9 +2,9 @@ package object_type
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"sync"
 
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -19,7 +19,7 @@ import (
 var _ universe.ObjectType = (*ObjectType)(nil)
 
 type ObjectType struct {
-	id           uuid.UUID
+	id           umid.UMID
 	ctx          context.Context
 	log          *zap.SugaredLogger
 	db           database.DB
@@ -32,12 +32,12 @@ type ObjectType struct {
 	asset3d      universe.Asset3d
 }
 
-func NewObjectType(id uuid.UUID, db database.DB) *ObjectType {
+func NewObjectType(id umid.UMID, db database.DB) *ObjectType {
 	return &ObjectType{
 		id: id,
 		db: db,
 		options: &entry.ObjectOptions{
-			AllowedSubObjects: []uuid.UUID{},
+			AllowedSubObjects: []umid.UMID{},
 			Minimap:           utils.GetPTR(true),
 			Visible:           utils.GetPTR(entry.ReactUnityObjectVisibleType),
 			Editable:          utils.GetPTR(true),
@@ -46,7 +46,7 @@ func NewObjectType(id uuid.UUID, db database.DB) *ObjectType {
 	}
 }
 
-func (ot *ObjectType) GetID() uuid.UUID {
+func (ot *ObjectType) GetID() umid.UMID {
 	return ot.id
 }
 

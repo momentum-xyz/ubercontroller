@@ -4,12 +4,12 @@ import (
 	"context"
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"sync"
 	"sync/atomic"
 	"time"
 	"unsafe"
 
-	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 	"github.com/sasha-s/go-deadlock"
@@ -26,8 +26,8 @@ import (
 var _ universe.User = (*User)(nil)
 
 type User struct {
-	id        uuid.UUID
-	sessionID uuid.UUID
+	id        umid.UMID
+	sessionID umid.UMID
 	db        database.DB
 	// The websocket connection.
 	conn *websocket.Conn
@@ -52,14 +52,14 @@ type User struct {
 	directLock                  sync.Mutex
 }
 
-func NewUser(id uuid.UUID, db database.DB) *User {
+func NewUser(id umid.UMID, db database.DB) *User {
 	return &User{
 		id: id,
 		db: db,
 	}
 }
 
-func (u *User) GetID() uuid.UUID {
+func (u *User) GetID() umid.UMID {
 	return u.id
 }
 
@@ -208,7 +208,7 @@ func (u *User) Load() error {
 
 	entry, err := u.db.GetUsersDB().GetUserByID(u.ctx, u.GetID())
 	if err != nil {
-		return errors.WithMessage(err, "failed to get user by id")
+		return errors.WithMessage(err, "failed to get user by umid")
 	}
 
 	if err := u.LoadFromEntry(entry); err != nil {
@@ -250,9 +250,9 @@ func (u *User) UpdatePosition(data []byte) error {
 	return nil
 }
 
-//func (u *User) TeleportToWorld(id uuid.UUID) {
-//	//url := universe.GetNode().ResolveNodeByWorldID(id)
-//	//u.Send(posbus.NewTeleportRequest(id, url).WSMessage())
+//func (u *User) TeleportToWorld(umid umid.UMID) {
+//	//url := universe.GetNode().ResolveNodeByWorldID(umid)
+//	//u.Send(posbus.NewTeleportRequest(umid, url).WSMessage())
 //	//u.close(true)
 //
 //}

@@ -1,17 +1,17 @@
 package world
 
 import (
-	"github.com/google/uuid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
-func (w *World) GetAllObjects() map[uuid.UUID]universe.Object {
+func (w *World) GetAllObjects() map[umid.UMID]universe.Object {
 	w.allObjects.Mu.RLock()
 	defer w.allObjects.Mu.RUnlock()
 
-	objects := make(map[uuid.UUID]universe.Object, len(w.allObjects.Data))
+	objects := make(map[umid.UMID]universe.Object, len(w.allObjects.Data))
 	for id, object := range w.allObjects.Data {
 		objects[id] = object
 	}
@@ -19,11 +19,11 @@ func (w *World) GetAllObjects() map[uuid.UUID]universe.Object {
 	return objects
 }
 
-func (w *World) FilterAllObjects(predicateFn universe.ObjectsFilterPredicateFn) map[uuid.UUID]universe.Object {
+func (w *World) FilterAllObjects(predicateFn universe.ObjectsFilterPredicateFn) map[umid.UMID]universe.Object {
 	return w.allObjects.Filter(predicateFn)
 }
 
-func (w *World) GetObjectFromAllObjects(objectID uuid.UUID) (universe.Object, bool) {
+func (w *World) GetObjectFromAllObjects(objectID umid.UMID) (universe.Object, bool) {
 	return w.allObjects.Load(objectID)
 }
 

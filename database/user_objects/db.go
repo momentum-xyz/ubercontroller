@@ -2,12 +2,12 @@ package user_objects
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"sync"
 
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 
 	"github.com/georgysavva/scany/pgxscan"
-	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -62,7 +62,7 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 	}
 }
 
-func (db *DB) GetUserObjectsByUserID(ctx context.Context, userID uuid.UUID) ([]*entry.UserObject, error) {
+func (db *DB) GetUserObjectsByUserID(ctx context.Context, userID umid.UMID) ([]*entry.UserObject, error) {
 	var userObjects []*entry.UserObject
 	if err := pgxscan.Select(ctx, db.conn, &userObjects, getUserObjectsByUserIDQuery, userID); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
@@ -70,7 +70,7 @@ func (db *DB) GetUserObjectsByUserID(ctx context.Context, userID uuid.UUID) ([]*
 	return userObjects, nil
 }
 
-func (db *DB) GetUserObjectsByObjectID(ctx context.Context, objectID uuid.UUID) ([]*entry.UserObject, error) {
+func (db *DB) GetUserObjectsByObjectID(ctx context.Context, objectID umid.UMID) ([]*entry.UserObject, error) {
 	var userObjects []*entry.UserObject
 	if err := pgxscan.Select(ctx, db.conn, &userObjects, getUserObjectsByObjectIDQuery, objectID); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
@@ -94,7 +94,8 @@ func (db *DB) GetUserObjectValueByID(
 	var value entry.UserObjectValue
 	if err := db.conn.QueryRow(
 		ctx, getUserObjectValueByIDQuery,
-		userObjectID.UserID, userObjectID.ObjectID).
+		userObjectID.UserID, userObjectID.ObjectID,
+	).
 		Scan(&value); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
@@ -109,8 +110,8 @@ func (db *DB) GetUserObjects(ctx context.Context) ([]*entry.UserObject, error) {
 	return userObjects, nil
 }
 
-func (db *DB) GetObjectIndirectAdmins(ctx context.Context, objectID uuid.UUID) ([]*uuid.UUID, error) {
-	var userIDs []*uuid.UUID
+func (db *DB) GetObjectIndirectAdmins(ctx context.Context, objectID umid.UMID) ([]*umid.UMID, error) {
+	var userIDs []*umid.UMID
 	if err := pgxscan.Select(ctx, db.conn, &userIDs, getObjectIndirectAdminsQuery, objectID); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
@@ -134,7 +135,7 @@ func (db *DB) UpdateUserObjectValue(
 
 	value, err := db.GetUserObjectValueByID(ctx, userObjectID)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to get value by id")
+		return nil, errors.WithMessage(err, "failed to get value by umid")
 	}
 
 	value, err = modifyFn(value)
@@ -162,7 +163,7 @@ func (db *DB) UpsertUserObject(
 	value, err := db.GetUserObjectValueByID(ctx, userObjectID)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
-			return nil, errors.WithMessage(err, "failed to get user object value by id")
+			return nil, errors.WithMessage(err, "failed to get user object value by umid")
 		}
 	}
 

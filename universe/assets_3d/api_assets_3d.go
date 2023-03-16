@@ -2,13 +2,13 @@ package assets_3d
 
 import (
 	"encoding/json"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"mime/multipart"
 	"net/http"
 	"path/filepath"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -25,7 +25,7 @@ import (
 // @Tags assets3d
 // @Accept json
 // @Produce json
-// @Param object_id path string true "Object ID"
+// @Param object_id path string true "Object UMID"
 // @Param query query assets_3d.apiGetAssets3d.InQuery true "query params"
 // @Success 200 {array} dto.Asset3d
 // @Failure 400 {object} api.HTTPError
@@ -42,8 +42,8 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 		return
 	}
 
-	var a3dMap map[uuid.UUID]universe.Asset3d
-	predicateFn := func(asset3dID uuid.UUID, asset3d universe.Asset3d) bool {
+	var a3dMap map[umid.UMID]universe.Asset3d
+	predicateFn := func(asset3dID umid.UMID, asset3d universe.Asset3d) bool {
 		var category string
 		meta := asset3d.GetMeta()
 
@@ -102,7 +102,7 @@ func (a *Assets3d) apiAddAssets3d(c *gin.Context) {
 
 	addAssets3d := make([]universe.Asset3d, 0, len(inBody.Assets3dIDs))
 	for i := range inBody.Assets3dIDs {
-		assetID, err := uuid.Parse(inBody.Assets3dIDs[i])
+		assetID, err := umid.Parse(inBody.Assets3dIDs[i])
 		if err != nil {
 			err = errors.WithMessage(err, "Assets3d: apiAddAssets3d: failed to parse uuid")
 			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_parse_uuid", err, a.log)
@@ -134,7 +134,7 @@ func (a *Assets3d) apiAddAssets3d(c *gin.Context) {
 // @Tags assets3d
 // @Accept multipart/form-data
 // @Produce json
-// @Param object_id path string true "Object ID"
+// @Param object_id path string true "Object UMID"
 // @Success 202 {object} dto.Asset3d
 // @Failure 400	{object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
@@ -154,7 +154,10 @@ func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 	}
 	assetFile := request.File
 	if assetFile == nil {
-		api.AbortRequest(c, http.StatusBadRequest, "failed_to_open", errors.New("Assets3d: apiUploadAsset3d: no file in request"), a.log)
+		api.AbortRequest(
+			c, http.StatusBadRequest, "failed_to_open", errors.New("Assets3d: apiUploadAsset3d: no file in request"),
+			a.log,
+		)
 		return
 	}
 
@@ -194,7 +197,7 @@ func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 		return
 	}
 
-	assetID, err := uuid.Parse(response.Hash)
+	assetID, err := umid.Parse(response.Hash)
 	if err != nil {
 		err := errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to parse hash to uuid")
 		api.AbortRequest(c, http.StatusBadRequest, "failed_to_parse_hash", err, a.log)
@@ -268,9 +271,9 @@ func (a *Assets3d) apiRemoveAssets3dByIDs(c *gin.Context) {
 		return
 	}
 
-	uids := make([]uuid.UUID, 0, len(inBody.Assets3dIDs))
+	uids := make([]umid.UMID, 0, len(inBody.Assets3dIDs))
 	for i := range inBody.Assets3dIDs {
-		uid, err := uuid.Parse(inBody.Assets3dIDs[i])
+		uid, err := umid.Parse(inBody.Assets3dIDs[i])
 		if err != nil {
 			err := errors.WithMessage(err, "Assets3d: apiRemoveAssets3dByIDs: failed to parse uuid")
 			api.AbortRequest(c, http.StatusInternalServerError, "invalid_uuid_parse", err, a.log)
@@ -320,7 +323,7 @@ func (a *Assets3d) apiGetAssets3dOptions(c *gin.Context) {
 	out := make(dto.Assets3dOptions, len(inQuery.Assets3dIDs))
 
 	for i := range inQuery.Assets3dIDs {
-		asset3dID, err := uuid.Parse(inQuery.Assets3dIDs[i])
+		asset3dID, err := umid.Parse(inQuery.Assets3dIDs[i])
 		if err != nil {
 			err := errors.WithMessagef(err, "Assets3d: apiGetAssets3dOptions: failed to parse uuid")
 			api.AbortRequest(c, http.StatusBadRequest, "invalid_asset3d_uuid", err, a.log)
@@ -366,7 +369,7 @@ func (a *Assets3d) apiGetAssets3dMeta(c *gin.Context) {
 	out := make(dto.Assets3dMeta, len(inQuery.Assets3dIDs))
 
 	for i := range inQuery.Assets3dIDs {
-		asset3dID, err := uuid.Parse(inQuery.Assets3dIDs[i])
+		asset3dID, err := umid.Parse(inQuery.Assets3dIDs[i])
 		if err != nil {
 			err := errors.WithMessagef(err, "Assets3d: apiGetAssets3dMeta: failed to parse uuid")
 			api.AbortRequest(c, http.StatusBadRequest, "invalid_asset3d_uuid", err, a.log)
@@ -386,9 +389,9 @@ func (a *Assets3d) apiGetAssets3dMeta(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// @Summary Delete a 3d asset by its id
+// @Summary Delete a 3d asset by its umid
 // @Schemes
-// @Description Deletes 3d asset by its id
+// @Description Deletes 3d asset by its umid
 // @Tags assets3d
 // @Accept json
 // @Produce json
@@ -396,7 +399,7 @@ func (a *Assets3d) apiGetAssets3dMeta(c *gin.Context) {
 // @Failure 500 {object} api.HTTPError
 // @Router /api/v4/assets-3d/{object_id}/{asset3d_id} [delete]
 func (a *Assets3d) apiRemoveAsset3dByID(c *gin.Context) {
-	uid, err := uuid.Parse(c.Param("asset3dID"))
+	uid, err := umid.Parse(c.Param("asset3dID"))
 	if err != nil {
 		err := errors.WithMessage(err, "Assets3d: apiRemoveAsset3dByID: failed to parse uuid")
 		api.AbortRequest(c, http.StatusInternalServerError, "invalid_uuid_parse", err, a.log)
@@ -418,14 +421,14 @@ func (a *Assets3d) apiRemoveAsset3dByID(c *gin.Context) {
 	c.JSON(http.StatusOK, nil)
 }
 
-// @Summary Update 3d asset meta by its id
+// @Summary Update 3d asset meta by its umid
 // @Schemes
-// @Description Update 3d asset meta by its id
+// @Description Update 3d asset meta by its umid
 // @Tags assets3d
 // @Accept json
 // @Produce json
-// @Param object_id path string true "Object ID"
-// @Param asset3d_id path string true "Asset 3D ID"
+// @Param object_id path string true "Object UMID"
+// @Param asset3d_id path string true "Asset 3D UMID"
 // @Param body body assets_3d.apiUpdateAsset3dByID.InBody true "body params"
 // @Success 200 {object} dto.Asset3d
 // @Failure 400 {object} api.HTTPError
@@ -442,7 +445,7 @@ func (a *Assets3d) apiUpdateAsset3dByID(c *gin.Context) {
 		return
 	}
 
-	asset3dID, err := uuid.Parse(c.Param("asset3dID"))
+	asset3dID, err := umid.Parse(c.Param("asset3dID"))
 	if err != nil {
 		err = errors.WithMessage(err, "Assets3d: apiUpdateAsset3dByID: failed to parse uuid")
 		api.AbortRequest(c, http.StatusInternalServerError, "invalid_uuid_parse", err, a.log)

@@ -1,10 +1,10 @@
 package node
 
 import (
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
@@ -46,16 +46,16 @@ func (n *Node) apiObjectsCreateObject(c *gin.Context) {
 		return
 	}
 
-	parentID, err := uuid.Parse(inBody.ParentID)
+	parentID, err := umid.Parse(inBody.ParentID)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiObjectsCreateObject: failed to parse parent id")
+		err := errors.WithMessage(err, "Node: apiObjectsCreateObject: failed to parse parent umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_parent_id", err, n.log)
 		return
 	}
 
 	userID, err := api.GetUserIDFromContext(c)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiObjectsCreateObject: failed to get user id")
+		err := errors.WithMessage(err, "Node: apiObjectsCreateObject: failed to get user umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
 		return
 	}
@@ -83,29 +83,29 @@ func (n *Node) apiObjectsCreateObject(c *gin.Context) {
 		}
 	}
 
-	objectTypeID, err := uuid.Parse(inBody.ObjectTypeID)
+	objectTypeID, err := umid.Parse(inBody.ObjectTypeID)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiObjectsCreateObject: failed to parse object type id")
+		err := errors.WithMessage(err, "Node: apiObjectsCreateObject: failed to parse object type umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_type_id", err, n.log)
 		return
 	}
 
-	var asset2dID *uuid.UUID
+	var asset2dID *umid.UMID
 	if inBody.Asset2dID != nil {
-		assetID, err := uuid.Parse(*inBody.Asset2dID)
+		assetID, err := umid.Parse(*inBody.Asset2dID)
 		if err != nil {
-			err := errors.WithMessage(err, "Node: apiObjectsCreateObject: failed to parse asset 2d id")
+			err := errors.WithMessage(err, "Node: apiObjectsCreateObject: failed to parse asset 2d umid")
 			api.AbortRequest(c, http.StatusBadRequest, "invalid_asset_2d_id", err, n.log)
 			return
 		}
 		asset2dID = &assetID
 	}
 
-	var asset3dID *uuid.UUID
+	var asset3dID *umid.UMID
 	if inBody.Asset3dID != nil {
-		assetID, err := uuid.Parse(*inBody.Asset3dID)
+		assetID, err := umid.Parse(*inBody.Asset3dID)
 		if err != nil {
-			err := errors.WithMessage(err, "Node: apiObjectsCreateObject: failed to parse asset 3d id")
+			err := errors.WithMessage(err, "Node: apiObjectsCreateObject: failed to parse asset 3d umid")
 			api.AbortRequest(c, http.StatusBadRequest, "invalid_asset_3d_id", err, n.log)
 			return
 		}

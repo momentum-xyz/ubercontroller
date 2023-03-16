@@ -3,10 +3,10 @@ package universe
 import (
 	"context"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	influxWrite "github.com/influxdata/influxdb-client-go/v2/api/write"
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -14,7 +14,7 @@ import (
 )
 
 type IDer interface {
-	GetID() uuid.UUID
+	GetID() umid.UMID
 }
 
 type Initializer interface {
@@ -57,9 +57,9 @@ type APIRegister interface {
 }
 
 type ObjectsCacher interface {
-	GetAllObjects() map[uuid.UUID]Object
-	GetObjectFromAllObjects(objectID uuid.UUID) (Object, bool)
-	FilterAllObjects(predicateFn ObjectsFilterPredicateFn) map[uuid.UUID]Object
+	GetAllObjects() map[umid.UMID]Object
+	GetObjectFromAllObjects(objectID umid.UMID) (Object, bool)
+	FilterAllObjects(predicateFn ObjectsFilterPredicateFn) map[umid.UMID]Object
 	AddObjectToAllObjects(object Object) error
 	RemoveObjectFromAllObjects(object Object) (bool, error)
 }
@@ -102,10 +102,10 @@ type Worlds interface {
 	LoadSaver
 	APIRegister
 
-	CreateWorld(worldID uuid.UUID) (World, error)
-	GetWorld(worldID uuid.UUID) (World, bool)
-	GetWorlds() map[uuid.UUID]World
-	FilterWorlds(predicateFn WorldsFilterPredicateFn) map[uuid.UUID]World
+	CreateWorld(worldID umid.UMID) (World, error)
+	GetWorld(worldID umid.UMID) (World, bool)
+	GetWorlds() map[umid.UMID]World
+	FilterWorlds(predicateFn WorldsFilterPredicateFn) map[umid.UMID]World
 	AddWorld(world World, updateDB bool) error
 	AddWorlds(worlds []World, updateDB bool) error
 	RemoveWorld(world World, updateDB bool) (bool, error)
@@ -145,8 +145,8 @@ type Object interface {
 	GetParent() Object
 	SetParent(parent Object, updateDB bool) error
 
-	GetOwnerID() uuid.UUID
-	SetOwnerID(ownerID uuid.UUID, updateDB bool) error
+	GetOwnerID() umid.UMID
+	SetOwnerID(ownerID umid.UMID, updateDB bool) error
 
 	GetTransform() *cmath.ObjectTransform
 	GetActualTransform() *cmath.ObjectTransform
@@ -174,17 +174,17 @@ type Object interface {
 	Update(recursive bool) error
 	UpdateChildrenPosition(recursive bool) error
 
-	CreateObject(objectID uuid.UUID) (Object, error)
-	GetObject(objectID uuid.UUID, recursive bool) (Object, bool)
-	GetObjects(recursive bool) map[uuid.UUID]Object
-	FilterObjects(predicateFn ObjectsFilterPredicateFn, recursive bool) map[uuid.UUID]Object
+	CreateObject(objectID umid.UMID) (Object, error)
+	GetObject(objectID umid.UMID, recursive bool) (Object, bool)
+	GetObjects(recursive bool) map[umid.UMID]Object
+	FilterObjects(predicateFn ObjectsFilterPredicateFn, recursive bool) map[umid.UMID]Object
 	AddObject(object Object, updateDB bool) error
 	AddObjects(objects []Object, updateDB bool) error
 	RemoveObject(object Object, recursive, updateDB bool) (bool, error)
 	RemoveObjects(objects []Object, recursive, updateDB bool) (bool, error)
 
-	GetUser(userID uuid.UUID, recursive bool) (User, bool)
-	GetUsers(recursive bool) map[uuid.UUID]User
+	GetUser(userID umid.UMID, recursive bool) (User, bool)
+	GetUsers(recursive bool) map[umid.UMID]User
 	AddUser(user User, updateDB bool) error
 	RemoveUser(user User, updateDB bool) (bool, error)
 
@@ -227,8 +227,8 @@ type User interface {
 	ReleaseSendBuffer()
 	LockSendBuffer()
 
-	GetSessionID() uuid.UUID
-	SetConnection(sessionID uuid.UUID, socketConnection *websocket.Conn) error
+	GetSessionID() umid.UMID
+	SetConnection(sessionID umid.UMID, socketConnection *websocket.Conn) error
 
 	Send(message *websocket.PreparedMessage) error
 	SendDirectly(message *websocket.PreparedMessage) error
@@ -241,7 +241,7 @@ type User interface {
 type UserObjects interface {
 	GetValue(userObjectID entry.UserObjectID) (*entry.UserObjectValue, bool)
 
-	GetObjectIndirectAdmins(objectID uuid.UUID) ([]*uuid.UUID, bool)
+	GetObjectIndirectAdmins(objectID umid.UMID) ([]*umid.UMID, bool)
 	CheckIsIndirectAdmin(userObjectID entry.UserObjectID) (bool, error)
 
 	Upsert(
@@ -310,10 +310,10 @@ type Assets2d interface {
 	LoadSaver
 	APIRegister
 
-	CreateAsset2d(asset2dID uuid.UUID) (Asset2d, error)
-	GetAsset2d(asset2dID uuid.UUID) (Asset2d, bool)
-	GetAssets2d() map[uuid.UUID]Asset2d
-	FilterAssets2d(predicateFn Assets2dFilterPredicateFn) map[uuid.UUID]Asset2d
+	CreateAsset2d(asset2dID umid.UMID) (Asset2d, error)
+	GetAsset2d(asset2dID umid.UMID) (Asset2d, bool)
+	GetAssets2d() map[umid.UMID]Asset2d
+	FilterAssets2d(predicateFn Assets2dFilterPredicateFn) map[umid.UMID]Asset2d
 	AddAsset2d(asset2d Asset2d, updateDB bool) error
 	AddAssets2d(assets2d []Asset2d, updateDB bool) error
 	RemoveAsset2d(asset2d Asset2d, updateDB bool) (bool, error)
@@ -339,16 +339,16 @@ type Assets3d interface {
 	LoadSaver
 	APIRegister
 
-	CreateAsset3d(asset3dID uuid.UUID) (Asset3d, error)
-	GetAsset3d(asset3dID uuid.UUID) (Asset3d, bool)
-	GetAssets3d() map[uuid.UUID]Asset3d
-	FilterAssets3d(predicateFn Assets3dFilterPredicateFn) map[uuid.UUID]Asset3d
+	CreateAsset3d(asset3dID umid.UMID) (Asset3d, error)
+	GetAsset3d(asset3dID umid.UMID) (Asset3d, bool)
+	GetAssets3d() map[umid.UMID]Asset3d
+	FilterAssets3d(predicateFn Assets3dFilterPredicateFn) map[umid.UMID]Asset3d
 	AddAsset3d(asset3d Asset3d, updateDB bool) error
 	AddAssets3d(assets3d []Asset3d, updateDB bool) error
 	RemoveAsset3d(asset3d Asset3d, updateDB bool) (bool, error)
 	RemoveAssets3d(assets3d []Asset3d, updateDB bool) (bool, error)
-	RemoveAsset3dByID(assets3dID uuid.UUID, updateDB bool) (bool, error)
-	RemoveAssets3dByIDs(assets3dIDs []uuid.UUID, updateDB bool) (bool, error)
+	RemoveAsset3dByID(assets3dID umid.UMID, updateDB bool) (bool, error)
+	RemoveAssets3dByIDs(assets3dIDs []umid.UMID, updateDB bool) (bool, error)
 }
 
 type Asset3d interface {
@@ -370,10 +370,10 @@ type Plugins interface {
 	LoadSaver
 	APIRegister
 
-	CreatePlugin(pluginID uuid.UUID) (Plugin, error)
-	GetPlugin(pluginID uuid.UUID) (Plugin, bool)
-	GetPlugins() map[uuid.UUID]Plugin
-	FilterPlugins(predicateFn PluginsFilterPredicateFn) map[uuid.UUID]Plugin
+	CreatePlugin(pluginID umid.UMID) (Plugin, error)
+	GetPlugin(pluginID umid.UMID) (Plugin, bool)
+	GetPlugins() map[umid.UMID]Plugin
+	FilterPlugins(predicateFn PluginsFilterPredicateFn) map[umid.UMID]Plugin
 	AddPlugin(plugin Plugin, updateDB bool) error
 	AddPlugins(plugins []Plugin, updateDB bool) error
 	RemovePlugin(plugin Plugin, updateDB bool) (bool, error)
@@ -414,7 +414,7 @@ type AttributeType interface {
 
 	GetID() entry.AttributeTypeID
 	GetName() string
-	GetPluginID() uuid.UUID
+	GetPluginID() umid.UMID
 
 	GetOptions() *entry.AttributeOptions
 	SetOptions(modifyFn modify.Fn[entry.AttributeOptions], updateDB bool) (*entry.AttributeOptions, error)
@@ -431,10 +431,10 @@ type ObjectTypes interface {
 	LoadSaver
 	APIRegister
 
-	CreateObjectType(objectTypeID uuid.UUID) (ObjectType, error)
-	GetObjectType(objectTypeID uuid.UUID) (ObjectType, bool)
-	GetObjectTypes() map[uuid.UUID]ObjectType
-	FilterObjectTypes(predicateFn ObjectTypesFilterPredicateFn) map[uuid.UUID]ObjectType
+	CreateObjectType(objectTypeID umid.UMID) (ObjectType, error)
+	GetObjectType(objectTypeID umid.UMID) (ObjectType, bool)
+	GetObjectTypes() map[umid.UMID]ObjectType
+	FilterObjectTypes(predicateFn ObjectTypesFilterPredicateFn) map[umid.UMID]ObjectType
 	AddObjectType(objectType ObjectType, updateDB bool) error
 	AddObjectTypes(objectTypes []ObjectType, updateDB bool) error
 	RemoveObjectType(objectType ObjectType, updateDB bool) (bool, error)
@@ -472,10 +472,10 @@ type UserTypes interface {
 	LoadSaver
 	APIRegister
 
-	CreateUserType(userTypeID uuid.UUID) (UserType, error)
-	GetUserType(userTypeID uuid.UUID) (UserType, bool)
-	GetUserTypes() map[uuid.UUID]UserType
-	FilterUserTypes(predicateFn UserTypesFilterPredicateFn) map[uuid.UUID]UserType
+	CreateUserType(userTypeID umid.UMID) (UserType, error)
+	GetUserType(userTypeID umid.UMID) (UserType, bool)
+	GetUserTypes() map[umid.UMID]UserType
+	FilterUserTypes(predicateFn UserTypesFilterPredicateFn) map[umid.UMID]UserType
 	AddUserType(userType UserType, updateDB bool) error
 	AddUserTypes(userTypes []UserType, updateDB bool) error
 	RemoveUserType(userType UserType, updateDB bool) (bool, error)

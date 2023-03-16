@@ -1,3 +1,4 @@
+//go:generate go run gen/mus.go
 package posbus
 
 import (
@@ -9,6 +10,12 @@ import (
 	"log"
 	"reflect"
 )
+
+type PosbusDataType interface {
+	MarshalMUS(buf []byte) int
+	UnmarshalMUS(buf []byte) (int, error)
+	SizeMUS() int
+}
 
 var mapMessageNameById map[MsgType]string
 var mapMessageDataTypeById map[MsgType]reflect.Type

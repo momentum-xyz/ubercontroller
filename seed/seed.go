@@ -3,8 +3,8 @@ package seed
 import (
 	"context"
 	"fmt"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
-	"github.com/google/uuid"
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
@@ -51,9 +51,11 @@ func Node(ctx context.Context, node universe.Node, db database.DB) error {
 		},
 	)
 
-	group.Go(func() error {
-		return seedMedia(groupCtx)
-	})
+	group.Go(
+		func() error {
+			return seedMedia(groupCtx)
+		},
+	)
 
 	if err := group.Wait(); err != nil {
 		return errors.WithMessage(err, "failed to seed")
@@ -69,8 +71,8 @@ func Node(ctx context.Context, node universe.Node, db database.DB) error {
 		return errors.WithMessage(err, "failed to seed users")
 	}
 
-	if err := node.SetOwnerID(uuid.MustParse("00000000-0000-0000-0000-000000000003"), false); err != nil {
-		return errors.WithMessage(err, "failed to set owner ID")
+	if err := node.SetOwnerID(umid.MustParse("00000000-0000-0000-0000-000000000003"), false); err != nil {
+		return errors.WithMessage(err, "failed to set owner UMID")
 	}
 
 	if err := node.Save(); err != nil {

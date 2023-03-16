@@ -3,9 +3,9 @@ package seed
 import (
 	"context"
 	"crypto/rand"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"math/big"
 
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -15,7 +15,7 @@ import (
 
 func seedNodeAttributes(ctx context.Context, node universe.Node) error {
 	type item struct {
-		pluginID      uuid.UUID
+		pluginID      umid.UMID
 		attributeName string
 		value         *entry.AttributeValue
 		options       *entry.AttributeOptions
@@ -36,9 +36,9 @@ func seedNodeAttributes(ctx context.Context, node universe.Node) error {
 			pluginID:      universe.GetSystemPluginID(),
 			attributeName: "node_settings",
 			value: &entry.AttributeValue{
-				"id":                       uuid.New(),
+				"umid":                     umid.New(),
 				"name":                     "dev2-node",
-				"user_id_salt":             uuid.New(),
+				"user_id_salt":             umid.New(),
 				"entrance_world":           "d83670c7-a120-47a4-892d-f9ec75604f74",
 				"guest_user_type":          guestUserTypeID,
 				"normal_user_type":         normalUserTypeID,

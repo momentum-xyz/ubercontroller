@@ -6,13 +6,13 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/google/uuid"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 type Balance struct {
 	WalletID                 []byte    `db:"wallet_id"`
 	ContractID               []byte    `db:"contract_id"`
-	BlockchainID             uuid.UUID `db:"blockchain_id"`
+	BlockchainID             umid.UMID `db:"blockchain_id"`
 	LastProcessedBlockNumber uint64    `db:"last_processed_block_number"`
 	Balance                  *BigInt   `db:"balance"` //TODO should be big.Int
 }

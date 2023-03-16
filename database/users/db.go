@@ -2,9 +2,9 @@ package users
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/georgysavva/scany/pgxscan"
-	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -20,7 +20,7 @@ const (
 	getUsersByIDsQuery   = `SELECT * FROM "user" WHERE user_id = ANY($1);`
 	getUserByWalletQuery = `SELECT * FROM "user"
          						WHERE user_id = (SELECT user_id FROM user_attribute
-         						                    /* Kusama plugin id */
+         						                    /* Kusama plugin umid */
          						                	WHERE plugin_id = '86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8'
          						                    AND attribute_name = 'wallet'
          						                    AND value->'wallet' ? $1
@@ -63,7 +63,7 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 	}
 }
 
-func (db *DB) GetUserByID(ctx context.Context, userID uuid.UUID) (*entry.User, error) {
+func (db *DB) GetUserByID(ctx context.Context, userID umid.UMID) (*entry.User, error) {
 	var user entry.User
 	if err := pgxscan.Get(ctx, db.conn, &user, getUserByIDQuery, userID); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
@@ -71,7 +71,7 @@ func (db *DB) GetUserByID(ctx context.Context, userID uuid.UUID) (*entry.User, e
 	return &user, nil
 }
 
-func (db *DB) GetUsersByIDs(ctx context.Context, userIDs []uuid.UUID) ([]*entry.User, error) {
+func (db *DB) GetUsersByIDs(ctx context.Context, userIDs []umid.UMID) ([]*entry.User, error) {
 	var users []*entry.User
 	if err := pgxscan.Select(ctx, db.conn, &users, getUsersByIDsQuery, userIDs); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
@@ -87,7 +87,7 @@ func (db *DB) GetUserByWallet(ctx context.Context, wallet string) (*entry.User, 
 	return &user, nil
 }
 
-func (db *DB) GetUserWalletByUserID(ctx context.Context, userID uuid.UUID) (*string, error) {
+func (db *DB) GetUserWalletByUserID(ctx context.Context, userID umid.UMID) (*string, error) {
 	var wallet string
 	if err := db.conn.QueryRow(ctx, getWalletByUserID, userID).
 		Scan(&wallet); err != nil {
@@ -105,10 +105,12 @@ func (db *DB) CheckIsUserExistsByName(ctx context.Context, name string) (bool, e
 	return exists, nil
 }
 
-func (db *DB) GetUserProfileByUserID(ctx context.Context, userID uuid.UUID) (*entry.UserProfile, error) {
+func (db *DB) GetUserProfileByUserID(ctx context.Context, userID umid.UMID) (*entry.UserProfile, error) {
 	var profile entry.UserProfile
-	err := db.conn.QueryRow(ctx,
-		getUserProfileByUserIDQuery, userID).Scan(&profile)
+	err := db.conn.QueryRow(
+		ctx,
+		getUserProfileByUserIDQuery, userID,
+	).Scan(&profile)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
@@ -148,35 +150,35 @@ func (db *DB) UpsertUsers(ctx context.Context, users []*entry.User) error {
 
 }
 
-func (db *DB) RemoveUsersByIDs(ctx context.Context, userIDs []uuid.UUID) error {
+func (db *DB) RemoveUsersByIDs(ctx context.Context, userIDs []umid.UMID) error {
 	if _, err := db.conn.Exec(ctx, removeUsersByIDsQuery, userIDs); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) RemoveUserByID(ctx context.Context, userID uuid.UUID) error {
+func (db *DB) RemoveUserByID(ctx context.Context, userID umid.UMID) error {
 	if _, err := db.conn.Exec(ctx, removeUserByIDQuery, userID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 
 }
-func (db *DB) UpdateUserUserTypeID(ctx context.Context, userID uuid.UUID, userTypeID uuid.UUID) error {
+func (db *DB) UpdateUserUserTypeID(ctx context.Context, userID umid.UMID, userTypeID umid.UMID) error {
 	if _, err := db.conn.Exec(ctx, updateUserUserTypeIDQuery, userID, userTypeID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) UpdateUserOptions(ctx context.Context, userID uuid.UUID, options *entry.UserOptions) error {
+func (db *DB) UpdateUserOptions(ctx context.Context, userID umid.UMID, options *entry.UserOptions) error {
 	if _, err := db.conn.Exec(ctx, updateUserOptionsQuery, userID, options); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-func (db *DB) UpdateUserProfile(ctx context.Context, userID uuid.UUID, profile *entry.UserProfile) error {
+func (db *DB) UpdateUserProfile(ctx context.Context, userID umid.UMID, profile *entry.UserProfile) error {
 	if _, err := db.conn.Exec(ctx, updateUserProfileQuery, userID, profile); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}

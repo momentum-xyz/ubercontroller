@@ -3,10 +3,10 @@ package world
 import (
 	"context"
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"sync/atomic"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
@@ -41,7 +41,7 @@ type World struct {
 	metaMsg             atomic.Pointer[websocket.PreparedMessage]
 	metaData            Metadata
 	settings            atomic.Pointer[universe.WorldSettings]
-	allObjects          *generic.SyncMap[uuid.UUID, universe.Object]
+	allObjects          *generic.SyncMap[umid.UMID, universe.Object]
 	calendar            *calendar.Calendar
 	skyBoxMsg           atomic.Pointer[websocket.PreparedMessage]
 	lastPosUpdate       int64
@@ -55,10 +55,10 @@ func (w *World) TempGetSkybox() *websocket.PreparedMessage {
 	return w.skyBoxMsg.Load()
 }
 
-func NewWorld(id uuid.UUID, db database.DB) *World {
+func NewWorld(id umid.UMID, db database.DB) *World {
 	world := &World{
 		db:         db,
-		allObjects: generic.NewSyncMap[uuid.UUID, universe.Object](0),
+		allObjects: generic.NewSyncMap[umid.UMID, universe.Object](0),
 	}
 	world.Object = object.NewObject(id, db, world)
 	world.settings.Store(&universe.WorldSettings{})
@@ -222,7 +222,7 @@ func (w *World) Load() error {
 
 	worldEntry, err := w.db.GetObjectsDB().GetObjectByID(w.ctx, w.GetID())
 	if err != nil {
-		return errors.WithMessage(err, "failed to get object by id")
+		return errors.WithMessage(err, "failed to get object by umid")
 	}
 
 	if err := w.LoadFromEntry(worldEntry, true); err != nil {
@@ -284,7 +284,7 @@ func (w *World) UpdateWorldSettings() error {
 func (w *World) UpdateWorldMetadata() error {
 	meta, ok := w.GetObjectAttributes().GetValue(
 		entry.NewAttributeID(
-			uuid.UUID(w.corePluginInterface.GetId()), universe.ReservedAttributes.World.Meta.Name,
+			umid.UMID(w.corePluginInterface.GetId()), universe.ReservedAttributes.World.Meta.Name,
 		),
 	)
 

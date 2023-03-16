@@ -2,10 +2,10 @@ package worlds
 
 import (
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
@@ -18,16 +18,16 @@ import (
 // @Tags worlds
 // @Accept json
 // @Produce json
-// @Param world_id path string true "World ID"
+// @Param world_id path string true "World UMID"
 // @Success 200 {object} nil
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/worlds/{object_id}/fly-to-me [post]
 func (w *Worlds) apiWorldsFlyToMe(c *gin.Context) {
-	objectID, err := uuid.Parse(c.Param("objectID"))
+	objectID, err := umid.Parse(c.Param("objectID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Worlds: apiWorldsFlyToMe: failed to parse world id")
+		err := errors.WithMessage(err, "Worlds: apiWorldsFlyToMe: failed to parse world umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
 		return
 	}
@@ -41,7 +41,7 @@ func (w *Worlds) apiWorldsFlyToMe(c *gin.Context) {
 
 	userID, err := api.GetUserIDFromContext(c)
 	if err != nil {
-		err = errors.WithMessage(err, "Worlds: apiWorldsFlyToMe: failed to get user id from context")
+		err = errors.WithMessage(err, "Worlds: apiWorldsFlyToMe: failed to get user umid from context")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_user_id", err, w.log)
 		return
 	}
@@ -55,7 +55,7 @@ func (w *Worlds) apiWorldsFlyToMe(c *gin.Context) {
 
 	userProfile, err := w.db.GetUsersDB().GetUserProfileByUserID(c, user.GetID())
 	if err != nil {
-		err = errors.WithMessage(err, "Worlds: apiWorldsFlyToMe: failed to get user profile by user id")
+		err = errors.WithMessage(err, "Worlds: apiWorldsFlyToMe: failed to get user profile by user umid")
 		api.AbortRequest(c, http.StatusNotFound, "profile_not_found", err, w.log)
 		return
 	}

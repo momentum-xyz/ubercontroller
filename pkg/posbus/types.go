@@ -2,10 +2,10 @@ package posbus
 
 import (
 	"encoding/json"
-	"github.com/google/uuid"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 type SignalType uint32
@@ -107,8 +107,8 @@ type HandShake struct {
 	HandshakeVersion int       `json:"handshake_version"`
 	ProtocolVersion  int       `json:"protocol_version"`
 	Token            string    `json:"token"`
-	UserId           uuid.UUID `json:"user_id"`
-	SessionId        uuid.UUID `json:"session_id"`
+	UserId           umid.UMID `json:"user_id"`
+	SessionId        umid.UMID `json:"session_id"`
 }
 
 type AddObjects struct {
@@ -116,7 +116,7 @@ type AddObjects struct {
 }
 
 type RemoveObjects struct {
-	Objects []uuid.UUID `json:"objects"`
+	Objects []umid.UMID `json:"objects"`
 }
 
 type AddUsers struct {
@@ -124,7 +124,7 @@ type AddUsers struct {
 }
 
 type RemoveUsers struct {
-	Users []uuid.UUID `json:"users"`
+	Users []umid.UMID `json:"users"`
 }
 
 type Signal struct {
@@ -132,36 +132,36 @@ type Signal struct {
 }
 
 type TeleportRequest struct {
-	Target uuid.UUID `json:"target"`
+	Target umid.UMID `json:"target"`
 }
 
 type ObjectDefinition struct {
-	ID               uuid.UUID             `json:"id"`
-	ParentID         uuid.UUID             `json:"parent_id"`
-	AssetType        uuid.UUID             `json:"asset_type"`
+	ID               umid.UMID             `json:"umid"`
+	ParentID         umid.UMID             `json:"parent_id"`
+	AssetType        umid.UMID             `json:"asset_type"`
 	AssetFormat      dto.Asset3dType       `json:"asset_format"` // TODO: Rename AssetType to AssetID, so Type can be used for this.
 	Name             string                `json:"name"`
 	Transform        cmath.ObjectTransform `json:"transform"`
 	IsEditable       bool                  `json:"is_editable"`
 	TetheredToParent bool                  `json:"tethered_to_parent"`
 	ShowOnMiniMap    bool                  `json:"show_on_minimap"`
-	//InfoUI           uuid.UUID
+	//InfoUI           umid.UMID
 }
 
 type UserDefinition struct {
-	ID        uuid.UUID           `json:"id"`
+	ID        umid.UMID           `json:"umid"`
 	Name      string              `json:"name"`
-	Avatar    uuid.UUID           `json:"avatar"`
+	Avatar    umid.UMID           `json:"avatar"`
 	Transform cmath.UserTransform `json:"transform"`
 	IsGuest   bool                `json:"is_guest"`
 }
 
 type SetWorldData struct {
-	ID              uuid.UUID `json:"id"`
+	ID              umid.UMID `json:"umid"`
 	Name            string    `json:"name"`
-	Avatar          uuid.UUID `json:"avatar"`
-	Owner           uuid.UUID `json:"owner"`
-	Avatar3DAssetID uuid.UUID `json:"avatar_3d_asset_id"`
+	Avatar          umid.UMID `json:"avatar"`
+	Owner           umid.UMID `json:"owner"`
+	Avatar3DAssetID umid.UMID `json:"avatar_3d_asset_id"`
 }
 
 type ObjectDataIndex struct {
@@ -170,23 +170,23 @@ type ObjectDataIndex struct {
 }
 
 type ObjectData struct {
-	ID      uuid.UUID
+	ID      umid.UMID
 	Entries map[ObjectDataIndex]interface{}
 }
 
 type SetObjectLock struct {
-	ID    uuid.UUID `json:"id"`
+	ID    umid.UMID `json:"umid"`
 	State uint32    `json:"state"`
 }
 
 type ObjectLockResultData struct {
-	ID        uuid.UUID `json:"id"`
+	ID        umid.UMID `json:"umid"`
 	Result    uint32    `json:"result"`
-	LockOwner uuid.UUID `json:"lock_owner"`
+	LockOwner umid.UMID `json:"lock_owner"`
 }
 
 type ObjectPosition struct {
-	ID              uuid.UUID             `json:"id"`
+	ID              umid.UMID             `json:"umid"`
 	ObjectTransform cmath.ObjectTransform `json:"object_transform"`
 }
 
@@ -208,7 +208,7 @@ func (o *ObjectData) MarshalJSON() ([]byte, error) {
 
 	return json.Marshal(
 		&struct {
-			ID      uuid.UUID                         `json:"id"`
+			ID      umid.UMID                         `json:"umid"`
 			Entries map[string]map[string]interface{} `json:"entries"`
 		}{
 			ID:      o.ID,
