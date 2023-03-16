@@ -14,15 +14,15 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/harvester"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 type EthereumAdapter struct {
 	listener  harvester.AdapterListener
-	uuid      uuid.UUID
+	umid      umid.UMID
 	rpcURL    string
 	httpURL   string
 	name      string
@@ -32,15 +32,15 @@ type EthereumAdapter struct {
 
 func NewEthereumAdapter() *EthereumAdapter {
 	return &EthereumAdapter{
-		uuid:    uuid.MustParse("ccccaaaa-1111-2222-3333-111111111111"),
+		umid:    umid.MustParse("ccccaaaa-1111-2222-3333-111111111111"),
 		rpcURL:  "wss://eth.llamarpc.com",
 		httpURL: "https://eth.llamarpc.com",
 		name:    "ethereum",
 	}
 }
 
-func (a *EthereumAdapter) GetInfo() (uuid uuid.UUID, name string, rpcURL string) {
-	return a.uuid, a.name, a.rpcURL
+func (a *EthereumAdapter) GetInfo() (umid umid.UMID, name string, rpcURL string) {
+	return a.umid, a.name, a.rpcURL
 }
 
 func (a *EthereumAdapter) RegisterNewBlockListener(f harvester.AdapterListener) {
@@ -179,7 +179,8 @@ func (a *EthereumAdapter) onNewBlock(b *harvester.BCBlock) {
 			//fmt.Println(MapToJson(methodInput))
 			//fmt.Printf("From: %s\n", a.GetTransactionMessage(tx).From().Hex()) // from field is not inside of transation
 			diff := &harvester.BCDiff{}
-			diff.From = strings.ToLower(a.GetTransactionMessage(tx).From().Hex())
+			//fmt.Println(tx)
+			//diff.From = strings.ToLower(a.GetTransactionMessage(tx).From().Hex())
 			diff.To = strings.ToLower(methodInput["_to"].(common.Address).Hex())
 			diff.Amount = methodInput["_value"].(*big.Int)
 			diffs = append(diffs, diff)
@@ -247,13 +248,13 @@ func MapToJson(param map[string]interface{}) string {
 	return dataString
 }
 
-func (a *EthereumAdapter) GetTransactionMessage(tx *types.Transaction) types.Message {
-	msg, err := tx.AsMessage(types.LatestSignerForChainID(tx.ChainId()), nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return msg
-}
+//func (a *EthereumAdapter) GetTransactionMessage(tx *types.Transaction) types.Message {
+//	msg, err := tx.AsMessage(types.LatestSignerForChainID(tx.ChainId()), nil)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//	return msg
+//}
 
 const erc20abi = `[
     {

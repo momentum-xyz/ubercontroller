@@ -7,13 +7,13 @@ import (
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/georgysavva/scany/pgxscan"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/sasha-s/go-deadlock"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 const getBlockchainByID = `SELECT * FROM blockchain WHERE blockchain_id=$1`
@@ -26,7 +26,7 @@ ON CONFLICT (blockchain_id) DO UPDATE SET last_processed_block_number=$2,
 const getAllBalances = `SELECT * FROM balance`
 
 type BlockChain struct {
-	uuid                     uuid.UUID
+	umid                     umid.UMID
 	name                     string
 	lastProcessedBlockNumber uint64
 	rpcURL                   string
@@ -39,9 +39,9 @@ type BlockChain struct {
 
 type UpdateWalletContractHook func(bcType string, wallet string, contract string, blockNumber uint64, balance *big.Int)
 
-func NewBlockchain(db *pgxpool.Pool, adapter Adapter, uuid uuid.UUID, name string, rpcURL string, onUpdateWalletContract UpdateWalletContractHook) *BlockChain {
+func NewBlockchain(db *pgxpool.Pool, adapter Adapter, umid umid.UMID, name string, rpcURL string, onUpdateWalletContract UpdateWalletContractHook) *BlockChain {
 	return &BlockChain{
-		uuid:                   uuid,
+		umid:                   umid,
 		name:                   name,
 		rpcURL:                 rpcURL,
 		db:                     db,
@@ -54,7 +54,7 @@ func NewBlockchain(db *pgxpool.Pool, adapter Adapter, uuid uuid.UUID, name strin
 
 func (b *BlockChain) ToEntry() *entry.Blockchain {
 	return &entry.Blockchain{
-		BlockchainID:             b.uuid,
+		BlockchainID:             b.umid,
 		LastProcessedBlockNumber: b.lastProcessedBlockNumber,
 		BlockchainName:           b.name,
 		RPCURL:                   b.rpcURL,
@@ -94,7 +94,7 @@ func (b *BlockChain) SubscribeForWalletAndContract(wallet []byte, contract []byt
 	b.m[walletStr][contractStr] = &entry.Balance{
 		WalletID:                 wallet,
 		ContractID:               contract,
-		BlockchainID:             b.uuid,
+		BlockchainID:             b.umid,
 		LastProcessedBlockNumber: 0,
 		Balance:                  &entry.BigInt{},
 	}
@@ -155,7 +155,7 @@ func (b *BlockChain) SaveBalancesToDB() (err error) {
 			VALUES ($1::bytea, $2)
 			ON CONFLICT (blockchain_id, wallet_id) DO NOTHING `
 	for _, w := range wallets {
-		_, err = tx.Exec(context.Background(), sql, w, b.uuid)
+		_, err = tx.Exec(context.Background(), sql, w, b.umid)
 		if err != nil {
 			err = errors.WithMessage(err, "failed to insert wallet to DB")
 			return err
@@ -193,7 +193,7 @@ func (b *BlockChain) SaveBalancesToDB() (err error) {
 
 func (b *BlockChain) LoadFromDB() error {
 	var vals []entry.Blockchain
-	if err := pgxscan.Select(context.Background(), b.db, &vals, getBlockchainByID, b.uuid); err != nil {
+	if err := pgxscan.Select(context.Background(), b.db, &vals, getBlockchainByID, b.umid); err != nil {
 
 		return errors.WithMessage(err, "failed to select from db")
 	}

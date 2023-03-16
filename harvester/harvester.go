@@ -4,9 +4,10 @@ import (
 	"encoding/hex"
 	"math/big"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
+
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 type Harvester struct {
@@ -58,8 +59,8 @@ func (h *Harvester) OnNewBlock(bcType string, block *BCBlock) {
 	h.clients.Trigger(bcType, NewBlock, block)
 }
 
-func (h *Harvester) RegisterAdapter(uuid uuid.UUID, bcType string, rpcURL string, adapter Adapter) error {
-	h.bc[bcType] = NewBlockchain(h.db, adapter, uuid, bcType, rpcURL, h.updateHook)
+func (h *Harvester) RegisterAdapter(umid umid.UMID, bcType string, rpcURL string, adapter Adapter) error {
+	h.bc[bcType] = NewBlockchain(h.db, adapter, umid, bcType, rpcURL, h.updateHook)
 	if err := h.bc[bcType].LoadFromDB(); err != nil {
 		return errors.WithMessage(err, "failed to load from DB")
 	}
