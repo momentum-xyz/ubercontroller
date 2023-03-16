@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -179,8 +180,8 @@ func (a *EthereumAdapter) onNewBlock(b *harvester.BCBlock) {
 			//fmt.Println(MapToJson(methodInput))
 			//fmt.Printf("From: %s\n", a.GetTransactionMessage(tx).From().Hex()) // from field is not inside of transation
 			diff := &harvester.BCDiff{}
-			//fmt.Println(tx)
-			//diff.From = strings.ToLower(a.GetTransactionMessage(tx).From().Hex())
+			diff.From = strings.ToLower(a.GetTransactionMessage(tx).From.Hex())
+
 			diff.To = strings.ToLower(methodInput["_to"].(common.Address).Hex())
 			diff.Amount = methodInput["_value"].(*big.Int)
 			diffs = append(diffs, diff)
@@ -248,13 +249,13 @@ func MapToJson(param map[string]interface{}) string {
 	return dataString
 }
 
-//func (a *EthereumAdapter) GetTransactionMessage(tx *types.Transaction) types.Message {
-//	msg, err := tx.AsMessage(types.LatestSignerForChainID(tx.ChainId()), nil)
-//	if err != nil {
-//		log.Fatal(err)
-//	}
-//	return msg
-//}
+func (a *EthereumAdapter) GetTransactionMessage(tx *types.Transaction) *core.Message {
+	msg, err := core.TransactionToMessage(tx, types.LatestSignerForChainID(tx.ChainId()), nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return msg
+}
 
 const erc20abi = `[
     {
