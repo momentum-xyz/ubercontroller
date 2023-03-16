@@ -11,7 +11,13 @@ type BCBlock struct {
 	Number uint64
 }
 
-type AdapterListener func(block *BCBlock)
+type BCDiff struct {
+	From   string
+	To     string
+	Amount *big.Int
+}
+
+type AdapterListener func(block *BCBlock, diffs []*BCDiff)
 
 type Adapter interface {
 	GetLastBlockNumber() (uint64, error)

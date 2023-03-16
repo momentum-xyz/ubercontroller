@@ -13,8 +13,9 @@ func main() {
 	a := ethereum_adapter.NewEthereumAdapter()
 	a.Run()
 	var l harvester.AdapterListener
-	l = func(b *harvester.BCBlock) {
+	l = func(b *harvester.BCBlock, diffs []*harvester.BCDiff) {
 		fmt.Printf("Listener: %+v %+v \n", b.Number, b.Hash)
+		fmt.Printf("Diffs: %+v \n", len(diffs))
 	}
 
 	a.RegisterNewBlockListener(l)
