@@ -11,7 +11,7 @@ import (
 	"reflect"
 )
 
-type PosbusDataType interface {
+type Message interface {
 	MarshalMUS(buf []byte) int
 	UnmarshalMUS(buf []byte) (int, error)
 	SizeMUS() int
@@ -26,7 +26,7 @@ var messageMaps = struct {
 	//lock         sync.Mutex
 }{NameById: make(map[MsgType]string), IdByName: make(map[string]MsgType), DataTypeById: make(map[MsgType]reflect.Type)}
 
-func addToMaps(id MsgType, name string, v PosbusDataType) {
+func addToMaps(id MsgType, name string, v Message) {
 	messageMaps.NameById[id] = name
 	messageMaps.IdByName[name] = id
 	messageMaps.DataTypeById[id] = reflect.TypeOf(v)
@@ -85,9 +85,9 @@ func MessageType(buf []byte) MsgType {
 //	binary.LittleEndian.PutUint32(m.buf[MsgTypeSize+len:], uint32(^m.msgType))
 //}
 
-func Decode(buf []byte) (PosbusDataType, error) {
+func Decode(buf []byte) (Message, error) {
 	msgType := MessageType(buf)
-	m, ok := reflect.New(MessageDataTypeById(msgType)).Interface().(PosbusDataType)
+	m, ok := reflect.New(MessageDataTypeById(msgType)).Interface().(Message)
 	if !ok {
 		return nil, errors.New("unknown message type")
 	}
@@ -95,17 +95,17 @@ func Decode(buf []byte) (PosbusDataType, error) {
 	return m, err
 }
 
-func DecodeTo(buf []byte, m PosbusDataType) error {
+func DecodeTo(buf []byte, m Message) error {
 	_, err := m.UnmarshalMUS(buf[MsgTypeSize:])
 	return err
 }
 
-func WSMessage(m PosbusDataType) *websocket.PreparedMessage {
+func WSMessage(m Message) *websocket.PreparedMessage {
 	msg, _ := websocket.NewPreparedMessage(websocket.BinaryMessage, BinMessage(m))
 	return msg
 }
 
-func BinMessage(m PosbusDataType) []byte {
+func BinMessage(m Message) []byte {
 	len := m.SizeMUS()
 	buf := make([]byte, MsgTypeSize*2+len)
 	msgType := m.Type()
@@ -115,20 +115,20 @@ func BinMessage(m PosbusDataType) []byte {
 	return buf
 }
 
-func MsgTypeName(m PosbusDataType) string {
+func MsgTypeName(m Message) string {
 	return stringy.New(reflect.ValueOf(m).Elem().Type().Name()).SnakeCase().ToLower()
 }
 
-func MsgTypeId(m PosbusDataType) MsgType {
+func MsgTypeId(m Message) MsgType {
 	return m.Type()
 }
 
 func registerMessage(m interface{}) {
 	if !isGenerate() {
-		m1, ok := m.(PosbusDataType)
+		m1, ok := m.(Message)
 		if !ok {
 			fmt.Println("Can not initialize posbus package\n")
-			fmt.Println("Message '%+v' does not conform PosbusDataType interface\n", MsgTypeName(m1))
+			fmt.Println("Message '%+v' does not conform Message interface\n", MsgTypeName(m1))
 			os.Exit(-1)
 		}
 		addToMaps(m1.Type(), MsgTypeName(m1), m1)

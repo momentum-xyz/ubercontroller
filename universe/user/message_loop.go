@@ -68,7 +68,7 @@ func (u *User) Teleport(target umid.UMID) error {
 	return world.AddUser(u, true)
 }
 
-func (u *User) GenericMessageHandler(msg posbus.PosbusDataType) error {
+func (u *User) GenericMessageHandler(msg posbus.Message) error {
 	//m := msg.(*posbus.GenericMessage)
 	//if m.Topic() == "emoji" {
 	//	// TODO: comes as plugin?
