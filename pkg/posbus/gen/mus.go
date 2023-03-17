@@ -91,4 +91,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	err = musGo.Generate(reflect.TypeOf((*posbus.NotificationType)(nil)).Elem(), unsafe)
+	if err != nil {
+		panic(err)
+	}
+	err = musGo.Generate(reflect.TypeOf((*posbus.Notification)(nil)).Elem(), unsafe)
+	if err != nil {
+		panic(err)
+	}
 }

@@ -127,7 +127,8 @@ func registerMessage(m interface{}) {
 	if !isGenerate() {
 		m1, ok := m.(PosbusDataType)
 		if !ok {
-			fmt.Println("Can not initialize posbus package!")
+			fmt.Println("Can not initialize posbus package\n")
+			fmt.Println("Message '%+v' does not conform PosbusDataType interface\n", MsgTypeName(m1))
 			os.Exit(-1)
 		}
 		addToMaps(m1.Type(), MsgTypeName(m1), m1)

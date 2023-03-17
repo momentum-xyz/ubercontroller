@@ -28,6 +28,6 @@ func init() {
 	registerMessage(&Notification{})
 }
 
-func (g *Notification) MsgTypeId() MsgType {
+func (g *Notification) Type() MsgType {
 	return TypeNotification
 }
