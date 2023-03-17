@@ -2,6 +2,7 @@ package posbus
 
 import (
 	"encoding/json"
+
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
@@ -136,7 +137,7 @@ type TeleportRequest struct {
 }
 
 type ObjectDefinition struct {
-	ID               umid.UMID             `json:"umid"`
+	ID               umid.UMID             `json:"id"`
 	ParentID         umid.UMID             `json:"parent_id"`
 	AssetType        umid.UMID             `json:"asset_type"`
 	AssetFormat      dto.Asset3dType       `json:"asset_format"` // TODO: Rename AssetType to AssetID, so Type can be used for this.
@@ -149,7 +150,7 @@ type ObjectDefinition struct {
 }
 
 type UserDefinition struct {
-	ID        umid.UMID           `json:"umid"`
+	ID        umid.UMID           `json:"id"`
 	Name      string              `json:"name"`
 	Avatar    umid.UMID           `json:"avatar"`
 	Transform cmath.UserTransform `json:"transform"`
@@ -157,7 +158,7 @@ type UserDefinition struct {
 }
 
 type SetWorldData struct {
-	ID              umid.UMID `json:"umid"`
+	ID              umid.UMID `json:"id"`
 	Name            string    `json:"name"`
 	Avatar          umid.UMID `json:"avatar"`
 	Owner           umid.UMID `json:"owner"`
@@ -175,18 +176,18 @@ type ObjectData struct {
 }
 
 type SetObjectLock struct {
-	ID    umid.UMID `json:"umid"`
+	ID    umid.UMID `json:"id"`
 	State uint32    `json:"state"`
 }
 
 type ObjectLockResultData struct {
-	ID        umid.UMID `json:"umid"`
+	ID        umid.UMID `json:"id"`
 	Result    uint32    `json:"result"`
 	LockOwner umid.UMID `json:"lock_owner"`
 }
 
 type ObjectPosition struct {
-	ID              umid.UMID             `json:"umid"`
+	ID              umid.UMID             `json:"id"`
 	ObjectTransform cmath.ObjectTransform `json:"object_transform"`
 }
 
@@ -208,7 +209,7 @@ func (o *ObjectData) MarshalJSON() ([]byte, error) {
 
 	return json.Marshal(
 		&struct {
-			ID      umid.UMID                         `json:"umid"`
+			ID      umid.UMID                         `json:"id"`
 			Entries map[string]map[string]interface{} `json:"entries"`
 		}{
 			ID:      o.ID,
