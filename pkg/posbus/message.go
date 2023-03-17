@@ -1,4 +1,4 @@
-//go:generate go run gen/mus.go
+//go:generate go run -mod vendor gen/mus.go
 package posbus
 
 import (
