@@ -15,6 +15,10 @@ func main() {
 		panic(err)
 	}
 	unsafe := false // To generate safe code.
+	err = musGo.Generate(reflect.TypeOf((*posbus.HandShake)(nil)).Elem(), unsafe)
+	if err != nil {
+		panic(err)
+	}
 	err = musGo.Generate(reflect.TypeOf((*posbus.AddObjects)(nil)).Elem(), unsafe)
 	if err != nil {
 		panic(err)
@@ -27,7 +31,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	err = musGo.Generate(reflect.TypeOf((*posbus.UserDefinition)(nil)).Elem(), unsafe)
+	err = musGo.Generate(reflect.TypeOf((*posbus.UserData)(nil)).Elem(), unsafe)
 	if err != nil {
 		panic(err)
 	}
@@ -43,7 +47,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	err = musGo.Generate(reflect.TypeOf((*posbus.SetWorldData)(nil)).Elem(), unsafe)
+	err = musGo.Generate(reflect.TypeOf((*posbus.SetWorld)(nil)).Elem(), unsafe)
 	if err != nil {
 		panic(err)
 	}
@@ -51,11 +55,11 @@ func main() {
 	//if err != nil {
 	//	panic(err)
 	//}
-	err = musGo.Generate(reflect.TypeOf((*posbus.SetObjectLock)(nil)).Elem(), unsafe)
+	err = musGo.Generate(reflect.TypeOf((*posbus.LockObject)(nil)).Elem(), unsafe)
 	if err != nil {
 		panic(err)
 	}
-	err = musGo.Generate(reflect.TypeOf((*posbus.ObjectLockResultData)(nil)).Elem(), unsafe)
+	err = musGo.Generate(reflect.TypeOf((*posbus.ObjectLockResult)(nil)).Elem(), unsafe)
 	if err != nil {
 		panic(err)
 	}
@@ -63,11 +67,15 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	err = musGo.Generate(reflect.TypeOf((*posbus.SetUsersTransforms)(nil)).Elem(), unsafe)
+	err = musGo.Generate(reflect.TypeOf((*posbus.UsersTransformList)(nil)).Elem(), unsafe)
 	if err != nil {
 		panic(err)
 	}
 	err = musGo.Generate(reflect.TypeOf((*posbus.UserTransform)(nil)).Elem(), unsafe)
+	if err != nil {
+		panic(err)
+	}
+	err = musGo.Generate(reflect.TypeOf((*posbus.MyTransform)(nil)).Elem(), unsafe)
 	if err != nil {
 		panic(err)
 	}
@@ -79,7 +87,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	err = musGo.Generate(reflect.TypeOf((*posbus.GenericMessageData)(nil)).Elem(), unsafe)
+	err = musGo.Generate(reflect.TypeOf((*posbus.GenericMessage)(nil)).Elem(), unsafe)
 	if err != nil {
 		panic(err)
 	}

@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"math/rand"
 	"os"
@@ -67,6 +69,9 @@ func main() {
 }
 
 func run(ctx context.Context) error {
+	qq := posbus.GenericMessage{}
+	fmt.Println("QQ:", posbus.MsgTypeName(&qq))
+	os.Exit(0)
 	cfg := config.GetConfig()
 
 	ctx = context.WithValue(ctx, types.LoggerContextKey, log)
