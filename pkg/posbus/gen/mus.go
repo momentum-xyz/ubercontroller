@@ -9,6 +9,7 @@ import (
 	"github.com/ymz-ncnk/musgo/v2"
 	"os"
 	"reflect"
+	"sort"
 )
 
 func main() {
@@ -118,8 +119,20 @@ func printTypes() {
 	if err != nil {
 		panic(err)
 	}
-	for msgType, s := range posbus.IdsCheck {
-		_, err = fmt.Fprintf(w, "    %+v     MsgType = 0x%08X\n", s, msgType)
+
+	msgNames := make([]string, 0, len(posbus.IdsCheck))
+	typeMap := make(map[string]posbus.MsgType)
+
+	for id, name := range posbus.IdsCheck {
+		msgNames = append(msgNames, name)
+		typeMap[name] = id
+	}
+
+	sort.Strings(msgNames)
+
+	for _, msgName := range msgNames {
+		msgType := typeMap[msgName]
+		_, err = fmt.Fprintf(w, "    %+v     MsgType = 0x%08X\n", msgName, msgType)
 		if err != nil {
 			panic(err)
 		}

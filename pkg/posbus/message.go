@@ -40,7 +40,7 @@ var messageMaps = struct {
 func addToMaps(id MsgType, name string, v Message) {
 	messageMaps.NameById[id] = name
 	messageMaps.IdByName[name] = id
-	messageMaps.DataTypeById[id] = reflect.TypeOf(v)
+	messageMaps.DataTypeById[id] = reflect.ValueOf(v).Elem().Type()
 }
 
 func MessageNameById(id MsgType) string {
@@ -103,6 +103,7 @@ func Decode(buf []byte) (Message, error) {
 		return nil, errors.New("unknown message type")
 	}
 	err := DecodeTo(buf, m)
+	fmt.Printf("%+v\n", m)
 	return m, err
 }
 
