@@ -2,6 +2,7 @@ package node
 
 import (
 	"fmt"
+
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/pkg/errors"
@@ -26,3 +27,5 @@ func (n *Node) LoadUser(userID umid.UMID) (universe.User, error) {
 	fmt.Printf("%+v\n", user.GetPosition())
 	return user, nil
 }
+
+// Todo: add user attribute functions for API

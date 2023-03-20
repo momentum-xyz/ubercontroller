@@ -68,9 +68,19 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 			{
 				verifiedUser.GET("", n.apiUsersGetByID)
 			}
-			attributes := verifiedUsers.Group("/attributes")
+
+			uAttributes := verifiedUsers.Group("/attributes")
 			{
-				attributes.POST("/sub/:userID/:targetID", n.apiSetUserUserSubAttributeValue)
+				uAttributes.POST("/attributes", n.apiSetUserAttributeValue)
+				uAttributes.DELETE("/attributes", n.apiRemoveUserAttributeValue)
+
+				uAttributes.POST("/attributes/sub", n.apiSetUserAttributeSubValue)
+				uAttributes.DELETE("/attributes/sub", n.apiRemoveUserAttributeSubValue)
+
+				uAttributes.GET("/attributes", n.apiGetUserAttributeValue)
+				uAttributes.GET("/attributes/sub", n.apiGetUserAttributeSubValue)
+
+				uAttributes.POST("/sub/:userID/:targetID", n.apiSetUserUserSubAttributeValue)
 			}
 		}
 
