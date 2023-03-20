@@ -31,7 +31,27 @@ func (t *Table) Run() {
 }
 
 func (t *Table) listener(block *BCBlock, diffs []*BCDiff) {
-
+	fmt.Printf("Block: %d \n", block.Number)
+	t.mu.Lock()
+	for _, diff := range diffs {
+		_, ok := t.data[diff.Token]
+		if !ok {
+			// No such contract
+			continue
+		}
+		b, ok := t.data[diff.Token][diff.From]
+		if ok {
+			// From wallet found
+			b.Sub(b, diff.Amount)
+		}
+		b, ok = t.data[diff.Token][diff.To]
+		if ok {
+			// To wallet found
+			b.Add(b, diff.Amount)
+		}
+	}
+	t.mu.Unlock()
+	t.Display()
 }
 
 func (t *Table) AddWalletContract(wallet string, contract string) {
@@ -75,5 +95,13 @@ func (t *Table) syncBalance(wallet string, contract string) {
 	} else {
 		t.mu.Unlock()
 		t.syncBalance(wallet, contract)
+	}
+}
+
+func (t *Table) Display() {
+	for token, wallets := range t.data {
+		for wallet, balance := range wallets {
+			fmt.Printf("%+v %+v %+v \n", token, wallet, balance.String())
+		}
 	}
 }

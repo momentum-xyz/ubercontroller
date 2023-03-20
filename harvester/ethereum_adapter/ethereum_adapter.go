@@ -120,7 +120,7 @@ func (a *EthereumAdapter) Run() {
 				log.Fatal(err)
 			case vLog := <-ch:
 
-				//fmt.Println(vLog.Number)
+				fmt.Println(vLog.Number)
 				//fmt.Println(vLog.ReceiptHash)
 				//fmt.Println(vLog.ParentHash)
 				//fmt.Println(vLog.Root)
@@ -219,7 +219,8 @@ func (a *EthereumAdapter) onNewBlock(b *harvester.BCBlock) {
 	}
 
 	amount := big.NewInt(0)
-	amount.SetString("33190774000000000000000", 10)
+	//amount.SetString("33190774000000000000000", 10)
+	amount.SetString("1", 10)
 
 	mockDiffs := []*harvester.BCDiff{
 		&harvester.BCDiff{

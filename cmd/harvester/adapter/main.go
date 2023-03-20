@@ -26,8 +26,8 @@ func main() {
 	}
 	fmt.Printf("Last Block Number: %d \n", n)
 
-	token := "0x85F17Cf997934a597031b2E18a9aB6ebD4B9f6a4"
-	wallet := "0x0c3A3040075dd985F141800a1392a0Db81A09cAd"
+	token := "0x85F17Cf997934a597031b2E18a9aB6ebD4B9f6a4"  // token smart contract address
+	wallet := "0x0c3A3040075dd985F141800a1392a0Db81A09cAd" // user address
 	b, err := a.GetBalance(wallet, token, n)
 	if err != nil {
 		log.Fatal(err)

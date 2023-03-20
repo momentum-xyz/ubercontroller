@@ -30,6 +30,7 @@ func main() {
 	a.Run()
 
 	t := harvester.NewTable(pool, a, func(p any) {})
+	t.Run()
 
 	//token := "0x85F17Cf997934a597031b2E18a9aB6ebD4B9f6a4"
 	//wallet := "0x0c3A3040075dd985F141800a1392a0Db81A09cAd"
@@ -41,6 +42,7 @@ func main() {
 	//amount := "33190774000000000000000"
 	t.AddWalletContract(wallet2, token2)
 
-	time.Sleep(time.Second * 3)
-	fmt.Println(t)
+	time.Sleep(time.Second * 30)
+	t.Display()
+
 }
