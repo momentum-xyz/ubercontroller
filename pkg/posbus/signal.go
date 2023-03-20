@@ -24,5 +24,5 @@ func init() {
 }
 
 func (g *Signal) Type() MsgType {
-	return TypeSignal
+	return 0xADC1964D
 }

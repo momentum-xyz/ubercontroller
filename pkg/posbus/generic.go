@@ -15,7 +15,7 @@ func init() {
 }
 
 func (g *GenericMessage) Type() MsgType {
-	return TypeGenericMessage
+	return 0xF508E4A3
 }
 
 func NewGenericMessage(topic string, data interface{}) *GenericMessage {

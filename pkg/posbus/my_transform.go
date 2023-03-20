@@ -11,5 +11,5 @@ func init() {
 }
 
 func (a *MyTransform) Type() MsgType {
-	return TypeMyTransform
+	return 0xF878C4BF
 }

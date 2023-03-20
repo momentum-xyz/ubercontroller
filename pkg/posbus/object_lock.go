@@ -19,9 +19,9 @@ func init() {
 }
 
 func (l *LockObject) Type() MsgType {
-	return TypeLockObject
+	return 0xA7DE9F59
 }
 
 func (l *ObjectLockResult) Type() MsgType {
-	return TypeObjectLockResult
+	return 0x0924668C
 }

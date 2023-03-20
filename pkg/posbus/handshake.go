@@ -15,5 +15,5 @@ func init() {
 }
 
 func (g *HandShake) Type() MsgType {
-	return TypeHandShake
+	return 0x7C41941A
 }

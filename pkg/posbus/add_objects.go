@@ -28,5 +28,5 @@ func init() {
 }
 
 func (g *AddObjects) Type() MsgType {
-	return TypeAddObjects
+	return 0x2452A9C1
 }

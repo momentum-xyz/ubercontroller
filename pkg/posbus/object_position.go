@@ -15,5 +15,5 @@ func init() {
 }
 
 func (g *ObjectPosition) Type() MsgType {
-	return TypeObjectPosition
+	return 0xEA6DA4B4
 }

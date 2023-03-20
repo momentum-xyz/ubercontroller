@@ -11,5 +11,5 @@ func init() {
 }
 
 func (g *TeleportRequest) Type() MsgType {
-	return TypeTeleportRequest
+	return 0x78DA55D9
 }

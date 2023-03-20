@@ -18,5 +18,5 @@ func init() {
 }
 
 func (a *UserData) Type() MsgType {
-	return TypeSetUserData
+	return 0xF702EF5F
 }

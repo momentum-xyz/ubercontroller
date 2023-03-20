@@ -11,5 +11,5 @@ func init() {
 }
 
 func (g *RemoveObjects) Type() MsgType {
-	return TypeRemoveObjects
+	return 0x6BF88C24
 }

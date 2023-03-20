@@ -5,7 +5,7 @@ type AddUsers struct {
 }
 
 func (a *AddUsers) Type() MsgType {
-	return TypeAddUsers
+	return 0xF51F2AFF
 }
 
 func init() {

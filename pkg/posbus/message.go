@@ -11,12 +11,23 @@ import (
 	"reflect"
 )
 
+const (
+	MsgTypeSize      = 4
+	MsgArrTypeSize   = 4
+	MsgUUIDTypeSize  = 16
+	MsgLockStateSize = 4
+)
+
+type MsgType uint32
+
 type Message interface {
 	MarshalMUS(buf []byte) int
 	UnmarshalMUS(buf []byte) (int, error)
 	SizeMUS() int
 	Type() MsgType
 }
+
+var IdsCheck map[MsgType]string = make(map[MsgType]string)
 
 var messageMaps = struct {
 	NameById     map[MsgType]string
@@ -76,7 +87,7 @@ func MessageType(buf []byte) MsgType {
 	if header == ^footer {
 		return MsgType(header)
 	}
-	return TypeNONE
+	return 0
 }
 
 //func (m *Message) makeBuffer(len int) {
@@ -132,7 +143,17 @@ func registerMessage(m interface{}) {
 			os.Exit(-1)
 		}
 		addToMaps(m1.Type(), MsgTypeName(m1), m1)
+	} else {
+		id := reflect.ValueOf(m).MethodByName("Type").Call([]reflect.Value{})[0].Interface().(MsgType)
+		_, ok := IdsCheck[id]
+		name := "Type" + reflect.ValueOf(m).Elem().Type().Name()
+		if ok {
+			fmt.Printf("QQQQ!\n")
+			os.Exit(-1)
+		}
+		IdsCheck[id] = name
 	}
+
 }
 
 func isGenerate() bool {
@@ -140,3 +161,7 @@ func isGenerate() bool {
 	_, ok2 := os.LookupEnv("GOFILE")
 	return ok1 && ok2
 }
+
+//TypeSetObjectData MsgType = 0xCACE197C
+//TypeTriggerVisualEffects MsgType = 0xD96089C6
+//TypeUserAction           MsgType = 0xEF1A2E75

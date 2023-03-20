@@ -15,5 +15,5 @@ func init() {
 }
 
 func (g *SetWorld) Type() MsgType {
-	return TypeSetWorld
+	return 0xCCDF2E49
 }

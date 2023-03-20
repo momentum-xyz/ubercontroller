@@ -7,7 +7,7 @@ type RemoveUsers struct {
 }
 
 func (a *RemoveUsers) Type() MsgType {
-	return TypeRemoveUsers
+	return 0xF5A14BB0
 }
 
 func init() {

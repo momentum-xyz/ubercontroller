@@ -21,7 +21,11 @@ type UsersTransformList struct {
 }
 
 func (s *UsersTransformList) Type() MsgType {
-	return TypeSetUsersTransforms
+	return 0x285954B8
+}
+
+func init() {
+	registerMessage(&UsersTransformList{})
 }
 
 //type UserTransformBuffer struct {

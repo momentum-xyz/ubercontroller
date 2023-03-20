@@ -3,8 +3,11 @@
 package main
 
 import (
+	"bufio"
+	"fmt"
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/ymz-ncnk/musgo/v2"
+	"os"
 	"reflect"
 )
 
@@ -99,4 +102,31 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	printTypes()
+}
+
+func printTypes() {
+	f, err := os.Create("types.autogen.go")
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	w := bufio.NewWriter(f)
+
+	_, err = fmt.Fprintf(w, "package posbus\n\nconst (\n")
+	if err != nil {
+		panic(err)
+	}
+	for msgType, s := range posbus.IdsCheck {
+		_, err = fmt.Fprintf(w, "    %+v     MsgType = 0x%08X\n", s, msgType)
+		if err != nil {
+			panic(err)
+		}
+	}
+	_, err = fmt.Fprintf(w, ")\n")
+	if err != nil {
+		panic(err)
+	}
+	w.Flush()
 }

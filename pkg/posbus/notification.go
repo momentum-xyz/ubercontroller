@@ -29,5 +29,5 @@ func init() {
 }
 
 func (g *Notification) Type() MsgType {
-	return TypeNotification
+	return 0xC1FB41D7
 }
