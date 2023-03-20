@@ -103,7 +103,6 @@ func Decode(buf []byte) (Message, error) {
 		return nil, errors.New("unknown message type")
 	}
 	err := DecodeTo(buf, m)
-	fmt.Printf("%+v\n", m)
 	return m, err
 }
 
