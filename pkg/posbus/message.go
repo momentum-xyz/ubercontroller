@@ -143,6 +143,7 @@ func registerMessage(m interface{}) {
 			os.Exit(-1)
 		}
 		addToMaps(m1.Type(), MsgTypeName(m1), m1)
+		IdsCheck[m1.Type()] = MsgTypeName(m1)
 	} else {
 		id := reflect.ValueOf(m).MethodByName("Type").Call([]reflect.Value{})[0].Interface().(MsgType)
 		_, ok := IdsCheck[id]
