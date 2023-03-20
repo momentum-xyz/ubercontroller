@@ -29,7 +29,7 @@ func main() {
 	a := ethereum_adapter.NewEthereumAdapter()
 	a.Run()
 
-	t := harvester.NewTable(pool, a, func(p any) {})
+	t := harvester.NewTable(pool, a, listener)
 	t.Run()
 
 	//token := "0x85F17Cf997934a597031b2E18a9aB6ebD4B9f6a4"
@@ -41,8 +41,16 @@ func main() {
 	//wallet2Receiver := "0x3f363b4e038a6e43ce8321c50f3efbf460196d4b"
 	//amount := "33190774000000000000000"
 	t.AddWalletContract(wallet2, token2)
+	t.AddWalletContract("0x3f363b4e038a6e43ce8321c50f3efbf460196d4b", token2)
 
 	time.Sleep(time.Second * 30)
 	t.Display()
 
+}
+
+func listener(events []*harvester.UpdateEvent) {
+	fmt.Printf("Table Listener: \n")
+	for k, v := range events {
+		fmt.Printf("%+v %+v %+v %+v \n", k, v.Wallet, v.Contract, v.Amount.String())
+	}
 }

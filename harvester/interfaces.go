@@ -18,6 +18,12 @@ type BCDiff struct {
 	Amount *big.Int
 }
 
+type UpdateEvent struct {
+	Wallet   string
+	Contract string
+	Amount   *big.Int
+}
+
 type AdapterListener func(block *BCBlock, diffs []*BCDiff)
 
 type Adapter interface {
