@@ -86,10 +86,18 @@ func MessageType(buf []byte) MsgType {
 	return 0
 }
 
-func Decode(buf []byte) (Message, error) {
-	msgType := MessageType(buf)
+func NewMessageOfType(msgType MsgType) (Message, error) {
 	m, ok := reflect.New(MessageDataTypeById(msgType)).Interface().(Message)
 	if !ok {
+		return nil, errors.New("unknown message type")
+	}
+	return m, nil
+}
+
+func Decode(buf []byte) (Message, error) {
+	msgType := MessageType(buf)
+	m, ok := NewMessageOfType(msgType)
+	if ok != nil {
 		return nil, errors.New("unknown message type")
 	}
 	err := DecodeTo(buf, m)
