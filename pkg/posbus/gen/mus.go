@@ -9,7 +9,6 @@ import (
 	"github.com/ymz-ncnk/musgo/v2"
 	"os"
 	"reflect"
-	"sort"
 )
 
 func main() {
@@ -107,6 +106,12 @@ func main() {
 	printTypes()
 }
 
+func check_error(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
 func printTypes() {
 	f, err := os.Create("types.autogen.go")
 	if err != nil {
@@ -116,30 +121,14 @@ func printTypes() {
 	w := bufio.NewWriter(f)
 
 	_, err = fmt.Fprintf(w, "package posbus\n\nconst (\n")
-	if err != nil {
-		panic(err)
-	}
+	check_error(err)
 
-	msgNames := make([]string, 0, len(posbus.IdsCheck))
-	typeMap := make(map[string]posbus.MsgType)
-
-	for id, name := range posbus.IdsCheck {
-		msgNames = append(msgNames, name)
-		typeMap[name] = id
-	}
-
-	sort.Strings(msgNames)
-
-	for _, msgName := range msgNames {
-		msgType := typeMap[msgName]
-		_, err = fmt.Fprintf(w, "    %+v     MsgType = 0x%08X\n", msgName, msgType)
-		if err != nil {
-			panic(err)
-		}
+	for _, mId := range posbus.GetMessageIds() {
+		mTypeName := posbus.MessageTypeNameById(mId)
+		_, err = fmt.Fprintf(w, "    %-30s  MsgType = 0x%08X\n", "Type"+mTypeName, mId)
+		check_error(err)
 	}
 	_, err = fmt.Fprintf(w, ")\n")
-	if err != nil {
-		panic(err)
-	}
+	check_error(err)
 	w.Flush()
 }

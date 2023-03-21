@@ -9,6 +9,8 @@ import (
 	"github.com/gorilla/websocket"
 	"os"
 	"reflect"
+	"sort"
+	"sync"
 )
 
 const (
@@ -27,34 +29,39 @@ type Message interface {
 	Type() MsgType
 }
 
-var IdsCheck map[MsgType]string = make(map[MsgType]string)
-
-var messageMaps = struct {
-	NameById     map[MsgType]string
-	DataTypeById map[MsgType]reflect.Type
-	IdByName     map[string]MsgType
-	//initialized  bool
-	//lock         sync.Mutex
-}{NameById: make(map[MsgType]string), IdByName: make(map[string]MsgType), DataTypeById: make(map[MsgType]reflect.Type)}
-
-func addToMaps(id MsgType, name string, v Message) {
-	messageMaps.NameById[id] = name
-	messageMaps.IdByName[name] = id
-	messageMaps.DataTypeById[id] = reflect.ValueOf(v).Elem().Type()
+type mDef struct {
+	Name     string
+	TypeName string
+	DataType reflect.Type
 }
 
+var messageMaps = struct {
+	lock     sync.Mutex
+	Def      map[MsgType]mDef
+	IdByName map[string]MsgType
+	IdList   []MsgType
+}{Def: make(map[MsgType]mDef), IdByName: make(map[string]MsgType), IdList: nil}
+
 func MessageNameById(id MsgType) string {
-	name, ok := messageMaps.NameById[id]
+	def, ok := messageMaps.Def[id]
 	if ok {
-		return name
+		return def.Name
+	}
+	return "none"
+}
+
+func MessageTypeNameById(id MsgType) string {
+	def, ok := messageMaps.Def[id]
+	if ok {
+		return def.TypeName
 	}
 	return "none"
 }
 
 func MessageDataTypeById(id MsgType) reflect.Type {
-	t, ok := messageMaps.DataTypeById[id]
+	def, ok := messageMaps.Def[id]
 	if ok {
-		return t
+		return def.DataType
 	}
 	return nil
 }
@@ -67,17 +74,6 @@ func MessageIdByName(name string) MsgType {
 	return 0
 }
 
-//func NewMessageFromBuffer(msgid MsgType, buf []byte) *Message {
-//	obj := &Message{msgType: msgid}
-//	obj.makeBuffer(len(buf))
-//	copy(obj.Msg(), buf)
-//	return obj
-//}
-
-//func (m *Message) Msg() []byte {
-//	return m.buf[MsgTypeSize : len(m.buf)-MsgTypeSize]
-//}
-
 func MessageType(buf []byte) MsgType {
 	/*if len(m.buf) < 4 {
 		// TODO: Handle
@@ -89,12 +85,6 @@ func MessageType(buf []byte) MsgType {
 	}
 	return 0
 }
-
-//func (m *Message) makeBuffer(len int) {
-//	m.buf = make([]byte, MsgTypeSize*2+len)
-//	binary.LittleEndian.PutUint32(m.buf, uint32(m.msgType))
-//	binary.LittleEndian.PutUint32(m.buf[MsgTypeSize+len:], uint32(^m.msgType))
-//}
 
 func Decode(buf []byte) (Message, error) {
 	msgType := MessageType(buf)
@@ -135,6 +125,14 @@ func MsgTypeId(m Message) MsgType {
 }
 
 func registerMessage(m interface{}) {
+
+	mType := reflect.ValueOf(m).MethodByName("Type").Call([]reflect.Value{})[0].Interface().(MsgType)
+	mTypeName := reflect.ValueOf(m).Elem().Type().Name()
+	mName := stringy.New(mTypeName).SnakeCase().ToLower()
+	messageMaps.Def[mType] = mDef{Name: mName, TypeName: mTypeName, DataType: reflect.ValueOf(m).Elem().Type()}
+	messageMaps.IdByName[mName] = mType
+
+	// if not in "generate" check that all messages conforms to the Message interface
 	if !isGenerate() {
 		m1, ok := m.(Message)
 		if !ok {
@@ -142,19 +140,28 @@ func registerMessage(m interface{}) {
 			fmt.Println("Message '%+v' does not conform Message interface\n", MsgTypeName(m1))
 			os.Exit(-1)
 		}
-		addToMaps(m1.Type(), MsgTypeName(m1), m1)
-		IdsCheck[m1.Type()] = MsgTypeName(m1)
-	} else {
-		id := reflect.ValueOf(m).MethodByName("Type").Call([]reflect.Value{})[0].Interface().(MsgType)
-		_, ok := IdsCheck[id]
-		name := "Type" + reflect.ValueOf(m).Elem().Type().Name()
-		if ok {
-			fmt.Printf("QQQQ!\n")
-			os.Exit(-1)
-		}
-		IdsCheck[id] = name
 	}
 
+}
+
+// GetMessageIds : returns list of message IDs sorted according to message names
+func GetMessageIds() []MsgType {
+
+	messageMaps.lock.Lock()
+	defer messageMaps.lock.Unlock()
+	if messageMaps.IdList != nil {
+		return messageMaps.IdList
+	}
+	msgNames := make([]string, 0, len(messageMaps.IdByName))
+	for name, _ := range messageMaps.IdByName {
+		msgNames = append(msgNames, name)
+	}
+	sort.Strings(msgNames)
+	messageMaps.IdList = make([]MsgType, 0)
+	for _, name := range msgNames {
+		messageMaps.IdList = append(messageMaps.IdList, messageMaps.IdByName[name])
+	}
+	return messageMaps.IdList
 }
 
 func isGenerate() bool {
