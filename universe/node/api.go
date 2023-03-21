@@ -71,13 +71,13 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 				userAttributesGroup := user.Group("/attributes")
 				{
 					userAttributesGroup.GET("", n.apiGetUserAttributeValue)
-
+					userAttributesGroup.GET("/sub", n.apiGetUserAttributeSubValue)
+					
 					userAttributesGroup.POST("", n.apiSetUserAttributeValue)
-					//userAttributesGroup.DELETE("", n.apiRemoveUserAttributeValue)
-					//userAttributesGroup.POST("/sub", n.apiSetUserAttributeSubValue)
-					//userAttributesGroup.DELETE("/sub", n.apiRemoveUserAttributeSubValue)
+					userAttributesGroup.DELETE("", n.apiRemoveUserAttributeValue)
 
-					//userAttributesGroup.GET("/sub", n.apiGetUserAttributeSubValue)
+					userAttributesGroup.POST("/sub", n.apiSetUserAttributeSubValue)
+					userAttributesGroup.DELETE("/sub", n.apiRemoveUserAttributeSubValue)
 				}
 
 			}
