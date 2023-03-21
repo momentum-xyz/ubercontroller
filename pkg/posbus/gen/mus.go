@@ -123,9 +123,17 @@ func printTypes() {
 	_, err = fmt.Fprintf(w, "package posbus\n\nconst (\n")
 	check_error(err)
 
+	maxLen := 0
+	for _, mId := range posbus.GetMessageIds() {
+		l := len(posbus.MessageTypeNameById(mId))
+		if l > maxLen {
+			maxLen = l
+		}
+	}
+
 	for _, mId := range posbus.GetMessageIds() {
 		mTypeName := posbus.MessageTypeNameById(mId)
-		_, err = fmt.Fprintf(w, "    %-30s  MsgType = 0x%08X\n", "Type"+mTypeName, mId)
+		_, err = fmt.Fprintf(w, "\t%-*sMsgType = 0x%08X\n", maxLen+5, "Type"+mTypeName, mId)
 		check_error(err)
 	}
 	_, err = fmt.Fprintf(w, ")\n")
