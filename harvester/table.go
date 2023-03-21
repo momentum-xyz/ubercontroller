@@ -8,6 +8,7 @@ import (
 	"math/big"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -36,6 +37,7 @@ func NewTable(db *pgxpool.Pool, adapter Adapter, listener func(p []*UpdateEvent)
 }
 
 func (t *Table) Run() {
+	t.LoadFromDB()
 	t.adapter.RegisterNewBlockListener(t.listener)
 }
 
@@ -176,6 +178,69 @@ func (t *Table) SaveToDB(events []*UpdateEvent) error {
 		return errors.WithMessage(err, "failed to insert or update blockchain DB query")
 	}
 
+	return nil
+}
+
+func (t *Table) LoadFromDB() error {
+
+	blockchainUMID, _, _ := t.adapter.GetInfo()
+
+	tx, err := t.db.BeginTx(context.TODO(), pgx.TxOptions{})
+	if err != nil {
+		return errors.WithMessage(err, "failed to begin transaction")
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback(context.TODO())
+		} else {
+			tx.Commit(context.TODO())
+		}
+	}()
+
+	sql := `SELECT last_processed_block_number FROM blockchain WHERE blockchain_id=$1`
+
+	row := tx.QueryRow(context.TODO(), sql, blockchainUMID)
+	b := &entry.Blockchain{}
+
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	if err := row.Scan(&b.LastProcessedBlockNumber); err != nil {
+		return errors.WithMessage(err, "failed to scan row from blockchain table")
+	}
+
+	sql = `SELECT wallet_id, contract_id, balance.balance
+			FROM balance
+			WHERE blockchain_id = $1`
+
+	rows, err := tx.Query(context.TODO(), sql, blockchainUMID)
+	if err != nil {
+		return err
+	}
+
+	for rows.Next() {
+		var wallet common.Address
+		var contract common.Address
+		var balance entry.BigInt
+
+		if err := rows.Scan(&wallet, &contract, &balance); err != nil {
+			return errors.WithMessage(err, "failed to scan rows from balance table")
+		}
+
+		walletStr := strings.ToLower(wallet.Hex())
+		contractStr := strings.ToLower(contract.Hex())
+
+		_, ok := t.data[contractStr]
+		if !ok {
+			t.data[contractStr] = make(map[string]*big.Int)
+		}
+		t.data[contractStr][walletStr] = (*big.Int)(&balance)
+
+		//fmt.Println(wallet.Hex(), contract.Hex(), (*big.Int)(&balance).String())
+	}
+
+	// If DB transaction fail block will not be updated
+	t.blockNumber = b.LastProcessedBlockNumber
 	return nil
 }
 
