@@ -42,7 +42,7 @@ func (n *Node) apiGetUserAttributeValue(c *gin.Context) {
 	userID, err := umid.Parse(c.Param("userID"))
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetUserAttributeValue: failed to parse user umid")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
 		return
 	}
 
