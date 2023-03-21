@@ -133,10 +133,14 @@ func MsgTypeId(m Message) MsgType {
 }
 
 func registerMessage(m interface{}) {
-
 	mType := reflect.ValueOf(m).MethodByName("Type").Call([]reflect.Value{})[0].Interface().(MsgType)
 	mTypeName := reflect.ValueOf(m).Elem().Type().Name()
 	mName := stringy.New(mTypeName).SnakeCase().ToLower()
+
+	if d, ok := messageMaps.Def[mType]; ok {
+		fmt.Printf("Message Type ID '0x%08X' already used for '%+v'\n", mType, d.TypeName)
+		os.Exit(-1)
+	}
 	messageMaps.Def[mType] = mDef{Name: mName, TypeName: mTypeName, DataType: reflect.ValueOf(m).Elem().Type()}
 	messageMaps.IdByName[mName] = mType
 
@@ -144,8 +148,8 @@ func registerMessage(m interface{}) {
 	if !isGenerate() {
 		m1, ok := m.(Message)
 		if !ok {
-			fmt.Println("Can not initialize posbus package\n")
-			fmt.Println("Message '%+v' does not conform Message interface\n", MsgTypeName(m1))
+			fmt.Printf("Can not initialize posbus package\n")
+			fmt.Printf("Message '%+v' does not conform Message interface\n", MsgTypeName(m1))
 			os.Exit(-1)
 		}
 	}
