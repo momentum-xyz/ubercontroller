@@ -27,5 +27,3 @@ func (n *Node) LoadUser(userID umid.UMID) (universe.User, error) {
 	fmt.Printf("%+v\n", user.GetPosition())
 	return user, nil
 }
-
-// Todo: add user attribute functions for API
