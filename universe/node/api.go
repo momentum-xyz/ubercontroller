@@ -67,20 +67,24 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 			user := verifiedUsers.Group("/:userID")
 			{
 				user.GET("", n.apiUsersGetByID)
-				user.GET("/attributes", n.apiGetUserAttributeValue)
 
-				//uAttributes.POST("/attributes", n.apiSetUserAttributeValue)
-				//uAttributes.DELETE("/attributes", n.apiRemoveUserAttributeValue)
-				//
-				//uAttributes.POST("/attributes/sub", n.apiSetUserAttributeSubValue)
-				//uAttributes.DELETE("/attributes/sub", n.apiRemoveUserAttributeSubValue)
+				userAttributesGroup := user.Group("/attributes")
+				{
+					userAttributesGroup.GET("", n.apiGetUserAttributeValue)
 
-				// uAttributes.GET("/attributes/sub", n.apiGetUserAttributeSubValue)
+					userAttributesGroup.POST("", n.apiSetUserAttributeValue)
+					//userAttributesGroup.DELETE("", n.apiRemoveUserAttributeValue)
+					//userAttributesGroup.POST("/sub", n.apiSetUserAttributeSubValue)
+					//userAttributesGroup.DELETE("/sub", n.apiRemoveUserAttributeSubValue)
+
+					//userAttributesGroup.GET("/sub", n.apiGetUserAttributeSubValue)
+				}
+
 			}
 
-			uAttributes := verifiedUsers.Group("/attributes")
+			userUserAttributesGroup := verifiedUsers.Group("/attributes")
 			{
-				uAttributes.POST("/sub/:userID/:targetID", n.apiSetUserUserSubAttributeValue)
+				userUserAttributesGroup.POST("/sub/:userID/:targetID", n.apiSetUserUserSubAttributeValue)
 			}
 		}
 

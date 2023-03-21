@@ -32,6 +32,8 @@ type ObjectAttributeValues map[umid.UMID]*entry.AttributeValue
 
 type ObjectSubAttributes map[string]any
 
+type UserSubAttributes map[string]any
+
 type Asset2dMeta entry.Asset2dMeta
 
 type Asset2dOptions *entry.Asset2dOptions
