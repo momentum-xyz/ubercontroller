@@ -3,7 +3,9 @@ DOCKER_TAG="develop"
 
 all: build
 
-gen:
+vendor: go.mod
+	go mod vendor
+gen: vendor
 	go generate ./...
 
 gen-clean:
