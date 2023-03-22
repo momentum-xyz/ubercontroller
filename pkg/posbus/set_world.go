@@ -11,7 +11,7 @@ type SetWorld struct {
 }
 
 func init() {
-	registerMessage(&SetWorld{})
+	registerMessage(SetWorld{})
 }
 
 func (g *SetWorld) Type() MsgType {

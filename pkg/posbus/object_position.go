@@ -11,7 +11,7 @@ type ObjectPosition struct {
 }
 
 func init() {
-	registerMessage(&ObjectPosition{})
+	registerMessage(ObjectPosition{})
 }
 
 func (g *ObjectPosition) Type() MsgType {

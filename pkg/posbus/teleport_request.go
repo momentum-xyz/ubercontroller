@@ -7,7 +7,7 @@ type TeleportRequest struct {
 }
 
 func init() {
-	registerMessage(&TeleportRequest{})
+	registerMessage(TeleportRequest{})
 }
 
 func (g *TeleportRequest) Type() MsgType {

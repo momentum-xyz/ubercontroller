@@ -1,27 +1,25 @@
 package posbus
 
-//
-//type Trigger uint32
-//
-//const (
-//	TriggerNone = iota
-//	TriggerWow
-//	TriggerHighFive
-//	TriggerEnteredObject
-//	TriggerLeftObject
-//	TriggerStake
-//)
-//type UserAction struct {
-//	Value SignalType `json:"value"`
-//}
-//
-//func init() {
-//	registerMessage(&Signal{})
-//}
-//
-//func (g *Signal) Type() MsgType {
-//	return TypeSignal
-//}
-//
-////addToMaps(TypeUserAction, "user_action", -1)
-//
+type Trigger uint32
+
+const (
+	TriggerNone = iota
+	TriggerWow
+	TriggerHighFive
+	TriggerEnteredObject
+	TriggerLeftObject
+	TriggerStake
+)
+
+type UserAction struct {
+	Value Trigger `json:"value"`
+}
+
+func init() {
+	registerMessage(UserAction{})
+	addExtraType(Trigger(0))
+}
+
+func (g *UserAction) Type() MsgType {
+	return 0xEF1A2E75
+}

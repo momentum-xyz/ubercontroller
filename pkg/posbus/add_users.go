@@ -9,5 +9,5 @@ func (a *AddUsers) Type() MsgType {
 }
 
 func init() {
-	registerMessage(&AddUsers{})
+	registerMessage(AddUsers{})
 }

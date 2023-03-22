@@ -1,4 +1,4 @@
-//go:generate go run -mod vendor gen/mus.go
+//go:generate go run -mod vendor gen/gen.go
 package posbus
 
 import (
@@ -36,11 +36,12 @@ type mDef struct {
 }
 
 var messageMaps = struct {
-	lock     sync.Mutex
-	Def      map[MsgType]mDef
-	IdByName map[string]MsgType
-	IdList   []MsgType
-}{Def: make(map[MsgType]mDef), IdByName: make(map[string]MsgType), IdList: nil}
+	lock       sync.Mutex
+	Def        map[MsgType]mDef
+	IdByName   map[string]MsgType
+	IdList     []MsgType
+	ExtraTypes []reflect.Type
+}{Def: make(map[MsgType]mDef), IdByName: make(map[string]MsgType), IdList: nil, ExtraTypes: make([]reflect.Type, 0)}
 
 func MessageNameById(id MsgType) string {
 	def, ok := messageMaps.Def[id]
@@ -125,28 +126,30 @@ func BinMessage(m Message) []byte {
 }
 
 func MsgTypeName(m Message) string {
-	return stringy.New(reflect.ValueOf(m).Elem().Type().Name()).SnakeCase().ToLower()
+	return stringy.New(reflect.TypeOf(m).Elem().Name()).SnakeCase().ToLower()
 }
 
 func MsgTypeId(m Message) MsgType {
 	return m.Type()
 }
 
-func registerMessage(m interface{}) {
-	mType := reflect.ValueOf(m).MethodByName("Type").Call([]reflect.Value{})[0].Interface().(MsgType)
-	mTypeName := reflect.ValueOf(m).Elem().Type().Name()
+func registerMessage[T any](m T) {
+	mType := reflect.ValueOf(&m).MethodByName("Type").Call([]reflect.Value{})[0].Interface().(MsgType)
+	mTypeName := reflect.TypeOf(m).Name()
 	mName := stringy.New(mTypeName).SnakeCase().ToLower()
 
 	if d, ok := messageMaps.Def[mType]; ok {
 		fmt.Printf("Message Type ID '0x%08X' already used for '%+v'\n", mType, d.TypeName)
 		os.Exit(-1)
 	}
-	messageMaps.Def[mType] = mDef{Name: mName, TypeName: mTypeName, DataType: reflect.ValueOf(m).Elem().Type()}
+	messageMaps.Def[mType] = mDef{Name: mName, TypeName: mTypeName, DataType: reflect.TypeOf(m)}
 	messageMaps.IdByName[mName] = mType
 
 	// if not in "generate" check that all messages conforms to the Message interface
 	if !isGenerate() {
-		m1, ok := m.(Message)
+		//var m1 Message
+		//m1 = &m
+		m1, ok := (interface{}(&m)).(Message)
 		if !ok {
 			fmt.Printf("Can not initialize posbus package\n")
 			fmt.Printf("Message '%+v' does not conform Message interface\n", MsgTypeName(m1))
@@ -182,6 +185,10 @@ func isGenerate() bool {
 	return ok1 && ok2
 }
 
-//TypeSetObjectData MsgType = 0xCACE197C
-//TypeTriggerVisualEffects MsgType = 0xD96089C6
-//TypeUserAction           MsgType = 0xEF1A2E75
+func addExtraType[T any](v T) {
+	messageMaps.ExtraTypes = append(messageMaps.ExtraTypes, reflect.TypeOf(v))
+}
+
+func ExtraTypes() []reflect.Type {
+	return messageMaps.ExtraTypes
+}

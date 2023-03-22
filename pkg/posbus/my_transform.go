@@ -7,7 +7,7 @@ import (
 type MyTransform cmath.UserTransform
 
 func init() {
-	registerMessage(&MyTransform{})
+	registerMessage(MyTransform{})
 }
 
 func (a *MyTransform) Type() MsgType {

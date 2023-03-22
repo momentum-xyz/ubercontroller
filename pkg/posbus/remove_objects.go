@@ -7,7 +7,7 @@ type RemoveObjects struct {
 }
 
 func init() {
-	registerMessage(&RemoveObjects{})
+	registerMessage(RemoveObjects{})
 }
 
 func (g *RemoveObjects) Type() MsgType {
