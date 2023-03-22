@@ -59,7 +59,11 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 		verifiedUsers := verified.Group("/users")
 		{
-			verifiedUsers.GET("/me", n.apiUsersGetMe)
+			userMe := verifiedUsers.Group("/me")
+			{
+				userMe.GET("", n.apiUsersGetMe)
+				userMe.GET("/attributes", n.apiGetMeUserAttributeValue)
+			}
 
 			verifiedUsers.POST("/mutual-docks", n.apiUsersCreateMutualDocks)
 			verifiedUsers.DELETE("/mutual-docks", n.apiUsersRemoveMutualDocks)
@@ -72,7 +76,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 				{
 					userAttributesGroup.GET("", n.apiGetUserAttributeValue)
 					userAttributesGroup.GET("/sub", n.apiGetUserAttributeSubValue)
-					
+
 					userAttributesGroup.POST("", n.apiSetUserAttributeValue)
 					userAttributesGroup.DELETE("", n.apiRemoveUserAttributeValue)
 

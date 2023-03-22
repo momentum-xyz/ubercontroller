@@ -14,6 +14,60 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 )
 
+// @Summary Get user attribute for own user based on token
+// @Schemes
+// @Description Returns user attribute
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param user_id path string true "User UMID"
+// @Param query query node.apiGetMeUserAttributeValue.InQuery true "query params"
+// @Success 200 {user} entry.AttributeValue
+// @Failure 500 {user} api.HTTPError
+// @Failure 400 {user} api.HTTPError
+// @Failure 404 {user} api.HTTPError
+// @Router /api/v4/users/me/attributes [get]
+func (n *Node) apiGetMeUserAttributeValue(c *gin.Context) {
+	type InQuery struct {
+		PluginID      string `form:"plugin_id" binding:"required"`
+		AttributeName string `form:"attribute_name" binding:"required"`
+	}
+
+	inQuery := InQuery{}
+
+	if err := c.ShouldBindQuery(&inQuery); err != nil {
+		err := errors.WithMessage(err, "Node: apiGetMeUserAttributeValue: failed to bind query")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
+		return
+	}
+
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiGetMeUserAttributeValue: failed to get user umid")
+		api.AbortRequest(c, http.StatusInternalServerError, "get_user_id_failed", err, n.log)
+		return
+	}
+
+	pluginID, err := umid.Parse(inQuery.PluginID)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetMeUserAttributeValue: failed to parse plugin umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
+		return
+	}
+
+	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
+	userAttributeID := entry.NewUserAttributeID(attributeID, userID)
+
+	out, ok := n.GetUserAttributes().GetValue(userAttributeID)
+	if !ok {
+		err := errors.Errorf("Node: apiGetMeUserAttributeValue: user attribute value not found: %s", attributeID)
+		api.AbortRequest(c, http.StatusNotFound, "attribute_not_found", err, n.log)
+		return
+	}
+
+	c.JSON(http.StatusOK, out)
+}
+
 // @Summary Get user attribute
 // @Schemes
 // @Description Returns user attribute
