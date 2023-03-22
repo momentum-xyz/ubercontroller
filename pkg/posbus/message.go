@@ -192,5 +192,3 @@ func addExtraType[T any](v T) {
 func ExtraTypes() []reflect.Type {
 	return messageMaps.ExtraTypes
 }
-
-//TypeSetObjectData MsgType = 0xCACE197C

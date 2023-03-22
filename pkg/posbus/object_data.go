@@ -6,6 +6,9 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
+// FIXME: implement ObjectData type
+//TypeSetObjectData MsgType = 0xCACE197C
+
 // addToMaps(TypeSetObjectData, "set_object_data", ObjectData{})
 func (o *ObjectData) MarshalJSON() ([]byte, error) {
 	q := make(map[string]map[string]interface{})
