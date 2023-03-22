@@ -125,17 +125,16 @@ func (o *Object) UpdateAutoTextureMap(
 		o.renderDataMap.Mu.RLock()
 		defer o.renderDataMap.Mu.RUnlock()
 		o.renderDataMap.Data[dataIndex] = data
-		o.dataMsg.Store(
-			posbus.NewMessageFromData(
-				posbus.TypeSetObjectData, posbus.ObjectData{ID: o.GetID(), Entries: o.renderDataMap.Data},
-			).WSMessage(),
-		)
+		//FIXME:
+		//msg := posbus.WSMessage(&posbus.ObjectData{ID: o.GetID(), Entries: o.renderDataMap.Data})
+		msg := &websocket.PreparedMessage{}
+		o.dataMsg.Store(msg)
 	}()
 
 	// prepare message for this atomic update
-	sendMap := map[posbus.ObjectDataIndex]interface{}{dataIndex: data}
-	msg := posbus.NewMessageFromData(
-		posbus.TypeSetObjectData, posbus.ObjectData{ID: o.GetID(), Entries: sendMap},
-	).WSMessage()
+	//FIXME
+	//sendMap := map[posbus.ObjectDataIndex]interface{}{dataIndex: data}
+	//msg := posbus.WSMessage(&posbus.ObjectData{ID: o.GetID(), Entries: sendMap})
+	msg := &websocket.PreparedMessage{}
 	return msg
 }

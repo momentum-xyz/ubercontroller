@@ -83,7 +83,6 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 					userAttributesGroup.POST("/sub", n.apiSetUserAttributeSubValue)
 					userAttributesGroup.DELETE("/sub", n.apiRemoveUserAttributeSubValue)
 				}
-
 			}
 
 			userUserAttributesGroup := verifiedUsers.Group("/attributes")

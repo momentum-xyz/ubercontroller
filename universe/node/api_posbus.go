@@ -39,12 +39,17 @@ func (n *Node) handShake(socketConnection *websocket.Conn) error {
 	if err != nil || mt != websocket.BinaryMessage {
 		return errors.WithMessagef(err, "error: wrong PreHandShake (1), aborting connection")
 	}
-	msg := posbus.BytesToMessage(incomingMessage)
+	msg, err := posbus.Decode(incomingMessage)
+	if err != nil {
+		return errors.WithMessagef(err, "error: can not decode message in handshake")
+	}
+
 	if msg.Type() != posbus.TypeHandShake {
 		return errors.New("error: wrong message received, not handshake")
 	}
-	var handshake posbus.HandShake
-	if err = msg.DecodeTo(&handshake); err != nil {
+	handshake, ok := msg.(*posbus.HandShake)
+
+	if !ok {
 		return errors.New("error: wrong message type received, not handshake data")
 	}
 

@@ -60,7 +60,7 @@ func GetOptionAutoMessage(
 	}
 	switch option.SendTo {
 	case entry.ReactPosBusDestinationType:
-		return posbus.NewGenericMessage(topic, data).WSMessage(), nil
+		return posbus.WSMessage(posbus.NewGenericMessage(topic, data)), nil
 	}
 
 	return nil, errors.Errorf("send to type is not supported yet: %d", option.SendTo)

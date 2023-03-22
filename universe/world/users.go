@@ -44,9 +44,7 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 				w.log.Infof("World: double-login detected for world %s, user %s", w.GetID(), exUser.GetID())
 
 				exUser.SendDirectly(
-					posbus.NewMessageFromData(
-						posbus.TypeSignal, posbus.Signal{Value: posbus.SignalDualConnection},
-					).WSMessage(),
+					posbus.WSMessage(&posbus.Signal{Value: posbus.SignalDualConnection}),
 				)
 
 				time.Sleep(time.Millisecond * 100)
@@ -69,9 +67,7 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 		return errors.WithMessagef(err, "failed to add user %s to world: %s", user.GetID(), w.GetID())
 	}
 	w.Send(
-		posbus.NewMessageFromData(
-			posbus.TypeAddUsers, posbus.AddUsers{Users: []posbus.UserDefinition{*user.GetUserDefinition()}},
-		).WSMessage(),
+		posbus.WSMessage(&posbus.AddUsers{Users: []posbus.UserData{*user.GetUserDefinition()}}),
 		true,
 	)
 
@@ -116,18 +112,14 @@ func (w *World) noLockRemoveUser(user universe.User, updateDB bool) (bool, error
 	for _, child := range w.allObjects.Data {
 		if child.LockUnityObject(user, 0) {
 			w.Send(
-				posbus.NewMessageFromData(
-					posbus.TypeObjectLockResult,
-					posbus.ObjectLockResultData{ID: child.GetID(), Result: 0, LockOwner: user.GetID()},
-				).WSMessage(), true,
+				posbus.WSMessage(&posbus.ObjectLockResult{ID: child.GetID(), Result: 0, LockOwner: user.GetID()}),
+				true,
 			)
 		}
 	}
 
 	w.Send(
-		posbus.NewMessageFromData(
-			posbus.TypeRemoveUsers, posbus.RemoveUsers{Users: []umid.UMID{user.GetID()}},
-		).WSMessage(),
+		posbus.WSMessage(&posbus.RemoveUsers{Users: []umid.UMID{user.GetID()}}),
 		true,
 	)
 
@@ -143,10 +135,7 @@ func (w *World) initializeUnity(user universe.User) error {
 
 	// TODO: fix circular dependency
 	if err := user.SendDirectly(
-		posbus.NewMessageFromBuffer(
-			posbus.TypeSendTransform,
-			user.GetTransform().Bytes(),
-		).WSMessage(),
+		posbus.WSMessage((*posbus.MyTransform)(user.GetTransform())),
 	); err != nil {
 		return errors.WithMessage(err, "failed to send position")
 	}

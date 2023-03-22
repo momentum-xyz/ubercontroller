@@ -6,19 +6,23 @@ import (
 )
 
 type GenericMessage struct {
-	*Message
-}
-
-type GenericMessageData struct {
 	Topic string
 	Data  []byte
 }
 
-func NewGenericMessage(topic string, data interface{}) *Message {
+func init() {
+	registerMessage(&GenericMessage{})
+}
+
+func (g *GenericMessage) Type() MsgType {
+	return 0xF508E4A3
+}
+
+func NewGenericMessage(topic string, data interface{}) *GenericMessage {
 	dataJSON, err := json.Marshal(data)
 	if err != nil {
 		err = errors.WithMessage(err, "NewGenericMessage: failed to marshal data")
 		return nil
 	}
-	return NewMessageFromData(TypeGenericMessage, GenericMessageData{Topic: topic, Data: dataJSON})
+	return &GenericMessage{Topic: topic, Data: dataJSON}
 }

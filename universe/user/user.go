@@ -2,18 +2,16 @@ package user
 
 import (
 	"context"
+	"github.com/gorilla/websocket"
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
-	"sync"
-	"sync/atomic"
-	"time"
-	"unsafe"
-
-	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 	"github.com/sasha-s/go-deadlock"
 	"go.uber.org/zap"
+	"sync"
+	"sync/atomic"
+	"time"
 
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
@@ -35,7 +33,7 @@ type User struct {
 	transform cmath.UserTransform
 	//pos          *cmath.Vec3 // going to data part to posMsgBuffer content for simple access
 	//rotation     *cmath.Vec3 // going to data part to posMsgBuffer content for simple access
-	posMsgBuffer []byte
+	//posMsgBuffer []byte
 
 	lastPositionUpdateTimestamp int64
 	userType                    universe.UserType
@@ -74,23 +72,23 @@ func (u *User) GetTransform() *cmath.UserTransform {
 }
 
 func (u *User) SetTransform(t cmath.UserTransform) {
-	t.CopyTo(&u.transform)
+	u.transform = t.Copy()
 }
 
 func (u *User) SetPosition(p cmath.Vec3) {
-	(*u.transform.Position) = p
+	u.transform.Position = p
 }
 
 func (u *User) GetPosition() cmath.Vec3 {
-	return *u.transform.Position
+	return u.transform.Position
 }
 
 func (u *User) GetRotation() cmath.Vec3 {
-	return *u.transform.Rotation
+	return u.transform.Rotation
 }
 
-func (u *User) GetUserDefinition() *posbus.UserDefinition {
-	d := new(posbus.UserDefinition)
+func (u *User) GetUserDefinition() *posbus.UserData {
+	d := new(posbus.UserData)
 	d.Transform = u.transform
 	d.ID = u.id
 	guestUserTypeID, _ := common.GetGuestUserTypeID()
@@ -99,9 +97,9 @@ func (u *User) GetUserDefinition() *posbus.UserDefinition {
 	return d
 }
 
-func (u *User) GetPosBuffer() []byte {
-	return u.posMsgBuffer
-}
+//func (u *User) GetPosBuffer() []byte {
+//	return u.posMsgBuffer
+//}
 
 func (u *User) GetLastPosTime() int64 {
 	return u.lastPositionUpdateTimestamp
@@ -159,9 +157,9 @@ func (u *User) Initialize(ctx context.Context) error {
 	u.log = log
 	u.bufferSends.Store(true)
 	u.numSendsQueued.Store(chanIsClosed)
-	u.posMsgBuffer = posbus.NewSendTransformBuffer(u.GetID())
-	u.transform.Position = (*cmath.Vec3)(unsafe.Add(unsafe.Pointer(&u.posMsgBuffer[0]), 16))
-	u.transform.Rotation = (*cmath.Vec3)(unsafe.Add(unsafe.Pointer(&u.posMsgBuffer[0]), 16+3*4))
+	//u.posMsgBuffer = posbus.NewSendTransformBuffer(u.GetID())
+	//u.transform.Position = (*cmath.Vec3)(unsafe.Add(unsafe.Pointer(&u.posMsgBuffer[0]), 16))
+	//u.transform.Rotation = (*cmath.Vec3)(unsafe.Add(unsafe.Pointer(&u.posMsgBuffer[0]), 16+3*4))
 	return nil
 }
 
@@ -240,10 +238,12 @@ func (u *User) LoadFromEntry(entry *entry.User) error {
 	return nil
 }
 
-func (u *User) UpdatePosition(data []byte) error {
+func (u *User) UpdatePosition(t *posbus.MyTransform) error {
+	//u.SetTransform(t)
+	u.transform = cmath.UserTransform(*t)
 	// not locking will speed up but introduce minor data race with zero impact
 	//u.world.users.positionLock.RLock()
-	copy(u.posMsgBuffer[16:40], data)
+	//copy(u.posMsgBuffer[16:40], data)
 	//u.world.users.positionLock.RUnlock()
 	u.lastPositionUpdateTimestamp = time.Now().Unix()
 

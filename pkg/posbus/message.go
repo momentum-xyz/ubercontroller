@@ -1,161 +1,187 @@
-//go:generate go run gen/mus.go
+//go:generate go run -mod vendor gen/mus.go
 package posbus
 
 import (
-	"bytes"
 	"encoding/binary"
-	"encoding/gob"
+	"errors"
+	"fmt"
+	"github.com/gobeam/stringy"
 	"github.com/gorilla/websocket"
-	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
-	"log"
+	"os"
 	"reflect"
+	"sort"
+	"sync"
 )
 
-type PosbusDataType interface {
+const (
+	MsgTypeSize      = 4
+	MsgArrTypeSize   = 4
+	MsgUUIDTypeSize  = 16
+	MsgLockStateSize = 4
+)
+
+type MsgType uint32
+
+type Message interface {
 	MarshalMUS(buf []byte) int
 	UnmarshalMUS(buf []byte) (int, error)
 	SizeMUS() int
+	Type() MsgType
 }
 
-var mapMessageNameById map[MsgType]string
-var mapMessageDataTypeById map[MsgType]reflect.Type
-var mapMessageIdByName map[string]MsgType
-
-func addToMaps[T any](id MsgType, name string, v T) {
-	mapMessageNameById[id] = name
-	mapMessageIdByName[name] = id
-	mapMessageDataTypeById[id] = reflect.TypeOf(v)
+type mDef struct {
+	Name     string
+	TypeName string
+	DataType reflect.Type
 }
 
-func init() {
-	mapMessageNameById = make(map[MsgType]string)
-	mapMessageIdByName = make(map[string]MsgType)
-	mapMessageDataTypeById = make(map[MsgType]reflect.Type)
-	addToMaps(NONEType, "none", -1)
-	addToMaps(TypeSetUsersTransforms, "set_users_transforms", -1)
-	addToMaps(TypeSendTransform, "send_transform", -1)
-	addToMaps(TypeGenericMessage, "generic_message", []byte{})
-	addToMaps(TypeHandShake, "handshake", HandShake{})
-	addToMaps(TypeSetWorld, "set_world", SetWorldData{})
-	addToMaps(TypeAddObjects, "add_objects", AddObjects{})
-	addToMaps(TypeRemoveObjects, "remove_objects", RemoveObjects{})
-	addToMaps(TypeSetObjectPosition, "set_object_position", cmath.ObjectTransform{})
-	addToMaps(TypeSetObjectData, "set_object_data", ObjectData{})
-
-	addToMaps(TypeAddUsers, "add_users", AddUsers{})
-	addToMaps(TypeRemoveUsers, "remove_users", RemoveUsers{})
-	addToMaps(TypeSetUserData, "set_user_data", UserDefinition{})
-
-	addToMaps(TypeSetObjectLock, "set_object_lock", SetObjectLock{})
-	addToMaps(TypeObjectLockResult, "object_lock_result", ObjectLockResultData{})
-	addToMaps(TypeTriggerVisualEffects, "trigger_visual_effects", -1)
-	addToMaps(TypeUserAction, "user_action", -1)
-	addToMaps(TypeSignal, "signal", Signal{})
-	addToMaps(TypeNotification, "notification", -1)
-	addToMaps(TypeTeleportRequest, "teleport_request", TeleportRequest{})
-}
+var messageMaps = struct {
+	lock     sync.Mutex
+	Def      map[MsgType]mDef
+	IdByName map[string]MsgType
+	IdList   []MsgType
+}{Def: make(map[MsgType]mDef), IdByName: make(map[string]MsgType), IdList: nil}
 
 func MessageNameById(id MsgType) string {
-	name, ok := mapMessageNameById[id]
+	def, ok := messageMaps.Def[id]
 	if ok {
-		return name
+		return def.Name
+	}
+	return "none"
+}
+
+func MessageTypeNameById(id MsgType) string {
+	def, ok := messageMaps.Def[id]
+	if ok {
+		return def.TypeName
 	}
 	return "none"
 }
 
 func MessageDataTypeById(id MsgType) reflect.Type {
-	t, ok := mapMessageDataTypeById[id]
+	def, ok := messageMaps.Def[id]
 	if ok {
-		return t
+		return def.DataType
 	}
 	return nil
 }
 
 func MessageIdByName(name string) MsgType {
-	id, ok := mapMessageIdByName[name]
+	id, ok := messageMaps.IdByName[name]
 	if ok {
 		return id
 	}
 	return 0
 }
 
-func BytesToMessage(b []byte) *Message {
-	return &Message{
-		buf: b,
-	}
-}
-
-func NewMessageFromData(msgid MsgType, data interface{}) *Message {
-	obj := &Message{msgType: msgid}
-	var mData bytes.Buffer // Stand-in for a network connection
-	enc := gob.NewEncoder(&mData)
-	err := enc.Encode(data)
-	if err != nil {
-		log.Fatal("encode error:", err)
-	}
-	obj.makeBuffer(mData.Len())
-	mData.Read(obj.Msg())
-	return obj
-}
-
-func NewMessageFromBuffer(msgid MsgType, buf []byte) *Message {
-	obj := &Message{msgType: msgid}
-	obj.makeBuffer(len(buf))
-	copy(obj.Msg(), buf)
-	return obj
-}
-
-func NewPreallocatedMessage(msgid MsgType, n int) *Message {
-	obj := &Message{msgType: msgid}
-	obj.makeBuffer(n)
-	return obj
-}
-
-func (m *Message) Buf() []byte {
-	return m.buf
-}
-
-func (m *Message) Msg() []byte {
-	return m.buf[MsgTypeSize : len(m.buf)-MsgTypeSize]
-}
-
-func (m *Message) Type() MsgType {
+func MessageType(buf []byte) MsgType {
 	/*if len(m.buf) < 4 {
 		// TODO: Handle
 	}*/
-	if m.msgType != 0 {
-		return m.msgType
-	} else {
-		header := binary.LittleEndian.Uint32(m.buf[:MsgTypeSize])
-		footer := binary.LittleEndian.Uint32(m.buf[len(m.buf)-MsgTypeSize:])
-		if header == ^footer {
-			m.msgType = MsgType(header)
-			return m.msgType
+	header := binary.LittleEndian.Uint32(buf[:MsgTypeSize])
+	footer := binary.LittleEndian.Uint32(buf[len(buf)-MsgTypeSize:])
+	if header == ^footer {
+		return MsgType(header)
+	}
+	return 0
+}
+
+func NewMessageOfType(msgType MsgType) (Message, error) {
+	m, ok := reflect.New(MessageDataTypeById(msgType)).Interface().(Message)
+	if !ok {
+		return nil, errors.New("unknown message type")
+	}
+	return m, nil
+}
+
+func Decode(buf []byte) (Message, error) {
+	msgType := MessageType(buf)
+	m, ok := NewMessageOfType(msgType)
+	if ok != nil {
+		return nil, errors.New("unknown message type")
+	}
+	err := DecodeTo(buf, m)
+	return m, err
+}
+
+func DecodeTo(buf []byte, m Message) error {
+	_, err := m.UnmarshalMUS(buf[MsgTypeSize:])
+	return err
+}
+
+func WSMessage(m Message) *websocket.PreparedMessage {
+	msg, _ := websocket.NewPreparedMessage(websocket.BinaryMessage, BinMessage(m))
+	return msg
+}
+
+func BinMessage(m Message) []byte {
+	len := m.SizeMUS()
+	buf := make([]byte, MsgTypeSize*2+len)
+	msgType := m.Type()
+	binary.LittleEndian.PutUint32(buf, uint32(msgType))
+	m.MarshalMUS(buf[MsgTypeSize:])
+	binary.LittleEndian.PutUint32(buf[MsgTypeSize+len:], uint32(^msgType))
+	return buf
+}
+
+func MsgTypeName(m Message) string {
+	return stringy.New(reflect.ValueOf(m).Elem().Type().Name()).SnakeCase().ToLower()
+}
+
+func MsgTypeId(m Message) MsgType {
+	return m.Type()
+}
+
+func registerMessage(m interface{}) {
+	mType := reflect.ValueOf(m).MethodByName("Type").Call([]reflect.Value{})[0].Interface().(MsgType)
+	mTypeName := reflect.ValueOf(m).Elem().Type().Name()
+	mName := stringy.New(mTypeName).SnakeCase().ToLower()
+
+	if d, ok := messageMaps.Def[mType]; ok {
+		fmt.Printf("Message Type ID '0x%08X' already used for '%+v'\n", mType, d.TypeName)
+		os.Exit(-1)
+	}
+	messageMaps.Def[mType] = mDef{Name: mName, TypeName: mTypeName, DataType: reflect.ValueOf(m).Elem().Type()}
+	messageMaps.IdByName[mName] = mType
+
+	// if not in "generate" check that all messages conforms to the Message interface
+	if !isGenerate() {
+		m1, ok := m.(Message)
+		if !ok {
+			fmt.Printf("Can not initialize posbus package\n")
+			fmt.Printf("Message '%+v' does not conform Message interface\n", MsgTypeName(m1))
+			os.Exit(-1)
 		}
 	}
-	return NONEType
+
 }
 
-func (m *Message) makeBuffer(len int) {
-	m.buf = make([]byte, MsgTypeSize*2+len)
-	binary.LittleEndian.PutUint32(m.buf, uint32(m.msgType))
-	binary.LittleEndian.PutUint32(m.buf[MsgTypeSize+len:], uint32(^m.msgType))
+// GetMessageIds : returns list of message IDs sorted according to message names
+func GetMessageIds() []MsgType {
+
+	messageMaps.lock.Lock()
+	defer messageMaps.lock.Unlock()
+	if messageMaps.IdList != nil {
+		return messageMaps.IdList
+	}
+	msgNames := make([]string, 0, len(messageMaps.IdByName))
+	for name, _ := range messageMaps.IdByName {
+		msgNames = append(msgNames, name)
+	}
+	sort.Strings(msgNames)
+	messageMaps.IdList = make([]MsgType, 0)
+	for _, name := range msgNames {
+		messageMaps.IdList = append(messageMaps.IdList, messageMaps.IdByName[name])
+	}
+	return messageMaps.IdList
 }
 
-func (m *Message) WSMessage() *websocket.PreparedMessage {
-	omsg, _ := websocket.NewPreparedMessage(websocket.BinaryMessage, m.Buf())
-	return omsg
+func isGenerate() bool {
+	_, ok1 := os.LookupEnv("GOPACKAGE")
+	_, ok2 := os.LookupEnv("GOFILE")
+	return ok1 && ok2
 }
 
-func (m *Message) Decode() (interface{}, error) {
-	v := reflect.New(MessageDataTypeById(m.Type())).Interface()
-	err := m.DecodeTo(v)
-	return v, err
-}
-
-func (m *Message) DecodeTo(result interface{}) error {
-	var mData bytes.Buffer
-	mData.Write(m.Msg())
-	dec := gob.NewDecoder(&mData)
-	return dec.Decode(result)
-}
+//TypeSetObjectData MsgType = 0xCACE197C
+//TypeTriggerVisualEffects MsgType = 0xD96089C6
+//TypeUserAction           MsgType = 0xEF1A2E75

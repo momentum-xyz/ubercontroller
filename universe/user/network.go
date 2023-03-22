@@ -3,7 +3,6 @@ package user
 import (
 	"container/list"
 	"github.com/gorilla/websocket"
-	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"github.com/pkg/errors"
 	"github.com/zakaria-chahboun/cute"
@@ -76,7 +75,7 @@ func (u *User) readPump() {
 		if messageType != websocket.BinaryMessage {
 			u.log.Errorf("User: read pump: wrong incoming message type: %d: %s", messageType, u.GetID())
 		} else {
-			if err := u.OnMessage(posbus.BytesToMessage(message)); err != nil {
+			if err := u.OnMessage(message); err != nil {
 				u.log.Warn(errors.WithMessagef(err, "User: read pump: failed to handle message: %s", u.GetID()))
 			}
 		}
