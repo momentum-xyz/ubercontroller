@@ -8,6 +8,7 @@ const (
 	TypeLockObject         MsgType = 0xA7DE9F59
 	TypeMyTransform        MsgType = 0xF878C4BF
 	TypeNotification       MsgType = 0xC1FB41D7
+	TypeObjectDefinition   MsgType = 0xD742B52E
 	TypeObjectLockResult   MsgType = 0x0924668C
 	TypeObjectPosition     MsgType = 0xEA6DA4B4
 	TypeRemoveObjects      MsgType = 0x6BF88C24
@@ -16,5 +17,6 @@ const (
 	TypeSignal             MsgType = 0xADC1964D
 	TypeTeleportRequest    MsgType = 0x78DA55D9
 	TypeUserData           MsgType = 0xF702EF5F
+	TypeUserTransform      MsgType = 0x3BC97EBB
 	TypeUsersTransformList MsgType = 0x285954B8
 )

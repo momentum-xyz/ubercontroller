@@ -14,7 +14,7 @@ type UserData struct {
 }
 
 func init() {
-	registerMessage(&UserData{})
+	registerMessage(UserData{})
 }
 
 func (a *UserData) Type() MsgType {

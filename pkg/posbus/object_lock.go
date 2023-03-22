@@ -14,8 +14,8 @@ type ObjectLockResult struct {
 }
 
 func init() {
-	registerMessage(&LockObject{})
-	registerMessage(&ObjectLockResult{})
+	registerMessage(LockObject{})
+	registerMessage(ObjectLockResult{})
 }
 
 func (l *LockObject) Type() MsgType {

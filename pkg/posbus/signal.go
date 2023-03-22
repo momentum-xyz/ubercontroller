@@ -20,7 +20,8 @@ type Signal struct {
 }
 
 func init() {
-	registerMessage(&Signal{})
+	registerMessage(Signal{})
+	addExtraType(SignalType(0))
 }
 
 func (g *Signal) Type() MsgType {

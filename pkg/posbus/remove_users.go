@@ -11,5 +11,5 @@ func (a *RemoveUsers) Type() MsgType {
 }
 
 func init() {
-	registerMessage(&RemoveUsers{})
+	registerMessage(RemoveUsers{})
 }

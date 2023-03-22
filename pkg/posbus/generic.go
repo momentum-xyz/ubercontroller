@@ -11,7 +11,7 @@ type GenericMessage struct {
 }
 
 func init() {
-	registerMessage(&GenericMessage{})
+	registerMessage(GenericMessage{})
 }
 
 func (g *GenericMessage) Type() MsgType {

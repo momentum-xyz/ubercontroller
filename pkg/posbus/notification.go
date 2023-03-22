@@ -1,6 +1,7 @@
 package posbus
 
 type NotificationType uint32
+
 type Notification struct {
 	Value NotificationType
 }
@@ -25,7 +26,8 @@ const (
 )
 
 func init() {
-	registerMessage(&Notification{})
+	registerMessage(Notification{})
+	addExtraType(NotificationType(0))
 }
 
 func (g *Notification) Type() MsgType {

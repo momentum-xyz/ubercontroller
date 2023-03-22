@@ -11,7 +11,7 @@ type HandShake struct {
 }
 
 func init() {
-	registerMessage(&HandShake{})
+	registerMessage(HandShake{})
 }
 
 func (g *HandShake) Type() MsgType {
