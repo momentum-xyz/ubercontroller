@@ -222,7 +222,7 @@ type User interface {
 	GetRotation() cmath.Vec3
 	SetPosition(position cmath.Vec3)
 
-	GetPosBuffer() []byte
+	//GetPosBuffer() []byte
 	GetLastPosTime() int64
 
 	Update() error
@@ -236,7 +236,7 @@ type User interface {
 	SendDirectly(message *websocket.PreparedMessage) error
 
 	AddInfluxTags(prefix string, point *influxWrite.Point) *influxWrite.Point
-	GetUserDefinition() *posbus.UserDefinition
+	GetUserDefinition() *posbus.UserData
 }
 
 // UserObjects ignores "updateDB" flag

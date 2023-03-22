@@ -25,8 +25,8 @@ type ObjectTransform struct {
 }
 
 type UserTransform struct {
-	Position *Vec3 `db:"location" json:"location"`
-	Rotation *Vec3 `db:"rotation" json:"rotation"`
+	Position Vec3 `db:"location" json:"location"`
+	Rotation Vec3 `db:"rotation" json:"rotation"`
 }
 
 func (v *Vec3) Plus(v2 Vec3) {
@@ -105,12 +105,10 @@ func DefaultPosition() Vec3 {
 	}
 }
 
-func NewUserTransform() UserTransform {
-	var t UserTransform
-	t.Position = &Vec3{}
-	t.Rotation = &Vec3{}
-	return t
-}
+//func NewUserTransform() UserTransform {
+//	var t UserTransform
+//	return t
+//}
 
 func (t *UserTransform) CopyToBuffer(b []byte) error {
 	binary.LittleEndian.PutUint32(b, math.Float32bits(t.Position.X))
@@ -122,23 +120,25 @@ func (t *UserTransform) CopyToBuffer(b []byte) error {
 	return nil
 }
 
-func (t *UserTransform) Bytes() []byte {
-	b := make([]byte, 6*Float32Bytes)
-	t.CopyToBuffer(b)
-	return b
-}
+//func (t *UserTransform) Bytes() []byte {
+//	b := make([]byte, 6*Float32Bytes)
+//	t.CopyToBuffer(b)
+//	return b
+//}
+//
+//func (t *UserTransform) CopyFromBuffer(b []byte) error {
+//	t.Position.X = math.Float32frombits(binary.LittleEndian.Uint32(b))
+//	t.Position.Y = math.Float32frombits(binary.LittleEndian.Uint32(b[Float32Bytes:]))
+//	t.Position.Z = math.Float32frombits(binary.LittleEndian.Uint32(b[2*Float32Bytes:]))
+//	t.Position.X = math.Float32frombits(binary.LittleEndian.Uint32(b[3*Float32Bytes:]))
+//	t.Position.Y = math.Float32frombits(binary.LittleEndian.Uint32(b[4*Float32Bytes:]))
+//	t.Position.Z = math.Float32frombits(binary.LittleEndian.Uint32(b[5*Float32Bytes:]))
+//	return nil
+//}
 
-func (t *UserTransform) CopyFromBuffer(b []byte) error {
-	t.Position.X = math.Float32frombits(binary.LittleEndian.Uint32(b))
-	t.Position.Y = math.Float32frombits(binary.LittleEndian.Uint32(b[Float32Bytes:]))
-	t.Position.Z = math.Float32frombits(binary.LittleEndian.Uint32(b[2*Float32Bytes:]))
-	t.Position.X = math.Float32frombits(binary.LittleEndian.Uint32(b[3*Float32Bytes:]))
-	t.Position.Y = math.Float32frombits(binary.LittleEndian.Uint32(b[4*Float32Bytes:]))
-	t.Position.Z = math.Float32frombits(binary.LittleEndian.Uint32(b[5*Float32Bytes:]))
-	return nil
-}
-
-func (t *UserTransform) CopyTo(t1 *UserTransform) {
-	*t1.Position = *t.Position
-	*t1.Rotation = *t.Rotation
+func (t *UserTransform) Copy() UserTransform {
+	t1 := UserTransform{}
+	t1.Position = t.Position
+	t1.Rotation = t.Rotation
+	return t1
 }

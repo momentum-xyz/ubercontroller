@@ -624,8 +624,8 @@ func (o *Object) UpdateSpawnMessage() error {
 		effectiveOptions.Editable, utils.GetPTR(true),
 	),
 		ShowOnMiniMap: *utils.GetFromAny(effectiveOptions.Minimap, &visible), Transform: *o.GetActualTransform()}
-	msg := posbus.NewMessageFromData(posbus.TypeAddObjects, posbus.AddObjects{Objects: mData})
-	o.spawnMsg.Store(msg.WSMessage())
+	msg := posbus.WSMessage(&posbus.AddObjects{Objects: mData})
+	o.spawnMsg.Store(msg)
 
 	return nil
 }
@@ -651,6 +651,7 @@ func (o *Object) SendSpawnMessage(sendFn func(*websocket.PreparedMessage) error,
 }
 
 func (o *Object) SendAllAutoAttributes(sendFn func(*websocket.PreparedMessage) error, recursive bool) {
+	return
 	msg := o.dataMsg.Load()
 	if msg != nil {
 		sendFn(msg)

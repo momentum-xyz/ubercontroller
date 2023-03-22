@@ -198,22 +198,22 @@ func (w *World) stopObjects() error {
 func (w *World) broadcastPositions() {
 	w.Users.Mu.RLock()
 	numClients := len(w.Users.Data)
-	positionsBuffer := posbus.StartUserTransformBuffer(numClients)
+	msg := posbus.UsersTransformList{}
 	currentTime := time.Now().Unix()
 
 	if numClients > 0 {
 		for _, u := range w.Users.Data {
 			if u.GetLastPosTime() > w.lastPosUpdate || (currentTime-u.GetLastPosTime() >= MaxPosUpdateInterval) {
-				positionsBuffer.AddPosition(u.GetPosBuffer())
+				msg.Value = append(msg.Value, posbus.UserTransform{ID: u.GetID(), Transform: *u.GetTransform()})
+				//positionsBuffer.AddPosition(u.GetPosBuffer())
 			}
 		}
 	}
 	w.lastPosUpdate = currentTime
 
 	w.Users.Mu.RUnlock()
-	if positionsBuffer.NumUsers() > 0 {
-		positionsBuffer.Finalize()
-		w.Send(posbus.NewMessageFromBuffer(posbus.TypeSetUsersTransforms, positionsBuffer.Buf()).WSMessage(), true)
+	if len(msg.Value) > 0 {
+		w.Send(posbus.WSMessage(&msg), true)
 	}
 }
 
@@ -298,10 +298,7 @@ func (w *World) UpdateWorldMetadata() error {
 	}
 
 	w.metaMsg.Store(
-		posbus.NewMessageFromData(
-			posbus.TypeSetWorld,
-			posbus.SetWorldData{ID: w.GetID(), Name: w.GetName(), Avatar: w.metaData.AvatarController, Avatar3DAssetID: w.metaData.AvatarController, Owner: w.GetOwnerID()},
-		).WSMessage(),
+		posbus.WSMessage(&posbus.SetWorld{ID: w.GetID(), Name: w.GetName(), Avatar: w.metaData.AvatarController, Avatar3DAssetID: w.metaData.AvatarController, Owner: w.GetOwnerID()}),
 	)
 
 	return nil

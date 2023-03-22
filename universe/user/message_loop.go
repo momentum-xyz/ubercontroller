@@ -10,46 +10,37 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
-func (u *User) OnMessage(msg *posbus.Message) error {
+func (u *User) OnMessage(buf []byte) error {
+	msg, err := posbus.Decode(buf)
+	if err != nil {
+		return err
+	}
 	switch msg.Type() {
-	case posbus.TypeSendTransform:
-		if err := u.UpdatePosition(msg.Msg()); err != nil {
-			return errors.WithMessage(err, "failed to handle: send transform")
-		}
+	case posbus.TypeMyTransform:
+		return u.UpdatePosition(msg.(*posbus.MyTransform))
+		//FIXME
+		//if err := u.UpdatePosition(msg.Msg()); err != nil {
+		//	return errors.WithMessage(err, "failed to handle: send transform")
+		//}
 
 	//case posbus.T:
 	//	if err := u.InteractionHandler(msg.AsTriggerInteraction()); err != nil {
 	//		return errors.WithMessage(err, "failed to handle: interaction")
 	//	}
 	case posbus.TypeGenericMessage:
-		if err := u.GenericMessageHandler(msg.Msg()); err != nil {
+		if err := u.GenericMessageHandler(msg); err != nil {
 			return errors.WithMessage(err, "failed to handle: relay to controller")
 		}
 	case posbus.TypeTeleportRequest:
-		var tr posbus.TeleportRequest
-		err := msg.DecodeTo(&tr)
-		if err != nil {
-			return errors.WithMessage(err, "failed to decode: teleport")
-		}
-		return u.Teleport(tr.Target)
+		return u.Teleport(msg.(*posbus.TeleportRequest).Target)
 	case posbus.TypeSignal:
-		var signal posbus.Signal
-		err := msg.DecodeTo(&signal)
-		if err != nil {
-			return errors.WithMessage(err, "failed to decode: signal")
-		}
-		return u.SignalsHandler(signal)
-	//case posbus.TypeSetObjectPosition:
+		return u.SignalsHandler(msg.(*posbus.Signal))
+	//case posbus.TypeObjectPosition:
 	//	if err := u.UpdateObjectPosition(msg.Msg()); err != nil {
 	//		return errors.WithMessage(err, "failed to update object transform")
 	//	}
-	case posbus.TypeSetObjectLock:
-		var lock posbus.SetObjectLock
-		err := msg.DecodeTo(&lock)
-		if err != nil {
-			return errors.WithMessage(err, "failed to decode: set object lock")
-		}
-		return u.LockObject(lock)
+	case posbus.TypeLockObject:
+		return u.LockObject(msg.(*posbus.LockObject))
 	default:
 		return errors.Errorf("unknown message: %d", msg.Type())
 	}
@@ -62,17 +53,13 @@ func (u *User) UpdateObjectPosition(msg posbus.ObjectPosition) error {
 	if !ok {
 		return errors.Errorf("object not found: %s", msg.ID)
 	}
-	return object.SetTransform(utils.GetPTR(msg.ObjectTransform), true)
+	return object.SetTransform(utils.GetPTR(msg.Transform), true)
 }
 
 func (u *User) Teleport(target umid.UMID) error {
 	world, ok := universe.GetNode().GetWorlds().GetWorld(target)
 	if !ok {
-		u.Send(
-			posbus.NewMessageFromData(
-				posbus.TypeSignal, posbus.Signal{Value: posbus.SignalWorldDoesNotExist},
-			).WSMessage(),
-		)
+		u.Send(posbus.WSMessage(&posbus.Signal{Value: posbus.SignalWorldDoesNotExist}))
 		return errors.New("Target world does not exist")
 	}
 	if oldWorld := u.GetWorld(); oldWorld != nil {
@@ -81,7 +68,8 @@ func (u *User) Teleport(target umid.UMID) error {
 	return world.AddUser(u, true)
 }
 
-func (u *User) GenericMessageHandler(msg []byte) error {
+func (u *User) GenericMessageHandler(msg posbus.Message) error {
+	//m := msg.(*posbus.GenericMessage)
 	//if m.Topic() == "emoji" {
 	//	// TODO: comes as plugin?
 	//	//u.HandleEmoji(msg.AsRelayToController())
@@ -89,7 +77,7 @@ func (u *User) GenericMessageHandler(msg []byte) error {
 	return nil
 }
 
-func (u *User) SignalsHandler(s posbus.Signal) error {
+func (u *User) SignalsHandler(s *posbus.Signal) error {
 	fmt.Printf("Got Signal %+v\n", s)
 	switch s.Value {
 	case posbus.SignalLeaveWorld:
@@ -165,7 +153,7 @@ func (u *User) SignalsHandler(s posbus.Signal) error {
 //	return errors.Errorf("unknown message: %d", kind)
 //}
 
-func (u *User) LockObject(lock posbus.SetObjectLock) error {
+func (u *User) LockObject(lock *posbus.LockObject) error {
 	id := lock.ID
 	state := lock.State
 
@@ -182,7 +170,7 @@ func (u *User) LockObject(lock posbus.SetObjectLock) error {
 
 	lock.State = newState
 
-	return u.GetWorld().Send(posbus.NewMessageFromData(posbus.TypeSetObjectLock, lock).WSMessage(), true)
+	return u.GetWorld().Send(posbus.WSMessage(lock), true)
 }
 
 //func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {

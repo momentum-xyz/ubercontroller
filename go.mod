@@ -11,6 +11,7 @@ require (
 	github.com/ethereum/go-ethereum v1.11.4
 	github.com/georgysavva/scany v1.2.1
 	github.com/gin-gonic/gin v1.9.0
+	github.com/gobeam/stringy v0.0.6
 	github.com/gofrs/uuid/v5 v5.0.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang-migrate/migrate/v4 v4.15.2

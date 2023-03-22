@@ -81,7 +81,7 @@ func (w *Worlds) apiWorldsFlyToMe(c *gin.Context) {
 	//	return
 	//}
 
-	msg := posbus.NewGenericMessage(string(dto.FlyToMeTrigger), fwmDto).WSMessage()
+	msg := posbus.WSMessage(posbus.NewGenericMessage(string(dto.FlyToMeTrigger), fwmDto))
 
 	if err := world.Send(msg, false); err != nil {
 		err = errors.WithMessage(err, "Worlds: apiWorldsFlyToMe: failed to dispatch event")

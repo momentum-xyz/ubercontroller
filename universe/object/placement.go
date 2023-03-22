@@ -71,7 +71,7 @@ func (o *Object) SetActualTransform(pos cmath.ObjectTransform, theta float64) er
 				world := o.GetWorld()
 				if world != nil {
 					world.Send(
-						posbus.NewMessageFromData(posbus.TypeSetObjectPosition, *(o.GetActualTransform())).WSMessage(),
+						posbus.WSMessage(&posbus.ObjectPosition{ID: o.id, Transform: *o.GetActualTransform()}),
 						true,
 					)
 				}
@@ -114,7 +114,7 @@ func (o *Object) SetTransform(position *cmath.ObjectTransform, updateDB bool) er
 				world := o.GetWorld()
 				if world != nil {
 					world.Send(
-						posbus.NewMessageFromData(posbus.TypeSetObjectPosition, *(o.GetActualTransform())).WSMessage(),
+						posbus.WSMessage(&posbus.ObjectPosition{ID: o.id, Transform: *o.GetActualTransform()}),
 						true,
 					)
 				}
