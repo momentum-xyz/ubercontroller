@@ -16,6 +16,7 @@ const (
 	TypeSetWorld           MsgType = 0xCCDF2E49
 	TypeSignal             MsgType = 0xADC1964D
 	TypeTeleportRequest    MsgType = 0x78DA55D9
+	TypeUserAction         MsgType = 0xEF1A2E75
 	TypeUserData           MsgType = 0xF702EF5F
 	TypeUserTransform      MsgType = 0x3BC97EBB
 	TypeUsersTransformList MsgType = 0x285954B8

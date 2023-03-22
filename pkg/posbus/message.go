@@ -195,4 +195,3 @@ func ExtraTypes() []reflect.Type {
 
 //TypeSetObjectData MsgType = 0xCACE197C
 //TypeTriggerVisualEffects MsgType = 0xD96089C6
-//TypeUserAction           MsgType = 0xEF1A2E75
