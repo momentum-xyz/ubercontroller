@@ -26,7 +26,7 @@ type UpdateEvent struct {
 	Amount   *big.Int
 }
 
-type AdapterListener func(block *BCBlock, diffs []*BCDiff)
+type AdapterListener func(blockNumber uint64, diffs []*BCDiff)
 
 type Adapter interface {
 	GetLastBlockNumber() (uint64, error)

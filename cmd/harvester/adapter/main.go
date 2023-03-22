@@ -15,8 +15,8 @@ func main() {
 	a := ethereum_adapter.NewEthereumAdapter()
 	a.Run()
 	var l harvester.AdapterListener
-	l = func(b *harvester.BCBlock, diffs []*harvester.BCDiff) {
-		fmt.Printf("Listener: %+v %+v \n", b.Number, b.Hash)
+	l = func(blockNumber uint64, diffs []*harvester.BCDiff) {
+		fmt.Printf("Listener: %+v \n", blockNumber)
 		fmt.Printf("Diffs: %+v \n", len(diffs))
 	}
 
@@ -40,7 +40,7 @@ func main() {
 		common.HexToAddress("0x6de037ef9ad2725eb40118bb1702ebb27e4aeb24"),
 		common.HexToAddress("0xa8c8cfb141a3bb59fea1e2ea6b79b5ecbcd7b6ca"),
 	}
-	diffs, err := a.GetTransferLogs(16882578, 16882878, contracts)
+	diffs, err := a.GetTransferLogs(16882904, 16882904, contracts)
 
 	for k, v := range diffs {
 		fmt.Printf("%+v %+v %+v %+v  \n", k, v.Token, v.To, v.Amount.String())

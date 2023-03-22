@@ -288,7 +288,7 @@ func (a *EthereumAdapter) onNewBlock(b *harvester.BCBlock) {
 		},
 	}
 
-	a.listener(b, mockDiffs)
+	a.listener(b.Number, mockDiffs)
 	//a.listener(b, diffs)
 }
 

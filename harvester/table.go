@@ -37,15 +37,61 @@ func NewTable(db *pgxpool.Pool, adapter Adapter, listener func(p []*UpdateEvent)
 }
 
 func (t *Table) Run() {
-	t.LoadFromDB()
+	err := t.LoadFromDB()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	t.fastForward()
+
 	t.adapter.RegisterNewBlockListener(t.listener)
 }
 
-func (t *Table) listener(block *BCBlock, diffs []*BCDiff) {
-	fmt.Printf("Block: %d \n", block.Number)
+func (t *Table) fastForward() {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	lastBlockNumber, err := t.adapter.GetLastBlockNumber()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	if t.blockNumber == 0 {
+		// No blocks processed
+		// Initialisation should be done using GetBalance
+		return
+	}
+
+	if t.blockNumber >= lastBlockNumber {
+		// Table already processed latest BC block
+		return
+	}
+
+	contracts := make([]common.Address, 0)
+	for contract := range t.data {
+		contracts = append(contracts, common.HexToAddress(contract))
+	}
+
+	fmt.Println("Doing Fast Forward")
+
+	if len(contracts) == 0 {
+		return
+	}
+
+	diffs, err := t.adapter.GetTransferLogs(int64(t.blockNumber)+1, int64(lastBlockNumber), contracts)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	t.ProcessDiffs(lastBlockNumber, diffs)
+}
+
+func (t *Table) ProcessDiffs(blockNumber uint64, diffs []*BCDiff) {
+	fmt.Printf("Block: %d \n", blockNumber)
 	events := make([]*UpdateEvent, 0)
 
-	t.mu.Lock()
 	for _, diff := range diffs {
 		_, ok := t.data[diff.Token]
 		if !ok {
@@ -74,7 +120,7 @@ func (t *Table) listener(block *BCBlock, diffs []*BCDiff) {
 		}
 	}
 
-	t.blockNumber = block.Number
+	t.blockNumber = blockNumber
 
 	t.harvesterListener(events)
 
@@ -82,9 +128,13 @@ func (t *Table) listener(block *BCBlock, diffs []*BCDiff) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	t.mu.Unlock()
 	t.Display()
+}
+
+func (t *Table) listener(blockNumber uint64, diffs []*BCDiff) {
+	t.mu.Lock()
+	t.ProcessDiffs(blockNumber, diffs)
+	t.mu.Unlock()
 }
 
 func (t *Table) SaveToDB(events []*UpdateEvent) error {
