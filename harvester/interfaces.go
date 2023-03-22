@@ -3,6 +3,8 @@ package harvester
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
+
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
@@ -29,6 +31,7 @@ type AdapterListener func(block *BCBlock, diffs []*BCDiff)
 type Adapter interface {
 	GetLastBlockNumber() (uint64, error)
 	GetBalance(wallet string, contract string, blockNumber uint64) (*big.Int, error)
+	GetTransferLogs(fromBlock, toBlock int64, addresses []common.Address) ([]*BCDiff, error)
 	RegisterNewBlockListener(f AdapterListener)
 	Run()
 	GetInfo() (umid umid.UMID, name string, rpcURL string)

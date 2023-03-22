@@ -8,11 +8,13 @@ import (
 	"math/big"
 	"strings"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/pkg/errors"
@@ -55,8 +57,63 @@ func (a *EthereumAdapter) GetLastBlockNumber() (uint64, error) {
 	return number, err
 }
 
-func (a *EthereumAdapter) GetTransactions(blockNumber uint64) ([]any, error) {
-	return nil, nil
+func (a *EthereumAdapter) GetTransferLogs(fromBlock, toBlock int64, addresses []common.Address) ([]*harvester.BCDiff, error) {
+
+	query := ethereum.FilterQuery{
+		FromBlock: big.NewInt(fromBlock),
+		ToBlock:   big.NewInt(toBlock),
+		Addresses: addresses,
+	}
+
+	logs, err := a.client.FilterLogs(context.Background(), query)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	contractABI, err := abi.JSON(strings.NewReader(erc20abi))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	logTransferSig := []byte("Transfer(address,address,uint256)")
+	logTransferSigHash := crypto.Keccak256Hash(logTransferSig)
+
+	diffs := make([]*harvester.BCDiff, 0)
+
+	for _, vLog := range logs {
+		//fmt.Printf("Log Block Number: %d\n", vLog.BlockNumber)
+		//fmt.Printf("Log Index: %d\n", vLog.Index)
+
+		switch vLog.Topics[0].Hex() {
+		case logTransferSigHash.Hex():
+			//fmt.Printf("Log Name: Transfer\n")
+
+			var transferEvent harvester.BCDiff
+
+			ev, err := contractABI.Unpack("Transfer", vLog.Data)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			fmt.Println(ev)
+
+			transferEvent.Token = strings.ToLower(vLog.Address.Hex())
+			// Hex and Un Hex here used to remove padding zeros
+			transferEvent.From = strings.ToLower(common.HexToAddress(vLog.Topics[1].Hex()).Hex())
+			transferEvent.To = strings.ToLower(common.HexToAddress(vLog.Topics[2].Hex()).Hex())
+			if len(ev) > 0 {
+				transferEvent.Amount = ev[0].(*big.Int)
+			}
+
+			//fmt.Printf("Contract: %s\n", transferEvent.Token)
+			//fmt.Printf("From: %s\n", transferEvent.From)
+			//fmt.Printf("To: %s\n", transferEvent.To)
+			//fmt.Printf("Tokens: %s\n", transferEvent.Amount.String())
+			diffs = append(diffs, &transferEvent)
+		}
+	}
+
+	return diffs, nil
 }
 
 func (a *EthereumAdapter) GetBalance(wallet string, contract string, blockNumber uint64) (*big.Int, error) {
