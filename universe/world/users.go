@@ -112,7 +112,7 @@ func (w *World) noLockRemoveUser(user universe.User, updateDB bool) (bool, error
 	for _, child := range w.allObjects.Data {
 		if child.LockUnityObject(user, 0) {
 			w.Send(
-				posbus.WSMessage(&posbus.ObjectLockResult{ID: child.GetID(), Result: 0, LockOwner: user.GetID()}),
+				posbus.WSMessage(&posbus.LockObjectResponse{ID: child.GetID(), Result: 0, LockOwner: user.GetID()}),
 				true,
 			)
 		}
