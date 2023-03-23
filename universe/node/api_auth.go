@@ -81,6 +81,68 @@ func (n *Node) apiGenChallenge(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
+// @Summary Verifies a signed challenge
+// @Schemes
+// @Description Returns OK when a signature has been validated
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param body body node.apiVerifySignature.InBody true "body params"
+// @Success 200 {object} nil
+// @Failure 400 {object} api.HTTPError
+// @Failure 500 {object} api.HTTPError
+// @Router /api/v4/auth/verify-signature [get]
+func (n *Node) apiVerifySignature(c *gin.Context) {
+	type InBody struct {
+		Wallet          string `json:"wallet" binding:"required"`
+		Network         string `json:"network"`
+		SignedChallenge string `json:"signedChallenge" binding:"required"`
+	}
+	var inBody InBody
+
+	if err := c.ShouldBindJSON(&inBody); err != nil {
+		err := errors.WithMessage(err, "Node: apiAddWallet: failed to bind json")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
+	attributeID := entry.NewAttributeID(universe.GetKusamaPluginID(), universe.ReservedAttributes.Kusama.Challenges.Name)
+
+	challengesAttributeValue, ok := n.GetNodeAttributes().GetValue(attributeID)
+	if !ok || challengesAttributeValue == nil {
+		err := errors.Errorf("Node: apiAddWallet: node attribute not found")
+		api.AbortRequest(c, http.StatusInternalServerError, "attribute_not_found", err, n.log)
+		return
+	}
+
+	var challenge string
+	if store := utils.GetFromAnyMap(
+		*challengesAttributeValue, universe.ReservedAttributes.Kusama.Challenges.Key, (map[string]any)(nil),
+	); store != nil {
+		challenge = utils.GetFromAnyMap(store, inBody.Wallet, "")
+	}
+	if challenge == "" {
+		err := errors.Errorf("Node: apiAddWallet: challenge not found")
+		api.AbortRequest(c, http.StatusNotFound, "challenge_not_found", err, n.log)
+		return
+	}
+
+	valid, err := api.VerifyEthereumSignature(inBody.Wallet, challenge, inBody.SignedChallenge)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiAddWallet: failed to update node attribute value")
+		api.AbortRequest(c, http.StatusInternalServerError, "attribute_update_failed", err, n.log)
+		return
+	}
+
+	if !valid {
+		err := errors.Errorf("Node: apiAddWallet: ethereum signature appears to be invalid")
+		api.AbortRequest(c, http.StatusNotFound, "invalid_signature", err, n.log)
+		return
+	}
+
+	c.JSON(http.StatusOK, "")
+}
+
 // @Summary Generate auth token
 // @Schemes
 // @Description Returns a new generated token based on params

@@ -3,9 +3,10 @@ package api
 import (
 	"bytes"
 	"fmt"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"strings"
 	"time"
+
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/ChainSafe/go-schnorrkel"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -15,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 
 	gonanoid "github.com/matoous/go-nanoid/v2"
+
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -90,7 +92,7 @@ func signHash(data []byte) []byte {
 	return crypto.Keccak256([]byte(msg))
 }
 
-func VerifyEthereumSignature(address, challenge, signature string) (bool, error) {
+func VerifyEthereumSignature(address string, challenge string, signature string) (bool, error) {
 	if !strings.HasPrefix(signature, "0x") {
 		signature = "0x" + signature
 	}
