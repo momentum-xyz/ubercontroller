@@ -7,7 +7,7 @@ type LockObject struct {
 	State uint32    `json:"state"`
 }
 
-type ObjectLockResult struct {
+type LockObjectResponse struct {
 	ID        umid.UMID `json:"id"`
 	Result    uint32    `json:"result"`
 	LockOwner umid.UMID `json:"lock_owner"`
@@ -15,13 +15,13 @@ type ObjectLockResult struct {
 
 func init() {
 	registerMessage(LockObject{})
-	registerMessage(ObjectLockResult{})
+	registerMessage(LockObjectResponse{})
 }
 
 func (l *LockObject) Type() MsgType {
 	return 0xA7DE9F59
 }
 
-func (l *ObjectLockResult) Type() MsgType {
+func (l *LockObjectResponse) Type() MsgType {
 	return 0x0924668C
 }

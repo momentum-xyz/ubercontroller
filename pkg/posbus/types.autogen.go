@@ -6,10 +6,10 @@ const (
 	TypeGenericMessage       MsgType = 0xF508E4A3
 	TypeHandShake            MsgType = 0x7C41941A
 	TypeLockObject           MsgType = 0xA7DE9F59
+	TypeLockObjectResponse   MsgType = 0x0924668C
 	TypeMyTransform          MsgType = 0xF878C4BF
 	TypeNotification         MsgType = 0xC1FB41D7
 	TypeObjectDefinition     MsgType = 0xD742B52E
-	TypeObjectLockResult     MsgType = 0x0924668C
 	TypeObjectPosition       MsgType = 0xEA6DA4B4
 	TypeRemoveObjects        MsgType = 0x6BF88C24
 	TypeRemoveUsers          MsgType = 0xF5A14BB0
