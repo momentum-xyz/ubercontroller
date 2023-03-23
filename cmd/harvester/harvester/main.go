@@ -33,8 +33,8 @@ func main() {
 	// ** Ethereum Adapter
 	ethereumAdapter := ethereum_adapter.NewEthereumAdapter()
 	ethereumAdapter.Run()
-	id, name, url := ethereumAdapter.GetInfo()
-	if err := harv.RegisterAdapter(id, name, url, ethereumAdapter); err != nil {
+	_, _, _ = ethereumAdapter.GetInfo()
+	if err := harv.RegisterAdapter(ethereumAdapter); err != nil {
 		log.Fatal(err)
 	}
 
@@ -55,16 +55,16 @@ func main() {
 	wallet2 := "0x9Dd3f13cbacf6bd96E9757eCaceDf5236ffF787f"
 	contract3 := "0x3af33bEF05C2dCb3C7288b77fe1C8d2AeBA4d789"
 
-	err = harv.SubscribeForWalletAndContract(harvester.Ethereum, harvester.HexToAddress(wallet1), harvester.HexToAddress(contract1), ptrTestHandler2)
+	err = harv.SubscribeForWalletAndContract(harvester.Ethereum, wallet1, contract1, ptrTestHandler2)
 	if err != nil {
 		panic(err)
 	}
-	err = harv.SubscribeForWalletAndContract(harvester.Ethereum, harvester.HexToAddress(wallet1), harvester.HexToAddress(contract2), ptrTestHandler2)
+	err = harv.SubscribeForWalletAndContract(harvester.Ethereum, wallet1, contract2, ptrTestHandler2)
 	if err != nil {
 		panic(err)
 	}
 
-	err = harv.SubscribeForWalletAndContract(harvester.Ethereum, harvester.HexToAddress(wallet2), harvester.HexToAddress(contract3), ptrTestHandler2)
+	err = harv.SubscribeForWalletAndContract(harvester.Ethereum, wallet2, contract3, ptrTestHandler2)
 	if err != nil {
 		panic(err)
 	}

@@ -48,10 +48,10 @@ const NewBlock Event = "new_block"
 const BalanceChange Event = "balance_change"
 
 type IHarvester interface {
-	RegisterAdapter(umid umid.UMID, bcType string, rpcURL string, bcAdapter Adapter) error
+	RegisterAdapter(bcAdapter Adapter) error
 	OnBalanceChange()
 	Subscribe(bcType string, eventName Event, callback Callback)
 	Unsubscribe(bcType string, eventName Event, callback Callback)
 	SubscribeForWallet(bcType string, wallet, callback Callback)
-	SubscribeForWalletAndContract(bcType string, wallet []byte, contract []byte, callback Callback) error
+	SubscribeForWalletAndContract(bcType string, wallet string, contract string, callback Callback) error
 }

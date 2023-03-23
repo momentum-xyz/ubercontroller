@@ -23,10 +23,10 @@ type Table struct {
 	data              map[string]map[string]*big.Int
 	db                *pgxpool.Pool
 	adapter           Adapter
-	harvesterListener func(p []*UpdateEvent)
+	harvesterListener func(bcName string, p []*UpdateEvent)
 }
 
-func NewTable(db *pgxpool.Pool, adapter Adapter, listener func(p []*UpdateEvent)) *Table {
+func NewTable(db *pgxpool.Pool, adapter Adapter, listener func(bcName string, p []*UpdateEvent)) *Table {
 	return &Table{
 		blockNumber:       0,
 		data:              make(map[string]map[string]*big.Int),
@@ -122,7 +122,8 @@ func (t *Table) ProcessDiffs(blockNumber uint64, diffs []*BCDiff) {
 
 	t.blockNumber = blockNumber
 
-	t.harvesterListener(events)
+	_, name, _ := t.adapter.GetInfo()
+	t.harvesterListener(name, events)
 
 	err := t.SaveToDB(events)
 	if err != nil {

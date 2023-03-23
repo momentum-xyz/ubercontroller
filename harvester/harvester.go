@@ -1,18 +1,14 @@
 package harvester
 
 import (
-	"math/big"
-
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
-
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 type Harvester struct {
 	clients *Callbacks
 	db      *pgxpool.Pool
-	bc      map[string]*BlockChain
+	bc      map[string]*Table
 }
 
 func (h *Harvester) SubscribeForWallet(bcType string, wallet, callback Callback) {
@@ -20,17 +16,14 @@ func (h *Harvester) SubscribeForWallet(bcType string, wallet, callback Callback)
 	panic("implement me")
 }
 
-func (h *Harvester) SubscribeForWalletAndContract(bcType string, wallet []byte, contract []byte, callback Callback) error {
-	bc, ok := h.bc[bcType]
+func (h *Harvester) SubscribeForWalletAndContract(bcType string, wallet string, contract string, callback Callback) error {
+	table, ok := h.bc[bcType]
 	if !ok {
 		return errors.New("failed to find blockchain:" + bcType)
 	}
 
 	h.clients.Add(bcType, BalanceChange, callback)
-
-	bc.SubscribeForWalletAndContract(wallet, contract)
-	bc.SaveBalancesToDB()
-	bc.LoadBalancesFromDB()
+	table.AddWalletContract(wallet, contract)
 
 	return nil
 }
@@ -41,7 +34,7 @@ func NewHarvester(db *pgxpool.Pool) *Harvester {
 	return &Harvester{
 		clients: NewCallbacks(),
 		db:      db,
-		bc:      make(map[string]*BlockChain),
+		bc:      make(map[string]*Table),
 	}
 }
 
@@ -58,17 +51,19 @@ func (h *Harvester) OnNewBlock(bcType string, block *BCBlock) {
 	h.clients.Trigger(bcType, NewBlock, block)
 }
 
-func (h *Harvester) RegisterAdapter(umid umid.UMID, bcType string, rpcURL string, adapter Adapter) error {
-	h.bc[bcType] = NewBlockchain(h.db, adapter, umid, bcType, rpcURL, h.updateHook)
-	if err := h.bc[bcType].LoadFromDB(); err != nil {
-		return errors.WithMessage(err, "failed to load from DB")
-	}
+func (h *Harvester) RegisterAdapter(adapter Adapter) error {
+	_, bcType, _ := adapter.GetInfo()
+
+	h.bc[bcType] = NewTable(h.db, adapter, h.updateHook)
+	h.bc[bcType].Run()
 
 	return nil
 }
 
-func (h *Harvester) updateHook(bcType string, wallet string, contract string, blockNumber uint64, balance *big.Int) {
-	h.clients.Trigger(bcType, BalanceChange, []any{wallet, contract, balance})
+func (h *Harvester) updateHook(bcType string, updates []*UpdateEvent) {
+	for update := range updates {
+		h.clients.Trigger(bcType, BalanceChange, update)
+	}
 }
 
 func (h *Harvester) Run() error {
