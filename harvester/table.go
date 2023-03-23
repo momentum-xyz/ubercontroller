@@ -223,7 +223,7 @@ func (t *Table) SaveToDB(events []*UpdateEvent) error {
 		BlockchainName:           name,
 		RPCURL:                   rpcURL,
 	}
-	_, err = t.db.Exec(context.Background(), insertOrUpdate,
+	_, err = t.db.Exec(context.Background(), sql,
 		val.BlockchainID, val.LastProcessedBlockNumber, val.BlockchainName, val.RPCURL)
 	if err != nil {
 		return errors.WithMessage(err, "failed to insert or update blockchain DB query")

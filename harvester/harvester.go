@@ -1,6 +1,8 @@
 package harvester
 
 import (
+	"fmt"
+
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 )
@@ -61,7 +63,8 @@ func (h *Harvester) RegisterAdapter(adapter Adapter) error {
 }
 
 func (h *Harvester) updateHook(bcType string, updates []*UpdateEvent) {
-	for update := range updates {
+	for _, update := range updates {
+		fmt.Println("Trigger Balance")
 		h.clients.Trigger(bcType, BalanceChange, update)
 	}
 }
