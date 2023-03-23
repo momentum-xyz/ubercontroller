@@ -24,6 +24,6 @@ func init() {
 	addExtraType(SignalType(0))
 }
 
-func (g *Signal) Type() MsgType {
+func (g *Signal) GetType() MsgType {
 	return 0xADC1964D
 }

@@ -4,7 +4,7 @@ type AddUsers struct {
 	Users []UserData `json:"users"`
 }
 
-func (a *AddUsers) Type() MsgType {
+func (a *AddUsers) GetType() MsgType {
 	return 0xF51F2AFF
 }
 

@@ -23,6 +23,6 @@ func init() {
 	registerMessage(ObjectDefinition{})
 }
 
-func (g *ObjectDefinition) Type() MsgType {
+func (g *ObjectDefinition) GetType() MsgType {
 	return 0xD742B52E
 }

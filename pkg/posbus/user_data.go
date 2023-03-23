@@ -17,6 +17,6 @@ func init() {
 	registerMessage(UserData{})
 }
 
-func (a *UserData) Type() MsgType {
+func (a *UserData) GetType() MsgType {
 	return 0xF702EF5F
 }

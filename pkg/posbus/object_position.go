@@ -14,6 +14,6 @@ func init() {
 	registerMessage(ObjectPosition{})
 }
 
-func (g *ObjectPosition) Type() MsgType {
+func (g *ObjectPosition) GetType() MsgType {
 	return 0xEA6DA4B4
 }

@@ -15,7 +15,7 @@ func (u *User) OnMessage(buf []byte) error {
 	if err != nil {
 		return err
 	}
-	switch msg.Type() {
+	switch msg.GetType() {
 	case posbus.TypeMyTransform:
 		return u.UpdatePosition(msg.(*posbus.MyTransform))
 		//FIXME
@@ -27,10 +27,6 @@ func (u *User) OnMessage(buf []byte) error {
 	//	if err := u.InteractionHandler(msg.AsTriggerInteraction()); err != nil {
 	//		return errors.WithMessage(err, "failed to handle: interaction")
 	//	}
-	case posbus.TypeGenericMessage:
-		if err := u.GenericMessageHandler(msg); err != nil {
-			return errors.WithMessage(err, "failed to handle: relay to controller")
-		}
 	case posbus.TypeTeleportRequest:
 		return u.Teleport(msg.(*posbus.TeleportRequest).Target)
 	case posbus.TypeSignal:
@@ -42,7 +38,7 @@ func (u *User) OnMessage(buf []byte) error {
 	case posbus.TypeLockObject:
 		return u.LockObject(msg.(*posbus.LockObject))
 	default:
-		return errors.Errorf("unknown message: %d", msg.Type())
+		return errors.Errorf("unknown message: %d", msg.GetType())
 	}
 
 	return nil
@@ -68,15 +64,6 @@ func (u *User) Teleport(target umid.UMID) error {
 	return world.AddUser(u, true)
 }
 
-func (u *User) GenericMessageHandler(msg posbus.Message) error {
-	//m := msg.(*posbus.GenericMessage)
-	//if m.Topic() == "emoji" {
-	//	// TODO: comes as plugin?
-	//	//u.HandleEmoji(msg.AsRelayToController())
-	//}
-	return nil
-}
-
 func (u *User) SignalsHandler(s *posbus.Signal) error {
 	fmt.Printf("Got Signal %+v\n", s)
 	switch s.Value {
@@ -85,21 +72,6 @@ func (u *User) SignalsHandler(s *posbus.Signal) error {
 			oldWorld.RemoveUser(u, true)
 		}
 	}
-	//case posbus.SignalReady:
-	//	u.ReleaseSendBuffer()
-	//	//u.log.Debugf("Got signalReady from %s", u.umid.String())
-	//	//TODO: Do we need it?
-	//	//if err := u.world.SendWorldData(u); err != nil {
-	//	//	log.Error(
-	//	//		errors.WithMessagef(
-	//	//			err, "User: SignalsHandler: SignalReady: failed to send world data: %s", u.UMID,
-	//	//		),
-	//	//	)
-	//	//	u.world.unregisterUser <- u
-	//	//	return
-	//	//}
-	//	//u.connection.EnableWriting()
-	//}
 
 	return nil
 }
@@ -182,11 +154,7 @@ func (u *User) LockObject(lock *posbus.LockObject) error {
 //	world := u.GetWorld()
 //	target, ok := world.GetUser(targetID, false)
 //	if !ok {
-//		u.Send(
-//			posbus.NewSimpleNotificationMsg(
-//				posbus.DestinationReact, posbus.NotificationTextMessage, 0, "Target user not found",
-//			).WSMessage(),
-//		)
+//		u.Send(posbus.WSMessage(&posbus.Notification{NotifyType: posbus.NotificationTextMessage, Value: "Target user not found"}))
 //		return errors.Errorf("failed to get target: %s", targetID)
 //	}
 //
@@ -201,26 +169,14 @@ func (u *User) LockObject(lock *posbus.LockObject) error {
 //		tName = *tProfile.Name
 //	}
 //
-//	high5Msg := struct {
-//		SenderID   string `json:"senderId"`
-//		ReceiverID string `json:"receiverId"`
-//		Message    string `json:"message"`
-//	}{
-//		SenderID:   u.GetID().String(),
-//		ReceiverID: targetID.String(),
+//	msg := posbus.HighFive{
+//		SenderID:   u.GetID(),
+//		ReceiverID: targetID,
 //		Message:    uName,
 //	}
-//	high5Data, err := json.Marshal(&high5Msg)
-//	if err != nil {
-//		return errors.WithMessage(err, "failed to marshal high5 message")
-//	}
 //
-//	u.Send(
-//		posbus.NewSimpleNotificationMsg(
-//			posbus.DestinationReact, posbus.NotificationHighFive, 0, tName,
-//		).WSMessage(),
-//	)
-//	target.Send(posbus.NewGenericMessage("high5", high5Data).WSMessage())
+//	u.Send(posbus.WSMessage(&posbus.Notification{NotifyType: posbus.NotificationHighFive, Value: tName}))
+//	target.Send(posbus.WSMessage(&msg))
 //
 //	effectsEmitterID := world.GetSettings().Objects["effects_emitter"]
 //	effect := posbus.NewTriggerTransitionalBridgingEffectsOnPositionMsg(1)

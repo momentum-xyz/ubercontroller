@@ -26,7 +26,7 @@ type Message interface {
 	MarshalMUS(buf []byte) int
 	UnmarshalMUS(buf []byte) (int, error)
 	SizeMUS() int
-	Type() MsgType
+	GetType() MsgType
 }
 
 type mDef struct {
@@ -118,7 +118,7 @@ func WSMessage(m Message) *websocket.PreparedMessage {
 func BinMessage(m Message) []byte {
 	len := m.SizeMUS()
 	buf := make([]byte, MsgTypeSize*2+len)
-	msgType := m.Type()
+	msgType := m.GetType()
 	binary.LittleEndian.PutUint32(buf, uint32(msgType))
 	m.MarshalMUS(buf[MsgTypeSize:])
 	binary.LittleEndian.PutUint32(buf[MsgTypeSize+len:], uint32(^msgType))
@@ -130,11 +130,11 @@ func MsgTypeName(m Message) string {
 }
 
 func MsgTypeId(m Message) MsgType {
-	return m.Type()
+	return m.GetType()
 }
 
 func registerMessage[T any](m T) {
-	mType := reflect.ValueOf(&m).MethodByName("Type").Call([]reflect.Value{})[0].Interface().(MsgType)
+	mType := reflect.ValueOf(&m).MethodByName("GetType").Call([]reflect.Value{})[0].Interface().(MsgType)
 	mTypeName := reflect.TypeOf(m).Name()
 	mName := stringy.New(mTypeName).SnakeCase().ToLower()
 

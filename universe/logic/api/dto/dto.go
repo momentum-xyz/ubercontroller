@@ -53,11 +53,11 @@ type ExploreOption struct {
 	SubObjects  []ExploreOption `json:"subObjects,omitempty"`
 }
 
-type FlyToMe struct {
-	Pilot     umid.UMID `json:"pilot"`
-	PilotName string    `json:"pilot_name"`
-	ObjectID  umid.UMID `json:"object_id"`
-}
+//type FlyToMe struct {
+//	Pilot     umid.UMID `json:"pilot"`
+//	PilotName string    `json:"pilot_name"`
+//	ObjectID  umid.UMID `json:"object_id"`
+//}
 
 type Profile struct {
 	Bio         *string `json:"bio,omitempty"`

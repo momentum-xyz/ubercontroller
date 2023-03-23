@@ -8,6 +8,6 @@ func init() {
 	registerMessage(AddObjects{})
 }
 
-func (g *AddObjects) Type() MsgType {
+func (g *AddObjects) GetType() MsgType {
 	return 0x2452A9C1
 }

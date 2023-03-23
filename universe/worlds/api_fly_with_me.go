@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
-	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 )
 
 // @Summary Starts a fly to me session
@@ -68,7 +67,7 @@ func (w *Worlds) apiWorldsFlyToMe(c *gin.Context) {
 		}
 	}
 
-	fwmDto := dto.FlyToMe{
+	fwm := posbus.FlyToMe{
 		Pilot:     user.GetID(),
 		PilotName: userName,
 		ObjectID:  world.GetID(),
@@ -81,7 +80,7 @@ func (w *Worlds) apiWorldsFlyToMe(c *gin.Context) {
 	//	return
 	//}
 
-	msg := posbus.WSMessage(posbus.NewGenericMessage(string(dto.FlyToMeTrigger), fwmDto))
+	msg := posbus.WSMessage(&fwm)
 
 	if err := world.Send(msg, false); err != nil {
 		err = errors.WithMessage(err, "Worlds: apiWorldsFlyToMe: failed to dispatch event")

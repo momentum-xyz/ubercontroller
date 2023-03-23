@@ -14,7 +14,7 @@ func init() {
 	registerMessage(GenericMessage{})
 }
 
-func (g *GenericMessage) Type() MsgType {
+func (g *GenericMessage) GetType() MsgType {
 	return 0xF508E4A3
 }
 
@@ -25,4 +25,8 @@ func NewGenericMessage(topic string, data interface{}) *GenericMessage {
 		return nil
 	}
 	return &GenericMessage{Topic: topic, Data: dataJSON}
+	//d := make(map[string]interface{})
+	//utils.MapDecode(data, d)
+	//fmt.Printf("%+v\n", d)
+	//return &GenericMessage{Topic: topic, Data: d}
 }

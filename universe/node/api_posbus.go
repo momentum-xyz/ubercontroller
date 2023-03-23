@@ -44,7 +44,7 @@ func (n *Node) handShake(socketConnection *websocket.Conn) error {
 		return errors.WithMessagef(err, "error: can not decode message in handshake")
 	}
 
-	if msg.Type() != posbus.TypeHandShake {
+	if msg.GetType() != posbus.TypeHandShake {
 		return errors.New("error: wrong message received, not handshake")
 	}
 	handshake, ok := msg.(*posbus.HandShake)

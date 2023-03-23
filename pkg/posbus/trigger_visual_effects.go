@@ -14,6 +14,6 @@ func init() {
 	addExtraType(VisualEffect{})
 }
 
-func (g *TriggerVisualEffects) Type() MsgType {
+func (g *TriggerVisualEffects) GetType() MsgType {
 	return 0xD96089C6
 }

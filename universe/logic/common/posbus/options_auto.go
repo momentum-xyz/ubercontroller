@@ -10,16 +10,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-type AttributeValueChangedMessage struct {
-	Type universe.AttributeChangeType     `json:"type"`
-	Data AttributeValueChangedMessageData `json:"data"`
-}
-
-type AttributeValueChangedMessageData struct {
-	AttributeName string                `json:"attribute_name"`
-	Value         *entry.AttributeValue `json:"value"`
-}
-
 func GetOptionAutoOption(options *entry.AttributeOptions) (*entry.PosBusAutoAttributeOption, error) {
 	if options == nil {
 		return nil, nil
@@ -46,22 +36,21 @@ func GetOptionAutoMessage(
 		return nil, nil
 	}
 
-	data := AttributeValueChangedMessage{
-		Type: changeType,
-		Data: AttributeValueChangedMessageData{
-			AttributeName: attributeID.Name,
-			Value:         value,
-		},
-	}
-
 	topic := option.Topic
 	if topic == "" {
 		topic = attributeID.PluginID.String()
 	}
-	switch option.SendTo {
-	case entry.ReactPosBusDestinationType:
-		return posbus.WSMessage(posbus.NewGenericMessage(topic, data)), nil
+
+	data := posbus.AttributeValueChanged{
+		Topic:      topic,
+		ChangeType: string(changeType),
+		Data: posbus.AttributeValueChangedData{
+			AttributeName: attributeID.Name,
+			Value:         (*posbus.StringMapAny)(value),
+		},
 	}
 
-	return nil, errors.Errorf("send to type is not supported yet: %d", option.SendTo)
+	return posbus.WSMessage(&data), nil
+
+	//return nil, errors.Errorf("send to type is not supported yet: %d", option.SendTo)
 }

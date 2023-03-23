@@ -10,6 +10,6 @@ func init() {
 	registerMessage(RemoveObjects{})
 }
 
-func (g *RemoveObjects) Type() MsgType {
+func (g *RemoveObjects) GetType() MsgType {
 	return 0x6BF88C24
 }

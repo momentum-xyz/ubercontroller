@@ -14,6 +14,6 @@ func init() {
 	registerMessage(HandShake{})
 }
 
-func (g *HandShake) Type() MsgType {
+func (g *HandShake) GetType() MsgType {
 	return 0x7C41941A
 }

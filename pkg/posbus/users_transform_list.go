@@ -20,12 +20,12 @@ type UsersTransformList struct {
 	Value []UserTransform `json:"value"`
 }
 
-func (s *UserTransform) Type() MsgType {
+func (s *UserTransform) GetType() MsgType {
 	// make it Message-compatible to auto-register
 	return 0x3BC97EBB
 }
 
-func (s *UsersTransformList) Type() MsgType {
+func (s *UsersTransformList) GetType() MsgType {
 	return 0x285954B8
 }
 
