@@ -2,24 +2,30 @@ package ethereum_adapter
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"log"
 	"math/big"
 	"strings"
 
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/harvester"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 type EthereumAdapter struct {
-	harv      harvester.BCAdapterAPI
-	uuid      umid.UMID
+	listener  harvester.AdapterListener
+	umid      umid.UMID
 	rpcURL    string
 	httpURL   string
 	name      string
@@ -27,19 +33,85 @@ type EthereumAdapter struct {
 	rpcClient *rpc.Client
 }
 
-func NewEthereumAdapter(harv harvester.BCAdapterAPI) *EthereumAdapter {
+func NewEthereumAdapter() *EthereumAdapter {
 	return &EthereumAdapter{
-		harv:    harv,
-		uuid:    umid.MustParse("ccccaaaa-1111-2222-3333-111111111111"),
+		umid:    umid.MustParse("ccccaaaa-1111-2222-3333-111111111111"),
 		rpcURL:  "wss://eth.llamarpc.com",
 		httpURL: "https://eth.llamarpc.com",
 		name:    "ethereum",
 	}
 }
 
+func (a *EthereumAdapter) GetInfo() (umid umid.UMID, name string, rpcURL string) {
+	return a.umid, a.name, a.rpcURL
+}
+
+func (a *EthereumAdapter) RegisterNewBlockListener(f harvester.AdapterListener) {
+	a.listener = f
+}
+
 func (a *EthereumAdapter) GetLastBlockNumber() (uint64, error) {
 	number, err := a.client.BlockNumber(context.Background())
 	return number, err
+}
+
+func (a *EthereumAdapter) GetTransferLogs(fromBlock, toBlock int64, addresses []common.Address) ([]*harvester.BCDiff, error) {
+
+	query := ethereum.FilterQuery{
+		FromBlock: big.NewInt(fromBlock),
+		ToBlock:   big.NewInt(toBlock),
+		Addresses: addresses,
+	}
+
+	logs, err := a.client.FilterLogs(context.Background(), query)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	contractABI, err := abi.JSON(strings.NewReader(erc20abi))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	logTransferSig := []byte("Transfer(address,address,uint256)")
+	logTransferSigHash := crypto.Keccak256Hash(logTransferSig)
+
+	diffs := make([]*harvester.BCDiff, 0)
+
+	for _, vLog := range logs {
+		//fmt.Printf("Log Block Number: %d\n", vLog.BlockNumber)
+		//fmt.Printf("Log Index: %d\n", vLog.Index)
+
+		switch vLog.Topics[0].Hex() {
+		case logTransferSigHash.Hex():
+			//fmt.Printf("Log Name: Transfer\n")
+
+			var transferEvent harvester.BCDiff
+
+			ev, err := contractABI.Unpack("Transfer", vLog.Data)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			fmt.Println(ev)
+
+			transferEvent.Token = strings.ToLower(vLog.Address.Hex())
+			// Hex and Un Hex here used to remove padding zeros
+			transferEvent.From = strings.ToLower(common.HexToAddress(vLog.Topics[1].Hex()).Hex())
+			transferEvent.To = strings.ToLower(common.HexToAddress(vLog.Topics[2].Hex()).Hex())
+			if len(ev) > 0 {
+				transferEvent.Amount = ev[0].(*big.Int)
+			}
+
+			//fmt.Printf("Contract: %s\n", transferEvent.Token)
+			//fmt.Printf("From: %s\n", transferEvent.From)
+			//fmt.Printf("To: %s\n", transferEvent.To)
+			//fmt.Printf("Tokens: %s\n", transferEvent.Amount.String())
+			diffs = append(diffs, &transferEvent)
+		}
+	}
+
+	return diffs, nil
 }
 
 func (a *EthereumAdapter) GetBalance(wallet string, contract string, blockNumber uint64) (*big.Int, error) {
@@ -55,7 +127,6 @@ func (a *EthereumAdapter) GetBalance(wallet string, contract string, blockNumber
 	var resp string
 	n := hexutil.EncodeUint64(blockNumber)
 	if err := a.rpcClient.Call(&resp, "eth_call", req, n); err != nil {
-		log.Fatal(err)
 		return nil, errors.WithMessage(err, "failed to make RPC call to ethereum:")
 	}
 
@@ -70,7 +141,6 @@ func (a *EthereumAdapter) GetBalance(wallet string, contract string, blockNumber
 		log.Fatal(err)
 	}
 
-	fmt.Println(balance)
 	return balance, nil
 }
 
@@ -87,14 +157,6 @@ func (a *EthereumAdapter) Run() {
 	}
 
 	a.client = client
-
-	if err := a.harv.RegisterBCAdapter(a.uuid, a.name, a.rpcURL, a); err != nil {
-		log.Fatal(err)
-	}
-
-	//client, err := ethclient.Dial("wss://rinkeby.infura.io/ws")
-	//url := "ws://localhost:8546"
-	//url := "wss://ethg.antst.net:8546"
 
 	fmt.Println("Connected to Ethereum Block Chain: " + a.rpcURL)
 
@@ -127,9 +189,341 @@ func (a *EthereumAdapter) Run() {
 					block.Number = vLog.Number.Uint64()
 				}
 
-				a.harv.OnNewBlock(harvester.Ethereum, block)
+				if a.listener != nil {
+					a.onNewBlock(block)
+				}
 			}
 		}
 	}()
-
 }
+
+func (a *EthereumAdapter) onNewBlock(b *harvester.BCBlock) {
+	block, err := a.client.BlockByNumber(context.TODO(), big.NewInt(int64(b.Number)))
+	if err != nil {
+		err = errors.WithMessage(err, "failed to get block by number")
+		fmt.Println(err)
+	}
+
+	diffs := make([]*harvester.BCDiff, 0)
+	for _, tx := range block.Transactions() {
+		//fmt.Println(tx.Hash().Hex())
+
+		contractABI, err := abi.JSON(strings.NewReader(erc20abi))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if len(tx.Data()) < 4 {
+			continue
+		}
+
+		methodName, methodInput, err := a.DecodeTransactionInputData(&contractABI, tx.Data())
+		if err != nil {
+			//log.Fatal(err)
+		}
+
+		if methodName == "transfer" {
+			diff := &harvester.BCDiff{}
+			diff.From = strings.ToLower(a.GetTransactionMessage(tx).From.Hex())
+
+			diff.To = strings.ToLower(methodInput["_to"].(common.Address).Hex())
+			diff.Token = strings.ToLower(tx.To().Hex())
+			diff.Amount = methodInput["_value"].(*big.Int)
+			diffs = append(diffs, diff)
+		}
+
+		if methodName == "transferFrom" {
+			diff := &harvester.BCDiff{}
+			diff.From = strings.ToLower(methodInput["_from"].(common.Address).Hex())
+			diff.To = strings.ToLower(methodInput["_to"].(common.Address).Hex())
+			diff.Token = strings.ToLower(tx.To().Hex())
+			diff.Amount = methodInput["_value"].(*big.Int)
+			diffs = append(diffs, diff)
+		}
+
+		// TODO Check that tx success
+		//receipt, err := a.client.TransactionReceipt(context.Background(), tx.Hash())
+		//if err != nil {
+		//	log.Fatal(err)
+		//}
+
+		//fmt.Println(tx.Hash())
+		//fmt.Println(receipt.Status) // 1
+	}
+
+	amount := big.NewInt(0)
+	//amount.SetString("33190774000000000000000", 10)
+	amount.SetString("1", 10)
+
+	mockDiffs := []*harvester.BCDiff{
+		{
+			From:   "0x2813fd17ea95b2655a7228383c5236e31090419e",
+			To:     "0x3f363b4e038a6e43ce8321c50f3efbf460196d4b",
+			Token:  "0xdefa4e8a7bcba345f687a2f1456f5edd9ce97202",
+			Amount: amount,
+		},
+	}
+
+	a.listener(b.Number, mockDiffs)
+}
+
+// refer https://github.com/ethereum/web3.py/blob/master/web3/contract.py#L435
+func (a *EthereumAdapter) DecodeTransactionInputData(contractABI *abi.ABI, data []byte) (string, map[string]any, error) {
+	// The first 4 bytes of the txn represent the ID of the method in the ABI
+	//fmt.Println(len(data))
+	methodSigData := data[:4]
+	method, err := contractABI.MethodById(methodSigData)
+	if err != nil {
+		err = errors.WithMessage(err, "failed to get ABI contract method by id")
+		return "", nil, err
+	}
+
+	// parse the inputs to this method
+	inputsSigData := data[4:]
+	inputsMap := make(map[string]interface{})
+	if err := method.Inputs.UnpackIntoMap(inputsMap, inputsSigData); err != nil {
+		err = errors.WithMessage(err, "failed to unpack ABI contract method into map")
+		return "", nil, err
+	}
+	//fmt.Printf("Method Name: %s\n", method.Name)
+	//fmt.Printf("Method inputs: %v\n", MapToJson(inputsMap))
+
+	return method.Name, inputsMap, nil
+}
+
+func MapToJson(param map[string]interface{}) string {
+	dataType, _ := json.Marshal(param)
+	dataString := string(dataType)
+	return dataString
+}
+
+func (a *EthereumAdapter) GetTransactionMessage(tx *types.Transaction) *core.Message {
+	msg, err := core.TransactionToMessage(tx, types.LatestSignerForChainID(tx.ChainId()), nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return msg
+}
+
+const erc20abi = `[
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "name",
+        "outputs": [
+            {
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [
+            {
+                "name": "_spender",
+                "type": "address"
+            },
+            {
+                "name": "_value",
+                "type": "uint256"
+            }
+        ],
+        "name": "approve",
+        "outputs": [
+            {
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "totalSupply",
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [
+            {
+                "name": "_from",
+                "type": "address"
+            },
+            {
+                "name": "_to",
+                "type": "address"
+            },
+            {
+                "name": "_value",
+                "type": "uint256"
+            }
+        ],
+        "name": "transferFrom",
+        "outputs": [
+            {
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "decimals",
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint8"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [
+            {
+                "name": "_owner",
+                "type": "address"
+            }
+        ],
+        "name": "balanceOf",
+        "outputs": [
+            {
+                "name": "balance",
+                "type": "uint256"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "symbol",
+        "outputs": [
+            {
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [
+            {
+                "name": "_to",
+                "type": "address"
+            },
+            {
+                "name": "_value",
+                "type": "uint256"
+            }
+        ],
+        "name": "transfer",
+        "outputs": [
+            {
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [
+            {
+                "name": "_owner",
+                "type": "address"
+            },
+            {
+                "name": "_spender",
+                "type": "address"
+            }
+        ],
+        "name": "allowance",
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "payable": true,
+        "stateMutability": "payable",
+        "type": "fallback"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "name": "owner",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "name": "spender",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "name": "value",
+                "type": "uint256"
+            }
+        ],
+        "name": "Approval",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "name": "from",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "name": "to",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "name": "value",
+                "type": "uint256"
+            }
+        ],
+        "name": "Transfer",
+        "type": "event"
+    }
+]`
