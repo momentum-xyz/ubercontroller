@@ -127,9 +127,7 @@ func (n *Node) apiVerifySignature(c *gin.Context) {
 		return
 	}
 
-	valid, err := func() (bool, error) {
-		return api.VerifyEthereumSignature(inBody.Wallet, challenge, inBody.SignedChallenge)
-	}()
+	valid, err := api.VerifyEthereumSignature(inBody.Wallet, challenge, inBody.SignedChallenge)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiAddWallet: failed to update node attribute value")
 		api.AbortRequest(c, http.StatusInternalServerError, "attribute_update_failed", err, n.log)
