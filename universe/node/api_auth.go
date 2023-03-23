@@ -12,6 +12,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 // @Summary Generate auth challenge
@@ -91,8 +92,8 @@ func (n *Node) apiGenChallenge(c *gin.Context) {
 // @Success 200 {object} nil
 // @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/auth/verify-signature [get]
-func (n *Node) apiVerifySignature(c *gin.Context) {
+// @Router /api/v4/auth/attach-account [post]
+func (n *Node) apiAttachAccount(c *gin.Context) {
 	type InBody struct {
 		Wallet          string `json:"wallet" binding:"required"`
 		Network         string `json:"network"`
@@ -101,7 +102,7 @@ func (n *Node) apiVerifySignature(c *gin.Context) {
 	var inBody InBody
 
 	if err := c.ShouldBindJSON(&inBody); err != nil {
-		err := errors.WithMessage(err, "Node: apiAddWallet: failed to bind json")
+		err := errors.WithMessage(err, "Node: apiAttachAccount: failed to bind json")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
 		return
 	}
@@ -110,7 +111,7 @@ func (n *Node) apiVerifySignature(c *gin.Context) {
 
 	challengesAttributeValue, ok := n.GetNodeAttributes().GetValue(attributeID)
 	if !ok || challengesAttributeValue == nil {
-		err := errors.Errorf("Node: apiAddWallet: node attribute not found")
+		err := errors.Errorf("Node: apiAttachAccount: node attribute not found")
 		api.AbortRequest(c, http.StatusInternalServerError, "attribute_not_found", err, n.log)
 		return
 	}
@@ -122,25 +123,69 @@ func (n *Node) apiVerifySignature(c *gin.Context) {
 		challenge = utils.GetFromAnyMap(store, inBody.Wallet, "")
 	}
 	if challenge == "" {
-		err := errors.Errorf("Node: apiAddWallet: challenge not found")
+		err := errors.Errorf("Node: apiAttachAccount: challenge not found")
 		api.AbortRequest(c, http.StatusNotFound, "challenge_not_found", err, n.log)
 		return
 	}
 
-	valid, err := api.VerifyEthereumSignature(inBody.Wallet, challenge, inBody.SignedChallenge)
+	valid, err := func() (bool, error) {
+		switch inBody.Network {
+		case "ethereum":
+			return api.VerifyEthereumSignature(inBody.Wallet, challenge, inBody.SignedChallenge)
+		default:
+			return api.VerifyPolkadotSignature(inBody.Wallet, challenge, inBody.SignedChallenge)
+		}
+	}()
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiAddWallet: failed to update node attribute value")
+		err := errors.WithMessage(err, "Node: apiAttachAccount: failed to update node attribute value")
 		api.AbortRequest(c, http.StatusInternalServerError, "attribute_update_failed", err, n.log)
 		return
 	}
 
 	if !valid {
-		err := errors.Errorf("Node: apiAddWallet: ethereum signature appears to be invalid")
+		err := errors.Errorf("Node: apiAttachAccount: ethereum signature appears to be invalid")
 		api.AbortRequest(c, http.StatusNotFound, "invalid_signature", err, n.log)
 		return
 	}
 
-	c.JSON(http.StatusOK, "")
+	userID, err := umid.Parse(c.Param("userID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiAttachAccount: failed to parse user umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
+		return
+	}
+
+	userAttributeID := entry.NewUserAttributeID(attributeID, userID)
+
+	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
+		newValue := func() *entry.AttributeValue {
+			value := entry.NewAttributeValue()
+			(*value)[universe.ReservedAttributes.Kusama.User.Wallet.Key] = inBody.Wallet
+			return value
+		}
+
+		if current == nil {
+			return entry.NewAttributePayload(newValue(), nil), nil
+		}
+
+		if current.Value == nil {
+			current.Value = newValue()
+			return current, nil
+		}
+
+		(*current.Value)[universe.ReservedAttributes.Kusama.User.Wallet.Key] = inBody.Wallet
+
+		return current, nil
+	}
+
+	payload, err := n.GetUserAttributes().Upsert(userAttributeID, modifyFn, true)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiAttachAccount: failed to upsert user attribute")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert", err, n.log)
+		return
+	}
+
+	c.JSON(http.StatusAccepted, payload.Value)
 }
 
 // @Summary Generate auth token
