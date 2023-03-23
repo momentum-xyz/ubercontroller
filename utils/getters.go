@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"reflect"
+	"github.com/goccy/go-reflect"
 
 	"github.com/pkg/errors"
 
@@ -22,7 +22,7 @@ func GetFromAny[V any](val any, defaultValue V) V {
 	// TODO: check without reflect
 	rVal := reflect.ValueOf(val)
 	switch rVal.Type().Kind() {
-	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice:
 		if rVal.IsNil() {
 			return defaultValue
 		}
