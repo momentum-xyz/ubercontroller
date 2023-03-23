@@ -160,7 +160,7 @@ func (n *Node) apiAttachAccount(c *gin.Context) {
 	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
 		newValue := func() *entry.AttributeValue {
 			value := entry.NewAttributeValue()
-			(*value)["wallet"] = inBody.Wallet
+			(*value)[universe.ReservedAttributes.Kusama.User.Wallet.Key] = inBody.Wallet
 			return value
 		}
 
@@ -173,7 +173,7 @@ func (n *Node) apiAttachAccount(c *gin.Context) {
 			return current, nil
 		}
 
-		(*current.Value)["wallet"] = inBody.Wallet
+		(*current.Value)[universe.ReservedAttributes.Kusama.User.Wallet.Key] = inBody.Wallet
 
 		return current, nil
 	}
