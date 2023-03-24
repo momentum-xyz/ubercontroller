@@ -122,7 +122,7 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 	}
 
 	nameChanged := inBody.Name != nil && *userProfile.Name != *inBody.Name
-	avatarChanged := inBody.Profile != nil && inBody.Profile.AvatarHash != nil && *userProfile.AvatarHash != *inBody.Profile.AvatarHash
+	avatarChanged := inBody.Profile != nil && inBody.Profile.AvatarHash != nil && userProfile.AvatarHash != nil && *userProfile.AvatarHash != *inBody.Profile.AvatarHash
 	shouldUpdateNFT := nameChanged || avatarChanged
 
 	if inBody.Name != nil {
