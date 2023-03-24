@@ -48,15 +48,14 @@ func run(ctx context.Context) error {
 	cute.SetMessageColor(cute.BrightBlue)
 	cute.Println("Node loaded", "Loading time:", tm2.Sub(tm1))
 
+	if err := node.Run(); err != nil {
+		return errors.WithMessagef(err, "failed to run node: %s", node.GetID())
+	}
 	defer func() {
 		if err := node.Stop(); err != nil {
 			log.Error(errors.WithMessagef(err, "failed to stop node: %s", node.GetID()))
 		}
 	}()
-
-	if err := node.Run(); err != nil {
-		return errors.WithMessagef(err, "failed to run node: %s", node.GetID())
-	}
 
 	cute.SetTitleColor(cute.BrightPurple)
 	cute.SetMessageColor(cute.BrightBlue)
