@@ -17,6 +17,9 @@ func main() {
 	var l harvester.AdapterListener
 	l = func(blockNumber uint64, diffs []*harvester.BCDiff) {
 		fmt.Printf("Listener: %+v \n", blockNumber)
+		for k, v := range diffs {
+			fmt.Printf("%+v %+v %+v %+v\n", k, v.To, v.Token, v.Amount)
+		}
 		fmt.Printf("Diffs: %+v \n", len(diffs))
 	}
 

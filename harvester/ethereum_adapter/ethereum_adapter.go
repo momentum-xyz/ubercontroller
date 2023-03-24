@@ -24,21 +24,24 @@ import (
 )
 
 type EthereumAdapter struct {
-	listener  harvester.AdapterListener
-	umid      umid.UMID
-	rpcURL    string
-	httpURL   string
-	name      string
-	client    *ethclient.Client
-	rpcClient *rpc.Client
+	listener    harvester.AdapterListener
+	umid        umid.UMID
+	rpcURL      string
+	httpURL     string
+	name        string
+	client      *ethclient.Client
+	rpcClient   *rpc.Client
+	contractABI abi.ABI
 }
 
 func NewEthereumAdapter() *EthereumAdapter {
 	return &EthereumAdapter{
 		umid:    umid.MustParse("ccccaaaa-1111-2222-3333-111111111111"),
-		rpcURL:  "wss://eth.llamarpc.com",
-		httpURL: "https://eth.llamarpc.com",
-		name:    "ethereum",
+		rpcURL:  "ws://127.0.0.1:8545",
+		httpURL: "http://127.0.0.1:8545",
+		//rpcURL:  "wss://eth.llamarpc.com",
+		//httpURL: "https://eth.llamarpc.com",
+		name: "ethereum",
 	}
 }
 
@@ -68,11 +71,6 @@ func (a *EthereumAdapter) GetTransferLogs(fromBlock, toBlock int64, addresses []
 		log.Fatal(err)
 	}
 
-	contractABI, err := abi.JSON(strings.NewReader(erc20abi))
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	logTransferSig := []byte("Transfer(address,address,uint256)")
 	logTransferSigHash := crypto.Keccak256Hash(logTransferSig)
 
@@ -88,7 +86,7 @@ func (a *EthereumAdapter) GetTransferLogs(fromBlock, toBlock int64, addresses []
 
 			var transferEvent harvester.BCDiff
 
-			ev, err := contractABI.Unpack("Transfer", vLog.Data)
+			ev, err := a.contractABI.Unpack("Transfer", vLog.Data)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -145,8 +143,13 @@ func (a *EthereumAdapter) GetBalance(wallet string, contract string, blockNumber
 }
 
 func (a *EthereumAdapter) Run() {
+	contractABI, err := abi.JSON(strings.NewReader(erc20abi))
+	if err != nil {
+		log.Fatal(err)
+	}
+	a.contractABI = contractABI
 
-	client, err := ethclient.Dial(a.rpcURL)
+	a.client, err = ethclient.Dial(a.rpcURL)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -156,13 +159,11 @@ func (a *EthereumAdapter) Run() {
 		log.Fatal(err)
 	}
 
-	a.client = client
-
 	fmt.Println("Connected to Ethereum Block Chain: " + a.rpcURL)
 
 	ch := make(chan *types.Header)
 
-	sub, err := client.SubscribeNewHead(context.Background(), ch)
+	sub, err := a.client.SubscribeNewHead(context.Background(), ch)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -251,20 +252,20 @@ func (a *EthereumAdapter) onNewBlock(b *harvester.BCBlock) {
 		//fmt.Println(receipt.Status) // 1
 	}
 
-	amount := big.NewInt(0)
-	//amount.SetString("33190774000000000000000", 10)
-	amount.SetString("1", 10)
+	//amount := big.NewInt(0)
+	////amount.SetString("33190774000000000000000", 10)
+	//amount.SetString("1", 10)
+	//
+	//mockDiffs := []*harvester.BCDiff{
+	//	{
+	//		From:   "0x2813fd17ea95b2655a7228383c5236e31090419e",
+	//		To:     "0x3f363b4e038a6e43ce8321c50f3efbf460196d4b",
+	//		Token:  "0xdefa4e8a7bcba345f687a2f1456f5edd9ce97202",
+	//		Amount: amount,
+	//	},
+	//}
 
-	mockDiffs := []*harvester.BCDiff{
-		{
-			From:   "0x2813fd17ea95b2655a7228383c5236e31090419e",
-			To:     "0x3f363b4e038a6e43ce8321c50f3efbf460196d4b",
-			Token:  "0xdefa4e8a7bcba345f687a2f1456f5edd9ce97202",
-			Amount: amount,
-		},
-	}
-
-	a.listener(b.Number, mockDiffs)
+	a.listener(b.Number, diffs)
 }
 
 // refer https://github.com/ethereum/web3.py/blob/master/web3/contract.py#L435
