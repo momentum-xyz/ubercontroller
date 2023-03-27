@@ -87,11 +87,11 @@ func (n *Node) apiGenChallenge(c *gin.Context) {
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param body body node.apiVerifySignature.InBody true "body params"
+// @Param body body node.apiAttachAccount.InBody true "body params"
 // @Success 200 {object} nil
 // @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/auth/attach-account [post]
+// @Router /api/v4/users/me/attach-account [post]
 func (n *Node) apiAttachAccount(c *gin.Context) {
 	type InBody struct {
 		Wallet          string `json:"wallet" binding:"required"`
@@ -106,9 +106,9 @@ func (n *Node) apiAttachAccount(c *gin.Context) {
 		return
 	}
 
-	attributeID := entry.NewAttributeID(universe.GetKusamaPluginID(), universe.ReservedAttributes.Kusama.Challenges.Name)
+	challengeAttributeID := entry.NewAttributeID(universe.GetKusamaPluginID(), universe.ReservedAttributes.Kusama.Challenges.Name)
 
-	challengesAttributeValue, ok := n.GetNodeAttributes().GetValue(attributeID)
+	challengesAttributeValue, ok := n.GetNodeAttributes().GetValue(challengeAttributeID)
 	if !ok || challengesAttributeValue == nil {
 		err := errors.Errorf("Node: apiAttachAccount: node attribute not found")
 		api.AbortRequest(c, http.StatusInternalServerError, "attribute_not_found", err, n.log)
@@ -154,12 +154,16 @@ func (n *Node) apiAttachAccount(c *gin.Context) {
 		return
 	}
 
-	userAttributeID := entry.NewUserAttributeID(attributeID, userID)
+	walletKey := universe.ReservedAttributes.Kusama.User.Wallet.Key
+	walletAttributeID := entry.NewAttributeID(universe.GetKusamaPluginID(), walletKey)
+	userAttributeID := entry.NewUserAttributeID(walletAttributeID, userID)
 
 	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
 		newValue := func() *entry.AttributeValue {
 			value := entry.NewAttributeValue()
-			(*value)[universe.ReservedAttributes.Kusama.User.Wallet.Key] = inBody.Wallet
+			walletSlice := make([]string, 0)
+			walletSlice = append(walletSlice, inBody.Wallet)
+			(*value)[walletKey] = walletSlice
 			return value
 		}
 
@@ -172,7 +176,13 @@ func (n *Node) apiAttachAccount(c *gin.Context) {
 			return current, nil
 		}
 
-		(*current.Value)[universe.ReservedAttributes.Kusama.User.Wallet.Key] = inBody.Wallet
+		walletSlice := utils.GetFromAny((*current.Value)[walletKey], []any{})
+		if walletSlice == nil {
+			return current, nil
+		}
+
+		walletSlice = append(walletSlice, inBody.Wallet)
+		(*current.Value)[walletKey] = walletSlice
 
 		return current, nil
 	}
