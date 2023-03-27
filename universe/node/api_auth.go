@@ -12,7 +12,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 // @Summary Generate auth challenge
@@ -148,7 +147,7 @@ func (n *Node) apiAttachAccount(c *gin.Context) {
 		return
 	}
 
-	userID, err := umid.Parse(c.Param("userID"))
+	userID, err := api.GetUserIDFromContext(c)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiAttachAccount: failed to parse user umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
