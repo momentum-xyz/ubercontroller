@@ -2,6 +2,7 @@ package users
 
 import (
 	"context"
+
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/georgysavva/scany/pgxscan"
@@ -30,8 +31,14 @@ const (
 						WHERE user_id = $1
 						  AND plugin_id = '86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8'
 						  AND attribute_name = 'wallet'`
-	checkIsUserExistsByNameQuery = `SELECT EXISTS(SELECT 1 FROM "user" WHERE profile->>'name' = $1);`
-	getUserProfileByUserIDQuery  = `SELECT profile FROM "user" WHERE user_id = $1;`
+	checkIsUserExistsByNameQuery   = `SELECT EXISTS(SELECT 1 FROM "user" WHERE profile->>'name' = $1);`
+	checkIsUserExistsByWalletQuery = `SELECT EXISTS(SELECT 1 FROM "user" WHERE user_id = (SELECT user_id FROM user_attribute
+         						                    /* Kusama plugin umid */
+         						                	WHERE plugin_id = '86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8'
+         						                    AND attribute_name = 'wallet'
+         						                    AND value->'wallet' ? $1
+         						                );`
+	getUserProfileByUserIDQuery = `SELECT profile FROM "user" WHERE user_id = $1;`
 
 	upsertUserQuery = `INSERT INTO "user"
     						(user_id, user_type_id, profile, options, created_at, updated_at)
@@ -100,6 +107,14 @@ func (db *DB) GetUserWalletByUserID(ctx context.Context, userID umid.UMID) (*str
 func (db *DB) CheckIsUserExistsByName(ctx context.Context, name string) (bool, error) {
 	var exists bool
 	if err := pgxscan.Get(ctx, db.conn, &exists, checkIsUserExistsByNameQuery, name); err != nil {
+		return false, errors.WithMessage(err, "failed to query db")
+	}
+	return exists, nil
+}
+
+func (db *DB) CheckIsUserExistsByWallet(ctx context.Context, wallet string) (bool, error) {
+	var exists bool
+	if err := pgxscan.Get(ctx, db.conn, &exists, checkIsUserExistsByWalletQuery, wallet); err != nil {
 		return false, errors.WithMessage(err, "failed to query db")
 	}
 	return exists, nil
