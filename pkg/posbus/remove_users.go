@@ -6,7 +6,7 @@ type RemoveUsers struct {
 	Users []umid.UMID `json:"users"`
 }
 
-func (a *RemoveUsers) Type() MsgType {
+func (a *RemoveUsers) GetType() MsgType {
 	return 0xF5A14BB0
 }
 

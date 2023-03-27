@@ -10,6 +10,6 @@ func init() {
 	registerMessage(MyTransform{})
 }
 
-func (a *MyTransform) Type() MsgType {
+func (a *MyTransform) GetType() MsgType {
 	return 0xF878C4BF
 }

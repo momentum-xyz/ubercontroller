@@ -9,7 +9,7 @@ gen: vendor
 	go generate ./...
 
 gen-clean:
-	find . -name "*.mus.go" | xargs rm
+	find . -type f \( -name "*.mus.go" -o -name "*.autogen.go" \) | xargs rm
 
 build: gen
 	go build -trimpath -o ./bin/ubercontroller ./cmd/service

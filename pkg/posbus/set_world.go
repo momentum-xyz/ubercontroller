@@ -14,6 +14,6 @@ func init() {
 	registerMessage(SetWorld{})
 }
 
-func (g *SetWorld) Type() MsgType {
+func (g *SetWorld) GetType() MsgType {
 	return 0xCCDF2E49
 }

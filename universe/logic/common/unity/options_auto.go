@@ -11,22 +11,21 @@ import (
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
-	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils"
 
 	"github.com/pkg/errors"
 )
 
-type AttributeValueChangedMessage struct {
-	Type universe.AttributeChangeType     `json:"type"`
-	Data AttributeValueChangedMessageData `json:"data"`
-}
-
-type AttributeValueChangedMessageData struct {
-	AttributeName string `json:"attribute_name"`
-	Value         any    `json:"value"`
-}
+//type AttributeValueChangedMessage struct {
+//	Type universe.AttributeChangeType     `json:"type"`
+//	Data AttributeValueChangedMessageData `json:"data"`
+//}
+//
+//type AttributeValueChangedMessageData struct {
+//	AttributeName string `json:"attribute_name"`
+//	Value         any    `json:"value"`
+//}
 
 const (
 	RenderKindNone uint = iota

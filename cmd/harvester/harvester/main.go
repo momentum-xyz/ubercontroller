@@ -48,31 +48,40 @@ func main() {
 	ptrTestHandler2 := &testHandler2
 	harv.Subscribe(harvester.Ethereum, harvester.NewBlock, ptrTestHandler2)
 
-	wallet1 := "0x9592b70a5a6c8ece2ef55547c3f07f1862372fd1"
-	contract1 := "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae"
-	contract2 := "0xde0b295669a9fd93d5f28d9ec85e40f4cb697ccc"
+	//wallet1 := "0x9592b70a5a6c8ece2ef55547c3f07f1862372fd1"
+	//contract1 := "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae"
+	//contract2 := "0xde0b295669a9fd93d5f28d9ec85e40f4cb697ccc"
+	//
+	//wallet2 := "0x31854122F629B1B1E3b2aA85336F7b68f83924fA"
+	//contract3 := "0x556353dab72b2F3223de2B2ac69700B3F280d357"
 
-	wallet2 := "0x9Dd3f13cbacf6bd96E9757eCaceDf5236ffF787f"
-	contract3 := "0x3af33bEF05C2dCb3C7288b77fe1C8d2AeBA4d789"
-
-	err = harv.SubscribeForWalletAndContract(harvester.Ethereum, wallet1, contract1, ptrTestHandler2)
-	if err != nil {
-		panic(err)
-	}
-	err = harv.SubscribeForWalletAndContract(harvester.Ethereum, wallet1, contract2, ptrTestHandler2)
-	if err != nil {
-		panic(err)
+	type pair struct {
+		Wallet   string
+		Contract string
 	}
 
-	err = harv.SubscribeForWalletAndContract(harvester.Ethereum, wallet2, contract3, ptrTestHandler2)
-	if err != nil {
-		panic(err)
+	pairs := []pair{
+		//{
+		//	Wallet:   "0x31854122F629B1B1E3b2aA85336F7b68f83924fA",
+		//	Contract: "0x556353dab72b2F3223de2B2ac69700B3F280d357",
+		//},
+		{
+			Wallet:   "0x15c7152B3b02324d17e753E4cfF65C0f1759812B",
+			Contract: "0x556353dab72b2F3223de2B2ac69700B3F280d357",
+		},
+	}
+
+	for _, pair := range pairs {
+		err = harv.SubscribeForWalletAndContract(harvester.Ethereum, pair.Wallet, pair.Contract, ptrTestHandler2)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	time.Sleep(time.Second * 30)
 	harv.Unsubscribe(harvester.Ethereum, harvester.NewBlock, ptrTestHandler2)
 
-	time.Sleep(time.Second * 50)
+	time.Sleep(time.Second * 500)
 }
 
 func testHandler1(p any) {

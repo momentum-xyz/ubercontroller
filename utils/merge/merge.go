@@ -3,8 +3,7 @@ package merge
 import (
 	"bytes"
 	"fmt"
-	"reflect"
-
+	"github.com/goccy/go-reflect"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/logger"
@@ -62,14 +61,18 @@ func AppendTriggerFn(new, current, result any) (any, bool, error) {
 	rNew := reflect.ValueOf(new)
 	rCurrent := reflect.ValueOf(current)
 	if rNew.Kind() != reflect.Slice || rCurrent.Kind() != reflect.Slice {
-		return nil, false, errors.Errorf("invalid values: new %q and current %q are not slices", rNew.Kind(), rCurrent.Kind())
+		return nil, false, errors.Errorf(
+			"invalid values: new %q and current %q are not slices", rNew.Kind(), rCurrent.Kind(),
+		)
 	}
 	if !rNew.IsValid() || !rCurrent.IsValid() ||
 		rNew.IsZero() || rCurrent.IsZero() {
 		return nil, false, nil
 	}
 	if !rNew.Type().Elem().AssignableTo(rCurrent.Type().Elem()) {
-		return nil, false, errors.Errorf("new value elem %q is not assignable to current value elem %q", rNew.Type(), rCurrent.Type())
+		return nil, false, errors.Errorf(
+			"new value elem %q is not assignable to current value elem %q", rNew.Type(), rCurrent.Type(),
+		)
 	}
 
 	newLen := rNew.Len()
@@ -134,7 +137,7 @@ func merge(optVal, defVal reflect.Value, path string, triggers ...Trigger) (refl
 	optValKind := optVal.Kind()
 	if optValKind == reflect.Map ||
 		optValKind == reflect.Slice ||
-		optValKind == reflect.Pointer ||
+		optValKind == reflect.Ptr ||
 		optValKind == reflect.Interface {
 		if optVal.IsZero() {
 			resVal, err := mergeHandle(path, optVal, defVal, defVal, triggers...)
@@ -165,7 +168,7 @@ func merge(optVal, defVal reflect.Value, path string, triggers ...Trigger) (refl
 			return reflect.Value{}, errors.WithMessagef(err, "failed to merge map: %q", path)
 		}
 		return resVal, nil
-	case reflect.Pointer:
+	case reflect.Ptr:
 		res, err := merge(optVal.Elem(), defVal.Elem(), path, triggers...)
 		if err != nil {
 			return reflect.Value{}, errors.WithMessagef(err, "failed to merge pointer: %q", path)
@@ -227,7 +230,8 @@ func mergeMap(optVal, defVal reflect.Value, path string, triggers ...Trigger) (r
 		if !resElem.Type().AssignableTo(resVal.Type().Elem()) {
 			return reflect.Value{}, errors.Errorf(
 				"failed to set map: %q: key: %+v: %+v != %+v",
-				path, keys[i].Interface(), resElem.Type(), resVal.Type().Elem())
+				path, keys[i].Interface(), resElem.Type(), resVal.Type().Elem(),
+			)
 		}
 		resVal.SetMapIndex(keys[i], resElem)
 	}

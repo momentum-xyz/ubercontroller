@@ -76,12 +76,13 @@ func (c *Calendar) tick(eventID string) error {
 	if e == nil {
 		return nil
 	}
-	topic := "notify-gathering-start"
-	//data, err := json.Marshal(&e)
-	//if err != nil {
-	//	return errors.WithMessagef(err, "failed to marshal message payload")
-	//}
-	m := posbus.WSMessage(posbus.NewGenericMessage(topic, e))
+
+	msg := posbus.EventStart{}
+	err := utils.MapEncode(e, msg)
+	if err != nil {
+		return errors.WithMessagef(err, "failed to marshal message payload")
+	}
+	m := posbus.WSMessage(&msg)
 	c.world.Send(m, false)
 
 	go c.update()

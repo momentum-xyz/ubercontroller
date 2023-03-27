@@ -18,10 +18,10 @@ func init() {
 	registerMessage(LockObjectResponse{})
 }
 
-func (l *LockObject) Type() MsgType {
+func (l *LockObject) GetType() MsgType {
 	return 0xA7DE9F59
 }
 
-func (l *LockObjectResponse) Type() MsgType {
+func (l *LockObjectResponse) GetType() MsgType {
 	return 0x0924668C
 }

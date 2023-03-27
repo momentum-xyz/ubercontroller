@@ -3,7 +3,8 @@ package posbus
 type NotificationType uint32
 
 type Notification struct {
-	Value NotificationType
+	NotifyType NotificationType `json:"notify_type"`
+	Value      string           `json:"value"`
 }
 
 const (
@@ -18,6 +19,8 @@ const (
 	NotificationStageModeStageRequest  NotificationType = 14
 	NotificationStageModeStageDeclined NotificationType = 15
 
+	NotificationGatheringStart NotificationType = 20
+
 	NotificationTextMessage NotificationType = 500
 	NotificationRelay       NotificationType = 501
 
@@ -30,6 +33,6 @@ func init() {
 	addExtraType(NotificationType(0))
 }
 
-func (g *Notification) Type() MsgType {
+func (g *Notification) GetType() MsgType {
 	return 0xC1FB41D7
 }

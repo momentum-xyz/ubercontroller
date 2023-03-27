@@ -5,14 +5,10 @@ package posbus
 import "github.com/ymz-ncnk/muserrs"
 
 // MarshalMUS fills buf with the MUS encoding of v.
-func (v Notification) MarshalMUS(buf []byte) int {
+func (v AttributeValueChangedData) MarshalMUS(buf []byte) int {
 	i := 0
 	{
-		si := v.NotifyType.MarshalMUS(buf[i:])
-		i += si
-	}
-	{
-		length := len(v.Value)
+		length := len(v.AttributeName)
 		{
 			uv := uint64(length)
 			if length < 0 {
@@ -33,27 +29,26 @@ func (v Notification) MarshalMUS(buf []byte) int {
 		if len(buf[i:]) < length {
 			panic(muserrs.ErrSmallBuf)
 		}
-		i += copy(buf[i:], v.Value)
+		i += copy(buf[i:], v.AttributeName)
+	}
+	if v.Value == nil {
+		buf[i] = 0
+		i++
+	} else {
+		buf[i] = 1
+		i++
+		{
+			si := (*v.Value).MarshalMUS(buf[i:])
+			i += si
+		}
 	}
 	return i
 }
 
 // UnmarshalMUS parses the MUS-encoded buf, and sets the result to *v.
-func (v *Notification) UnmarshalMUS(buf []byte) (int, error) {
+func (v *AttributeValueChangedData) UnmarshalMUS(buf []byte) (int, error) {
 	i := 0
 	var err error
-	{
-		var sv NotificationType
-		si := 0
-		si, err = sv.UnmarshalMUS(buf[i:])
-		if err == nil {
-			v.NotifyType = sv
-			i += si
-		}
-	}
-	if err != nil {
-		return i, muserrs.NewFieldError("NotifyType", err)
-	}
 	{
 		var length int
 		{
@@ -94,8 +89,30 @@ func (v *Notification) UnmarshalMUS(buf []byte) (int, error) {
 		if len(buf) < i+length {
 			return i, muserrs.ErrSmallBuf
 		}
-		v.Value = string(buf[i : i+length])
+		v.AttributeName = string(buf[i : i+length])
 		i += length
+	}
+	if err != nil {
+		return i, muserrs.NewFieldError("AttributeName", err)
+	}
+	v.Value = new(StringMapAny)
+	if buf[i] == 0 {
+		i++
+		v.Value = nil
+	} else if buf[i] != 1 {
+		i++
+		return i, muserrs.ErrWrongByte
+	} else {
+		i++
+		{
+			var sv StringMapAny
+			si := 0
+			si, err = sv.UnmarshalMUS(buf[i:])
+			if err == nil {
+				(*v.Value) = sv
+				i += si
+			}
+		}
 	}
 	if err != nil {
 		return i, muserrs.NewFieldError("Value", err)
@@ -104,14 +121,10 @@ func (v *Notification) UnmarshalMUS(buf []byte) (int, error) {
 }
 
 // SizeMUS returns the size of the MUS-encoded v.
-func (v Notification) SizeMUS() int {
+func (v AttributeValueChangedData) SizeMUS() int {
 	size := 0
 	{
-		ss := v.NotifyType.SizeMUS()
-		size += ss
-	}
-	{
-		length := len(v.Value)
+		length := len(v.AttributeName)
 		{
 			uv := uint64(length<<1) ^ uint64(length>>63)
 			{
@@ -122,7 +135,14 @@ func (v Notification) SizeMUS() int {
 				size++
 			}
 		}
-		size += len(v.Value)
+		size += len(v.AttributeName)
+	}
+	size++
+	if v.Value != nil {
+		{
+			ss := (*v.Value).SizeMUS()
+			size += ss
+		}
 	}
 	return size
 }

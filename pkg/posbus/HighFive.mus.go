@@ -2,17 +2,24 @@
 
 package posbus
 
-import "github.com/ymz-ncnk/muserrs"
+import (
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
+	"github.com/ymz-ncnk/muserrs"
+)
 
 // MarshalMUS fills buf with the MUS encoding of v.
-func (v Notification) MarshalMUS(buf []byte) int {
+func (v HighFive) MarshalMUS(buf []byte) int {
 	i := 0
 	{
-		si := v.NotifyType.MarshalMUS(buf[i:])
+		si := v.SenderID.MarshalMUS(buf[i:])
 		i += si
 	}
 	{
-		length := len(v.Value)
+		si := v.ReceiverID.MarshalMUS(buf[i:])
+		i += si
+	}
+	{
+		length := len(v.Message)
 		{
 			uv := uint64(length)
 			if length < 0 {
@@ -33,26 +40,38 @@ func (v Notification) MarshalMUS(buf []byte) int {
 		if len(buf[i:]) < length {
 			panic(muserrs.ErrSmallBuf)
 		}
-		i += copy(buf[i:], v.Value)
+		i += copy(buf[i:], v.Message)
 	}
 	return i
 }
 
 // UnmarshalMUS parses the MUS-encoded buf, and sets the result to *v.
-func (v *Notification) UnmarshalMUS(buf []byte) (int, error) {
+func (v *HighFive) UnmarshalMUS(buf []byte) (int, error) {
 	i := 0
 	var err error
 	{
-		var sv NotificationType
+		var sv umid.UMID
 		si := 0
 		si, err = sv.UnmarshalMUS(buf[i:])
 		if err == nil {
-			v.NotifyType = sv
+			v.SenderID = sv
 			i += si
 		}
 	}
 	if err != nil {
-		return i, muserrs.NewFieldError("NotifyType", err)
+		return i, muserrs.NewFieldError("SenderID", err)
+	}
+	{
+		var sv umid.UMID
+		si := 0
+		si, err = sv.UnmarshalMUS(buf[i:])
+		if err == nil {
+			v.ReceiverID = sv
+			i += si
+		}
+	}
+	if err != nil {
+		return i, muserrs.NewFieldError("ReceiverID", err)
 	}
 	{
 		var length int
@@ -94,24 +113,28 @@ func (v *Notification) UnmarshalMUS(buf []byte) (int, error) {
 		if len(buf) < i+length {
 			return i, muserrs.ErrSmallBuf
 		}
-		v.Value = string(buf[i : i+length])
+		v.Message = string(buf[i : i+length])
 		i += length
 	}
 	if err != nil {
-		return i, muserrs.NewFieldError("Value", err)
+		return i, muserrs.NewFieldError("Message", err)
 	}
 	return i, err
 }
 
 // SizeMUS returns the size of the MUS-encoded v.
-func (v Notification) SizeMUS() int {
+func (v HighFive) SizeMUS() int {
 	size := 0
 	{
-		ss := v.NotifyType.SizeMUS()
+		ss := v.SenderID.SizeMUS()
 		size += ss
 	}
 	{
-		length := len(v.Value)
+		ss := v.ReceiverID.SizeMUS()
+		size += ss
+	}
+	{
+		length := len(v.Message)
 		{
 			uv := uint64(length<<1) ^ uint64(length>>63)
 			{
@@ -122,7 +145,7 @@ func (v Notification) SizeMUS() int {
 				size++
 			}
 		}
-		size += len(v.Value)
+		size += len(v.Message)
 	}
 	return size
 }

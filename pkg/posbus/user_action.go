@@ -20,6 +20,6 @@ func init() {
 	addExtraType(Trigger(0))
 }
 
-func (g *UserAction) Type() MsgType {
+func (g *UserAction) GetType() MsgType {
 	return 0xEF1A2E75
 }

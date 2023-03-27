@@ -44,6 +44,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		{
 			auth.GET("/challenge", n.apiGenChallenge)
 
+			auth.POST("/attach-account", n.apiAttachAccount)
 			auth.POST("/token", n.apiGenToken)
 
 			auth.POST("/guest-token", n.apiGuestToken)

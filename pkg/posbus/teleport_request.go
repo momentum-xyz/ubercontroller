@@ -10,6 +10,6 @@ func init() {
 	registerMessage(TeleportRequest{})
 }
 
-func (g *TeleportRequest) Type() MsgType {
+func (g *TeleportRequest) GetType() MsgType {
 	return 0x78DA55D9
 }
