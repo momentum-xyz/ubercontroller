@@ -32,7 +32,7 @@ const (
 						  AND plugin_id = '86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8'
 						  AND attribute_name = 'wallet'`
 	checkIsUserExistsByNameQuery   = `SELECT EXISTS(SELECT 1 FROM "user" WHERE profile->>'name' = $1);`
-	checkIsUserExistsByWalletQuery = `SELECT EXISTS(SELECT 1 FROM "user" WHERE user_id = (SELECT user_id FROM user_attribute
+	checkIsUserExistsByWalletQuery = `SELECT EXISTS(SELECT user_id FROM user_attribute
          						                    /* Kusama plugin umid */
          						                	WHERE plugin_id = '86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8'
          						                    AND attribute_name = 'wallet'
