@@ -105,11 +105,17 @@ func (n *Node) apiAttachAccount(c *gin.Context) {
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
 		return
 	}
-	
-	_, err := n.db.GetUsersDB().CheckIsUserExistsByWallet(c, inBody.Wallet)
-	if err == nil {
-		err := errors.WithMessage(err, "Node: apiAttachAccount: user with wallet already exists")
-		api.AbortRequest(c, http.StatusInternalServerError, "wallet_already_exists", err, n.log)
+
+	exists, err := n.db.GetUsersDB().CheckIsUserExistsByWallet(c, inBody.Wallet)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiAttachAccount: unable to check if wallet exists")
+		api.AbortRequest(c, http.StatusInternalServerError, "invalid_wallet_query", err, n.log)
+		return
+	}
+
+	if exists {
+		err := errors.Errorf("Node: apiAttachAccount: user with wallet already exists")
+		api.AbortRequest(c, http.StatusBadRequest, "wallet_already_exists", err, n.log)
 		return
 	}
 
