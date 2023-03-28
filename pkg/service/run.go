@@ -1,4 +1,4 @@
-// Package run allows running the controller service from go
+// Package services allows running the controller service from go
 // without going through the cli.
 package service
 
@@ -50,7 +50,7 @@ import (
 )
 
 // Load a Node
-func LoadNode(ctx context.Context, cfg *config.Config) (universe.Node, error) {
+func LoadNode(ctx context.Context, cfg *config.Config, pool *pgxpool.Pool) (universe.Node, error) {
 	//todo: change to pool
 	if err := universe.InitializeIDs(
 		umid.MustParse("f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0"),
@@ -64,12 +64,6 @@ func LoadNode(ctx context.Context, cfg *config.Config) (universe.Node, error) {
 	if err := logic.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize logic package")
 	}
-
-	pool, err := createDBConnection(ctx, &cfg.Postgres)
-	if err != nil {
-		return nil, errors.WithMessage(err, "failed to create db connection")
-	}
-	defer pool.Close()
 
 	db, err := createDB(pool)
 	if err != nil {
@@ -161,7 +155,7 @@ func createNode(ctx context.Context, db database.DB, nodeEntry *entry.Node) (uni
 	return node, nil
 }
 
-func createDBConnection(ctx context.Context, cfg *config.Postgres) (*pgxpool.Pool, error) {
+func CreateDBConnection(ctx context.Context, cfg *config.Postgres) (*pgxpool.Pool, error) {
 	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
 	config, err := cfg.GenConfig(log.Desugar())
 	if err != nil {

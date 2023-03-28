@@ -37,7 +37,13 @@ func run(ctx context.Context) error {
 	defer cancel()
 
 	tm1 := time.Now()
-	node, err := service.LoadNode(ctx, cfg)
+	pool, err := service.CreateDBConnection(ctx, &cfg.Postgres)
+	if err != nil {
+		return errors.WithMessage(err, "failed to create db connection")
+	}
+	defer pool.Close()
+
+	node, err := service.LoadNode(ctx, cfg, pool)
 	if err != nil {
 		return errors.WithMessage(err, "loading node")
 	}
