@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
@@ -69,6 +70,7 @@ type UsersDB interface {
 	GetUserProfileByUserID(ctx context.Context, userID umid.UMID) (*entry.UserProfile, error)
 
 	CheckIsUserExistsByName(ctx context.Context, name string) (bool, error)
+	CheckIsUserExistsByWallet(ctx context.Context, wallet string) (bool, error)
 
 	UpsertUser(ctx context.Context, user *entry.User) error
 	UpsertUsers(ctx context.Context, user []*entry.User) error
