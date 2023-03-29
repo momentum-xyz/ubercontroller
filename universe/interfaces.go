@@ -93,6 +93,8 @@ type Node interface {
 	GetUserUserAttributes() UserUserAttributes
 	GetObjectUserAttributes() ObjectUserAttributes
 
+	CreateUsers(ctx context.Context, users ...*entry.User) error // TODO: refactor, place Users next to Nodes in a universe
+
 	AddAPIRegister(register APIRegister)
 
 	WriteInfluxPoint(point *influxWrite.Point) error
