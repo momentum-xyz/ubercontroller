@@ -2,6 +2,7 @@ package user
 
 import (
 	"fmt"
+
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"github.com/pkg/errors"
@@ -55,7 +56,8 @@ func (u *User) UpdateObjectPosition(msg posbus.ObjectPosition) error {
 func (u *User) Teleport(target umid.UMID) error {
 	world, ok := universe.GetNode().GetWorlds().GetWorld(target)
 	if !ok {
-		u.Send(posbus.WSMessage(&posbus.Signal{Value: posbus.SignalWorldDoesNotExist}))
+		// send buffer is locked at this point, so direct:
+		u.SendDirectly(posbus.WSMessage(&posbus.Signal{Value: posbus.SignalWorldDoesNotExist}))
 		return errors.New("Target world does not exist")
 	}
 	if oldWorld := u.GetWorld(); oldWorld != nil {
