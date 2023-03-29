@@ -67,7 +67,7 @@ func (o *Object) AddUser(user universe.User, updateDB bool) error {
 	}
 
 	if updateDB {
-		o.log.Error("Object: AddUser: update database is not supported")
+		o.log.Warn("Object: AddUser: update database is not supported")
 	}
 
 	user.SetObject(o)
@@ -86,7 +86,7 @@ func (o *Object) RemoveUser(user universe.User, updateDB bool) (bool, error) {
 	}
 
 	if updateDB {
-		o.log.Error("Object: RemoveUser: update database is not supported")
+		o.log.Warn("Object: RemoveUser: update database is not supported")
 	}
 
 	user.SetObject(nil)
