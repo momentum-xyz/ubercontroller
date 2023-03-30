@@ -12,5 +12,5 @@ const (
 
 type Algo interface {
 	Name() string
-	CalcPos(parentTheta float64, parentPosition cmath.ObjectTransform, i, n int) (cmath.ObjectTransform, float64)
+	CalcPos(parentTheta float64, parentPosition cmath.Transform, i, n int) (cmath.Transform, float64)
 }

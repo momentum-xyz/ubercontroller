@@ -5,7 +5,7 @@ package cmath
 import "github.com/ymz-ncnk/muserrs"
 
 // MarshalMUS fills buf with the MUS encoding of v.
-func (v UserTransform) MarshalMUS(buf []byte) int {
+func (v Transform) MarshalMUS(buf []byte) int {
 	i := 0
 	{
 		si := v.Position.MarshalMUS(buf[i:])
@@ -15,11 +15,15 @@ func (v UserTransform) MarshalMUS(buf []byte) int {
 		si := v.Rotation.MarshalMUS(buf[i:])
 		i += si
 	}
+	{
+		si := v.Scale.MarshalMUS(buf[i:])
+		i += si
+	}
 	return i
 }
 
 // UnmarshalMUS parses the MUS-encoded buf, and sets the result to *v.
-func (v *UserTransform) UnmarshalMUS(buf []byte) (int, error) {
+func (v *Transform) UnmarshalMUS(buf []byte) (int, error) {
 	i := 0
 	var err error
 	{
@@ -46,11 +50,23 @@ func (v *UserTransform) UnmarshalMUS(buf []byte) (int, error) {
 	if err != nil {
 		return i, muserrs.NewFieldError("Rotation", err)
 	}
+	{
+		var sv Vec3
+		si := 0
+		si, err = sv.UnmarshalMUS(buf[i:])
+		if err == nil {
+			v.Scale = sv
+			i += si
+		}
+	}
+	if err != nil {
+		return i, muserrs.NewFieldError("Scale", err)
+	}
 	return i, err
 }
 
 // SizeMUS returns the size of the MUS-encoded v.
-func (v UserTransform) SizeMUS() int {
+func (v Transform) SizeMUS() int {
 	size := 0
 	{
 		ss := v.Position.SizeMUS()
@@ -58,6 +74,10 @@ func (v UserTransform) SizeMUS() int {
 	}
 	{
 		ss := v.Rotation.SizeMUS()
+		size += ss
+	}
+	{
+		ss := v.Scale.SizeMUS()
 		size += ss
 	}
 	return size

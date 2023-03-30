@@ -1,8 +1,9 @@
 package node
 
 import (
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"net/http"
+
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -30,13 +31,13 @@ func (n *Node) apiObjectsCreateObject(c *gin.Context) {
 	// TODO: use "helper.ObjectTemplate" alternative here to have ability to create composite objects
 	// QUESTION: can we automatically clone "helper.ObjectTemplate" definition and add validation tags to it?
 	type InBody struct {
-		ObjectName   string                 `json:"object_name" binding:"required"`
-		ParentID     string                 `json:"parent_id" binding:"required"`
-		ObjectTypeID string                 `json:"object_type_id" binding:"required"`
-		Asset2dID    *string                `json:"asset_2d_id"`
-		Asset3dID    *string                `json:"asset_3d_id"`
-		Position     *cmath.ObjectTransform `json:"position"`
-		Minimap      bool                   `json:"minimap"`
+		ObjectName   string           `json:"object_name" binding:"required"`
+		ParentID     string           `json:"parent_id" binding:"required"`
+		ObjectTypeID string           `json:"object_type_id" binding:"required"`
+		Asset2dID    *string          `json:"asset_2d_id"`
+		Asset3dID    *string          `json:"asset_3d_id"`
+		Position     *cmath.Transform `json:"position"`
+		Minimap      bool             `json:"minimap"`
 	}
 	var inBody InBody
 

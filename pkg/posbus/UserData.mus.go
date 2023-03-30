@@ -133,7 +133,7 @@ func (v *UserData) UnmarshalMUS(buf []byte) (int, error) {
 		return i, muserrs.NewFieldError("Avatar", err)
 	}
 	{
-		var sv cmath.UserTransform
+		var sv cmath.TransformNoScale
 		si := 0
 		si, err = sv.UnmarshalMUS(buf[i:])
 		if err == nil {

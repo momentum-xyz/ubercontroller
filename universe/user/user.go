@@ -2,6 +2,10 @@ package user
 
 import (
 	"context"
+	"sync"
+	"sync/atomic"
+	"time"
+
 	"github.com/gorilla/websocket"
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
@@ -9,9 +13,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sasha-s/go-deadlock"
 	"go.uber.org/zap"
-	"sync"
-	"sync/atomic"
-	"time"
 
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
@@ -30,7 +31,7 @@ type User struct {
 	// The websocket connection.
 	conn *websocket.Conn
 
-	transform cmath.UserTransform
+	transform cmath.TransformNoScale
 	//pos          *cmath.Vec3 // going to data part to posMsgBuffer content for simple access
 	//rotation     *cmath.Vec3 // going to data part to posMsgBuffer content for simple access
 	//posMsgBuffer []byte
@@ -67,11 +68,11 @@ func (u *User) GetID() umid.UMID {
 //	return t
 //}
 
-func (u *User) GetTransform() *cmath.UserTransform {
+func (u *User) GetTransform() *cmath.TransformNoScale {
 	return &u.transform
 }
 
-func (u *User) SetTransform(t cmath.UserTransform) {
+func (u *User) SetTransform(t cmath.TransformNoScale) {
 	u.transform = t.Copy()
 }
 
@@ -240,7 +241,7 @@ func (u *User) LoadFromEntry(entry *entry.User) error {
 
 func (u *User) UpdatePosition(t *posbus.MyTransform) error {
 	//u.SetTransform(t)
-	u.transform = cmath.UserTransform(*t)
+	u.transform = cmath.TransformNoScale(*t)
 	// not locking will speed up but introduce minor data race with zero impact
 	//u.world.users.positionLock.RLock()
 	//copy(u.posMsgBuffer[16:40], data)

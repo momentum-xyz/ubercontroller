@@ -6,11 +6,11 @@ import (
 )
 
 type UserData struct {
-	ID        umid.UMID           `json:"id"`
-	Name      string              `json:"name"`
-	Avatar    umid.UMID           `json:"avatar"`
-	Transform cmath.UserTransform `json:"transform"`
-	IsGuest   bool                `json:"is_guest"`
+	ID        umid.UMID              `json:"id"`
+	Name      string                 `json:"name"`
+	Avatar    umid.UMID              `json:"avatar"`
+	Transform cmath.TransformNoScale `json:"transform"`
+	IsGuest   bool                   `json:"is_guest"`
 }
 
 func init() {

@@ -45,7 +45,7 @@ func (u *User) OnMessage(buf []byte) error {
 	return nil
 }
 
-func (u *User) UpdateObjectPosition(msg posbus.ObjectPosition) error {
+func (u *User) UpdateObjectPosition(msg posbus.ObjectTransform) error {
 	object, ok := universe.GetNode().GetObjectFromAllObjects(msg.ID)
 	if !ok {
 		return errors.Errorf("object not found: %s", msg.ID)

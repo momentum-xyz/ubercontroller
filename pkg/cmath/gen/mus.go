@@ -3,9 +3,10 @@
 package main
 
 import (
+	"reflect"
+
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/ymz-ncnk/musgo/v2"
-	"reflect"
 )
 
 func main() {
@@ -15,11 +16,11 @@ func main() {
 		panic(err)
 	}
 	unsafe := false // To generate safe code.
-	err = musGo.Generate(reflect.TypeOf((*cmath.ObjectTransform)(nil)).Elem(), unsafe)
+	err = musGo.Generate(reflect.TypeOf((*cmath.Transform)(nil)).Elem(), unsafe)
 	if err != nil {
 		panic(err)
 	}
-	err = musGo.Generate(reflect.TypeOf((*cmath.UserTransform)(nil)).Elem(), unsafe)
+	err = musGo.Generate(reflect.TypeOf((*cmath.TransformNoScale)(nil)).Elem(), unsafe)
 	if err != nil {
 		panic(err)
 	}

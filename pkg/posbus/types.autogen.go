@@ -15,7 +15,7 @@ const (
 	TypeNotification          MsgType = 0xC1FB41D7
 	TypeObjectData            MsgType = 0xCACE197C
 	TypeObjectDefinition      MsgType = 0xD742B52E
-	TypeObjectPosition        MsgType = 0xEA6DA4B4
+	TypeObjectTransform       MsgType = 0xEA6DA4B4
 	TypeRemoveObjects         MsgType = 0x6BF88C24
 	TypeRemoveUsers           MsgType = 0xF5A14BB0
 	TypeSetWorld              MsgType = 0xCCDF2E49

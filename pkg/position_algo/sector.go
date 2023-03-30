@@ -27,8 +27,8 @@ func NewSector(parameterMap map[string]interface{}) Algo {
 	}
 }
 
-func (sec *sector) CalcPos(parentTheta float64, parentPosition cmath.ObjectTransform, i, n int) (
-	cmath.ObjectTransform, float64,
+func (sec *sector) CalcPos(parentTheta float64, parentPosition cmath.Transform, i, n int) (
+	cmath.Transform, float64,
 ) {
 	parent := parentPosition.Position.ToVec3f64()
 
@@ -46,7 +46,7 @@ func (sec *sector) CalcPos(parentTheta float64, parentPosition cmath.ObjectTrans
 		Z: math.Round((parent.Z+sec.R*math.Sin(angle))*10.0) / 10.0,
 	}
 
-	np := cmath.ObjectTransform{Position: p.ToVec3()}
+	np := cmath.Transform{Position: p.ToVec3()}
 	return np, math.Atan2(p.Z-parent.Z, p.X-parent.X) /* theta */
 }
 
