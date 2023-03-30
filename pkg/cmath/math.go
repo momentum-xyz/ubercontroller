@@ -20,7 +20,7 @@ type Vec3 struct {
 
 // Transform represent a transformation for an object in 3D space.
 type Transform struct {
-	Position Vec3 `db:"location" json:"location"`
+	Position Vec3 `db:"location" json:"position"`
 	Rotation Vec3 `db:"rotation" json:"rotation"`
 	Scale    Vec3 `db:"scale" json:"scale"`
 }
@@ -28,7 +28,7 @@ type Transform struct {
 // TransformNoScale represents a transformation for an object in 3D space that has no scale.
 // For example, users don't have a scale in the current system.
 type TransformNoScale struct { // TODO: come up with a better name, winner gets a prize!
-	Position Vec3 `db:"location" json:"location"`
+	Position Vec3 `db:"location" json:"position"`
 	Rotation Vec3 `db:"rotation" json:"rotation"`
 }
 
