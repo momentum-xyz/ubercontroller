@@ -5,9 +5,12 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
-	"github.com/ymz-ncnk/musgo/v2"
 	"os"
+
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
+	"github.com/ymz-ncnk/musgen/v2/text_template"
+	"github.com/ymz-ncnk/musgo/v2"
+	"github.com/ymz-ncnk/persistor"
 )
 
 func main() {
@@ -16,8 +19,11 @@ func main() {
 }
 
 func generateMus() {
-	musGo, err := musgo.New()
-
+	musGen, err := text_template.New()
+	if err != nil {
+		panic(err)
+	}
+	musGo, err := musgo.NewWith(musGen, persistor.HarDrivePersistor{Perm: 0664})
 	if err != nil {
 		panic(err)
 	}
