@@ -1,20 +1,17 @@
-package ethereum_adapter
+package arbitrum_nova_adapter
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"math/big"
 	"strings"
 
-	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/pkg/errors"
@@ -23,7 +20,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
-type EthereumAdapter struct {
+type ArbitrumNovaAdapter struct {
 	listener    harvester.AdapterListener
 	umid        umid.UMID
 	rpcURL      string
@@ -34,117 +31,31 @@ type EthereumAdapter struct {
 	contractABI abi.ABI
 }
 
-func NewEthereumAdapter() *EthereumAdapter {
-	return &EthereumAdapter{
-		umid:    umid.MustParse("ccccaaaa-1111-2222-3333-111111111111"),
-		rpcURL:  "wss://bcdev.antst.net:8546",
-		httpURL: "https://bcdev.antst.net:8545",
+//curl https://nova.arbitrum.io/rpc \
+//-X POST \
+//-H "Content-Type: application/json" \
+//--data '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}'
+//{"jsonrpc":"2.0","id":1,"result":"0x34f585"}
+
+func NewArbitrumNovaAdapter() *ArbitrumNovaAdapter {
+	return &ArbitrumNovaAdapter{
+		umid:    umid.MustParse("ccccaaaa-1111-2222-3333-222222222222"),
+		rpcURL:  "wss://bcdev.antst.net:8548",
+		httpURL: "https://bcdev.antst.net:8547",
 		//rpcURL:  "ws://127.0.0.1:8545",
 		//httpURL: "http://127.0.0.1:8545",
 		//rpcURL:  "wss://eth.llamarpc.com",
 		//httpURL: "https://eth.llamarpc.com",
-		name: "ethereum",
+		name: "arbitrum_nova",
 	}
 }
 
-func (a *EthereumAdapter) GetInfo() (umid umid.UMID, name string, rpcURL string) {
-	return a.umid, a.name, a.rpcURL
-}
-
-func (a *EthereumAdapter) RegisterNewBlockListener(f harvester.AdapterListener) {
-	a.listener = f
-}
-
-func (a *EthereumAdapter) GetLastBlockNumber() (uint64, error) {
-	number, err := a.client.BlockNumber(context.Background())
+func (a *ArbitrumNovaAdapter) GetLastBlockNumber() (uint64, error) {
+	number, err := a.client.BlockNumber(context.TODO())
 	return number, err
 }
 
-func (a *EthereumAdapter) GetTransferLogs(fromBlock, toBlock int64, addresses []common.Address) ([]*harvester.BCDiff, error) {
-
-	query := ethereum.FilterQuery{
-		FromBlock: big.NewInt(fromBlock),
-		ToBlock:   big.NewInt(toBlock),
-		Addresses: addresses,
-	}
-
-	logs, err := a.client.FilterLogs(context.Background(), query)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	logTransferSig := []byte("Transfer(address,address,uint256)")
-	logTransferSigHash := crypto.Keccak256Hash(logTransferSig)
-
-	diffs := make([]*harvester.BCDiff, 0)
-
-	for _, vLog := range logs {
-		fmt.Printf("Log Block Number: %d\n", vLog.BlockNumber)
-		fmt.Printf("Log Index: %d\n", vLog.Index)
-
-		switch vLog.Topics[0].Hex() {
-		case logTransferSigHash.Hex():
-			//fmt.Printf("Log Name: Transfer\n")
-
-			var transferEvent harvester.BCDiff
-
-			ev, err := a.contractABI.Unpack("Transfer", vLog.Data)
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			fmt.Println(ev)
-
-			transferEvent.Token = strings.ToLower(vLog.Address.Hex())
-			// Hex and Un Hex here used to remove padding zeros
-			transferEvent.From = strings.ToLower(common.HexToAddress(vLog.Topics[1].Hex()).Hex())
-			transferEvent.To = strings.ToLower(common.HexToAddress(vLog.Topics[2].Hex()).Hex())
-			if len(ev) > 0 {
-				transferEvent.Amount = ev[0].(*big.Int)
-			}
-
-			//fmt.Printf("Contract: %s\n", transferEvent.Token)
-			//fmt.Printf("From: %s\n", transferEvent.From)
-			//fmt.Printf("To: %s\n", transferEvent.To)
-			//fmt.Printf("Tokens: %s\n", transferEvent.Amount.String())
-			diffs = append(diffs, &transferEvent)
-		}
-	}
-
-	return diffs, nil
-}
-
-func (a *EthereumAdapter) GetBalance(wallet string, contract string, blockNumber uint64) (*big.Int, error) {
-	type request struct {
-		To   string `json:"to"`
-		Data string `json:"data"`
-	}
-
-	// "0x70a08231" - crypto.Keccak256Hash([]byte("balanceOf(address)")).String()[0:10]
-	data := "0x70a08231" + fmt.Sprintf("%064s", wallet[2:]) // %064s means that the string is padded with 0 to 64 bytes
-	req := request{contract, data}
-
-	var resp string
-	n := hexutil.EncodeUint64(blockNumber)
-	if err := a.rpcClient.Call(&resp, "eth_call", req, n); err != nil {
-		return nil, errors.WithMessage(err, "failed to make RPC call to ethereum:")
-	}
-
-	// remove leading zero of resp
-	t := strings.TrimLeft(resp[2:], "0")
-	if t == "" {
-		t = "0"
-	}
-	s := "0x" + t
-	balance, err := hexutil.DecodeBig(s)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return balance, nil
-}
-
-func (a *EthereumAdapter) Run() {
+func (a *ArbitrumNovaAdapter) Run() {
 	contractABI, err := abi.JSON(strings.NewReader(erc20abi))
 	if err != nil {
 		log.Fatal(err)
@@ -200,7 +111,11 @@ func (a *EthereumAdapter) Run() {
 	}()
 }
 
-func (a *EthereumAdapter) onNewBlock(b *harvester.BCBlock) {
+func (a *ArbitrumNovaAdapter) RegisterNewBlockListener(f harvester.AdapterListener) {
+	a.listener = f
+}
+
+func (a *ArbitrumNovaAdapter) onNewBlock(b *harvester.BCBlock) {
 	block, err := a.client.BlockByNumber(context.TODO(), big.NewInt(int64(b.Number)))
 	if err != nil {
 		err = errors.WithMessage(err, "failed to get block by number")
@@ -270,8 +185,46 @@ func (a *EthereumAdapter) onNewBlock(b *harvester.BCBlock) {
 	a.listener(b.Number, diffs)
 }
 
+func (a *ArbitrumNovaAdapter) GetBalance(wallet string, contract string, blockNumber uint64) (*big.Int, error) {
+	type request struct {
+		To   string `json:"to"`
+		Data string `json:"data"`
+	}
+
+	// "0x70a08231" - crypto.Keccak256Hash([]byte("balanceOf(address)")).String()[0:10]
+	data := "0x70a08231" + fmt.Sprintf("%064s", wallet[2:]) // %064s means that the string is padded with 0 to 64 bytes
+	req := request{contract, data}
+
+	var resp string
+	n := hexutil.EncodeUint64(blockNumber)
+	if err := a.rpcClient.Call(&resp, "eth_call", req, n); err != nil {
+		return nil, errors.WithMessage(err, "failed to make RPC call to ethereum:")
+	}
+
+	// remove leading zero of resp
+	t := strings.TrimLeft(resp[2:], "0")
+	if t == "" {
+		t = "0"
+	}
+	s := "0x" + t
+	balance, err := hexutil.DecodeBig(s)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return balance, nil
+}
+
+func (a *ArbitrumNovaAdapter) GetTransactionMessage(tx *types.Transaction) *core.Message {
+	msg, err := core.TransactionToMessage(tx, types.LatestSignerForChainID(tx.ChainId()), nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return msg
+}
+
 // refer https://github.com/ethereum/web3.py/blob/master/web3/contract.py#L435
-func (a *EthereumAdapter) DecodeTransactionInputData(contractABI *abi.ABI, data []byte) (string, map[string]any, error) {
+func (a *ArbitrumNovaAdapter) DecodeTransactionInputData(contractABI *abi.ABI, data []byte) (string, map[string]any, error) {
 	// The first 4 bytes of the txn represent the ID of the method in the ABI
 	//fmt.Println(len(data))
 	methodSigData := data[:4]
@@ -292,20 +245,6 @@ func (a *EthereumAdapter) DecodeTransactionInputData(contractABI *abi.ABI, data 
 	//fmt.Printf("Method inputs: %v\n", MapToJson(inputsMap))
 
 	return method.Name, inputsMap, nil
-}
-
-func MapToJson(param map[string]interface{}) string {
-	dataType, _ := json.Marshal(param)
-	dataString := string(dataType)
-	return dataString
-}
-
-func (a *EthereumAdapter) GetTransactionMessage(tx *types.Transaction) *core.Message {
-	msg, err := core.TransactionToMessage(tx, types.LatestSignerForChainID(tx.ChainId()), nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return msg
 }
 
 const erc20abi = `[
