@@ -9,7 +9,7 @@ import (
 )
 
 // MarshalMUS fills buf with the MUS encoding of v.
-func (v ObjectPosition) MarshalMUS(buf []byte) int {
+func (v ObjectTransform) MarshalMUS(buf []byte) int {
 	i := 0
 	{
 		si := v.ID.MarshalMUS(buf[i:])
@@ -23,7 +23,7 @@ func (v ObjectPosition) MarshalMUS(buf []byte) int {
 }
 
 // UnmarshalMUS parses the MUS-encoded buf, and sets the result to *v.
-func (v *ObjectPosition) UnmarshalMUS(buf []byte) (int, error) {
+func (v *ObjectTransform) UnmarshalMUS(buf []byte) (int, error) {
 	i := 0
 	var err error
 	{
@@ -54,7 +54,7 @@ func (v *ObjectPosition) UnmarshalMUS(buf []byte) (int, error) {
 }
 
 // SizeMUS returns the size of the MUS-encoded v.
-func (v ObjectPosition) SizeMUS() int {
+func (v ObjectTransform) SizeMUS() int {
 	size := 0
 	{
 		ss := v.ID.SizeMUS()
