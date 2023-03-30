@@ -1,9 +1,10 @@
 package entry
 
 import (
+	"time"
+
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
-	"time"
 )
 
 type ObjectVisibleType byte
@@ -16,16 +17,16 @@ const (
 )
 
 type Object struct {
-	ObjectID     umid.UMID              `db:"object_id" json:"object_id"`
-	ObjectTypeID umid.UMID              `db:"object_type_id" json:"object_type_id"`
-	OwnerID      umid.UMID              `db:"owner_id" json:"owner_id"`
-	ParentID     umid.UMID              `db:"parent_id" json:"parent_id"`
-	Asset2dID    *umid.UMID             `db:"asset_2d_id" json:"asset_2d_id"`
-	Asset3dID    *umid.UMID             `db:"asset_3d_id" json:"asset_3d_id"`
-	Options      *ObjectOptions         `db:"options" json:"options"`
-	Position     *cmath.ObjectTransform `db:"position" json:"position"`
-	CreatedAt    time.Time              `db:"created_at" json:"created_at"`
-	UpdatedAt    time.Time              `db:"updated_at" json:"updated_at"`
+	ObjectID     umid.UMID        `db:"object_id" json:"object_id"`
+	ObjectTypeID umid.UMID        `db:"object_type_id" json:"object_type_id"`
+	OwnerID      umid.UMID        `db:"owner_id" json:"owner_id"`
+	ParentID     umid.UMID        `db:"parent_id" json:"parent_id"`
+	Asset2dID    *umid.UMID       `db:"asset_2d_id" json:"asset_2d_id"`
+	Asset3dID    *umid.UMID       `db:"asset_3d_id" json:"asset_3d_id"`
+	Options      *ObjectOptions   `db:"options" json:"options"`
+	Position     *cmath.Transform `db:"position" json:"position"`
+	CreatedAt    time.Time        `db:"created_at" json:"created_at"`
+	UpdatedAt    time.Time        `db:"updated_at" json:"updated_at"`
 }
 
 type ObjectOptions struct {

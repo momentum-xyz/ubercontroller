@@ -27,8 +27,8 @@ func NewCircular(parameterMap map[string]interface{}) Algo {
 	}
 }
 
-func (cir *circular) CalcPos(parentTheta float64, parentPosition cmath.ObjectTransform, i, n int) (
-	cmath.ObjectTransform, float64,
+func (cir *circular) CalcPos(parentTheta float64, parentPosition cmath.Transform, i, n int) (
+	cmath.Transform, float64,
 ) {
 	parent := parentPosition.Position.ToVec3f64()
 	phi := -0.5*math.Pi + cir.Angle/180.0*math.Pi + parentTheta
@@ -41,7 +41,7 @@ func (cir *circular) CalcPos(parentTheta float64, parentPosition cmath.ObjectTra
 		Z: math.Round((parent.Z+cir.R*math.Sin(angle))*10.0) / 10.0,
 	}
 
-	np := cmath.ObjectTransform{Position: p.ToVec3()}
+	np := cmath.Transform{Position: p.ToVec3()}
 	return np, math.Atan2(p.Z-parent.Z, p.X-parent.X) /* theta */
 }
 

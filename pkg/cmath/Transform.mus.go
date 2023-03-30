@@ -5,7 +5,7 @@ package cmath
 import "github.com/ymz-ncnk/muserrs"
 
 // MarshalMUS fills buf with the MUS encoding of v.
-func (v ObjectTransform) MarshalMUS(buf []byte) int {
+func (v Transform) MarshalMUS(buf []byte) int {
 	i := 0
 	{
 		si := v.Position.MarshalMUS(buf[i:])
@@ -23,7 +23,7 @@ func (v ObjectTransform) MarshalMUS(buf []byte) int {
 }
 
 // UnmarshalMUS parses the MUS-encoded buf, and sets the result to *v.
-func (v *ObjectTransform) UnmarshalMUS(buf []byte) (int, error) {
+func (v *Transform) UnmarshalMUS(buf []byte) (int, error) {
 	i := 0
 	var err error
 	{
@@ -66,7 +66,7 @@ func (v *ObjectTransform) UnmarshalMUS(buf []byte) (int, error) {
 }
 
 // SizeMUS returns the size of the MUS-encoded v.
-func (v ObjectTransform) SizeMUS() int {
+func (v Transform) SizeMUS() int {
 	size := 0
 	{
 		ss := v.Position.SizeMUS()

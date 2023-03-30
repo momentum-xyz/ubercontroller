@@ -2,11 +2,12 @@ package object
 
 import (
 	"context"
+	"sync/atomic"
+
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/momentum-xyz/ubercontroller/seed"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
-	"sync/atomic"
 
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
@@ -41,7 +42,7 @@ type Object struct {
 	//Mu               sync.RWMutex
 	Mu               deadlock.RWMutex
 	ownerID          umid.UMID
-	transform        *cmath.ObjectTransform
+	transform        *cmath.Transform
 	options          *entry.ObjectOptions
 	Parent           universe.Object
 	asset2d          universe.Asset2d
@@ -54,7 +55,7 @@ type Object struct {
 	attributesMsg     *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
 	renderDataMap     *generic.SyncMap[posbus.ObjectDataIndex, interface{}]
 	dataMsg           atomic.Pointer[websocket.PreparedMessage]
-	actualPosition    atomic.Pointer[cmath.ObjectTransform]
+	actualPosition    atomic.Pointer[cmath.Transform]
 	broadcastPipeline chan *websocket.PreparedMessage
 	messageAccept     atomic.Bool
 	numSendsQueued    atomic.Int64
@@ -140,7 +141,7 @@ func (o *Object) Initialize(ctx context.Context) error {
 	o.numSendsQueued.Store(chanIsClosed)
 	o.lockedBy.Store(umid.Nil)
 
-	newPos := cmath.ObjectTransform{Position: *new(cmath.Vec3), Rotation: *new(cmath.Vec3), Scale: *new(cmath.Vec3)}
+	newPos := cmath.Transform{Position: *new(cmath.Vec3), Rotation: *new(cmath.Vec3), Scale: *new(cmath.Vec3)}
 	o.actualPosition.Store(&newPos)
 
 	return nil

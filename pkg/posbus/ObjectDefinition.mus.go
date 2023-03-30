@@ -182,7 +182,7 @@ func (v *ObjectDefinition) UnmarshalMUS(buf []byte) (int, error) {
 		return i, muserrs.NewFieldError("Name", err)
 	}
 	{
-		var sv cmath.ObjectTransform
+		var sv cmath.Transform
 		si := 0
 		si, err = sv.UnmarshalMUS(buf[i:])
 		if err == nil {

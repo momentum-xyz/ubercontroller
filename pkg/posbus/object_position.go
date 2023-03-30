@@ -6,8 +6,8 @@ import (
 )
 
 type ObjectPosition struct {
-	ID        umid.UMID             `json:"id"`
-	Transform cmath.ObjectTransform `json:"object_transform"`
+	ID        umid.UMID       `json:"id"`
+	Transform cmath.Transform `json:"object_transform"`
 }
 
 func init() {

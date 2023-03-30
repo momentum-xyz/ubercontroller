@@ -2,6 +2,7 @@ package objects
 
 import (
 	"context"
+
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/georgysavva/scany/pgxscan"
@@ -101,7 +102,7 @@ func (db *DB) UpdateObjectParentID(ctx context.Context, objectID umid.UMID, pare
 	return nil
 }
 
-func (db *DB) UpdateObjectPosition(ctx context.Context, objectID umid.UMID, position *cmath.ObjectTransform) error {
+func (db *DB) UpdateObjectPosition(ctx context.Context, objectID umid.UMID, position *cmath.Transform) error {
 	if _, err := db.conn.Exec(ctx, updateObjectPositionQuery, objectID, position); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
