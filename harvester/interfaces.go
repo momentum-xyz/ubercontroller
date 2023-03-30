@@ -41,6 +41,7 @@ type BCType string
 
 const Ethereum string = "ethereum"
 const Polkadot string = "polkadot"
+const ArbitrumNova string = "arbitrum_nova"
 
 type Event string
 

@@ -7,11 +7,13 @@ import (
 	"math/big"
 	"strings"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/pkg/errors"
@@ -31,22 +33,12 @@ type ArbitrumNovaAdapter struct {
 	contractABI abi.ABI
 }
 
-//curl https://nova.arbitrum.io/rpc \
-//-X POST \
-//-H "Content-Type: application/json" \
-//--data '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}'
-//{"jsonrpc":"2.0","id":1,"result":"0x34f585"}
-
 func NewArbitrumNovaAdapter() *ArbitrumNovaAdapter {
 	return &ArbitrumNovaAdapter{
 		umid:    umid.MustParse("ccccaaaa-1111-2222-3333-222222222222"),
 		rpcURL:  "wss://bcdev.antst.net:8548",
 		httpURL: "https://bcdev.antst.net:8547",
-		//rpcURL:  "ws://127.0.0.1:8545",
-		//httpURL: "http://127.0.0.1:8545",
-		//rpcURL:  "wss://eth.llamarpc.com",
-		//httpURL: "https://eth.llamarpc.com",
-		name: "arbitrum_nova",
+		name:    "arbitrum_nova",
 	}
 }
 
@@ -116,71 +108,10 @@ func (a *ArbitrumNovaAdapter) RegisterNewBlockListener(f harvester.AdapterListen
 }
 
 func (a *ArbitrumNovaAdapter) onNewBlock(b *harvester.BCBlock) {
-	block, err := a.client.BlockByNumber(context.TODO(), big.NewInt(int64(b.Number)))
+	diffs, err := a.GetTransferLogs(int64(b.Number), int64(b.Number), []common.Address{})
 	if err != nil {
-		err = errors.WithMessage(err, "failed to get block by number")
 		fmt.Println(err)
 	}
-
-	diffs := make([]*harvester.BCDiff, 0)
-	for _, tx := range block.Transactions() {
-		//fmt.Println(tx.Hash().Hex())
-
-		contractABI, err := abi.JSON(strings.NewReader(erc20abi))
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		if len(tx.Data()) < 4 {
-			continue
-		}
-
-		methodName, methodInput, err := a.DecodeTransactionInputData(&contractABI, tx.Data())
-		if err != nil {
-			//log.Fatal(err)
-		}
-
-		if methodName == "transfer" {
-			diff := &harvester.BCDiff{}
-			diff.From = strings.ToLower(a.GetTransactionMessage(tx).From.Hex())
-
-			diff.To = strings.ToLower(methodInput["_to"].(common.Address).Hex())
-			diff.Token = strings.ToLower(tx.To().Hex())
-			diff.Amount = methodInput["_value"].(*big.Int)
-			diffs = append(diffs, diff)
-		}
-
-		if methodName == "transferFrom" {
-			diff := &harvester.BCDiff{}
-			diff.From = strings.ToLower(methodInput["_from"].(common.Address).Hex())
-			diff.To = strings.ToLower(methodInput["_to"].(common.Address).Hex())
-			diff.Token = strings.ToLower(tx.To().Hex())
-			diff.Amount = methodInput["_value"].(*big.Int)
-			diffs = append(diffs, diff)
-		}
-
-		// TODO Check that tx success
-		//receipt, err := a.client.TransactionReceipt(context.Background(), tx.Hash())
-		//if err != nil {
-		//	log.Fatal(err)
-		//}
-
-		//fmt.Println(tx.Hash())
-		//fmt.Println(receipt.Status) // 1
-	}
-
-	//amount := big.NewInt(0)
-	////amount.SetString("33190774000000000000000", 10)
-	//amount.SetString("1", 10)
-	//
-	//mockDiffs := []*harvester.BCDiff{
-	//	{
-	//		From:   "0x2813fd17ea95b2655a7228383c5236e31090419e",
-	//		To:     "0x3f363b4e038a6e43ce8321c50f3efbf460196d4b",
-	//		Token:  "0xdefa4e8a7bcba345f687a2f1456f5edd9ce97202",
-	//		Amount: amount,
-	//	},
-	//}
 
 	a.listener(b.Number, diffs)
 }
@@ -245,6 +176,64 @@ func (a *ArbitrumNovaAdapter) DecodeTransactionInputData(contractABI *abi.ABI, d
 	//fmt.Printf("Method inputs: %v\n", MapToJson(inputsMap))
 
 	return method.Name, inputsMap, nil
+}
+
+func (a *ArbitrumNovaAdapter) GetTransferLogs(fromBlock, toBlock int64, addresses []common.Address) ([]*harvester.BCDiff, error) {
+
+	query := ethereum.FilterQuery{
+		FromBlock: big.NewInt(fromBlock),
+		ToBlock:   big.NewInt(toBlock),
+		Addresses: addresses,
+	}
+
+	logs, err := a.client.FilterLogs(context.Background(), query)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	logTransferSig := []byte("Transfer(address,address,uint256)")
+	logTransferSigHash := crypto.Keccak256Hash(logTransferSig)
+
+	diffs := make([]*harvester.BCDiff, 0)
+
+	for _, vLog := range logs {
+		fmt.Printf("Log Block Number: %d\n", vLog.BlockNumber)
+		fmt.Printf("Log Index: %d\n", vLog.Index)
+
+		switch vLog.Topics[0].Hex() {
+		case logTransferSigHash.Hex():
+			//fmt.Printf("Log Name: Transfer\n")
+
+			var transferEvent harvester.BCDiff
+
+			ev, err := a.contractABI.Unpack("Transfer", vLog.Data)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			fmt.Println(ev)
+
+			transferEvent.Token = strings.ToLower(vLog.Address.Hex())
+			// Hex and Un Hex here used to remove padding zeros
+			transferEvent.From = strings.ToLower(common.HexToAddress(vLog.Topics[1].Hex()).Hex())
+			transferEvent.To = strings.ToLower(common.HexToAddress(vLog.Topics[2].Hex()).Hex())
+			if len(ev) > 0 {
+				transferEvent.Amount = ev[0].(*big.Int)
+			}
+
+			//fmt.Printf("Contract: %s\n", transferEvent.Token)
+			//fmt.Printf("From: %s\n", transferEvent.From)
+			//fmt.Printf("To: %s\n", transferEvent.To)
+			//fmt.Printf("Tokens: %s\n", transferEvent.Amount.String())
+			diffs = append(diffs, &transferEvent)
+		}
+	}
+
+	return diffs, nil
+}
+
+func (a *ArbitrumNovaAdapter) GetInfo() (umid umid.UMID, name string, rpcURL string) {
+	return a.umid, a.name, a.rpcURL
 }
 
 const erc20abi = `[

@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 	"log"
+	"time"
+
+	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/momentum-xyz/ubercontroller/harvester"
 	"github.com/momentum-xyz/ubercontroller/harvester/arbitrum_nova_adapter"
@@ -38,4 +41,17 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Printf("Balance: %+v \n", b)
+
+	contracts := []common.Address{
+		common.HexToAddress("0x7F85fB7f42A0c0D40431cc0f7DFDf88be6495e67"),
+	}
+	_ = contracts
+	//diffs, err := a.GetTransferLogs(0, 12, contracts)
+	diffs, err := a.GetTransferLogs(0, 12, []common.Address{})
+
+	for k, v := range diffs {
+		fmt.Printf("%+v %+v %+v %+v  \n", k, v.Token, v.To, v.Amount.String())
+	}
+
+	time.Sleep(time.Second * 300)
 }
