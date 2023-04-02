@@ -12,3 +12,10 @@ type AttributeType struct {
 	Description *string           `db:"description" json:"description"`
 	Options     *AttributeOptions `db:"options" json:"options"`
 }
+
+func NewAttributeTypeID(pluginID umid.UMID, name string) AttributeTypeID {
+	return AttributeTypeID{
+		PluginID: pluginID,
+		Name:     name,
+	}
+}
