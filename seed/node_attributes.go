@@ -3,8 +3,9 @@ package seed
 import (
 	"context"
 	"crypto/rand"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"math/big"
+
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/pkg/errors"
 
@@ -118,7 +119,7 @@ func seedNodeAttributes(ctx context.Context, node universe.Node) error {
 								"y": 1,
 								"z": 1,
 							},
-							"location": map[string]any{
+							"position": map[string]any{
 								"x": 15.887797,
 								"y": 51.115723,
 								"z": 144.49608,
@@ -157,7 +158,7 @@ func seedNodeAttributes(ctx context.Context, node universe.Node) error {
 								"y": 1,
 								"z": 1,
 							},
-							"location": map[string]any{
+							"position": map[string]any{
 								"x": 86.6892,
 								"y": 59.070778,
 								"z": 156.44916,
@@ -196,7 +197,7 @@ func seedNodeAttributes(ctx context.Context, node universe.Node) error {
 								"y": 1.1553961,
 								"z": 2.0322535,
 							},
-							"location": map[string]any{
+							"position": map[string]any{
 								"x": 51.27168,
 								"y": 47.102135,
 								"z": 147.76534,
@@ -235,7 +236,7 @@ func seedNodeAttributes(ctx context.Context, node universe.Node) error {
 								"y": 1.0045278,
 								"z": 2.4337356,
 							},
-							"location": map[string]any{
+							"position": map[string]any{
 								"x": 15.918898,
 								"y": 46.477386,
 								"z": 144.60236,
@@ -274,7 +275,7 @@ func seedNodeAttributes(ctx context.Context, node universe.Node) error {
 								"y": 1,
 								"z": 2.2992187,
 							},
-							"location": map[string]any{
+							"position": map[string]any{
 								"x": 30.522566,
 								"y": 45.030613,
 								"z": 164.6621,
@@ -313,7 +314,7 @@ func seedNodeAttributes(ctx context.Context, node universe.Node) error {
 								"y": 2.3933778,
 								"z": 1,
 							},
-							"location": map[string]any{
+							"position": map[string]any{
 								"x": 30.702652,
 								"y": 51.685955,
 								"z": 163.36012,
@@ -352,7 +353,7 @@ func seedNodeAttributes(ctx context.Context, node universe.Node) error {
 								"y": 2.3933778,
 								"z": 1,
 							},
-							"location": map[string]any{
+							"position": map[string]any{
 								"x": 30.702652,
 								"y": 51.685955,
 								"z": 163.36012,
@@ -391,7 +392,7 @@ func seedNodeAttributes(ctx context.Context, node universe.Node) error {
 								"y": 1,
 								"z": 3.0823991,
 							},
-							"location": map[string]any{
+							"position": map[string]any{
 								"x": 56.173256,
 								"y": 50.4917,
 								"z": 143.80066,
@@ -447,7 +448,7 @@ func seedNodeAttributes(ctx context.Context, node universe.Node) error {
 								"y": 1,
 								"z": 2.8605652,
 							},
-							"location": map[string]any{
+							"position": map[string]any{
 								"x": 63.490574,
 								"y": 51.481842,
 								"z": 160.97379,
@@ -505,7 +506,7 @@ func seedNodeAttributes(ctx context.Context, node universe.Node) error {
 								"y": 1,
 								"z": 1,
 							},
-							"location": map[string]any{
+							"position": map[string]any{
 								"x": 62.438713,
 								"y": 54.17204,
 								"z": 152.16934,
@@ -533,7 +534,7 @@ func seedNodeAttributes(ctx context.Context, node universe.Node) error {
 								"y": 1,
 								"z": 1,
 							},
-							"location": map[string]any{
+							"position": map[string]any{
 								"x": 62.438713,
 								"y": 54.17204,
 								"z": 152.16934,
@@ -561,7 +562,7 @@ func seedNodeAttributes(ctx context.Context, node universe.Node) error {
 								"y": 1,
 								"z": 1,
 							},
-							"location": map[string]any{
+							"position": map[string]any{
 								"x": 62.438713,
 								"y": 54.17204,
 								"z": 152.16934,
@@ -589,7 +590,7 @@ func seedNodeAttributes(ctx context.Context, node universe.Node) error {
 								"y": 1,
 								"z": 1,
 							},
-							"location": map[string]any{
+							"position": map[string]any{
 								"x": 62.438713,
 								"y": 54.17204,
 								"z": 152.16934,

@@ -24,7 +24,7 @@ type Object struct {
 	Asset2dID    *umid.UMID       `db:"asset_2d_id" json:"asset_2d_id"`
 	Asset3dID    *umid.UMID       `db:"asset_3d_id" json:"asset_3d_id"`
 	Options      *ObjectOptions   `db:"options" json:"options"`
-	Position     *cmath.Transform `db:"position" json:"position"`
+	Transform    *cmath.Transform `db:"transform" json:"transform"`
 	CreatedAt    time.Time        `db:"created_at" json:"created_at"`
 	UpdatedAt    time.Time        `db:"updated_at" json:"updated_at"`
 }

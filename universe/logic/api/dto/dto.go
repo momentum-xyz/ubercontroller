@@ -96,7 +96,7 @@ type Object struct {
 	ObjectTypeID string          `json:"object_type_id"`
 	Asset2dID    string          `json:"asset_2d_id"`
 	Asset3dID    string          `json:"asset_3d_id"`
-	Position     cmath.Transform `json:"position"`
+	Transform    cmath.Transform `json:"transform"`
 }
 
 type Asset2d struct {

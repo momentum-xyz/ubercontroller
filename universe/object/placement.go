@@ -99,7 +99,7 @@ func (o *Object) SetTransform(position *cmath.Transform, updateDB bool) error {
 	defer o.Mu.Unlock()
 
 	if updateDB {
-		if err := o.db.GetObjectsDB().UpdateObjectPosition(o.ctx, o.GetID(), position); err != nil {
+		if err := o.db.GetObjectsDB().UpdateObjectTransform(o.ctx, o.GetID(), position); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}

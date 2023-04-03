@@ -351,10 +351,10 @@ func (o *Object) GetEntry() *entry.Object {
 	defer o.Mu.RUnlock()
 
 	entry := &entry.Object{
-		ObjectID: o.id,
-		OwnerID:  o.ownerID,
-		Options:  o.options,
-		Position: o.transform,
+		ObjectID:  o.id,
+		OwnerID:   o.ownerID,
+		Options:   o.options,
+		Transform: o.transform,
 	}
 	if o.objectType != nil {
 		entry.ObjectTypeID = o.objectType.GetID()
@@ -573,7 +573,7 @@ func (o *Object) load(entry *entry.Object) error {
 		}
 	}
 
-	if err := o.SetTransform(entry.Position, false); err != nil {
+	if err := o.SetTransform(entry.Transform, false); err != nil {
 		return errors.WithMessage(err, "failed to set transform")
 	}
 
