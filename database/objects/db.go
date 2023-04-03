@@ -23,16 +23,16 @@ const (
 
 	upsertObjectQuery = `INSERT INTO object
     						(object_id, object_type_id, owner_id, parent_id, asset_2d_id,
-    						asset_3d_id, options, position, created_at, updated_at)
+    						asset_3d_id, options, transform, created_at, updated_at)
 						VALUES
 							($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 						ON CONFLICT (object_id)
 						DO UPDATE SET
 							object_type_id = $2, owner_id = $3, parent_id = $4, asset_2d_id = $5,
-							asset_3d_id = $6, options = $7, position = $8, updated_at = CURRENT_TIMESTAMP;`
+							asset_3d_id = $6, options = $7, transform = $8, updated_at = CURRENT_TIMESTAMP;`
 
 	updateObjectParentIDQuery     = `UPDATE object SET parent_id = $2, updated_at = CURRENT_TIMESTAMP WHERE object_id = $1;`
-	updateObjectPositionQuery     = `UPDATE object SET position = $2, updated_at = CURRENT_TIMESTAMP WHERE object_id = $1;`
+	updateObjectPositionQuery     = `UPDATE object SET transform = $2, updated_at = CURRENT_TIMESTAMP WHERE object_id = $1;`
 	updateObjectOwnerIDQuery      = `UPDATE object SET owner_id = $2, updated_at = CURRENT_TIMESTAMP WHERE object_id = $1;`
 	updateObjectAsset2dIDQuery    = `UPDATE object SET asset_2d_id = $2, updated_at = CURRENT_TIMESTAMP WHERE object_id = $1;`
 	updateObjectAsset3dIDQuery    = `UPDATE object SET asset_3d_id = $2, updated_at = CURRENT_TIMESTAMP WHERE object_id = $1;`
@@ -148,7 +148,7 @@ func (db *DB) UpsertObject(ctx context.Context, object *entry.Object) error {
 	if _, err := db.conn.Exec(
 		ctx, upsertObjectQuery,
 		object.ObjectID, object.ObjectTypeID, object.OwnerID, object.ParentID, object.Asset2dID, object.Asset3dID,
-		object.Options, object.Position,
+		object.Options, object.Transform,
 	); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
@@ -160,7 +160,7 @@ func (db *DB) UpsertObjects(ctx context.Context, objects []*entry.Object) error 
 	for _, object := range objects {
 		batch.Queue(
 			upsertObjectQuery, object.ObjectID, object.ObjectTypeID, object.OwnerID,
-			object.ParentID, object.Asset2dID, object.Asset3dID, object.Options, object.Position,
+			object.ParentID, object.Asset2dID, object.Asset3dID, object.Options, object.Transform,
 		)
 	}
 

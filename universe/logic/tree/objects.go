@@ -23,7 +23,7 @@ type ObjectTemplate struct {
 	Asset2dID        *umid.UMID           `json:"asset_2d_id"`
 	Asset3dID        *umid.UMID           `json:"asset_3d_id"`
 	Options          *entry.ObjectOptions `json:"options"`
-	Position         *cmath.Transform     `json:"position"`
+	Transform        *cmath.Transform     `json:"transform"`
 	Label            *string              `json:"label"`
 	ObjectAttributes []*entry.Attribute   `json:"object_attributes"`
 	Objects          []*ObjectTemplate    `json:"objects"`
@@ -97,9 +97,9 @@ func AddObjectFromTemplate(objectTemplate *ObjectTemplate, updateDB bool) (umid.
 			return umid.Nil, errors.WithMessagef(err, "failed to set asset 3d: %s", objectTemplate.Asset3dID)
 		}
 	}
-	if objectTemplate.Position != nil {
-		if err := object.SetTransform(objectTemplate.Position, false); err != nil {
-			return umid.Nil, errors.WithMessagef(err, "failed to set position: %+v", objectTemplate.Position)
+	if objectTemplate.Transform != nil {
+		if err := object.SetTransform(objectTemplate.Transform, false); err != nil {
+			return umid.Nil, errors.WithMessagef(err, "failed to set position: %+v", objectTemplate.Transform)
 		}
 	}
 

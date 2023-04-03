@@ -51,7 +51,7 @@
           "visible": 1
         }
       },
-      "position": {
+      "transform": {
         "scale": {
           "x": 1,
           "y": 1,
@@ -90,7 +90,7 @@
           "visible": 1
         }
       },
-      "position": {
+      "transform": {
         "scale": {
           "x": 1,
           "y": 1,
@@ -129,7 +129,7 @@
           "visible": 1
         }
       },
-      "position": {
+      "transform": {
         "scale": {
           "x": 2.1864054,
           "y": 1.1553961,
@@ -168,7 +168,7 @@
           "visible": 1
         }
       },
-      "position": {
+      "transform": {
         "scale": {
           "x": 2.4160378,
           "y": 1.0045278,
@@ -207,7 +207,7 @@
           "visible": 1
         }
       },
-      "position": {
+      "transform": {
         "scale": {
           "x": 2.0890555,
           "y": 1,
@@ -246,7 +246,7 @@
           "visible": 1
         }
       },
-      "position": {
+      "transform": {
         "scale": {
           "x": 1.9816073,
           "y": 2.3933778,
@@ -285,7 +285,7 @@
           "visible": 1
         }
       },
-      "position": {
+      "transform": {
         "scale": {
           "x": 4.390896,
           "y": 1,
@@ -341,7 +341,7 @@
           "visible": 1
         }
       },
-      "position": {
+      "transform": {
         "scale": {
           "x": 1.6822052,
           "y": 1,
@@ -399,7 +399,7 @@
           "visible": 1
         }
       },
-      "position": {
+      "transform": {
         "scale": {
           "x": 1,
           "y": 1,
@@ -427,7 +427,7 @@
           "visible": 1
         }
       },
-      "position": {
+      "transform": {
         "scale": {
           "x": 1,
           "y": 1,
@@ -455,7 +455,7 @@
           "visible": 1
         }
       },
-      "position": {
+      "transform": {
         "scale": {
           "x": 1,
           "y": 1,
@@ -483,7 +483,7 @@
           "visible": 1
         }
       },
-      "position": {
+      "transform": {
         "scale": {
           "x": 1,
           "y": 1,

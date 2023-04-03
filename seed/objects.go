@@ -15,7 +15,7 @@ func seedObjects(node universe.Node) error {
 		asset2dID   umid.UMID
 		asset3dID   *umid.UMID
 		options     *entry.ObjectOptions
-		position    *map[string]any
+		transform   *map[string]any
 	}
 
 	return nil
