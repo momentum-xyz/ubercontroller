@@ -99,7 +99,7 @@ func AddObjectFromTemplate(objectTemplate *ObjectTemplate, updateDB bool) (umid.
 	}
 	if objectTemplate.Transform != nil {
 		if err := object.SetTransform(objectTemplate.Transform, false); err != nil {
-			return umid.Nil, errors.WithMessagef(err, "failed to set position: %+v", objectTemplate.Transform)
+			return umid.Nil, errors.WithMessagef(err, "failed to set transform: %+v", objectTemplate.Transform)
 		}
 	}
 

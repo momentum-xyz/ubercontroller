@@ -33,7 +33,7 @@ func (u *User) OnMessage(buf []byte) error {
 	case posbus.TypeSignal:
 		return u.SignalsHandler(msg.(*posbus.Signal))
 	//case posbus.TypeObjectPosition:
-	//	if err := u.UpdateObjectPosition(msg.Msg()); err != nil {
+	//	if err := u.UpdateObjectTransform(msg.Msg()); err != nil {
 	//		return errors.WithMessage(err, "failed to update object transform")
 	//	}
 	case posbus.TypeLockObject:
@@ -45,7 +45,7 @@ func (u *User) OnMessage(buf []byte) error {
 	return nil
 }
 
-func (u *User) UpdateObjectPosition(msg posbus.ObjectTransform) error {
+func (u *User) UpdateObjectTransform(msg posbus.ObjectTransform) error {
 	object, ok := universe.GetNode().GetObjectFromAllObjects(msg.ID)
 	if !ok {
 		return errors.Errorf("object not found: %s", msg.ID)

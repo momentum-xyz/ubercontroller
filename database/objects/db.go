@@ -32,7 +32,7 @@ const (
 							asset_3d_id = $6, options = $7, transform = $8, updated_at = CURRENT_TIMESTAMP;`
 
 	updateObjectParentIDQuery     = `UPDATE object SET parent_id = $2, updated_at = CURRENT_TIMESTAMP WHERE object_id = $1;`
-	updateObjectPositionQuery     = `UPDATE object SET transform = $2, updated_at = CURRENT_TIMESTAMP WHERE object_id = $1;`
+	updateObjectTransformQuery    = `UPDATE object SET transform = $2, updated_at = CURRENT_TIMESTAMP WHERE object_id = $1;`
 	updateObjectOwnerIDQuery      = `UPDATE object SET owner_id = $2, updated_at = CURRENT_TIMESTAMP WHERE object_id = $1;`
 	updateObjectAsset2dIDQuery    = `UPDATE object SET asset_2d_id = $2, updated_at = CURRENT_TIMESTAMP WHERE object_id = $1;`
 	updateObjectAsset3dIDQuery    = `UPDATE object SET asset_3d_id = $2, updated_at = CURRENT_TIMESTAMP WHERE object_id = $1;`
@@ -102,8 +102,8 @@ func (db *DB) UpdateObjectParentID(ctx context.Context, objectID umid.UMID, pare
 	return nil
 }
 
-func (db *DB) UpdateObjectPosition(ctx context.Context, objectID umid.UMID, position *cmath.Transform) error {
-	if _, err := db.conn.Exec(ctx, updateObjectPositionQuery, objectID, position); err != nil {
+func (db *DB) UpdateObjectTransform(ctx context.Context, objectID umid.UMID, position *cmath.Transform) error {
+	if _, err := db.conn.Exec(ctx, updateObjectTransformQuery, objectID, position); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
