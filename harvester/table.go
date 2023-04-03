@@ -173,7 +173,26 @@ func (t *Table) SaveToDB(events []*UpdateEvent) error {
 		}
 	}()
 
-	sql := `INSERT INTO wallet (wallet_id, blockchain_id)
+	sql := `INSERT INTO blockchain (blockchain_id, last_processed_block_number, blockchain_name, rpc_url, updated_at)
+							VALUES ($1, $2, $3, $4, NOW())
+							ON CONFLICT (blockchain_id) DO UPDATE SET last_processed_block_number=$2,
+																	  blockchain_name=$3,
+																	  rpc_url=$4,
+																	  updated_at=NOW();`
+
+	val := &entry.Blockchain{
+		BlockchainID:             blockchainUMID,
+		LastProcessedBlockNumber: t.blockNumber,
+		BlockchainName:           name,
+		RPCURL:                   rpcURL,
+	}
+	_, err = t.db.Exec(context.Background(), sql,
+		val.BlockchainID, val.LastProcessedBlockNumber, val.BlockchainName, val.RPCURL)
+	if err != nil {
+		return errors.WithMessage(err, "failed to insert or update blockchain DB query")
+	}
+
+	sql = `INSERT INTO wallet (wallet_id, blockchain_id)
 			VALUES ($1::bytea, $2)
 			ON CONFLICT (blockchain_id, wallet_id) DO NOTHING `
 	for _, w := range wallets {
@@ -210,30 +229,10 @@ func (t *Table) SaveToDB(events []*UpdateEvent) error {
 		}
 	}
 
-	sql = `INSERT INTO blockchain (blockchain_id, last_processed_block_number, blockchain_name, rpc_url, updated_at)
-							VALUES ($1, $2, $3, $4, NOW())
-							ON CONFLICT (blockchain_id) DO UPDATE SET last_processed_block_number=$2,
-																	  blockchain_name=$3,
-																	  rpc_url=$4,
-																	  updated_at=NOW();`
-
-	val := &entry.Blockchain{
-		BlockchainID:             blockchainUMID,
-		LastProcessedBlockNumber: t.blockNumber,
-		BlockchainName:           name,
-		RPCURL:                   rpcURL,
-	}
-	_, err = t.db.Exec(context.Background(), sql,
-		val.BlockchainID, val.LastProcessedBlockNumber, val.BlockchainName, val.RPCURL)
-	if err != nil {
-		return errors.WithMessage(err, "failed to insert or update blockchain DB query")
-	}
-
 	return nil
 }
 
 func (t *Table) LoadFromDB() error {
-
 	blockchainUMID, _, _ := t.adapter.GetInfo()
 
 	tx, err := t.db.BeginTx(context.TODO(), pgx.TxOptions{})
@@ -257,7 +256,9 @@ func (t *Table) LoadFromDB() error {
 	defer t.mu.Unlock()
 
 	if err := row.Scan(&b.LastProcessedBlockNumber); err != nil {
-		return errors.WithMessage(err, "failed to scan row from blockchain table")
+		if err != pgx.ErrNoRows {
+			return errors.WithMessage(err, "failed to scan row from blockchain table")
+		}
 	}
 
 	sql = `SELECT wallet_id, contract_id, balance.balance
