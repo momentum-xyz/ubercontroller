@@ -49,6 +49,10 @@ jobs:
       - id: convert-openapi
         name: Convert to OpenAPI v3
         run: npx -- swagger2openapi@latest build/docs/swagger.json > build/docs/openapi.json
+      - id: generate HTML
+        name: Generate HTML page
+        if: github.ref == 'refs/heads/develop'
+        run: npx -- @redocly/cli build-docs build/docs/openapi.json --title "Momentum controller API - development version" -o ./build/docs/api.html
       - id: store-docs
         name: Store assets catalog
         uses: actions/upload-artifact@v3
@@ -67,6 +71,7 @@ jobs:
       - id: update-docs-site
         name: Update docs website
         uses: peter-evans/repository-dispatch@v2
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
         with:
           token: ${{ secrets.DOCS_TRIGGER_TOKEN }}
           repository: momentum-xyz/docs
