@@ -49,7 +49,7 @@ jobs:
       - id: convert-openapi
         name: Convert to OpenAPI v3
         run: npx -- swagger2openapi@latest build/docs/swagger.json > build/docs/openapi.json
-      - id: generate HTML
+      - id: generate-html
         name: Generate HTML page
         if: github.ref == 'refs/heads/develop'
         run: npx -- @redocly/cli build-docs build/docs/openapi.json --title "Momentum controller API - development version" -o ./build/docs/api.html
