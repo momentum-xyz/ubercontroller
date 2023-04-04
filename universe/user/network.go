@@ -2,11 +2,13 @@ package user
 
 import (
 	"container/list"
+	"time"
+
 	"github.com/gorilla/websocket"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"github.com/pkg/errors"
 	"github.com/zakaria-chahboun/cute"
-	"time"
+
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 const (
@@ -202,6 +204,15 @@ func (u *User) close(needToRemoveFromWorld bool) error {
 				return errors.WithMessagef(err, "failed to remove user from world: %s", world.GetID())
 			}
 		}
+	}
+
+	isTemporaryUser, err := u.IsTemporaryUser()
+	if err != nil {
+		return errors.WithMessagef(err, "failed to assess if user is temporary user: %s", u.GetID())
+	}
+
+	if isTemporaryUser {
+		u.offlineTimer.Set(u.id, time.Minute*30, u.DeleteTemporaryUser)
 	}
 
 	return nil
