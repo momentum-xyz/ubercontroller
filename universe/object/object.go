@@ -711,3 +711,7 @@ func (o *Object) LockUnityObject(user universe.User, state uint32) bool {
 		return o.lockedBy.CompareAndSwap(user.GetID(), umid.Nil)
 	}
 }
+
+func (o *Object) IsLockedByUser(user universe.User) bool {
+	return o.lockedBy.Load() == user.GetID()
+}

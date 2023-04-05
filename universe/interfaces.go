@@ -199,6 +199,7 @@ type Object interface {
 	SendAllAutoAttributes(sendFn func(msg *websocket.PreparedMessage) error, recursive bool)
 
 	LockUnityObject(user User, state uint32) bool
+	IsLockedByUser(user User) bool
 }
 
 type User interface {

@@ -48,6 +48,11 @@ func (u *User) UpdateObjectTransform(msg *posbus.ObjectTransform) error {
 	if !ok {
 		return errors.Errorf("object not found: %s", msg.ID)
 	}
+
+	if !object.IsLockedByUser(u) {
+		return errors.Errorf("object is not locked by user: %s", u.GetID())
+	}
+
 	return object.SetTransform(utils.GetPTR(msg.Transform), true)
 }
 
