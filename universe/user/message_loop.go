@@ -32,10 +32,8 @@ func (u *User) OnMessage(buf []byte) error {
 		return u.Teleport(msg.(*posbus.TeleportRequest).Target)
 	case posbus.TypeSignal:
 		return u.SignalsHandler(msg.(*posbus.Signal))
-	//case posbus.TypeObjectPosition:
-	//	if err := u.UpdateObjectTransform(msg.Msg()); err != nil {
-	//		return errors.WithMessage(err, "failed to update object transform")
-	//	}
+	case posbus.TypeObjectTransform:
+		return u.UpdateObjectTransform(msg.(*posbus.ObjectTransform))
 	case posbus.TypeLockObject:
 		return u.LockObject(msg.(*posbus.LockObject))
 	default:
@@ -45,7 +43,7 @@ func (u *User) OnMessage(buf []byte) error {
 	return nil
 }
 
-func (u *User) UpdateObjectTransform(msg posbus.ObjectTransform) error {
+func (u *User) UpdateObjectTransform(msg *posbus.ObjectTransform) error {
 	object, ok := universe.GetNode().GetObjectFromAllObjects(msg.ID)
 	if !ok {
 		return errors.Errorf("object not found: %s", msg.ID)
