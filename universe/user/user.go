@@ -145,6 +145,13 @@ func (u *User) GetUserType() universe.UserType {
 	return u.userType
 }
 
+func (u *User) OfflineTimer() *generic.TimerSet[umid.UMID] {
+	u.mu.RLock()
+	defer u.mu.RUnlock()
+
+	return u.offlineTimer
+}
+
 func (u *User) IsTemporaryUser() (bool, error) {
 	guestUserTypeID, err := common.GetGuestUserTypeID()
 	if err != nil {
@@ -211,7 +218,15 @@ func (u *User) SetUserType(userType universe.UserType, updateDB bool) error {
 }
 
 func (u *User) Run() error {
-	//
+	isTemporaryUser, err := u.IsTemporaryUser()
+	if err != nil {
+		return errors.WithMessagef(err, "failed to assess if user is temporary user: %s", u.GetID())
+	}
+
+	if isTemporaryUser && u.offlineTimer != nil {
+		u.offlineTimer.StopAll()
+	}
+
 	u.StartIOPumps()
 	return nil
 }

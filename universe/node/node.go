@@ -3,10 +3,11 @@ package node
 import (
 	"context"
 	"fmt"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/gin-gonic/gin"
 	influx_api "github.com/influxdata/influxdb-client-go/v2/api"
@@ -192,6 +193,19 @@ func (n *Node) AddAPIRegister(register universe.APIRegister) {
 }
 
 func (n *Node) Run() error {
+	users := n.GetUsers(false)
+
+	for _, user := range users {
+		isTemporaryUser, err := user.IsTemporaryUser()
+		if err != nil {
+			return errors.WithMessagef(err, "failed to assess if user is temporary user: %s", user.GetID())
+		}
+
+		if isTemporaryUser {
+			user.OfflineTimer().Set(user.GetID(), time.Minute*30, user.DeleteTemporaryUser)
+		}
+	}
+
 	if err := n.worlds.Run(); err != nil {
 		return errors.WithMessage(err, "failed to run worlds")
 	}
