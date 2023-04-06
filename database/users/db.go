@@ -26,7 +26,8 @@ const (
          						                    AND attribute_name = 'wallet'
          						                    AND value->'wallet' ? $1
          						                );`
-	getWalletByUserID = `SELECT value -> 'wallet' ->> 0 AS wallet
+	getUsersByUserType = `SELECT * FROM "user" WHERE user_type_id = $1;`
+	getWalletByUserID  = `SELECT value -> 'wallet' ->> 0 AS wallet
 						FROM user_attribute
 						WHERE user_id = $1
 						  AND plugin_id = '86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8'
@@ -68,6 +69,15 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 		conn:   conn,
 		common: commonDB,
 	}
+}
+
+func (db *DB) GetUsersByUserType(ctx context.Context, userTypeID umid.UMID) ([]*entry.User, error) {
+	var users []*entry.User
+
+	if err := pgxscan.Select(ctx, db.conn, &users, getUsersByUserType, userTypeID); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return users, nil
 }
 
 func (db *DB) GetUserByID(ctx context.Context, userID umid.UMID) (*entry.User, error) {

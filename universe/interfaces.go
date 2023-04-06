@@ -8,7 +8,6 @@ import (
 	influxWrite "github.com/influxdata/influxdb-client-go/v2/api/write"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
-	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
@@ -233,7 +232,7 @@ type User interface {
 	LockSendBuffer()
 
 	IsTemporaryUser() (bool, error)
-	OfflineTimer() *generic.TimerSet[umid.UMID]
+	SetOfflineTimer() (bool, error)
 	DeleteTemporaryUser(uid umid.UMID) error
 
 	GetSessionID() umid.UMID

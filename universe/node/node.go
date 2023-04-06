@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/gin-gonic/gin"
@@ -193,16 +194,25 @@ func (n *Node) AddAPIRegister(register universe.APIRegister) {
 }
 
 func (n *Node) Run() error {
-	users := n.GetUsers(false)
+	temporaryUserTypeID, err := common.GetGuestUserTypeID()
+	if err != nil {
+		return errors.WithMessage(err, "failed to get guest user type id")
+	}
 
+	users, err := n.db.GetUsersDB().GetUsersByUserType(n.ctx, temporaryUserTypeID)
 	for _, user := range users {
-		isTemporaryUser, err := user.IsTemporaryUser()
+		loadedUser, _ := n.LoadUser(user.UserID)
+
+		isTemporaryUser, err := loadedUser.IsTemporaryUser()
 		if err != nil {
-			return errors.WithMessagef(err, "failed to assess if user is temporary user: %s", user.GetID())
+			return errors.WithMessagef(err, "failed to assess if user is temporary user: %s", loadedUser.GetID())
 		}
 
 		if isTemporaryUser {
-			user.OfflineTimer().Set(user.GetID(), time.Minute*30, user.DeleteTemporaryUser)
+			ok, err := loadedUser.SetOfflineTimer()
+			if !ok || err != nil {
+				return errors.WithMessage(err, "failed to set offline timer")
+			}
 		}
 	}
 

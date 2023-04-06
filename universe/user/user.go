@@ -145,11 +145,13 @@ func (u *User) GetUserType() universe.UserType {
 	return u.userType
 }
 
-func (u *User) OfflineTimer() *generic.TimerSet[umid.UMID] {
+func (u *User) SetOfflineTimer() (bool, error) {
 	u.mu.RLock()
 	defer u.mu.RUnlock()
 
-	return u.offlineTimer
+	u.offlineTimer.Set(u.id, time.Minute*20, u.DeleteTemporaryUser)
+	u.log.Infof("Timer set: %s", u.GetID())
+	return true, nil
 }
 
 func (u *User) IsTemporaryUser() (bool, error) {
@@ -167,6 +169,8 @@ func (u *User) IsTemporaryUser() (bool, error) {
 func (u *User) DeleteTemporaryUser(uid umid.UMID) error {
 	u.mu.Lock()
 	defer u.mu.Unlock()
+
+	u.log.Infof("Deleting temp user: %s", u.GetID())
 
 	if err := u.db.GetUsersDB().RemoveUserByID(u.ctx, uid); err != nil {
 		return errors.WithMessage(err, "failed to delete temporary user by id")
