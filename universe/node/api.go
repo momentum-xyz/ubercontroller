@@ -20,7 +20,7 @@ import (
 func (n *Node) RegisterAPI(r *gin.Engine) {
 	n.log.Infof("Registering api for node: %s...", n.GetID())
 
-	if n.cfg.Common.DisableCORS {
+	if n.cfg.Common.AllowCORS {
 		r.Use(cors.New(cors.Config{
 			AllowOrigins: []string{"*"},
 		}))
