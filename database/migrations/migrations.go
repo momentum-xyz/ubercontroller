@@ -125,7 +125,7 @@ func MigrateDatabase(ctx context.Context, cfg *config.Postgres) error {
 		if isDirty {
 			return errors.New("database is dirty")
 		}
-		log.Infof("Migration: current DB schema verion=%d, available schema version=%d, will miigrate", iver, version)
+		log.Infof("Migration: current DB schema verion=%d, available schema version=%d, will migrate", iver, version)
 	} else {
 		log.Infoln("Migration: migration is not required")
 		return nil
