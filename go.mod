@@ -10,6 +10,7 @@ require (
 	github.com/c0mm4nd/go-ripemd v0.0.0-20200326052756-bd1759ad7d10
 	github.com/ethereum/go-ethereum v1.11.4
 	github.com/georgysavva/scany v1.2.1
+	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.9.0
 	github.com/gobeam/stringy v0.0.6
 	github.com/goccy/go-reflect v1.2.0
