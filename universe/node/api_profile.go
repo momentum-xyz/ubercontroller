@@ -121,9 +121,10 @@ func (n *Node) apiProfileUpdate(c *gin.Context) {
 		return
 	}
 
-	nameChanged := inBody.Name != nil && *userProfile.Name != *inBody.Name
-	avatarChanged := inBody.Profile != nil && inBody.Profile.AvatarHash != nil && userProfile.AvatarHash != nil && *userProfile.AvatarHash != *inBody.Profile.AvatarHash
-	shouldUpdateNFT := nameChanged || avatarChanged
+	// nameChanged := inBody.Name != nil && *userProfile.Name != *inBody.Name
+	// avatarChanged := inBody.Profile != nil && inBody.Profile.AvatarHash != nil && userProfile.AvatarHash != nil && *userProfile.AvatarHash != *inBody.Profile.AvatarHash
+	// shouldUpdateNFT := nameChanged || avatarChanged
+	shouldUpdateNFT := false
 
 	if inBody.Name != nil {
 		// TODO: check name unique
