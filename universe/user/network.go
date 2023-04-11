@@ -212,7 +212,7 @@ func (u *User) close(needToRemoveFromWorld bool) error {
 	}
 
 	if isTemporaryUser {
-		u.offlineTimer.Set(u.id, time.Minute*30, u.DeleteTemporaryUser)
+		u.offlineTimer.Set(u.id, time.Minute*20, u.DeleteTemporaryUser)
 	}
 
 	return nil
