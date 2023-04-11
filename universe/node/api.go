@@ -20,9 +20,11 @@ import (
 func (n *Node) RegisterAPI(r *gin.Engine) {
 	n.log.Infof("Registering api for node: %s...", n.GetID())
 
-	r.Use(cors.New(cors.Config{
-		AllowOrigins: []string{"*"},
-	}))
+	if n.cfg.Common.DisableCORS {
+		r.Use(cors.New(cors.Config{
+			AllowOrigins: []string{"*"},
+		}))
+	}
 
 	r.GET("/version", n.apiGetVersion)
 	r.GET("/health", n.apiHealthCheck)
