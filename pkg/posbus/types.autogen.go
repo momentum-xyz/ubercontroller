@@ -24,6 +24,7 @@ const (
 	TypeTriggerVisualEffects  MsgType = 0xD96089C6
 	TypeUserAction            MsgType = 0xEF1A2E75
 	TypeUserData              MsgType = 0xF702EF5F
+	TypeUserStakedToOdyssey   MsgType = 0x10DACABC
 	TypeUserTransform         MsgType = 0x3BC97EBB
 	TypeUsersTransformList    MsgType = 0x285954B8
 )
