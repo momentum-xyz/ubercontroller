@@ -29,7 +29,7 @@ create table pending_stake
     updated_at     timestamp   not null,
     created_at     timestamp   not null,
     constraint pending_stake_pk
-        primary key (blockchain_id, wallet_id, transaction_id),
+        primary key (blockchain_id, wallet_id, transaction_id, object_id),
     constraint pending_stake_wallet_fk
         foreign key (blockchain_id, wallet_id) references wallet (blockchain_id, wallet_id)
             on update cascade on delete cascade,
