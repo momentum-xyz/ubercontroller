@@ -18,6 +18,11 @@ const (
 	getWorldsQuery = `SELECT * FROM object
          					WHERE parent_id = (SELECT object_id FROM object WHERE object_id = parent_id)
          					AND object_id != parent_id;`
+	getRecentWorldIDsQuery = `SELECT object_id FROM object
+         					WHERE parent_id = (SELECT object_id FROM object WHERE object_id = parent_id)
+         					AND object_id != parent_id
+         					ORDER BY created_at DESC
+							LIMIT 6;`
 )
 
 var _ database.WorldsDB = (*DB)(nil)
@@ -50,4 +55,12 @@ func (db *DB) GetWorlds(ctx context.Context) ([]*entry.Object, error) {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return worlds, nil
+}
+
+func (db *DB) GetRecentWorldIDs(ctx context.Context) ([]umid.UMID, error) {
+	var worldIDs []umid.UMID
+	if err := pgxscan.Select(ctx, db.conn, &worldIDs, getRecentWorldIDsQuery); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return worldIDs, nil
 }

@@ -40,6 +40,8 @@ type NodesDB interface {
 type WorldsDB interface {
 	GetWorldIDs(ctx context.Context) ([]umid.UMID, error)
 	GetWorlds(ctx context.Context) ([]*entry.Object, error)
+
+	GetRecentWorldIDs(ctx context.Context) ([]umid.UMID, error)
 }
 
 type ObjectsDB interface {

@@ -10,7 +10,7 @@ import (
 
 type ExploreOptions []ExploreOption
 
-type SearchOptions map[string][]ExploreOption
+type SearchOptions []ExploreOption
 
 type Plugins map[umid.UMID]string
 
@@ -47,10 +47,15 @@ type Assets3dMeta map[umid.UMID]Asset3dMeta
 type Asset3dMeta *entry.Asset3dMeta
 
 type ExploreOption struct {
-	ID          umid.UMID       `json:"id"`
-	Name        string          `json:"name"`
-	Description string          `json:"description"`
-	SubObjects  []ExploreOption `json:"subObjects,omitempty"`
+	ID          umid.UMID `json:"id"`
+	Name        *string   `json:"name"`
+	Description *string   `json:"description"`
+}
+
+type RecentWorld struct {
+	ID         umid.UMID `json:"id"`
+	Name       *string   `json:"name"`
+	AvatarHash *string   `json:"avatarHash"`
 }
 
 //type FlyToMe struct {
