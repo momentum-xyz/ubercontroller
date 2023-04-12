@@ -7,12 +7,14 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
-	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"github.com/pkg/errors"
 	"github.com/sasha-s/go-deadlock"
 	"go.uber.org/zap"
+
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
+	"github.com/momentum-xyz/ubercontroller/types/generic"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
@@ -49,12 +51,14 @@ type User struct {
 	bufferSends                 atomic.Bool
 	numSendsQueued              atomic.Int64
 	directLock                  sync.Mutex
+	offlineTimer                *generic.TimerSet[umid.UMID]
 }
 
 func NewUser(id umid.UMID, db database.DB) *User {
 	return &User{
-		id: id,
-		db: db,
+		id:           id,
+		offlineTimer: generic.NewTimerSet[umid.UMID](),
+		db:           db,
 	}
 }
 
@@ -141,6 +145,40 @@ func (u *User) GetUserType() universe.UserType {
 	return u.userType
 }
 
+func (u *User) SetOfflineTimer() (bool, error) {
+	u.mu.RLock()
+	defer u.mu.RUnlock()
+
+	u.offlineTimer.Set(u.id, time.Minute*20, u.DeleteTemporaryUser)
+	u.log.Infof("Timer set: %s", u.GetID())
+	return true, nil
+}
+
+func (u *User) IsTemporaryUser() (bool, error) {
+	guestUserTypeID, err := common.GetGuestUserTypeID()
+	if err != nil {
+		return false, errors.WithMessage(err, "failed to get guestUserTypeID")
+	}
+	if u.GetUserType().GetID() != guestUserTypeID {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+func (u *User) DeleteTemporaryUser(uid umid.UMID) error {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+
+	u.log.Infof("Deleting temp user: %s", u.GetID())
+
+	if err := u.db.GetUsersDB().RemoveUserByID(u.ctx, uid); err != nil {
+		return errors.WithMessage(err, "failed to delete temporary user by id")
+	}
+
+	return nil
+}
+
 func (u *User) GetProfile() *entry.UserProfile {
 	u.mu.RLock()
 	defer u.mu.RUnlock()
@@ -184,6 +222,15 @@ func (u *User) SetUserType(userType universe.UserType, updateDB bool) error {
 }
 
 func (u *User) Run() error {
+	isTemporaryUser, err := u.IsTemporaryUser()
+	if err != nil {
+		return errors.WithMessagef(err, "failed to assess if user is temporary user: %s", u.GetID())
+	}
+
+	if isTemporaryUser && u.offlineTimer != nil {
+		u.offlineTimer.StopAll()
+	}
+
 	u.StartIOPumps()
 	return nil
 }

@@ -3,10 +3,12 @@ package node
 import (
 	"context"
 	"fmt"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/gin-gonic/gin"
 	influx_api "github.com/influxdata/influxdb-client-go/v2/api"
@@ -192,6 +194,28 @@ func (n *Node) AddAPIRegister(register universe.APIRegister) {
 }
 
 func (n *Node) Run() error {
+	temporaryUserTypeID, err := common.GetGuestUserTypeID()
+	if err != nil {
+		return errors.WithMessage(err, "failed to get guest user type id")
+	}
+
+	users, err := n.db.GetUsersDB().GetUsersByUserType(n.ctx, temporaryUserTypeID)
+	for _, user := range users {
+		loadedUser, _ := n.LoadUser(user.UserID)
+
+		isTemporaryUser, err := loadedUser.IsTemporaryUser()
+		if err != nil {
+			return errors.WithMessagef(err, "failed to assess if user is temporary user: %s", loadedUser.GetID())
+		}
+
+		if isTemporaryUser {
+			ok, err := loadedUser.SetOfflineTimer()
+			if !ok || err != nil {
+				return errors.WithMessage(err, "failed to set offline timer")
+			}
+		}
+	}
+
 	if err := n.worlds.Run(); err != nil {
 		return errors.WithMessage(err, "failed to run worlds")
 	}

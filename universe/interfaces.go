@@ -231,6 +231,10 @@ type User interface {
 	ReleaseSendBuffer()
 	LockSendBuffer()
 
+	IsTemporaryUser() (bool, error)
+	SetOfflineTimer() (bool, error)
+	DeleteTemporaryUser(uid umid.UMID) error
+
 	GetSessionID() umid.UMID
 	SetConnection(sessionID umid.UMID, socketConnection *websocket.Conn) error
 
