@@ -2,7 +2,10 @@
 
 package posbus
 
-import "github.com/ymz-ncnk/muserrs"
+import (
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
+	"github.com/ymz-ncnk/muserrs"
+)
 
 // MarshalMUS fills buf with the MUS encoding of v.
 func (v UserStakedToOdyssey) MarshalMUS(buf []byte) int {
@@ -32,28 +35,8 @@ func (v UserStakedToOdyssey) MarshalMUS(buf []byte) int {
 		i += copy(buf[i:], v.TransactionHash)
 	}
 	{
-		length := len(v.ObjectID)
-		{
-			uv := uint64(length)
-			if length < 0 {
-				uv = ^(uv << 1)
-			} else {
-				uv = uv << 1
-			}
-			{
-				for uv >= 0x80 {
-					buf[i] = byte(uv) | 0x80
-					uv >>= 7
-					i++
-				}
-				buf[i] = byte(uv)
-				i++
-			}
-		}
-		if len(buf[i:]) < length {
-			panic(muserrs.ErrSmallBuf)
-		}
-		i += copy(buf[i:], v.ObjectID)
+		si := v.ObjectID.MarshalMUS(buf[i:])
+		i += si
 	}
 	{
 		length := len(v.Amount)
@@ -157,47 +140,13 @@ func (v *UserStakedToOdyssey) UnmarshalMUS(buf []byte) (int, error) {
 		return i, muserrs.NewFieldError("TransactionHash", err)
 	}
 	{
-		var length int
-		{
-			var uv uint64
-			{
-				if i > len(buf)-1 {
-					return i, muserrs.ErrSmallBuf
-				}
-				shift := 0
-				done := false
-				for l, b := range buf[i:] {
-					if l == 9 && b > 1 {
-						return i, muserrs.ErrOverflow
-					}
-					if b < 0x80 {
-						uv = uv | uint64(b)<<shift
-						done = true
-						i += l + 1
-						break
-					}
-					uv = uv | uint64(b&0x7F)<<shift
-					shift += 7
-				}
-				if !done {
-					return i, muserrs.ErrSmallBuf
-				}
-			}
-			if uv&1 == 1 {
-				uv = ^(uv >> 1)
-			} else {
-				uv = uv >> 1
-			}
-			length = int(uv)
+		var sv umid.UMID
+		si := 0
+		si, err = sv.UnmarshalMUS(buf[i:])
+		if err == nil {
+			v.ObjectID = sv
+			i += si
 		}
-		if length < 0 {
-			return i, muserrs.ErrNegativeLength
-		}
-		if len(buf) < i+length {
-			return i, muserrs.ErrSmallBuf
-		}
-		v.ObjectID = string(buf[i : i+length])
-		i += length
 	}
 	if err != nil {
 		return i, muserrs.NewFieldError("ObjectID", err)
@@ -315,18 +264,8 @@ func (v UserStakedToOdyssey) SizeMUS() int {
 		size += len(v.TransactionHash)
 	}
 	{
-		length := len(v.ObjectID)
-		{
-			uv := uint64(length<<1) ^ uint64(length>>63)
-			{
-				for uv >= 0x80 {
-					uv >>= 7
-					size++
-				}
-				size++
-			}
-		}
-		size += len(v.ObjectID)
+		ss := v.ObjectID.SizeMUS()
+		size += ss
 	}
 	{
 		length := len(v.Amount)
