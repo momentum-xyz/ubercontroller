@@ -3,9 +3,10 @@ package user
 import (
 	"fmt"
 
+	"github.com/pkg/errors"
+
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
-	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils"
@@ -38,6 +39,10 @@ func (u *User) OnMessage(buf []byte) error {
 	//	}
 	case posbus.TypeLockObject:
 		return u.LockObject(msg.(*posbus.LockObject))
+
+	case posbus.TypeUserStakedToOdyssey:
+		return u.StakeToOdyssey(msg.(*posbus.UserStakedToOdyssey))
+
 	default:
 		return errors.Errorf("unknown message: %d", msg.GetType())
 	}
@@ -126,6 +131,12 @@ func (u *User) SignalsHandler(s *posbus.Signal) error {
 //
 //	return errors.Errorf("unknown message: %d", kind)
 //}
+
+func (u *User) StakeToOdyssey(stakeMsg *posbus.UserStakedToOdyssey) error {
+	fmt.Println(stakeMsg)
+
+	return nil
+}
 
 func (u *User) LockObject(lock *posbus.LockObject) error {
 	id := lock.ID
