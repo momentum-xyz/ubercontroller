@@ -76,15 +76,15 @@ func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
 // @Tags worlds
 // @Accept json
 // @Produce json
-// @Success 200 {array} dto.User
+// @Success 200 {array} dto.RecentWorld
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/worlds/latest [get]
-func (w *Worlds) apiGetLatestWorlds(c *gin.Context) {
+func (w *Worlds) apiWorldsGetLatest(c *gin.Context) {
 	recentWorldIDs, err := w.db.GetWorldsDB().GetRecentWorldIDs(w.ctx)
 	if err != nil {
-		err := errors.WithMessage(err, "Worlds: apiGetLatestWorlds: failed to get latest world ids")
+		err := errors.WithMessage(err, "Worlds: apiWorldsGetLatest: failed to get latest world ids")
 		api.AbortRequest(c, http.StatusInternalServerError, "get_latest_worlds_failed", err, w.log)
 		return
 	}

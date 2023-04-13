@@ -88,6 +88,8 @@ type Node interface {
 
 	GetUserObjects() UserObjects
 
+	FilterUsers(predicateFn UsersFilterPredicateFn) map[umid.UMID]User
+
 	GetNodeAttributes() NodeAttributes
 	GetUserAttributes() UserAttributes
 	GetUserUserAttributes() UserUserAttributes

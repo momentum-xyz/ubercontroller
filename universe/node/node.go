@@ -145,6 +145,10 @@ func (n *Node) GetUserObjects() universe.UserObjects {
 	return n.userObjects
 }
 
+func (n *Node) FilterUsers(predicateFn universe.UsersFilterPredicateFn) map[umid.UMID]universe.User {
+	return n.Users.Filter(predicateFn)
+}
+
 func (n *Node) GetNodeAttributes() universe.NodeAttributes {
 	return n.nodeAttributes
 }

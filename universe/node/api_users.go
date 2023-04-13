@@ -3,8 +3,7 @@ package node
 import (
 	"context"
 	"net/http"
-
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -13,9 +12,12 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/converters"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
+	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 // @Summary Get user based on token
@@ -92,6 +94,119 @@ func (n *Node) apiUsersGetByID(c *gin.Context) {
 	userDTO := converters.ToUserDTO(userEntry, guestUserTypeID, true)
 
 	c.JSON(http.StatusOK, userDTO)
+}
+
+// @Summary Get latest users
+// @Schemes
+// @Description Returns a list of six newest users
+// @Tags users
+// @Accept json
+// @Produce json
+// @Success 200 {array} dto.RecentUser
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/users/latest [get]
+func (n *Node) apiUsersGetLatest(c *gin.Context) {
+	recentUserIDs, err := n.db.GetUsersDB().GetRecentUserIDs(n.ctx)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiUsersGetLatest: failed to get latest user ids")
+		api.AbortRequest(c, http.StatusInternalServerError, "get_latest_users_failed", err, n.log)
+		return
+	}
+
+	recents := make([]dto.RecentUser, 0, len(recentUserIDs))
+
+	for _, userID := range recentUserIDs {
+		user, _ := n.GetUser(userID, true)
+
+		recent := dto.RecentUser{
+			ID:   user.GetID(),
+			Name: utils.GetPTR(""),
+			Profile: dto.Profile{
+				Bio:         nil,
+				Location:    nil,
+				AvatarHash:  nil,
+				ProfileLink: nil,
+			},
+		}
+
+		recents = append(recents, recent)
+	}
+
+	c.JSON(http.StatusOK, recents)
+}
+
+// @Summary Search available users
+// @Schemes
+// @Description Returns user information based on a search query
+// @Tags users
+// @Accept json
+// @Produce json
+// @Success 200 {object} dto.UserSearchResult
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/worlds/explore/search [get]
+func (n *Node) apiUsersSearchUsers(c *gin.Context) {
+	type Query struct {
+		SearchQuery string `form:"query" binding:"required"`
+	}
+
+	inQuery := Query{}
+
+	if err := c.ShouldBindQuery(&inQuery); err != nil {
+		err := errors.WithMessage(err, "Worlds: apiUsersSearchUsers: failed to bind query")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
+		return
+	}
+
+	users, err := n.apiUsersFilterUsers(inQuery.SearchQuery)
+	if err != nil {
+		err := errors.WithMessage(err, "Worlds: apiUsersSearchUsers: failed to filter objects")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_filter", err, n.log)
+		return
+	}
+
+	c.JSON(http.StatusOK, users)
+}
+
+func (n *Node) apiUsersFilterUsers(searchQuery string) (dto.UserSearchResults, error) {
+	predicateFn := func(userID umid.UMID, user universe.User) bool {
+		var name string
+		profile := user.GetProfile()
+
+		if profile != nil && profile.Name != nil {
+			name = *profile.Name
+		}
+
+		name = strings.ToLower(name)
+		searchQuery = strings.ToLower(searchQuery)
+		return strings.Contains(name, searchQuery)
+	}
+
+	filteredUsers := n.FilterUsers(predicateFn)
+	options := make([]dto.UserSearchResult, 0, len(filteredUsers))
+
+	for _, filteredUser := range filteredUsers {
+		profile := filteredUser.GetProfile()
+
+		option := dto.UserSearchResult{
+			ID:     filteredUser.GetID(),
+			Name:   profile.Name,
+			Wallet: nil,
+			Profile: dto.Profile{
+				Bio:         profile.Bio,
+				Location:    profile.Location,
+				AvatarHash:  profile.AvatarHash,
+				ProfileLink: profile.ProfileLink,
+			},
+		}
+
+		options = append(options, option)
+	}
+
+	return options, nil
 }
 
 func (n *Node) apiCreateGuestUserByName(ctx context.Context, name string) (*entry.User, error) {

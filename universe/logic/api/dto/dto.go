@@ -12,6 +12,8 @@ type ExploreOptions []ExploreOption
 
 type SearchOptions []ExploreOption
 
+type UserSearchResults []UserSearchResult
+
 type Plugins map[umid.UMID]string
 
 type PluginsMeta map[umid.UMID]PluginMeta
@@ -93,6 +95,20 @@ type User struct {
 	CreatedAt  string  `json:"createdAt"`
 	UpdatedAt  string  `json:"updatedAt,omitempty"`
 	IsGuest    bool    `json:"isGuest"`
+}
+
+type UserSearchResult struct {
+	ID      umid.UMID `json:"id"`
+	Name    *string   `json:"name"`
+	Wallet  *string   `json:"wallet,omitempty"`
+	Profile Profile   `json:"profile"`
+}
+
+type RecentUser struct {
+	ID      umid.UMID `json:"id"`
+	Name    *string   `json:"name"`
+	Wallet  *string   `json:"wallet,omitempty"`
+	Profile Profile   `json:"profile"`
 }
 
 type Object struct {

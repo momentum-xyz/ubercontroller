@@ -15,6 +15,7 @@ const (
 
 type ObjectFilterPredicateFn func(objectID umid.UMID, object Object) bool
 type WorldsFilterPredicateFn func(worldID umid.UMID, world World) bool
+type UsersFilterPredicateFn func(userID umid.UMID, user User) bool
 type ObjectsFilterPredicateFn func(objectID umid.UMID, object Object) bool
 type Assets2dFilterPredicateFn func(asset2dID umid.UMID, asset2d Asset2d) bool
 type Assets3dFilterPredicateFn func(asset3dID umid.UMID, asset3d Asset3d) bool
