@@ -14,7 +14,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/converters"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
-	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
@@ -118,16 +117,23 @@ func (n *Node) apiUsersGetLatest(c *gin.Context) {
 	recents := make([]dto.RecentUser, 0, len(recentUserIDs))
 
 	for _, userID := range recentUserIDs {
-		user, _ := n.GetUser(userID, true)
+		user, err := n.LoadUser(userID)
+		if err != nil {
+			err := errors.WithMessage(err, "Node: apiUsersGetLatest: failed to get load user by id")
+			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_load_user", err, n.log)
+			return
+		}
+
+		profile := user.GetProfile()
 
 		recent := dto.RecentUser{
 			ID:   user.GetID(),
-			Name: utils.GetPTR(""),
+			Name: profile.Name,
 			Profile: dto.Profile{
-				Bio:         nil,
-				Location:    nil,
-				AvatarHash:  nil,
-				ProfileLink: nil,
+				Bio:         profile.Bio,
+				Location:    profile.Location,
+				AvatarHash:  profile.AvatarHash,
+				ProfileLink: profile.ProfileLink,
 			},
 		}
 
