@@ -314,7 +314,8 @@ func (a *EthereumAdapter) onNewBlock(b *harvester.BCBlock) {
 	//	},
 	//}
 
-	a.listener(b.Number, diffs)
+	stakes := make([]*harvester.BCStake, 0)
+	a.listener(b.Number, diffs, stakes)
 }
 
 // refer https://github.com/ethereum/web3.py/blob/master/web3/contract.py#L435
