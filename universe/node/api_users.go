@@ -143,6 +143,42 @@ func (n *Node) apiUsersGetLatest(c *gin.Context) {
 	c.JSON(http.StatusOK, recents)
 }
 
+// @Summary Get owned worlds
+// @Schemes
+// @Description Returns a list of owned Worlds for a user
+// @Tags users
+// @Accept json
+// @Produce json
+// @Success 200 {array} dto.OwnedOdyssey
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/users/{user_id}/worlds [get]
+func (n *Node) apiUsersGetOwnedWorlds(c *gin.Context) {
+	userID, err := umid.Parse(c.Param("userID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiUsersGetOwnedWorlds: failed to parse user umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
+		return
+	}
+
+	worlds := n.GetWorldsByOwnerID(userID)
+	ownedWorlds := make([]dto.OwnedWorld, 0, len(worlds))
+	for _, world := range worlds {
+		name := world.GetName()
+
+		ownedWorld := dto.OwnedWorld{
+			ID:      world.GetID(),
+			OwnerID: world.GetOwnerID(),
+			Name:    &name,
+		}
+
+		ownedWorlds = append(ownedWorlds, ownedWorld)
+	}
+
+	c.JSON(http.StatusOK, ownedWorlds)
+}
+
 // @Summary Search available users
 // @Schemes
 // @Description Returns user information based on a search query

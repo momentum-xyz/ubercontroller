@@ -48,6 +48,7 @@ type ObjectsDB interface {
 	GetObjectByID(ctx context.Context, objectID umid.UMID) (*entry.Object, error)
 	GetObjectIDsByParentID(ctx context.Context, parentID umid.UMID) ([]umid.UMID, error)
 	GetObjectsByParentID(ctx context.Context, parentID umid.UMID) ([]*entry.Object, error)
+	GetObjectsByOwnerID(ctx context.Context, ownerID umid.UMID) ([]*entry.Object, error)
 
 	UpsertObject(ctx context.Context, object *entry.Object) error
 	UpsertObjects(ctx context.Context, objects []*entry.Object) error

@@ -169,6 +169,21 @@ func (n *Node) GetWorlds() universe.Worlds {
 	return n.worlds
 }
 
+func (n *Node) GetWorldsByOwnerID(userID umid.UMID) map[umid.UMID]universe.Object {
+	n.Children.Mu.RLock()
+	defer n.Children.Mu.RUnlock()
+
+	worlds := make(map[umid.UMID]universe.Object, len(n.Children.Data))
+	for id, world := range n.worlds.GetWorlds() {
+
+		if world.GetOwnerID() == userID {
+			worlds[id] = world
+		}
+	}
+
+	return worlds
+}
+
 func (n *Node) GetAssets2d() universe.Assets2d {
 	return n.assets2d
 }
