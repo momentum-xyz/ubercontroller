@@ -132,7 +132,7 @@ func (t *Table) ProcessDiffs(blockNumber uint64, diffs []*BCDiff) {
 	t.Display()
 }
 
-func (t *Table) listener(blockNumber uint64, diffs []*BCDiff) {
+func (t *Table) listener(blockNumber uint64, diffs []*BCDiff, stakes []*BCStake) {
 	t.mu.Lock()
 	t.ProcessDiffs(blockNumber, diffs)
 	t.mu.Unlock()
