@@ -42,8 +42,16 @@ func main() {
 	contracts := []common.Address{
 		common.HexToAddress("0x6de037ef9ad2725eb40118bb1702ebb27e4aeb24"),
 		common.HexToAddress("0xa8c8cfb141a3bb59fea1e2ea6b79b5ecbcd7b6ca"),
+
+		//common.HexToAddress("0xa8F737436eCb9cef0EDA3F8855b551f41d48C6fe"), // stakes geth
+		//common.HexToAddress("0x6787F4aeaEe40cDC85B49DD885B28a85F83899C8"), // stakes ganache
+		common.HexToAddress("0x02FE980E3aA97A42A402a69DA38e4804898033De"), // stakes ganache
 	}
-	diffs, err := a.GetTransferLogs(16882904, 16882904, contracts)
+
+	// Last Block Number: 737179
+	diffs, stakes, err := a.GetTransferLogs(1, 31, contracts)
+
+	fmt.Println(stakes)
 
 	for k, v := range diffs {
 		fmt.Printf("%+v %+v %+v %+v  \n", k, v.Token, v.To, v.Amount.String())
