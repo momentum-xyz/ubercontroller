@@ -48,7 +48,7 @@ func main() {
 	}
 	_ = contracts
 	//diffs, err := a.GetTransferLogs(0, 12, contracts)
-	diffs, stakes, err := a.GetTransferLogs(94, 105, []common.Address{})
+	diffs, stakes, err := a.GetTransferLogs(94, 115, []common.Address{})
 
 	fmt.Println("tokens ---")
 	for k, v := range diffs {
@@ -57,7 +57,7 @@ func main() {
 
 	fmt.Println("stakes ---")
 	for k, v := range stakes {
-		fmt.Printf("%+v %+v %+v %+v  \n", k, v.From, v.OdysseyID.String(), v.Amount.String())
+		fmt.Printf("%+v %+v %+v %+v %+v  \n", k, v.From, v.OdysseyID.String(), v.Amount.String(), v.TotalAmount.String())
 	}
 
 	time.Sleep(time.Second * 300)

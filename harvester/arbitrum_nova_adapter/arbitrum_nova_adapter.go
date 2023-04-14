@@ -258,11 +258,14 @@ func (a *ArbitrumNovaAdapter) GetTransferLogs(fromBlock, toBlock int64, addresse
 
 			tokenType := ev[3].(uint8)
 
+			totalAmount := ev[4].(*big.Int)
+
 			stake := &harvester.BCStake{
-				From:      fromWallet.Hex(),
-				OdysseyID: odysseyID,
-				TokenType: tokenType,
-				Amount:    amount,
+				From:        fromWallet.Hex(),
+				OdysseyID:   odysseyID,
+				TokenType:   tokenType,
+				Amount:      amount,
+				TotalAmount: totalAmount,
 			}
 
 			stakes = append(stakes, stake)

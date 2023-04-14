@@ -21,10 +21,11 @@ type BCDiff struct {
 }
 
 type BCStake struct {
-	From      string
-	OdysseyID umid.UMID
-	TokenType uint8 //0-MOM; 1-DAD
-	Amount    *big.Int
+	From        string
+	OdysseyID   umid.UMID
+	TokenType   uint8 //0-MOM; 1-DAD
+	Amount      *big.Int
+	TotalAmount *big.Int
 }
 
 type UpdateEvent struct {
