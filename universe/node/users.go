@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/pkg/errors"
@@ -38,4 +39,28 @@ func (n *Node) CreateUsers(ctx context.Context, users ...*entry.User) error {
 	// TODO: add 'returning` to the query, so we can give back user objects
 	// with their filled in database defaults and ID.
 	return nil
+}
+
+func (n *Node) Filter(predicateFn func(userID umid.UMID, user universe.User) bool) (map[umid.UMID]universe.User, error) {
+	data := make(map[umid.UMID]universe.User)
+	userTypeID, err := common.GetNormalUserTypeID()
+	if err != nil {
+		return nil, nil
+	}
+
+	users, _ := n.db.GetUsersDB().GetAllUsers(n.ctx, userTypeID)
+
+	n.Mu.RLock()
+	defer n.Mu.RUnlock()
+
+	for _, v := range users {
+		loadedUser, _ := n.LoadUser(v.UserID)
+		userID := loadedUser.GetID()
+
+		if predicateFn(loadedUser.GetID(), loadedUser) {
+			data[userID] = loadedUser
+		}
+	}
+
+	return data, nil
 }

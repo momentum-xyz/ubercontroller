@@ -19,6 +19,7 @@ import (
 const (
 	getUserByIDQuery      = `SELECT * FROM "user" WHERE user_id = $1;`
 	getUsersByIDsQuery    = `SELECT * FROM "user" WHERE user_id = ANY($1);`
+	getAllUsersQuery      = `SELECT * FROM "user" WHERE user_type_id = $1;`
 	getRecentUserIDsQuery = `SELECT user_id FROM "user"
          					ORDER BY created_at DESC
 							LIMIT 6;`
@@ -93,6 +94,14 @@ func (db *DB) GetUserByID(ctx context.Context, userID umid.UMID) (*entry.User, e
 func (db *DB) GetUsersByIDs(ctx context.Context, userIDs []umid.UMID) ([]*entry.User, error) {
 	var users []*entry.User
 	if err := pgxscan.Select(ctx, db.conn, &users, getUsersByIDsQuery, userIDs); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return users, nil
+}
+
+func (db *DB) GetAllUsers(ctx context.Context, userTypeID umid.UMID) ([]*entry.User, error) {
+	var users []*entry.User
+	if err := pgxscan.Select(ctx, db.conn, &users, getAllUsersQuery, userTypeID); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return users, nil

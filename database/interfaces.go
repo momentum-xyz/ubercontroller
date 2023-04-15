@@ -68,6 +68,7 @@ type ObjectsDB interface {
 type UsersDB interface {
 	GetUserByID(ctx context.Context, userID umid.UMID) (*entry.User, error)
 	GetUsersByIDs(ctx context.Context, userIDs []umid.UMID) ([]*entry.User, error)
+	GetAllUsers(ctx context.Context, userTypeID umid.UMID) ([]*entry.User, error)
 	GetUserByWallet(ctx context.Context, wallet string) (*entry.User, error)
 	GetUserWalletByUserID(ctx context.Context, userID umid.UMID) (*string, error)
 	GetUserProfileByUserID(ctx context.Context, userID umid.UMID) (*entry.UserProfile, error)

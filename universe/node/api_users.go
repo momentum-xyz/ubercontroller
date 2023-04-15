@@ -189,7 +189,7 @@ func (n *Node) apiUsersGetOwnedWorlds(c *gin.Context) {
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/worlds/explore/search [get]
+// @Router /api/v4/users/search [get]
 func (n *Node) apiUsersSearchUsers(c *gin.Context) {
 	type Query struct {
 		SearchQuery string `form:"query" binding:"required"`
@@ -198,14 +198,14 @@ func (n *Node) apiUsersSearchUsers(c *gin.Context) {
 	inQuery := Query{}
 
 	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		err := errors.WithMessage(err, "Worlds: apiUsersSearchUsers: failed to bind query")
+		err := errors.WithMessage(err, "Node: apiUsersSearchUsers: failed to bind query")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
 		return
 	}
 
 	users, err := n.apiUsersFilterUsers(inQuery.SearchQuery)
 	if err != nil {
-		err := errors.WithMessage(err, "Worlds: apiUsersSearchUsers: failed to filter objects")
+		err := errors.WithMessage(err, "Node: apiUsersSearchUsers: failed to filter objects")
 		api.AbortRequest(c, http.StatusBadRequest, "failed_to_filter", err, n.log)
 		return
 	}
@@ -216,7 +216,8 @@ func (n *Node) apiUsersSearchUsers(c *gin.Context) {
 func (n *Node) apiUsersFilterUsers(searchQuery string) (dto.UserSearchResults, error) {
 	predicateFn := func(userID umid.UMID, user universe.User) bool {
 		var name string
-		profile := user.GetProfile()
+		loadedUser, _ := n.LoadUser(userID)
+		profile := loadedUser.GetProfile()
 
 		if profile != nil && profile.Name != nil {
 			name = *profile.Name
@@ -227,7 +228,7 @@ func (n *Node) apiUsersFilterUsers(searchQuery string) (dto.UserSearchResults, e
 		return strings.Contains(name, searchQuery)
 	}
 
-	filteredUsers := n.FilterUsers(predicateFn)
+	filteredUsers, _ := n.Filter(predicateFn)
 	options := make([]dto.UserSearchResult, 0, len(filteredUsers))
 
 	for _, filteredUser := range filteredUsers {

@@ -80,6 +80,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 			verifiedUsers.DELETE("/mutual-docks", n.apiUsersRemoveMutualDocks)
 
 			verifiedUsers.GET("/latest", n.apiUsersGetLatest)
+			verifiedUsers.GET("/search", n.apiUsersSearchUsers)
 
 			user := verifiedUsers.Group("/:userID")
 			{
