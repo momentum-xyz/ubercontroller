@@ -34,6 +34,12 @@ type UpdateEvent struct {
 	Amount   *big.Int
 }
 
+type StakeEvent struct {
+	Wallet    string
+	OdysseyID umid.UMID
+	Amount    *big.Int
+}
+
 type AdapterListener func(blockNumber uint64, diffs []*BCDiff, stakes []*BCStake)
 
 type Adapter interface {

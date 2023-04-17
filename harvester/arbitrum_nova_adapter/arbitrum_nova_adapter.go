@@ -32,14 +32,16 @@ type ArbitrumNovaAdapter struct {
 	rpcClient        *rpc.Client
 	contractABI      abi.ABI
 	stakeContractABI abi.ABI
+	stakeContract    common.Address
 }
 
 func NewArbitrumNovaAdapter() *ArbitrumNovaAdapter {
 	return &ArbitrumNovaAdapter{
-		umid:    umid.MustParse("ccccaaaa-1111-2222-3333-222222222222"),
-		rpcURL:  "wss://bcdev.antst.net:8548",
-		httpURL: "https://bcdev.antst.net:8547",
-		name:    "arbitrum_nova",
+		umid:          umid.MustParse("ccccaaaa-1111-2222-3333-222222222222"),
+		rpcURL:        "wss://bcdev.antst.net:8548",
+		httpURL:       "https://bcdev.antst.net:8547",
+		name:          "arbitrum_nova",
+		stakeContract: common.HexToAddress("0x938c38D417fD1b0a29EA1722C84Ad16fF5dD89c3"),
 	}
 }
 
@@ -190,7 +192,7 @@ func (a *ArbitrumNovaAdapter) GetTransferLogs(fromBlock, toBlock int64, addresse
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(fromBlock),
 		ToBlock:   big.NewInt(toBlock),
-		Addresses: addresses,
+		Addresses: append(addresses, a.stakeContract),
 	}
 
 	logs, err := a.client.FilterLogs(context.Background(), query)
