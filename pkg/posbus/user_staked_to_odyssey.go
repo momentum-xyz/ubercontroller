@@ -3,9 +3,9 @@ package posbus
 import "github.com/momentum-xyz/ubercontroller/utils/umid"
 
 type UserStakedToOdyssey struct {
-	TransactionHash [32]byte  `json:"transaction_hash"`
+	TransactionHash string    `json:"transaction_hash"`
 	ObjectID        umid.UMID `json:"object_id"`
-	Amount          uint64    `json:"amount"`
+	Amount          string    `json:"amount"`
 	Comment         string    `json:"comment"`
 }
 
