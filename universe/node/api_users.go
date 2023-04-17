@@ -149,7 +149,7 @@ func (n *Node) apiUsersGetLatest(c *gin.Context) {
 // @Tags users
 // @Accept json
 // @Produce json
-// @Success 200 {array} dto.OwnedOdyssey
+// @Success 200 {array} dto.OwnedWorld
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
