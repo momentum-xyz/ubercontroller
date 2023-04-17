@@ -70,6 +70,42 @@ func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, userDTOs)
 }
 
+// @Summary Get latest worlds
+// @Schemes
+// @Description Returns a list of six latest created worlds
+// @Tags worlds
+// @Accept json
+// @Produce json
+// @Success 200 {array} dto.RecentWorld
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/worlds/latest [get]
+func (w *Worlds) apiWorldsGetLatest(c *gin.Context) {
+	recentWorldIDs, err := w.db.GetWorldsDB().GetRecentWorldIDs(w.ctx)
+	if err != nil {
+		err := errors.WithMessage(err, "Worlds: apiWorldsGetLatest: failed to get latest world ids")
+		api.AbortRequest(c, http.StatusInternalServerError, "get_latest_worlds_failed", err, w.log)
+		return
+	}
+
+	recents := make([]dto.RecentWorld, 0, len(recentWorldIDs))
+
+	for _, worldID := range recentWorldIDs {
+		world, _ := w.GetWorld(worldID)
+
+		recent := dto.RecentWorld{
+			ID:         world.GetID(),
+			Name:       utils.GetPTR(world.GetName()),
+			AvatarHash: nil,
+		}
+
+		recents = append(recents, recent)
+	}
+
+	c.JSON(http.StatusOK, recents)
+}
+
 // @Summary Returns objects and one level of children
 // @Schemes
 // @Description Returns object information and one level of children based on world_id (used in explore widget)
@@ -137,7 +173,7 @@ func (w *Worlds) apiWorldsGetObjectsWithChildren(c *gin.Context) {
 }
 
 func (w *Worlds) apiWorldsGetRootOptions(root universe.Object) (dto.ExploreOption, error) {
-	objects := root.GetObjects(false)
+	// objects := root.GetObjects(false)
 	var option dto.ExploreOption
 
 	name, description, err := w.apiWorldsResolveNameDescription(root)
@@ -145,16 +181,15 @@ func (w *Worlds) apiWorldsGetRootOptions(root universe.Object) (dto.ExploreOptio
 		return dto.ExploreOption{}, errors.WithMessage(err, "failed to resolve name or description")
 	}
 
-	foundSubObjects, err := w.apiWorldsGetChildrenOptions(objects, 0, 2)
-	if err != nil {
-		return dto.ExploreOption{}, errors.WithMessage(err, "failed to get children")
-	}
+	//foundSubObjects, err := w.apiWorldsGetChildrenOptions(objects, 0, 2)
+	//if err != nil {
+	//	return dto.ExploreOption{}, errors.WithMessage(err, "failed to get children")
+	//}
 
 	option = dto.ExploreOption{
 		ID:          root.GetID(),
-		Name:        name,
-		Description: description,
-		SubObjects:  foundSubObjects,
+		Name:        utils.GetPTR(name),
+		Description: utils.GetPTR(description),
 	}
 
 	return option, nil
@@ -174,17 +209,16 @@ func (w *Worlds) apiWorldsGetChildrenOptions(
 			return nil, errors.WithMessage(err, "failed to resolve name or description")
 		}
 
-		subObjects := object.GetObjects(false)
-		foundSubObjects, err := w.apiWorldsGetChildrenOptions(subObjects, currentLevel+1, maxLevel)
+		// subObjects := object.GetObjects(false)
+		// foundSubObjects, err := w.apiWorldsGetChildrenOptions(subObjects, currentLevel+1, maxLevel)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to get options")
 		}
 
 		option := dto.ExploreOption{
 			ID:          object.GetID(),
-			Name:        name,
-			Description: description,
-			SubObjects:  foundSubObjects,
+			Name:        utils.GetPTR(name),
+			Description: utils.GetPTR(description),
 		}
 
 		options = append(options, option)
@@ -208,20 +242,18 @@ func (w *Worlds) apiWorldsResolveNameDescription(object universe.Object) (
 	return object.GetName(), description, nil
 }
 
-// @Summary Search objects
+// @Summary Search available worlds
 // @Schemes
-// @Description Returns objects information based on a search query and categorizes the results
+// @Description Returns world information based on a search query and categorizes the results
 // @Tags worlds
 // @Accept json
 // @Produce json
-// @Param world_id path string true "World UMID"
-// @Param query query worlds.apiWorldsSearchObjects.Query true "query params"
 // @Success 200 {object} dto.SearchOptions
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/worlds/{object_id}/explore/search [get]
-func (w *Worlds) apiWorldsSearchObjects(c *gin.Context) {
+// @Router /api/v4/worlds/explore/search [get]
+func (w *Worlds) apiWorldsSearchWorlds(c *gin.Context) {
 	type Query struct {
 		SearchQuery string `form:"query" binding:"required"`
 	}
@@ -229,38 +261,27 @@ func (w *Worlds) apiWorldsSearchObjects(c *gin.Context) {
 	inQuery := Query{}
 
 	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		err := errors.WithMessage(err, "Worlds: apiWorldsSearchObjects: failed to bind query")
+		err := errors.WithMessage(err, "Worlds: apiWorldsSearchWorlds: failed to bind query")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, w.log)
 		return
 	}
 
-	objectID, err := umid.Parse(c.Param("objectID"))
+	worlds, err := w.apiWorldsFilterWorlds(inQuery.SearchQuery)
 	if err != nil {
-		err := errors.WithMessage(err, "Worlds: apiWorldsSearchObjects: failed to parse world umid")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
-		return
-	}
-
-	world, ok := w.GetWorld(objectID)
-	if !ok {
-		err := errors.Errorf("Worlds: apiWorldsSearchObjects: object not found: %s", objectID)
-		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
-		return
-	}
-
-	objects, err := w.apiWorldsFilterObjects(inQuery.SearchQuery, world)
-	if err != nil {
-		err := errors.WithMessage(err, "Worlds: apiWorldsSearchObjects: failed to filter objects")
+		err := errors.WithMessage(err, "Worlds: apiWorldsSearchWorlds: failed to filter objects")
 		api.AbortRequest(c, http.StatusBadRequest, "failed_to_filter", err, w.log)
 		return
 	}
 
-	c.JSON(http.StatusOK, objects)
+	c.JSON(http.StatusOK, worlds)
 }
 
-func (w *Worlds) apiWorldsFilterObjects(searchQuery string, world universe.World) (dto.SearchOptions, error) {
-	predicateFn := func(objectID umid.UMID, object universe.Object) bool {
-		name, _, err := w.apiWorldsResolveNameDescription(object)
+func (w *Worlds) apiWorldsFilterWorlds(searchQuery string) (dto.SearchOptions, error) {
+	node := universe.GetNode()
+	worlds := node.GetWorlds()
+
+	predicateFn := func(worldID umid.UMID, world universe.World) bool {
+		name, _, err := w.apiWorldsResolveNameDescription(world)
 		if err != nil {
 			return false
 		}
@@ -270,27 +291,25 @@ func (w *Worlds) apiWorldsFilterObjects(searchQuery string, world universe.World
 		return strings.Contains(name, searchQuery)
 	}
 
-	objects := world.FilterAllObjects(predicateFn)
+	filteredWorlds := worlds.FilterWorlds(predicateFn)
+	options := make([]dto.ExploreOption, 0, len(filteredWorlds))
 
-	options, err := w.apiWorldsGetChildrenOptions(objects, 0, 1)
-	if err != nil {
-		return nil, errors.WithMessage(err, "failed to get options")
-	}
-
-	group := make(dto.SearchOptions)
-	for _, option := range options {
-		object, ok := world.GetObjectFromAllObjects(option.ID)
-		if !ok {
-			return nil, errors.Errorf("failed to get object: %T", option.ID)
+	for _, filteredWorld := range filteredWorlds {
+		name, description, err := w.apiWorldsResolveNameDescription(filteredWorld)
+		if err != nil {
+			return nil, errors.WithMessage(err, "Worlds: apiWorldsFilterWorlds: failed to get name description")
 		}
 
-		objectType := object.GetObjectType()
-		categoryName := objectType.GetCategoryName()
+		option := dto.ExploreOption{
+			ID:          filteredWorld.GetID(),
+			Name:        utils.GetPTR(name),
+			Description: utils.GetPTR(description),
+		}
 
-		group[categoryName] = append(group[categoryName], option)
+		options = append(options, option)
 	}
 
-	return group, nil
+	return options, nil
 }
 
 // @Summary Teleports user from token to another world

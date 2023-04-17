@@ -20,6 +20,7 @@ const (
 	getObjectByIDQuery          = `SELECT * FROM object WHERE object_id = $1;`
 	getObjectIDsByParentIDQuery = `SELECT object_id FROM object WHERE parent_id = $1;`
 	getObjectsByParentIDQuery   = `SELECT * FROM object WHERE parent_id = $1;`
+	getObjectsByOwnerIDQuery    = `SELECT * FROM object WHERE owner_id = $1;`
 
 	upsertObjectQuery = `INSERT INTO object
     						(object_id, object_type_id, owner_id, parent_id, asset_2d_id,
@@ -76,6 +77,14 @@ func (db *DB) GetObjectIDsByParentID(ctx context.Context, parentID umid.UMID) ([
 func (db *DB) GetObjectsByParentID(ctx context.Context, parentID umid.UMID) ([]*entry.Object, error) {
 	var objects []*entry.Object
 	if err := pgxscan.Select(ctx, db.conn, &objects, getObjectsByParentIDQuery, parentID); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return objects, nil
+}
+
+func (db *DB) GetObjectsByOwnerID(ctx context.Context, ownerID umid.UMID) ([]*entry.Object, error) {
+	var objects []*entry.Object
+	if err := pgxscan.Select(ctx, db.conn, &objects, getObjectsByOwnerIDQuery, ownerID); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return objects, nil

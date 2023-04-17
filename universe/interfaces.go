@@ -107,11 +107,15 @@ type Worlds interface {
 	APIRegister
 
 	CreateWorld(worldID umid.UMID) (World, error)
+
 	GetWorld(worldID umid.UMID) (World, bool)
 	GetWorlds() map[umid.UMID]World
+
 	FilterWorlds(predicateFn WorldsFilterPredicateFn) map[umid.UMID]World
+
 	AddWorld(world World, updateDB bool) error
 	AddWorlds(worlds []World, updateDB bool) error
+
 	RemoveWorld(world World, updateDB bool) (bool, error)
 	RemoveWorlds(worlds []World, updateDB bool) (bool, error)
 }

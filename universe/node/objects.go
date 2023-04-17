@@ -7,7 +7,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
-func (n *Node) CreateObject(ojbectID umid.UMID) (universe.Object, error) {
+func (n *Node) CreateObject(objectID umid.UMID) (universe.Object, error) {
 	return nil, errors.Errorf("not permitted for node")
 }
 
