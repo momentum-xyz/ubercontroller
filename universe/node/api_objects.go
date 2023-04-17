@@ -1,8 +1,9 @@
 package node
 
 import (
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"net/http"
+
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -30,13 +31,13 @@ func (n *Node) apiObjectsCreateObject(c *gin.Context) {
 	// TODO: use "helper.ObjectTemplate" alternative here to have ability to create composite objects
 	// QUESTION: can we automatically clone "helper.ObjectTemplate" definition and add validation tags to it?
 	type InBody struct {
-		ObjectName   string                 `json:"object_name" binding:"required"`
-		ParentID     string                 `json:"parent_id" binding:"required"`
-		ObjectTypeID string                 `json:"object_type_id" binding:"required"`
-		Asset2dID    *string                `json:"asset_2d_id"`
-		Asset3dID    *string                `json:"asset_3d_id"`
-		Position     *cmath.ObjectTransform `json:"position"`
-		Minimap      bool                   `json:"minimap"`
+		ObjectName   string           `json:"object_name" binding:"required"`
+		ParentID     string           `json:"parent_id" binding:"required"`
+		ObjectTypeID string           `json:"object_type_id" binding:"required"`
+		Asset2dID    *string          `json:"asset_2d_id"`
+		Asset3dID    *string          `json:"asset_3d_id"`
+		Transform    *cmath.Transform `json:"transform"`
+		Minimap      bool             `json:"minimap"`
 	}
 	var inBody InBody
 
@@ -73,9 +74,9 @@ func (n *Node) apiObjectsCreateObject(c *gin.Context) {
 		return
 	}
 
-	position := inBody.Position
-	if position == nil {
-		position, err = tree.CalcObjectSpawnPosition(parentID, userID)
+	transform := inBody.Transform
+	if transform == nil {
+		transform, err = tree.CalcObjectSpawnPosition(parentID, userID)
 		if err != nil {
 			err := errors.WithMessage(err, "Node: apiObjectsCreateObject: failed to calc object spawn position")
 			api.AbortRequest(c, http.StatusBadRequest, "calc_spawn_position_failed", err, n.log)
@@ -119,7 +120,7 @@ func (n *Node) apiObjectsCreateObject(c *gin.Context) {
 		OwnerID:      &userID,
 		Asset2dID:    asset2dID,
 		Asset3dID:    asset3dID,
-		Position:     position,
+		Transform:    transform,
 		Options: &entry.ObjectOptions{
 			Minimap: utils.GetPTR(inBody.Minimap),
 		},

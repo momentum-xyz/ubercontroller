@@ -11,21 +11,24 @@ const (
 	Float32Bytes = 4
 )
 
+// Vec3 is a three dimensional vector.
 type Vec3 struct {
 	X float32 `json:"x" db:"x"`
 	Y float32 `json:"y" db:"y"`
 	Z float32 `json:"z" db:"z"`
 }
 
-// TODO: rename to "Transform"
-type ObjectTransform struct {
-	Position Vec3 `db:"location" json:"location"`
+// Transform represent a transformation for an object in 3D space.
+type Transform struct {
+	Position Vec3 `db:"position" json:"position"`
 	Rotation Vec3 `db:"rotation" json:"rotation"`
 	Scale    Vec3 `db:"scale" json:"scale"`
 }
 
-type UserTransform struct {
-	Position Vec3 `db:"location" json:"location"`
+// TransformNoScale represents a transformation for an object in 3D space that has no scale.
+// For example, users don't have a scale in the current system.
+type TransformNoScale struct { // TODO: come up with a better name, winner gets a prize!
+	Position Vec3 `db:"position" json:"position"`
 	Rotation Vec3 `db:"rotation" json:"rotation"`
 }
 
@@ -110,7 +113,7 @@ func DefaultPosition() Vec3 {
 //	return t
 //}
 
-func (t *UserTransform) CopyToBuffer(b []byte) error {
+func (t *TransformNoScale) CopyToBuffer(b []byte) error {
 	binary.LittleEndian.PutUint32(b, math.Float32bits(t.Position.X))
 	binary.LittleEndian.PutUint32(b[Float32Bytes:], math.Float32bits(t.Position.Y))
 	binary.LittleEndian.PutUint32(b[2*Float32Bytes:], math.Float32bits(t.Position.Z))
@@ -136,8 +139,8 @@ func (t *UserTransform) CopyToBuffer(b []byte) error {
 //	return nil
 //}
 
-func (t *UserTransform) Copy() UserTransform {
-	t1 := UserTransform{}
+func (t *TransformNoScale) Copy() TransformNoScale {
+	t1 := TransformNoScale{}
 	t1.Position = t.Position
 	t1.Rotation = t.Rotation
 	return t1

@@ -4,6 +4,8 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"math/big"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
@@ -27,6 +29,8 @@ func (b *BigInt) Value() (driver.Value, error) {
 }
 
 func (b *BigInt) Scan(value interface{}) error {
+	// TODO Find better way
+
 	if value == nil {
 		b = nil
 	}
@@ -38,7 +42,24 @@ func (b *BigInt) Scan(value interface{}) error {
 			return fmt.Errorf("failed to load value to []uint8: %v", value)
 		}
 	case string:
-		s := strings.Replace(t, "e0", "", 1) // TODO Find better way
+
+		var s string
+
+		r, _ := regexp.Compile("^[0-9]*e[0-9]*$")
+		match := r.MatchString(t)
+
+		if match {
+			// If match string example: 265e17
+			ss := strings.Split(t, "e")
+			zerosCount, err := strconv.ParseInt(ss[1], 10, 8)
+			if err != nil {
+				fmt.Println(err)
+				return fmt.Errorf("failed to strconv.ParseInt: %v", ss[1])
+			}
+			s = ss[0] + strings.Repeat("0", int(zerosCount))
+		} else {
+			s = t
+		}
 		_, ok := (*big.Int)(b).SetString(s, 10)
 		if !ok {
 			return fmt.Errorf("failed to load value to string: %v", value)

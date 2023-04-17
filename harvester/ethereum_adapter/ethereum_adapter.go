@@ -37,8 +37,10 @@ type EthereumAdapter struct {
 func NewEthereumAdapter() *EthereumAdapter {
 	return &EthereumAdapter{
 		umid:    umid.MustParse("ccccaaaa-1111-2222-3333-111111111111"),
-		rpcURL:  "ws://127.0.0.1:8545",
-		httpURL: "http://127.0.0.1:8545",
+		rpcURL:  "wss://bcdev.antst.net:8546",
+		httpURL: "https://bcdev.antst.net:8545",
+		//rpcURL:  "ws://127.0.0.1:8545",
+		//httpURL: "http://127.0.0.1:8545",
 		//rpcURL:  "wss://eth.llamarpc.com",
 		//httpURL: "https://eth.llamarpc.com",
 		name: "ethereum",
@@ -77,8 +79,8 @@ func (a *EthereumAdapter) GetTransferLogs(fromBlock, toBlock int64, addresses []
 	diffs := make([]*harvester.BCDiff, 0)
 
 	for _, vLog := range logs {
-		//fmt.Printf("Log Block Number: %d\n", vLog.BlockNumber)
-		//fmt.Printf("Log Index: %d\n", vLog.Index)
+		fmt.Printf("Log Block Number: %d\n", vLog.BlockNumber)
+		fmt.Printf("Log Index: %d\n", vLog.Index)
 
 		switch vLog.Topics[0].Hex() {
 		case logTransferSigHash.Hex():

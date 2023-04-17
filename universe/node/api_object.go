@@ -2,9 +2,10 @@ package node
 
 import (
 	"fmt"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"net/http"
 	"time"
+
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/AgoraIO-Community/go-tokenbuilder/rtctokenbuilder"
 	"github.com/gin-gonic/gin"
@@ -147,7 +148,7 @@ func (n *Node) apiGetObject(c *gin.Context) {
 		out.ParentID = parent.GetID().String()
 	}
 	if position != nil {
-		out.Position = *position
+		out.Transform = *position
 	}
 	if objectType != nil {
 		out.ObjectTypeID = objectType.GetID().String()

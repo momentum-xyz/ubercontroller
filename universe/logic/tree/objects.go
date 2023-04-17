@@ -15,19 +15,19 @@ import (
 )
 
 type ObjectTemplate struct {
-	ObjectID         *umid.UMID             `json:"object_id"`
-	ObjectName       *string                `json:"object_name"`
-	ObjectTypeID     umid.UMID              `json:"object_type_id"`
-	ParentID         umid.UMID              `json:"parent_id"`
-	OwnerID          *umid.UMID             `json:"owner_id"`
-	Asset2dID        *umid.UMID             `json:"asset_2d_id"`
-	Asset3dID        *umid.UMID             `json:"asset_3d_id"`
-	Options          *entry.ObjectOptions   `json:"options"`
-	Position         *cmath.ObjectTransform `json:"position"`
-	Label            *string                `json:"label"`
-	ObjectAttributes []*entry.Attribute     `json:"object_attributes"`
-	Objects          []*ObjectTemplate      `json:"objects"`
-	RandomObjects    []*ObjectTemplate      `json:"random_objects"`
+	ObjectID         *umid.UMID           `json:"object_id"`
+	ObjectName       *string              `json:"object_name"`
+	ObjectTypeID     umid.UMID            `json:"object_type_id"`
+	ParentID         umid.UMID            `json:"parent_id"`
+	OwnerID          *umid.UMID           `json:"owner_id"`
+	Asset2dID        *umid.UMID           `json:"asset_2d_id"`
+	Asset3dID        *umid.UMID           `json:"asset_3d_id"`
+	Options          *entry.ObjectOptions `json:"options"`
+	Transform        *cmath.Transform     `json:"transform"`
+	Label            *string              `json:"label"`
+	ObjectAttributes []*entry.Attribute   `json:"object_attributes"`
+	Objects          []*ObjectTemplate    `json:"objects"`
+	RandomObjects    []*ObjectTemplate    `json:"random_objects"`
 }
 
 func AddObjectFromTemplate(objectTemplate *ObjectTemplate, updateDB bool) (umid.UMID, error) {
@@ -97,9 +97,9 @@ func AddObjectFromTemplate(objectTemplate *ObjectTemplate, updateDB bool) (umid.
 			return umid.Nil, errors.WithMessagef(err, "failed to set asset 3d: %s", objectTemplate.Asset3dID)
 		}
 	}
-	if objectTemplate.Position != nil {
-		if err := object.SetTransform(objectTemplate.Position, false); err != nil {
-			return umid.Nil, errors.WithMessagef(err, "failed to set position: %+v", objectTemplate.Position)
+	if objectTemplate.Transform != nil {
+		if err := object.SetTransform(objectTemplate.Transform, false); err != nil {
+			return umid.Nil, errors.WithMessagef(err, "failed to set transform: %+v", objectTemplate.Transform)
 		}
 	}
 

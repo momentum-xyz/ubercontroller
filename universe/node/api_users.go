@@ -2,8 +2,9 @@ package node
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"net/http"
+
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -108,7 +109,7 @@ func (n *Node) apiCreateGuestUserByName(ctx context.Context, name string) (*entr
 
 	ue.UserTypeID = guestUserTypeID
 
-	err = n.db.GetUsersDB().UpsertUser(ctx, ue)
+	err = n.CreateUsers(ctx, ue)
 
 	n.log.Infof("Node: apiCreateGuestUserByName: guest created: %s", ue.UserID)
 
@@ -157,7 +158,7 @@ func (n *Node) createUserFromWalletMeta(ctx context.Context, walletMeta *WalletM
 	}
 	userEntry.UserTypeID = normUserTypeID
 
-	if err := n.db.GetUsersDB().UpsertUser(ctx, userEntry); err != nil {
+	if err := n.CreateUsers(ctx, userEntry); err != nil {
 		return nil, errors.WithMessagef(err, "failed to upsert user: %s", userEntry.UserID)
 	}
 

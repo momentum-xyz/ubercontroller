@@ -1,9 +1,10 @@
 package object
 
 import (
+	"sort"
+
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
-	"sort"
 
 	"github.com/pkg/errors"
 
@@ -57,7 +58,7 @@ func (o *Object) GetPlacements() map[umid.UMID]position_algo.Algo {
 	return pls
 }
 
-func (o *Object) SetActualTransform(pos cmath.ObjectTransform, theta float64) error {
+func (o *Object) SetActualTransform(pos cmath.Transform, theta float64) error {
 	o.Mu.Lock()
 	defer o.Mu.Unlock()
 
@@ -71,7 +72,7 @@ func (o *Object) SetActualTransform(pos cmath.ObjectTransform, theta float64) er
 				world := o.GetWorld()
 				if world != nil {
 					world.Send(
-						posbus.WSMessage(&posbus.ObjectPosition{ID: o.id, Transform: *o.GetActualTransform()}),
+						posbus.WSMessage(&posbus.ObjectTransform{ID: o.id, Transform: *o.GetActualTransform()}),
 						true,
 					)
 				}
@@ -82,23 +83,23 @@ func (o *Object) SetActualTransform(pos cmath.ObjectTransform, theta float64) er
 	return nil
 }
 
-func (o *Object) GetTransform() *cmath.ObjectTransform {
+func (o *Object) GetTransform() *cmath.Transform {
 	o.Mu.RLock()
 	defer o.Mu.RUnlock()
 
 	return o.transform
 }
 
-func (o *Object) GetActualTransform() *cmath.ObjectTransform {
+func (o *Object) GetActualTransform() *cmath.Transform {
 	return o.actualPosition.Load()
 }
 
-func (o *Object) SetTransform(position *cmath.ObjectTransform, updateDB bool) error {
+func (o *Object) SetTransform(position *cmath.Transform, updateDB bool) error {
 	o.Mu.Lock()
 	defer o.Mu.Unlock()
 
 	if updateDB {
-		if err := o.db.GetObjectsDB().UpdateObjectPosition(o.ctx, o.GetID(), position); err != nil {
+		if err := o.db.GetObjectsDB().UpdateObjectTransform(o.ctx, o.GetID(), position); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -114,7 +115,7 @@ func (o *Object) SetTransform(position *cmath.ObjectTransform, updateDB bool) er
 				world := o.GetWorld()
 				if world != nil {
 					world.Send(
-						posbus.WSMessage(&posbus.ObjectPosition{ID: o.id, Transform: *o.GetActualTransform()}),
+						posbus.WSMessage(&posbus.ObjectTransform{ID: o.id, Transform: *o.GetActualTransform()}),
 						true,
 					)
 				}

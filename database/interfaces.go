@@ -51,7 +51,7 @@ type ObjectsDB interface {
 	UpsertObjects(ctx context.Context, objects []*entry.Object) error
 
 	UpdateObjectParentID(ctx context.Context, objectID umid.UMID, parentID umid.UMID) error
-	UpdateObjectPosition(ctx context.Context, objectID umid.UMID, position *cmath.ObjectTransform) error
+	UpdateObjectTransform(ctx context.Context, objectID umid.UMID, position *cmath.Transform) error
 	UpdateObjectOwnerID(ctx context.Context, objectID, ownerID umid.UMID) error
 	UpdateObjectAsset2dID(ctx context.Context, objectID umid.UMID, asset2dID *umid.UMID) error
 	UpdateObjectAsset3dID(ctx context.Context, objectID umid.UMID, asset3dID *umid.UMID) error
@@ -68,6 +68,7 @@ type UsersDB interface {
 	GetUserByWallet(ctx context.Context, wallet string) (*entry.User, error)
 	GetUserWalletByUserID(ctx context.Context, userID umid.UMID) (*string, error)
 	GetUserProfileByUserID(ctx context.Context, userID umid.UMID) (*entry.UserProfile, error)
+	GetUsersByUserType(ctx context.Context, userTypeID umid.UMID) ([]*entry.User, error)
 
 	CheckIsUserExistsByName(ctx context.Context, name string) (bool, error)
 	CheckIsUserExistsByWallet(ctx context.Context, wallet string) (bool, error)

@@ -11,9 +11,11 @@ const UserTransformMessageSize = MsgUUIDTypeSize + cmath.Float32Bytes*6
 //	registerMessage(&UsersTransformList{})
 //}
 
+
+// UserTransform is a transform to apply to a specific user.
 type UserTransform struct {
-	ID        umid.UMID           `json:"id"`
-	Transform cmath.UserTransform `json:"transform"`
+	ID        umid.UMID              `json:"id"`
+	Transform cmath.TransformNoScale `json:"transform"`
 }
 
 type UsersTransformList struct {

@@ -4,7 +4,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 )
 
-type MyTransform cmath.UserTransform
+type MyTransform cmath.TransformNoScale
 
 func init() {
 	registerMessage(MyTransform{})

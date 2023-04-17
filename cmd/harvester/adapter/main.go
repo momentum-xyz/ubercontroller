@@ -49,5 +49,5 @@ func main() {
 		fmt.Printf("%+v %+v %+v %+v  \n", k, v.Token, v.To, v.Amount.String())
 	}
 
-	time.Sleep(time.Second * 30)
+	time.Sleep(time.Second * 300)
 }

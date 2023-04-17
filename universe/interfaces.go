@@ -93,6 +93,8 @@ type Node interface {
 	GetUserUserAttributes() UserUserAttributes
 	GetObjectUserAttributes() ObjectUserAttributes
 
+	CreateUsers(ctx context.Context, users ...*entry.User) error // TODO: refactor, place Users next to Nodes in a universe
+
 	AddAPIRegister(register APIRegister)
 
 	WriteInfluxPoint(point *influxWrite.Point) error
@@ -150,10 +152,10 @@ type Object interface {
 	GetOwnerID() umid.UMID
 	SetOwnerID(ownerID umid.UMID, updateDB bool) error
 
-	GetTransform() *cmath.ObjectTransform
-	GetActualTransform() *cmath.ObjectTransform
-	SetTransform(position *cmath.ObjectTransform, updateDB bool) error
-	SetActualTransform(pos cmath.ObjectTransform, theta float64) error
+	GetTransform() *cmath.Transform
+	GetActualTransform() *cmath.Transform
+	SetTransform(position *cmath.Transform, updateDB bool) error
+	SetActualTransform(pos cmath.Transform, theta float64) error
 
 	GetOptions() *entry.ObjectOptions
 	GetEffectiveOptions() *entry.ObjectOptions
@@ -215,8 +217,8 @@ type User interface {
 
 	GetProfile() *entry.UserProfile
 
-	GetTransform() *cmath.UserTransform
-	SetTransform(cmath.UserTransform)
+	GetTransform() *cmath.TransformNoScale
+	SetTransform(cmath.TransformNoScale)
 
 	GetPosition() cmath.Vec3
 	GetRotation() cmath.Vec3
@@ -228,6 +230,10 @@ type User interface {
 	Update() error
 	ReleaseSendBuffer()
 	LockSendBuffer()
+
+	IsTemporaryUser() (bool, error)
+	SetOfflineTimer() (bool, error)
+	DeleteTemporaryUser(uid umid.UMID) error
 
 	GetSessionID() umid.UMID
 	SetConnection(sessionID umid.UMID, socketConnection *websocket.Conn) error
