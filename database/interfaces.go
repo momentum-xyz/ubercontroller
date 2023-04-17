@@ -40,12 +40,15 @@ type NodesDB interface {
 type WorldsDB interface {
 	GetWorldIDs(ctx context.Context) ([]umid.UMID, error)
 	GetWorlds(ctx context.Context) ([]*entry.Object, error)
+
+	GetRecentWorldIDs(ctx context.Context) ([]umid.UMID, error)
 }
 
 type ObjectsDB interface {
 	GetObjectByID(ctx context.Context, objectID umid.UMID) (*entry.Object, error)
 	GetObjectIDsByParentID(ctx context.Context, parentID umid.UMID) ([]umid.UMID, error)
 	GetObjectsByParentID(ctx context.Context, parentID umid.UMID) ([]*entry.Object, error)
+	GetObjectsByOwnerID(ctx context.Context, ownerID umid.UMID) ([]*entry.Object, error)
 
 	UpsertObject(ctx context.Context, object *entry.Object) error
 	UpsertObjects(ctx context.Context, objects []*entry.Object) error
@@ -65,10 +68,13 @@ type ObjectsDB interface {
 type UsersDB interface {
 	GetUserByID(ctx context.Context, userID umid.UMID) (*entry.User, error)
 	GetUsersByIDs(ctx context.Context, userIDs []umid.UMID) ([]*entry.User, error)
+	GetAllUsers(ctx context.Context, userTypeID umid.UMID) ([]*entry.User, error)
 	GetUserByWallet(ctx context.Context, wallet string) (*entry.User, error)
 	GetUserWalletByUserID(ctx context.Context, userID umid.UMID) (*string, error)
 	GetUserProfileByUserID(ctx context.Context, userID umid.UMID) (*entry.UserProfile, error)
 	GetUsersByUserType(ctx context.Context, userTypeID umid.UMID) ([]*entry.User, error)
+
+	GetRecentUserIDs(ctx context.Context) ([]umid.UMID, error)
 
 	CheckIsUserExistsByName(ctx context.Context, name string) (bool, error)
 	CheckIsUserExistsByWallet(ctx context.Context, wallet string) (bool, error)

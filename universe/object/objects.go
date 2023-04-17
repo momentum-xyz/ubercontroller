@@ -2,10 +2,10 @@ package object
 
 import (
 	"github.com/hashicorp/go-multierror"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 const (

@@ -10,7 +10,9 @@ import (
 
 type ExploreOptions []ExploreOption
 
-type SearchOptions map[string][]ExploreOption
+type SearchOptions []ExploreOption
+
+type UserSearchResults []UserSearchResult
 
 type Plugins map[umid.UMID]string
 
@@ -47,10 +49,15 @@ type Assets3dMeta map[umid.UMID]Asset3dMeta
 type Asset3dMeta *entry.Asset3dMeta
 
 type ExploreOption struct {
-	ID          umid.UMID       `json:"id"`
-	Name        string          `json:"name"`
-	Description string          `json:"description"`
-	SubObjects  []ExploreOption `json:"subObjects,omitempty"`
+	ID          umid.UMID `json:"id"`
+	Name        *string   `json:"name"`
+	Description *string   `json:"description"`
+}
+
+type RecentWorld struct {
+	ID         umid.UMID `json:"id"`
+	Name       *string   `json:"name"`
+	AvatarHash *string   `json:"avatarHash"`
 }
 
 //type FlyToMe struct {
@@ -90,6 +97,20 @@ type User struct {
 	IsGuest    bool    `json:"isGuest"`
 }
 
+type UserSearchResult struct {
+	ID      umid.UMID `json:"id"`
+	Name    *string   `json:"name"`
+	Wallet  *string   `json:"wallet,omitempty"`
+	Profile Profile   `json:"profile"`
+}
+
+type RecentUser struct {
+	ID      umid.UMID `json:"id"`
+	Name    *string   `json:"name"`
+	Wallet  *string   `json:"wallet,omitempty"`
+	Profile Profile   `json:"profile"`
+}
+
 type Object struct {
 	OwnerID      string          `json:"owner_id"`
 	ParentID     string          `json:"parent_id"`
@@ -97,6 +118,12 @@ type Object struct {
 	Asset2dID    string          `json:"asset_2d_id"`
 	Asset3dID    string          `json:"asset_3d_id"`
 	Transform    cmath.Transform `json:"transform"`
+}
+
+type OwnedWorld struct {
+	ID      umid.UMID `json:"id"`
+	OwnerID umid.UMID `json:"owner_id"`
+	Name    *string   `json:"name"`
 }
 
 type Asset2d struct {

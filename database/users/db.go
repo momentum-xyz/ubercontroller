@@ -17,8 +17,12 @@ import (
 )
 
 const (
-	getUserByIDQuery     = `SELECT * FROM "user" WHERE user_id = $1;`
-	getUsersByIDsQuery   = `SELECT * FROM "user" WHERE user_id = ANY($1);`
+	getUserByIDQuery      = `SELECT * FROM "user" WHERE user_id = $1;`
+	getUsersByIDsQuery    = `SELECT * FROM "user" WHERE user_id = ANY($1);`
+	getAllUsersQuery      = `SELECT * FROM "user" WHERE user_type_id = $1;`
+	getRecentUserIDsQuery = `SELECT user_id FROM "user"
+         					ORDER BY created_at DESC
+							LIMIT 6;`
 	getUserByWalletQuery = `SELECT * FROM "user"
          						WHERE user_id = (SELECT user_id FROM user_attribute
          						                    /* Kusama plugin umid */
@@ -32,6 +36,7 @@ const (
 						WHERE user_id = $1
 						  AND plugin_id = '86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8'
 						  AND attribute_name = 'wallet'`
+	getUserProfileByUserIDQuery    = `SELECT profile FROM "user" WHERE user_id = $1;`
 	checkIsUserExistsByNameQuery   = `SELECT EXISTS(SELECT 1 FROM "user" WHERE profile->>'name' = $1);`
 	checkIsUserExistsByWalletQuery = `SELECT EXISTS(SELECT user_id FROM user_attribute
          						                    /* Kusama plugin umid */
@@ -39,8 +44,6 @@ const (
          						                    AND attribute_name = 'wallet'
          						                    AND value->'wallet' ? $1
          						                );`
-	getUserProfileByUserIDQuery = `SELECT profile FROM "user" WHERE user_id = $1;`
-
 	upsertUserQuery = `INSERT INTO "user"
     						(user_id, user_type_id, profile, options, created_at, updated_at)
 						VALUES
@@ -94,6 +97,22 @@ func (db *DB) GetUsersByIDs(ctx context.Context, userIDs []umid.UMID) ([]*entry.
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return users, nil
+}
+
+func (db *DB) GetAllUsers(ctx context.Context, userTypeID umid.UMID) ([]*entry.User, error) {
+	var users []*entry.User
+	if err := pgxscan.Select(ctx, db.conn, &users, getAllUsersQuery, userTypeID); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return users, nil
+}
+
+func (db *DB) GetRecentUserIDs(ctx context.Context) ([]umid.UMID, error) {
+	var userIDs []umid.UMID
+	if err := pgxscan.Select(ctx, db.conn, &userIDs, getRecentUserIDsQuery); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return userIDs, nil
 }
 
 func (db *DB) GetUserByWallet(ctx context.Context, wallet string) (*entry.User, error) {
