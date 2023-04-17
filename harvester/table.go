@@ -161,6 +161,7 @@ func (t *Table) SaveToDB(events []*UpdateEvent, stakeEvents []*StakeEvent) error
 	contracts := make([]Address, 0)
 	// Save balance by value to quickly unlock mutex, otherwise have to unlock util DB transaction finished
 	balances := make([]*entry.Balance, 0)
+	stakesData := make([]*entry.Stake, 0)
 
 	blockchainUMID, name, rpcURL := t.adapter.GetInfo()
 
@@ -178,6 +179,21 @@ func (t *Table) SaveToDB(events []*UpdateEvent, stakeEvents []*StakeEvent) error
 			Balance:                  (*entry.BigInt)(event.Amount),
 		})
 	}
+
+	for _, stake := range stakeEvents {
+		wallets = append(wallets, HexToAddress(stake.Wallet))
+		stakesData = append(stakesData, &entry.Stake{
+			WalletID:     HexToAddress(stake.Wallet),
+			BlockchainID: blockchainUMID,
+			ObjectID:     stake.OdysseyID,
+			LastComment:  0,
+			Amount:       (*entry.BigInt)(stake.Amount),
+		})
+	}
+
+	wallets = unique(wallets)
+
+	fmt.Println(stakesData)
 
 	tx, err := t.db.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
@@ -373,4 +389,17 @@ func HexToAddress(s string) []byte {
 		panic(err)
 	}
 	return b
+}
+
+func unique(slice []Address) []Address {
+	keys := make(map[string]bool)
+	list := []Address{}
+	for _, entry := range slice {
+		entryStr := hex.EncodeToString(entry)
+		if _, value := keys[entryStr]; !value {
+			keys[entryStr] = true
+			list = append(list, entry)
+		}
+	}
+	return list
 }
