@@ -41,7 +41,7 @@ func NewArbitrumNovaAdapter() *ArbitrumNovaAdapter {
 		rpcURL:        "wss://bcdev.antst.net:8548",
 		httpURL:       "https://bcdev.antst.net:8547",
 		name:          "arbitrum_nova",
-		stakeContract: common.HexToAddress("0x938c38D417fD1b0a29EA1722C84Ad16fF5dD89c3"),
+		stakeContract: common.HexToAddress("0xf83B24fB757eFeb2F326117663B408E8Cf1F4A45"),
 	}
 }
 
@@ -706,6 +706,18 @@ const stakeABI = `[
 				"internalType": "enum StakingT.Token",
 				"name": "",
 				"type": "uint8"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
 			}
 		],
 		"name": "Restake",
@@ -982,9 +994,27 @@ const stakeABI = `[
 				"internalType": "uint256[]",
 				"name": "amounts",
 				"type": "uint256[]"
+			},
+			{
+				"internalType": "uint256",
+				"name": "timestamp",
+				"type": "uint256"
 			}
 		],
 		"name": "update_rewards",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_rewards_timeout",
+				"type": "uint256"
+			}
+		],
+		"name": "update_rewards_timeout",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -1104,6 +1134,19 @@ const stakeABI = `[
 	},
 	{
 		"inputs": [],
+		"name": "last_rewards_calculation",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
 		"name": "locking_period",
 		"outputs": [
 			{
@@ -1178,6 +1221,19 @@ const stakeABI = `[
 				"internalType": "bytes32",
 				"name": "",
 				"type": "bytes32"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "rewards_timeout",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -1281,7 +1337,7 @@ const stakeABI = `[
 			},
 			{
 				"internalType": "uint256",
-				"name": "since",
+				"name": "untaking_timestamp",
 				"type": "uint256"
 			}
 		],
