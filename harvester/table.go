@@ -78,9 +78,9 @@ func (t *Table) fastForward() {
 
 	fmt.Println("Doing Fast Forward")
 
-	if len(contracts) == 0 {
-		return
-	}
+	//if len(contracts) == 0 {
+	//	return
+	//}
 
 	diffs, stakes, err := t.adapter.GetTransferLogs(int64(t.blockNumber)+1, int64(lastBlockNumber), contracts)
 	if err != nil {
@@ -161,7 +161,7 @@ func (t *Table) SaveToDB(events []*UpdateEvent, stakeEvents []*StakeEvent) error
 	contracts := make([]Address, 0)
 	// Save balance by value to quickly unlock mutex, otherwise have to unlock util DB transaction finished
 	balances := make([]*entry.Balance, 0)
-	stakesData := make([]*entry.Stake, 0)
+	stakeEntries := make([]*entry.Stake, 0)
 
 	blockchainUMID, name, rpcURL := t.adapter.GetInfo()
 
@@ -182,7 +182,7 @@ func (t *Table) SaveToDB(events []*UpdateEvent, stakeEvents []*StakeEvent) error
 
 	for _, stake := range stakeEvents {
 		wallets = append(wallets, HexToAddress(stake.Wallet))
-		stakesData = append(stakesData, &entry.Stake{
+		stakeEntries = append(stakeEntries, &entry.Stake{
 			WalletID:     HexToAddress(stake.Wallet),
 			BlockchainID: blockchainUMID,
 			ObjectID:     stake.OdysseyID,
@@ -193,7 +193,7 @@ func (t *Table) SaveToDB(events []*UpdateEvent, stakeEvents []*StakeEvent) error
 
 	wallets = unique(wallets)
 
-	fmt.Println(stakesData)
+	fmt.Println(stakeEntries)
 
 	tx, err := t.db.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
@@ -259,6 +259,21 @@ func (t *Table) SaveToDB(events []*UpdateEvent, stakeEvents []*StakeEvent) error
 			b.WalletID, b.ContractID, b.BlockchainID, b.Balance, b.LastProcessedBlockNumber)
 		if err != nil {
 			err = errors.WithMessage(err, "failed to insert balance to DB")
+			return err
+		}
+	}
+
+	sql = `INSERT INTO stake (wallet_id, blockchain_id, object_id, amount, last_comment, updated_at, created_at)
+			VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+			ON CONFLICT (blockchain_id, wallet_id, object_id)
+				DO UPDATE SET updated_at = NOW(),
+							  amount     = $4`
+
+	for _, s := range stakeEntries {
+		_, err = tx.Exec(context.TODO(), sql,
+			s.WalletID, blockchainUMID, s.ObjectID, s.Amount, "")
+		if err != nil {
+			err = errors.WithMessage(err, "failed to insert stakes to DB")
 			return err
 		}
 	}
