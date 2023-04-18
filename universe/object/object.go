@@ -51,10 +51,12 @@ type Object struct {
 	effectiveOptions *entry.ObjectOptions
 	objectAttributes *objectAttributes // WARNING: the Object is sharing the same mutex ("Mu") with it
 
-	spawnMsg          atomic.Pointer[websocket.PreparedMessage]
-	attributesMsg     *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
-	renderDataMap     *generic.SyncMap[posbus.ObjectDataIndex, interface{}]
-	dataMsg           atomic.Pointer[websocket.PreparedMessage]
+	spawnMsg      atomic.Pointer[websocket.PreparedMessage]
+	attributesMsg *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
+
+	renderDataMap *generic.SyncMap[entry.SlotType, *posbus.StringAnyMap]
+	dataMsg       atomic.Pointer[websocket.PreparedMessage]
+
 	actualPosition    atomic.Pointer[cmath.Transform]
 	broadcastPipeline chan *websocket.PreparedMessage
 	messageAccept     atomic.Bool
@@ -73,7 +75,7 @@ func NewObject(id umid.UMID, db database.DB, world universe.World) *Object {
 		Users:         generic.NewSyncMap[umid.UMID, universe.User](0),
 		Children:      generic.NewSyncMap[umid.UMID, universe.Object](0),
 		attributesMsg: generic.NewSyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]](0),
-		renderDataMap: generic.NewSyncMap[posbus.ObjectDataIndex, interface{}](0),
+		renderDataMap: generic.NewSyncMap[entry.SlotType, *posbus.StringAnyMap](0),
 		world:         world,
 	}
 	object.objectAttributes = newObjectAttributes(object)
@@ -616,7 +618,7 @@ func (o *Object) UpdateSpawnMessage() error {
 
 	// TODO: discuss is it ok to rely on "ReactSpaceVisibleType"?
 	var visible bool
-	if effectiveOptions.Visible != nil && *effectiveOptions.Visible == entry.ReactObjectVisibleType {
+	if effectiveOptions.Visible != nil && *effectiveOptions.Visible == entry.UI2DObjectVisibleType {
 		visible = true
 	}
 
@@ -704,7 +706,7 @@ func (o *Object) SetAttributesMsg(kind, name string, msg *websocket.PreparedMess
 	m.Store(name, msg)
 }
 
-func (o *Object) LockUnityObject(user universe.User, state uint32) bool {
+func (o *Object) LockUIObject(user universe.User, state uint32) bool {
 	if state == 1 {
 		return o.lockedBy.CompareAndSwap(umid.Nil, user.GetID())
 	} else {

@@ -3,21 +3,22 @@ package object
 import (
 	"github.com/gorilla/websocket"
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
+	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/logic/common/unity"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/common/slot"
 )
 
-func (o *Object) unityAutoOnObjectAttributeChanged(
+func (o *Object) renderAutoOnObjectAttributeChanged(
 	changeType universe.AttributeChangeType,
 	attributeID entry.AttributeID,
 	value *entry.AttributeValue,
 	effectiveOptions *entry.AttributeOptions,
 ) error {
 	o.log.Infof("attribute Unuty Auto processing for %+v %+v", o.GetID(), attributeID)
-	autoOption, err := unity.GetOptionAutoOption(attributeID, effectiveOptions)
+	autoOption, err := slot.GetOptionAutoOption(attributeID, effectiveOptions)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to get auto option: %+v", attributeID)
 	}
@@ -25,14 +26,14 @@ func (o *Object) unityAutoOnObjectAttributeChanged(
 		return nil
 	}
 
-	o.log.Infof("unity-auto stage3 for %+v %+v", o.GetID(), attributeID)
+	o.log.Infof("render-auto stage3 for %+v %+v", o.GetID(), attributeID)
 
-	hash, err := unity.PrerenderAutoValue(o.ctx, autoOption, value)
+	hash, err := slot.PrerenderAutoValue(o.ctx, autoOption, value)
 	if err != nil {
 		return errors.WithMessagef(err, "prerendering error: %+v", attributeID)
 	}
 
-	o.log.Infof("unity-auto stage4 for %+v %+v %+v", o.GetID(), attributeID, hash)
+	o.log.Infof("render-auto stage4 for %+v %+v %+v", o.GetID(), attributeID, hash)
 
 	//dirty hack to set auto_render_hash value without triggering processing again
 	// TODO: fix it properly later
@@ -52,14 +53,14 @@ func (o *Object) unityAutoOnObjectAttributeChanged(
 			return nil
 		}()
 	}
-	o.SendUnityAutoAttributeMessage(
+	o.SendRenderAutoAttributeMessage(
 		autoOption, value, func(m *websocket.PreparedMessage) error { return o.GetWorld().Send(m, false) },
 	)
 	return nil
 }
 
-func (o *Object) SendUnityAutoAttributeMessage(
-	option *entry.UnityAutoAttributeOption,
+func (o *Object) SendRenderAutoAttributeMessage(
+	option *entry.RenderAutoAttributeOption,
 	value *entry.AttributeValue,
 	send func(*websocket.PreparedMessage) error,
 ) {
@@ -71,16 +72,15 @@ func (o *Object) SendUnityAutoAttributeMessage(
 }
 
 func (o *Object) UpdateAutoTextureMap(
-	option *entry.UnityAutoAttributeOption, value *entry.AttributeValue,
+	option *entry.RenderAutoAttributeOption, value *entry.AttributeValue,
 ) *websocket.PreparedMessage {
 	if option == nil || value == nil {
 		return nil
 	}
 
-	dataIndex := posbus.ObjectDataIndex{SlotName: option.SlotName, Kind: option.SlotType}
 	var data interface{}
 	switch option.SlotType {
-	case entry.UnitySlotTypeNumber:
+	case entry.SlotTypeNumber:
 		v, ok := (*value)[option.ValueField]
 		if !ok {
 			return nil
@@ -90,7 +90,7 @@ func (o *Object) UpdateAutoTextureMap(
 			return nil
 		}
 		data = int32(val)
-	case entry.UnitySlotTypeString:
+	case entry.SlotTypeString:
 		o.log.Infof("Processing String Slot %+v for %+v \n", option.SlotName, o.GetID())
 		v, ok := (*value)[option.ValueField]
 		if !ok {
@@ -104,7 +104,7 @@ func (o *Object) UpdateAutoTextureMap(
 		o.log.Infof("Setting String Slot %+v for %+v to  %+v  \n", option.SlotName, o.GetID(), val)
 
 		data = val
-	case entry.UnitySlotTypeTexture:
+	case entry.SlotTypeTexture:
 		valField := "auto_render_hash"
 		if option.ContentType == "image" {
 			valField = "render_hash"
@@ -124,17 +124,19 @@ func (o *Object) UpdateAutoTextureMap(
 	func() {
 		o.renderDataMap.Mu.RLock()
 		defer o.renderDataMap.Mu.RUnlock()
-		o.renderDataMap.Data[dataIndex] = data
-		//FIXME:
-		//msg := posbus.WSMessage(&posbus.ObjectData{ID: o.GetID(), Entries: o.renderDataMap.Data})
-		msg := &websocket.PreparedMessage{}
+		slots, ok := o.renderDataMap.Data[option.SlotType]
+		if !ok {
+			slots = utils.GetPTR(make(posbus.StringAnyMap))
+			o.renderDataMap.Data[option.SlotType] = slots
+		}
+		(*slots)[option.SlotName] = data
+		msg := posbus.WSMessage(&posbus.ObjectData{ID: o.GetID(), Entries: o.renderDataMap.Data})
 		o.dataMsg.Store(msg)
 	}()
 
 	// prepare message for this atomic update
 	//FIXME
-	//sendMap := map[posbus.ObjectDataIndex]interface{}{dataIndex: data}
-	//msg := posbus.WSMessage(&posbus.ObjectData{ID: o.GetID(), Entries: sendMap})
-	msg := &websocket.PreparedMessage{}
-	return msg
+
+	msg := posbus.ObjectData{ID: o.GetID(), Entries: map[entry.SlotType]*posbus.StringAnyMap{option.SlotType: utils.GetPTR(posbus.StringAnyMap{option.SlotName: data})}}
+	return posbus.WSMessage(&msg)
 }

@@ -46,7 +46,7 @@ func GetOptionAutoMessage(
 		ChangeType: string(changeType),
 		Data: posbus.AttributeValueChangedData{
 			AttributeName: attributeID.Name,
-			Value:         (*posbus.StringMapAny)(value),
+			Value:         (*posbus.StringAnyMap)(value),
 		},
 	}
 

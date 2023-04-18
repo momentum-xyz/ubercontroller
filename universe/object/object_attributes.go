@@ -5,7 +5,7 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/logic/common/unity"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/common/slot"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
@@ -60,7 +60,7 @@ func (oa *objectAttributes) Load() error {
 			)
 			continue
 		}
-		autoOption, err := unity.GetOptionAutoOption(oaEntry.AttributeID, effectiveOptions)
+		autoOption, err := slot.GetOptionAutoOption(oaEntry.AttributeID, effectiveOptions)
 		if err != nil {
 			return errors.WithMessagef(err, "failed to get option auto option: %+v", oaEntry)
 		}
@@ -164,7 +164,8 @@ func (oa *objectAttributes) Upsert(
 
 	if updateDB {
 		if err := oa.object.db.GetObjectAttributesDB().UpsertObjectAttribute(
-			oa.object.ctx, entry.NewObjectAttribute(entry.NewObjectAttributeID(attributeID, oa.object.GetID()), payload),
+			oa.object.ctx,
+			entry.NewObjectAttribute(entry.NewObjectAttributeID(attributeID, oa.object.GetID()), payload),
 		); err != nil {
 			return nil, errors.WithMessagef(err, "failed to upsert object attribute")
 		}
@@ -330,10 +331,10 @@ func (o *Object) onObjectAttributeChanged(
 	}()
 
 	go func() {
-		if err := o.unityAutoOnObjectAttributeChanged(changeType, attributeID, value, effectiveOptions); err != nil {
+		if err := o.renderAutoOnObjectAttributeChanged(changeType, attributeID, value, effectiveOptions); err != nil {
 			o.log.Error(
 				errors.WithMessagef(
-					err, "Object: onObjectAttributeChanged: failed to handle unity auto: %s: %+v",
+					err, "Object: onObjectAttributeChanged: failed to handle slot auto: %s: %+v",
 					o.GetID(), attributeID,
 				),
 			)
