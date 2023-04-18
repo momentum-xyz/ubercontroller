@@ -13,7 +13,14 @@ import (
 )
 
 type OperationType uint
+type OwnerColumn uint
 type AttributeKind uint
+type Permission uint
+
+//const (
+//	Read Permission = 1 << iota
+//	Write
+//)
 
 const (
 	ReadOperation OperationType = iota
@@ -21,10 +28,20 @@ const (
 )
 
 const (
+	AnyColumn OwnerColumn = iota
+	UserID
+	ObjectID
+	SourceID
+	TargetID
+	NodeID
+)
+
+const (
 	ObjectAttribute AttributeKind = iota
 	ObjectUserAttribute
 	UserAttribute
 	UserUserAttribute
+	NodeAttribute
 )
 
 const (
@@ -56,6 +73,7 @@ func (n *Node) AssessPermissions(
 
 	options := attributeType.GetOptions()
 	permissions := make(map[string]string)
+
 	if options != nil {
 		// Todo: remove hardcode
 		permissions = utils.GetFromAnyMap(*options, "permissions", map[string]string(nil))
@@ -67,15 +85,15 @@ func (n *Node) AssessPermissions(
 
 	switch operationType {
 	case ReadOperation:
-		return n.AssessReadOperation(userID, ownerID, permissions["read"], attributeKind)
+		return n.AssessReadOperation(userID, ownerID, permissions["read"], attributeKind, options)
 	case WriteOperation:
-		return n.AssessWriteOperation(userID, ownerID, permissions["write"], attributeKind)
+		return n.AssessWriteOperation(userID, ownerID, permissions["write"], attributeKind, options)
 	}
 
 	return false, nil
 }
 
-func (n *Node) AssessReadOperation(userID umid.UMID, ownerID umid.UMID, permissions string, attributeKind AttributeKind) (bool, error) {
+func (n *Node) AssessReadOperation(userID umid.UMID, ownerID umid.UMID, permissions string, attributeKind AttributeKind, options *entry.AttributeOptions) (bool, error) {
 	userPermissions := make([]string, 0)
 	attributeTypePermissions := make([]string, 0)
 	if strings.Contains(permissions, "+") {
@@ -85,17 +103,27 @@ func (n *Node) AssessReadOperation(userID umid.UMID, ownerID umid.UMID, permissi
 	}
 
 	// Is the user a registered user or a guest?
-	user, _ := n.GetUser(userID, false)
-	userType := user.GetUserType()
+	user, err := n.LoadUser(userID)
+	if err != nil {
+		return false, errors.WithMessage(err, "failed to load user")
+	}
 
-	guestUserTypeID, _ := common.GetGuestUserTypeID()
+	userType := user.GetUserType()
+	guestUserTypeID, err := common.GetGuestUserTypeID()
+	if err != nil {
+		return false, errors.WithMessage(err, "failed to get guest user type id")
+	}
 
 	if userType.GetID() != guestUserTypeID {
 		userPermissions = append(userPermissions, User)
 	}
 
+	ownerColumn := make(map[string]string)
+	ownerColumn = utils.GetFromAnyMap(*options, "owner_column", map[string]string(nil))
+
 	switch attributeKind {
 	case ObjectAttribute:
+	case ObjectUserAttribute:
 		userObjectID := entry.NewUserObjectID(userID, ownerID)
 		// What rights does the user have?
 		// Does the user own the object?
@@ -109,19 +137,54 @@ func (n *Node) AssessReadOperation(userID umid.UMID, ownerID umid.UMID, permissi
 			userPermissions = append(userPermissions, Owner)
 		}
 
-		isAdmin, _ := n.db.GetUserObjectsDB().CheckIsIndirectAdminByID(n.ctx, userObjectID)
+		defaultOwnerColumn := map[string]string{
+			"owner_column": "object_id",
+		}
+
+		if ownerColumn == nil {
+			ownerColumn = defaultOwnerColumn
+		}
+
+		isAdmin, err := n.db.GetUserObjectsDB().CheckIsIndirectAdminByID(n.ctx, userObjectID)
+		if err != nil {
+			return false, errors.WithMessage(err, "failed to check admin status")
+		}
 		if isAdmin {
 			userPermissions = append(userPermissions, Admin)
 		}
 		// Then what is the user allowed to do?
 		permission := n.CompareReadPermissions(attributeTypePermissions, userPermissions)
 		return permission, nil
-		//case ObjectUserAttribute:
-		//	dbInstance = n.db.GetObjectUserAttributesDB()
-		//case UserAttribute:
-		//	dbInstance = n.db.GetUserAttributesDB()
-		//case UserUserAttribute:
-		//	dbInstance = n.db.GetUserUserAttributesDB()
+	case UserAttribute:
+		defaultOwnerColumn := map[string]string{
+			"owner_column": "object_id",
+		}
+
+		if ownerColumn == nil {
+			ownerColumn = defaultOwnerColumn
+		}
+		permission := n.CompareReadPermissions(attributeTypePermissions, userPermissions)
+		return permission, nil
+	case UserUserAttribute:
+		defaultOwnerColumn := map[string]string{
+			"owner_column": "source_id",
+		}
+
+		if ownerColumn == nil {
+			ownerColumn = defaultOwnerColumn
+		}
+		permission := n.CompareReadPermissions(attributeTypePermissions, userPermissions)
+		return permission, nil
+	case NodeAttribute:
+		defaultOwnerColumn := map[string]string{
+			"owner_column": "node_id",
+		}
+
+		if ownerColumn == nil {
+			ownerColumn = defaultOwnerColumn
+		}
+		permission := n.CompareReadPermissions(attributeTypePermissions, userPermissions)
+		return permission, nil
 	}
 
 	return false, nil
@@ -129,7 +192,7 @@ func (n *Node) AssessReadOperation(userID umid.UMID, ownerID umid.UMID, permissi
 
 func (n *Node) AssessWriteOperation(
 	userID umid.UMID, ownerID umid.UMID, permissions string,
-	attributeKind AttributeKind,
+	attributeKind AttributeKind, options *entry.AttributeOptions,
 ) (bool, error) {
 	sl := make([]string, 0)
 
