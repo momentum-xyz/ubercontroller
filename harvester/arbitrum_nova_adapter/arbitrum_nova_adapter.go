@@ -204,6 +204,8 @@ func (a *ArbitrumNovaAdapter) GetTransferLogs(fromBlock, toBlock int64, addresse
 	logTransferSigHash := crypto.Keccak256Hash(logTransferSig)
 
 	logStakeSigHash := crypto.Keccak256Hash([]byte(a.stakeContractABI.Events["Stake"].Sig))
+	logUnstakeSigHash := a.stakeContractABI.Events["Unstake"].ID
+	logRestakeSigHash := a.stakeContractABI.Events["Restake"].ID
 
 	diffs := make([]*harvester.BCDiff, 0)
 	stakes := make([]*harvester.BCStake, 0)
@@ -272,8 +274,44 @@ func (a *ArbitrumNovaAdapter) GetTransferLogs(fromBlock, toBlock int64, addresse
 
 			stakes = append(stakes, stake)
 
-			//fmt.Printf("%+v %+v %+v %+v \n\n", fromWallet.String(), odysseyID.String(), amount, tokenType)
-			//fmt.Println(ev)
+		//fmt.Printf("%+v %+v %+v %+v \n\n", fromWallet.String(), odysseyID.String(), amount, tokenType)
+		//fmt.Println(ev)
+
+		case logUnstakeSigHash.Hex():
+			log.Println("Unstake")
+
+			ev, err := a.stakeContractABI.Unpack("Unstake", vLog.Data)
+			if err != nil {
+				return nil, nil, errors.WithMessage(err, "failed to unpack event from ABI")
+			}
+
+			// Read and convert event params
+			fromWallet := ev[0].(common.Address)
+
+			arr := ev[1].([16]byte)
+			odysseyID, err := umid.FromBytes(arr[:])
+			if err != nil {
+				return nil, nil, errors.WithMessage(err, "failed to parse umid from bytes")
+			}
+
+			amount := ev[2].(*big.Int)
+
+			tokenType := ev[3].(uint8)
+
+			totalAmount := ev[4].(*big.Int)
+
+			stake := &harvester.BCStake{
+				From:        fromWallet.Hex(),
+				OdysseyID:   odysseyID,
+				TokenType:   tokenType,
+				Amount:      amount,
+				TotalAmount: totalAmount,
+			}
+
+			stakes = append(stakes, stake)
+
+		case logRestakeSigHash.Hex():
+			fmt.Println("Restake")
 		}
 	}
 
