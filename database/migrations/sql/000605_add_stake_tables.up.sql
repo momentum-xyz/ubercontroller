@@ -4,7 +4,7 @@ create table stake
     blockchain_id uuid      not null,
     object_id     uuid      not null,
     amount        integer   not null,
-    last_comment  integer   not null,
+    last_comment  text      not null,
     updated_at    timestamp not null,
     created_at    timestamp not null,
     constraint stake_pk
