@@ -2,9 +2,10 @@ package worlds
 
 import (
 	"fmt"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"net/http"
 	"strings"
+
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -80,11 +81,37 @@ func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/worlds/latest [get]
-func (w *Worlds) apiWorldsGetLatest(c *gin.Context) {
-	recentWorldIDs, err := w.db.GetWorldsDB().GetRecentWorldIDs(w.ctx)
+// @Router /api/v4/worlds [get]
+func (w *Worlds) apiWorldsGet(c *gin.Context) {
+	type InQuery struct {
+		Sort  string `form:"sort"`
+		Limit string `form:"limit"`
+	}
+	var inQuery InQuery
+
+	if err := c.ShouldBindQuery(&inQuery); err != nil {
+		err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to bind query")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, w.log)
+		return
+	}
+
+	if inQuery.Limit == "" {
+		inQuery.Limit = "100"
+	}
+
+	var sortType universe.SortType
+	switch inQuery.Sort {
+	case "ASC":
+		sortType = universe.ASC
+	case "DESC":
+		sortType = universe.DESC
+	default:
+		sortType = universe.DESC
+	}
+
+	recentWorldIDs, err := w.db.GetWorldsDB().GetWorldIDs(w.ctx, sortType, inQuery.Limit)
 	if err != nil {
-		err := errors.WithMessage(err, "Worlds: apiWorldsGetLatest: failed to get latest world ids")
+		err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to get world ids")
 		api.AbortRequest(c, http.StatusInternalServerError, "get_latest_worlds_failed", err, w.log)
 		return
 	}
