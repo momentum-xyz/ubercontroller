@@ -2,10 +2,11 @@ package world
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"sync/atomic"
 	"time"
+
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/gorilla/websocket"
 	"github.com/hashicorp/go-multierror"

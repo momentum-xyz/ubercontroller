@@ -29,9 +29,13 @@ type DB interface {
 	GetObjectUserAttributesDB() ObjectUserAttributesDB
 	GetUserAttributesDB() UserAttributesDB
 	GetUserUserAttributesDB() UserUserAttributesDB
+	GetStakesDB() StakesDB
 }
 
 type CommonDB interface {
+}
+
+type StakesDB interface {
 }
 
 type NodesDB interface {

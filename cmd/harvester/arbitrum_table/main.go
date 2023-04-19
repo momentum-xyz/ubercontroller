@@ -11,11 +11,11 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/harvester"
-	"github.com/momentum-xyz/ubercontroller/harvester/ethereum_adapter"
+	"github.com/momentum-xyz/ubercontroller/harvester/arbitrum_nova_adapter"
 )
 
 func main() {
-	fmt.Println("Harvester Debugger")
+	fmt.Println("Arbitrum Table Debugger")
 
 	cfg := config.GetConfig()
 	logger, _ := zap.NewProduction()
@@ -26,7 +26,7 @@ func main() {
 	}
 	defer pool.Close()
 
-	a := ethereum_adapter.NewEthereumAdapter()
+	a := arbitrum_nova_adapter.NewArbitrumNovaAdapter()
 	a.Run()
 
 	t := harvester.NewTable(pool, a, listener)
@@ -48,9 +48,12 @@ func main() {
 
 }
 
-func listener(bcName string, events []*harvester.UpdateEvent, stakeEvents []*harvester.StakeEvent) {
+func listener(bcName string, events []*harvester.UpdateEvent, stakes []*harvester.StakeEvent) {
 	fmt.Printf("Table Listener: \n")
-	for k, v := range events {
-		fmt.Printf("%+v %+v %+v %+v \n", k, v.Wallet, v.Contract, v.Amount.String())
+	//for k, v := range events {
+	//	fmt.Printf("%+v %+v %+v %+v \n", k, v.Wallet, v.Contract, v.Amount.String())
+	//}
+	for k, v := range stakes {
+		fmt.Printf("%+v %+v %+v %+v \n", k, v.Wallet, v.OdysseyID, v.Amount.String())
 	}
 }
