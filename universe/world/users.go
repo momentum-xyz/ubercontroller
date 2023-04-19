@@ -2,12 +2,13 @@ package world
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/gorilla/websocket"
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
-	"time"
 
 	"github.com/pkg/errors"
 
@@ -124,9 +125,9 @@ func (w *World) noLockRemoveUser(user universe.User, updateDB bool) (bool, error
 
 	var mp entry.AttributeValue
 	utils.MapEncode(user.GetTransform(), &mp)
-	fmt.Printf("PMAP: %+v, %+v\n", user.GetTransform(), mp)
+	// fmt.Printf("PMAP: %+v, %+v\n", user.GetTransform(), mp)
 
-	val, err := universe.GetNode().GetObjectUserAttributes().Upsert(
+	_, err := universe.GetNode().GetObjectUserAttributes().Upsert(
 		entry.ObjectUserAttributeID{
 			AttributeID: entry.AttributeID{PluginID: universe.GetSystemPluginID(), Name: "last_known_position"},
 			UserID:      user.GetID(), ObjectID: w.GetID()},
@@ -137,8 +138,9 @@ func (w *World) noLockRemoveUser(user universe.User, updateDB bool) (bool, error
 		},
 		true,
 	)
-	fmt.Println(val, err)
-	//modify.ReplaceWith(&mp),
+	if err != nil {
+		return false, fmt.Errorf("storing last known position: %w", err)
+	}
 	user.Stop()
 
 	delete(w.Users.Data, user.GetID())
