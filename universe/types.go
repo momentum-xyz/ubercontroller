@@ -32,6 +32,13 @@ type WorldSettings struct {
 	Effects     map[string]umid.UMID `db:"effects" json:"effects"`
 }
 
+type SortType string
+
+const (
+	ASC  SortType = "ASC"
+	DESC SortType = "DESC"
+)
+
 type ReservedAttribute struct {
 	Name string
 	Key  string

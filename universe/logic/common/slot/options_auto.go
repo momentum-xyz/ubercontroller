@@ -1,4 +1,4 @@
-package unity
+package slot
 
 import (
 	"bytes"
@@ -36,25 +36,25 @@ const (
 // TODO: requre optimization to not do it every time we touch attribute
 func GetOptionAutoOption(
 	attributeID entry.AttributeID, options *entry.AttributeOptions,
-) (*entry.UnityAutoAttributeOption, error) {
+) (*entry.RenderAutoAttributeOption, error) {
 	if options == nil {
 		return nil, nil
 	}
 
-	autoOptionsValue, ok := (*options)["unity_auto"]
+	autoOptionsValue, ok := (*options)["render_auto"]
 	if !ok {
 		return nil, nil
 	}
 
 	//fmt.Printf("FFF0: %+v \n", autoOptionsValue)
 
-	var autoOption *entry.UnityAutoAttributeOption
+	var autoOption *entry.RenderAutoAttributeOption
 	if err := utils.MapDecode(autoOptionsValue, &autoOption); err != nil {
 		return nil, errors.WithMessage(err, "failed to decode auto option")
 	}
 	//fmt.Printf("FFF: %+v %+v \n", autoOption, autoOptionsValue)
 
-	if autoOption.SlotType == entry.UnitySlotTypeInvalid || autoOption.ContentType == entry.UnityContentTypeInvalid {
+	if autoOption.SlotType == entry.SlotTypeInvalid || autoOption.ContentType == entry.SlotContentTypeInvalid {
 		return nil, nil
 	}
 	if autoOption.SlotName == "" {
@@ -71,7 +71,7 @@ func GetOptionAutoOption(
 }
 
 func PrerenderAutoValue(
-	ctx context.Context, option *entry.UnityAutoAttributeOption, value *entry.AttributeValue,
+	ctx context.Context, option *entry.RenderAutoAttributeOption, value *entry.AttributeValue,
 ) (*dto.HashResponse, error) {
 	if option == nil || option.SlotType != "texture" || value == nil {
 		return nil, nil

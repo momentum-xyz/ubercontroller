@@ -2,15 +2,12 @@ package node
 
 import (
 	"context"
-	"fmt"
-
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/user"
 )
@@ -25,9 +22,6 @@ func (n *Node) LoadUser(userID umid.UMID) (universe.User, error) {
 		return nil, errors.WithMessagef(err, "failed to load user: %s", userID)
 	}
 
-	fmt.Printf("%+v\n", user.GetPosition())
-	user.SetPosition(cmath.Vec3{X: 50, Y: 50, Z: 150})
-	fmt.Printf("%+v\n", user.GetPosition())
 	return user, nil
 }
 
@@ -41,7 +35,9 @@ func (n *Node) CreateUsers(ctx context.Context, users ...*entry.User) error {
 	return nil
 }
 
-func (n *Node) Filter(predicateFn func(userID umid.UMID, user universe.User) bool) (map[umid.UMID]universe.User, error) {
+func (n *Node) Filter(predicateFn func(userID umid.UMID, user universe.User) bool) (
+	map[umid.UMID]universe.User, error,
+) {
 	data := make(map[umid.UMID]universe.User)
 	userTypeID, err := common.GetNormalUserTypeID()
 	if err != nil {

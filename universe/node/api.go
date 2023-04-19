@@ -20,6 +20,10 @@ import (
 func (n *Node) RegisterAPI(r *gin.Engine) {
 	n.log.Infof("Registering api for node: %s...", n.GetID())
 
+	if n.cfg.Common.PProfAPI {
+		registerPProfAPI(r.Group("/debug"))
+	}
+
 	if n.cfg.Common.AllowCORS {
 		r.Use(cors.New(cors.Config{
 			AllowOrigins: []string{"*"},
@@ -79,7 +83,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 			verifiedUsers.POST("/mutual-docks", n.apiUsersCreateMutualDocks)
 			verifiedUsers.DELETE("/mutual-docks", n.apiUsersRemoveMutualDocks)
 
-			verifiedUsers.GET("/latest", n.apiUsersGetLatest)
+			verifiedUsers.GET("", n.apiUsersGet)
 			verifiedUsers.GET("/search", n.apiUsersSearchUsers)
 
 			user := verifiedUsers.Group("/:userID")

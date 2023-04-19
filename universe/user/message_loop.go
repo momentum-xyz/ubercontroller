@@ -3,10 +3,9 @@ package user
 import (
 	"fmt"
 
-	"github.com/pkg/errors"
-
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
+	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils"
@@ -33,16 +32,14 @@ func (u *User) OnMessage(buf []byte) error {
 		return u.Teleport(msg.(*posbus.TeleportRequest).Target)
 	case posbus.TypeSignal:
 		return u.SignalsHandler(msg.(*posbus.Signal))
-	//case posbus.TypeObjectPosition:
-	//	if err := u.UpdateObjectTransform(msg.Msg()); err != nil {
-	//		return errors.WithMessage(err, "failed to update object transform")
-	//	}
+	case posbus.TypeObjectTransform:
+		if err := u.UpdateObjectTransform(msg.(*posbus.ObjectTransform)); err != nil {
+			return errors.WithMessage(err, "failed to update object transform")
+		}
 	case posbus.TypeLockObject:
 		return u.LockObject(msg.(*posbus.LockObject))
-
-	case posbus.TypeUserStakedToOdyssey:
-		return u.StakeToOdyssey(msg.(*posbus.UserStakedToOdyssey))
-
+	case posbus.TypeUnlockObject:
+		return u.UnlockObject(msg.(*posbus.UnlockObject))
 	default:
 		return errors.Errorf("unknown message: %d", msg.GetType())
 	}
@@ -50,7 +47,7 @@ func (u *User) OnMessage(buf []byte) error {
 	return nil
 }
 
-func (u *User) UpdateObjectTransform(msg posbus.ObjectTransform) error {
+func (u *User) UpdateObjectTransform(msg *posbus.ObjectTransform) error {
 	object, ok := universe.GetNode().GetObjectFromAllObjects(msg.ID)
 	if !ok {
 		return errors.Errorf("object not found: %s", msg.ID)
@@ -132,30 +129,39 @@ func (u *User) SignalsHandler(s *posbus.Signal) error {
 //	return errors.Errorf("unknown message: %d", kind)
 //}
 
-func (u *User) StakeToOdyssey(stakeMsg *posbus.UserStakedToOdyssey) error {
-	fmt.Println(stakeMsg)
+func (u *User) LockObject(lock *posbus.LockObject) error {
+	objectId := lock.ID
+	object, ok := u.GetWorld().GetObjectFromAllObjects(objectId)
+	if !ok {
+		return errors.Errorf("object not found: %s", objectId)
+	}
 
-	return nil
+	result := object.LockUIObject(u, 1)
+	if result {
+		return u.GetWorld().Send(
+			posbus.WSMessage(&posbus.LockObjectResponse{ID: objectId, State: 1, LockOwner: u.GetID()}),
+			true,
+		)
+	}
+	return u.Send(posbus.WSMessage(&posbus.LockObjectResponse{ID: objectId, State: 0, LockOwner: u.GetID()}))
 }
 
-func (u *User) LockObject(lock *posbus.LockObject) error {
-	id := lock.ID
-	state := lock.State
-
-	object, ok := u.GetWorld().GetObjectFromAllObjects(id)
+func (u *User) UnlockObject(lock *posbus.UnlockObject) error {
+	objectId := lock.ID
+	object, ok := u.GetWorld().GetObjectFromAllObjects(objectId)
 	if !ok {
-		return errors.Errorf("object not found: %s", id)
+		return errors.Errorf("object not found: %s", objectId)
 	}
 
-	result := object.LockUnityObject(u, state)
-	newState := state
-	if !result {
-		newState = 1 - state
+	result := object.LockUIObject(u, 0)
+
+	if result {
+		return u.GetWorld().Send(
+			posbus.WSMessage(&posbus.LockObjectResponse{ID: objectId, State: 1, LockOwner: u.GetID()}),
+			true,
+		)
 	}
-
-	lock.State = newState
-
-	return u.GetWorld().Send(posbus.WSMessage(lock), true)
+	return u.Send(posbus.WSMessage(&posbus.LockObjectResponse{ID: objectId, State: 1, LockOwner: u.GetID()}))
 }
 
 //func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {

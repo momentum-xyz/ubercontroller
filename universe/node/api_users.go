@@ -105,11 +105,37 @@ func (n *Node) apiUsersGetByID(c *gin.Context) {
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/users/latest [get]
-func (n *Node) apiUsersGetLatest(c *gin.Context) {
-	recentUserIDs, err := n.db.GetUsersDB().GetRecentUserIDs(n.ctx)
+// @Router /api/v4/users [get]
+func (n *Node) apiUsersGet(c *gin.Context) {
+	type InQuery struct {
+		Sort  string `form:"sort"`
+		Limit string `form:"limit"`
+	}
+	var inQuery InQuery
+
+	if err := c.ShouldBindQuery(&inQuery); err != nil {
+		err := errors.WithMessage(err, "Node: apiUsersGet: failed to bind query")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
+		return
+	}
+
+	if inQuery.Limit == "" {
+		inQuery.Limit = "100"
+	}
+
+	var sortType universe.SortType
+	switch inQuery.Sort {
+	case "ASC":
+		sortType = universe.ASC
+	case "DESC":
+		sortType = universe.DESC
+	default:
+		sortType = universe.DESC
+	}
+
+	recentUserIDs, err := n.db.GetUsersDB().GetUserIDs(n.ctx, sortType, inQuery.Limit)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiUsersGetLatest: failed to get latest user ids")
+		err := errors.WithMessage(err, "Node: apiUsersGet: failed to get latest user ids")
 		api.AbortRequest(c, http.StatusInternalServerError, "get_latest_users_failed", err, n.log)
 		return
 	}
@@ -119,7 +145,7 @@ func (n *Node) apiUsersGetLatest(c *gin.Context) {
 	for _, userID := range recentUserIDs {
 		user, err := n.LoadUser(userID)
 		if err != nil {
-			err := errors.WithMessage(err, "Node: apiUsersGetLatest: failed to get load user by id")
+			err := errors.WithMessage(err, "Node: apiUsersGet: failed to get load user by id")
 			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_load_user", err, n.log)
 			return
 		}

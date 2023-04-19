@@ -1,10 +1,14 @@
 package world
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/gorilla/websocket"
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
+	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
-	"time"
 
 	"github.com/pkg/errors"
 
@@ -60,6 +64,24 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 	w.log.Infof("Setworld: %+v\n", user.GetID())
 	user.SetWorld(w)
 
+	initPos := cmath.TransformNoScale{Position: cmath.Vec3{X: 0, Y: 0, Z: 0}}
+
+	val, ok := universe.GetNode().GetObjectUserAttributes().GetValue(
+		entry.ObjectUserAttributeID{
+			AttributeID: entry.AttributeID{PluginID: universe.GetSystemPluginID(), Name: "last_known_position"},
+			UserID:      user.GetID(), ObjectID: w.GetID()},
+	)
+
+	if ok {
+		var pos cmath.TransformNoScale
+		err := utils.MapDecode(val, &pos)
+		if err != nil {
+			initPos = pos
+		}
+	}
+
+	user.SetTransform(initPos)
+
 	w.log.Infof("AddUser: %+v\n", user.GetID())
 	// effectively replace user if exists
 	user.LockSendBuffer()
@@ -71,7 +93,7 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 		true,
 	)
 
-	err = w.initializeUnity(user)
+	err = w.initializeUI(user)
 	return err
 }
 
@@ -100,6 +122,25 @@ func (w *World) noLockRemoveUser(user universe.User, updateDB bool) (bool, error
 	}
 
 	user.SetWorld(nil)
+
+	var mp entry.AttributeValue
+	utils.MapEncode(user.GetTransform(), &mp)
+	// fmt.Printf("PMAP: %+v, %+v\n", user.GetTransform(), mp)
+
+	_, err := universe.GetNode().GetObjectUserAttributes().Upsert(
+		entry.ObjectUserAttributeID{
+			AttributeID: entry.AttributeID{PluginID: universe.GetSystemPluginID(), Name: "last_known_position"},
+			UserID:      user.GetID(), ObjectID: w.GetID()},
+		func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
+			v := entry.AttributePayload{}
+			v.Value = &mp
+			return &v, nil
+		},
+		true,
+	)
+	if err != nil {
+		return false, fmt.Errorf("storing last known position: %w", err)
+	}
 	user.Stop()
 
 	delete(w.Users.Data, user.GetID())
@@ -110,9 +151,9 @@ func (w *World) noLockRemoveUser(user universe.User, updateDB bool) (bool, error
 	defer w.allObjects.Mu.RUnlock()
 
 	for _, child := range w.allObjects.Data {
-		if child.LockUnityObject(user, 0) {
+		if child.LockUIObject(user, 0) {
 			w.Send(
-				posbus.WSMessage(&posbus.LockObjectResponse{ID: child.GetID(), Result: 0, LockOwner: user.GetID()}),
+				posbus.WSMessage(&posbus.LockObjectResponse{ID: child.GetID(), State: 0, LockOwner: user.GetID()}),
 				true,
 			)
 		}
@@ -126,7 +167,7 @@ func (w *World) noLockRemoveUser(user universe.User, updateDB bool) (bool, error
 	return true, nil
 }
 
-func (w *World) initializeUnity(user universe.User) error {
+func (w *World) initializeUI(user universe.User) error {
 	// TODO: rest of startup logic
 	if err := user.SendDirectly(w.metaMsg.Load()); err != nil {
 		return errors.WithMessage(err, "failed to send meta msg")

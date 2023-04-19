@@ -3,26 +3,24 @@ package users
 import (
 	"context"
 
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
-
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/ubercontroller/types/entry"
-
 	"github.com/momentum-xyz/ubercontroller/database"
+	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 const (
-	getUserByIDQuery      = `SELECT * FROM "user" WHERE user_id = $1;`
-	getUsersByIDsQuery    = `SELECT * FROM "user" WHERE user_id = ANY($1);`
-	getAllUsersQuery      = `SELECT * FROM "user" WHERE user_type_id = $1;`
-	getRecentUserIDsQuery = `SELECT user_id FROM "user"
-         					ORDER BY created_at DESC
-							LIMIT 6;`
+	getUserByIDQuery   = `SELECT * FROM "user" WHERE user_id = $1;`
+	getUsersByIDsQuery = `SELECT * FROM "user" WHERE user_id = ANY($1);`
+	getAllUsersQuery   = `SELECT * FROM "user" WHERE user_type_id = $1;`
+	getUserIDsQuery    = `SELECT user_id FROM "user"
+         					ORDER BY created_at `
 	getUserByWalletQuery = `SELECT * FROM "user"
          						WHERE user_id = (SELECT user_id FROM user_attribute
          						                    /* Kusama plugin umid */
@@ -107,9 +105,10 @@ func (db *DB) GetAllUsers(ctx context.Context, userTypeID umid.UMID) ([]*entry.U
 	return users, nil
 }
 
-func (db *DB) GetRecentUserIDs(ctx context.Context) ([]umid.UMID, error) {
+func (db *DB) GetUserIDs(ctx context.Context, sortType universe.SortType, limit string) ([]umid.UMID, error) {
+	limitQuery := " LIMIT " + limit + ";"
 	var userIDs []umid.UMID
-	if err := pgxscan.Select(ctx, db.conn, &userIDs, getRecentUserIDsQuery); err != nil {
+	if err := pgxscan.Select(ctx, db.conn, &userIDs, getUserIDsQuery+string(sortType)+limitQuery); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return userIDs, nil

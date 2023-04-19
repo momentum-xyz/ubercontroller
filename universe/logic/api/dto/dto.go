@@ -99,16 +99,16 @@ type User struct {
 
 type UserSearchResult struct {
 	ID      umid.UMID `json:"id"`
-	Name    *string   `json:"name"`
+	Name    *string   `json:"name,omitempty"`
 	Wallet  *string   `json:"wallet,omitempty"`
-	Profile Profile   `json:"profile"`
+	Profile Profile   `json:"profile,omitempty"`
 }
 
 type RecentUser struct {
 	ID      umid.UMID `json:"id"`
-	Name    *string   `json:"name"`
+	Name    *string   `json:"name,omitempty"`
 	Wallet  *string   `json:"wallet,omitempty"`
-	Profile Profile   `json:"profile"`
+	Profile Profile   `json:"profile,omitempty"`
 }
 
 type Object struct {
@@ -123,7 +123,7 @@ type Object struct {
 type OwnedWorld struct {
 	ID      umid.UMID `json:"id"`
 	OwnerID umid.UMID `json:"owner_id"`
-	Name    *string   `json:"name"`
+	Name    *string   `json:"name,omitempty"`
 }
 
 type Asset2d struct {

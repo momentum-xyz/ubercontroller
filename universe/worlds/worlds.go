@@ -2,7 +2,11 @@ package worlds
 
 import (
 	"context"
+
 	"github.com/hashicorp/go-multierror"
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
+
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types"
@@ -11,8 +15,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/world"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
-	"github.com/pkg/errors"
-	"go.uber.org/zap"
 )
 
 var _ universe.Worlds = (*Worlds)(nil)
@@ -188,7 +190,7 @@ func (w *Worlds) Stop() error {
 func (w *Worlds) Load() error {
 	w.log.Info("Loading worlds...")
 
-	worldIDs, err := w.db.GetWorldsDB().GetWorldIDs(w.ctx)
+	worldIDs, err := w.db.GetWorldsDB().GetAllWorldIDs(w.ctx)
 	if err != nil {
 		return errors.WithMessage(err, "failed to get world ids from db")
 	}

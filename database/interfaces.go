@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 
+	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
@@ -42,10 +43,9 @@ type NodesDB interface {
 }
 
 type WorldsDB interface {
-	GetWorldIDs(ctx context.Context) ([]umid.UMID, error)
+	GetAllWorldIDs(ctx context.Context) ([]umid.UMID, error)
+	GetWorldIDs(ctx context.Context, sortType universe.SortType, limit string) ([]umid.UMID, error)
 	GetWorlds(ctx context.Context) ([]*entry.Object, error)
-
-	GetRecentWorldIDs(ctx context.Context) ([]umid.UMID, error)
 }
 
 type ObjectsDB interface {
@@ -78,7 +78,7 @@ type UsersDB interface {
 	GetUserProfileByUserID(ctx context.Context, userID umid.UMID) (*entry.UserProfile, error)
 	GetUsersByUserType(ctx context.Context, userTypeID umid.UMID) ([]*entry.User, error)
 
-	GetRecentUserIDs(ctx context.Context) ([]umid.UMID, error)
+	GetUserIDs(ctx context.Context, sortType universe.SortType, limit string) ([]umid.UMID, error)
 
 	CheckIsUserExistsByName(ctx context.Context, name string) (bool, error)
 	CheckIsUserExistsByWallet(ctx context.Context, wallet string) (bool, error)

@@ -3,6 +3,7 @@
 package posbus
 
 import (
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"github.com/ymz-ncnk/muserrs"
 )
@@ -35,52 +36,19 @@ func (v ObjectData) MarshalMUS(buf []byte) int {
 		}
 		for ke, vl := range v.Entries {
 			{
-				length := len(ke)
-				{
-					uv := uint64(length)
-					if length < 0 {
-						uv = ^(uv << 1)
-					} else {
-						uv = uv << 1
-					}
-					{
-						for uv >= 0x80 {
-							buf[i] = byte(uv) | 0x80
-							uv >>= 7
-							i++
-						}
-						buf[i] = byte(uv)
-						i++
-					}
-				}
-				if len(buf[i:]) < length {
-					panic(muserrs.ErrSmallBuf)
-				}
-				i += copy(buf[i:], ke)
+				si := ke.MarshalMUS(buf[i:])
+				i += si
 			}
-			{
-				length := len(vl)
+			if vl == nil {
+				buf[i] = 0
+				i++
+			} else {
+				buf[i] = 1
+				i++
 				{
-					uv := uint64(length)
-					if length < 0 {
-						uv = ^(uv << 1)
-					} else {
-						uv = uv << 1
-					}
-					{
-						for uv >= 0x80 {
-							buf[i] = byte(uv) | 0x80
-							uv >>= 7
-							i++
-						}
-						buf[i] = byte(uv)
-						i++
-					}
+					si := (*vl).MarshalMUS(buf[i:])
+					i += si
 				}
-				if len(buf[i:]) < length {
-					panic(muserrs.ErrSmallBuf)
-				}
-				i += copy(buf[i:], vl)
 			}
 		}
 	}
@@ -140,99 +108,40 @@ func (v *ObjectData) UnmarshalMUS(buf []byte) (int, error) {
 		if length < 0 {
 			return i, muserrs.ErrNegativeLength
 		}
-		v.Entries = make(map[string]string)
+		v.Entries = make(map[entry.SlotType]*StringAnyMap)
 		for ; length > 0; length-- {
-			var kem string
-			var vlm string
+			var kem entry.SlotType
+			vlm := new(StringAnyMap)
 			{
-				var length int
-				{
-					var uv uint64
-					{
-						if i > len(buf)-1 {
-							return i, muserrs.ErrSmallBuf
-						}
-						shift := 0
-						done := false
-						for l, b := range buf[i:] {
-							if l == 9 && b > 1 {
-								return i, muserrs.ErrOverflow
-							}
-							if b < 0x80 {
-								uv = uv | uint64(b)<<shift
-								done = true
-								i += l + 1
-								break
-							}
-							uv = uv | uint64(b&0x7F)<<shift
-							shift += 7
-						}
-						if !done {
-							return i, muserrs.ErrSmallBuf
-						}
-					}
-					if uv&1 == 1 {
-						uv = ^(uv >> 1)
-					} else {
-						uv = uv >> 1
-					}
-					length = int(uv)
+				var sv entry.SlotType
+				si := 0
+				si, err = sv.UnmarshalMUS(buf[i:])
+				if err == nil {
+					kem = sv
+					i += si
 				}
-				if length < 0 {
-					return i, muserrs.ErrNegativeLength
-				}
-				if len(buf) < i+length {
-					return i, muserrs.ErrSmallBuf
-				}
-				kem = string(buf[i : i+length])
-				i += length
 			}
 			if err != nil {
 				err = muserrs.NewMapKeyError(kem, err)
 				break
 			}
-			{
-				var length int
+			if buf[i] == 0 {
+				i++
+				vlm = nil
+			} else if buf[i] != 1 {
+				i++
+				return i, muserrs.ErrWrongByte
+			} else {
+				i++
 				{
-					var uv uint64
-					{
-						if i > len(buf)-1 {
-							return i, muserrs.ErrSmallBuf
-						}
-						shift := 0
-						done := false
-						for l, b := range buf[i:] {
-							if l == 9 && b > 1 {
-								return i, muserrs.ErrOverflow
-							}
-							if b < 0x80 {
-								uv = uv | uint64(b)<<shift
-								done = true
-								i += l + 1
-								break
-							}
-							uv = uv | uint64(b&0x7F)<<shift
-							shift += 7
-						}
-						if !done {
-							return i, muserrs.ErrSmallBuf
-						}
+					var sv StringAnyMap
+					si := 0
+					si, err = sv.UnmarshalMUS(buf[i:])
+					if err == nil {
+						(*vlm) = sv
+						i += si
 					}
-					if uv&1 == 1 {
-						uv = ^(uv >> 1)
-					} else {
-						uv = uv >> 1
-					}
-					length = int(uv)
 				}
-				if length < 0 {
-					return i, muserrs.ErrNegativeLength
-				}
-				if len(buf) < i+length {
-					return i, muserrs.ErrSmallBuf
-				}
-				vlm = string(buf[i : i+length])
-				i += length
 			}
 			if err != nil {
 				err = muserrs.NewMapValueError(kem, vlm, err)
@@ -268,32 +177,15 @@ func (v ObjectData) SizeMUS() int {
 		}
 		for ke, vl := range v.Entries {
 			{
-				length := len(ke)
-				{
-					uv := uint64(length<<1) ^ uint64(length>>63)
-					{
-						for uv >= 0x80 {
-							uv >>= 7
-							size++
-						}
-						size++
-					}
-				}
-				size += len(ke)
+				ss := ke.SizeMUS()
+				size += ss
 			}
-			{
-				length := len(vl)
+			size++
+			if vl != nil {
 				{
-					uv := uint64(length<<1) ^ uint64(length>>63)
-					{
-						for uv >= 0x80 {
-							uv >>= 7
-							size++
-						}
-						size++
-					}
+					ss := (*vl).SizeMUS()
+					size += ss
 				}
-				size += len(vl)
 			}
 		}
 	}
