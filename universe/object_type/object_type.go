@@ -39,7 +39,7 @@ func NewObjectType(id umid.UMID, db database.DB) *ObjectType {
 		options: &entry.ObjectOptions{
 			AllowedSubObjects: []umid.UMID{},
 			Minimap:           utils.GetPTR(true),
-			Visible:           utils.GetPTR(entry.ReactUnityObjectVisibleType),
+			Visible:           utils.GetPTR(entry.AllObjectVisibleType),
 			Editable:          utils.GetPTR(true),
 			Private:           utils.GetPTR(false),
 		},

@@ -8,7 +8,7 @@ import (
 )
 
 // MarshalMUS fills buf with the MUS encoding of v.
-func (v LockObject) MarshalMUS(buf []byte) int {
+func (v UnlockObject) MarshalMUS(buf []byte) int {
 	i := 0
 	{
 		si := v.ID.MarshalMUS(buf[i:])
@@ -18,7 +18,7 @@ func (v LockObject) MarshalMUS(buf []byte) int {
 }
 
 // UnmarshalMUS parses the MUS-encoded buf, and sets the result to *v.
-func (v *LockObject) UnmarshalMUS(buf []byte) (int, error) {
+func (v *UnlockObject) UnmarshalMUS(buf []byte) (int, error) {
 	i := 0
 	var err error
 	{
@@ -37,7 +37,7 @@ func (v *LockObject) UnmarshalMUS(buf []byte) (int, error) {
 }
 
 // SizeMUS returns the size of the MUS-encoded v.
-func (v LockObject) SizeMUS() int {
+func (v UnlockObject) SizeMUS() int {
 	size := 0
 	{
 		ss := v.ID.SizeMUS()

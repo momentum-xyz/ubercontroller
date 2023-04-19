@@ -93,7 +93,9 @@ type Node interface {
 	GetUserUserAttributes() UserUserAttributes
 	GetObjectUserAttributes() ObjectUserAttributes
 
-	CreateUsers(ctx context.Context, users ...*entry.User) error // TODO: refactor, place Users next to Nodes in a universe
+	CreateUsers(
+		ctx context.Context, users ...*entry.User,
+	) error // TODO: refactor, place Users next to Nodes in a universe
 
 	AddAPIRegister(register APIRegister)
 
@@ -202,7 +204,7 @@ type Object interface {
 	SendAttributes(sendFn func(*websocket.PreparedMessage), recursive bool)
 	SendAllAutoAttributes(sendFn func(msg *websocket.PreparedMessage) error, recursive bool)
 
-	LockUnityObject(user User, state uint32) bool
+	LockUIObject(user User, state uint32) bool
 }
 
 type User interface {
@@ -230,6 +232,8 @@ type User interface {
 
 	//GetPosBuffer() []byte
 	GetLastPosTime() int64
+	GetLastSendPosTime() int64
+	SetLastSendPosTime(int64)
 
 	Update() error
 	ReleaseSendBuffer()

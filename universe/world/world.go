@@ -2,10 +2,11 @@ package world
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"sync/atomic"
 	"time"
+
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/gorilla/websocket"
 	"github.com/hashicorp/go-multierror"
@@ -28,6 +29,8 @@ var _ universe.World = (*World)(nil)
 
 // MaxPosUpdateInterval : send user position at least ones per 5 min, even if user is not moving
 const MaxPosUpdateInterval = 60 * 5
+
+const PosUpdateInterval = 500 * time.Millisecond
 
 type World struct {
 	*object.Object
@@ -136,7 +139,7 @@ func (w *World) Run() error {
 			}
 		}()
 		go w.calendar.Run()
-		ticker := time.NewTicker(500 * time.Millisecond)
+		ticker := time.NewTicker(PosUpdateInterval)
 
 		defer func() {
 			w.calendar.Stop()
@@ -203,7 +206,9 @@ func (w *World) broadcastPositions() {
 
 	if numClients > 0 {
 		for _, u := range w.Users.Data {
-			if u.GetLastPosTime() > w.lastPosUpdate || (currentTime-u.GetLastPosTime() >= MaxPosUpdateInterval) {
+
+			if (u.GetLastPosTime() >= w.lastPosUpdate) || ((currentTime - u.GetLastSendPosTime()) > MaxPosUpdateInterval) {
+				u.SetLastSendPosTime(currentTime)
 				msg.Value = append(msg.Value, posbus.UserTransform{ID: u.GetID(), Transform: *u.GetTransform()})
 				//positionsBuffer.AddPosition(u.GetPosBuffer())
 			}

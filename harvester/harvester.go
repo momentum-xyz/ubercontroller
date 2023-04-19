@@ -62,7 +62,7 @@ func (h *Harvester) RegisterAdapter(adapter Adapter) error {
 	return nil
 }
 
-func (h *Harvester) updateHook(bcType string, updates []*UpdateEvent) {
+func (h *Harvester) updateHook(bcType string, updates []*UpdateEvent, stakeUpdates []*StakeEvent) {
 	for _, update := range updates {
 		fmt.Println("Trigger Balance")
 		h.clients.Trigger(bcType, BalanceChange, update)

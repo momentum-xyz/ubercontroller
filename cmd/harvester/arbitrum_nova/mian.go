@@ -24,7 +24,7 @@ func main() {
 	fmt.Printf("Last Block: %+v \n", n)
 
 	var l harvester.AdapterListener
-	l = func(blockNumber uint64, diffs []*harvester.BCDiff) {
+	l = func(blockNumber uint64, diffs []*harvester.BCDiff, stakes []*harvester.BCStake) {
 		fmt.Printf("Listener: %+v \n", blockNumber)
 		for k, v := range diffs {
 			fmt.Printf("%+v %+v %+v %+v\n", k, v.To, v.Token, v.Amount)
@@ -43,14 +43,21 @@ func main() {
 	fmt.Printf("Balance: %+v \n", b)
 
 	contracts := []common.Address{
-		common.HexToAddress("0x7F85fB7f42A0c0D40431cc0f7DFDf88be6495e67"),
+		//common.HexToAddress("0x7F85fB7f42A0c0D40431cc0f7DFDf88be6495e67"),
+		common.HexToAddress("0x938c38D417fD1b0a29EA1722C84Ad16fF5dD89c3"), //staking t
 	}
 	_ = contracts
 	//diffs, err := a.GetTransferLogs(0, 12, contracts)
-	diffs, err := a.GetTransferLogs(0, 12, []common.Address{})
+	diffs, stakes, err := a.GetTransferLogs(94, 115, []common.Address{})
 
+	fmt.Println("tokens ---")
 	for k, v := range diffs {
 		fmt.Printf("%+v %+v %+v %+v  \n", k, v.Token, v.To, v.Amount.String())
+	}
+
+	fmt.Println("stakes ---")
+	for k, v := range stakes {
+		fmt.Printf("%+v %+v %+v %+v %+v  \n", k, v.From, v.OdysseyID.String(), v.Amount.String(), v.TotalAmount.String())
 	}
 
 	time.Sleep(time.Second * 300)

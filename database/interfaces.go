@@ -34,6 +34,9 @@ type DB interface {
 type CommonDB interface {
 }
 
+type StakesDB interface {
+}
+
 type NodesDB interface {
 	GetNode(ctx context.Context) (*entry.Node, error)
 }

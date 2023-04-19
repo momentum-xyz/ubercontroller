@@ -103,7 +103,7 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			attributeName: "state",
 			description:   "State of the video tile",
 			options: &entry.AttributeOptions{
-				"unity_auto": map[string]string{
+				"render_auto": map[string]string{
 					"slot_name":    "Block",
 					"slot_type":    "texture",
 					"value_field":  "value",
@@ -209,7 +209,7 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			attributeName: "active_skybox",
 			description:   "Holds skybox data such as texture",
 			options: &entry.AttributeOptions{
-				"unity_auto": map[string]string{
+				"render_auto": map[string]string{
 					"slot_name":    "skybox_custom",
 					"slot_type":    "texture",
 					"content_type": "image",
@@ -254,7 +254,7 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			attributeName: "name",
 			description:   "Space name",
 			options: &entry.AttributeOptions{
-				"unity_auto": map[string]any{
+				"render_auto": map[string]any{
 					"slot_name":    "name",
 					"slot_type":    "texture",
 					"value_field":  "name",
@@ -341,10 +341,16 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 		},
 		{
 			pluginID:      universe.GetSystemPluginID(),
+			attributeName: "last_known_position",
+			description:   "Last known position for user in the world",
+			options:       nil,
+		},
+		{
+			pluginID:      universe.GetSystemPluginID(),
 			attributeName: "object_color",
 			description:   "Holds the object color",
 			options: &entry.AttributeOptions{
-				"unity_auto": map[string]any{
+				"render_auto": map[string]any{
 					"slot_type":    "string",
 					"content_type": "string",
 				},
@@ -356,7 +362,7 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			attributeName: "state",
 			description:   "State of the text tile",
 			options: &entry.AttributeOptions{
-				"unity_auto": map[string]any{
+				"render_auto": map[string]any{
 					"slot_name":    "description",
 					"slot_type":    "Block",
 					"value_field":  "value",
@@ -423,7 +429,7 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			attributeName: "state",
 			description:   "State of the image tile",
 			options: &entry.AttributeOptions{
-				"unity_auto": map[string]any{
+				"render_auto": map[string]any{
 					"slot_name":    "Block",
 					"slot_type":    "texture",
 					"content_type": "image",

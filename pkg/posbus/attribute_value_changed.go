@@ -8,7 +8,7 @@ type AttributeValueChanged struct {
 
 type AttributeValueChangedData struct {
 	AttributeName string        `json:"attribute_name"`
-	Value         *StringMapAny `json:"value"`
+	Value         *StringAnyMap `json:"value"`
 }
 
 func (r *AttributeValueChanged) GetType() MsgType {

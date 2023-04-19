@@ -35,7 +35,7 @@ func seedObjectTypes(node universe.Node) error {
 					},
 				},
 				Private:           utils.GetPTR(false),
-				Visible:           utils.GetPTR(entry.ReactObjectVisibleType),
+				Visible:           utils.GetPTR(entry.UI2DObjectVisibleType),
 				DefaultTiles:      []any{},
 				FrameTemplates:    map[string]any{},
 				AllowedSubObjects: []umid.UMID{},
@@ -50,7 +50,7 @@ func seedObjectTypes(node universe.Node) error {
 			description:    utils.GetPTR(""),
 			options: &entry.ObjectOptions{
 				Private: utils.GetPTR(false),
-				Visible: utils.GetPTR(entry.ReactUnityObjectVisibleType),
+				Visible: utils.GetPTR(entry.AllObjectVisibleType),
 				ChildPlacements: map[umid.UMID]*entry.ObjectChildPlacement{
 					umid.MustParse("00000000-0000-0000-0000-000000000000"): &entry.ObjectChildPlacement{
 						Algo: utils.GetPTR("circular"),
@@ -72,7 +72,7 @@ func seedObjectTypes(node universe.Node) error {
 			categoryName:   "Docking station",
 			description:    utils.GetPTR("Odyssey docking hub"),
 			options: &entry.ObjectOptions{
-				Visible: utils.GetPTR(entry.ReactUnityObjectVisibleType),
+				Visible: utils.GetPTR(entry.AllObjectVisibleType),
 				ChildPlacements: map[umid.UMID]*entry.ObjectChildPlacement{
 					umid.MustParse("00000000-0000-0000-0000-000000000000"): &entry.ObjectChildPlacement{
 						Algo: utils.GetPTR("circular"),
@@ -94,7 +94,7 @@ func seedObjectTypes(node universe.Node) error {
 			description:    utils.GetPTR("World Type"),
 			options: &entry.ObjectOptions{
 				Private:           utils.GetPTR(false),
-				Visible:           utils.GetPTR(entry.ReactUnityObjectVisibleType),
+				Visible:           utils.GetPTR(entry.AllObjectVisibleType),
 				DefaultTiles:      []any{},
 				FrameTemplates:    map[string]any{},
 				AllowedSubObjects: []umid.UMID{},
@@ -109,7 +109,7 @@ func seedObjectTypes(node universe.Node) error {
 			categoryName:   "Docking bulbs",
 			description:    utils.GetPTR("Odyssey docking bulb"),
 			options: &entry.ObjectOptions{
-				Visible:  utils.GetPTR(entry.ReactUnityObjectVisibleType),
+				Visible:  utils.GetPTR(entry.AllObjectVisibleType),
 				Editable: utils.GetPTR(false),
 			},
 		},
@@ -122,7 +122,7 @@ func seedObjectTypes(node universe.Node) error {
 			categoryName:   "Custom",
 			description:    utils.GetPTR("Custom placed objects"),
 			options: &entry.ObjectOptions{
-				Visible: utils.GetPTR(entry.ReactUnityObjectVisibleType),
+				Visible: utils.GetPTR(entry.AllObjectVisibleType),
 			},
 		},
 
@@ -134,7 +134,7 @@ func seedObjectTypes(node universe.Node) error {
 			categoryName:   "Effects",
 			description:    utils.GetPTR("Effects emitter"),
 			options: &entry.ObjectOptions{
-				Visible: utils.GetPTR(entry.UnityObjectVisibleType),
+				Visible: utils.GetPTR(entry.UI3DObjectVisibleType),
 			},
 		},
 
@@ -163,7 +163,7 @@ func seedObjectTypes(node universe.Node) error {
 			description:    utils.GetPTR("Skybox"),
 			options: &entry.ObjectOptions{
 				Editable: utils.GetPTR(false),
-				Visible:  utils.GetPTR(entry.UnityObjectVisibleType),
+				Visible:  utils.GetPTR(entry.UI3DObjectVisibleType),
 			},
 		},
 
@@ -176,7 +176,7 @@ func seedObjectTypes(node universe.Node) error {
 			description:    utils.GetPTR(""),
 			options: &entry.ObjectOptions{
 				Private:           utils.GetPTR(false),
-				Visible:           utils.GetPTR(entry.ReactUnityObjectVisibleType),
+				Visible:           utils.GetPTR(entry.AllObjectVisibleType),
 				DefaultTiles:      []any{},
 				FrameTemplates:    map[string]any{},
 				AllowedSubObjects: []umid.UMID{},

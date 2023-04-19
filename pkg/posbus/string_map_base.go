@@ -1,20 +1,22 @@
 package posbus
 
-import "github.com/momentum-xyz/ubercontroller/logger"
+import (
+	"github.com/niubaoshu/gotiny"
+)
 
-type StringMapAny map[string]any
+type StringAnyMap map[string]any
 
-func (v StringMapAny) MarshalMUS(buf []byte) int {
-	logger.L().Infof("*********** StringMapAny.MarshalMUS is not implemented yet!")
-	return 0
+func (v StringAnyMap) MarshalMUS(buf []byte) int {
+	b := gotiny.Marshal(&v)
+	copy(buf, b)
+	return len(b)
 }
 
-func (v *StringMapAny) UnmarshalMUS(buf []byte) (int, error) {
-	logger.L().Infof("*********** StringMapAny.UnmarshalMUS is not implemented yet!")
-	return 0, nil
+func (v *StringAnyMap) UnmarshalMUS(buf []byte) (int, error) {
+	l := gotiny.Unmarshal(buf, v)
+	return l, nil
 }
 
-func (v StringMapAny) SizeMUS() int {
-	logger.L().Infof("*********** StringMapAny.SizeMUS is not implemented yet!")
-	return 0
+func (v StringAnyMap) SizeMUS() int {
+	return len(gotiny.Marshal(&v))
 }
