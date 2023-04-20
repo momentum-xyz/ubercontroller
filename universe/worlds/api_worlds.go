@@ -2,10 +2,9 @@ package worlds
 
 import (
 	"fmt"
+	"math/big"
 	"net/http"
 	"strings"
-
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -17,6 +16,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 // @Summary Get world online users
@@ -144,13 +144,28 @@ func (w *Worlds) apiWorldsGet(c *gin.Context) {
 			}
 		}
 
+		stakes, err := w.db.GetStakesDB().GetStakesByWorldID(c, worldID)
+		if err != nil {
+			err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to get stakes for world")
+			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_stakes", err, w.log)
+			return
+		}
+
+		var totalStake big.Int
+		if stakes != nil {
+			for _, stake := range stakes {
+				s := (*big.Int)(stake.Amount)
+				totalStake.Add(&totalStake, s)
+			}
+		}
+
 		recent := dto.RecentWorld{
 			ID:          world.GetID(),
 			OwnerID:     ownerID,
 			OwnerName:   ownerName,
 			Name:        utils.GetPTR(world.GetName()),
 			Description: utils.GetPTR(world.GetDescription()),
-			StakeTotal:  utils.GetPTR(0),
+			StakeTotal:  &totalStake,
 			AvatarHash:  nil,
 		}
 

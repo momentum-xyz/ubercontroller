@@ -2,6 +2,8 @@
 package dto
 
 import (
+	"math/big"
+
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
@@ -59,7 +61,7 @@ type RecentWorld struct {
 	OwnerID     umid.UMID `json:"owner_id"`
 	OwnerName   *string   `json:"owner_name"`
 	Description *string   `json:"description"`
-	StakeTotal  *int      `json:"stake_total"`
+	StakeTotal  *big.Int  `json:"stake_total,omitempty"`
 	Name        *string   `json:"name"`
 	AvatarHash  *string   `json:"avatarHash"`
 }
