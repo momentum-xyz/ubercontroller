@@ -151,9 +151,10 @@ func (t *Table) ProcessDiffs(blockNumber uint64, diffs []*BCDiff, stakes []*BCSt
 }
 
 func (t *Table) listener(blockNumber uint64, diffs []*BCDiff, stakes []*BCStake) {
-	t.mu.Lock()
-	t.ProcessDiffs(blockNumber, diffs, stakes)
-	t.mu.Unlock()
+	t.fastForward()
+	//t.mu.Lock()
+	//t.ProcessDiffs(blockNumber, diffs, stakes)
+	//t.mu.Unlock()
 }
 
 func (t *Table) SaveToDB(events []*UpdateEvent, stakeEvents []*StakeEvent) error {

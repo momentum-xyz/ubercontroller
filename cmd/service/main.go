@@ -12,6 +12,8 @@ import (
 	"github.com/zakaria-chahboun/cute"
 
 	"github.com/momentum-xyz/ubercontroller/config"
+	"github.com/momentum-xyz/ubercontroller/harvester"
+	"github.com/momentum-xyz/ubercontroller/harvester/arbitrum_nova_adapter"
 	"github.com/momentum-xyz/ubercontroller/logger"
 	"github.com/momentum-xyz/ubercontroller/pkg/service"
 	"github.com/momentum-xyz/ubercontroller/types"
@@ -53,6 +55,13 @@ func run(ctx context.Context) error {
 	cute.SetTitleColor(cute.BrightGreen)
 	cute.SetMessageColor(cute.BrightBlue)
 	cute.Println("Node loaded", "Loading time:", tm2.Sub(tm1))
+
+	harv := harvester.NewHarvester(pool)
+	arbitrumAdapter := arbitrum_nova_adapter.NewArbitrumNovaAdapter()
+	arbitrumAdapter.Run()
+	if err := harv.RegisterAdapter(arbitrumAdapter); err != nil {
+		return errors.WithMessage(err, "failed to register arbitrum adapter")
+	}
 
 	if err := node.Run(); err != nil {
 		return errors.WithMessagef(err, "failed to run node: %s", node.GetID())
