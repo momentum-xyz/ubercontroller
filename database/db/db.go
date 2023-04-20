@@ -27,6 +27,7 @@ type DB struct {
 	database.ObjectUserAttributesDB
 	database.UserAttributesDB
 	database.UserUserAttributesDB
+	database.StakesDB
 }
 
 func NewDB(
@@ -48,6 +49,7 @@ func NewDB(
 	objectUserAttributes database.ObjectUserAttributesDB,
 	userAttributes database.UserAttributesDB,
 	userUserAttributes database.UserUserAttributesDB,
+	stakesDB database.StakesDB,
 ) *DB {
 	return &DB{
 		conn:                   conn,
@@ -68,6 +70,7 @@ func NewDB(
 		ObjectUserAttributesDB: objectUserAttributes,
 		UserAttributesDB:       userAttributes,
 		UserUserAttributesDB:   userUserAttributes,
+		StakesDB:               stakesDB,
 	}
 }
 
@@ -137,4 +140,8 @@ func (DB *DB) GetUserUserAttributesDB() database.UserUserAttributesDB {
 
 func (DB *DB) GetUserObjectsDB() database.UserObjectsDB {
 	return DB.UserObjectsDB
+}
+
+func (DB *DB) GetStakesDB() database.StakesDB {
+	return DB.StakesDB
 }
