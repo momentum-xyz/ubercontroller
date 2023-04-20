@@ -201,23 +201,42 @@ func (w *World) stopObjects() error {
 func (w *World) broadcastPositions() {
 	w.Users.Mu.RLock()
 	numClients := len(w.Users.Data)
-	msg := posbus.UsersTransformList{}
 	currentTime := time.Now().Unix()
 
-	if numClients > 0 {
-		for _, u := range w.Users.Data {
+	// Need to do some 'reasonable' batching.
+	// - fit inside max message size of a receiving client.
+	// - something reasonable to process in frontend and not lockup UI thread for too long?
+	// Size is about 40b per client with some overhead,
+	// 'default' setting of our websocket client is 32kb
+	// so as a start, something that fits and won't often be triggered?
+	batchSize := 768
 
+	var msgBatches []posbus.UsersTransformList
+	if numClients > 0 {
+		uTransforms := make([]posbus.UserTransform, 0)
+		for _, u := range w.Users.Data {
 			if (u.GetLastPosTime() >= w.lastPosUpdate) || ((currentTime - u.GetLastSendPosTime()) > MaxPosUpdateInterval) {
 				u.SetLastSendPosTime(currentTime)
-				msg.Value = append(msg.Value, posbus.UserTransform{ID: u.GetID(), Transform: *u.GetTransform()})
-				//positionsBuffer.AddPosition(u.GetPosBuffer())
+				uTransforms = append(uTransforms, posbus.UserTransform{ID: u.GetID(), Transform: *u.GetTransform()})
 			}
 		}
+		nrUpdates := len(uTransforms)
+		msgBatches = make([]posbus.UsersTransformList, 0, (nrUpdates+batchSize-1)/batchSize)
+
+		generic.NewButcher(uTransforms).HandleBatchesSync(
+			batchSize,
+			func(batch []posbus.UserTransform) error {
+				msg := posbus.UsersTransformList{}
+				msg.Value = batch
+				msgBatches = append(msgBatches, msg)
+				return nil
+			},
+		)
 	}
 	w.lastPosUpdate = currentTime
 
 	w.Users.Mu.RUnlock()
-	if len(msg.Value) > 0 {
+	for _, msg := range msgBatches {
 		w.Send(posbus.WSMessage(&msg), true)
 	}
 }
