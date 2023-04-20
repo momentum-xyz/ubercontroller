@@ -29,12 +29,10 @@ type DB interface {
 	GetObjectUserAttributesDB() ObjectUserAttributesDB
 	GetUserAttributesDB() UserAttributesDB
 	GetUserUserAttributesDB() UserUserAttributesDB
+	GetStakesDB() StakesDB
 }
 
 type CommonDB interface {
-}
-
-type StakesDB interface {
 }
 
 type NodesDB interface {
@@ -74,6 +72,7 @@ type UsersDB interface {
 	GetAllUsers(ctx context.Context, userTypeID umid.UMID) ([]*entry.User, error)
 	GetUserByWallet(ctx context.Context, wallet string) (*entry.User, error)
 	GetUserWalletByUserID(ctx context.Context, userID umid.UMID) (*string, error)
+	GetUserWalletsByUserID(ctx context.Context, userID umid.UMID) ([]*string, error)
 	GetUserProfileByUserID(ctx context.Context, userID umid.UMID) (*entry.UserProfile, error)
 	GetUsersByUserType(ctx context.Context, userTypeID umid.UMID) ([]*entry.User, error)
 
@@ -443,4 +442,8 @@ type UserUserAttributesDB interface {
 	RemoveUserUserAttributesByPluginIDAndSourceUserIDAndTargetUserID(
 		ctx context.Context, pluginID umid.UMID, sourceUserID umid.UMID, targetUserID umid.UMID,
 	) error
+}
+
+type StakesDB interface {
+	GetStakes(ctx context.Context, walletID []byte) ([]*map[string]any, error)
 }
