@@ -17,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/harvester"
@@ -309,7 +310,12 @@ func (a *ArbitrumNovaAdapter) GetTransferLogs(fromBlock, toBlock int64, addresse
 				TotalAmount: totalAmount,
 			}
 
-			stakes = append(stakes, stake)
+			if stake.OdysseyID.String() != uuid.MustParse("ccccaaaa-1111-2222-3333-222222222222").String() &&
+				stake.OdysseyID.String() != uuid.MustParse("ccccaaaa-1111-2222-3333-222222222244").String() &&
+				stake.OdysseyID.String() != uuid.MustParse("ccccaaaa-1111-2222-3333-222222222241").String() {
+
+				stakes = append(stakes, stake)
+			}
 
 		//fmt.Printf("%+v %+v %+v %+v \n\n", fromWallet.String(), odysseyID.String(), amount, tokenType)
 		//fmt.Println(ev)

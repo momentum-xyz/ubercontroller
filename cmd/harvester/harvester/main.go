@@ -11,7 +11,7 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/harvester"
-	"github.com/momentum-xyz/ubercontroller/harvester/ethereum_adapter"
+	"github.com/momentum-xyz/ubercontroller/harvester/arbitrum_nova_adapter"
 )
 
 func main() {
@@ -30,23 +30,21 @@ func main() {
 	var harv harvester.IHarvester
 	harv = harvester.NewHarvester(pool)
 
-	// ** Ethereum Adapter
-	ethereumAdapter := ethereum_adapter.NewEthereumAdapter()
-	ethereumAdapter.Run()
-	_, _, _ = ethereumAdapter.GetInfo()
-	if err := harv.RegisterAdapter(ethereumAdapter); err != nil {
+	// **  Adapter
+	adapter := arbitrum_nova_adapter.NewArbitrumNovaAdapter()
+	adapter.Run()
+	_, _, _ = adapter.GetInfo()
+	if err := harv.RegisterAdapter(adapter); err != nil {
 		log.Fatal(err)
 	}
 
 	// ** Harvester Clients
 	testHandler1 := testHandler1
 	ptrTestHandler1 := &testHandler1
-	harv.Subscribe(harvester.Ethereum, harvester.NewBlock, ptrTestHandler1)
-	harv.Subscribe(harvester.Polkadot, harvester.NewBlock, ptrTestHandler1)
+	harv.Subscribe(harvester.ArbitrumNova, harvester.NewBlock, ptrTestHandler1)
 
 	testHandler2 := testHandler2
 	ptrTestHandler2 := &testHandler2
-	harv.Subscribe(harvester.Ethereum, harvester.NewBlock, ptrTestHandler2)
 
 	//wallet1 := "0x9592b70a5a6c8ece2ef55547c3f07f1862372fd1"
 	//contract1 := "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae"
@@ -72,14 +70,14 @@ func main() {
 	}
 
 	for _, pair := range pairs {
-		err = harv.SubscribeForWalletAndContract(harvester.Ethereum, pair.Wallet, pair.Contract, ptrTestHandler2)
+		err = harv.SubscribeForWalletAndContract(harvester.ArbitrumNova, pair.Wallet, pair.Contract, ptrTestHandler2)
 		if err != nil {
 			panic(err)
 		}
 	}
 
 	time.Sleep(time.Second * 30)
-	harv.Unsubscribe(harvester.Ethereum, harvester.NewBlock, ptrTestHandler2)
+	harv.Unsubscribe(harvester.ArbitrumNova, harvester.NewBlock, ptrTestHandler2)
 
 	time.Sleep(time.Second * 500)
 }
