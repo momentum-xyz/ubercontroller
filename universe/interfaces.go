@@ -100,6 +100,7 @@ type Node interface {
 	AddAPIRegister(register APIRegister)
 
 	WriteInfluxPoint(point *influxWrite.Point) error
+	LoadUser(userID umid.UMID) (User, error)
 }
 
 type Worlds interface {
@@ -131,6 +132,8 @@ type World interface {
 
 	GetSettings() *WorldSettings
 
+	GetTotalStake() uint8
+
 	GetCalendar() Calendar
 
 	WriteInfluxPoint(point *influxWrite.Point) error
@@ -151,6 +154,8 @@ type Object interface {
 
 	GetName() string
 	SetName(name string, updateDB bool) error
+
+	GetDescription() string
 
 	GetParent() Object
 	SetParent(parent Object, updateDB bool) error

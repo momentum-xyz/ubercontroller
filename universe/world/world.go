@@ -50,6 +50,16 @@ type World struct {
 	lastPosUpdate       int64
 }
 
+func (w *World) LockUIObject(user universe.User, state uint32) bool {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (w *World) GetTotalStake() uint8 {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (w *World) TempSetSkybox(msg *websocket.PreparedMessage) {
 	w.skyBoxMsg.Store(msg)
 }

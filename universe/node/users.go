@@ -2,28 +2,14 @@ package node
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/types/entry"
-	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/pkg/errors"
 
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/user"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
-
-func (n *Node) LoadUser(userID umid.UMID) (universe.User, error) {
-	user := user.NewUser(userID, n.db)
-	if err := user.Initialize(n.ctx); err != nil {
-		return nil, errors.WithMessagef(err, "failed to initialize user: %s", userID)
-	}
-
-	if err := user.Load(); err != nil {
-		return nil, errors.WithMessagef(err, "failed to load user: %s", userID)
-	}
-
-	return user, nil
-}
 
 // Create new users on this node.
 func (n *Node) CreateUsers(ctx context.Context, users ...*entry.User) error {

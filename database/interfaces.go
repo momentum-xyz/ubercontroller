@@ -77,7 +77,7 @@ type UsersDB interface {
 	GetUserProfileByUserID(ctx context.Context, userID umid.UMID) (*entry.UserProfile, error)
 	GetUsersByUserType(ctx context.Context, userTypeID umid.UMID) ([]*entry.User, error)
 
-	GetUserIDs(ctx context.Context, sortType universe.SortType, limit string) ([]umid.UMID, error)
+	GetUserIDs(ctx context.Context, sortType universe.SortType, limit string, userTypeID umid.UMID) ([]umid.UMID, error)
 
 	CheckIsUserExistsByName(ctx context.Context, name string) (bool, error)
 	CheckIsUserExistsByWallet(ctx context.Context, wallet string) (bool, error)

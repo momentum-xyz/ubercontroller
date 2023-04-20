@@ -133,7 +133,14 @@ func (n *Node) apiUsersGet(c *gin.Context) {
 		sortType = universe.DESC
 	}
 
-	recentUserIDs, err := n.db.GetUsersDB().GetUserIDs(n.ctx, sortType, inQuery.Limit)
+	normUserTypeID, err := common.GetNormalUserTypeID()
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiUsersGet: failed to get normal user type id")
+		api.AbortRequest(c, http.StatusInternalServerError, "get_user_type_failed", err, n.log)
+		return
+	}
+
+	recentUserIDs, err := n.db.GetUsersDB().GetUserIDs(n.ctx, sortType, inQuery.Limit, normUserTypeID)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiUsersGet: failed to get latest user ids")
 		api.AbortRequest(c, http.StatusInternalServerError, "get_latest_users_failed", err, n.log)

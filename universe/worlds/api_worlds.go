@@ -109,6 +109,8 @@ func (w *Worlds) apiWorldsGet(c *gin.Context) {
 		sortType = universe.DESC
 	}
 
+	node := universe.GetNode()
+
 	recentWorldIDs, err := w.db.GetWorldsDB().GetWorldIDs(w.ctx, sortType, inQuery.Limit)
 	if err != nil {
 		err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to get world ids")
@@ -118,13 +120,40 @@ func (w *Worlds) apiWorldsGet(c *gin.Context) {
 
 	recents := make([]dto.RecentWorld, 0, len(recentWorldIDs))
 
+	//description field
+	//stake total amt for object
+
 	for _, worldID := range recentWorldIDs {
-		world, _ := w.GetWorld(worldID)
+		world, ok := w.GetWorld(worldID)
+		if !ok {
+			err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to get world by id")
+			api.AbortRequest(c, http.StatusInternalServerError, "get_world_by_id_failed", err, w.log)
+			return
+		}
+
+		ownerID := world.GetOwnerID()
+		loadedUser, err := node.LoadUser(ownerID)
+		if err != nil {
+			err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to load user")
+			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_load_user", err, w.log)
+			return
+		}
+
+		var ownerName *string
+		profile := loadedUser.GetProfile()
+		if profile != nil {
+			if profile.Name != nil {
+				ownerName = profile.Name
+			}
+		}
 
 		recent := dto.RecentWorld{
-			ID:         world.GetID(),
-			Name:       utils.GetPTR(world.GetName()),
-			AvatarHash: nil,
+			ID:          world.GetID(),
+			OwnerID:     ownerID,
+			OwnerName:   ownerName,
+			Name:        utils.GetPTR(world.GetName()),
+			Description: utils.GetPTR(world.GetDescription()),
+			AvatarHash:  nil,
 		}
 
 		recents = append(recents, recent)

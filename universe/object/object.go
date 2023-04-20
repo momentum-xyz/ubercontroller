@@ -95,6 +95,17 @@ func (o *Object) SetEnabled(enabled bool) {
 	o.enabled.Store(enabled)
 }
 
+func (o *Object) GetDescription() string {
+	defaultDescription := "No Description Set"
+	value, ok := o.GetObjectAttributes().GetValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Object.Description.Name),
+	)
+	if !ok || value == nil {
+		return defaultDescription
+	}
+	return utils.GetFromAnyMap(*value, universe.ReservedAttributes.Object.Description.Key, defaultDescription)
+}
+
 func (o *Object) GetName() string {
 	name := o.GetID().String()
 	value, ok := o.GetObjectAttributes().GetValue(

@@ -55,9 +55,13 @@ type ExploreOption struct {
 }
 
 type RecentWorld struct {
-	ID         umid.UMID `json:"id"`
-	Name       *string   `json:"name"`
-	AvatarHash *string   `json:"avatarHash"`
+	ID          umid.UMID `json:"id"`
+	OwnerID     umid.UMID `json:"owner_id"`
+	OwnerName   *string   `json:"owner_name"`
+	Description *string   `json:"description"`
+	StakeTotal  *uint8    `json:"stake_total"`
+	Name        *string   `json:"name"`
+	AvatarHash  *string   `json:"avatarHash"`
 }
 
 //type FlyToMe struct {
