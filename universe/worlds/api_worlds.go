@@ -120,9 +120,6 @@ func (w *Worlds) apiWorldsGet(c *gin.Context) {
 
 	recents := make([]dto.RecentWorld, 0, len(recentWorldIDs))
 
-	//description field
-	//stake total amt for object
-
 	for _, worldID := range recentWorldIDs {
 		world, ok := w.GetWorld(worldID)
 		if !ok {
@@ -153,6 +150,7 @@ func (w *Worlds) apiWorldsGet(c *gin.Context) {
 			OwnerName:   ownerName,
 			Name:        utils.GetPTR(world.GetName()),
 			Description: utils.GetPTR(world.GetDescription()),
+			StakeTotal:  utils.GetPTR(0),
 			AvatarHash:  nil,
 		}
 

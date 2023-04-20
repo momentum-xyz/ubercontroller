@@ -59,7 +59,7 @@ type RecentWorld struct {
 	OwnerID     umid.UMID `json:"owner_id"`
 	OwnerName   *string   `json:"owner_name"`
 	Description *string   `json:"description"`
-	StakeTotal  *uint8    `json:"stake_total"`
+	StakeTotal  *int      `json:"stake_total"`
 	Name        *string   `json:"name"`
 	AvatarHash  *string   `json:"avatarHash"`
 }
