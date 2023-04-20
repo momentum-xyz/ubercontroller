@@ -2,6 +2,7 @@ package stakes
 
 import (
 	"context"
+	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -9,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/database"
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
@@ -52,8 +54,7 @@ func (db *DB) GetStakes(ctx context.Context, walletID []byte) ([]*map[string]any
 		var name string
 		var walletID common.Address
 		var blockchainID umid.UMID
-		//var amount entry.BigInt // TODO use BigInt need to update SQL schema
-		var amount int64
+		var amount entry.BigInt
 		var lastComment string
 		var updatedAt time.Time
 
@@ -67,7 +68,7 @@ func (db *DB) GetStakes(ctx context.Context, walletID []byte) ([]*map[string]any
 		item["name"] = name
 		item["wallet_id"] = walletID
 		item["blockchain_id"] = blockchainID
-		item["amount"] = amount
+		item["amount"] = (*big.Int)(&amount).String()
 		item["lastComment"] = lastComment
 		item["updatedAt"] = updatedAt
 
