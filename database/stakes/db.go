@@ -69,6 +69,7 @@ func (db *DB) GetStakes(ctx context.Context, walletID []byte) ([]*map[string]any
 		item["wallet_id"] = walletID
 		item["blockchain_id"] = blockchainID
 		item["amount"] = (*big.Int)(&amount).String()
+		item["reward"] = "0"
 		item["lastComment"] = lastComment
 		item["updatedAt"] = updatedAt
 
