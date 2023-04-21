@@ -4,6 +4,13 @@ import (
 	"github.com/niubaoshu/gotiny"
 )
 
+func init() {
+	// workaround, sometimes when receiving StringAnyMap, we end up in the 'interface' branch of gotiny unmarshalling and not the map handling :/
+	// Needs some more debugging. But for now avoid the panic when handling these.
+	gotiny.Register("")
+	gotiny.Register(map[string]any{})
+}
+
 type StringAnyMap map[string]any
 
 func (v StringAnyMap) MarshalMUS(buf []byte) int {
