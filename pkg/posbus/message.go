@@ -5,12 +5,13 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/gobeam/stringy"
-	"github.com/gorilla/websocket"
 	"os"
 	"reflect"
 	"sort"
 	"sync"
+
+	"github.com/gobeam/stringy"
+	"github.com/gorilla/websocket"
 )
 
 const (
@@ -105,9 +106,14 @@ func Decode(buf []byte) (Message, error) {
 	return m, err
 }
 
-func DecodeTo(buf []byte, m Message) error {
-	_, err := m.UnmarshalMUS(buf[MsgTypeSize:])
-	return err
+func DecodeTo(buf []byte, m Message) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic decoding Message: %v", r)
+		}
+	}()
+	_, err = m.UnmarshalMUS(buf[MsgTypeSize:])
+	return
 }
 
 func WSMessage(m Message) *websocket.PreparedMessage {
