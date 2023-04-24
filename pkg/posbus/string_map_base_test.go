@@ -28,6 +28,12 @@ func TestStringAnyMapMarshalling(t *testing.T) {
 				"foo": map[string]any{"bar": "baz"},
 			},
 		},
+		{
+			name: "bool",
+			in: posbus.StringAnyMap{
+				"foo": true,
+			},
+		},
 	}
 
 	for _, subTest := range subTests {
