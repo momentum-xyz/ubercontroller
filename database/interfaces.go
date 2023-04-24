@@ -446,4 +446,5 @@ type UserUserAttributesDB interface {
 
 type StakesDB interface {
 	GetStakes(ctx context.Context, walletID []byte) ([]*map[string]any, error)
+	GetWalletsInfo(ctx context.Context, walletIDs [][]byte) ([]*map[string]any, error)
 }
