@@ -57,7 +57,7 @@ func (a *ArbitrumNovaAdapter) GetLastBlockNumber() (uint64, error) {
 
 	var resp string
 	if err := a.rpcClient.Call(&resp, "eth_blockNumber"); err != nil {
-		return 0, errors.WithMessage(err, "failed to make RPC call to ethereum:")
+		return 0, errors.WithMessage(err, "failed to make RPC call to arbitrum:")
 	}
 
 	return hex2int(resp), nil
@@ -86,7 +86,7 @@ func (a *ArbitrumNovaAdapter) Run() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Connected to Ethereum Block Chain: " + a.wsURL)
+	fmt.Println("Connected to Arbitrum Block Chain: " + a.wsURL)
 	///////
 
 	ticker := time.NewTicker(1000 * time.Millisecond)
@@ -177,7 +177,7 @@ func (a *ArbitrumNovaAdapter) GetBalance(wallet string, contract string, blockNu
 	var resp string
 	n := hexutil.EncodeUint64(blockNumber)
 	if err := a.rpcClient.Call(&resp, "eth_call", req, n); err != nil {
-		return nil, errors.WithMessage(err, "failed to make RPC call to ethereum:")
+		return nil, errors.WithMessage(err, "failed to make RPC call to arbitrum:")
 	}
 
 	// remove leading zero of resp

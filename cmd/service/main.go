@@ -62,6 +62,10 @@ func run(ctx context.Context) error {
 	if err := harvester.GetInstance().RegisterAdapter(arbitrumAdapter); err != nil {
 		return errors.WithMessage(err, "failed to register arbitrum adapter")
 	}
+	err = harvester.SubscribeAllWallets(ctx, harvester.GetInstance(), cfg, pool)
+	if err != nil {
+		log.Error(err)
+	}
 
 	if err := node.Run(); err != nil {
 		return errors.WithMessagef(err, "failed to run node: %s", node.GetID())
