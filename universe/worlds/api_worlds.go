@@ -152,7 +152,7 @@ func (w *Worlds) apiWorldsGetDetails(c *gin.Context) {
 			totalStake.Add(&totalStake, stakeAmt)
 
 			worldStaker := dto.WorldStaker{
-				ID:         userAttribute.UserID,
+				UserID:     userAttribute.UserID,
 				Name:       stakerName,
 				Stake:      stakeAmt,
 				AvatarHash: nil,
@@ -162,9 +162,9 @@ func (w *Worlds) apiWorldsGetDetails(c *gin.Context) {
 		}
 	}
 
-	latestStake, err := w.db.GetStakesDB().GetStakeByLatestStake(c)
+	latestStakeComment, err := w.db.GetStakesDB().GetStakeByLatestStake(c)
 	if err != nil {
-		err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to get latest stake")
+		err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to get latest stake comment")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_latest_stake", err, w.log)
 		return
 	}
@@ -178,7 +178,7 @@ func (w *Worlds) apiWorldsGetDetails(c *gin.Context) {
 		StakeTotal:         &totalStake,
 		AvatarHash:         nil,
 		WorldStakers:       worldStakers,
-		LastStakingComment: utils.GetPTR(latestStake.LastComment),
+		LastStakingComment: latestStakeComment,
 	}
 
 	c.JSON(http.StatusOK, worldDetails)

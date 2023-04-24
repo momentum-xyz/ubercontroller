@@ -79,7 +79,7 @@ type WorldDetails struct {
 }
 
 type WorldStaker struct {
-	ID         umid.UMID `json:"id"`
+	UserID     umid.UMID `json:"user_id"`
 	Name       *string   `json:"name"`
 	Stake      *big.Int  `json:"stake,omitempty"`
 	AvatarHash *string   `json:"avatarHash"`
