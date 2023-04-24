@@ -3,13 +3,13 @@ package seed
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
 
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"github.com/momentum-xyz/ubercontroller/config"
@@ -34,12 +34,12 @@ func seedRecursive(ctx context.Context, client *http.Client, basePath string) er
 	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
 	return filepath.WalkDir(basePath, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
-			return errors.WithMessagef(err, "seed data files %s", path)
+			return fmt.Errorf("seed data files: %w", err)
 		}
 		if !entry.IsDir() {
 			file, err := os.Open(path)
 			if err != nil {
-				return errors.WithMessagef(err, "reading seed data file %s", path)
+				return fmt.Errorf("reading seed data file: %w", err)
 			}
 
 			defer file.Close()
@@ -54,7 +54,6 @@ func seedRecursive(ctx context.Context, client *http.Client, basePath string) er
 			}
 			log.Infof("Seed %s = %s", rPath, fHash)
 		} else if path != basePath {
-			fmt.Printf("Seed from %s\n", path)
 			seedRecursive(ctx, client, path)
 		}
 		return nil
@@ -89,7 +88,7 @@ func uploadSeedFile(ctx context.Context, client *http.Client, f *os.File) (strin
 func uploadFile(ctx context.Context, client *http.Client, f *os.File, renderURL string, mimeType string) (string, error) {
 	req, err := http.NewRequest("POST", renderURL, f)
 	if err != nil {
-		return "", errors.WithMessage(err, "failed to media manager url")
+		return "", fmt.Errorf("media manager request: %w", err)
 	}
 
 	req.Header.Set("Content-Type", mimeType)
