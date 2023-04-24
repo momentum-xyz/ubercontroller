@@ -1,13 +1,14 @@
 package node
 
 import (
-	"encoding/hex"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
+	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 // @Summary Get current user's stakes list
@@ -36,7 +37,6 @@ func (n *Node) apiGetMyStakes(c *gin.Context) {
 	}
 	_ = userEntry
 
-	//wallets, err := n.db.GetUsersDB().GetUserWalletsByUserID(c, umid.MustParse("f4c90bda-34c9-4e6f-9d8e-328164c6a019"))
 	wallets, err := n.db.GetUsersDB().GetUserWalletsByUserID(c, userID)
 	if err != nil {
 		err := errors.WithMessagef(err, "Node: apiUsersGetMe: wallets not found for given user_id:%s", userID)
@@ -44,10 +44,9 @@ func (n *Node) apiGetMyStakes(c *gin.Context) {
 		return
 	}
 
-	result := make([]*map[string]any, 0)
-
+	result := make([]*entry.Stake, 0)
 	for _, w := range wallets {
-		r, err := n.db.GetStakesDB().GetStakesByWalletID(c, HexToAddress(*w))
+		r, err := n.db.GetStakesDB().GetStakesByWalletID(c, utils.HexToAddress(*w))
 		if err != nil {
 			err := errors.WithMessagef(err, "Node: apiUsersGetMe: can not get stakes for wallet:%s", *w)
 			api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, n.log)
@@ -57,12 +56,4 @@ func (n *Node) apiGetMyStakes(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, result)
-}
-
-func HexToAddress(s string) []byte {
-	b, err := hex.DecodeString(s[2:])
-	if err != nil {
-		panic(err)
-	}
-	return b
 }

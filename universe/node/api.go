@@ -93,6 +93,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 			{
 				user.GET("", n.apiUsersGetByID)
 				user.GET("/worlds", n.apiUsersGetOwnedWorlds)
+				user.GET("/staked-worlds", n.apiUsersGetStakedWorlds)
 
 				userAttributesGroup := user.Group("/attributes")
 				{

@@ -215,6 +215,63 @@ func (n *Node) apiUsersGetOwnedWorlds(c *gin.Context) {
 	c.JSON(http.StatusOK, ownedWorlds)
 }
 
+// @Summary Get the worlds the user has staked in
+// @Schemes
+// @Description Returns a list of staked Worlds for a user
+// @Tags users
+// @Accept json
+// @Produce json
+// @Success 200 {array} dto.StakedWorld
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/users/{user_id}/stake-world [get]
+func (n *Node) apiUsersGetStakedWorlds(c *gin.Context) {
+	userID, err := umid.Parse(c.Param("userID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiUsersGetStakedWorlds: failed to parse user umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
+		return
+	}
+
+	wallets, err := n.db.GetUsersDB().GetUserWalletsByUserID(c, userID)
+	if err != nil {
+		err := errors.WithMessagef(err, "Node: apiUsersGetStakedWorlds: wallets not found for given user_id:%s", userID)
+		api.AbortRequest(c, http.StatusNotFound, "wallets_not_found", err, n.log)
+		return
+	}
+
+	var stakedWorlds []dto.StakedWorld
+	for _, wallet := range wallets {
+		stakes, err := n.db.GetStakesDB().GetStakesByWalletID(c, utils.HexToAddress(*wallet))
+		if err != nil {
+			err := errors.WithMessage(err, "Node: apiUsersGetStakedWorlds: failed to get stakes for world")
+			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_stakes", err, n.log)
+			return
+		}
+
+		for _, stake := range stakes {
+			world, ok := n.GetObject(stake.ObjectID, false)
+			if !ok {
+				err := errors.Errorf("Node: apiUsersGetStakedWorlds: world not found: %s", stake.ObjectID)
+				api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, n.log)
+				return
+			}
+
+			stakedWorld := dto.StakedWorld{
+				ID:          world.GetID(),
+				OwnerID:     world.GetOwnerID(),
+				Name:        utils.GetPTR(world.GetName()),
+				Description: utils.GetPTR(world.GetDescription()),
+				AvatarHash:  nil,
+			}
+			stakedWorlds = append(stakedWorlds, stakedWorld)
+		}
+	}
+
+	c.JSON(http.StatusOK, stakedWorlds)
+}
+
 //// @Summary Search available users
 //// @Schemes
 //// @Description Returns user information based on a search query

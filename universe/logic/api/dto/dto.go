@@ -147,6 +147,14 @@ type OwnedWorld struct {
 	AvatarHash  *string   `json:"avatarHash"`
 }
 
+type StakedWorld struct {
+	ID          umid.UMID `json:"id"`
+	OwnerID     umid.UMID `json:"owner_id"`
+	Name        *string   `json:"name,omitempty"`
+	Description *string   `json:"description"`
+	AvatarHash  *string   `json:"avatarHash"`
+}
+
 type Asset2d struct {
 	Meta    Asset2dMeta    `json:"meta"`
 	Options Asset2dOptions `json:"options"`
