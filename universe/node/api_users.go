@@ -14,6 +14,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/converters"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
+	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
@@ -201,9 +202,11 @@ func (n *Node) apiUsersGetOwnedWorlds(c *gin.Context) {
 		name := world.GetName()
 
 		ownedWorld := dto.OwnedWorld{
-			ID:      world.GetID(),
-			OwnerID: world.GetOwnerID(),
-			Name:    &name,
+			ID:          world.GetID(),
+			OwnerID:     world.GetOwnerID(),
+			Name:        &name,
+			Description: utils.GetPTR(world.GetDescription()),
+			AvatarHash:  nil,
 		}
 
 		ownedWorlds = append(ownedWorlds, ownedWorld)

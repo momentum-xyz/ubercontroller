@@ -140,9 +140,11 @@ type Object struct {
 }
 
 type OwnedWorld struct {
-	ID      umid.UMID `json:"id"`
-	OwnerID umid.UMID `json:"owner_id"`
-	Name    *string   `json:"name,omitempty"`
+	ID          umid.UMID `json:"id"`
+	OwnerID     umid.UMID `json:"owner_id"`
+	Name        *string   `json:"name,omitempty"`
+	Description *string   `json:"description"`
+	AvatarHash  *string   `json:"avatarHash"`
 }
 
 type Asset2d struct {
