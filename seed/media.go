@@ -27,10 +27,10 @@ func seedMedia(ctx context.Context) error {
 	basePath := cfg.Settings.SeedDataFiles
 	client := &http.Client{}
 
-	return seedRecursive(ctx, client, basePath)
+	return seedPath(ctx, client, basePath)
 }
 
-func seedRecursive(ctx context.Context, client *http.Client, basePath string) error {
+func seedPath(ctx context.Context, client *http.Client, basePath string) error {
 	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
 	return filepath.WalkDir(basePath, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
@@ -53,8 +53,6 @@ func seedRecursive(ctx context.Context, client *http.Client, basePath string) er
 				rPath = path
 			}
 			log.Infof("Seed %s = %s", rPath, fHash)
-		} else if path != basePath {
-			seedRecursive(ctx, client, path)
 		}
 		return nil
 	})
