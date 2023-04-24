@@ -15,7 +15,6 @@ const (
 	skyboxArrivalAsset3dID     = "658611b8-a86a-4bf0-a956-12129b06dbfd"
 	skyboxAbbysAsset3dID       = "b4e10a57-de25-4793-b9f1-35fcb6daf404"
 	skyboxQuantumFluxAsset3dID = "a0b93937-fbab-4b9f-b5c1-93c47ffef624"
-	dockingStationAsset3dID    = "581a8563-1329-4de6-8c8e-869770526ff0"
 
 	normalUserTypeID = "00000000-0000-0000-0000-000000000006"
 	guestUserTypeID  = "76802331-37b3-44fa-9010-35008b0cbaec"
@@ -23,5 +22,4 @@ const (
 	miroPluginAsset2dID        = "a31722a6-26b7-46bc-97f9-435c380c3ca9"
 	googleDrivePluginAsset2dID = "c601404b-61a2-47d5-a5c7-f3c704a8bf58"
 	videoPluginAsset2dID       = "bda25d5d-2aab-45b4-9e8a-23579514cec1"
-	dockingStationAsset2dID    = "140c0f2e-2056-443f-b5a7-4a3c2e6b05da"
 )

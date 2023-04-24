@@ -3,6 +3,7 @@ package seed
 import (
 	"context"
 	"fmt"
+
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/momentum-xyz/ubercontroller/database"
