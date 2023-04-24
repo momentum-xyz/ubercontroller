@@ -27,6 +27,11 @@ FROM stake
          JOIN object_attribute USING (object_id)
 WHERE attribute_name = 'name'
   		AND wallet_id = $1`
+
+	getWalletsInfoQuery = `SELECT wallet_id, contract_id, balance, blockchain_name, updated_at
+					FROM balance
+							 JOIN blockchain USING (blockchain_id)
+					WHERE wallet_id = ANY ($1);`
 )
 
 var _ database.StakesDB = (*DB)(nil)
@@ -39,6 +44,39 @@ func NewDB(conn *pgxpool.Pool) *DB {
 	return &DB{
 		conn: conn,
 	}
+}
+
+func (db *DB) GetWalletsInfo(ctx context.Context, walletIDs [][]byte) ([]*map[string]any, error) {
+	wallets := make([]*map[string]any, 0)
+
+	rows, err := db.conn.Query(ctx, getWalletsInfoQuery, walletIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var walletID common.Address
+		var contractID common.Address
+		var balance entry.BigInt
+		var blockchainName string
+		var updatedAt time.Time
+
+		if err := rows.Scan(&walletID, &contractID, &balance, &blockchainName, &updatedAt); err != nil {
+			return nil, errors.WithMessage(err, "failed to scan rows from table")
+		}
+
+		item := make(map[string]any)
+
+		item["wallet_id"] = walletID
+		item["contract_id"] = contractID
+		item["balance"] = (*big.Int)(&balance).String()
+		item["blockchain_name"] = blockchainName
+		item["updatedAt"] = updatedAt
+
+		wallets = append(wallets, &item)
+	}
+
+	return wallets, nil
 }
 
 func (db *DB) GetStakes(ctx context.Context, walletID []byte) ([]*map[string]any, error) {
