@@ -28,7 +28,7 @@ FROM stake
 WHERE attribute_name = 'name'
   		AND wallet_id = $1`
 
-	getWallets = `SELECT wallet_id, contract_id, balance, blockchain_name, updated_at
+	getWalletsInfoQuery = `SELECT wallet_id, contract_id, balance, blockchain_name, updated_at
 					FROM balance
 							 JOIN blockchain USING (blockchain_id)
 					WHERE wallet_id = ANY ($1);`
@@ -49,7 +49,7 @@ func NewDB(conn *pgxpool.Pool) *DB {
 func (db *DB) GetWalletsInfo(ctx context.Context, walletIDs [][]byte) ([]*map[string]any, error) {
 	wallets := make([]*map[string]any, 0)
 
-	rows, err := db.conn.Query(ctx, getWallets, walletIDs)
+	rows, err := db.conn.Query(ctx, getWalletsInfoQuery, walletIDs)
 	if err != nil {
 		return nil, err
 	}
