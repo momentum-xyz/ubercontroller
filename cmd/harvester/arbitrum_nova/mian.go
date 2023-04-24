@@ -7,12 +7,14 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
+	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/harvester"
 	"github.com/momentum-xyz/ubercontroller/harvester/arbitrum_nova_adapter"
 )
 
 func main() {
-	a := arbitrum_nova_adapter.NewArbitrumNovaAdapter()
+	cfg := config.GetConfig()
+	a := arbitrum_nova_adapter.NewArbitrumNovaAdapter(cfg)
 
 	a.Run()
 
@@ -34,13 +36,16 @@ func main() {
 
 	a.RegisterNewBlockListener(l)
 
-	token := "0x7F85fB7f42A0c0D40431cc0f7DFDf88be6495e67"  // token smart contract address
-	wallet := "0xe2148ee53c0755215df69b2616e552154edc584f" // user address
-	b, err := a.GetBalance(wallet, token, n)
-	if err != nil {
-		log.Fatal(err)
+	token := cfg.Arbitrum.ArbitrumMOMTokenAddress // token smart contract address
+	//wallet := "0x683642c22feDE752415D4793832Ab75EFdF6223c" // user address
+	wallet := "0x5ab4ef2f56001f2a21c821ef10b717d3c2dc91dd85fa823e9539e1178e5daa32" // user address
+	for i := 1; i < 100; i++ {
+		b, err := a.GetBalance(wallet, token, n)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("Balance: %+v \n", b)
 	}
-	fmt.Printf("Balance: %+v \n", b)
 
 	contracts := []common.Address{
 		//common.HexToAddress("0x7F85fB7f42A0c0D40431cc0f7DFDf88be6495e67"),

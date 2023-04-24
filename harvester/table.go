@@ -167,7 +167,7 @@ func (t *Table) SaveToDB(events []*UpdateEvent, stakeEvents []*StakeEvent) (err 
 	balances := make([]*entry.Balance, 0)
 	stakeEntries := make([]*entry.Stake, 0)
 
-	blockchainUMID, name, rpcURL := t.adapter.GetInfo()
+	blockchainUMID, _, _ := t.adapter.GetInfo()
 
 	for _, event := range events {
 		if event.Amount == nil {
@@ -198,6 +198,12 @@ func (t *Table) SaveToDB(events []*UpdateEvent, stakeEvents []*StakeEvent) (err 
 	wallets = unique(wallets)
 
 	fmt.Println(stakeEntries)
+
+	return t.saveToDB(wallets, contracts, balances, stakeEntries)
+}
+
+func (t *Table) saveToDB(wallets []Address, contracts []Address, balances []*entry.Balance, stakeEntries []*entry.Stake) error {
+	blockchainUMID, name, rpcURL := t.adapter.GetInfo()
 
 	tx, err := t.db.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
@@ -390,7 +396,7 @@ func (t *Table) syncBalance(wallet string, contract string) {
 	}
 	balance, err := t.adapter.GetBalance(wallet, contract, blockNumber)
 	if err != nil {
-		err = errors.WithMessage(err, "failed to get balance")
+		err = errors.WithMessagef(err, "failed to get balance: %s, %s, %d", wallet, contract, blockNumber)
 		fmt.Println(err)
 	}
 	t.mu.Lock()

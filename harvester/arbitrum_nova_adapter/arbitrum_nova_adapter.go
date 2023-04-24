@@ -20,6 +20,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
+	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/harvester"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
@@ -27,7 +28,7 @@ import (
 type ArbitrumNovaAdapter struct {
 	listener harvester.AdapterListener
 	umid     umid.UMID
-	rpcURL   string
+	wsURL    string
 	httpURL  string
 	name     string
 	//client           *ethclient.Client
@@ -38,13 +39,13 @@ type ArbitrumNovaAdapter struct {
 	lastBlock        uint64
 }
 
-func NewArbitrumNovaAdapter() *ArbitrumNovaAdapter {
+func NewArbitrumNovaAdapter(cfg *config.Config) *ArbitrumNovaAdapter {
 	return &ArbitrumNovaAdapter{
 		umid:          umid.MustParse("ccccaaaa-1111-2222-3333-222222222222"),
-		rpcURL:        "wss://bcdev.antst.net:8548",
-		httpURL:       "https://bcdev.antst.net:8547",
+		wsURL:         cfg.Arbitrum.ArbitrumWSURL,
+		httpURL:       cfg.Arbitrum.ArbitrumRPCURL,
 		name:          "arbitrum_nova",
-		stakeContract: common.HexToAddress("0xC4497d6c0f94dc427cE0B8F825c91F25e2845B91"),
+		stakeContract: common.HexToAddress(cfg.Arbitrum.ArbitrumStakeContractAddress),
 	}
 }
 
@@ -56,7 +57,7 @@ func (a *ArbitrumNovaAdapter) GetLastBlockNumber() (uint64, error) {
 
 	var resp string
 	if err := a.rpcClient.Call(&resp, "eth_blockNumber"); err != nil {
-		return 0, errors.WithMessage(err, "failed to make RPC call to ethereum:")
+		return 0, errors.WithMessage(err, "failed to make RPC call to arbitrum:")
 	}
 
 	return hex2int(resp), nil
@@ -85,7 +86,7 @@ func (a *ArbitrumNovaAdapter) Run() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Connected to Ethereum Block Chain: " + a.rpcURL)
+	fmt.Println("Connected to Arbitrum Block Chain: " + a.wsURL)
 	///////
 
 	ticker := time.NewTicker(1000 * time.Millisecond)
@@ -176,7 +177,7 @@ func (a *ArbitrumNovaAdapter) GetBalance(wallet string, contract string, blockNu
 	var resp string
 	n := hexutil.EncodeUint64(blockNumber)
 	if err := a.rpcClient.Call(&resp, "eth_call", req, n); err != nil {
-		return nil, errors.WithMessage(err, "failed to make RPC call to ethereum:")
+		return nil, errors.WithMessage(err, "failed to make RPC call to arbitrum:")
 	}
 
 	// remove leading zero of resp
@@ -362,7 +363,7 @@ func (a *ArbitrumNovaAdapter) GetTransferLogs(fromBlock, toBlock int64, addresse
 }
 
 func (a *ArbitrumNovaAdapter) GetInfo() (umid umid.UMID, name string, rpcURL string) {
-	return a.umid, a.name, a.rpcURL
+	return a.umid, a.name, a.wsURL
 }
 
 func (a *ArbitrumNovaAdapter) FilterLogs(ctx context.Context, q ethereum.FilterQuery) ([]types.Log, error) {

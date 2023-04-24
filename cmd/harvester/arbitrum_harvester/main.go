@@ -31,7 +31,7 @@ func main() {
 	harv = harvester.NewHarvester(pool)
 
 	// ** Ethereum Adapter
-	adapter := arbitrum_nova_adapter.NewArbitrumNovaAdapter()
+	adapter := arbitrum_nova_adapter.NewArbitrumNovaAdapter(cfg)
 	adapter.Run()
 	_, _, _ = adapter.GetInfo()
 	if err := harv.RegisterAdapter(adapter); err != nil {

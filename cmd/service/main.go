@@ -56,11 +56,15 @@ func run(ctx context.Context) error {
 	cute.SetMessageColor(cute.BrightBlue)
 	cute.Println("Node loaded", "Loading time:", tm2.Sub(tm1))
 
-	harv := harvester.NewHarvester(pool)
-	arbitrumAdapter := arbitrum_nova_adapter.NewArbitrumNovaAdapter()
+	harvester.Initialise(ctx, log, cfg, pool)
+	arbitrumAdapter := arbitrum_nova_adapter.NewArbitrumNovaAdapter(cfg)
 	arbitrumAdapter.Run()
-	if err := harv.RegisterAdapter(arbitrumAdapter); err != nil {
+	if err := harvester.GetInstance().RegisterAdapter(arbitrumAdapter); err != nil {
 		return errors.WithMessage(err, "failed to register arbitrum adapter")
+	}
+	err = harvester.SubscribeAllWallets(ctx, harvester.GetInstance(), cfg, pool)
+	if err != nil {
+		log.Error(err)
 	}
 
 	if err := node.Run(); err != nil {
