@@ -2,6 +2,7 @@ package harvester
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -11,6 +12,7 @@ type Harvester struct {
 	clients *Callbacks
 	db      *pgxpool.Pool
 	bc      map[string]*Table
+	mu      sync.Mutex
 }
 
 func (h *Harvester) SubscribeForWallet(bcType string, wallet, callback Callback) {
@@ -19,6 +21,8 @@ func (h *Harvester) SubscribeForWallet(bcType string, wallet, callback Callback)
 }
 
 func (h *Harvester) SubscribeForWalletAndContract(bcType string, wallet string, contract string, callback Callback) error {
+	mu.Lock()
+	defer mu.Unlock()
 	table, ok := h.bc[bcType]
 	if !ok {
 		return errors.New("failed to find blockchain:" + bcType)
