@@ -87,6 +87,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 			verifiedUsers.GET("", n.apiUsersGet)
 			verifiedUsers.GET("/search", n.apiUsersSearchUsers)
+			// verifiedUsers.GET("/top-stakers", n.apiUsersTopStakers)
 
 			user := verifiedUsers.Group("/:userID")
 			{

@@ -27,10 +27,13 @@ func (n *Node) Filter(predicateFn func(userID umid.UMID, user universe.User) boo
 	data := make(map[umid.UMID]universe.User)
 	userTypeID, err := common.GetNormalUserTypeID()
 	if err != nil {
-		return nil, nil
+		return nil, errors.WithMessage(err, "failed to get normal user type id")
 	}
 
-	users, _ := n.db.GetUsersDB().GetAllUsers(n.ctx, userTypeID)
+	users, err := n.db.GetUsersDB().GetAllUsers(n.ctx, userTypeID)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to get all user entries")
+	}
 
 	n.Mu.RLock()
 	defer n.Mu.RUnlock()

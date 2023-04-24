@@ -23,8 +23,8 @@ func (w *Worlds) RegisterAPI(r *gin.Engine) {
 
 				world := worlds.Group("/:objectID")
 				{
+					world.GET("", w.apiWorldsGetDetails)
 					world.GET("/explore", w.apiWorldsGetObjectsWithChildren)
-
 					world.GET("/online-users", w.apiGetOnlineUsers)
 
 					authorizedAdmin := world.Group("", middleware.AuthorizeAdmin(w.log))

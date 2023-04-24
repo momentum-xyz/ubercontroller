@@ -212,6 +212,36 @@ func (n *Node) apiUsersGetOwnedWorlds(c *gin.Context) {
 	c.JSON(http.StatusOK, ownedWorlds)
 }
 
+//// @Summary Search available users
+//// @Schemes
+//// @Description Returns user information based on a search query
+//// @Tags users
+//// @Accept json
+//// @Produce json
+//// @Success 200 {object} dto.UserSearchResult
+//// @Failure 500 {object} api.HTTPError
+//// @Failure 400 {object} api.HTTPError
+//// @Failure 404 {object} api.HTTPError
+//// @Router /api/v4/users/top-stakers [get]
+//func (n *Node) apiUsersTopStakers(c *gin.Context) {
+//	stakes, err := n.db.GetStakesDB().GetStakesByWorldID(c)
+//	if err != nil {
+//		err := errors.WithMessage(err, "Node: apiUsersTopStakers: failed to get stakes for user")
+//		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_stakes", err, w.log)
+//		return
+//	}
+//
+//	guestUserTypeID, err := common.GetGuestUserTypeID()
+//	if err != nil {
+//		err := errors.New("Node: apiUsersTopStakers: failed to GetGuestUserTypeID")
+//		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, n.log)
+//		return
+//	}
+//
+//	userDTO := converters.ToUserDTOs(userEntry, guestUserTypeID, true)
+//	c.JSON(http.StatusOK, userDTO)
+//}
+
 // @Summary Search available users
 // @Schemes
 // @Description Returns user information based on a search query

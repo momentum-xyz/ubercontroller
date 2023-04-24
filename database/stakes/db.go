@@ -27,7 +27,8 @@ const (
     	JOIN object_attribute USING (object_id)
 		WHERE attribute_name = 'name'
   		AND wallet_id = $1`
-	getStakesByObjectID = `SELECT * FROM stake WHERE object_id = $1`
+	getStakesByObjectID    = `SELECT * FROM stake WHERE object_id = $1`
+	getStakesByLatestStake = `SELECT * FROM stake ORDER BY created_at DESC LIMIT 1;`
 )
 
 var _ database.StakesDB = (*DB)(nil)
@@ -87,4 +88,13 @@ func (db *DB) GetStakesByWorldID(ctx context.Context, worldID umid.UMID) ([]*ent
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return stakes, nil
+}
+
+func (db *DB) GetStakeByLatestStake(ctx context.Context) (*entry.Stake, error) {
+	var stake *entry.Stake
+
+	if err := pgxscan.Select(ctx, db.conn, &stake, getStakesByLatestStake); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return stake, nil
 }

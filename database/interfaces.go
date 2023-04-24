@@ -331,6 +331,7 @@ type ObjectUserAttributesDB interface {
 type UserAttributesDB interface {
 	GetUserAttributes(ctx context.Context) ([]*entry.UserAttribute, error)
 	GetUserAttributeByID(ctx context.Context, userAttributeID entry.UserAttributeID) (*entry.UserAttribute, error)
+	GetUserAttributeByWallet(ctx context.Context, wallet []byte) (*entry.UserAttribute, error)
 	GetUserAttributesByUserID(ctx context.Context, userID umid.UMID) ([]*entry.UserAttribute, error)
 	GetUserAttributePayloadByID(ctx context.Context, userAttributeID entry.UserAttributeID) (
 		*entry.AttributePayload, error,
@@ -447,4 +448,5 @@ type UserUserAttributesDB interface {
 type StakesDB interface {
 	GetStakesByWalletID(ctx context.Context, walletID []byte) ([]*map[string]any, error)
 	GetStakesByWorldID(ctx context.Context, worldID umid.UMID) ([]*entry.Stake, error)
+	GetStakeByLatestStake(ctx context.Context) (*entry.Stake, error)
 }
