@@ -196,6 +196,21 @@ func (n *Node) apiUsersGetOwnedWorlds(c *gin.Context) {
 		return
 	}
 
+	loadedUser, err := n.LoadUser(userID)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiUsersGetOwnedWorlds: failed to load user")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_load_user", err, n.log)
+		return
+	}
+
+	userProfile := loadedUser.GetProfile()
+	var userName *string
+	if userProfile != nil {
+		if userProfile.Name != nil {
+			userName = userProfile.Name
+		}
+	}
+
 	worlds := n.GetWorldsByOwnerID(userID)
 	ownedWorlds := make([]dto.OwnedWorld, 0, len(worlds))
 	for _, world := range worlds {
@@ -204,6 +219,7 @@ func (n *Node) apiUsersGetOwnedWorlds(c *gin.Context) {
 		ownedWorld := dto.OwnedWorld{
 			ID:          world.GetID(),
 			OwnerID:     world.GetOwnerID(),
+			OwnerName:   userName,
 			Name:        &name,
 			Description: utils.GetPTR(world.GetDescription()),
 			AvatarHash:  nil,

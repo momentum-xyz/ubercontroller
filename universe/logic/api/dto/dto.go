@@ -142,6 +142,7 @@ type Object struct {
 type OwnedWorld struct {
 	ID          umid.UMID `json:"id"`
 	OwnerID     umid.UMID `json:"owner_id"`
+	OwnerName   *string   `json:"owner_name"`
 	Name        *string   `json:"name,omitempty"`
 	Description *string   `json:"description"`
 	AvatarHash  *string   `json:"avatarHash"`
