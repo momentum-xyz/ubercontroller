@@ -127,11 +127,3 @@ func (n *Node) apiAddPendingStakeTransaction(c *gin.Context) {
 
 	c.JSON(http.StatusOK, out)
 }
-
-func HexToAddress(s string) []byte {
-	b, err := hex.DecodeString(s[2:])
-	if err != nil {
-		panic(err)
-	}
-	return b
-}
