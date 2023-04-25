@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 
@@ -15,20 +16,22 @@ import (
 )
 
 const (
-	getStakes = `SELECT object.object_id,
+	getJoinedStakesByWalletID = `SELECT object.object_id,
        object_attribute.value ->> 'name' AS name,
        stake.wallet_id,
        stake.blockchain_id,
        stake.amount,
        stake.last_comment,
        stake.updated_at
-FROM stake
-         JOIN object USING (object_id)
-         JOIN object_attribute USING (object_id)
-WHERE attribute_name = 'name'
+		FROM stake
+        JOIN object USING (object_id)
+    	JOIN object_attribute USING (object_id)
+		WHERE attribute_name = 'name'
   		AND wallet_id = $1`
-
-	getWalletsInfoQuery = `SELECT wallet_id, contract_id, balance, blockchain_name, updated_at
+	getStakesByObjectID    = `SELECT * FROM stake WHERE object_id = $1`
+	getStakesByWalletID    = `SELECT * FROM stake WHERE wallet_id = $1`
+	getStakesByLatestStake = `SELECT last_comment FROM stake ORDER BY created_at DESC LIMIT 1;`
+	getWalletsInfoQuery    = `SELECT wallet_id, contract_id, balance, blockchain_name, updated_at
 					FROM balance
 							 JOIN blockchain USING (blockchain_id)
 					WHERE wallet_id = ANY ($1);`
@@ -44,6 +47,15 @@ func NewDB(conn *pgxpool.Pool) *DB {
 	return &DB{
 		conn: conn,
 	}
+}
+
+func (db *DB) GetStakesByWalletID(ctx context.Context, walletID string) ([]*entry.Stake, error) {
+	var stakes []*entry.Stake
+
+	if err := pgxscan.Select(ctx, db.conn, &stakes, getStakesByWalletID, walletID); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return stakes, nil
 }
 
 func (db *DB) GetWalletsInfo(ctx context.Context, walletIDs [][]byte) ([]*map[string]any, error) {
@@ -82,7 +94,7 @@ func (db *DB) GetWalletsInfo(ctx context.Context, walletIDs [][]byte) ([]*map[st
 func (db *DB) GetStakes(ctx context.Context, walletID []byte) ([]*map[string]any, error) {
 	stakes := make([]*map[string]any, 0)
 
-	rows, err := db.conn.Query(ctx, getStakes, walletID)
+	rows, err := db.conn.Query(ctx, getJoinedStakesByWalletID, walletID)
 	if err != nil {
 		return nil, err
 	}
@@ -115,4 +127,22 @@ func (db *DB) GetStakes(ctx context.Context, walletID []byte) ([]*map[string]any
 	}
 
 	return stakes, nil
+}
+
+func (db *DB) GetStakesByWorldID(ctx context.Context, worldID umid.UMID) ([]*entry.Stake, error) {
+	var stakes []*entry.Stake
+
+	if err := pgxscan.Select(ctx, db.conn, &stakes, getStakesByObjectID, worldID); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return stakes, nil
+}
+
+func (db *DB) GetStakeByLatestStake(ctx context.Context) (*string, error) {
+	var stake *string
+
+	if err := pgxscan.Get(ctx, db.conn, &stake, getStakesByLatestStake); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return stake, nil
 }

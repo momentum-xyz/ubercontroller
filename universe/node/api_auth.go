@@ -361,8 +361,8 @@ func (n *Node) apiGuestToken(c *gin.Context) {
 		name = *userEntry.Profile.Name
 	}
 	outUser := dto.User{
-		ID:         userEntry.UserID.String(),
-		UserTypeID: userEntry.UserTypeID.String(),
+		ID:         userEntry.UserID,
+		UserTypeID: userEntry.UserTypeID,
 		Name:       name,
 		JWTToken:   &token,
 		CreatedAt:  userEntry.CreatedAt.Format(time.RFC3339),

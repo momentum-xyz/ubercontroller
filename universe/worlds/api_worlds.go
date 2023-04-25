@@ -2,10 +2,9 @@ package worlds
 
 import (
 	"fmt"
+	"math/big"
 	"net/http"
 	"strings"
-
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -17,6 +16,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 // @Summary Get world online users
@@ -71,13 +71,124 @@ func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, userDTOs)
 }
 
+// @Summary Get world details
+// @Schemes
+// @Description Returns a world by ID and its details
+// @Tags worlds
+// @Accept json
+// @Produce json
+// @Param worldID path string true "World UMID"
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/worlds/{object_id} [get]
+func (w *Worlds) apiWorldsGetDetails(c *gin.Context) {
+	worldID, err := umid.Parse(c.Param("objectID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Worlds: apiWorldsGetDetails: failed to parse world umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
+		return
+	}
+
+	world, ok := w.GetWorld(worldID)
+	if !ok || world == nil {
+		err := errors.New("Worlds: apiWorldsGetDetails: world not found")
+		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
+		return
+	}
+
+	node := universe.GetNode()
+	ownerID := world.GetOwnerID()
+	loadedUser, err := node.LoadUser(ownerID)
+	if err != nil {
+		err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to load user")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_load_user", err, w.log)
+		return
+	}
+
+	var ownerName *string
+	profile := loadedUser.GetProfile()
+	if profile != nil {
+		if profile.Name != nil {
+			ownerName = profile.Name
+		}
+	}
+
+	stakes, err := w.db.GetStakesDB().GetStakesByWorldID(c, worldID)
+	if err != nil {
+		err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to get stakes for world")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_stakes", err, w.log)
+		return
+	}
+
+	var worldStakers []dto.WorldStaker
+	var totalStake big.Int
+	if stakes != nil {
+		for _, stake := range stakes {
+			userAttribute, err := w.db.GetUserAttributesDB().GetUserAttributeByWallet(w.ctx, stake.WalletID)
+			if err != nil {
+				err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to get user attribute")
+				api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_user_attribute", err, w.log)
+				return
+			}
+
+			loadedStaker, err := node.LoadUser(userAttribute.UserID)
+			if err != nil {
+				err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to load staker")
+				api.AbortRequest(c, http.StatusInternalServerError, "failed_to_load_staker", err, w.log)
+				return
+			}
+
+			stakerProfile := loadedStaker.GetProfile()
+			var stakerName *string
+			if stakerProfile != nil {
+				if stakerProfile.Name != nil {
+					stakerName = stakerProfile.Name
+				}
+			}
+
+			stakeAmt := (*big.Int)(stake.Amount)
+			totalStake.Add(&totalStake, stakeAmt)
+
+			worldStaker := dto.WorldStaker{
+				UserID:     userAttribute.UserID,
+				Name:       stakerName,
+				Stake:      stakeAmt,
+				AvatarHash: nil,
+			}
+
+			worldStakers = append(worldStakers, worldStaker)
+		}
+	}
+
+	latestStakeComment, err := w.db.GetStakesDB().GetStakeByLatestStake(c)
+	if err != nil {
+		err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to get latest stake comment")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_latest_stake", err, w.log)
+		return
+	}
+
+	worldDetails := dto.WorldDetails{
+		ID:                 world.GetID(),
+		OwnerID:            ownerID,
+		OwnerName:          ownerName,
+		Name:               utils.GetPTR(world.GetName()),
+		Description:        utils.GetPTR(world.GetDescription()),
+		StakeTotal:         &totalStake,
+		AvatarHash:         nil,
+		WorldStakers:       worldStakers,
+		LastStakingComment: latestStakeComment,
+	}
+
+	c.JSON(http.StatusOK, worldDetails)
+}
+
 // @Summary Get latest worlds
 // @Schemes
 // @Description Returns a list of six latest created worlds
 // @Tags worlds
 // @Accept json
 // @Produce json
-// @Success 200 {array} dto.RecentWorld
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
@@ -109,6 +220,7 @@ func (w *Worlds) apiWorldsGet(c *gin.Context) {
 		sortType = universe.DESC
 	}
 
+	node := universe.GetNode()
 	recentWorldIDs, err := w.db.GetWorldsDB().GetWorldIDs(w.ctx, sortType, inQuery.Limit)
 	if err != nil {
 		err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to get world ids")
@@ -119,12 +231,52 @@ func (w *Worlds) apiWorldsGet(c *gin.Context) {
 	recents := make([]dto.RecentWorld, 0, len(recentWorldIDs))
 
 	for _, worldID := range recentWorldIDs {
-		world, _ := w.GetWorld(worldID)
+		world, ok := w.GetWorld(worldID)
+		if !ok {
+			err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to get world by id")
+			api.AbortRequest(c, http.StatusInternalServerError, "get_world_by_id_failed", err, w.log)
+			return
+		}
+
+		ownerID := world.GetOwnerID()
+		loadedUser, err := node.LoadUser(ownerID)
+		if err != nil {
+			err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to load user")
+			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_load_user", err, w.log)
+			return
+		}
+
+		var ownerName *string
+		profile := loadedUser.GetProfile()
+		if profile != nil {
+			if profile.Name != nil {
+				ownerName = profile.Name
+			}
+		}
+
+		stakes, err := w.db.GetStakesDB().GetStakesByWorldID(c, worldID)
+		if err != nil {
+			err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to get stakes for world")
+			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_stakes", err, w.log)
+			return
+		}
+
+		var totalStake big.Int
+		if stakes != nil {
+			for _, stake := range stakes {
+				s := (*big.Int)(stake.Amount)
+				totalStake.Add(&totalStake, s)
+			}
+		}
 
 		recent := dto.RecentWorld{
-			ID:         world.GetID(),
-			Name:       utils.GetPTR(world.GetName()),
-			AvatarHash: nil,
+			ID:          world.GetID(),
+			OwnerID:     ownerID,
+			OwnerName:   ownerName,
+			Name:        utils.GetPTR(world.GetName()),
+			Description: utils.GetPTR(world.GetDescription()),
+			StakeTotal:  &totalStake,
+			AvatarHash:  nil,
 		}
 
 		recents = append(recents, recent)

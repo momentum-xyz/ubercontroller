@@ -1,13 +1,13 @@
 package node
 
 import (
-	"encoding/hex"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
+	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
@@ -37,9 +37,8 @@ func (n *Node) apiGetMyStakes(c *gin.Context) {
 	}
 
 	result := make([]*map[string]any, 0)
-
 	for _, w := range wallets {
-		r, err := n.db.GetStakesDB().GetStakes(c, HexToAddress(*w))
+		r, err := n.db.GetStakesDB().GetStakes(c, utils.HexToAddress(*w))
 		if err != nil {
 			err := errors.WithMessagef(err, "Node: apiUsersGetMe: can not get stakes for wallet:%s", *w)
 			api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, n.log)
@@ -78,7 +77,7 @@ func (n *Node) apiGetMyWallets(c *gin.Context) {
 
 	walletAddresses := make([][]byte, 0)
 	for _, w := range wallets {
-		walletAddresses = append(walletAddresses, HexToAddress(*w))
+		walletAddresses = append(walletAddresses, utils.HexToAddress(*w))
 	}
 
 	result, err := n.db.GetStakesDB().GetWalletsInfo(c, walletAddresses)

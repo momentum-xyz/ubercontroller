@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
+	"github.com/momentum-xyz/ubercontroller/universe/user"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/gin-gonic/gin"
@@ -135,6 +136,19 @@ func (n *Node) Initialize(ctx context.Context) error {
 	}
 
 	return n.ToObject().Initialize(ctx)
+}
+
+func (n *Node) LoadUser(userID umid.UMID) (universe.User, error) {
+	newUser := user.NewUser(userID, n.db)
+	if err := newUser.Initialize(n.ctx); err != nil {
+		return nil, errors.WithMessagef(err, "failed to initialize user: %s", userID)
+	}
+
+	if err := newUser.Load(); err != nil {
+		return nil, errors.WithMessagef(err, "failed to load user: %s", userID)
+	}
+
+	return newUser, nil
 }
 
 func (n *Node) ToObject() universe.Object {

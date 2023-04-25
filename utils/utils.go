@@ -1,14 +1,16 @@
 package utils
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"reflect"
 	"runtime"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
@@ -74,6 +76,14 @@ func MapEncode(input, output interface{}) error {
 	}
 
 	return decoder.Decode(input)
+}
+
+func HexToAddress(s string) []byte {
+	b, err := hex.DecodeString(s[2:])
+	if err != nil {
+		panic(err)
+	}
+	return b
 }
 
 // handleNilAnonymousNestedStruct needed to fix "unsupported type for squash: ptr" mapstructure error

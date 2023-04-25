@@ -1,21 +1,21 @@
 package converters
 
 import (
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"time"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 func ToUserDTO(userEntry *entry.User, guestUserTypeID umid.UMID, includeWallet bool) *dto.User {
 	profileEntry := userEntry.Profile
 
 	userDTO := dto.User{
-		ID:         userEntry.UserID.String(),
-		UserTypeID: userEntry.UserTypeID.String(),
+		ID:         userEntry.UserID,
+		UserTypeID: userEntry.UserTypeID,
 		Profile: dto.Profile{
 			Bio:         profileEntry.Bio,
 			Location:    profileEntry.Location,

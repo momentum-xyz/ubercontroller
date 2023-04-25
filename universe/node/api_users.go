@@ -14,6 +14,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/converters"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
+	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
@@ -133,7 +134,14 @@ func (n *Node) apiUsersGet(c *gin.Context) {
 		sortType = universe.DESC
 	}
 
-	recentUserIDs, err := n.db.GetUsersDB().GetUserIDs(n.ctx, sortType, inQuery.Limit)
+	normUserTypeID, err := common.GetNormalUserTypeID()
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiUsersGet: failed to get normal user type id")
+		api.AbortRequest(c, http.StatusInternalServerError, "get_user_type_failed", err, n.log)
+		return
+	}
+
+	recentUserIDs, err := n.db.GetUsersDB().GetUserIDs(n.ctx, sortType, inQuery.Limit, normUserTypeID)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiUsersGet: failed to get latest user ids")
 		api.AbortRequest(c, http.StatusInternalServerError, "get_latest_users_failed", err, n.log)
@@ -194,9 +202,11 @@ func (n *Node) apiUsersGetOwnedWorlds(c *gin.Context) {
 		name := world.GetName()
 
 		ownedWorld := dto.OwnedWorld{
-			ID:      world.GetID(),
-			OwnerID: world.GetOwnerID(),
-			Name:    &name,
+			ID:          world.GetID(),
+			OwnerID:     world.GetOwnerID(),
+			Name:        &name,
+			Description: utils.GetPTR(world.GetDescription()),
+			AvatarHash:  nil,
 		}
 
 		ownedWorlds = append(ownedWorlds, ownedWorld)
@@ -204,6 +214,93 @@ func (n *Node) apiUsersGetOwnedWorlds(c *gin.Context) {
 
 	c.JSON(http.StatusOK, ownedWorlds)
 }
+
+// @Summary Get the worlds the user has staked in
+// @Schemes
+// @Description Returns a list of staked Worlds for a user
+// @Tags users
+// @Accept json
+// @Produce json
+// @Success 200 {array} dto.StakedWorld
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/users/{user_id}/staked-worlds [get]
+func (n *Node) apiUsersGetStakedWorlds(c *gin.Context) {
+	userID, err := umid.Parse(c.Param("userID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiUsersGetStakedWorlds: failed to parse user umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
+		return
+	}
+
+	wallets, err := n.db.GetUsersDB().GetUserWalletsByUserID(c, userID)
+	if err != nil {
+		err := errors.WithMessagef(err, "Node: apiUsersGetStakedWorlds: wallets not found for given user_id:%s", userID)
+		api.AbortRequest(c, http.StatusNotFound, "wallets_not_found", err, n.log)
+		return
+	}
+
+	var stakedWorlds []dto.StakedWorld
+	for _, wallet := range wallets {
+		stakes, err := n.db.GetStakesDB().GetStakesByWalletID(c, *wallet)
+		if err != nil {
+			err := errors.WithMessage(err, "Node: apiUsersGetStakedWorlds: failed to get stakes for world")
+			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_stakes", err, n.log)
+			return
+		}
+
+		for _, stake := range stakes {
+			world, ok := n.GetObjectFromAllObjects(stake.ObjectID)
+			if !ok {
+				err := errors.Errorf("Node: apiUsersGetStakedWorlds: world not found: %s", stake.ObjectID)
+				api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, n.log)
+				return
+			}
+
+			stakedWorld := dto.StakedWorld{
+				ID:          world.GetID(),
+				OwnerID:     world.GetOwnerID(),
+				Name:        utils.GetPTR(world.GetName()),
+				Description: utils.GetPTR(world.GetDescription()),
+				AvatarHash:  nil,
+			}
+			stakedWorlds = append(stakedWorlds, stakedWorld)
+		}
+	}
+
+	c.JSON(http.StatusOK, stakedWorlds)
+}
+
+//// @Summary Search available users
+//// @Schemes
+//// @Description Returns user information based on a search query
+//// @Tags users
+//// @Accept json
+//// @Produce json
+//// @Success 200 {object} dto.UserSearchResult
+//// @Failure 500 {object} api.HTTPError
+//// @Failure 400 {object} api.HTTPError
+//// @Failure 404 {object} api.HTTPError
+//// @Router /api/v4/users/top-stakers [get]
+//func (n *Node) apiUsersTopStakers(c *gin.Context) {
+//	stakes, err := n.db.GetStakesDB().GetStakesByWorldID(c)
+//	if err != nil {
+//		err := errors.WithMessage(err, "Node: apiUsersTopStakers: failed to get stakes for user")
+//		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_stakes", err, w.log)
+//		return
+//	}
+//
+//	guestUserTypeID, err := common.GetGuestUserTypeID()
+//	if err != nil {
+//		err := errors.New("Node: apiUsersTopStakers: failed to GetGuestUserTypeID")
+//		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, n.log)
+//		return
+//	}
+//
+//	userDTO := converters.ToUserDTOs(userEntry, guestUserTypeID, true)
+//	c.JSON(http.StatusOK, userDTO)
+//}
 
 // @Summary Search available users
 // @Schemes
