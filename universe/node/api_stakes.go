@@ -45,7 +45,7 @@ func (n *Node) apiGetMyStakes(c *gin.Context) {
 
 	result := make([]*map[string]any, 0)
 	for _, w := range wallets {
-		r, err := n.db.GetStakesDB().GetStakesByWalletID(c, utils.HexToAddress(*w))
+		r, err := n.db.GetStakesDB().GetJoinedStakesByWalletID(c, utils.HexToAddress(*w))
 		if err != nil {
 			err := errors.WithMessagef(err, "Node: apiUsersGetMe: can not get stakes for wallet:%s", *w)
 			api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, n.log)

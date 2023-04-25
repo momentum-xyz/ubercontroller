@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	getStakesByWalletID = `SELECT object.object_id,
+	getJoinedStakesByWalletID = `SELECT object.object_id,
        object_attribute.value ->> 'name' AS name,
        stake.wallet_id,
        stake.blockchain_id,
@@ -28,6 +28,7 @@ const (
 		WHERE attribute_name = 'name'
   		AND wallet_id = $1`
 	getStakesByObjectID    = `SELECT * FROM stake WHERE object_id = $1`
+	getStakesByWalletID    = `SELECT * FROM stake WHERE wallet_id = $1`
 	getStakesByLatestStake = `SELECT last_comment FROM stake ORDER BY created_at DESC LIMIT 1;`
 )
 
@@ -43,10 +44,19 @@ func NewDB(conn *pgxpool.Pool) *DB {
 	}
 }
 
-func (db *DB) GetStakesByWalletID(ctx context.Context, walletID []byte) ([]*map[string]any, error) {
+func (db *DB) GetStakesByWalletID(ctx context.Context, walletID string) ([]*entry.Stake, error) {
+	var stakes []*entry.Stake
+
+	if err := pgxscan.Select(ctx, db.conn, &stakes, getStakesByWalletID, walletID); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return stakes, nil
+}
+
+func (db *DB) GetJoinedStakesByWalletID(ctx context.Context, walletID []byte) ([]*map[string]any, error) {
 	stakes := make([]*map[string]any, 0)
 
-	rows, err := db.conn.Query(ctx, getStakesByWalletID, walletID)
+	rows, err := db.conn.Query(ctx, getJoinedStakesByWalletID, walletID)
 	if err != nil {
 		return nil, err
 	}

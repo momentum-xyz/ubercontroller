@@ -225,7 +225,7 @@ func (n *Node) apiUsersGetOwnedWorlds(c *gin.Context) {
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/users/{user_id}/stake-world [get]
+// @Router /api/v4/users/{user_id}/staked-worlds [get]
 func (n *Node) apiUsersGetStakedWorlds(c *gin.Context) {
 	userID, err := umid.Parse(c.Param("userID"))
 	if err != nil {
@@ -243,7 +243,7 @@ func (n *Node) apiUsersGetStakedWorlds(c *gin.Context) {
 
 	var stakedWorlds []dto.StakedWorld
 	for _, wallet := range wallets {
-		stakes, err := n.db.GetStakesDB().GetStakesByWalletID(c, utils.HexToAddress(*wallet))
+		stakes, err := n.db.GetStakesDB().GetStakesByWalletID(c, *wallet)
 		if err != nil {
 			err := errors.WithMessage(err, "Node: apiUsersGetStakedWorlds: failed to get stakes for world")
 			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_stakes", err, n.log)
@@ -251,15 +251,9 @@ func (n *Node) apiUsersGetStakedWorlds(c *gin.Context) {
 		}
 
 		for _, stake := range stakes {
-			var objectID umid.UMID
-			if stake != nil {
-				objectIDString := utils.GetFromAnyMap(*stake, "object_id", "")
-				objectID = umid.MustParse(objectIDString)
-			}
-
-			world, ok := n.GetObject(objectID, false)
+			world, ok := n.GetObjectFromAllObjects(stake.ObjectID)
 			if !ok {
-				err := errors.Errorf("Node: apiUsersGetStakedWorlds: world not found: %s", objectID)
+				err := errors.Errorf("Node: apiUsersGetStakedWorlds: world not found: %s", stake.ObjectID)
 				api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, n.log)
 				return
 			}
