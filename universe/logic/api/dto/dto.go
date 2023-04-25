@@ -85,6 +85,14 @@ type WorldStaker struct {
 	AvatarHash *string   `json:"avatarHash"`
 }
 
+type TopStaker struct {
+	UserID     umid.UMID `json:"user_id"`
+	Name       *string   `json:"name"`
+	TotalStake *big.Int  `json:"total_stake,omitempty"`
+	StakeCount *uint8    `json:"stake_count,omitempty"`
+	AvatarHash *string   `json:"avatarHash"`
+}
+
 type Profile struct {
 	Bio         *string `json:"bio,omitempty"`
 	Location    *string `json:"location,omitempty"`

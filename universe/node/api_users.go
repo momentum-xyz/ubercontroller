@@ -288,35 +288,60 @@ func (n *Node) apiUsersGetStakedWorlds(c *gin.Context) {
 	c.JSON(http.StatusOK, stakedWorlds)
 }
 
-//// @Summary Search available users
-//// @Schemes
-//// @Description Returns user information based on a search query
-//// @Tags users
-//// @Accept json
-//// @Produce json
-//// @Success 200 {object} dto.UserSearchResult
-//// @Failure 500 {object} api.HTTPError
-//// @Failure 400 {object} api.HTTPError
-//// @Failure 404 {object} api.HTTPError
-//// @Router /api/v4/users/top-stakers [get]
-//func (n *Node) apiUsersTopStakers(c *gin.Context) {
-//	stakes, err := n.db.GetStakesDB().GetStakesByWorldID(c)
-//	if err != nil {
-//		err := errors.WithMessage(err, "Node: apiUsersTopStakers: failed to get stakes for user")
-//		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_stakes", err, w.log)
-//		return
-//	}
-//
-//	guestUserTypeID, err := common.GetGuestUserTypeID()
-//	if err != nil {
-//		err := errors.New("Node: apiUsersTopStakers: failed to GetGuestUserTypeID")
-//		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, n.log)
-//		return
-//	}
-//
-//	userDTO := converters.ToUserDTOs(userEntry, guestUserTypeID, true)
-//	c.JSON(http.StatusOK, userDTO)
-//}
+// @Summary Returns a sorted list of top stakers
+// @Schemes
+// @Description Returns user information based amount and amount of times a user has staked
+// @Tags users
+// @Accept json
+// @Produce json
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/users/top-stakers [get]
+func (n *Node) apiUsersTopStakers(c *gin.Context) {
+	stakes, err := n.db.GetStakesDB().GetStakesWithCount(c)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiUsersTopStakers: failed to get stakes with count")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_stakes", err, n.log)
+		return
+	}
+
+	var topStakers []dto.TopStaker
+	for _, stake := range stakes {
+		user, err := n.db.GetUsersDB().GetUserByWallet(c, stake.WalletID)
+		if err != nil {
+			err := errors.WithMessage(err, "Node: apiUsersTopStakers: failed to get user by walletID")
+			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_user_by_wallet", err, n.log)
+			return
+		}
+
+		loadedUser, err := n.LoadUser(user.UserID)
+		if err != nil {
+			err := errors.WithMessage(err, "Node: apiUsersTopStakers: failed to load user")
+			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_load_user", err, n.log)
+			return
+		}
+
+		profile := loadedUser.GetProfile()
+		var userName *string
+		if profile != nil {
+			if profile.Name != nil {
+				userName = profile.Name
+			}
+		}
+
+		topStaker := dto.TopStaker{
+			UserID:     loadedUser.GetID(),
+			Name:       userName,
+			StakeCount: utils.GetPTR(stake.Count),
+			AvatarHash: nil,
+		}
+
+		topStakers = append(topStakers, topStaker)
+	}
+
+	c.JSON(http.StatusOK, topStakers)
+}
 
 // @Summary Search available users
 // @Schemes
@@ -414,7 +439,7 @@ func (n *Node) apiCreateGuestUserByName(ctx context.Context, name string) (*entr
 }
 
 func (n *Node) apiGetOrCreateUserFromWallet(ctx context.Context, wallet string) (*entry.User, int, error) {
-	userEntry, err := n.db.GetUsersDB().GetUserByWallet(ctx, wallet)
+	userEntry, err := n.db.GetUsersDB().GetUserByWallet(ctx, utils.HexToAddress(wallet))
 	if err == nil {
 		return userEntry, 0, nil
 	}

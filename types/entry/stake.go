@@ -14,4 +14,5 @@ type Stake struct {
 	Amount       *BigInt   `db:"amount"` //TODO should be big.Int
 	CreatedAt    time.Time `db:"created_at" json:"created_at"`
 	UpdatedAt    time.Time `db:"updated_at" json:"updated_at"`
+	Count        uint8     `json:"count"`
 }

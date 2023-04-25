@@ -120,7 +120,7 @@ func (db *DB) GetUserIDs(ctx context.Context, sortType universe.SortType, limit 
 	return userIDs, nil
 }
 
-func (db *DB) GetUserByWallet(ctx context.Context, wallet string) (*entry.User, error) {
+func (db *DB) GetUserByWallet(ctx context.Context, wallet []byte) (*entry.User, error) {
 	var user entry.User
 	if err := pgxscan.Get(ctx, db.conn, &user, getUserByWalletQuery, wallet); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")

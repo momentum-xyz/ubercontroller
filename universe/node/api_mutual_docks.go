@@ -1,8 +1,9 @@
 package node
 
 import (
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"net/http"
+
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -41,14 +42,14 @@ func (n *Node) apiUsersCreateMutualDocks(c *gin.Context) {
 		return
 	}
 
-	userA, err := n.db.GetUsersDB().GetUserByWallet(c, inBody.WalletA)
+	userA, err := n.db.GetUsersDB().GetUserByWallet(c, utils.HexToAddress(inBody.WalletA))
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiUsersCreateMutualDocks: failed to get user A by wallet")
 		api.AbortRequest(c, http.StatusNotFound, "user_a_not_found", err, n.log)
 		return
 	}
 
-	userB, err := n.db.GetUsersDB().GetUserByWallet(c, inBody.WalletB)
+	userB, err := n.db.GetUsersDB().GetUserByWallet(c, utils.HexToAddress(inBody.WalletB))
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiUsersCreateMutualDocks: failed to get user B by wallet")
 		api.AbortRequest(c, http.StatusNotFound, "user_b_not_found", err, n.log)
@@ -157,14 +158,14 @@ func (n *Node) apiUsersRemoveMutualDocks(c *gin.Context) {
 		return
 	}
 
-	userA, err := n.db.GetUsersDB().GetUserByWallet(c, inBody.WalletA)
+	userA, err := n.db.GetUsersDB().GetUserByWallet(c, utils.HexToAddress(inBody.WalletA))
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiUsersRemoveMutualDocks: failed to get user A by wallet")
 		api.AbortRequest(c, http.StatusNotFound, "user_a_not_found", err, n.log)
 		return
 	}
 
-	userB, err := n.db.GetUsersDB().GetUserByWallet(c, inBody.WalletB)
+	userB, err := n.db.GetUsersDB().GetUserByWallet(c, utils.HexToAddress(inBody.WalletB))
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiUsersRemoveMutualDocks: failed to get user B by wallet")
 		api.AbortRequest(c, http.StatusNotFound, "user_b_not_found", err, n.log)
