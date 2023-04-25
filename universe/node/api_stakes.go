@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 // @Summary Get current user's stakes list
@@ -88,6 +89,44 @@ func (n *Node) apiGetMyWallets(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, result)
+}
+
+// @Summary Add pending stake transaction
+// @Schemes
+// @Description Add pending transaction
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param body body node.apiAddPendingStakeTransaction.Body true "body params"
+// @Success 200 {object} node.apiAddPendingStakeTransaction.Out
+// @Failure 400 {object} api.HTTPError
+// @Failure 500 {object} api.HTTPError
+// @Router /api/v4/users/me/stakes [post]
+func (n *Node) apiAddPendingStakeTransaction(c *gin.Context) {
+	type Body struct {
+		TransactionID string    `json:"transaction_id" binding:"required"`
+		OdysseyID     umid.UMID `json:"odyssey_id" binding:"required"`
+		Wallet        string    `json:"wallet" binding:"required"`
+		Comment       string    `json:"comment" binding:"required"`
+		Amount        string    `json:"amount" binding:"required"`
+		Kind          string    `json:"kind" binding:"required"`
+	}
+
+	var inBody Body
+	if err := c.ShouldBindJSON(&inBody); err != nil {
+		err = errors.WithMessage(err, "Node: apiAddPendingStakeTransaction: failed to bind json")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
+	type Out struct {
+		Success bool `json:"success"`
+	}
+	out := Out{
+		Success: true,
+	}
+
+	c.JSON(http.StatusOK, out)
 }
 
 func HexToAddress(s string) []byte {
