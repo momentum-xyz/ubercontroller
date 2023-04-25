@@ -251,22 +251,24 @@ func (w *World) broadcastPositions() {
 	}
 }
 
-// Send posbus.AddUsers containing all current users in the world (including themself).
-// Accepts a function, which should be the function to send the message to a user.
+// Send posbus.AddUsers containing all current users in the world (excluding themself).
 //
 // Similar to Object.SendSpawnMessage, but not prepared like objects (stored on world).
 // This changes more often and would require some fine-grained hooks into the add/remove user logic.
 // (Also it just changed, since this new user was added)
-func (w *World) SendUsersSpawnMessage(sendFn func(*websocket.PreparedMessage) error) {
+func (w *World) SendUsersSpawnMessage(receiver universe.User) {
 	// See broadcastPositions, same logic, just different contents
 	w.Users.Mu.RLock()
-	numClients := len(w.Users.Data)
+	// Assuming receiver themself is in this list
+	numClients := len(w.Users.Data) - 1
 	batchSize := 100 // Sane size for UserData? contains variable name string.
 	var msgBatches []posbus.AddUsers
 	if numClients > 0 {
 		uDatas := make([]posbus.UserData, 0)
 		for _, u := range w.Users.Data {
-			uDatas = append(uDatas, *u.GetUserDefinition())
+			if u.GetID() != receiver.GetID() {
+				uDatas = append(uDatas, *u.GetUserDefinition())
+			}
 		}
 		nrUpdates := len(uDatas)
 		msgBatches = make([]posbus.AddUsers, 0, (nrUpdates+batchSize-1)/batchSize)
@@ -283,7 +285,7 @@ func (w *World) SendUsersSpawnMessage(sendFn func(*websocket.PreparedMessage) er
 	}
 	w.Users.Mu.RUnlock()
 	for _, msg := range msgBatches {
-		sendFn(posbus.WSMessage(&msg))
+		receiver.Send(posbus.WSMessage(&msg))
 	}
 }
 

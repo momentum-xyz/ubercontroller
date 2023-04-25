@@ -194,7 +194,7 @@ func (w *World) initializeUI(user universe.User) error {
 	w.log.Infof("Sent Textures: %+v\n", user.GetID())
 	user.ReleaseSendBuffer()
 
-	w.SendUsersSpawnMessage(user.Send)
+	w.SendUsersSpawnMessage(user)
 	w.log.Infof("Sent all users: %+v\n", user.GetID())
 	return nil
 }
