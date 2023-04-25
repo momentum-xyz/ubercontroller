@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"math/big"
 
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
@@ -451,4 +452,11 @@ type StakesDB interface {
 	GetStakeByLatestStake(ctx context.Context) (*string, error)
 	GetStakes(ctx context.Context, walletID []byte) ([]*map[string]any, error)
 	GetWalletsInfo(ctx context.Context, walletIDs [][]byte) ([]*map[string]any, error)
+	InsertIntoPendingStakes(ctx context.Context, transactionID []byte,
+		objectID umid.UMID,
+		walletID []byte,
+		blockchainID umid.UMID,
+		amount *big.Int,
+		comment string,
+		kind uint8) error
 }

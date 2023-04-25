@@ -1,6 +1,8 @@
 package node
 
 import (
+	"encoding/hex"
+	"math/big"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -118,6 +120,36 @@ func (n *Node) apiAddPendingStakeTransaction(c *gin.Context) {
 		return
 	}
 
+	transactionID, err := hexToAddress(inBody.TransactionID)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiAddPendingStakeTransaction: failed to parse transaction_id to byte array")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
+	wallet, err := hexToAddress(inBody.Wallet)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiAddPendingStakeTransaction: failed to parse wallet to byte array")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
+	big := big.NewInt(0)
+	amount, ok := big.SetString(inBody.Amount, 10)
+	if !ok {
+		err := errors.New("Node: apiAddPendingStakeTransaction: failed to parse amount")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
+	err = n.db.GetStakesDB().InsertIntoPendingStakes(c, transactionID,
+		inBody.OdysseyID, wallet, umid.MustParse("ccccaaaa-1111-2222-3333-222222222222"), amount, inBody.Comment, 0)
+	if err != nil {
+		err := errors.New("Node: apiAddPendingStakeTransaction: failed to insert into pending stakes")
+		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+		return
+	}
+
 	type Out struct {
 		Success bool `json:"success"`
 	}
@@ -126,4 +158,12 @@ func (n *Node) apiAddPendingStakeTransaction(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, out)
+}
+
+func hexToAddress(s string) ([]byte, error) {
+	b, err := hex.DecodeString(s[2:])
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
 }
