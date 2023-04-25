@@ -6,7 +6,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
@@ -44,7 +43,7 @@ func (n *Node) apiGetMyStakes(c *gin.Context) {
 		return
 	}
 
-	result := make([]*entry.Stake, 0)
+	result := make([]*map[string]any, 0)
 	for _, w := range wallets {
 		r, err := n.db.GetStakesDB().GetStakesByWalletID(c, utils.HexToAddress(*w))
 		if err != nil {

@@ -251,9 +251,15 @@ func (n *Node) apiUsersGetStakedWorlds(c *gin.Context) {
 		}
 
 		for _, stake := range stakes {
-			world, ok := n.GetObject(stake.ObjectID, false)
+			var objectID umid.UMID
+			if stake != nil {
+				objectIDString := utils.GetFromAnyMap(*stake, "object_id", "")
+				objectID = umid.MustParse(objectIDString)
+			}
+
+			world, ok := n.GetObject(objectID, false)
 			if !ok {
-				err := errors.Errorf("Node: apiUsersGetStakedWorlds: world not found: %s", stake.ObjectID)
+				err := errors.Errorf("Node: apiUsersGetStakedWorlds: world not found: %s", objectID)
 				api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, n.log)
 				return
 			}
