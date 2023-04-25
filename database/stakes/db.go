@@ -35,6 +35,16 @@ const (
 					FROM balance
 							 JOIN blockchain USING (blockchain_id)
 					WHERE wallet_id = ANY ($1);`
+	insertIntoPendingStakes = `INSERT INTO pending_stake (transaction_id,
+									   object_id,
+									   wallet_id,
+									   blockchain_id,
+									   amount,
+									   comment,
+									   kind,
+									   updated_at,
+									   created_at)
+								VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())`
 )
 
 var _ database.StakesDB = (*DB)(nil)
@@ -145,4 +155,23 @@ func (db *DB) GetStakeByLatestStake(ctx context.Context) (*string, error) {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return stake, nil
+}
+
+func (db *DB) InsertIntoPendingStakes(ctx context.Context, transactionID []byte,
+	objectID umid.UMID,
+	walletID []byte,
+	blockchainID umid.UMID,
+	amount *big.Int,
+	comment string,
+	kind uint8) error {
+
+	a := (*entry.BigInt)(amount)
+
+	if _, err := db.conn.Exec(
+		ctx, insertIntoPendingStakes,
+		transactionID, objectID, walletID, blockchainID, a, comment, kind,
+	); err != nil {
+		return errors.WithMessage(err, "failed to exec db")
+	}
+	return nil
 }

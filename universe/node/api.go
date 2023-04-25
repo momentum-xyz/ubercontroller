@@ -80,6 +80,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 				userMe.POST("/attach-account", n.apiAttachAccount)
 
 				userMe.GET("/stakes", n.apiGetMyStakes)
+				userMe.POST("/stakes", n.apiAddPendingStakeTransaction)
 
 				userMe.GET("/wallets", n.apiGetMyWallets)
 			}
