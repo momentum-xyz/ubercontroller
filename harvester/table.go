@@ -55,14 +55,9 @@ func (t *Table) fastForward() {
 	defer t.mu.Unlock()
 
 	lastBlockNumber, err := t.adapter.GetLastBlockNumber()
+	fmt.Printf("Fast Forward. From: %d to: %d\n", t.blockNumber, lastBlockNumber)
 	if err != nil {
 		fmt.Println(err)
-		return
-	}
-
-	if t.blockNumber == 0 {
-		// No blocks processed
-		// Initialisation should be done using GetBalance
 		return
 	}
 
@@ -72,6 +67,14 @@ func (t *Table) fastForward() {
 	}
 
 	contracts := make([]common.Address, 0)
+
+	//if t.blockNumber == 0 {
+	//	// No blocks processed
+	//	// Initialisation should be done using GetBalance for tokens
+	//	// But for stakes we will use fastForward
+	//	return
+	//}
+
 	for contract := range t.data {
 		contracts = append(contracts, common.HexToAddress(contract))
 	}
@@ -151,19 +154,20 @@ func (t *Table) ProcessDiffs(blockNumber uint64, diffs []*BCDiff, stakes []*BCSt
 }
 
 func (t *Table) listener(blockNumber uint64, diffs []*BCDiff, stakes []*BCStake) {
-	t.mu.Lock()
-	t.ProcessDiffs(blockNumber, diffs, stakes)
-	t.mu.Unlock()
+	t.fastForward()
+	//t.mu.Lock()
+	//t.ProcessDiffs(blockNumber, diffs, stakes)
+	//t.mu.Unlock()
 }
 
-func (t *Table) SaveToDB(events []*UpdateEvent, stakeEvents []*StakeEvent) error {
+func (t *Table) SaveToDB(events []*UpdateEvent, stakeEvents []*StakeEvent) (err error) {
 	wallets := make([]Address, 0)
 	contracts := make([]Address, 0)
 	// Save balance by value to quickly unlock mutex, otherwise have to unlock util DB transaction finished
 	balances := make([]*entry.Balance, 0)
 	stakeEntries := make([]*entry.Stake, 0)
 
-	blockchainUMID, name, rpcURL := t.adapter.GetInfo()
+	blockchainUMID, _, _ := t.adapter.GetInfo()
 
 	for _, event := range events {
 		if event.Amount == nil {
@@ -186,7 +190,7 @@ func (t *Table) SaveToDB(events []*UpdateEvent, stakeEvents []*StakeEvent) error
 			WalletID:     HexToAddress(stake.Wallet),
 			BlockchainID: blockchainUMID,
 			ObjectID:     stake.OdysseyID,
-			LastComment:  0,
+			LastComment:  string(0),
 			Amount:       (*entry.BigInt)(stake.Amount),
 		})
 	}
@@ -195,15 +199,31 @@ func (t *Table) SaveToDB(events []*UpdateEvent, stakeEvents []*StakeEvent) error
 
 	fmt.Println(stakeEntries)
 
+	return t.saveToDB(wallets, contracts, balances, stakeEntries)
+}
+
+func (t *Table) saveToDB(wallets []Address, contracts []Address, balances []*entry.Balance, stakeEntries []*entry.Stake) error {
+	blockchainUMID, name, rpcURL := t.adapter.GetInfo()
+
 	tx, err := t.db.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return errors.WithMessage(err, "failed to begin transaction")
 	}
 	defer func() {
 		if err != nil {
-			tx.Rollback(context.TODO())
+			fmt.Println("!!! Rollback")
+			e := tx.Rollback(context.TODO())
+			if e != nil {
+				fmt.Println("???")
+				fmt.Println(e)
+			}
 		} else {
-			tx.Commit(context.TODO())
+			//fmt.Println("!!! Commit")
+			e := tx.Commit(context.TODO())
+			if e != nil {
+				fmt.Println("???!!!")
+				fmt.Println(e)
+			}
 		}
 	}()
 
@@ -220,7 +240,7 @@ func (t *Table) SaveToDB(events []*UpdateEvent, stakeEvents []*StakeEvent) error
 		BlockchainName:           name,
 		RPCURL:                   rpcURL,
 	}
-	_, err = t.db.Exec(context.Background(), sql,
+	_, err = tx.Exec(context.Background(), sql,
 		val.BlockchainID, val.LastProcessedBlockNumber, val.BlockchainName, val.RPCURL)
 	if err != nil {
 		return errors.WithMessage(err, "failed to insert or update blockchain DB query")
@@ -376,7 +396,7 @@ func (t *Table) syncBalance(wallet string, contract string) {
 	}
 	balance, err := t.adapter.GetBalance(wallet, contract, blockNumber)
 	if err != nil {
-		err = errors.WithMessage(err, "failed to get balance")
+		err = errors.WithMessagef(err, "failed to get balance: %s, %s, %d", wallet, contract, blockNumber)
 		fmt.Println(err)
 	}
 	t.mu.Lock()

@@ -26,6 +26,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/matoous/go-nanoid/v2 v2.0.0
 	github.com/mitchellh/mapstructure v1.5.0
+	github.com/niubaoshu/gotiny v0.0.3
 	github.com/pborman/getopt/v2 v2.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/sasha-s/go-deadlock v0.3.1
@@ -109,7 +110,6 @@ require (
 	github.com/mimoo/StrobeGo v0.0.0-20220103164710-9a04d6ca976b // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/niubaoshu/gotiny v0.0.3 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.7 // indirect
 	github.com/petermattis/goid v0.0.0-20230222173705-8ff7bb262a50 // indirect

@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -14,40 +16,51 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
+	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/harvester"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 type ArbitrumNovaAdapter struct {
-	listener         harvester.AdapterListener
-	umid             umid.UMID
-	rpcURL           string
-	httpURL          string
-	name             string
-	client           *ethclient.Client
+	listener harvester.AdapterListener
+	umid     umid.UMID
+	wsURL    string
+	httpURL  string
+	name     string
+	//client           *ethclient.Client
 	rpcClient        *rpc.Client
 	contractABI      abi.ABI
 	stakeContractABI abi.ABI
 	stakeContract    common.Address
+	lastBlock        uint64
 }
 
-func NewArbitrumNovaAdapter() *ArbitrumNovaAdapter {
+func NewArbitrumNovaAdapter(cfg *config.Config) *ArbitrumNovaAdapter {
 	return &ArbitrumNovaAdapter{
 		umid:          umid.MustParse("ccccaaaa-1111-2222-3333-222222222222"),
-		rpcURL:        "wss://bcdev.antst.net:8548",
-		httpURL:       "https://bcdev.antst.net:8547",
+		wsURL:         cfg.Arbitrum.ArbitrumWSURL,
+		httpURL:       cfg.Arbitrum.ArbitrumRPCURL,
 		name:          "arbitrum_nova",
-		stakeContract: common.HexToAddress("0xe7d2C09480ab9136cD4F02aF37aAd4767a217596"),
+		stakeContract: common.HexToAddress(cfg.Arbitrum.ArbitrumStakeContractAddress),
 	}
 }
 
 func (a *ArbitrumNovaAdapter) GetLastBlockNumber() (uint64, error) {
-	number, err := a.client.BlockNumber(context.TODO())
-	return number, err
+	//number, err := a.client.BlockNumber(context.TODO())
+	//_ = number
+	//fmt.Println(err)
+	//fmt.Println(number)
+
+	var resp string
+	if err := a.rpcClient.Call(&resp, "eth_blockNumber"); err != nil {
+		return 0, errors.WithMessage(err, "failed to make RPC call to arbitrum:")
+	}
+
+	return hex2int(resp), nil
 }
 
 func (a *ArbitrumNovaAdapter) Run() {
@@ -63,67 +76,93 @@ func (a *ArbitrumNovaAdapter) Run() {
 	}
 	a.stakeContractABI = stakeContractABI
 
-	a.client, err = ethclient.Dial(a.rpcURL)
-	if err != nil {
-		log.Fatal(err)
-	}
+	//a.client, err = ethclient.Dial(a.rpcURL)
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
 
 	a.rpcClient, err = rpc.DialHTTP(a.httpURL)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Connected to Ethereum Block Chain: " + a.rpcURL)
+	fmt.Println("Connected to Arbitrum Block Chain: " + a.wsURL)
+	///////
 
-	ch := make(chan *types.Header)
-
-	sub, err := a.client.SubscribeNewHead(context.Background(), ch)
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	ticker := time.NewTicker(1000 * time.Millisecond)
+	done := make(chan bool)
 	go func() {
 		for {
 			select {
-			case err := <-sub.Err():
-				log.Fatal(err)
-			case vLog := <-ch:
-
-				//fmt.Println(vLog.Number)
-				//fmt.Println(vLog.ReceiptHash)
-				//fmt.Println(vLog.ParentHash)
-				//fmt.Println(vLog.Root)
-				//fmt.Println(vLog.TxHash)
-				//fmt.Println(vLog.Hash())
-
-				block := &harvester.BCBlock{
-					Hash: vLog.Hash().String(),
+			case <-done:
+				return
+			case t := <-ticker.C:
+				_ = t
+				//fmt.Println("Tick at", t)
+				n, err := a.GetLastBlockNumber()
+				if err != nil {
+					fmt.Println(err)
 				}
-
-				if vLog.Number != nil {
-					block.Number = vLog.Number.Uint64()
-				}
-
-				if a.listener != nil {
-					a.onNewBlock(block)
+				if a.lastBlock < n {
+					a.lastBlock = n
+					a.listener(n, nil, nil)
 				}
 			}
 		}
 	}()
+
+	///////
+
+	//
+	//ch := make(chan *types.Header)
+	//
+	//sub, err := a.client.SubscribeNewHead(context.Background(), ch)
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//
+	//go func() {
+	//	for {
+	//		select {
+	//		case err := <-sub.Err():
+	//			log.Fatal(err)
+	//		case vLog := <-ch:
+	//
+	//			fmt.Println(vLog.Number)
+	//			//fmt.Println(vLog.ReceiptHash)
+	//			//fmt.Println(vLog.ParentHash)
+	//			//fmt.Println(vLog.Root)
+	//			//fmt.Println(vLog.TxHash)
+	//			//fmt.Println(vLog.Hash())
+	//
+	//			block := &harvester.BCBlock{
+	//				Hash: vLog.Hash().String(),
+	//			}
+	//
+	//			if vLog.Number != nil {
+	//				block.Number = vLog.Number.Uint64()
+	//			}
+	//
+	//			if a.listener != nil {
+	//				a.onNewBlock(block)
+	//			}
+	//		}
+	//	}
+	//}()
 }
 
 func (a *ArbitrumNovaAdapter) RegisterNewBlockListener(f harvester.AdapterListener) {
 	a.listener = f
 }
 
-func (a *ArbitrumNovaAdapter) onNewBlock(b *harvester.BCBlock) {
-	diffs, stakes, err := a.GetTransferLogs(int64(b.Number), int64(b.Number), []common.Address{})
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	a.listener(b.Number, diffs, stakes)
-}
+//func (a *ArbitrumNovaAdapter) onNewBlock(b *harvester.BCBlock) {
+//	diffs, stakes, err := a.GetTransferLogs(int64(b.Number), int64(b.Number), []common.Address{})
+//	if err != nil {
+//		fmt.Println(err)
+//	}
+//
+//	a.listener(b.Number, diffs, stakes)
+//}
 
 func (a *ArbitrumNovaAdapter) GetBalance(wallet string, contract string, blockNumber uint64) (*big.Int, error) {
 	type request struct {
@@ -138,7 +177,7 @@ func (a *ArbitrumNovaAdapter) GetBalance(wallet string, contract string, blockNu
 	var resp string
 	n := hexutil.EncodeUint64(blockNumber)
 	if err := a.rpcClient.Call(&resp, "eth_call", req, n); err != nil {
-		return nil, errors.WithMessage(err, "failed to make RPC call to ethereum:")
+		return nil, errors.WithMessage(err, "failed to make RPC call to arbitrum:")
 	}
 
 	// remove leading zero of resp
@@ -195,7 +234,7 @@ func (a *ArbitrumNovaAdapter) GetTransferLogs(fromBlock, toBlock int64, addresse
 		Addresses: append(addresses, a.stakeContract),
 	}
 
-	logs, err := a.client.FilterLogs(context.Background(), query)
+	logs, err := a.FilterLogs(context.TODO(), query)
 	if err != nil {
 		return nil, nil, errors.WithMessage(err, "failed to filter log")
 	}
@@ -272,7 +311,12 @@ func (a *ArbitrumNovaAdapter) GetTransferLogs(fromBlock, toBlock int64, addresse
 				TotalAmount: totalAmount,
 			}
 
-			stakes = append(stakes, stake)
+			if stake.OdysseyID.String() != uuid.MustParse("ccccaaaa-1111-2222-3333-222222222222").String() &&
+				stake.OdysseyID.String() != uuid.MustParse("ccccaaaa-1111-2222-3333-222222222244").String() &&
+				stake.OdysseyID.String() != uuid.MustParse("ccccaaaa-1111-2222-3333-222222222241").String() {
+
+				stakes = append(stakes, stake)
+			}
 
 		//fmt.Printf("%+v %+v %+v %+v \n\n", fromWallet.String(), odysseyID.String(), amount, tokenType)
 		//fmt.Println(ev)
@@ -319,7 +363,66 @@ func (a *ArbitrumNovaAdapter) GetTransferLogs(fromBlock, toBlock int64, addresse
 }
 
 func (a *ArbitrumNovaAdapter) GetInfo() (umid umid.UMID, name string, rpcURL string) {
-	return a.umid, a.name, a.rpcURL
+	return a.umid, a.name, a.wsURL
+}
+
+func (a *ArbitrumNovaAdapter) FilterLogs(ctx context.Context, q ethereum.FilterQuery) ([]types.Log, error) {
+	var result []types.Log
+	arg, err := toFilterArg(q)
+	if err != nil {
+		return nil, err
+	}
+	err = a.rpcClient.CallContext(ctx, &result, "eth_getLogs", arg)
+	return result, err
+}
+
+func toFilterArg(q ethereum.FilterQuery) (interface{}, error) {
+	arg := map[string]interface{}{
+		"address": q.Addresses,
+		"topics":  q.Topics,
+	}
+	if q.BlockHash != nil {
+		arg["blockHash"] = *q.BlockHash
+		if q.FromBlock != nil || q.ToBlock != nil {
+			return nil, fmt.Errorf("cannot specify both BlockHash and FromBlock/ToBlock")
+		}
+	} else {
+		if q.FromBlock == nil {
+			arg["fromBlock"] = "0x0"
+		} else {
+			arg["fromBlock"] = toBlockNumArg(q.FromBlock)
+		}
+		arg["toBlock"] = toBlockNumArg(q.ToBlock)
+	}
+	return arg, nil
+}
+
+func toBlockNumArg(number *big.Int) string {
+	if number == nil {
+		return "latest"
+	}
+	pending := big.NewInt(-1)
+	if number.Cmp(pending) == 0 {
+		return "pending"
+	}
+	finalized := big.NewInt(int64(rpc.FinalizedBlockNumber))
+	if number.Cmp(finalized) == 0 {
+		return "finalized"
+	}
+	safe := big.NewInt(int64(rpc.SafeBlockNumber))
+	if number.Cmp(safe) == 0 {
+		return "safe"
+	}
+	return hexutil.EncodeBig(number)
+}
+
+func hex2int(hexStr string) uint64 {
+	// remove 0x suffix if found in the input string
+	cleaned := strings.Replace(hexStr, "0x", "", -1)
+
+	// base 16 for hexadecimal
+	result, _ := strconv.ParseUint(cleaned, 16, 64)
+	return uint64(result)
 }
 
 const erc20abi = `[
@@ -579,6 +682,20 @@ const stakeABI = `[
 		"type": "event"
 	},
 	{
+		"inputs": [],
+		"name": "claim_rewards",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "claim_unstaked_tokens",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"anonymous": false,
 		"inputs": [
 			{
@@ -604,6 +721,42 @@ const stakeABI = `[
 		"type": "event"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "bytes32",
+				"name": "role",
+				"type": "bytes32"
+			},
+			{
+				"internalType": "address",
+				"name": "account",
+				"type": "address"
+			}
+		],
+		"name": "grantRole",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_mom_token",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "_dad_token",
+				"type": "address"
+			}
+		],
+		"name": "initialize",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"anonymous": false,
 		"inputs": [
 			{
@@ -615,6 +768,52 @@ const stakeABI = `[
 		],
 		"name": "Initialized",
 		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes32",
+				"name": "role",
+				"type": "bytes32"
+			},
+			{
+				"internalType": "address",
+				"name": "account",
+				"type": "address"
+			}
+		],
+		"name": "renounceRole",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes16",
+				"name": "from_odyssey_id",
+				"type": "bytes16"
+			},
+			{
+				"internalType": "bytes16",
+				"name": "to_odyssey_id",
+				"type": "bytes16"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "enum Staking.Token",
+				"name": "token",
+				"type": "uint8"
+			}
+		],
+		"name": "restake",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
 	},
 	{
 		"anonymous": false,
@@ -645,25 +844,31 @@ const stakeABI = `[
 			},
 			{
 				"indexed": false,
-				"internalType": "enum StakingT.Token",
+				"internalType": "enum Staking.Token",
 				"name": "",
 				"type": "uint8"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
 			}
 		],
 		"name": "Restake",
 		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes32",
+				"name": "role",
+				"type": "bytes32"
+			},
+			{
+				"internalType": "address",
+				"name": "account",
+				"type": "address"
+			}
+		],
+		"name": "revokeRole",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
 	},
 	{
 		"anonymous": false,
@@ -760,41 +965,27 @@ const stakeABI = `[
 		"type": "event"
 	},
 	{
-		"anonymous": false,
 		"inputs": [
 			{
-				"indexed": false,
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			},
-			{
-				"indexed": false,
 				"internalType": "bytes16",
-				"name": "",
+				"name": "odyssey_id",
 				"type": "bytes16"
 			},
 			{
-				"indexed": false,
 				"internalType": "uint256",
-				"name": "",
+				"name": "amount",
 				"type": "uint256"
 			},
 			{
-				"indexed": false,
-				"internalType": "enum StakingT.Token",
-				"name": "",
+				"internalType": "enum Staking.Token",
+				"name": "token",
 				"type": "uint8"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
 			}
 		],
-		"name": "Stake",
-		"type": "event"
+		"name": "stake",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
 	},
 	{
 		"anonymous": false,
@@ -819,7 +1010,7 @@ const stakeABI = `[
 			},
 			{
 				"indexed": false,
-				"internalType": "enum StakingT.Token",
+				"internalType": "enum Staking.Token",
 				"name": "",
 				"type": "uint8"
 			},
@@ -830,8 +1021,114 @@ const stakeABI = `[
 				"type": "uint256"
 			}
 		],
+		"name": "Stake",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes16",
+				"name": "odyssey_id",
+				"type": "bytes16"
+			},
+			{
+				"internalType": "enum Staking.Token",
+				"name": "token",
+				"type": "uint8"
+			}
+		],
+		"name": "unstake",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "bytes16",
+				"name": "",
+				"type": "bytes16"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "enum Staking.Token",
+				"name": "",
+				"type": "uint8"
+			}
+		],
 		"name": "Unstake",
 		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_dad_token",
+				"type": "address"
+			}
+		],
+		"name": "update_dad_token_contract",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_locking_period",
+				"type": "uint256"
+			}
+		],
+		"name": "update_locking_period",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_mom_token",
+				"type": "address"
+			}
+		],
+		"name": "update_mom_token_contract",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address[]",
+				"name": "addresses",
+				"type": "address[]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "amounts",
+				"type": "uint256[]"
+			}
+		],
+		"name": "update_rewards",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
 	},
 	{
 		"anonymous": false,
@@ -847,43 +1144,34 @@ const stakeABI = `[
 		"type": "event"
 	},
 	{
-		"inputs": [],
-		"name": "DEFAULT_ADMIN_ROLE",
-		"outputs": [
+		"inputs": [
 			{
-				"internalType": "bytes32",
-				"name": "",
-				"type": "bytes32"
+				"internalType": "address",
+				"name": "newImplementation",
+				"type": "address"
 			}
 		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "MANAGER_ROLE",
-		"outputs": [
-			{
-				"internalType": "bytes32",
-				"name": "",
-				"type": "bytes32"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "claim_rewards",
+		"name": "upgradeTo",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "claim_unstaked_tokens",
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "newImplementation",
+				"type": "address"
+			},
+			{
+				"internalType": "bytes",
+				"name": "data",
+				"type": "bytes"
+			}
+		],
+		"name": "upgradeToAndCall",
 		"outputs": [],
-		"stateMutability": "nonpayable",
+		"stateMutability": "payable",
 		"type": "function"
 	},
 	{
@@ -894,6 +1182,19 @@ const stakeABI = `[
 				"internalType": "address",
 				"name": "",
 				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "DEFAULT_ADMIN_ROLE",
+		"outputs": [
+			{
+				"internalType": "bytes32",
+				"name": "",
+				"type": "bytes32"
 			}
 		],
 		"stateMutability": "view",
@@ -931,61 +1232,12 @@ const stakeABI = `[
 				"type": "address"
 			}
 		],
-		"name": "grantRole",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes32",
-				"name": "role",
-				"type": "bytes32"
-			},
-			{
-				"internalType": "address",
-				"name": "account",
-				"type": "address"
-			}
-		],
 		"name": "hasRole",
 		"outputs": [
 			{
 				"internalType": "bool",
 				"name": "",
 				"type": "bool"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "_mom_token",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "_dad_token",
-				"type": "address"
-			}
-		],
-		"name": "initialize",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "last_rewards_calculation",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -999,6 +1251,19 @@ const stakeABI = `[
 				"internalType": "uint256",
 				"name": "",
 				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "MANAGER_ROLE",
+		"outputs": [
+			{
+				"internalType": "bytes32",
+				"name": "",
+				"type": "bytes32"
 			}
 		],
 		"stateMutability": "view",
@@ -1057,106 +1322,6 @@ const stakeABI = `[
 			}
 		],
 		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes32",
-				"name": "role",
-				"type": "bytes32"
-			},
-			{
-				"internalType": "address",
-				"name": "account",
-				"type": "address"
-			}
-		],
-		"name": "renounceRole",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes16",
-				"name": "from_odyssey_id",
-				"type": "bytes16"
-			},
-			{
-				"internalType": "bytes16",
-				"name": "to_odyssey_id",
-				"type": "bytes16"
-			},
-			{
-				"internalType": "uint256",
-				"name": "amount",
-				"type": "uint256"
-			},
-			{
-				"internalType": "enum StakingT.Token",
-				"name": "token",
-				"type": "uint8"
-			}
-		],
-		"name": "restake",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes32",
-				"name": "role",
-				"type": "bytes32"
-			},
-			{
-				"internalType": "address",
-				"name": "account",
-				"type": "address"
-			}
-		],
-		"name": "revokeRole",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "rewards_timeout",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes16",
-				"name": "odyssey_id",
-				"type": "bytes16"
-			},
-			{
-				"internalType": "uint256",
-				"name": "amount",
-				"type": "uint256"
-			},
-			{
-				"internalType": "enum StakingT.Token",
-				"name": "token",
-				"type": "uint8"
-			}
-		],
-		"name": "stake",
-		"outputs": [],
-		"stateMutability": "payable",
 		"type": "function"
 	},
 	{
@@ -1233,24 +1398,6 @@ const stakeABI = `[
 	{
 		"inputs": [
 			{
-				"internalType": "bytes16",
-				"name": "odyssey_id",
-				"type": "bytes16"
-			},
-			{
-				"internalType": "enum StakingT.Token",
-				"name": "token",
-				"type": "uint8"
-			}
-		],
-		"name": "unstake",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
 				"internalType": "address",
 				"name": "",
 				"type": "address"
@@ -1275,117 +1422,11 @@ const stakeABI = `[
 			},
 			{
 				"internalType": "uint256",
-				"name": "untaking_timestamp",
+				"name": "since",
 				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "_dad_token",
-				"type": "address"
-			}
-		],
-		"name": "update_dad_token_contract",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_locking_period",
-				"type": "uint256"
-			}
-		],
-		"name": "update_locking_period",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "_mom_token",
-				"type": "address"
-			}
-		],
-		"name": "update_mom_token_contract",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address[]",
-				"name": "addresses",
-				"type": "address[]"
-			},
-			{
-				"internalType": "uint256[]",
-				"name": "amounts",
-				"type": "uint256[]"
-			},
-			{
-				"internalType": "uint256",
-				"name": "timestamp",
-				"type": "uint256"
-			}
-		],
-		"name": "update_rewards",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_rewards_timeout",
-				"type": "uint256"
-			}
-		],
-		"name": "update_rewards_timeout",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "newImplementation",
-				"type": "address"
-			}
-		],
-		"name": "upgradeTo",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "newImplementation",
-				"type": "address"
-			},
-			{
-				"internalType": "bytes",
-				"name": "data",
-				"type": "bytes"
-			}
-		],
-		"name": "upgradeToAndCall",
-		"outputs": [],
-		"stateMutability": "payable",
 		"type": "function"
 	}
 ]`

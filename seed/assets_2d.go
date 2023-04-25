@@ -2,6 +2,7 @@ package seed
 
 import (
 	"context"
+
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/pkg/errors"
@@ -77,13 +78,6 @@ func seedAssets2d(ctx context.Context, node universe.Node) error {
 				"pluginId":  videoPluginID,
 				"scopeName": "plugin_google_drive",
 				"scriptUrl": videoUrl,
-			},
-		},
-		{
-			Asset2dID: umid.MustParse(dockingStationAsset2dID),
-			Options:   &entry.Asset2dOptions{},
-			Meta: entry.Asset2dMeta{
-				"name": "Docking station",
 			},
 		},
 	}

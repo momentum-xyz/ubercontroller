@@ -1,6 +1,8 @@
 package seed
 
 import (
+	"fmt"
+
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils"
@@ -10,6 +12,7 @@ import (
 )
 
 func seedObjectTypes(node universe.Node) error {
+
 	type item struct {
 		id             umid.UMID
 		asset2dID      *umid.UMID
@@ -65,27 +68,6 @@ func seedObjectTypes(node universe.Node) error {
 			},
 		},
 		{
-			id:             umid.MustParse("27456794-f9aa-44b5-90a5-e307fc21bc3d"),
-			asset2dID:      nil,
-			asset3dID:      utils.GetPTR(umid.MustParse(dockingStationAsset3dID)),
-			objectTypeName: "Docking station",
-			categoryName:   "Docking station",
-			description:    utils.GetPTR("Odyssey docking hub"),
-			options: &entry.ObjectOptions{
-				Visible: utils.GetPTR(entry.AllObjectVisibleType),
-				ChildPlacements: map[umid.UMID]*entry.ObjectChildPlacement{
-					umid.MustParse("00000000-0000-0000-0000-000000000000"): &entry.ObjectChildPlacement{
-						Algo: utils.GetPTR("circular"),
-						Options: map[string]any{
-							"R":     42,
-							"angle": 0,
-						},
-					},
-				},
-			},
-		},
-		//
-		{
 			id:             umid.MustParse("a41ee21e-6c56-41b3-81a9-1c86578b6b3c"),
 			asset2dID:      nil,
 			asset3dID:      nil,
@@ -100,20 +82,6 @@ func seedObjectTypes(node universe.Node) error {
 				AllowedSubObjects: []umid.UMID{},
 			},
 		},
-
-		{
-			id:             umid.MustParse("b59abd4d-f54d-4a97-8b6d-16a2037ddd8f"),
-			asset2dID:      utils.GetPTR(umid.MustParse(dockingStationAsset2dID)),
-			asset3dID:      utils.GetPTR(umid.MustParse("a6862b31-8f80-497d-b9d6-8234e6a71773")),
-			objectTypeName: "Docking bulb",
-			categoryName:   "Docking bulbs",
-			description:    utils.GetPTR("Odyssey docking bulb"),
-			options: &entry.ObjectOptions{
-				Visible:  utils.GetPTR(entry.AllObjectVisibleType),
-				Editable: utils.GetPTR(false),
-			},
-		},
-
 		{
 			id:             umid.MustParse("4ed3a5bb-53f8-4511-941b-07902982c31c"),
 			asset2dID:      nil,
@@ -125,19 +93,6 @@ func seedObjectTypes(node universe.Node) error {
 				Visible: utils.GetPTR(entry.AllObjectVisibleType),
 			},
 		},
-
-		{
-			id:             umid.MustParse("4fe4ed05-9024-461a-97d6-22666e8a4f46"),
-			asset2dID:      nil,
-			asset3dID:      utils.GetPTR(umid.MustParse("6846dba3-38b1-4540-a80d-4ba04af4111e")),
-			objectTypeName: "Effects emitter",
-			categoryName:   "Effects",
-			description:    utils.GetPTR("Effects emitter"),
-			options: &entry.ObjectOptions{
-				Visible: utils.GetPTR(entry.UI3DObjectVisibleType),
-			},
-		},
-
 		{
 			id:             umid.MustParse("69d8ae40-df9b-4fc8-af95-32b736d2bbcd"),
 			asset2dID:      nil,
@@ -153,20 +108,6 @@ func seedObjectTypes(node universe.Node) error {
 				AllowedSubObjects: []umid.UMID{},
 			},
 		},
-
-		{
-			id:             umid.MustParse("d7a41cbd-5cfe-454b-b522-76f22fa55026"),
-			asset2dID:      nil,
-			asset3dID:      utils.GetPTR(umid.MustParse("313a597a-8b9a-47a7-9908-52bdc7a21a3e")),
-			objectTypeName: "Skybox",
-			categoryName:   "Skybox",
-			description:    utils.GetPTR("Skybox"),
-			options: &entry.ObjectOptions{
-				Editable: utils.GetPTR(false),
-				Visible:  utils.GetPTR(entry.UI3DObjectVisibleType),
-			},
-		},
-
 		{
 			id:             umid.MustParse("75b56447-c4f1-4020-b8fc-d68704a11d65"),
 			asset2dID:      nil,
@@ -182,7 +123,6 @@ func seedObjectTypes(node universe.Node) error {
 				AllowedSubObjects: []umid.UMID{},
 			},
 		},
-
 		{
 			id:             umid.MustParse("f9607e55-63e8-4cb1-ae47-66395199975d"),
 			asset2dID:      nil,
@@ -209,7 +149,7 @@ func seedObjectTypes(node universe.Node) error {
 		if item.asset2dID != nil {
 			asset2d, ok := node.GetAssets2d().GetAsset2d(*item.asset2dID)
 			if !ok {
-				return errors.WithMessagef(err, "failed to create object type: asset_2d not found: %s", item.asset2dID)
+				return fmt.Errorf("failed to create object type: asset_2d not found: %s", item.asset2dID)
 			}
 			if err := objectType.SetAsset2d(asset2d, false); err != nil {
 				return errors.WithMessagef(
@@ -221,7 +161,7 @@ func seedObjectTypes(node universe.Node) error {
 		if item.asset3dID != nil {
 			asset3d, ok := node.GetAssets3d().GetAsset3d(*item.asset3dID)
 			if !ok {
-				return errors.WithMessagef(err, "failed to create object type: asset_3d not found: %s", item.asset3dID)
+				return fmt.Errorf("failed to create object type: asset_3d not found: %s", item.asset3dID)
 			}
 			if err := objectType.SetAsset3d(asset3d, false); err != nil {
 				return errors.WithMessagef(

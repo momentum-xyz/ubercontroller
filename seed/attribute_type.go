@@ -2,6 +2,7 @@ package seed
 
 import (
 	"context"
+
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/pkg/errors"
@@ -86,7 +87,7 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			description:   "Miro state",
 			options: &entry.AttributeOptions{
 				"posbus_auto": map[string]any{
-					"scope":   []string{"space"},
+					"scope":   []string{"object"},
 					"send_to": 1,
 				},
 			},
@@ -144,7 +145,7 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			description:   "Google Drive state",
 			options: &entry.AttributeOptions{
 				"posbus_auto": map[string]any{
-					"scope":   []string{"space"},
+					"scope":   []string{"object"},
 					"send_to": 1,
 				},
 			},
@@ -243,7 +244,7 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			description:   "Odyssey screenshare state",
 			options: &entry.AttributeOptions{
 				"posbus_auto": map[string]any{
-					"scope":   []string{"space"},
+					"scope":   []string{"object"},
 					"topic":   "screenshare-action",
 					"send_to": 1,
 				},
@@ -309,7 +310,7 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			description:   "Voice chat user actions",
 			options: &entry.AttributeOptions{
 				"posbus_auto": map[string]any{
-					"scope":   []string{"space"},
+					"scope":   []string{"object"},
 					"topic":   "voice-chat-action",
 					"send_to": 1,
 				},
@@ -321,7 +322,7 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			description:   "Voice chat users",
 			options: &entry.AttributeOptions{
 				"posbus_auto": map[string]any{
-					"scope":   []string{"space"},
+					"scope":   []string{"object"},
 					"topic":   "voice-chat-user",
 					"send_to": 1,
 				},

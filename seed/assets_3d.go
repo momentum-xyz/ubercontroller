@@ -2,6 +2,8 @@ package seed
 
 import (
 	"context"
+
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/pkg/errors"
@@ -21,353 +23,111 @@ func seedAssets3d(ctx context.Context, node universe.Node) error {
 
 	items := []*entry.Asset3d{
 		{
-			Asset3dID: umid.MustParse("313a597a-8b9a-47a7-9908-52bdc7a21a3e"),
-			Options:   &entry.Asset3dOptions{},
-			Meta: &entry.Asset3dMeta{
-				"name": "Custom skybox",
-			},
-		},
-		{
-			Asset3dID: umid.MustParse("6846dba3-38b1-4540-a80d-4ba04af4111e"),
-			Options:   &entry.Asset3dOptions{},
-			Meta: &entry.Asset3dMeta{
-				"name": "World effects",
-			},
-		},
-		{
-			Asset3dID: umid.MustParse("b2ef3600-9595-2743-ac9d-0a86c1a327a2"),
-			Options:   &entry.Asset3dOptions{},
-			Meta: &entry.Asset3dMeta{
-				"name": "World center",
-			},
-		},
-		{
-			Asset3dID: umid.MustParse(alphaProgramAsset3dID),
-			Options:   &entry.Asset3dOptions{},
-			Meta: &entry.Asset3dMeta{
-				"name": "Alpha program space",
-			},
-		},
-		{
-			Asset3dID: umid.MustParse(skyboxArrivalAsset3dID),
-			Options:   &entry.Asset3dOptions{},
-			Meta: &entry.Asset3dMeta{
-				"name":         "Arrival",
-				"type":         0,
-				"category":     "skybox",
-				"preview_hash": "bbe7629c15c6f96559def3ace4b203ca",
-			},
-		},
-		{
-			Asset3dID: umid.MustParse(skyboxAbbysAsset3dID),
-			Options:   &entry.Asset3dOptions{},
-			Meta: &entry.Asset3dMeta{
-				"name":     "Abyss",
-				"type":     0,
-				"category": "skybox",
-			},
-		},
-		{
-			Asset3dID: umid.MustParse(skyboxQuantumFluxAsset3dID),
-			Options:   &entry.Asset3dOptions{},
-			Meta: &entry.Asset3dMeta{
-				"name":         "QuantumFlux",
-				"type":         0,
-				"category":     "skybox",
-				"preview_hash": "3805f85c58e0bc817420efabc946517c",
-			},
-		},
-		{
-			Asset3dID: umid.MustParse(dockingStationAsset3dID),
-			Options:   &entry.Asset3dOptions{},
-			Meta: &entry.Asset3dMeta{
-				"name":     "Docking station",
-				"type":     0,
-				"category": "odyssey",
-			},
-		},
-		{
-			Asset3dID: umid.MustParse("a6862b31-8f80-497d-b9d6-8234e6a71773"),
-			Options:   &entry.Asset3dOptions{},
-			Meta: &entry.Asset3dMeta{
-				"name":     "Innerverse Bulb",
-				"type":     0,
-				"category": "odyssey",
-			},
-		},
-		{
-			Asset3dID: umid.MustParse("de240de6-d911-4d84-9406-8b81550dfea8"),
-			Options:   &entry.Asset3dOptions{},
-			Meta: &entry.Asset3dMeta{
-				"name":     "Portal",
-				"type":     0,
-				"category": "odyssey",
-			},
-		},
-		{
-			Asset3dID: umid.MustParse("7e20a110-149b-4c6e-b1ab-a25cbdc066e6"),
+			Asset3dID: umid.MustParse("a55f9ca74b45692e204fe37ed9dc3d78"),
 			Options:   &entry.Asset3dOptions{},
 			Meta: &entry.Asset3dMeta{
 				"name":     "Bucky with image",
-				"type":     0,
+				"type":     dto.GLTFAsset3dType,
 				"category": "basic",
 			},
 		},
 		{
-			Asset3dID: umid.MustParse("bda945cc-8fb6-4e4d-94e3-0d0480c78893"),
+			Asset3dID: umid.MustParse("eea924c06e33393fe06ee6631e8860e9"),
 			Options:   &entry.Asset3dOptions{},
 			Meta: &entry.Asset3dMeta{
 				"name":     "Capsule with image",
-				"type":     0,
+				"type":     dto.GLTFAsset3dType,
 				"category": "basic",
 			},
 		},
 		{
-			Asset3dID: umid.MustParse("9bfd83c1-7dad-4cc9-a97b-69c7b9ad931d"),
+			Asset3dID: umid.MustParse("8a7e55f5934d8ebf17bb39e2d8d9bfa1"),
 			Options:   &entry.Asset3dOptions{},
 			Meta: &entry.Asset3dMeta{
 				"name":     "Cone with image",
-				"type":     0,
+				"type":     dto.GLTFAsset3dType,
 				"category": "basic",
 			},
 		},
 		{
-			Asset3dID: umid.MustParse("ad49552f-67c8-47f4-bcad-fc6f6deac1fc"),
+			Asset3dID: umid.MustParse("5b5bd8720328e38c1b54bf2bfa70fc85"),
 			Options:   &entry.Asset3dOptions{},
 			Meta: &entry.Asset3dMeta{
 				"name":     "Cube with image",
-				"type":     0,
+				"type":     dto.GLTFAsset3dType,
 				"category": "basic",
 			},
 		},
 		{
-			Asset3dID: umid.MustParse("97a8bd60-bbdb-4c28-964c-280322f84d4a"),
+			Asset3dID: umid.MustParse("46d923ad21ff276dc3c4ead2212bcb02"),
 			Options:   &entry.Asset3dOptions{},
 			Meta: &entry.Asset3dMeta{
 				"name":     "Cylinder with image",
-				"type":     0,
+				"type":     dto.GLTFAsset3dType,
 				"category": "basic",
 			},
 		},
 		{
-			Asset3dID: umid.MustParse("021a6576-25c2-4245-a48e-73f1e9c4c25a"),
+			Asset3dID: umid.MustParse("97daa12f9b2e536d78513b0837175e4c"),
 			Options:   &entry.Asset3dOptions{},
 			Meta: &entry.Asset3dMeta{
 				"name":     "Disc with image",
-				"type":     0,
+				"type":     dto.GLTFAsset3dType,
 				"category": "basic",
 			},
 		},
 		{
-			Asset3dID: umid.MustParse("b238c592-ba69-4721-a275-30f9738db31e"),
+			Asset3dID: umid.MustParse("839b21db52ff45ce7484fd1b59ebb087"),
 			Options:   &entry.Asset3dOptions{},
 			Meta: &entry.Asset3dMeta{
 				"name":     "Dodeca with image",
-				"type":     0,
+				"type":     dto.GLTFAsset3dType,
 				"category": "basic",
 			},
 		},
 		{
-			Asset3dID: umid.MustParse("414cfe78-a3b1-4d48-a473-5b1cf163ea3e"),
+			Asset3dID: umid.MustParse("dad4e8a4cdcc41749d77f7e849bba352"),
 			Options:   &entry.Asset3dOptions{},
 			Meta: &entry.Asset3dMeta{
 				"name":     "Icosa with image",
-				"type":     0,
+				"type":     dto.GLTFAsset3dType,
 				"category": "basic",
 			},
 		},
 		{
-			Asset3dID: umid.MustParse("e50d9cef-4588-4032-80ed-3bb2fb133835"),
+			Asset3dID: umid.MustParse("a1f144deb21ad1e906356eb250927326"),
 			Options:   &entry.Asset3dOptions{},
 			Meta: &entry.Asset3dMeta{
 				"name":     "Octo with image",
-				"type":     0,
+				"type":     dto.GLTFAsset3dType,
 				"category": "basic",
 			},
 		},
 		{
-			Asset3dID: umid.MustParse("3aa77816-345c-4f63-8b0d-3c1ec5585b23"),
+			Asset3dID: umid.MustParse("418c4963623a391c795de6080be11899"),
 			Options:   &entry.Asset3dOptions{},
 			Meta: &entry.Asset3dMeta{
 				"name":     "Quad with image",
-				"type":     0,
+				"type":     dto.GLTFAsset3dType,
 				"category": "basic",
 			},
 		},
 		{
-			Asset3dID: umid.MustParse("e369c559-a1ca-4c5b-9e16-d1c942bb86b8"),
+			Asset3dID: umid.MustParse("313a97ccfe1b39bb56e7516d213cc23d"),
 			Options:   &entry.Asset3dOptions{},
 			Meta: &entry.Asset3dMeta{
 				"name":     "Sphere with image",
-				"type":     0,
+				"type":     dto.GLTFAsset3dType,
 				"category": "basic",
 			},
 		},
 		{
-			Asset3dID: umid.MustParse("c57d792d-ee61-4b2d-9ea3-b49c6ce9991a"),
+			Asset3dID: umid.MustParse("6e8fec1cff95df661375e312f6447b3d"),
 			Options:   &entry.Asset3dOptions{},
 			Meta: &entry.Asset3dMeta{
 				"name":     "Torus with image",
-				"type":     0,
+				"type":     dto.GLTFAsset3dType,
 				"category": "basic",
-			},
-		},
-		{
-			Asset3dID: umid.MustParse("9ac3b215-f1fd-4d23-bb8b-7849f4e13659"),
-			Options:   &entry.Asset3dOptions{},
-			Meta: &entry.Asset3dMeta{
-				"name":     "Bucky",
-				"type":     0,
-				"category": "noclick",
-			},
-		},
-		{
-			Asset3dID: umid.MustParse("fcb944f4-a952-4d72-bf68-8d7bf249fda9"),
-			Options:   &entry.Asset3dOptions{},
-			Meta: &entry.Asset3dMeta{
-				"name":     "Capsule",
-				"type":     0,
-				"category": "noclick",
-			},
-		},
-		{
-			Asset3dID: umid.MustParse("01f475b3-8922-4acf-8bb5-1c4e870aab7a"),
-			Options:   &entry.Asset3dOptions{},
-			Meta: &entry.Asset3dMeta{
-				"name":     "Cone",
-				"type":     0,
-				"category": "noclick",
-			},
-		},
-		{
-			Asset3dID: umid.MustParse("008472fd-6033-4ecb-81ca-fe345334791e"),
-			Options:   &entry.Asset3dOptions{},
-			Meta: &entry.Asset3dMeta{
-				"name":     "Cube",
-				"type":     0,
-				"category": "noclick",
-			},
-		},
-		{
-			Asset3dID: umid.MustParse("1b093918-8e7d-4ee3-9f5d-af5f209ae84a"),
-			Options:   &entry.Asset3dOptions{},
-			Meta: &entry.Asset3dMeta{
-				"name":     "Cylinder",
-				"type":     0,
-				"category": "noclick",
-			},
-		},
-		{
-			Asset3dID: umid.MustParse("aeda3d26-d5dd-455f-b162-014d2c2e36ab"),
-			Options:   &entry.Asset3dOptions{},
-			Meta: &entry.Asset3dMeta{
-				"name":     "Disc",
-				"type":     0,
-				"category": "noclick",
-			},
-		},
-		{
-			Asset3dID: umid.MustParse("0576b67f-3214-4862-8973-c984a30dfda9"),
-			Options:   &entry.Asset3dOptions{},
-			Meta: &entry.Asset3dMeta{
-				"name":     "Dodeca",
-				"type":     0,
-				"category": "noclick",
-			},
-		},
-		{
-			Asset3dID: umid.MustParse("5044b89c-1d5c-457d-a06f-36e05455f0d0"),
-			Options:   &entry.Asset3dOptions{},
-			Meta: &entry.Asset3dMeta{
-				"name":     "Icosa",
-				"type":     0,
-				"category": "noclick",
-			},
-		},
-		{
-			Asset3dID: umid.MustParse("5b447fea-b639-4895-ba3a-4ac8487252c6"),
-			Options:   &entry.Asset3dOptions{},
-			Meta: &entry.Asset3dMeta{
-				"name":     "Octa",
-				"type":     0,
-				"category": "noclick",
-			},
-		},
-		{
-			Asset3dID: umid.MustParse("bece5db8-1ae3-4839-8e46-63afb947c96d"),
-			Options:   &entry.Asset3dOptions{},
-			Meta: &entry.Asset3dMeta{
-				"name":     "Quad",
-				"type":     0,
-				"category": "noclick",
-			},
-		},
-		{
-			Asset3dID: umid.MustParse("c4338f9f-9f5b-4ca0-9939-3644bbddbc9e"),
-			Options:   &entry.Asset3dOptions{},
-			Meta: &entry.Asset3dMeta{
-				"name":     "Sphere",
-				"type":     0,
-				"category": "noclick",
-			},
-		},
-		{
-			Asset3dID: umid.MustParse("ee7961ea-e01f-4d1d-9ad8-673c2fb49fb2"),
-			Options:   &entry.Asset3dOptions{},
-			Meta: &entry.Asset3dMeta{
-				"name":     "Torus",
-				"type":     0,
-				"category": "noclick",
-			},
-		},
-		{
-			Asset3dID: umid.MustParse("eb0fe08b-155d-4783-a6b4-a49bd5be6a8e"),
-			Options:   &entry.Asset3dOptions{},
-			Meta: &entry.Asset3dMeta{
-				"name":         "Gogogo",
-				"type":         0,
-				"category":     "skybox",
-				"preview_hash": "0543ba59db159b6c6a2b60395460f7dd",
-			},
-		},
-		{
-			Asset3dID: umid.MustParse("f7be7dac-f103-458f-9aea-8d937e6e493c"),
-			Options:   &entry.Asset3dOptions{},
-			Meta: &entry.Asset3dMeta{
-				"name":         "Honey",
-				"type":         0,
-				"category":     "skybox",
-				"preview_hash": "8a14a7f55c1c419db7595f9dbc59dd78",
-			},
-		},
-		{
-			Asset3dID: umid.MustParse("f70dceda-98cc-4fce-8a0d-0b2ce864e7bd"),
-			Options:   &entry.Asset3dOptions{},
-			Meta: &entry.Asset3dMeta{
-				"name":         "PlasmaSummer",
-				"type":         0,
-				"category":     "skybox",
-				"preview_hash": "995b64c7c7efb2795a8ceade7ba75995",
-			},
-		},
-		{
-			Asset3dID: umid.MustParse("5079b26d-3653-419c-97fd-6aa6d0361a56"),
-			Options:   &entry.Asset3dOptions{},
-			Meta: &entry.Asset3dMeta{
-				"name":         "ShowTime",
-				"type":         0,
-				"category":     "skybox",
-				"preview_hash": "8268b7490370f60d715540a8f6ff68f2",
-			},
-		},
-		{
-			Asset3dID: umid.MustParse("67f3e7e9-8dea-4458-8e54-26e05246296c"),
-			Options:   &entry.Asset3dOptions{},
-			Meta: &entry.Asset3dMeta{
-				"name":         "Temptations",
-				"type":         0,
-				"category":     "skybox",
-				"preview_hash": "7c8524c0304d8bc68af0093f2d6ff472",
 			},
 		},
 	}

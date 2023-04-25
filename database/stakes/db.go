@@ -2,6 +2,7 @@ package stakes
 
 import (
 	"context"
+	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -30,6 +31,10 @@ const (
 	getStakesByObjectID    = `SELECT * FROM stake WHERE object_id = $1`
 	getStakesByWalletID    = `SELECT * FROM stake WHERE wallet_id = $1`
 	getStakesByLatestStake = `SELECT last_comment FROM stake ORDER BY created_at DESC LIMIT 1;`
+	getWalletsInfoQuery    = `SELECT wallet_id, contract_id, balance, blockchain_name, updated_at
+					FROM balance
+							 JOIN blockchain USING (blockchain_id)
+					WHERE wallet_id = ANY ($1);`
 )
 
 var _ database.StakesDB = (*DB)(nil)
@@ -53,7 +58,40 @@ func (db *DB) GetStakesByWalletID(ctx context.Context, walletID string) ([]*entr
 	return stakes, nil
 }
 
-func (db *DB) GetJoinedStakesByWalletID(ctx context.Context, walletID []byte) ([]*map[string]any, error) {
+func (db *DB) GetWalletsInfo(ctx context.Context, walletIDs [][]byte) ([]*map[string]any, error) {
+	wallets := make([]*map[string]any, 0)
+
+	rows, err := db.conn.Query(ctx, getWalletsInfoQuery, walletIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var walletID common.Address
+		var contractID common.Address
+		var balance entry.BigInt
+		var blockchainName string
+		var updatedAt time.Time
+
+		if err := rows.Scan(&walletID, &contractID, &balance, &blockchainName, &updatedAt); err != nil {
+			return nil, errors.WithMessage(err, "failed to scan rows from table")
+		}
+
+		item := make(map[string]any)
+
+		item["wallet_id"] = walletID
+		item["contract_id"] = contractID
+		item["balance"] = (*big.Int)(&balance).String()
+		item["blockchain_name"] = blockchainName
+		item["updatedAt"] = updatedAt
+
+		wallets = append(wallets, &item)
+	}
+
+	return wallets, nil
+}
+
+func (db *DB) GetStakes(ctx context.Context, walletID []byte) ([]*map[string]any, error) {
 	stakes := make([]*map[string]any, 0)
 
 	rows, err := db.conn.Query(ctx, getJoinedStakesByWalletID, walletID)
@@ -66,8 +104,7 @@ func (db *DB) GetJoinedStakesByWalletID(ctx context.Context, walletID []byte) ([
 		var name string
 		var walletID common.Address
 		var blockchainID umid.UMID
-		//var amount entry.BigInt // TODO use BigInt need to update SQL schema
-		var amount int64
+		var amount entry.BigInt
 		var lastComment string
 		var updatedAt time.Time
 
@@ -81,7 +118,8 @@ func (db *DB) GetJoinedStakesByWalletID(ctx context.Context, walletID []byte) ([
 		item["name"] = name
 		item["wallet_id"] = walletID
 		item["blockchain_id"] = blockchainID
-		item["amount"] = amount
+		item["amount"] = (*big.Int)(&amount).String()
+		item["reward"] = "0"
 		item["lastComment"] = lastComment
 		item["updatedAt"] = updatedAt
 

@@ -12,6 +12,8 @@ import (
 	"github.com/zakaria-chahboun/cute"
 
 	"github.com/momentum-xyz/ubercontroller/config"
+	"github.com/momentum-xyz/ubercontroller/harvester"
+	"github.com/momentum-xyz/ubercontroller/harvester/arbitrum_nova_adapter"
 	"github.com/momentum-xyz/ubercontroller/logger"
 	"github.com/momentum-xyz/ubercontroller/pkg/service"
 	"github.com/momentum-xyz/ubercontroller/types"
@@ -53,6 +55,17 @@ func run(ctx context.Context) error {
 	cute.SetTitleColor(cute.BrightGreen)
 	cute.SetMessageColor(cute.BrightBlue)
 	cute.Println("Node loaded", "Loading time:", tm2.Sub(tm1))
+
+	harvester.Initialise(ctx, log, cfg, pool)
+	arbitrumAdapter := arbitrum_nova_adapter.NewArbitrumNovaAdapter(cfg)
+	arbitrumAdapter.Run()
+	if err := harvester.GetInstance().RegisterAdapter(arbitrumAdapter); err != nil {
+		return errors.WithMessage(err, "failed to register arbitrum adapter")
+	}
+	err = harvester.SubscribeAllWallets(ctx, harvester.GetInstance(), cfg, pool)
+	if err != nil {
+		log.Error(err)
+	}
 
 	if err := node.Run(); err != nil {
 		return errors.WithMessagef(err, "failed to run node: %s", node.GetID())

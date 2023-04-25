@@ -80,6 +80,8 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 				userMe.POST("/attach-account", n.apiAttachAccount)
 
 				userMe.GET("/stakes", n.apiGetMyStakes)
+
+				userMe.GET("/wallets", n.apiGetMyWallets)
 			}
 
 			verifiedUsers.POST("/mutual-docks", n.apiUsersCreateMutualDocks)
