@@ -1,13 +1,13 @@
 package node
 
 import (
-	"encoding/hex"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
+	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 // @Summary Get current user's stakes list
@@ -28,6 +28,14 @@ func (n *Node) apiGetMyStakes(c *gin.Context) {
 		return
 	}
 
+	userEntry, err := n.db.GetUsersDB().GetUserByID(c, userID)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiUsersGetMe: user not found")
+		api.AbortRequest(c, http.StatusNotFound, "user_not_found", err, n.log)
+		return
+	}
+	_ = userEntry
+
 	wallets, err := n.db.GetUsersDB().GetUserWalletsByUserID(c, userID)
 	if err != nil {
 		err := errors.WithMessagef(err, "Node: apiUsersGetMe: wallets not found for given user_id:%s", userID)
@@ -36,9 +44,8 @@ func (n *Node) apiGetMyStakes(c *gin.Context) {
 	}
 
 	result := make([]*map[string]any, 0)
-
 	for _, w := range wallets {
-		r, err := n.db.GetStakesDB().GetStakes(c, HexToAddress(*w))
+		r, err := n.db.GetStakesDB().GetStakes(c, utils.HexToAddress(*w))
 		if err != nil {
 			err := errors.WithMessagef(err, "Node: apiUsersGetMe: can not get stakes for wallet:%s", *w)
 			api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, n.log)
@@ -77,7 +84,7 @@ func (n *Node) apiGetMyWallets(c *gin.Context) {
 
 	walletAddresses := make([][]byte, 0)
 	for _, w := range wallets {
-		walletAddresses = append(walletAddresses, HexToAddress(*w))
+		walletAddresses = append(walletAddresses, utils.HexToAddress(*w))
 	}
 
 	result, err := n.db.GetStakesDB().GetWalletsInfo(c, walletAddresses)
@@ -88,12 +95,4 @@ func (n *Node) apiGetMyWallets(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, result)
-}
-
-func HexToAddress(s string) []byte {
-	b, err := hex.DecodeString(s[2:])
-	if err != nil {
-		panic(err)
-	}
-	return b
 }

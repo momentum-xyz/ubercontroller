@@ -2,6 +2,8 @@
 package dto
 
 import (
+	"math/big"
+
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
@@ -55,16 +57,33 @@ type ExploreOption struct {
 }
 
 type RecentWorld struct {
-	ID         umid.UMID `json:"id"`
-	Name       *string   `json:"name"`
-	AvatarHash *string   `json:"avatarHash"`
+	ID          umid.UMID `json:"id"`
+	OwnerID     umid.UMID `json:"owner_id"`
+	OwnerName   *string   `json:"owner_name"`
+	Description *string   `json:"description"`
+	StakeTotal  *big.Int  `json:"stake_total,omitempty"`
+	Name        *string   `json:"name"`
+	AvatarHash  *string   `json:"avatarHash"`
 }
 
-//type FlyToMe struct {
-//	Pilot     umid.UMID `json:"pilot"`
-//	PilotName string    `json:"pilot_name"`
-//	ObjectID  umid.UMID `json:"object_id"`
-//}
+type WorldDetails struct {
+	ID                 umid.UMID     `json:"id"`
+	OwnerID            umid.UMID     `json:"owner_id"`
+	OwnerName          *string       `json:"owner_name"`
+	Description        *string       `json:"description"`
+	StakeTotal         *big.Int      `json:"stake_total,omitempty"`
+	Name               *string       `json:"name"`
+	AvatarHash         *string       `json:"avatarHash"`
+	WorldStakers       []WorldStaker `json:"stakers"`
+	LastStakingComment *string       `json:"last_staking_comment"`
+}
+
+type WorldStaker struct {
+	UserID     umid.UMID `json:"user_id"`
+	Name       *string   `json:"name"`
+	Stake      *big.Int  `json:"stake,omitempty"`
+	AvatarHash *string   `json:"avatarHash"`
+}
 
 type Profile struct {
 	Bio         *string `json:"bio,omitempty"`
@@ -86,15 +105,15 @@ type HashResponse struct {
 }
 
 type User struct {
-	ID         string  `json:"id"`
-	UserTypeID string  `json:"userTypeId"`
-	Name       string  `json:"name"`
-	Wallet     *string `json:"wallet,omitempty"`
-	Profile    Profile `json:"profile"`
-	JWTToken   *string `json:"token,omitempty"`
-	CreatedAt  string  `json:"createdAt"`
-	UpdatedAt  string  `json:"updatedAt,omitempty"`
-	IsGuest    bool    `json:"isGuest"`
+	ID         umid.UMID `json:"id"`
+	UserTypeID umid.UMID `json:"userTypeId"`
+	Name       string    `json:"name"`
+	Wallet     *string   `json:"wallet,omitempty"`
+	Profile    Profile   `json:"profile"`
+	JWTToken   *string   `json:"token,omitempty"`
+	CreatedAt  string    `json:"createdAt"`
+	UpdatedAt  string    `json:"updatedAt,omitempty"`
+	IsGuest    bool      `json:"isGuest"`
 }
 
 type UserSearchResult struct {
@@ -121,9 +140,19 @@ type Object struct {
 }
 
 type OwnedWorld struct {
-	ID      umid.UMID `json:"id"`
-	OwnerID umid.UMID `json:"owner_id"`
-	Name    *string   `json:"name,omitempty"`
+	ID          umid.UMID `json:"id"`
+	OwnerID     umid.UMID `json:"owner_id"`
+	Name        *string   `json:"name,omitempty"`
+	Description *string   `json:"description"`
+	AvatarHash  *string   `json:"avatarHash"`
+}
+
+type StakedWorld struct {
+	ID          umid.UMID `json:"id"`
+	OwnerID     umid.UMID `json:"owner_id"`
+	Name        *string   `json:"name,omitempty"`
+	Description *string   `json:"description"`
+	AvatarHash  *string   `json:"avatarHash"`
 }
 
 type Asset2d struct {

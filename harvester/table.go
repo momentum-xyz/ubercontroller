@@ -190,7 +190,7 @@ func (t *Table) SaveToDB(events []*UpdateEvent, stakeEvents []*StakeEvent) (err 
 			WalletID:     HexToAddress(stake.Wallet),
 			BlockchainID: blockchainUMID,
 			ObjectID:     stake.OdysseyID,
-			LastComment:  0,
+			LastComment:  string(0),
 			Amount:       (*entry.BigInt)(stake.Amount),
 		})
 	}

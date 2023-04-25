@@ -76,7 +76,7 @@ type UsersDB interface {
 	GetUserProfileByUserID(ctx context.Context, userID umid.UMID) (*entry.UserProfile, error)
 	GetUsersByUserType(ctx context.Context, userTypeID umid.UMID) ([]*entry.User, error)
 
-	GetUserIDs(ctx context.Context, sortType universe.SortType, limit string) ([]umid.UMID, error)
+	GetUserIDs(ctx context.Context, sortType universe.SortType, limit string, userTypeID umid.UMID) ([]umid.UMID, error)
 
 	CheckIsUserExistsByName(ctx context.Context, name string) (bool, error)
 	CheckIsUserExistsByWallet(ctx context.Context, wallet string) (bool, error)
@@ -331,6 +331,7 @@ type ObjectUserAttributesDB interface {
 type UserAttributesDB interface {
 	GetUserAttributes(ctx context.Context) ([]*entry.UserAttribute, error)
 	GetUserAttributeByID(ctx context.Context, userAttributeID entry.UserAttributeID) (*entry.UserAttribute, error)
+	GetUserAttributeByWallet(ctx context.Context, wallet []byte) (*entry.UserAttribute, error)
 	GetUserAttributesByUserID(ctx context.Context, userID umid.UMID) ([]*entry.UserAttribute, error)
 	GetUserAttributePayloadByID(ctx context.Context, userAttributeID entry.UserAttributeID) (
 		*entry.AttributePayload, error,
@@ -445,6 +446,9 @@ type UserUserAttributesDB interface {
 }
 
 type StakesDB interface {
+	GetStakesByWalletID(ctx context.Context, walletID string) ([]*entry.Stake, error)
+	GetStakesByWorldID(ctx context.Context, worldID umid.UMID) ([]*entry.Stake, error)
+	GetStakeByLatestStake(ctx context.Context) (*string, error)
 	GetStakes(ctx context.Context, walletID []byte) ([]*map[string]any, error)
 	GetWalletsInfo(ctx context.Context, walletIDs [][]byte) ([]*map[string]any, error)
 }

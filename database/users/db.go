@@ -19,7 +19,8 @@ const (
 	getUserByIDQuery   = `SELECT * FROM "user" WHERE user_id = $1;`
 	getUsersByIDsQuery = `SELECT * FROM "user" WHERE user_id = ANY($1);`
 	getAllUsersQuery   = `SELECT * FROM "user" WHERE user_type_id = $1;`
-	getUserIDsQuery    = `SELECT user_id FROM "user"
+	getUserIDsQuery    = `SELECT user_id FROM "user" 
+               				WHERE user_type_id = $1
          					ORDER BY created_at `
 	getUserByWalletQuery = `SELECT * FROM "user"
          						WHERE user_id = (SELECT user_id FROM user_attribute
@@ -110,10 +111,10 @@ func (db *DB) GetAllUsers(ctx context.Context, userTypeID umid.UMID) ([]*entry.U
 	return users, nil
 }
 
-func (db *DB) GetUserIDs(ctx context.Context, sortType universe.SortType, limit string) ([]umid.UMID, error) {
+func (db *DB) GetUserIDs(ctx context.Context, sortType universe.SortType, limit string, userTypeID umid.UMID) ([]umid.UMID, error) {
 	limitQuery := " LIMIT " + limit + ";"
 	var userIDs []umid.UMID
-	if err := pgxscan.Select(ctx, db.conn, &userIDs, getUserIDsQuery+string(sortType)+limitQuery); err != nil {
+	if err := pgxscan.Select(ctx, db.conn, &userIDs, getUserIDsQuery+string(sortType)+limitQuery, userTypeID); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return userIDs, nil
