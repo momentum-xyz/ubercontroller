@@ -101,7 +101,7 @@ func (db *DB) GetWalletsInfo(ctx context.Context, walletIDs [][]byte) ([]*dto.Wa
 		item := dto.WalletInfo{
 			WalletID:       walletID.Hex(),
 			ContractID:     contractID.Hex(),
-			Balance:        (*big.Int)(&balance),
+			Balance:        (*big.Int)(&balance).String(),
 			BlockchainName: blockchainName,
 			UpdatedAt:      updatedAt,
 		}
@@ -138,7 +138,7 @@ func (db *DB) GetStakes(ctx context.Context, walletID []byte) ([]*dto.Stake, err
 			Name:         name,
 			WalletID:     walletID.Hex(),
 			BlockchainID: blockchainID,
-			Amount:       (*big.Int)(&amount),
+			Amount:       (*big.Int)(&amount).String(),
 			Reward:       "0",
 			LastComment:  lastComment,
 			UpdatedAt:    updatedAt,

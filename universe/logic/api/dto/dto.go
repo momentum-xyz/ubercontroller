@@ -391,7 +391,7 @@ type Stake struct {
 	Name         string    `json:"name"`
 	WalletID     string    `json:"wallet_id"`
 	BlockchainID umid.UMID `json:"blockchain_id"`
-	Amount       *big.Int  `json:"amount"`
+	Amount       string    `json:"amount"`
 	Reward       string    `json:"reward"`
 	LastComment  string    `json:"last_comment"`
 	UpdatedAt    time.Time `json:"updated_at"`
@@ -400,7 +400,7 @@ type Stake struct {
 type WalletInfo struct {
 	WalletID       string    `json:"wallet_id"`
 	ContractID     string    `json:"contract_id"`
-	Balance        *big.Int  `json:"balance"`
+	Balance        string    `json:"balance"`
 	BlockchainName string    `json:"blockchain_name"`
 	UpdatedAt      time.Time `json:"updated_at"`
 }
