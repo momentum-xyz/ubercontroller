@@ -214,7 +214,6 @@ func (n *Node) apiUsersGetOwnedWorlds(c *gin.Context) {
 	ownedWorlds := make([]dto.OwnedWorld, 0, len(worlds))
 	for _, world := range worlds {
 		name := world.GetName()
-
 		ownedWorld := dto.OwnedWorld{
 			ID:          world.GetID(),
 			OwnerID:     world.GetOwnerID(),

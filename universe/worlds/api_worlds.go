@@ -194,7 +194,6 @@ func (w *Worlds) apiWorldsGetDetails(c *gin.Context) {
 // @Tags worlds
 // @Accept json
 // @Produce json
-// @Success 200 {array} dto.RecentWorld
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
