@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -169,6 +170,7 @@ func (w *Worlds) apiWorldsGetDetails(c *gin.Context) {
 		return
 	}
 
+	worldEntry := world.GetEntry()
 	worldDetails := dto.WorldDetails{
 		ID:                 world.GetID(),
 		OwnerID:            ownerID,
@@ -176,6 +178,8 @@ func (w *Worlds) apiWorldsGetDetails(c *gin.Context) {
 		Name:               utils.GetPTR(world.GetName()),
 		Description:        utils.GetPTR(world.GetDescription()),
 		StakeTotal:         &totalStake,
+		CreatedAt:          worldEntry.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:          worldEntry.UpdatedAt.Format(time.RFC3339),
 		AvatarHash:         nil,
 		WorldStakers:       worldStakers,
 		LastStakingComment: latestStakeComment,

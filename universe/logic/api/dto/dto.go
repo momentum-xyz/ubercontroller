@@ -73,6 +73,8 @@ type WorldDetails struct {
 	Description        *string       `json:"description"`
 	StakeTotal         *big.Int      `json:"stake_total,omitempty"`
 	Name               *string       `json:"name"`
+	CreatedAt          string        `json:"createdAt,omitempty"`
+	UpdatedAt          string        `json:"updatedAt,omitempty"`
 	AvatarHash         *string       `json:"avatarHash"`
 	WorldStakers       []WorldStaker `json:"stakers"`
 	LastStakingComment *string       `json:"last_staking_comment"`

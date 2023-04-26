@@ -159,7 +159,6 @@ func (n *Node) apiUsersGet(c *gin.Context) {
 		}
 
 		profile := user.GetProfile()
-
 		recent := dto.RecentUser{
 			ID:   user.GetID(),
 			Name: profile.Name,
