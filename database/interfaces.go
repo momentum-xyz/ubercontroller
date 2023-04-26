@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
@@ -450,7 +451,7 @@ type StakesDB interface {
 	GetStakesByWalletID(ctx context.Context, walletID string) ([]*entry.Stake, error)
 	GetStakesByWorldID(ctx context.Context, worldID umid.UMID) ([]*entry.Stake, error)
 	GetStakeByLatestStake(ctx context.Context) (*string, error)
-	GetStakes(ctx context.Context, walletID []byte) ([]*map[string]any, error)
+	GetStakes(ctx context.Context, walletID []byte) ([]*dto.Stake, error)
 	GetStakesWithCount(ctx context.Context) ([]*entry.Stake, error)
 	GetWalletsInfo(ctx context.Context, walletIDs [][]byte) ([]*map[string]any, error)
 	InsertIntoPendingStakes(ctx context.Context, transactionID []byte,

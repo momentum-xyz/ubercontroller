@@ -3,6 +3,7 @@ package dto
 
 import (
 	"math/big"
+	"time"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
@@ -383,4 +384,15 @@ type Plugin struct {
 	SubTitle  *string `json:"subTitle,omitempty"`
 	ScriptURL string  `json:"scriptUrl"`
 	IconName  *string `json:"iconName,omitempty"`
+}
+
+type Stake struct {
+	ObjectID     umid.UMID `json:"object_id"`
+	Name         string    `json:"name"`
+	WalletID     string    `json:"wallet_id"`
+	BlockchainID umid.UMID `json:"blockchain_id"`
+	Amount       *big.Int  `json:"amount"`
+	Reward       string    `json:"reward"`
+	LastComment  string    `json:"last_comment"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }

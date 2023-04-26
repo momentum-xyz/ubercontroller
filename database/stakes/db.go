@@ -12,6 +12,7 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
@@ -111,8 +112,8 @@ func (db *DB) GetWalletsInfo(ctx context.Context, walletIDs [][]byte) ([]*map[st
 	return wallets, nil
 }
 
-func (db *DB) GetStakes(ctx context.Context, walletID []byte) ([]*map[string]any, error) {
-	stakes := make([]*map[string]any, 0)
+func (db *DB) GetStakes(ctx context.Context, walletID []byte) ([]*dto.Stake, error) {
+	stakes := make([]*dto.Stake, 0)
 
 	rows, err := db.conn.Query(ctx, getJoinedStakesByWalletID, walletID)
 	if err != nil {
@@ -132,16 +133,16 @@ func (db *DB) GetStakes(ctx context.Context, walletID []byte) ([]*map[string]any
 			return nil, errors.WithMessage(err, "failed to scan rows from table")
 		}
 
-		item := make(map[string]any)
-
-		item["object_id"] = objectID
-		item["name"] = name
-		item["wallet_id"] = walletID
-		item["blockchain_id"] = blockchainID
-		item["amount"] = (*big.Int)(&amount).String()
-		item["reward"] = "0"
-		item["lastComment"] = lastComment
-		item["updatedAt"] = updatedAt
+		item := dto.Stake{
+			ObjectID:     objectID,
+			Name:         name,
+			WalletID:     walletID.Hex(),
+			BlockchainID: blockchainID,
+			Amount:       (*big.Int)(&amount),
+			Reward:       "0",
+			LastComment:  lastComment,
+			UpdatedAt:    updatedAt,
+		}
 
 		stakes = append(stakes, &item)
 	}
