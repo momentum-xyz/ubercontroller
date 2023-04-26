@@ -102,6 +102,7 @@ func (u *User) GetUserDefinition() *posbus.UserData {
 	guestUserTypeID, _ := common.GetGuestUserTypeID()
 	d.IsGuest = u.userType.GetID() == guestUserTypeID
 	d.Name = *u.profile.Name
+	d.Avatar = *u.profile.AvatarHash
 	return d
 }
 
