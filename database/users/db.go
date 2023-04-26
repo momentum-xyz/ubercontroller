@@ -22,13 +22,10 @@ const (
 	getUserIDsQuery    = `SELECT user_id FROM "user" 
                				WHERE user_type_id = $1
          					ORDER BY created_at `
-	getUserByWalletQuery = `SELECT * FROM "user"
-         						WHERE user_id = (SELECT user_id FROM user_attribute
-         						                    /* Kusama plugin umid */
-         						                	WHERE plugin_id = '86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8'
-         						                    AND attribute_name = 'wallet'
-         						                    AND value->'wallet' ? $1
-         						                );`
+	getUserByWalletQuery = `SELECT * FROM "user" WHERE user_id = (SELECT user_id
+							FROM user_attribute,
+							LATERAL jsonb_array_elements_text(value->'wallet') AS wallet_address
+							WHERE UPPER(wallet_address) = UPPER($1) LIMIT 1);`
 	getUsersByUserType = `SELECT * FROM "user" WHERE user_type_id = $1;`
 	getWalletByUserID  = `SELECT value -> 'wallet' ->> 0 AS wallet
 						FROM user_attribute

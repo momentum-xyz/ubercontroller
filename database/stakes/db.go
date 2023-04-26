@@ -30,6 +30,7 @@ const (
   		AND wallet_id = $1`
 	getStakesByObjectID    = `SELECT * FROM stake WHERE object_id = $1`
 	getStakesByWalletID    = `SELECT * FROM stake WHERE wallet_id = $1`
+	getStakesWithCount     = `SELECT wallet_id, COUNT(*) AS count FROM stake GROUP BY wallet_id ORDER BY count DESC;`
 	getStakesByLatestStake = `SELECT last_comment FROM stake ORDER BY created_at DESC LIMIT 1;`
 	getWalletsInfoQuery    = `SELECT wallet_id, contract_id, balance, blockchain_name, updated_at
 					FROM balance
@@ -63,6 +64,15 @@ func (db *DB) GetStakesByWalletID(ctx context.Context, walletID string) ([]*entr
 	var stakes []*entry.Stake
 
 	if err := pgxscan.Select(ctx, db.conn, &stakes, getStakesByWalletID, walletID); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return stakes, nil
+}
+
+func (db *DB) GetStakesWithCount(ctx context.Context) ([]*entry.Stake, error) {
+	var stakes []*entry.Stake
+
+	if err := pgxscan.Select(ctx, db.conn, &stakes, getStakesWithCount); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return stakes, nil

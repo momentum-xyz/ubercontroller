@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -78,6 +79,7 @@ func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param worldID path string true "World UMID"
+// @Success 200 {array} dto.WorldDetails
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
@@ -168,6 +170,7 @@ func (w *Worlds) apiWorldsGetDetails(c *gin.Context) {
 		return
 	}
 
+	worldEntry := world.GetEntry()
 	worldDetails := dto.WorldDetails{
 		ID:                 world.GetID(),
 		OwnerID:            ownerID,
@@ -175,6 +178,8 @@ func (w *Worlds) apiWorldsGetDetails(c *gin.Context) {
 		Name:               utils.GetPTR(world.GetName()),
 		Description:        utils.GetPTR(world.GetDescription()),
 		StakeTotal:         &totalStake,
+		CreatedAt:          worldEntry.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:          worldEntry.UpdatedAt.Format(time.RFC3339),
 		AvatarHash:         nil,
 		WorldStakers:       worldStakers,
 		LastStakingComment: latestStakeComment,

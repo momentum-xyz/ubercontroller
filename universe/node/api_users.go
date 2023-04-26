@@ -159,7 +159,6 @@ func (n *Node) apiUsersGet(c *gin.Context) {
 		}
 
 		profile := user.GetProfile()
-
 		recent := dto.RecentUser{
 			ID:   user.GetID(),
 			Name: profile.Name,
@@ -196,14 +195,29 @@ func (n *Node) apiUsersGetOwnedWorlds(c *gin.Context) {
 		return
 	}
 
+	loadedUser, err := n.LoadUser(userID)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiUsersGetOwnedWorlds: failed to load user")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_load_user", err, n.log)
+		return
+	}
+
+	userProfile := loadedUser.GetProfile()
+	var userName *string
+	if userProfile != nil {
+		if userProfile.Name != nil {
+			userName = userProfile.Name
+		}
+	}
+
 	worlds := n.GetWorldsByOwnerID(userID)
 	ownedWorlds := make([]dto.OwnedWorld, 0, len(worlds))
 	for _, world := range worlds {
 		name := world.GetName()
-
 		ownedWorld := dto.OwnedWorld{
 			ID:          world.GetID(),
 			OwnerID:     world.GetOwnerID(),
+			OwnerName:   userName,
 			Name:        &name,
 			Description: utils.GetPTR(world.GetDescription()),
 			AvatarHash:  nil,
@@ -272,35 +286,64 @@ func (n *Node) apiUsersGetStakedWorlds(c *gin.Context) {
 	c.JSON(http.StatusOK, stakedWorlds)
 }
 
-//// @Summary Search available users
-//// @Schemes
-//// @Description Returns user information based on a search query
-//// @Tags users
-//// @Accept json
-//// @Produce json
-//// @Success 200 {object} dto.UserSearchResult
-//// @Failure 500 {object} api.HTTPError
-//// @Failure 400 {object} api.HTTPError
-//// @Failure 404 {object} api.HTTPError
-//// @Router /api/v4/users/top-stakers [get]
-//func (n *Node) apiUsersTopStakers(c *gin.Context) {
-//	stakes, err := n.db.GetStakesDB().GetStakesByWorldID(c)
-//	if err != nil {
-//		err := errors.WithMessage(err, "Node: apiUsersTopStakers: failed to get stakes for user")
-//		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_stakes", err, w.log)
-//		return
-//	}
-//
-//	guestUserTypeID, err := common.GetGuestUserTypeID()
-//	if err != nil {
-//		err := errors.New("Node: apiUsersTopStakers: failed to GetGuestUserTypeID")
-//		api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, n.log)
-//		return
-//	}
-//
-//	userDTO := converters.ToUserDTOs(userEntry, guestUserTypeID, true)
-//	c.JSON(http.StatusOK, userDTO)
-//}
+// @Summary Returns a sorted list of top stakers
+// @Schemes
+// @Description Returns user information based amount and amount of times a user has staked
+// @Tags users
+// @Accept json
+// @Produce json
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/users/top-stakers [get]
+func (n *Node) apiUsersTopStakers(c *gin.Context) {
+	stakes, err := n.db.GetStakesDB().GetStakesWithCount(c)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiUsersTopStakers: failed to get stakes with count")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_stakes", err, n.log)
+		return
+	}
+
+	var topStakers []dto.TopStaker
+	for _, stake := range stakes {
+		hexAddr := utils.AddressToHex(stake.WalletID)
+		if len(hexAddr) != 42 && !strings.HasPrefix(hexAddr, "0x") {
+			hexAddr = "0x" + hexAddr
+		} else if len(hexAddr) != 66 && !strings.HasPrefix(hexAddr, "0x") {
+			hexAddr = "0x" + hexAddr
+		}
+
+		user, _ := n.db.GetUsersDB().GetUserByWallet(c, hexAddr)
+
+		if user != nil {
+			loadedUser, err := n.LoadUser(user.UserID)
+			if err != nil {
+				err := errors.WithMessage(err, "Node: apiUsersTopStakers: failed to load user")
+				api.AbortRequest(c, http.StatusInternalServerError, "failed_to_load_user", err, n.log)
+				return
+			}
+
+			profile := loadedUser.GetProfile()
+			var userName *string
+			if profile != nil {
+				if profile.Name != nil {
+					userName = profile.Name
+				}
+			}
+
+			topStaker := dto.TopStaker{
+				UserID:     loadedUser.GetID(),
+				Name:       userName,
+				StakeCount: utils.GetPTR(stake.Count),
+				AvatarHash: nil,
+			}
+
+			topStakers = append(topStakers, topStaker)
+		}
+	}
+
+	c.JSON(http.StatusOK, topStakers)
+}
 
 // @Summary Search available users
 // @Schemes

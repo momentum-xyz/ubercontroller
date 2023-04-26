@@ -31,6 +31,14 @@ func (n *Node) apiGetMyStakes(c *gin.Context) {
 		return
 	}
 
+	userEntry, err := n.db.GetUsersDB().GetUserByID(c, userID)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiUsersGetMe: user not found")
+		api.AbortRequest(c, http.StatusNotFound, "user_not_found", err, n.log)
+		return
+	}
+	_ = userEntry
+
 	wallets, err := n.db.GetUsersDB().GetUserWalletsByUserID(c, userID)
 	if err != nil {
 		err := errors.WithMessagef(err, "Node: apiUsersGetMe: wallets not found for given user_id:%s", userID)
