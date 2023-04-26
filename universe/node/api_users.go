@@ -308,36 +308,40 @@ func (n *Node) apiUsersTopStakers(c *gin.Context) {
 
 	var topStakers []dto.TopStaker
 	for _, stake := range stakes {
-		user, err := n.db.GetUsersDB().GetUserByWallet(c, utils.AddressToHex(stake.WalletID))
-		if err != nil {
-			err := errors.WithMessage(err, "Node: apiUsersTopStakers: failed to get user by walletID")
-			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_user_by_wallet", err, n.log)
-			return
+		hexAddr := utils.AddressToHex(stake.WalletID)
+		if len(hexAddr) != 42 && !strings.HasPrefix(hexAddr, "0x") {
+			hexAddr = "0x" + hexAddr
+		} else if len(hexAddr) != 66 && !strings.HasPrefix(hexAddr, "0x") {
+			hexAddr = "0x" + hexAddr
 		}
 
-		loadedUser, err := n.LoadUser(user.UserID)
-		if err != nil {
-			err := errors.WithMessage(err, "Node: apiUsersTopStakers: failed to load user")
-			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_load_user", err, n.log)
-			return
-		}
+		user, _ := n.db.GetUsersDB().GetUserByWallet(c, hexAddr)
 
-		profile := loadedUser.GetProfile()
-		var userName *string
-		if profile != nil {
-			if profile.Name != nil {
-				userName = profile.Name
+		if user != nil {
+			loadedUser, err := n.LoadUser(user.UserID)
+			if err != nil {
+				err := errors.WithMessage(err, "Node: apiUsersTopStakers: failed to load user")
+				api.AbortRequest(c, http.StatusInternalServerError, "failed_to_load_user", err, n.log)
+				return
 			}
-		}
 
-		topStaker := dto.TopStaker{
-			UserID:     loadedUser.GetID(),
-			Name:       userName,
-			StakeCount: utils.GetPTR(stake.Count),
-			AvatarHash: nil,
-		}
+			profile := loadedUser.GetProfile()
+			var userName *string
+			if profile != nil {
+				if profile.Name != nil {
+					userName = profile.Name
+				}
+			}
 
-		topStakers = append(topStakers, topStaker)
+			topStaker := dto.TopStaker{
+				UserID:     loadedUser.GetID(),
+				Name:       userName,
+				StakeCount: utils.GetPTR(stake.Count),
+				AvatarHash: nil,
+			}
+
+			topStakers = append(topStakers, topStaker)
+		}
 	}
 
 	c.JSON(http.StatusOK, topStakers)
