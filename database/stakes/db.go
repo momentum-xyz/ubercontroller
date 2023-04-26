@@ -79,8 +79,8 @@ func (db *DB) GetStakesWithCount(ctx context.Context) ([]*entry.Stake, error) {
 	return stakes, nil
 }
 
-func (db *DB) GetWalletsInfo(ctx context.Context, walletIDs [][]byte) ([]*map[string]any, error) {
-	wallets := make([]*map[string]any, 0)
+func (db *DB) GetWalletsInfo(ctx context.Context, walletIDs [][]byte) ([]*dto.WalletInfo, error) {
+	wallets := make([]*dto.WalletInfo, 0)
 
 	rows, err := db.conn.Query(ctx, getWalletsInfoQuery, walletIDs)
 	if err != nil {
@@ -98,13 +98,13 @@ func (db *DB) GetWalletsInfo(ctx context.Context, walletIDs [][]byte) ([]*map[st
 			return nil, errors.WithMessage(err, "failed to scan rows from table")
 		}
 
-		item := make(map[string]any)
-
-		item["wallet_id"] = walletID
-		item["contract_id"] = contractID
-		item["balance"] = (*big.Int)(&balance).String()
-		item["blockchain_name"] = blockchainName
-		item["updatedAt"] = updatedAt
+		item := dto.WalletInfo{
+			WalletID:       walletID.Hex(),
+			ContractID:     contractID.Hex(),
+			Balance:        (*big.Int)(&balance),
+			BlockchainName: blockchainName,
+			UpdatedAt:      updatedAt,
+		}
 
 		wallets = append(wallets, &item)
 	}

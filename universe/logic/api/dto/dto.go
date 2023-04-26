@@ -396,3 +396,11 @@ type Stake struct {
 	LastComment  string    `json:"last_comment"`
 	UpdatedAt    time.Time `json:"updated_at"`
 }
+
+type WalletInfo struct {
+	WalletID       string    `json:"wallet_id"`
+	ContractID     string    `json:"contract_id"`
+	Balance        *big.Int  `json:"balance"`
+	BlockchainName string    `json:"blockchain_name"`
+	UpdatedAt      time.Time `json:"updated_at"`
+}

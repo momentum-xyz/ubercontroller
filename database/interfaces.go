@@ -453,7 +453,7 @@ type StakesDB interface {
 	GetStakeByLatestStake(ctx context.Context) (*string, error)
 	GetStakes(ctx context.Context, walletID []byte) ([]*dto.Stake, error)
 	GetStakesWithCount(ctx context.Context) ([]*entry.Stake, error)
-	GetWalletsInfo(ctx context.Context, walletIDs [][]byte) ([]*map[string]any, error)
+	GetWalletsInfo(ctx context.Context, walletIDs [][]byte) ([]*dto.WalletInfo, error)
 	InsertIntoPendingStakes(ctx context.Context, transactionID []byte,
 		objectID umid.UMID,
 		walletID []byte,

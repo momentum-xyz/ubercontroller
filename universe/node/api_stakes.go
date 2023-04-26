@@ -20,7 +20,7 @@ import (
 // @Tags users
 // @Accept json
 // @Produce json
-// @Success 200 {object} dto.Stakes
+// @Success 200 {object} []dto.Stakes
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/users/me/stakes [get]
@@ -67,7 +67,7 @@ func (n *Node) apiGetMyStakes(c *gin.Context) {
 // @Tags users
 // @Accept json
 // @Produce json
-// @Success 200 {object} map[string]any
+// @Success 200 {object} []dto.WalletInfo
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/users/me/wallets [get]
