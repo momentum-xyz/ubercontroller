@@ -8,7 +8,7 @@ import (
 type UserData struct {
 	ID        umid.UMID              `json:"id"`
 	Name      string                 `json:"name"`
-	Avatar    umid.UMID              `json:"avatar"`
+	Avatar    string                 `json:"avatar"`
 	Transform cmath.TransformNoScale `json:"transform"`
 	IsGuest   bool                   `json:"is_guest"`
 }
