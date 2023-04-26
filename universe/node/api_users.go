@@ -308,7 +308,7 @@ func (n *Node) apiUsersTopStakers(c *gin.Context) {
 
 	var topStakers []dto.TopStaker
 	for _, stake := range stakes {
-		user, err := n.db.GetUsersDB().GetUserByWallet(c, stake.WalletID)
+		user, err := n.db.GetUsersDB().GetUserByWallet(c, utils.AddressToHex(stake.WalletID))
 		if err != nil {
 			err := errors.WithMessage(err, "Node: apiUsersTopStakers: failed to get user by walletID")
 			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_user_by_wallet", err, n.log)
@@ -439,7 +439,7 @@ func (n *Node) apiCreateGuestUserByName(ctx context.Context, name string) (*entr
 }
 
 func (n *Node) apiGetOrCreateUserFromWallet(ctx context.Context, wallet string) (*entry.User, int, error) {
-	userEntry, err := n.db.GetUsersDB().GetUserByWallet(ctx, utils.HexToAddress(wallet))
+	userEntry, err := n.db.GetUsersDB().GetUserByWallet(ctx, wallet)
 	if err == nil {
 		return userEntry, 0, nil
 	}

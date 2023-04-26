@@ -86,6 +86,10 @@ func HexToAddress(s string) []byte {
 	return b
 }
 
+func AddressToHex(a []byte) string {
+	return hex.EncodeToString(a)
+}
+
 // handleNilAnonymousNestedStruct needed to fix "unsupported type for squash: ptr" mapstructure error
 func handleNilAnonymousNestedStruct() mapstructure.DecodeHookFunc {
 	return func(from reflect.Value, to reflect.Value) (interface{}, error) {

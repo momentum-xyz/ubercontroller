@@ -42,14 +42,14 @@ func (n *Node) apiUsersCreateMutualDocks(c *gin.Context) {
 		return
 	}
 
-	userA, err := n.db.GetUsersDB().GetUserByWallet(c, utils.HexToAddress(inBody.WalletA))
+	userA, err := n.db.GetUsersDB().GetUserByWallet(c, inBody.WalletA)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiUsersCreateMutualDocks: failed to get user A by wallet")
 		api.AbortRequest(c, http.StatusNotFound, "user_a_not_found", err, n.log)
 		return
 	}
 
-	userB, err := n.db.GetUsersDB().GetUserByWallet(c, utils.HexToAddress(inBody.WalletB))
+	userB, err := n.db.GetUsersDB().GetUserByWallet(c, inBody.WalletB)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiUsersCreateMutualDocks: failed to get user B by wallet")
 		api.AbortRequest(c, http.StatusNotFound, "user_b_not_found", err, n.log)
@@ -158,14 +158,14 @@ func (n *Node) apiUsersRemoveMutualDocks(c *gin.Context) {
 		return
 	}
 
-	userA, err := n.db.GetUsersDB().GetUserByWallet(c, utils.HexToAddress(inBody.WalletA))
+	userA, err := n.db.GetUsersDB().GetUserByWallet(c, inBody.WalletA)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiUsersRemoveMutualDocks: failed to get user A by wallet")
 		api.AbortRequest(c, http.StatusNotFound, "user_a_not_found", err, n.log)
 		return
 	}
 
-	userB, err := n.db.GetUsersDB().GetUserByWallet(c, utils.HexToAddress(inBody.WalletB))
+	userB, err := n.db.GetUsersDB().GetUserByWallet(c, inBody.WalletB)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiUsersRemoveMutualDocks: failed to get user B by wallet")
 		api.AbortRequest(c, http.StatusNotFound, "user_b_not_found", err, n.log)
