@@ -22,7 +22,7 @@ test:
 	go test -v -race ./...
 
 build-docs:
-	swag init -g api.go -d universe/node,./,universe/streamchat -o build/docs/
+	swag init -g api.go -d universe/node,./,universe/streamchat -o build/docs/ --parseDependency --parseInternal
 
 docker-build: DOCKER_BUILDKIT=1
 docker-build:
