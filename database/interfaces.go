@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
@@ -332,7 +333,7 @@ type ObjectUserAttributesDB interface {
 type UserAttributesDB interface {
 	GetUserAttributes(ctx context.Context) ([]*entry.UserAttribute, error)
 	GetUserAttributeByID(ctx context.Context, userAttributeID entry.UserAttributeID) (*entry.UserAttribute, error)
-	GetUserAttributeByWallet(ctx context.Context, wallet []byte) (*entry.UserAttribute, error)
+	GetUserAttributeByWallet(ctx context.Context, wallet string) (*entry.UserAttribute, error)
 	GetUserAttributesByUserID(ctx context.Context, userID umid.UMID) ([]*entry.UserAttribute, error)
 	GetUserAttributePayloadByID(ctx context.Context, userAttributeID entry.UserAttributeID) (
 		*entry.AttributePayload, error,
@@ -450,9 +451,9 @@ type StakesDB interface {
 	GetStakesByWalletID(ctx context.Context, walletID string) ([]*entry.Stake, error)
 	GetStakesByWorldID(ctx context.Context, worldID umid.UMID) ([]*entry.Stake, error)
 	GetStakeByLatestStake(ctx context.Context) (*string, error)
-	GetStakes(ctx context.Context, walletID []byte) ([]*map[string]any, error)
+	GetStakes(ctx context.Context, walletID []byte) ([]*dto.Stake, error)
 	GetStakesWithCount(ctx context.Context) ([]*entry.Stake, error)
-	GetWalletsInfo(ctx context.Context, walletIDs [][]byte) ([]*map[string]any, error)
+	GetWalletsInfo(ctx context.Context, walletIDs [][]byte) ([]*dto.WalletInfo, error)
 	InsertIntoPendingStakes(ctx context.Context, transactionID []byte,
 		objectID umid.UMID,
 		walletID []byte,

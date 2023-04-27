@@ -17,7 +17,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/config"
@@ -32,29 +31,22 @@ type ArbitrumNovaAdapter struct {
 	httpURL  string
 	name     string
 	//client           *ethclient.Client
-	rpcClient        *rpc.Client
-	contractABI      abi.ABI
-	stakeContractABI abi.ABI
-	stakeContract    common.Address
-	lastBlock        uint64
+	rpcClient *rpc.Client
+	lastBlock uint64
+	contracts *Contracts
 }
 
 func NewArbitrumNovaAdapter(cfg *config.Config) *ArbitrumNovaAdapter {
 	return &ArbitrumNovaAdapter{
-		umid:          umid.MustParse("ccccaaaa-1111-2222-3333-222222222222"),
-		wsURL:         cfg.Arbitrum.ArbitrumWSURL,
-		httpURL:       cfg.Arbitrum.ArbitrumRPCURL,
-		name:          "arbitrum_nova",
-		stakeContract: common.HexToAddress(cfg.Arbitrum.ArbitrumStakeContractAddress),
+		umid:      umid.MustParse("ccccaaaa-1111-2222-3333-222222222222"),
+		wsURL:     cfg.Arbitrum.ArbitrumWSURL,
+		httpURL:   cfg.Arbitrum.ArbitrumRPCURL,
+		name:      "arbitrum_nova",
+		contracts: NewContracts(&cfg.Arbitrum),
 	}
 }
 
 func (a *ArbitrumNovaAdapter) GetLastBlockNumber() (uint64, error) {
-	//number, err := a.client.BlockNumber(context.TODO())
-	//_ = number
-	//fmt.Println(err)
-	//fmt.Println(number)
-
 	var resp string
 	if err := a.rpcClient.Call(&resp, "eth_blockNumber"); err != nil {
 		return 0, errors.WithMessage(err, "failed to make RPC call to arbitrum:")
@@ -64,23 +56,7 @@ func (a *ArbitrumNovaAdapter) GetLastBlockNumber() (uint64, error) {
 }
 
 func (a *ArbitrumNovaAdapter) Run() {
-	contractABI, err := abi.JSON(strings.NewReader(erc20abi))
-	if err != nil {
-		log.Fatal(err)
-	}
-	a.contractABI = contractABI
-
-	stakeContractABI, err := abi.JSON(strings.NewReader(stakeABI))
-	if err != nil {
-		log.Fatal(err)
-	}
-	a.stakeContractABI = stakeContractABI
-
-	//a.client, err = ethclient.Dial(a.rpcURL)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-
+	var err error
 	a.rpcClient, err = rpc.DialHTTP(a.httpURL)
 	if err != nil {
 		log.Fatal(err)
@@ -105,64 +81,18 @@ func (a *ArbitrumNovaAdapter) Run() {
 				}
 				if a.lastBlock < n {
 					a.lastBlock = n
-					a.listener(n, nil, nil)
+					if a.listener != nil {
+						a.listener(n, nil, nil)
+					}
 				}
 			}
 		}
 	}()
-
-	///////
-
-	//
-	//ch := make(chan *types.Header)
-	//
-	//sub, err := a.client.SubscribeNewHead(context.Background(), ch)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//
-	//go func() {
-	//	for {
-	//		select {
-	//		case err := <-sub.Err():
-	//			log.Fatal(err)
-	//		case vLog := <-ch:
-	//
-	//			fmt.Println(vLog.Number)
-	//			//fmt.Println(vLog.ReceiptHash)
-	//			//fmt.Println(vLog.ParentHash)
-	//			//fmt.Println(vLog.Root)
-	//			//fmt.Println(vLog.TxHash)
-	//			//fmt.Println(vLog.Hash())
-	//
-	//			block := &harvester.BCBlock{
-	//				Hash: vLog.Hash().String(),
-	//			}
-	//
-	//			if vLog.Number != nil {
-	//				block.Number = vLog.Number.Uint64()
-	//			}
-	//
-	//			if a.listener != nil {
-	//				a.onNewBlock(block)
-	//			}
-	//		}
-	//	}
-	//}()
 }
 
 func (a *ArbitrumNovaAdapter) RegisterNewBlockListener(f harvester.AdapterListener) {
 	a.listener = f
 }
-
-//func (a *ArbitrumNovaAdapter) onNewBlock(b *harvester.BCBlock) {
-//	diffs, stakes, err := a.GetTransferLogs(int64(b.Number), int64(b.Number), []common.Address{})
-//	if err != nil {
-//		fmt.Println(err)
-//	}
-//
-//	a.listener(b.Number, diffs, stakes)
-//}
 
 func (a *ArbitrumNovaAdapter) GetBalance(wallet string, contract string, blockNumber uint64) (*big.Int, error) {
 	type request struct {
@@ -226,12 +156,12 @@ func (a *ArbitrumNovaAdapter) DecodeTransactionInputData(contractABI *abi.ABI, d
 	return method.Name, inputsMap, nil
 }
 
-func (a *ArbitrumNovaAdapter) GetTransferLogs(fromBlock, toBlock int64, addresses []common.Address) ([]*harvester.BCDiff, []*harvester.BCStake, error) {
+func (a *ArbitrumNovaAdapter) GetTransferLogs(fromBlock, toBlock int64, contracts []common.Address) ([]*harvester.BCDiff, []*harvester.BCStake, error) {
 
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(fromBlock),
 		ToBlock:   big.NewInt(toBlock),
-		Addresses: append(addresses, a.stakeContract),
+		Addresses: a.contracts.AllAddresses,
 	}
 
 	logs, err := a.FilterLogs(context.TODO(), query)
@@ -242,9 +172,9 @@ func (a *ArbitrumNovaAdapter) GetTransferLogs(fromBlock, toBlock int64, addresse
 	logTransferSig := []byte("Transfer(address,address,uint256)")
 	logTransferSigHash := crypto.Keccak256Hash(logTransferSig)
 
-	logStakeSigHash := crypto.Keccak256Hash([]byte(a.stakeContractABI.Events["Stake"].Sig))
-	logUnstakeSigHash := a.stakeContractABI.Events["Unstake"].ID
-	logRestakeSigHash := a.stakeContractABI.Events["Restake"].ID
+	logStakeSigHash := crypto.Keccak256Hash([]byte(a.contracts.StakeABI.Events["Stake"].Sig))
+	logUnstakeSigHash := a.contracts.StakeABI.Events["Unstake"].ID
+	logRestakeSigHash := a.contracts.StakeABI.Events["Restake"].ID
 
 	diffs := make([]*harvester.BCDiff, 0)
 	stakes := make([]*harvester.BCStake, 0)
@@ -259,7 +189,7 @@ func (a *ArbitrumNovaAdapter) GetTransferLogs(fromBlock, toBlock int64, addresse
 
 			var transferEvent harvester.BCDiff
 
-			ev, err := a.contractABI.Unpack("Transfer", vLog.Data)
+			ev, err := a.contracts.TokenABI.Unpack("Transfer", vLog.Data)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -283,7 +213,7 @@ func (a *ArbitrumNovaAdapter) GetTransferLogs(fromBlock, toBlock int64, addresse
 			//fmt.Println("STAKE")
 			//fmt.Println(vLog)
 
-			ev, err := a.stakeContractABI.Unpack("Stake", vLog.Data)
+			ev, err := a.contracts.StakeABI.Unpack("Stake", vLog.Data)
 			if err != nil {
 				return nil, nil, errors.WithMessage(err, "failed to unpack event from ABI")
 			}
@@ -295,6 +225,12 @@ func (a *ArbitrumNovaAdapter) GetTransferLogs(fromBlock, toBlock int64, addresse
 			odysseyID, err := umid.FromBytes(arr[:])
 			if err != nil {
 				return nil, nil, errors.WithMessage(err, "failed to parse umid from bytes")
+			}
+			if odysseyID == umid.MustParse("ccccaaaa-1111-2222-3333-222222222222") ||
+				odysseyID == umid.MustParse("ccccaaaa-1111-2222-3333-222222222244") ||
+				odysseyID == umid.MustParse("ccccaaaa-1111-2222-3333-222222222241") {
+				// Skip test Odyssey IDs
+				continue
 			}
 
 			amount := ev[2].(*big.Int)
@@ -311,12 +247,7 @@ func (a *ArbitrumNovaAdapter) GetTransferLogs(fromBlock, toBlock int64, addresse
 				TotalAmount: totalAmount,
 			}
 
-			if stake.OdysseyID.String() != uuid.MustParse("ccccaaaa-1111-2222-3333-222222222222").String() &&
-				stake.OdysseyID.String() != uuid.MustParse("ccccaaaa-1111-2222-3333-222222222244").String() &&
-				stake.OdysseyID.String() != uuid.MustParse("ccccaaaa-1111-2222-3333-222222222241").String() {
-
-				stakes = append(stakes, stake)
-			}
+			stakes = append(stakes, stake)
 
 		//fmt.Printf("%+v %+v %+v %+v \n\n", fromWallet.String(), odysseyID.String(), amount, tokenType)
 		//fmt.Println(ev)
@@ -324,7 +255,7 @@ func (a *ArbitrumNovaAdapter) GetTransferLogs(fromBlock, toBlock int64, addresse
 		case logUnstakeSigHash.Hex():
 			log.Println("Unstake")
 
-			ev, err := a.stakeContractABI.Unpack("Unstake", vLog.Data)
+			ev, err := a.contracts.StakeABI.Unpack("Unstake", vLog.Data)
 			if err != nil {
 				return nil, nil, errors.WithMessage(err, "failed to unpack event from ABI")
 			}
@@ -424,1009 +355,3 @@ func hex2int(hexStr string) uint64 {
 	result, _ := strconv.ParseUint(cleaned, 16, 64)
 	return uint64(result)
 }
-
-const erc20abi = `[
-    {
-        "constant": true,
-        "inputs": [],
-        "name": "name",
-        "outputs": [
-            {
-                "name": "",
-                "type": "string"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "constant": false,
-        "inputs": [
-            {
-                "name": "_spender",
-                "type": "address"
-            },
-            {
-                "name": "_value",
-                "type": "uint256"
-            }
-        ],
-        "name": "approve",
-        "outputs": [
-            {
-                "name": "",
-                "type": "bool"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "constant": true,
-        "inputs": [],
-        "name": "totalSupply",
-        "outputs": [
-            {
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "constant": false,
-        "inputs": [
-            {
-                "name": "_from",
-                "type": "address"
-            },
-            {
-                "name": "_to",
-                "type": "address"
-            },
-            {
-                "name": "_value",
-                "type": "uint256"
-            }
-        ],
-        "name": "transferFrom",
-        "outputs": [
-            {
-                "name": "",
-                "type": "bool"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "constant": true,
-        "inputs": [],
-        "name": "decimals",
-        "outputs": [
-            {
-                "name": "",
-                "type": "uint8"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "constant": true,
-        "inputs": [
-            {
-                "name": "_owner",
-                "type": "address"
-            }
-        ],
-        "name": "balanceOf",
-        "outputs": [
-            {
-                "name": "balance",
-                "type": "uint256"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "constant": true,
-        "inputs": [],
-        "name": "symbol",
-        "outputs": [
-            {
-                "name": "",
-                "type": "string"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "constant": false,
-        "inputs": [
-            {
-                "name": "_to",
-                "type": "address"
-            },
-            {
-                "name": "_value",
-                "type": "uint256"
-            }
-        ],
-        "name": "transfer",
-        "outputs": [
-            {
-                "name": "",
-                "type": "bool"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "constant": true,
-        "inputs": [
-            {
-                "name": "_owner",
-                "type": "address"
-            },
-            {
-                "name": "_spender",
-                "type": "address"
-            }
-        ],
-        "name": "allowance",
-        "outputs": [
-            {
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "payable": true,
-        "stateMutability": "payable",
-        "type": "fallback"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "name": "owner",
-                "type": "address"
-            },
-            {
-                "indexed": true,
-                "name": "spender",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "name": "value",
-                "type": "uint256"
-            }
-        ],
-        "name": "Approval",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "name": "from",
-                "type": "address"
-            },
-            {
-                "indexed": true,
-                "name": "to",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "name": "value",
-                "type": "uint256"
-            }
-        ],
-        "name": "Transfer",
-        "type": "event"
-    }
-]`
-
-const stakeABI = `[
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "address",
-				"name": "previousAdmin",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "address",
-				"name": "newAdmin",
-				"type": "address"
-			}
-		],
-		"name": "AdminChanged",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "beacon",
-				"type": "address"
-			}
-		],
-		"name": "BeaconUpgraded",
-		"type": "event"
-	},
-	{
-		"inputs": [],
-		"name": "claim_rewards",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "claim_unstaked_tokens",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "ClaimedUnstaked",
-		"type": "event"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes32",
-				"name": "role",
-				"type": "bytes32"
-			},
-			{
-				"internalType": "address",
-				"name": "account",
-				"type": "address"
-			}
-		],
-		"name": "grantRole",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "_mom_token",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "_dad_token",
-				"type": "address"
-			}
-		],
-		"name": "initialize",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "uint8",
-				"name": "version",
-				"type": "uint8"
-			}
-		],
-		"name": "Initialized",
-		"type": "event"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes32",
-				"name": "role",
-				"type": "bytes32"
-			},
-			{
-				"internalType": "address",
-				"name": "account",
-				"type": "address"
-			}
-		],
-		"name": "renounceRole",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes16",
-				"name": "from_odyssey_id",
-				"type": "bytes16"
-			},
-			{
-				"internalType": "bytes16",
-				"name": "to_odyssey_id",
-				"type": "bytes16"
-			},
-			{
-				"internalType": "uint256",
-				"name": "amount",
-				"type": "uint256"
-			},
-			{
-				"internalType": "enum Staking.Token",
-				"name": "token",
-				"type": "uint8"
-			}
-		],
-		"name": "restake",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "bytes16",
-				"name": "",
-				"type": "bytes16"
-			},
-			{
-				"indexed": false,
-				"internalType": "bytes16",
-				"name": "",
-				"type": "bytes16"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "enum Staking.Token",
-				"name": "",
-				"type": "uint8"
-			}
-		],
-		"name": "Restake",
-		"type": "event"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes32",
-				"name": "role",
-				"type": "bytes32"
-			},
-			{
-				"internalType": "address",
-				"name": "account",
-				"type": "address"
-			}
-		],
-		"name": "revokeRole",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "RewardsClaimed",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "bytes32",
-				"name": "role",
-				"type": "bytes32"
-			},
-			{
-				"indexed": true,
-				"internalType": "bytes32",
-				"name": "previousAdminRole",
-				"type": "bytes32"
-			},
-			{
-				"indexed": true,
-				"internalType": "bytes32",
-				"name": "newAdminRole",
-				"type": "bytes32"
-			}
-		],
-		"name": "RoleAdminChanged",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "bytes32",
-				"name": "role",
-				"type": "bytes32"
-			},
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "account",
-				"type": "address"
-			},
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "sender",
-				"type": "address"
-			}
-		],
-		"name": "RoleGranted",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "bytes32",
-				"name": "role",
-				"type": "bytes32"
-			},
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "account",
-				"type": "address"
-			},
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "sender",
-				"type": "address"
-			}
-		],
-		"name": "RoleRevoked",
-		"type": "event"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes16",
-				"name": "odyssey_id",
-				"type": "bytes16"
-			},
-			{
-				"internalType": "uint256",
-				"name": "amount",
-				"type": "uint256"
-			},
-			{
-				"internalType": "enum Staking.Token",
-				"name": "token",
-				"type": "uint8"
-			}
-		],
-		"name": "stake",
-		"outputs": [],
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "bytes16",
-				"name": "",
-				"type": "bytes16"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "enum Staking.Token",
-				"name": "",
-				"type": "uint8"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "Stake",
-		"type": "event"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes16",
-				"name": "odyssey_id",
-				"type": "bytes16"
-			},
-			{
-				"internalType": "enum Staking.Token",
-				"name": "token",
-				"type": "uint8"
-			}
-		],
-		"name": "unstake",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "bytes16",
-				"name": "",
-				"type": "bytes16"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "enum Staking.Token",
-				"name": "",
-				"type": "uint8"
-			}
-		],
-		"name": "Unstake",
-		"type": "event"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "_dad_token",
-				"type": "address"
-			}
-		],
-		"name": "update_dad_token_contract",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_locking_period",
-				"type": "uint256"
-			}
-		],
-		"name": "update_locking_period",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "_mom_token",
-				"type": "address"
-			}
-		],
-		"name": "update_mom_token_contract",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address[]",
-				"name": "addresses",
-				"type": "address[]"
-			},
-			{
-				"internalType": "uint256[]",
-				"name": "amounts",
-				"type": "uint256[]"
-			}
-		],
-		"name": "update_rewards",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "implementation",
-				"type": "address"
-			}
-		],
-		"name": "Upgraded",
-		"type": "event"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "newImplementation",
-				"type": "address"
-			}
-		],
-		"name": "upgradeTo",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "newImplementation",
-				"type": "address"
-			},
-			{
-				"internalType": "bytes",
-				"name": "data",
-				"type": "bytes"
-			}
-		],
-		"name": "upgradeToAndCall",
-		"outputs": [],
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "dad_token",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "DEFAULT_ADMIN_ROLE",
-		"outputs": [
-			{
-				"internalType": "bytes32",
-				"name": "",
-				"type": "bytes32"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes32",
-				"name": "role",
-				"type": "bytes32"
-			}
-		],
-		"name": "getRoleAdmin",
-		"outputs": [
-			{
-				"internalType": "bytes32",
-				"name": "",
-				"type": "bytes32"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes32",
-				"name": "role",
-				"type": "bytes32"
-			},
-			{
-				"internalType": "address",
-				"name": "account",
-				"type": "address"
-			}
-		],
-		"name": "hasRole",
-		"outputs": [
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "locking_period",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "MANAGER_ROLE",
-		"outputs": [
-			{
-				"internalType": "bytes32",
-				"name": "",
-				"type": "bytes32"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "mom_token",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes16",
-				"name": "",
-				"type": "bytes16"
-			}
-		],
-		"name": "odysseys",
-		"outputs": [
-			{
-				"internalType": "bytes16",
-				"name": "odyssey_id",
-				"type": "bytes16"
-			},
-			{
-				"internalType": "uint256",
-				"name": "total_staked_into",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "total_stakers",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "proxiableUUID",
-		"outputs": [
-			{
-				"internalType": "bytes32",
-				"name": "",
-				"type": "bytes32"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"name": "stakers",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "user",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "total_rewards",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "total_staked",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "dad_amount",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "mom_amount",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes4",
-				"name": "interfaceId",
-				"type": "bytes4"
-			}
-		],
-		"name": "supportsInterface",
-		"outputs": [
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "total_staked",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "unstakes",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "dad_amount",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "mom_amount",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "since",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	}
-]`

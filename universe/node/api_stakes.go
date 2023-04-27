@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
@@ -19,7 +20,7 @@ import (
 // @Tags users
 // @Accept json
 // @Produce json
-// @Success 200 {object} map[string]any
+// @Success 200 {object} []dto.Stake
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/users/me/stakes [get]
@@ -46,8 +47,11 @@ func (n *Node) apiGetMyStakes(c *gin.Context) {
 		return
 	}
 
-	result := make([]*map[string]any, 0)
+	result := make([]*dto.Stake, 0)
 	for _, w := range wallets {
+		if len(*w) != 42 {
+			continue
+		}
 		r, err := n.db.GetStakesDB().GetStakes(c, utils.HexToAddress(*w))
 		if err != nil {
 			err := errors.WithMessagef(err, "Node: apiUsersGetMe: can not get stakes for wallet:%s", *w)
@@ -66,7 +70,7 @@ func (n *Node) apiGetMyStakes(c *gin.Context) {
 // @Tags users
 // @Accept json
 // @Produce json
-// @Success 200 {object} map[string]any
+// @Success 200 {object} []dto.WalletInfo
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/users/me/wallets [get]
@@ -87,6 +91,9 @@ func (n *Node) apiGetMyWallets(c *gin.Context) {
 
 	walletAddresses := make([][]byte, 0)
 	for _, w := range wallets {
+		if len(*w) != 42 {
+			continue
+		}
 		walletAddresses = append(walletAddresses, utils.HexToAddress(*w))
 	}
 

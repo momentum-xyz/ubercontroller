@@ -3,6 +3,7 @@ package dto
 
 import (
 	"math/big"
+	"time"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
@@ -83,7 +84,7 @@ type WorldDetails struct {
 type WorldStaker struct {
 	UserID     umid.UMID `json:"user_id"`
 	Name       *string   `json:"name"`
-	Stake      *big.Int  `json:"stake,omitempty"`
+	Stake      *string   `json:"stake,omitempty"`
 	AvatarHash *string   `json:"avatarHash"`
 }
 
@@ -383,4 +384,27 @@ type Plugin struct {
 	SubTitle  *string `json:"subTitle,omitempty"`
 	ScriptURL string  `json:"scriptUrl"`
 	IconName  *string `json:"iconName,omitempty"`
+}
+
+type Stake struct {
+	ObjectID     umid.UMID `json:"object_id"`
+	Name         string    `json:"name"`
+	WalletID     string    `json:"wallet_id"`
+	BlockchainID umid.UMID `json:"blockchain_id"`
+	Amount       string    `json:"amount"`
+	Reward       string    `json:"reward"`
+	LastComment  string    `json:"last_comment"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+type WalletInfo struct {
+	WalletID       string    `json:"wallet_id"`
+	ContractID     string    `json:"contract_id"`
+	Balance        string    `json:"balance"`
+	BlockchainName string    `json:"blockchain_name"`
+	UpdatedAt      time.Time `json:"updated_at"`
+	Reward         string    `json:"reward"`
+	Transferable   string    `json:"transferable"`
+	Staked         string    `json:"staked"`
+	Unbonding      string    `json:"unbonding"`
 }

@@ -56,17 +56,28 @@ func run(ctx context.Context) error {
 	cute.SetMessageColor(cute.BrightBlue)
 	cute.Println("Node loaded", "Loading time:", tm2.Sub(tm1))
 
-	harvester.Initialise(ctx, log, cfg, pool)
+	//harvester.Initialise(ctx, log, cfg, pool)
+	//if cfg.Arbitrum.ArbitrumMOMTokenAddress != "" {
+	//	arbitrumAdapter := arbitrum_nova_adapter.NewArbitrumNovaAdapter(cfg)
+	//	arbitrumAdapter.Run()
+	//	if err := harvester.GetInstance().RegisterAdapter(arbitrumAdapter); err != nil {
+	//		return errors.WithMessage(err, "failed to register arbitrum adapter")
+	//	}
+	//}
+	//err = harvester.SubscribeAllWallets(ctx, harvester.GetInstance(), cfg, pool)
+	//if err != nil {
+	//	log.Error(err)
+	//}
+
+	/**
+	Simplified version of harvester
+	*/
 	if cfg.Arbitrum.ArbitrumMOMTokenAddress != "" {
-		arbitrumAdapter := arbitrum_nova_adapter.NewArbitrumNovaAdapter(cfg)
-		arbitrumAdapter.Run()
-		if err := harvester.GetInstance().RegisterAdapter(arbitrumAdapter); err != nil {
-			return errors.WithMessage(err, "failed to register arbitrum adapter")
-		}
-	}
-	err = harvester.SubscribeAllWallets(ctx, harvester.GetInstance(), cfg, pool)
-	if err != nil {
-		log.Error(err)
+		adapter := arbitrum_nova_adapter.NewArbitrumNovaAdapter(cfg)
+		adapter.Run()
+
+		t := harvester.NewTable2(pool, adapter, nil)
+		t.Run()
 	}
 
 	if err := node.Run(); err != nil {

@@ -127,39 +127,43 @@ func (w *Worlds) apiWorldsGetDetails(c *gin.Context) {
 	var totalStake big.Int
 	if stakes != nil {
 		for _, stake := range stakes {
-			userAttribute, err := w.db.GetUserAttributesDB().GetUserAttributeByWallet(w.ctx, stake.WalletID)
-			if err != nil {
-				err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to get user attribute")
-				api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_user_attribute", err, w.log)
-				return
+			hexAddr := utils.AddressToHex(stake.WalletID)
+			if len(hexAddr) != 42 && !strings.HasPrefix(hexAddr, "0x") {
+				hexAddr = "0x" + hexAddr
+			} else if len(hexAddr) != 66 && !strings.HasPrefix(hexAddr, "0x") {
+				hexAddr = "0x" + hexAddr
 			}
+			user, _ := w.db.GetUsersDB().GetUserByWallet(w.ctx, hexAddr)
 
-			loadedStaker, err := node.LoadUser(userAttribute.UserID)
-			if err != nil {
-				err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to load staker")
-				api.AbortRequest(c, http.StatusInternalServerError, "failed_to_load_staker", err, w.log)
-				return
-			}
-
-			stakerProfile := loadedStaker.GetProfile()
-			var stakerName *string
-			if stakerProfile != nil {
-				if stakerProfile.Name != nil {
-					stakerName = stakerProfile.Name
+			if user != nil {
+				loadedStaker, err := node.LoadUser(user.UserID)
+				if err != nil {
+					err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to load staker")
+					api.AbortRequest(c, http.StatusInternalServerError, "failed_to_load_staker", err, w.log)
+					return
 				}
+
+				stakerProfile := loadedStaker.GetProfile()
+				var stakerName *string
+				if stakerProfile != nil {
+					if stakerProfile.Name != nil {
+						stakerName = stakerProfile.Name
+					}
+				}
+
+				stakeAmt := (*big.Int)(stake.Amount)
+				stakeAmtStr := stakeAmt.String()
+				totalStake.Add(&totalStake, stakeAmt)
+
+				worldStaker := dto.WorldStaker{
+					UserID:     user.UserID,
+					Name:       stakerName,
+					Stake:      &stakeAmtStr,
+					AvatarHash: nil,
+				}
+
+				worldStakers = append(worldStakers, worldStaker)
 			}
-
-			stakeAmt := (*big.Int)(stake.Amount)
-			totalStake.Add(&totalStake, stakeAmt)
-
-			worldStaker := dto.WorldStaker{
-				UserID:     userAttribute.UserID,
-				Name:       stakerName,
-				Stake:      stakeAmt,
-				AvatarHash: nil,
-			}
-
-			worldStakers = append(worldStakers, worldStaker)
 		}
 	}
 

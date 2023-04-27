@@ -40,6 +40,8 @@ func (u *User) OnMessage(buf []byte) error {
 		return u.LockObject(msg.(*posbus.LockObject))
 	case posbus.TypeUnlockObject:
 		return u.UnlockObject(msg.(*posbus.UnlockObject))
+	case posbus.TypeHighFive:
+		return u.HandleHighFive(msg.(*posbus.HighFive))
 	default:
 		return errors.Errorf("unknown message: %d", msg.GetType())
 	}
@@ -164,45 +166,35 @@ func (u *User) UnlockObject(lock *posbus.UnlockObject) error {
 	return u.Send(posbus.WSMessage(&posbus.LockObjectResponse{ID: objectId, State: 1, LockOwner: u.GetID()}))
 }
 
-//func (u *User) HandleHighFive(m *posbus.TriggerInteraction) error {
-//	targetID := m.Target()
-//	if targetID == u.GetID() {
-//		return errors.New("high-five yourself not permitted")
-//	}
-//
-//	world := u.GetWorld()
-//	target, ok := world.GetUser(targetID, false)
-//	if !ok {
-//		u.Send(posbus.WSMessage(&posbus.Notification{NotifyType: posbus.NotificationTextMessage, Value: "Target user not found"}))
-//		return errors.Errorf("failed to get target: %s", targetID)
-//	}
-//
-//	var uName string
-//	var tName string
-//	uProfile := u.GetProfile()
-//	tProfile := target.GetProfile()
-//	if uProfile != nil && uProfile.Name != nil {
-//		uName = *uProfile.Name
-//	}
-//	if tProfile != nil && tProfile.Name != nil {
-//		tName = *tProfile.Name
-//	}
-//
-//	msg := posbus.HighFive{
-//		SenderID:   u.GetID(),
-//		ReceiverID: targetID,
-//		Message:    uName,
-//	}
-//
-//	u.Send(posbus.WSMessage(&posbus.Notification{NotifyType: posbus.NotificationHighFive, Value: tName}))
-//	target.Send(posbus.WSMessage(&msg))
-//
-//	effectsEmitterID := world.GetSettings().Objects["effects_emitter"]
-//	effect := posbus.NewTriggerTransitionalBridgingEffectsOnPositionMsg(1)
-//	effect.SetEffect(0, effectsEmitterID, u.GetTransform(), target.GetTransform(), 1001)
-//	u.GetWorld().Send(effect.WSMessage(), false)
-//
-//	go u.SendHighFiveStats(target)
-//
-//	return nil
-//}
+func (u *User) HandleHighFive(m *posbus.HighFive) error {
+	targetID := m.ReceiverID
+	if targetID == u.GetID() {
+		return errors.New("high-five yourself not permitted")
+	}
+
+	world := u.GetWorld()
+	_, ok := world.GetUser(targetID, false)
+	if !ok {
+		u.Send(posbus.WSMessage(&posbus.Notification{NotifyType: posbus.NotificationTextMessage, Value: "Target user not found"}))
+		return errors.Errorf("failed to get target: %s", targetID)
+	}
+
+	/* TODO: implement as generic notification message
+	u.Send(posbus.WSMessage(&posbus.Notification{NotifyType: posbus.NotificationHighFive, Value: tName}))
+	target.Send(posbus.WSMessage(&msg))
+	*/
+	// For now, just broadcast the HighFive to the world
+	world.Send(posbus.WSMessage(m), false)
+
+	/* TODO: implement as generic (3D) effect
+	effectsEmitterID := world.GetSettings().Objects["effects_emitter"]
+	effect := posbus.NewTriggerTransitionalBridgingEffectsOnPositionMsg(1)
+	effect.SetEffect(0, effectsEmitterID, u.GetTransform(), target.GetTransform(), 1001)
+	u.GetWorld().Send(effect.WSMessage(), false)
+	*/
+
+	// TODO: stats tracking.
+	//go u.SendHighFiveStats(target)
+
+	return nil
+}

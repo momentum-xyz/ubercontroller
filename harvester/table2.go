@@ -2,11 +2,9 @@ package harvester
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"log"
 	"math/big"
-	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v4"
@@ -18,7 +16,12 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
-type Table struct {
+/**
+Table2 features:
+	- Always load data from Arbitrum from block 0 on every UC start
+*/
+
+type Table2 struct {
 	mu                deadlock.RWMutex
 	blockNumber       uint64
 	data              map[string]map[string]*big.Int
@@ -28,8 +31,8 @@ type Table struct {
 	harvesterListener func(bcName string, p []*UpdateEvent, s []*StakeEvent)
 }
 
-func NewTable(db *pgxpool.Pool, adapter Adapter, listener func(bcName string, p []*UpdateEvent, s []*StakeEvent)) *Table {
-	return &Table{
+func NewTable2(db *pgxpool.Pool, adapter Adapter, listener func(bcName string, p []*UpdateEvent, s []*StakeEvent)) *Table2 {
+	return &Table2{
 		blockNumber:       0,
 		data:              make(map[string]map[string]*big.Int),
 		stakesData:        make(map[umid.UMID]map[string]*big.Int),
@@ -39,18 +42,13 @@ func NewTable(db *pgxpool.Pool, adapter Adapter, listener func(bcName string, p 
 	}
 }
 
-func (t *Table) Run() {
-	err := t.LoadFromDB()
-	if err != nil {
-		fmt.Println(err)
-	}
-
+func (t *Table2) Run() {
 	t.fastForward()
 
 	t.adapter.RegisterNewBlockListener(t.listener)
 }
 
-func (t *Table) fastForward() {
+func (t *Table2) fastForward() {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -85,7 +83,7 @@ func (t *Table) fastForward() {
 	//	return
 	//}
 
-	diffs, stakes, err := t.adapter.GetTransferLogs(int64(t.blockNumber)+1, int64(lastBlockNumber), contracts)
+	diffs, stakes, err := t.adapter.GetTransferLogs(int64(t.blockNumber)+1, int64(lastBlockNumber), nil)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -94,7 +92,7 @@ func (t *Table) fastForward() {
 	t.ProcessDiffs(lastBlockNumber, diffs, stakes)
 }
 
-func (t *Table) ProcessDiffs(blockNumber uint64, diffs []*BCDiff, stakes []*BCStake) {
+func (t *Table2) ProcessDiffs(blockNumber uint64, diffs []*BCDiff, stakes []*BCStake) {
 	fmt.Printf("Block: %d \n", blockNumber)
 	events := make([]*UpdateEvent, 0)
 	stakeEvents := make([]*StakeEvent, 0)
@@ -102,29 +100,33 @@ func (t *Table) ProcessDiffs(blockNumber uint64, diffs []*BCDiff, stakes []*BCSt
 	for _, diff := range diffs {
 		_, ok := t.data[diff.Token]
 		if !ok {
-			// No such contract
-			continue
+			// Table2 store everything came from adapter
+			t.data[diff.Token] = make(map[string]*big.Int)
 		}
+
 		b, ok := t.data[diff.Token][diff.From]
-		if ok && b != nil { // if
-			// From wallet found
-			b.Sub(b, diff.Amount)
-			events = append(events, &UpdateEvent{
-				Wallet:   diff.From,
-				Contract: diff.Token,
-				Amount:   b, // TODO ask should we clone here by value
-			})
+		if !ok {
+			t.data[diff.Token][diff.From] = big.NewInt(0)
 		}
+		b = t.data[diff.Token][diff.From]
+		b.Sub(b, diff.Amount)
+		events = append(events, &UpdateEvent{
+			Wallet:   diff.From,
+			Contract: diff.Token,
+			Amount:   b,
+		})
+
 		b, ok = t.data[diff.Token][diff.To]
-		if ok && b != nil {
-			// To wallet found
-			b.Add(b, diff.Amount)
-			events = append(events, &UpdateEvent{
-				Wallet:   diff.To,
-				Contract: diff.Token,
-				Amount:   b,
-			})
+		if !ok {
+			t.data[diff.Token][diff.To] = big.NewInt(0)
 		}
+		b = t.data[diff.Token][diff.To]
+		b.Add(b, diff.Amount)
+		events = append(events, &UpdateEvent{
+			Wallet:   diff.To,
+			Contract: diff.Token,
+			Amount:   b,
+		})
 	}
 
 	for _, stake := range stakes {
@@ -143,8 +145,8 @@ func (t *Table) ProcessDiffs(blockNumber uint64, diffs []*BCDiff, stakes []*BCSt
 
 	t.blockNumber = blockNumber
 
-	_, name, _ := t.adapter.GetInfo()
-	t.harvesterListener(name, events, stakeEvents)
+	/////_, name, _ := t.adapter.GetInfo()
+	/////t.harvesterListener(name, events, stakeEvents)
 
 	err := t.SaveToDB(events, stakeEvents)
 	if err != nil {
@@ -153,14 +155,14 @@ func (t *Table) ProcessDiffs(blockNumber uint64, diffs []*BCDiff, stakes []*BCSt
 	t.Display()
 }
 
-func (t *Table) listener(blockNumber uint64, diffs []*BCDiff, stakes []*BCStake) {
+func (t *Table2) listener(blockNumber uint64, diffs []*BCDiff, stakes []*BCStake) {
 	t.fastForward()
 	//t.mu.Lock()
 	//t.ProcessDiffs(blockNumber, diffs, stakes)
 	//t.mu.Unlock()
 }
 
-func (t *Table) SaveToDB(events []*UpdateEvent, stakeEvents []*StakeEvent) (err error) {
+func (t *Table2) SaveToDB(events []*UpdateEvent, stakeEvents []*StakeEvent) (err error) {
 	wallets := make([]Address, 0)
 	contracts := make([]Address, 0)
 	// Save balance by value to quickly unlock mutex, otherwise have to unlock util DB transaction finished
@@ -202,7 +204,7 @@ func (t *Table) SaveToDB(events []*UpdateEvent, stakeEvents []*StakeEvent) (err 
 	return t.saveToDB(wallets, contracts, balances, stakeEntries)
 }
 
-func (t *Table) saveToDB(wallets []Address, contracts []Address, balances []*entry.Balance, stakeEntries []*entry.Stake) error {
+func (t *Table2) saveToDB(wallets []Address, contracts []Address, balances []*entry.Balance, stakeEntries []*entry.Stake) error {
 	blockchainUMID, name, rpcURL := t.adapter.GetInfo()
 
 	tx, err := t.db.BeginTx(context.Background(), pgx.TxOptions{})
@@ -301,150 +303,19 @@ func (t *Table) saveToDB(wallets []Address, contracts []Address, balances []*ent
 	return nil
 }
 
-func (t *Table) LoadFromDB() error {
-	blockchainUMID, _, _ := t.adapter.GetInfo()
-
-	tx, err := t.db.BeginTx(context.TODO(), pgx.TxOptions{})
-	if err != nil {
-		return errors.WithMessage(err, "failed to begin transaction")
-	}
-	defer func() {
-		if err != nil {
-			tx.Rollback(context.TODO())
-		} else {
-			tx.Commit(context.TODO())
-		}
-	}()
-
-	sql := `SELECT last_processed_block_number FROM blockchain WHERE blockchain_id=$1`
-
-	row := tx.QueryRow(context.TODO(), sql, blockchainUMID)
-	b := &entry.Blockchain{}
-
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	if err := row.Scan(&b.LastProcessedBlockNumber); err != nil {
-		if err != pgx.ErrNoRows {
-			return errors.WithMessage(err, "failed to scan row from blockchain table")
-		}
-	}
-
-	sql = `SELECT wallet_id, contract_id, balance.balance
-			FROM balance
-			WHERE blockchain_id = $1`
-
-	rows, err := tx.Query(context.TODO(), sql, blockchainUMID)
-	if err != nil {
-		return err
-	}
-
-	for rows.Next() {
-		var wallet common.Address
-		var contract common.Address
-		var balance entry.BigInt
-
-		if err := rows.Scan(&wallet, &contract, &balance); err != nil {
-			return errors.WithMessage(err, "failed to scan rows from balance table")
-		}
-
-		walletStr := strings.ToLower(wallet.Hex())
-		contractStr := strings.ToLower(contract.Hex())
-
-		_, ok := t.data[contractStr]
-		if !ok {
-			t.data[contractStr] = make(map[string]*big.Int)
-		}
-		t.data[contractStr][walletStr] = (*big.Int)(&balance)
-
-		//fmt.Println(wallet.Hex(), contract.Hex(), (*big.Int)(&balance).String())
-	}
-
-	// If DB transaction fail block will not be updated
-	t.blockNumber = b.LastProcessedBlockNumber
-	return nil
+func (t *Table2) LoadFromDB() error {
+	panic("not implemented")
 }
 
-func (t *Table) AddWalletContract(wallet string, contract string) {
-	wallet = strings.ToLower(wallet)
-	contract = strings.ToLower(contract)
-
-	t.mu.Lock()
-	_, ok := t.data[contract]
-	if !ok {
-		t.data[contract] = make(map[string]*big.Int)
-	}
-	_, ok = t.data[contract][wallet]
-	if !ok {
-		t.data[contract][wallet] = nil
-		// Such wallet has not existed so need to get initial balance
-		go t.syncBalance(wallet, contract)
-	}
-	t.mu.Unlock()
+func (t *Table2) AddWalletContract(wallet string, contract string) {
+	panic("not implemented")
 }
 
-func (t *Table) syncBalance(wallet string, contract string) {
-	wallet = strings.ToLower(wallet)
-	contract = strings.ToLower(contract)
-
-	t.mu.RLock()
-	blockNumber, err := t.adapter.GetLastBlockNumber()
-	t.mu.RUnlock()
-	if err != nil {
-		err = errors.WithMessage(err, "failed to get last block number")
-		fmt.Println(err)
-	}
-	balance, err := t.adapter.GetBalance(wallet, contract, blockNumber)
-	if err != nil {
-		err = errors.WithMessagef(err, "failed to get balance: %s, %s, %d", wallet, contract, blockNumber)
-		fmt.Println(err)
-	}
-	t.mu.Lock()
-	if t.blockNumber == 0 || t.blockNumber == blockNumber {
-		t.data[contract][wallet] = balance
-		events := make([]*UpdateEvent, 0)
-		events = append(events, &UpdateEvent{
-			Wallet:   wallet,
-			Contract: contract,
-			Amount:   balance,
-		})
-		err := t.SaveToDB(events, nil)
-		if err != nil {
-			fmt.Println(err)
-		}
-		t.mu.Unlock()
-	} else {
-		t.mu.Unlock()
-		t.syncBalance(wallet, contract)
-	}
-}
-
-func (t *Table) Display() {
+func (t *Table2) Display() {
 	fmt.Println("Display:")
 	for token, wallets := range t.data {
 		for wallet, balance := range wallets {
 			fmt.Printf("%+v %+v %+v \n", token, wallet, balance.String())
 		}
 	}
-}
-
-func HexToAddress(s string) []byte {
-	b, err := hex.DecodeString(s[2:])
-	if err != nil {
-		panic(err)
-	}
-	return b
-}
-
-func unique(slice []Address) []Address {
-	keys := make(map[string]bool)
-	list := []Address{}
-	for _, entry := range slice {
-		entryStr := hex.EncodeToString(entry)
-		if _, value := keys[entryStr]; !value {
-			keys[entryStr] = true
-			list = append(list, entry)
-		}
-	}
-	return list
 }
