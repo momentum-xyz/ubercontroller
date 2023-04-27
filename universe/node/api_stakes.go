@@ -49,6 +49,9 @@ func (n *Node) apiGetMyStakes(c *gin.Context) {
 
 	result := make([]*dto.Stake, 0)
 	for _, w := range wallets {
+		if len(*w) != 42 {
+			continue
+		}
 		r, err := n.db.GetStakesDB().GetStakes(c, utils.HexToAddress(*w))
 		if err != nil {
 			err := errors.WithMessagef(err, "Node: apiUsersGetMe: can not get stakes for wallet:%s", *w)
@@ -88,6 +91,9 @@ func (n *Node) apiGetMyWallets(c *gin.Context) {
 
 	walletAddresses := make([][]byte, 0)
 	for _, w := range wallets {
+		if len(*w) != 42 {
+			continue
+		}
 		walletAddresses = append(walletAddresses, utils.HexToAddress(*w))
 	}
 
