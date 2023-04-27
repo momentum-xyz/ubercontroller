@@ -333,7 +333,7 @@ type ObjectUserAttributesDB interface {
 type UserAttributesDB interface {
 	GetUserAttributes(ctx context.Context) ([]*entry.UserAttribute, error)
 	GetUserAttributeByID(ctx context.Context, userAttributeID entry.UserAttributeID) (*entry.UserAttribute, error)
-	GetUserAttributeByWallet(ctx context.Context, wallet []byte) (*entry.UserAttribute, error)
+	GetUserAttributeByWallet(ctx context.Context, wallet string) (*entry.UserAttribute, error)
 	GetUserAttributesByUserID(ctx context.Context, userID umid.UMID) ([]*entry.UserAttribute, error)
 	GetUserAttributePayloadByID(ctx context.Context, userAttributeID entry.UserAttributeID) (
 		*entry.AttributePayload, error,

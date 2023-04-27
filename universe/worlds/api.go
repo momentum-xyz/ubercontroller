@@ -26,6 +26,7 @@ func (w *Worlds) RegisterAPI(r *gin.Engine) {
 					world.GET("", w.apiWorldsGetDetails)
 					world.GET("/explore", w.apiWorldsGetObjectsWithChildren)
 					world.GET("/online-users", w.apiGetOnlineUsers)
+					world.PATCH("", w.apiWorldsUpdateByID)
 
 					authorizedAdmin := world.Group("", middleware.AuthorizeAdmin(w.log))
 					{
