@@ -105,7 +105,9 @@ func (a *ArbitrumNovaAdapter) Run() {
 				}
 				if a.lastBlock < n {
 					a.lastBlock = n
-					a.listener(n, nil, nil)
+					if a.listener != nil {
+						a.listener(n, nil, nil)
+					}
 				}
 			}
 		}

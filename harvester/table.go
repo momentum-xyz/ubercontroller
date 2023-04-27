@@ -190,7 +190,7 @@ func (t *Table) SaveToDB(events []*UpdateEvent, stakeEvents []*StakeEvent) (err 
 			WalletID:     HexToAddress(stake.Wallet),
 			BlockchainID: blockchainUMID,
 			ObjectID:     stake.OdysseyID,
-			LastComment:  string(0),
+			LastComment:  "",
 			Amount:       (*entry.BigInt)(stake.Amount),
 		})
 	}
@@ -400,8 +400,18 @@ func (t *Table) syncBalance(wallet string, contract string) {
 		fmt.Println(err)
 	}
 	t.mu.Lock()
-	if t.blockNumber <= blockNumber {
+	if t.blockNumber == 0 || t.blockNumber == blockNumber {
 		t.data[contract][wallet] = balance
+		events := make([]*UpdateEvent, 0)
+		events = append(events, &UpdateEvent{
+			Wallet:   wallet,
+			Contract: contract,
+			Amount:   balance,
+		})
+		err := t.SaveToDB(events, nil)
+		if err != nil {
+			fmt.Println(err)
+		}
 		t.mu.Unlock()
 	} else {
 		t.mu.Unlock()
