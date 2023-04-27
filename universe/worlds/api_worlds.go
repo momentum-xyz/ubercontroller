@@ -170,6 +170,7 @@ func (w *Worlds) apiWorldsGetDetails(c *gin.Context) {
 		return
 	}
 
+	totalStakeStr := totalStake.String()
 	worldEntry := world.GetEntry()
 	worldDetails := dto.WorldDetails{
 		ID:                 world.GetID(),
@@ -177,7 +178,7 @@ func (w *Worlds) apiWorldsGetDetails(c *gin.Context) {
 		OwnerName:          ownerName,
 		Name:               utils.GetPTR(world.GetName()),
 		Description:        utils.GetPTR(world.GetDescription()),
-		StakeTotal:         &totalStake,
+		StakeTotal:         &totalStakeStr,
 		CreatedAt:          worldEntry.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:          worldEntry.UpdatedAt.Format(time.RFC3339),
 		AvatarHash:         nil,
@@ -274,13 +275,14 @@ func (w *Worlds) apiWorldsGet(c *gin.Context) {
 			}
 		}
 
+		totalStakeStr := totalStake.String()
 		recent := dto.RecentWorld{
 			ID:          world.GetID(),
 			OwnerID:     ownerID,
 			OwnerName:   ownerName,
 			Name:        utils.GetPTR(world.GetName()),
 			Description: utils.GetPTR(world.GetDescription()),
-			StakeTotal:  &totalStake,
+			StakeTotal:  &totalStakeStr,
 			AvatarHash:  nil,
 		}
 
@@ -547,6 +549,57 @@ func (w *Worlds) apiWorldsTeleportUser(c *gin.Context) {
 	}
 
 	fmt.Sprintln(userEntry)
+
+	c.JSON(http.StatusOK, nil)
+}
+
+// @Summary Updates world data
+// @Schemes
+// @Description Returns updates world with new data
+// @Tags worlds
+// @Accept json
+// @Produce json
+// @Param worldID path string true "World UMID"
+// @Success 200 {array} dto.User
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/worlds/{object_id} [patch]
+func (w *Worlds) apiWorldsUpdateByID(c *gin.Context) {
+	type InBody struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		WebsiteLink string `json:"website_link"`
+	}
+
+	inBody := InBody{}
+
+	if err := c.ShouldBindJSON(&inBody); err != nil {
+		err := errors.WithMessage(err, "Worlds: apiWorldsUpdateByID: failed to bind json")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, w.log)
+		return
+	}
+
+	worldID, err := umid.Parse(c.Param("objectID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Worlds: apiWorldsUpdateByID: failed to parse world umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
+		return
+	}
+
+	world, ok := w.GetWorld(worldID)
+	if !ok || world == nil {
+		err := errors.New("Worlds: apiWorldsUpdateByID: world not found")
+		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
+		return
+	}
+
+	worldEntry := world.GetEntry()
+	if err := w.db.GetObjectsDB().UpsertObject(c, worldEntry); err != nil {
+		err := errors.New("Worlds: apiWorldsUpdateByID: failed to upsert world")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert", err, w.log)
+		return
+	}
 
 	c.JSON(http.StatusOK, nil)
 }
