@@ -393,6 +393,9 @@ type Stake struct {
 	BlockchainID umid.UMID `json:"blockchain_id"`
 	Amount       string    `json:"amount"`
 	Reward       string    `json:"reward"`
+	Transferable string    `json:"transferable"`
+	Staked       string    `json:"staked"`
+	Unbonding    string    `json:"unbonding"`
 	LastComment  string    `json:"last_comment"`
 	UpdatedAt    time.Time `json:"updated_at"`
 }

@@ -140,6 +140,9 @@ func (db *DB) GetStakes(ctx context.Context, walletID []byte) ([]*dto.Stake, err
 			BlockchainID: blockchainID,
 			Amount:       (*big.Int)(&amount).String(),
 			Reward:       "0",
+			Transferable: "0",
+			Staked:       "0",
+			Unbonding:    "0",
 			LastComment:  lastComment,
 			UpdatedAt:    updatedAt,
 		}
