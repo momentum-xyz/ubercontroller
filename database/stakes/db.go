@@ -164,12 +164,15 @@ func (db *DB) GetStakesByWorldID(ctx context.Context, worldID umid.UMID) ([]*ent
 }
 
 func (db *DB) GetStakeByLatestStake(ctx context.Context) (*string, error) {
-	var stake *string
+	var comment []*string
 
-	if err := pgxscan.Get(ctx, db.conn, &stake, getStakesByLatestStake); err != nil {
+	if err := pgxscan.Select(ctx, db.conn, &comment, getStakesByLatestStake); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
-	return stake, nil
+	if len(comment) > 0 {
+		return comment[0], nil
+	}
+	return nil, nil
 }
 
 func (db *DB) InsertIntoPendingStakes(ctx context.Context, transactionID []byte,
