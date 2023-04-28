@@ -83,64 +83,107 @@ func (t *Table2) fastForward() {
 	//	return
 	//}
 
-	diffs, stakes, err := t.adapter.GetLogs(int64(t.blockNumber)+1, int64(lastBlockNumber), nil)
+	logs, err := t.adapter.GetLogs(int64(t.blockNumber)+1, int64(lastBlockNumber), nil)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	t.ProcessDiffs(lastBlockNumber, diffs, stakes)
+	t.ProcessLogs(lastBlockNumber, logs)
 }
 
-func (t *Table2) ProcessDiffs(blockNumber uint64, diffs []*BCDiff, stakes []*BCStake) {
+func (t *Table2) ProcessLogs(blockNumber uint64, logs []any) {
 	fmt.Printf("Block: %d \n", blockNumber)
 	events := make([]*UpdateEvent, 0)
 	stakeEvents := make([]*StakeEvent, 0)
 
-	for _, diff := range diffs {
-		_, ok := t.data[diff.Token]
-		if !ok {
-			// Table2 store everything came from adapter
-			t.data[diff.Token] = make(map[string]*big.Int)
-		}
+	for _, log := range logs {
+		switch log.(type) {
+		case *TransferERC20Log:
+			diff := log.(*TransferERC20Log)
 
-		b, ok := t.data[diff.Token][diff.From]
-		if !ok {
-			t.data[diff.Token][diff.From] = big.NewInt(0)
-		}
-		b = t.data[diff.Token][diff.From]
-		b.Sub(b, diff.Amount)
-		events = append(events, &UpdateEvent{
-			Wallet:   diff.From,
-			Contract: diff.Token,
-			Amount:   b,
-		})
+			_, ok := t.data[diff.Contract]
+			if !ok {
+				// Table2 store everything came from adapter
+				t.data[diff.Contract] = make(map[string]*big.Int)
+			}
 
-		b, ok = t.data[diff.Token][diff.To]
-		if !ok {
-			t.data[diff.Token][diff.To] = big.NewInt(0)
-		}
-		b = t.data[diff.Token][diff.To]
-		b.Add(b, diff.Amount)
-		events = append(events, &UpdateEvent{
-			Wallet:   diff.To,
-			Contract: diff.Token,
-			Amount:   b,
-		})
-	}
+			b, ok := t.data[diff.Contract][diff.From]
+			if !ok {
+				t.data[diff.Contract][diff.From] = big.NewInt(0)
+			}
+			b = t.data[diff.Contract][diff.From]
+			b.Sub(b, diff.Value)
+			events = append(events, &UpdateEvent{
+				Wallet:   diff.From,
+				Contract: diff.Contract,
+				Amount:   b,
+			})
 
-	for _, stake := range stakes {
-		_, ok := t.stakesData[stake.OdysseyID]
-		if !ok {
-			t.stakesData[stake.OdysseyID] = make(map[string]*big.Int)
-		}
+			b, ok = t.data[diff.Contract][diff.To]
+			if !ok {
+				t.data[diff.Contract][diff.To] = big.NewInt(0)
+			}
+			b = t.data[diff.Contract][diff.To]
+			b.Add(b, diff.Value)
+			events = append(events, &UpdateEvent{
+				Wallet:   diff.To,
+				Contract: diff.Contract,
+				Amount:   b,
+			})
 
-		t.stakesData[stake.OdysseyID][stake.From] = stake.TotalAmount
-		stakeEvents = append(stakeEvents, &StakeEvent{
-			Wallet:    stake.From,
-			OdysseyID: stake.OdysseyID,
-			Amount:    stake.TotalAmount,
-		})
+		case *StakeLog:
+			stake := log.(*StakeLog)
+			_, ok := t.stakesData[stake.OdysseyID]
+			if !ok {
+				t.stakesData[stake.OdysseyID] = make(map[string]*big.Int)
+			}
+
+			t.stakesData[stake.OdysseyID][stake.UserWallet] = stake.TotalStaked
+			stakeEvents = append(stakeEvents, &StakeEvent{
+				Wallet:    stake.UserWallet,
+				OdysseyID: stake.OdysseyID,
+				Amount:    stake.TotalStaked,
+			})
+
+		case *UnstakeLog:
+			stake := log.(*UnstakeLog)
+			_, ok := t.stakesData[stake.OdysseyID]
+			if !ok {
+				t.stakesData[stake.OdysseyID] = make(map[string]*big.Int)
+			}
+
+			t.stakesData[stake.OdysseyID][stake.UserWallet] = stake.TotalStaked
+			stakeEvents = append(stakeEvents, &StakeEvent{
+				Wallet:    stake.UserWallet,
+				OdysseyID: stake.OdysseyID,
+				Amount:    stake.TotalStaked,
+			})
+		case *RestakeLog:
+			stake := log.(*RestakeLog)
+
+			_, ok := t.stakesData[stake.FromOdysseyID]
+			if !ok {
+				t.stakesData[stake.FromOdysseyID] = make(map[string]*big.Int)
+			}
+			t.stakesData[stake.FromOdysseyID][stake.UserWallet] = stake.TotalStakedToFrom
+			stakeEvents = append(stakeEvents, &StakeEvent{
+				Wallet:    stake.UserWallet,
+				OdysseyID: stake.FromOdysseyID,
+				Amount:    stake.TotalStakedToFrom,
+			})
+
+			_, ok = t.stakesData[stake.ToOdysseyID]
+			if !ok {
+				t.stakesData[stake.ToOdysseyID] = make(map[string]*big.Int)
+			}
+			t.stakesData[stake.ToOdysseyID][stake.UserWallet] = stake.TotalStakedToTo
+			stakeEvents = append(stakeEvents, &StakeEvent{
+				Wallet:    stake.UserWallet,
+				OdysseyID: stake.ToOdysseyID,
+				Amount:    stake.TotalStakedToTo,
+			})
+		}
 	}
 
 	t.blockNumber = blockNumber

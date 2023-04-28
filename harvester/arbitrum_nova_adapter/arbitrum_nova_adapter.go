@@ -156,7 +156,7 @@ func (a *ArbitrumNovaAdapter) DecodeTransactionInputData(contractABI *abi.ABI, d
 	return method.Name, inputsMap, nil
 }
 
-func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []common.Address) ([]*harvester.BCDiff, []*harvester.BCStake, error) {
+func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []common.Address) ([]any, error) {
 
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(fromBlock),
@@ -164,10 +164,12 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 		Addresses: a.contracts.AllAddresses,
 	}
 
-	logs, err := a.FilterLogs(context.TODO(), query)
+	bcLogs, err := a.FilterLogs(context.TODO(), query)
 	if err != nil {
-		return nil, nil, errors.WithMessage(err, "failed to filter log")
+		return nil, errors.WithMessage(err, "failed to filter log")
 	}
+
+	logs := make([]any, 0)
 
 	logTransferSig := []byte("Transfer(address,address,uint256)")
 	logTransferSigHash := crypto.Keccak256Hash(logTransferSig)
@@ -176,35 +178,35 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 	logUnstakeSigHash := a.contracts.StakeABI.Events["Unstake"].ID
 	logRestakeSigHash := a.contracts.StakeABI.Events["Restake"].ID
 
-	diffs := make([]*harvester.BCDiff, 0)
-	stakes := make([]*harvester.BCStake, 0)
-
-	for _, vLog := range logs {
+	for _, vLog := range bcLogs {
 		//fmt.Printf("Log Block Number: %d\n", vLog.BlockNumber)
 		//fmt.Printf("Log Index: %d\n", vLog.Index)
 
+		// Iterate contracts
 		switch vLog.Address.Hex() {
 		case a.contracts.momTokenAddress.Hex():
 			switch vLog.Topics[0].Hex() {
 			case logTransferSigHash.Hex():
 				//fmt.Printf("Log Name: Transfer\n")
 
-				var transferEvent harvester.BCDiff
+				//var transferEvent harvester.BCDiff
+
+				var e harvester.TransferERC20Log
 
 				ev, err := a.contracts.TokenABI.Unpack("Transfer", vLog.Data)
 				if err != nil {
-					return nil, nil, errors.WithMessage(err, "failed to unpack event from ABI")
+					return nil, errors.WithMessage(err, "failed to unpack event from ABI")
 				}
 
-				transferEvent.Token = strings.ToLower(vLog.Address.Hex())
+				e.Contract = strings.ToLower(vLog.Address.Hex())
 				// Hex and Un Hex here used to remove padding zeros
-				transferEvent.From = strings.ToLower(common.HexToAddress(vLog.Topics[1].Hex()).Hex())
-				transferEvent.To = strings.ToLower(common.HexToAddress(vLog.Topics[2].Hex()).Hex())
+				e.From = strings.ToLower(common.HexToAddress(vLog.Topics[1].Hex()).Hex())
+				e.To = strings.ToLower(common.HexToAddress(vLog.Topics[2].Hex()).Hex())
 				if len(ev) > 0 {
-					transferEvent.Amount = ev[0].(*big.Int)
+					e.Value = ev[0].(*big.Int)
 				}
 
-				diffs = append(diffs, &transferEvent)
+				logs = append(logs, &e)
 			}
 
 		case a.contracts.stakeAddress.Hex():
@@ -213,7 +215,7 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 			case logStakeSigHash.Hex():
 				ev, err := a.contracts.StakeABI.Unpack("Stake", vLog.Data)
 				if err != nil {
-					return nil, nil, errors.WithMessage(err, "failed to unpack event from ABI")
+					return nil, errors.WithMessage(err, "failed to unpack event from ABI")
 				}
 
 				// Read and convert event params
@@ -222,7 +224,7 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 				arr := ev[1].([16]byte)
 				odysseyID, err := umid.FromBytes(arr[:])
 				if err != nil {
-					return nil, nil, errors.WithMessage(err, "failed to parse umid from bytes")
+					return nil, errors.WithMessage(err, "failed to parse umid from bytes")
 				}
 				if odysseyID == umid.MustParse("ccccaaaa-1111-2222-3333-222222222222") ||
 					odysseyID == umid.MustParse("ccccaaaa-1111-2222-3333-222222222244") ||
@@ -237,25 +239,20 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 
 				totalAmount := ev[4].(*big.Int)
 
-				stake := &harvester.BCStake{
-					From:        fromWallet.Hex(),
-					OdysseyID:   odysseyID,
-					TokenType:   tokenType,
-					Amount:      amount,
-					TotalAmount: totalAmount,
+				e := &harvester.StakeLog{
+					UserWallet:   fromWallet.Hex(),
+					OdysseyID:    odysseyID,
+					AmountStaked: amount,
+					TokenType:    tokenType,
+					TotalStaked:  totalAmount,
 				}
 
-				stakes = append(stakes, stake)
-
-			//fmt.Printf("%+v %+v %+v %+v \n\n", fromWallet.String(), odysseyID.String(), amount, tokenType)
-			//fmt.Println(ev)
+				logs = append(logs, e)
 
 			case logUnstakeSigHash.Hex():
-				log.Println("Unstake")
-
 				ev, err := a.contracts.StakeABI.Unpack("Unstake", vLog.Data)
 				if err != nil {
-					return nil, nil, errors.WithMessage(err, "failed to unpack event from ABI")
+					return nil, errors.WithMessage(err, "failed to unpack event from ABI")
 				}
 
 				// Read and convert event params
@@ -264,7 +261,7 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 				arr := ev[1].([16]byte)
 				odysseyID, err := umid.FromBytes(arr[:])
 				if err != nil {
-					return nil, nil, errors.WithMessage(err, "failed to parse umid from bytes")
+					return nil, errors.WithMessage(err, "failed to parse umid from bytes")
 				}
 
 				amount := ev[2].(*big.Int)
@@ -273,15 +270,15 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 
 				totalAmount := ev[4].(*big.Int)
 
-				stake := &harvester.BCStake{
-					From:        fromWallet.Hex(),
-					OdysseyID:   odysseyID,
-					TokenType:   tokenType,
-					Amount:      amount,
-					TotalAmount: totalAmount,
+				e := &harvester.UnstakeLog{
+					UserWallet:     fromWallet.Hex(),
+					OdysseyID:      odysseyID,
+					AmountUnstaked: amount,
+					TokenType:      tokenType,
+					TotalStaked:    totalAmount,
 				}
 
-				stakes = append(stakes, stake)
+				logs = append(logs, e)
 
 			case logRestakeSigHash.Hex():
 				fmt.Println("Restake")
@@ -292,7 +289,7 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 
 	}
 
-	return diffs, stakes, nil
+	return logs, nil
 }
 
 func (a *ArbitrumNovaAdapter) GetInfo() (umid umid.UMID, name string, rpcURL string) {
