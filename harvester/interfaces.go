@@ -76,6 +76,17 @@ type RestakeLog struct {
 	TotalStakedToTo   *big.Int
 }
 
+/**
+ * @dev Emitted when `tokenId` token is transferred from `from` to `to`.
+ */
+//event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
+type TransferNFTLog struct {
+	From     string
+	To       string
+	TokenID  umid.UMID
+	Contract string
+}
+
 type BCBlock struct {
 	Hash   string
 	Number uint64
@@ -106,6 +117,13 @@ type StakeEvent struct {
 	Wallet    string
 	OdysseyID umid.UMID
 	Amount    *big.Int
+}
+
+type NftEvent struct {
+	From      string
+	To        string
+	OdysseyID umid.UMID
+	Contract  string
 }
 
 type AdapterListener func(blockNumber uint64, diffs []*BCDiff, stakes []*BCStake)
