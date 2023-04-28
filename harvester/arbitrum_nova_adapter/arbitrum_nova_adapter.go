@@ -62,7 +62,7 @@ func (a *ArbitrumNovaAdapter) Run() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Connected to Arbitrum Block Chain: " + a.wsURL)
+	fmt.Println("Connected to Arbitrum Block Chain: " + a.httpURL)
 	///////
 
 	ticker := time.NewTicker(1000 * time.Millisecond)
@@ -178,6 +178,8 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 	logUnstakeSigHash := a.contracts.StakeABI.Events["Unstake"].ID
 	logRestakeSigHash := a.contracts.StakeABI.Events["Restake"].ID
 
+	logTransferNftHash := a.contracts.NftABI.Events["Transfer"].ID
+
 	for _, vLog := range bcLogs {
 		//fmt.Printf("Log Block Number: %d\n", vLog.BlockNumber)
 		//fmt.Printf("Log Index: %d\n", vLog.Index)
@@ -265,9 +267,7 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 				}
 
 				amount := ev[2].(*big.Int)
-
 				tokenType := ev[3].(uint8)
-
 				totalAmount := ev[4].(*big.Int)
 
 				e := &harvester.UnstakeLog{
@@ -285,6 +285,35 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 			}
 		case a.contracts.nftAddress.Hex():
 			fmt.Println("NFT")
+
+			switch vLog.Topics[0].Hex() {
+			case logTransferNftHash.Hex():
+				// TODO Not sure why vLog.Data is empty
+				//ev, err := a.contracts.NftABI.Unpack("Transfer", vLog.Data)
+				//if err != nil {
+				//	return nil, errors.WithMessage(err, "failed to unpack event from ABI")
+				//}
+
+				from := strings.ToLower(common.HexToAddress(vLog.Topics[1].Hex()).Hex())
+				to := strings.ToLower(common.HexToAddress(vLog.Topics[2].Hex()).Hex())
+				itemID := vLog.Topics[3].Big()
+
+				var id umid.UMID
+				itemID.FillBytes(id[:])
+
+				if err != nil {
+					return nil, errors.WithMessage(err, "failed to read umid from bytes")
+				}
+
+				e := &harvester.TransferNFTLog{
+					From:     from,
+					To:       to,
+					TokenID:  id,
+					Contract: strings.ToLower(vLog.Address.Hex()),
+				}
+
+				logs = append(logs, e)
+			}
 		}
 
 	}
