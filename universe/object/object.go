@@ -665,7 +665,6 @@ func (o *Object) SendSpawnMessage(sendFn func(*websocket.PreparedMessage) error,
 }
 
 func (o *Object) SendAllAutoAttributes(sendFn func(*websocket.PreparedMessage) error, recursive bool) {
-	return
 	msg := o.dataMsg.Load()
 	if msg != nil {
 		sendFn(msg)
