@@ -6,8 +6,8 @@ import (
 )
 
 type ObjectData struct {
-	ID      umid.UMID
-	Entries map[entry.SlotType]*StringAnyMap
+	ID      umid.UMID                        `json:"id"`
+	Entries map[entry.SlotType]*StringAnyMap `json:"entries"`
 }
 
 func init() {
