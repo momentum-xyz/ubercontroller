@@ -62,7 +62,7 @@ type RecentWorld struct {
 	OwnerID     umid.UMID `json:"owner_id"`
 	OwnerName   *string   `json:"owner_name"`
 	Description *string   `json:"description"`
-	StakeTotal  *big.Int  `json:"stake_total,omitempty"`
+	StakeTotal  *string   `json:"stake_total,omitempty"`
 	Name        *string   `json:"name"`
 	AvatarHash  *string   `json:"avatarHash"`
 }
@@ -72,7 +72,7 @@ type WorldDetails struct {
 	OwnerID            umid.UMID     `json:"owner_id"`
 	OwnerName          *string       `json:"owner_name"`
 	Description        *string       `json:"description"`
-	StakeTotal         *big.Int      `json:"stake_total,omitempty"`
+	StakeTotal         *string       `json:"stake_total,omitempty"`
 	Name               *string       `json:"name"`
 	CreatedAt          string        `json:"createdAt,omitempty"`
 	UpdatedAt          string        `json:"updatedAt,omitempty"`
@@ -84,7 +84,7 @@ type WorldDetails struct {
 type WorldStaker struct {
 	UserID     umid.UMID `json:"user_id"`
 	Name       *string   `json:"name"`
-	Stake      *big.Int  `json:"stake,omitempty"`
+	Stake      *string   `json:"stake,omitempty"`
 	AvatarHash *string   `json:"avatarHash"`
 }
 

@@ -16,9 +16,12 @@ import (
 )
 
 const (
-	getUserAttributesQuery           = `SELECT * FROM user_attribute;`
-	getUserAttributeByIDQuery        = `SELECT * FROM user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
-	getUserAttributeByWalletQuery    = `SELECT * FROM user_attribute WHERE value->'wallet' ? $1;`
+	getUserAttributesQuery        = `SELECT * FROM user_attribute;`
+	getUserAttributeByIDQuery     = `SELECT * FROM user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
+	getUserAttributeByWalletQuery = `SELECT * FROM user_attribute, 
+    									LATERAL jsonb_array_elements_text(value->'wallet') 
+    									AS wallet_address
+										WHERE UPPER(wallet_address) = UPPER($1) LIMIT 1;`
 	getUserAttributesByUserIDQuery   = `SELECT * FROM user_attribute WHERE user_id = $1;`
 	getUserAttributePayloadByIDQuery = `SELECT value, options FROM user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
 	getUserAttributeValueByIDQuery   = `SELECT value FROM user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
@@ -97,7 +100,7 @@ func (db *DB) GetUserAttributeByID(
 }
 
 func (db *DB) GetUserAttributeByWallet(
-	ctx context.Context, wallet []byte,
+	ctx context.Context, wallet string,
 ) (*entry.UserAttribute, error) {
 	var attribute entry.UserAttribute
 
