@@ -156,7 +156,7 @@ func (a *ArbitrumNovaAdapter) DecodeTransactionInputData(contractABI *abi.ABI, d
 	return method.Name, inputsMap, nil
 }
 
-func (a *ArbitrumNovaAdapter) GetTransferLogs(fromBlock, toBlock int64, contracts []common.Address) ([]*harvester.BCDiff, []*harvester.BCStake, error) {
+func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []common.Address) ([]*harvester.BCDiff, []*harvester.BCStake, error) {
 
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(fromBlock),

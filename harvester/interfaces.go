@@ -45,7 +45,7 @@ type AdapterListener func(blockNumber uint64, diffs []*BCDiff, stakes []*BCStake
 type Adapter interface {
 	GetLastBlockNumber() (uint64, error)
 	GetBalance(wallet string, contract string, blockNumber uint64) (*big.Int, error)
-	GetTransferLogs(fromBlock, toBlock int64, addresses []common.Address) ([]*BCDiff, []*BCStake, error)
+	GetLogs(fromBlock, toBlock int64, addresses []common.Address) ([]*BCDiff, []*BCStake, error)
 	RegisterNewBlockListener(f AdapterListener)
 	Run()
 	GetInfo() (umid umid.UMID, name string, rpcURL string)

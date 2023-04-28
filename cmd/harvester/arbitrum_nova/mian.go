@@ -52,8 +52,8 @@ func main() {
 		common.HexToAddress("0x938c38D417fD1b0a29EA1722C84Ad16fF5dD89c3"), //staking t
 	}
 	_ = contracts
-	//diffs, err := a.GetTransferLogs(0, 12, contracts)
-	diffs, stakes, err := a.GetTransferLogs(0, 7247196, []common.Address{})
+	//diffs, err := a.GetLogs(0, 12, contracts)
+	diffs, stakes, err := a.GetLogs(0, 7247196, []common.Address{})
 
 	fmt.Println("tokens ---")
 	for k, v := range diffs {

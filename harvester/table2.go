@@ -83,7 +83,7 @@ func (t *Table2) fastForward() {
 	//	return
 	//}
 
-	diffs, stakes, err := t.adapter.GetTransferLogs(int64(t.blockNumber)+1, int64(lastBlockNumber), nil)
+	diffs, stakes, err := t.adapter.GetLogs(int64(t.blockNumber)+1, int64(lastBlockNumber), nil)
 	if err != nil {
 		fmt.Println(err)
 		return
