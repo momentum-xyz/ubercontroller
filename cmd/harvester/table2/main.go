@@ -35,7 +35,7 @@ func main() {
 	time.Sleep(time.Hour)
 }
 
-func listener(bcName string, events []*harvester.UpdateEvent, stakeEvents []*harvester.StakeEvent) {
+func listener(bcName string, events []*harvester.UpdateEvent, stakeEvents []*harvester.StakeEvent, nftEvent []*harvester.NftEvent) {
 	fmt.Printf("Table Listener: \n")
 	for k, v := range events {
 		fmt.Printf("%+v %+v %+v %+v \n", k, v.Wallet, v.Contract, v.Amount.String())
