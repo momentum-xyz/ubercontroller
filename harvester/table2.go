@@ -292,13 +292,38 @@ func (t *Table2) saveToDB(wallets []Address, contracts []Address, balances []*en
 							  amount     = $4`
 
 	for _, s := range stakeEntries {
+		// Create a savepoint before each INSERT statement
+		_, err = tx.Exec(context.TODO(), "SAVEPOINT my_savepoint")
+		if err != nil {
+			err = errors.WithMessage(err, "failed to create savepoint")
+			fmt.Println(err)
+			return err
+		}
+
 		_, err = tx.Exec(context.TODO(), sql,
 			s.WalletID, blockchainUMID, s.ObjectID, s.Amount, "")
 		if err != nil {
 			err = errors.WithMessage(err, "failed to insert stakes to DB")
+			// return err
 			fmt.Println(err)
 			fmt.Println("Ignore this error as not critical")
-			// return err
+			err = nil
+
+			// Rollback to the savepoint if an error occurs
+			_, rbErr := tx.Exec(context.TODO(), "ROLLBACK TO SAVEPOINT my_savepoint")
+			if rbErr != nil {
+				rbErr = errors.WithMessage(rbErr, "failed to rollback to savepoint")
+				fmt.Println(rbErr)
+				return rbErr
+			}
+		} else {
+			// Release the savepoint if the INSERT was successful
+			_, err = tx.Exec(context.TODO(), "RELEASE my_savepoint")
+			if err != nil {
+				err = errors.WithMessage(err, "failed to release savepoint")
+				fmt.Println(err)
+				return err
+			}
 		}
 	}
 
