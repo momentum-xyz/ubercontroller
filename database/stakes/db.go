@@ -13,6 +13,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
+	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
@@ -64,7 +65,7 @@ func NewDB(conn *pgxpool.Pool) *DB {
 func (db *DB) GetStakesByWalletID(ctx context.Context, walletID string) ([]*entry.Stake, error) {
 	var stakes []*entry.Stake
 
-	if err := pgxscan.Select(ctx, db.conn, &stakes, getStakesByWalletID, walletID); err != nil {
+	if err := pgxscan.Select(ctx, db.conn, &stakes, getStakesByWalletID, utils.HexToAddress(walletID)); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return stakes, nil
