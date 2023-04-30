@@ -26,16 +26,18 @@ type Table2 struct {
 	blockNumber       uint64
 	data              map[string]map[string]*big.Int
 	stakesData        map[umid.UMID]map[string]*big.Int
+	nftData           map[umid.UMID]string
 	db                *pgxpool.Pool
 	adapter           Adapter
-	harvesterListener func(bcName string, p []*UpdateEvent, s []*StakeEvent)
+	harvesterListener func(bcName string, p []*UpdateEvent, s []*StakeEvent, n []*NftEvent)
 }
 
-func NewTable2(db *pgxpool.Pool, adapter Adapter, listener func(bcName string, p []*UpdateEvent, s []*StakeEvent)) *Table2 {
+func NewTable2(db *pgxpool.Pool, adapter Adapter, listener func(bcName string, p []*UpdateEvent, s []*StakeEvent, n []*NftEvent)) *Table2 {
 	return &Table2{
 		blockNumber:       0,
 		data:              make(map[string]map[string]*big.Int),
 		stakesData:        make(map[umid.UMID]map[string]*big.Int),
+		nftData:           make(map[umid.UMID]string),
 		adapter:           adapter,
 		harvesterListener: listener,
 		db:                db,
@@ -83,72 +85,128 @@ func (t *Table2) fastForward() {
 	//	return
 	//}
 
-	diffs, stakes, err := t.adapter.GetTransferLogs(int64(t.blockNumber)+1, int64(lastBlockNumber), nil)
+	logs, err := t.adapter.GetLogs(int64(t.blockNumber)+1, int64(lastBlockNumber), nil)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	t.ProcessDiffs(lastBlockNumber, diffs, stakes)
+	t.ProcessLogs(lastBlockNumber, logs)
 }
 
-func (t *Table2) ProcessDiffs(blockNumber uint64, diffs []*BCDiff, stakes []*BCStake) {
+func (t *Table2) ProcessLogs(blockNumber uint64, logs []any) {
 	fmt.Printf("Block: %d \n", blockNumber)
 	events := make([]*UpdateEvent, 0)
 	stakeEvents := make([]*StakeEvent, 0)
+	nftEvents := make([]*NftEvent, 0)
 
-	for _, diff := range diffs {
-		_, ok := t.data[diff.Token]
-		if !ok {
-			// Table2 store everything came from adapter
-			t.data[diff.Token] = make(map[string]*big.Int)
+	nftLogs := make([]*TransferNFTLog, 0)
+
+	for _, log := range logs {
+		switch log.(type) {
+		case *TransferERC20Log:
+			diff := log.(*TransferERC20Log)
+
+			_, ok := t.data[diff.Contract]
+			if !ok {
+				// Table2 store everything came from adapter
+				t.data[diff.Contract] = make(map[string]*big.Int)
+			}
+
+			b, ok := t.data[diff.Contract][diff.From]
+			if !ok {
+				t.data[diff.Contract][diff.From] = big.NewInt(0)
+			}
+			b = t.data[diff.Contract][diff.From]
+			b.Sub(b, diff.Value)
+			events = append(events, &UpdateEvent{
+				Wallet:   diff.From,
+				Contract: diff.Contract,
+				Amount:   b,
+			})
+
+			b, ok = t.data[diff.Contract][diff.To]
+			if !ok {
+				t.data[diff.Contract][diff.To] = big.NewInt(0)
+			}
+			b = t.data[diff.Contract][diff.To]
+			b.Add(b, diff.Value)
+			events = append(events, &UpdateEvent{
+				Wallet:   diff.To,
+				Contract: diff.Contract,
+				Amount:   b,
+			})
+
+		case *StakeLog:
+			stake := log.(*StakeLog)
+			_, ok := t.stakesData[stake.OdysseyID]
+			if !ok {
+				t.stakesData[stake.OdysseyID] = make(map[string]*big.Int)
+			}
+
+			t.stakesData[stake.OdysseyID][stake.UserWallet] = stake.TotalStaked
+			stakeEvents = append(stakeEvents, &StakeEvent{
+				Wallet:    stake.UserWallet,
+				OdysseyID: stake.OdysseyID,
+				Amount:    stake.TotalStaked,
+			})
+
+		case *UnstakeLog:
+			stake := log.(*UnstakeLog)
+			_, ok := t.stakesData[stake.OdysseyID]
+			if !ok {
+				t.stakesData[stake.OdysseyID] = make(map[string]*big.Int)
+			}
+
+			t.stakesData[stake.OdysseyID][stake.UserWallet] = stake.TotalStaked
+			stakeEvents = append(stakeEvents, &StakeEvent{
+				Wallet:    stake.UserWallet,
+				OdysseyID: stake.OdysseyID,
+				Amount:    stake.TotalStaked,
+			})
+		case *RestakeLog:
+			stake := log.(*RestakeLog)
+
+			_, ok := t.stakesData[stake.FromOdysseyID]
+			if !ok {
+				t.stakesData[stake.FromOdysseyID] = make(map[string]*big.Int)
+			}
+			t.stakesData[stake.FromOdysseyID][stake.UserWallet] = stake.TotalStakedToFrom
+			stakeEvents = append(stakeEvents, &StakeEvent{
+				Wallet:    stake.UserWallet,
+				OdysseyID: stake.FromOdysseyID,
+				Amount:    stake.TotalStakedToFrom,
+			})
+
+			_, ok = t.stakesData[stake.ToOdysseyID]
+			if !ok {
+				t.stakesData[stake.ToOdysseyID] = make(map[string]*big.Int)
+			}
+			t.stakesData[stake.ToOdysseyID][stake.UserWallet] = stake.TotalStakedToTo
+			stakeEvents = append(stakeEvents, &StakeEvent{
+				Wallet:    stake.UserWallet,
+				OdysseyID: stake.ToOdysseyID,
+				Amount:    stake.TotalStakedToTo,
+			})
+		case *TransferNFTLog:
+			e := log.(*TransferNFTLog)
+			t.nftData[e.TokenID] = e.To
+			nftEvents = append(nftEvents, &NftEvent{
+				From:      e.From,
+				To:        e.To,
+				OdysseyID: e.TokenID,
+			})
+			nftLogs = append(nftLogs, e)
 		}
 
-		b, ok := t.data[diff.Token][diff.From]
-		if !ok {
-			t.data[diff.Token][diff.From] = big.NewInt(0)
-		}
-		b = t.data[diff.Token][diff.From]
-		b.Sub(b, diff.Amount)
-		events = append(events, &UpdateEvent{
-			Wallet:   diff.From,
-			Contract: diff.Token,
-			Amount:   b,
-		})
-
-		b, ok = t.data[diff.Token][diff.To]
-		if !ok {
-			t.data[diff.Token][diff.To] = big.NewInt(0)
-		}
-		b = t.data[diff.Token][diff.To]
-		b.Add(b, diff.Amount)
-		events = append(events, &UpdateEvent{
-			Wallet:   diff.To,
-			Contract: diff.Token,
-			Amount:   b,
-		})
-	}
-
-	for _, stake := range stakes {
-		_, ok := t.stakesData[stake.OdysseyID]
-		if !ok {
-			t.stakesData[stake.OdysseyID] = make(map[string]*big.Int)
-		}
-
-		t.stakesData[stake.OdysseyID][stake.From] = stake.TotalAmount
-		stakeEvents = append(stakeEvents, &StakeEvent{
-			Wallet:    stake.From,
-			OdysseyID: stake.OdysseyID,
-			Amount:    stake.TotalAmount,
-		})
 	}
 
 	t.blockNumber = blockNumber
 
-	/////_, name, _ := t.adapter.GetInfo()
-	/////t.harvesterListener(name, events, stakeEvents)
+	_, name, _ := t.adapter.GetInfo()
+	t.harvesterListener(name, events, stakeEvents, nftEvents)
 
-	err := t.SaveToDB(events, stakeEvents)
+	err := t.SaveToDB(events, stakeEvents, nftLogs)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -162,7 +220,7 @@ func (t *Table2) listener(blockNumber uint64, diffs []*BCDiff, stakes []*BCStake
 	//t.mu.Unlock()
 }
 
-func (t *Table2) SaveToDB(events []*UpdateEvent, stakeEvents []*StakeEvent) (err error) {
+func (t *Table2) SaveToDB(events []*UpdateEvent, stakeEvents []*StakeEvent, nftLogs []*TransferNFTLog) (err error) {
 	wallets := make([]Address, 0)
 	contracts := make([]Address, 0)
 	// Save balance by value to quickly unlock mutex, otherwise have to unlock util DB transaction finished
@@ -201,10 +259,10 @@ func (t *Table2) SaveToDB(events []*UpdateEvent, stakeEvents []*StakeEvent) (err
 
 	fmt.Println(stakeEntries)
 
-	return t.saveToDB(wallets, contracts, balances, stakeEntries)
+	return t.saveToDB(wallets, contracts, balances, stakeEntries, nftLogs)
 }
 
-func (t *Table2) saveToDB(wallets []Address, contracts []Address, balances []*entry.Balance, stakeEntries []*entry.Stake) error {
+func (t *Table2) saveToDB(wallets []Address, contracts []Address, balances []*entry.Balance, stakeEntries []*entry.Stake, nftLogs []*TransferNFTLog) error {
 	blockchainUMID, name, rpcURL := t.adapter.GetInfo()
 
 	tx, err := t.db.BeginTx(context.Background(), pgx.TxOptions{})
@@ -292,10 +350,57 @@ func (t *Table2) saveToDB(wallets []Address, contracts []Address, balances []*en
 							  amount     = $4`
 
 	for _, s := range stakeEntries {
+		// Create a savepoint before each INSERT statement
+		_, err = tx.Exec(context.TODO(), "SAVEPOINT my_savepoint")
+		if err != nil {
+			err = errors.WithMessage(err, "failed to create savepoint")
+			fmt.Println(err)
+			return err
+		}
+
 		_, err = tx.Exec(context.TODO(), sql,
 			s.WalletID, blockchainUMID, s.ObjectID, s.Amount, "")
 		if err != nil {
 			err = errors.WithMessage(err, "failed to insert stakes to DB")
+			// return err
+			fmt.Println(err)
+			fmt.Println("Ignore this error as not critical")
+			err = nil
+
+			// Rollback to the savepoint if an error occurs
+			_, rbErr := tx.Exec(context.TODO(), "ROLLBACK TO SAVEPOINT my_savepoint")
+			if rbErr != nil {
+				rbErr = errors.WithMessage(rbErr, "failed to rollback to savepoint")
+				fmt.Println(rbErr)
+				return rbErr
+			}
+		} else {
+			// Release the savepoint if the INSERT was successful
+			_, err = tx.Exec(context.TODO(), "RELEASE my_savepoint")
+			if err != nil {
+				err = errors.WithMessage(err, "failed to release savepoint")
+				fmt.Println(err)
+				return err
+			}
+		}
+	}
+
+	sql = `INSERT INTO nft (wallet_id, blockchain_id, object_id, contract_id, created_at, updated_at)	
+			VALUES ($1, $2, $3, $4, NOW(), NOW())
+			ON CONFLICT (wallet_id, contract_id, blockchain_id, object_id) DO UPDATE SET updated_at=NOW()`
+
+	deleteSQL := `DELETE FROM nft WHERE object_id = $1`
+
+	for _, nft := range nftLogs {
+		_, err = tx.Exec(context.TODO(), deleteSQL, nft.TokenID)
+		if err != nil {
+			err = errors.WithMessage(err, "failed to delete NFT from DB")
+			return err
+		}
+
+		_, err = tx.Exec(context.TODO(), sql, HexToAddress(nft.To), blockchainUMID, nft.TokenID, HexToAddress(nft.Contract))
+		if err != nil {
+			err = errors.WithMessage(err, "failed to insert NFT to DB")
 			return err
 		}
 	}

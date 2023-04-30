@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"log"
 	"math/big"
 	"strings"
 
@@ -85,72 +84,72 @@ func (t *Table) fastForward() {
 	//	return
 	//}
 
-	diffs, stakes, err := t.adapter.GetTransferLogs(int64(t.blockNumber)+1, int64(lastBlockNumber), contracts)
+	logs, err := t.adapter.GetLogs(int64(t.blockNumber)+1, int64(lastBlockNumber), contracts)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	t.ProcessDiffs(lastBlockNumber, diffs, stakes)
+	t.ProcessDiffs(lastBlockNumber, logs)
 }
 
-func (t *Table) ProcessDiffs(blockNumber uint64, diffs []*BCDiff, stakes []*BCStake) {
-	fmt.Printf("Block: %d \n", blockNumber)
-	events := make([]*UpdateEvent, 0)
-	stakeEvents := make([]*StakeEvent, 0)
-
-	for _, diff := range diffs {
-		_, ok := t.data[diff.Token]
-		if !ok {
-			// No such contract
-			continue
-		}
-		b, ok := t.data[diff.Token][diff.From]
-		if ok && b != nil { // if
-			// From wallet found
-			b.Sub(b, diff.Amount)
-			events = append(events, &UpdateEvent{
-				Wallet:   diff.From,
-				Contract: diff.Token,
-				Amount:   b, // TODO ask should we clone here by value
-			})
-		}
-		b, ok = t.data[diff.Token][diff.To]
-		if ok && b != nil {
-			// To wallet found
-			b.Add(b, diff.Amount)
-			events = append(events, &UpdateEvent{
-				Wallet:   diff.To,
-				Contract: diff.Token,
-				Amount:   b,
-			})
-		}
-	}
-
-	for _, stake := range stakes {
-		_, ok := t.stakesData[stake.OdysseyID]
-		if !ok {
-			t.stakesData[stake.OdysseyID] = make(map[string]*big.Int)
-		}
-
-		t.stakesData[stake.OdysseyID][stake.From] = stake.TotalAmount
-		stakeEvents = append(stakeEvents, &StakeEvent{
-			Wallet:    stake.From,
-			OdysseyID: stake.OdysseyID,
-			Amount:    stake.TotalAmount,
-		})
-	}
-
-	t.blockNumber = blockNumber
-
-	_, name, _ := t.adapter.GetInfo()
-	t.harvesterListener(name, events, stakeEvents)
-
-	err := t.SaveToDB(events, stakeEvents)
-	if err != nil {
-		log.Fatal(err)
-	}
-	t.Display()
+func (t *Table) ProcessDiffs(blockNumber uint64, logs []any) {
+	//fmt.Printf("Block: %d \n", blockNumber)
+	//events := make([]*UpdateEvent, 0)
+	//stakeEvents := make([]*StakeEvent, 0)
+	//
+	//for _, diff := range diffs {
+	//	_, ok := t.data[diff.Token]
+	//	if !ok {
+	//		// No such contract
+	//		continue
+	//	}
+	//	b, ok := t.data[diff.Token][diff.From]
+	//	if ok && b != nil { // if
+	//		// From wallet found
+	//		b.Sub(b, diff.Amount)
+	//		events = append(events, &UpdateEvent{
+	//			Wallet:   diff.From,
+	//			Contract: diff.Token,
+	//			Amount:   b, // TODO ask should we clone here by value
+	//		})
+	//	}
+	//	b, ok = t.data[diff.Token][diff.To]
+	//	if ok && b != nil {
+	//		// To wallet found
+	//		b.Add(b, diff.Amount)
+	//		events = append(events, &UpdateEvent{
+	//			Wallet:   diff.To,
+	//			Contract: diff.Token,
+	//			Amount:   b,
+	//		})
+	//	}
+	//}
+	//
+	//for _, stake := range stakes {
+	//	_, ok := t.stakesData[stake.OdysseyID]
+	//	if !ok {
+	//		t.stakesData[stake.OdysseyID] = make(map[string]*big.Int)
+	//	}
+	//
+	//	t.stakesData[stake.OdysseyID][stake.From] = stake.TotalAmount
+	//	stakeEvents = append(stakeEvents, &StakeEvent{
+	//		Wallet:    stake.From,
+	//		OdysseyID: stake.OdysseyID,
+	//		Amount:    stake.TotalAmount,
+	//	})
+	//}
+	//
+	//t.blockNumber = blockNumber
+	//
+	//_, name, _ := t.adapter.GetInfo()
+	//t.harvesterListener(name, events, stakeEvents)
+	//
+	//err := t.SaveToDB(events, stakeEvents)
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//t.Display()
 }
 
 func (t *Table) listener(blockNumber uint64, diffs []*BCDiff, stakes []*BCStake) {

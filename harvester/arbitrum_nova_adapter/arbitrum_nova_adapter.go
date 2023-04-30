@@ -62,7 +62,7 @@ func (a *ArbitrumNovaAdapter) Run() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Connected to Arbitrum Block Chain: " + a.wsURL)
+	fmt.Println("Connected to Arbitrum Block Chain: " + a.httpURL)
 	///////
 
 	ticker := time.NewTicker(1000 * time.Millisecond)
@@ -156,7 +156,7 @@ func (a *ArbitrumNovaAdapter) DecodeTransactionInputData(contractABI *abi.ABI, d
 	return method.Name, inputsMap, nil
 }
 
-func (a *ArbitrumNovaAdapter) GetTransferLogs(fromBlock, toBlock int64, contracts []common.Address) ([]*harvester.BCDiff, []*harvester.BCStake, error) {
+func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []common.Address) ([]any, error) {
 
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(fromBlock),
@@ -164,10 +164,12 @@ func (a *ArbitrumNovaAdapter) GetTransferLogs(fromBlock, toBlock int64, contract
 		Addresses: a.contracts.AllAddresses,
 	}
 
-	logs, err := a.FilterLogs(context.TODO(), query)
+	bcLogs, err := a.FilterLogs(context.TODO(), query)
 	if err != nil {
-		return nil, nil, errors.WithMessage(err, "failed to filter log")
+		return nil, errors.WithMessage(err, "failed to filter log")
 	}
+
+	logs := make([]any, 0)
 
 	logTransferSig := []byte("Transfer(address,address,uint256)")
 	logTransferSigHash := crypto.Keccak256Hash(logTransferSig)
@@ -176,121 +178,147 @@ func (a *ArbitrumNovaAdapter) GetTransferLogs(fromBlock, toBlock int64, contract
 	logUnstakeSigHash := a.contracts.StakeABI.Events["Unstake"].ID
 	logRestakeSigHash := a.contracts.StakeABI.Events["Restake"].ID
 
-	diffs := make([]*harvester.BCDiff, 0)
-	stakes := make([]*harvester.BCStake, 0)
+	logTransferNftHash := a.contracts.NftABI.Events["Transfer"].ID
 
-	for _, vLog := range logs {
+	for _, vLog := range bcLogs {
 		//fmt.Printf("Log Block Number: %d\n", vLog.BlockNumber)
 		//fmt.Printf("Log Index: %d\n", vLog.Index)
 
-		switch vLog.Topics[0].Hex() {
-		case logTransferSigHash.Hex():
-			//fmt.Printf("Log Name: Transfer\n")
+		// Iterate contracts
+		switch vLog.Address.Hex() {
+		case a.contracts.momTokenAddress.Hex():
+			switch vLog.Topics[0].Hex() {
+			case logTransferSigHash.Hex():
+				//fmt.Printf("Log Name: Transfer\n")
 
-			var transferEvent harvester.BCDiff
+				//var transferEvent harvester.BCDiff
 
-			ev, err := a.contracts.TokenABI.Unpack("Transfer", vLog.Data)
-			if err != nil {
-				log.Fatal(err)
+				var e harvester.TransferERC20Log
+
+				ev, err := a.contracts.TokenABI.Unpack("Transfer", vLog.Data)
+				if err != nil {
+					return nil, errors.WithMessage(err, "failed to unpack event from ABI")
+				}
+
+				e.Contract = strings.ToLower(vLog.Address.Hex())
+				// Hex and Un Hex here used to remove padding zeros
+				e.From = strings.ToLower(common.HexToAddress(vLog.Topics[1].Hex()).Hex())
+				e.To = strings.ToLower(common.HexToAddress(vLog.Topics[2].Hex()).Hex())
+				if len(ev) > 0 {
+					e.Value = ev[0].(*big.Int)
+				}
+
+				logs = append(logs, &e)
 			}
 
-			fmt.Println(ev)
+		case a.contracts.stakeAddress.Hex():
+			switch vLog.Topics[0].Hex() {
 
-			transferEvent.Token = strings.ToLower(vLog.Address.Hex())
-			// Hex and Un Hex here used to remove padding zeros
-			transferEvent.From = strings.ToLower(common.HexToAddress(vLog.Topics[1].Hex()).Hex())
-			transferEvent.To = strings.ToLower(common.HexToAddress(vLog.Topics[2].Hex()).Hex())
-			if len(ev) > 0 {
-				transferEvent.Amount = ev[0].(*big.Int)
+			case logStakeSigHash.Hex():
+				ev, err := a.contracts.StakeABI.Unpack("Stake", vLog.Data)
+				if err != nil {
+					return nil, errors.WithMessage(err, "failed to unpack event from ABI")
+				}
+
+				// Read and convert event params
+				fromWallet := ev[0].(common.Address)
+
+				arr := ev[1].([16]byte)
+				odysseyID, err := umid.FromBytes(arr[:])
+				if err != nil {
+					return nil, errors.WithMessage(err, "failed to parse umid from bytes")
+				}
+				if odysseyID == umid.MustParse("ccccaaaa-1111-2222-3333-222222222222") ||
+					odysseyID == umid.MustParse("ccccaaaa-1111-2222-3333-222222222244") ||
+					odysseyID == umid.MustParse("ccccaaaa-1111-2222-3333-222222222241") {
+					// Skip test Odyssey IDs
+					continue
+				}
+
+				amount := ev[2].(*big.Int)
+
+				tokenType := ev[3].(uint8)
+
+				totalAmount := ev[4].(*big.Int)
+
+				e := &harvester.StakeLog{
+					UserWallet:   fromWallet.Hex(),
+					OdysseyID:    odysseyID,
+					AmountStaked: amount,
+					TokenType:    tokenType,
+					TotalStaked:  totalAmount,
+				}
+
+				logs = append(logs, e)
+
+			case logUnstakeSigHash.Hex():
+				ev, err := a.contracts.StakeABI.Unpack("Unstake", vLog.Data)
+				if err != nil {
+					return nil, errors.WithMessage(err, "failed to unpack event from ABI")
+				}
+
+				// Read and convert event params
+				fromWallet := ev[0].(common.Address)
+
+				arr := ev[1].([16]byte)
+				odysseyID, err := umid.FromBytes(arr[:])
+				if err != nil {
+					return nil, errors.WithMessage(err, "failed to parse umid from bytes")
+				}
+
+				amount := ev[2].(*big.Int)
+				tokenType := ev[3].(uint8)
+				totalAmount := ev[4].(*big.Int)
+
+				e := &harvester.UnstakeLog{
+					UserWallet:     fromWallet.Hex(),
+					OdysseyID:      odysseyID,
+					AmountUnstaked: amount,
+					TokenType:      tokenType,
+					TotalStaked:    totalAmount,
+				}
+
+				logs = append(logs, e)
+
+			case logRestakeSigHash.Hex():
+				fmt.Println("Restake")
 			}
+		case a.contracts.nftAddress.Hex():
+			fmt.Println("NFT")
 
-			//fmt.Printf("Contract: %s\n", transferEvent.Token)
-			//fmt.Printf("From: %s\n", transferEvent.From)
-			//fmt.Printf("To: %s\n", transferEvent.To)
-			//fmt.Printf("Tokens: %s\n", transferEvent.Amount.String())
-			diffs = append(diffs, &transferEvent)
-		case logStakeSigHash.Hex():
-			//fmt.Println("STAKE")
-			//fmt.Println(vLog)
+			switch vLog.Topics[0].Hex() {
+			case logTransferNftHash.Hex():
+				// TODO Not sure why vLog.Data is empty
+				//ev, err := a.contracts.NftABI.Unpack("Transfer", vLog.Data)
+				//if err != nil {
+				//	return nil, errors.WithMessage(err, "failed to unpack event from ABI")
+				//}
 
-			ev, err := a.contracts.StakeABI.Unpack("Stake", vLog.Data)
-			if err != nil {
-				return nil, nil, errors.WithMessage(err, "failed to unpack event from ABI")
+				from := strings.ToLower(common.HexToAddress(vLog.Topics[1].Hex()).Hex())
+				to := strings.ToLower(common.HexToAddress(vLog.Topics[2].Hex()).Hex())
+				itemID := vLog.Topics[3].Big()
+
+				var id umid.UMID
+				itemID.FillBytes(id[:])
+
+				if err != nil {
+					return nil, errors.WithMessage(err, "failed to read umid from bytes")
+				}
+
+				e := &harvester.TransferNFTLog{
+					From:     from,
+					To:       to,
+					TokenID:  id,
+					Contract: strings.ToLower(vLog.Address.Hex()),
+				}
+
+				logs = append(logs, e)
 			}
-
-			// Read and convert event params
-			fromWallet := ev[0].(common.Address)
-
-			arr := ev[1].([16]byte)
-			odysseyID, err := umid.FromBytes(arr[:])
-			if err != nil {
-				return nil, nil, errors.WithMessage(err, "failed to parse umid from bytes")
-			}
-			if odysseyID == umid.MustParse("ccccaaaa-1111-2222-3333-222222222222") ||
-				odysseyID == umid.MustParse("ccccaaaa-1111-2222-3333-222222222244") ||
-				odysseyID == umid.MustParse("ccccaaaa-1111-2222-3333-222222222241") {
-				// Skip test Odyssey IDs
-				continue
-			}
-
-			amount := ev[2].(*big.Int)
-
-			tokenType := ev[3].(uint8)
-
-			totalAmount := ev[4].(*big.Int)
-
-			stake := &harvester.BCStake{
-				From:        fromWallet.Hex(),
-				OdysseyID:   odysseyID,
-				TokenType:   tokenType,
-				Amount:      amount,
-				TotalAmount: totalAmount,
-			}
-
-			stakes = append(stakes, stake)
-
-		//fmt.Printf("%+v %+v %+v %+v \n\n", fromWallet.String(), odysseyID.String(), amount, tokenType)
-		//fmt.Println(ev)
-
-		case logUnstakeSigHash.Hex():
-			log.Println("Unstake")
-
-			ev, err := a.contracts.StakeABI.Unpack("Unstake", vLog.Data)
-			if err != nil {
-				return nil, nil, errors.WithMessage(err, "failed to unpack event from ABI")
-			}
-
-			// Read and convert event params
-			fromWallet := ev[0].(common.Address)
-
-			arr := ev[1].([16]byte)
-			odysseyID, err := umid.FromBytes(arr[:])
-			if err != nil {
-				return nil, nil, errors.WithMessage(err, "failed to parse umid from bytes")
-			}
-
-			amount := ev[2].(*big.Int)
-
-			tokenType := ev[3].(uint8)
-
-			totalAmount := ev[4].(*big.Int)
-
-			stake := &harvester.BCStake{
-				From:        fromWallet.Hex(),
-				OdysseyID:   odysseyID,
-				TokenType:   tokenType,
-				Amount:      amount,
-				TotalAmount: totalAmount,
-			}
-
-			stakes = append(stakes, stake)
-
-		case logRestakeSigHash.Hex():
-			fmt.Println("Restake")
 		}
+
 	}
 
-	return diffs, stakes, nil
+	return logs, nil
 }
 
 func (a *ArbitrumNovaAdapter) GetInfo() (umid umid.UMID, name string, rpcURL string) {

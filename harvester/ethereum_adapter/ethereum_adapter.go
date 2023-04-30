@@ -61,7 +61,7 @@ func (a *EthereumAdapter) GetLastBlockNumber() (uint64, error) {
 	return number, err
 }
 
-func (a *EthereumAdapter) GetTransferLogs(fromBlock, toBlock int64, addresses []common.Address) ([]*harvester.BCDiff, []*harvester.BCStake, error) {
+func (a *EthereumAdapter) GetLogs(fromBlock, toBlock int64, addresses []common.Address) ([]*harvester.BCDiff, []*harvester.BCStake, error) {
 
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(fromBlock),

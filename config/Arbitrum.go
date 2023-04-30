@@ -10,10 +10,10 @@ type Arbitrum struct {
 }
 
 func (a *Arbitrum) Init() {
-	a.ArbitrumMOMTokenAddress = "0x310c2B16c304109f32BABB5f47cC562813765744"
-	a.ArbitrumDADTokenAddress = "0xB647d3a893E7e0534827B5E795d3BF7cb80FF16f"
-	a.ArbitrumStakeContractAddress = "0xC4497d6c0f94dc427cE0B8F825c91F25e2845B91"
-	a.ArbitrumNFTContractAddress = "0xC4497d6c0f94dc427cE0B8F825c91F25e2845B91"
+	a.ArbitrumMOMTokenAddress = "0x567d4e8264dC890571D5392fDB9fbd0e3FCBEe56"
+	a.ArbitrumDADTokenAddress = "0x0244BbA6fcB25eFed05955C4A1B86A458986D2e0"
+	a.ArbitrumStakeContractAddress = "0xb187f16656C30580bB0B0b797DaDB9CFab766156"
+	a.ArbitrumNFTContractAddress = "0x97E0B10D89a494Eb5cfFCc72853FB0750BD64AcD"
 	a.ArbitrumRPCURL = "https://bcdev.antst.net:8547"
 	//a.ArbitrumRPCURL = "https://nova.arbitrum.io/rpc"
 	a.ArbitrumWSURL = "wss://bcdev.antst.net:8548"

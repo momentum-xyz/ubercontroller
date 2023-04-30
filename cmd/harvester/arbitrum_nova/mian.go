@@ -52,17 +52,14 @@ func main() {
 		common.HexToAddress("0x938c38D417fD1b0a29EA1722C84Ad16fF5dD89c3"), //staking t
 	}
 	_ = contracts
-	//diffs, err := a.GetTransferLogs(0, 12, contracts)
-	diffs, stakes, err := a.GetTransferLogs(0, 7247196, []common.Address{})
+	//diffs, err := a.GetLogs(0, 12, contracts)
+	logs, err := a.GetLogs(0, 7247196, nil)
 
-	fmt.Println("tokens ---")
-	for k, v := range diffs {
-		fmt.Printf("%+v %+v %+v %+v  \n", k, v.Token, v.To, v.Amount.String())
-	}
-
-	fmt.Println("stakes ---")
-	for k, v := range stakes {
-		fmt.Printf("%+v %+v %+v %+v %+v  \n", k, v.From, v.OdysseyID.String(), v.Amount.String(), v.TotalAmount.String())
+	for _, log := range logs {
+		switch log.(type) {
+		case *harvester.TransferERC20Log:
+			fmt.Println(log.(*harvester.TransferERC20Log).Value)
+		}
 	}
 
 	time.Sleep(time.Second * 300)

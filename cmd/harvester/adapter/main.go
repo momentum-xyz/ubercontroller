@@ -49,7 +49,7 @@ func main() {
 	}
 
 	// Last Block Number: 737179
-	diffs, stakes, err := a.GetTransferLogs(1, 31, contracts)
+	diffs, stakes, err := a.GetLogs(1, 31, contracts)
 
 	fmt.Println(stakes)
 

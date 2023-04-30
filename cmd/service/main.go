@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
 	"github.com/zakaria-chahboun/cute"
 
@@ -76,7 +78,7 @@ func run(ctx context.Context) error {
 		adapter := arbitrum_nova_adapter.NewArbitrumNovaAdapter(cfg)
 		adapter.Run()
 
-		t := harvester.NewTable2(pool, adapter, nil)
+		t := harvester.NewTable2(pool, adapter, listener)
 		t.Run()
 	}
 
@@ -94,4 +96,19 @@ func run(ctx context.Context) error {
 	cute.Println("Node stopped", "That's all folks!")
 
 	return nil
+}
+
+func listener(bcName string, events []*harvester.UpdateEvent, stakeEvents []*harvester.StakeEvent, nftEvent []*harvester.NftEvent) {
+	fmt.Printf("Table Listener: \n")
+	for k, v := range events {
+		fmt.Printf("%+v %+v %+v %+v \n", k, v.Wallet, v.Contract, v.Amount.String())
+	}
+	if nftEvent != nil && len(nftEvent) > 0 {
+		for _, e := range nftEvent {
+			if e.To != (common.Address{}).Hex() {
+				// TODO 1- create world 2 - find better place for listener
+				fmt.Printf("Mint new world here for wallet:%s, NFT_ID:%s\n", e.To, e.OdysseyID)
+			}
+		}
+	}
 }
