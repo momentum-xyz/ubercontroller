@@ -1,8 +1,9 @@
 package common
 
 import (
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"github.com/pkg/errors"
+
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"

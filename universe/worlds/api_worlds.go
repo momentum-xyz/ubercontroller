@@ -72,6 +72,70 @@ func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, userDTOs)
 }
 
+// @Summary Get world nft meta data
+// @Schemes
+// @Description Returns a json object containing meta-data and traits
+// @Tags worlds
+// @Accept json
+// @Produce json
+// @Param worldID path string true "World UMID"
+// @Success 200 {array} dto.WorldNFTMeta
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/worlds/{object_id}/meta-data [get]
+func (w *Worlds) apiWorldsGetMetaData(c *gin.Context) {
+	worldID, err := umid.Parse(c.Param("objectID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Worlds: apiWorldsGetMetaData: failed to parse world umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
+		return
+	}
+
+	world, ok := w.GetWorld(worldID)
+	if !ok || world == nil {
+		err := errors.New("Worlds: apiWorldsGetMetaData: world not found")
+		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
+		return
+	}
+
+	attributes := make([]dto.NFTAttributes, 0)
+
+	worldEntry := world.GetEntry()
+	checkedWorld, _ := w.db.GetWorldsDB().CheckIsWorldFirstHundred(w.ctx, worldEntry.ObjectTypeID, world.GetID())
+	if checkedWorld != nil {
+		attribute := dto.NFTAttributes{
+			TraitType: "type",
+			Value:     "origin",
+		}
+
+		attributes = append(attributes, attribute)
+	}
+
+	pluginID := universe.GetSystemPluginID()
+	attributeID := entry.NewAttributeID(pluginID, universe.ReservedAttributes.Object.WorldAvatar.Name)
+	imageValue, ok := world.GetObjectAttributes().GetValue(attributeID)
+	if !ok {
+		err := errors.New("Worlds: apiWorldsGetMetaData: failed to get image attribute")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_image_attribute", err, w.log)
+		return
+	}
+
+	var worldAvatarHash string
+	if imageValue != nil {
+		worldAvatarHash = utils.GetFromAnyMap(*imageValue, universe.ReservedAttributes.Object.WorldAvatar.Key, "")
+	}
+
+	worldMeta := dto.WorldNFTMeta{
+		Name:        world.GetName(),
+		Description: world.GetDescription(),
+		Image:       worldAvatarHash,
+		Attributes:  attributes,
+	}
+
+	c.JSON(http.StatusOK, worldMeta)
+}
+
 // @Summary Get world details
 // @Schemes
 // @Description Returns a world by ID and its details

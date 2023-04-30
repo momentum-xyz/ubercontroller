@@ -81,6 +81,18 @@ type WorldDetails struct {
 	LastStakingComment *string       `json:"last_staking_comment"`
 }
 
+type WorldNFTMeta struct {
+	Name        string          `json:"name" binding:"required"`
+	Description string          `json:"description"`
+	Image       string          `json:"image"`
+	Attributes  []NFTAttributes `json:"attributes"`
+}
+
+type NFTAttributes struct {
+	TraitType string `json:"trait_type"`
+	Value     string `json:"value"`
+}
+
 type WorldStaker struct {
 	UserID     umid.UMID `json:"user_id"`
 	Name       *string   `json:"name"`

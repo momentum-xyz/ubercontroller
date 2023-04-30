@@ -61,6 +61,7 @@ var (
 		Object struct {
 			Name           ReservedAttribute
 			Description    ReservedAttribute
+			WorldAvatar    ReservedAttribute
 			NewsFeedItems  ReservedAttribute
 			PortalDockFace ReservedAttribute
 			Events         ReservedAttribute
@@ -121,6 +122,7 @@ var (
 		Object: struct {
 			Name           ReservedAttribute
 			Description    ReservedAttribute
+			WorldAvatar    ReservedAttribute
 			NewsFeedItems  ReservedAttribute
 			PortalDockFace ReservedAttribute
 			Events         ReservedAttribute
@@ -131,6 +133,10 @@ var (
 			},
 			Description: ReservedAttribute{
 				Name: "description",
+			},
+			WorldAvatar: ReservedAttribute{
+				Name: "world_avatar",
+				Key:  "render_hash",
 			},
 			NewsFeedItems: ReservedAttribute{
 				Name: "news_feed",
