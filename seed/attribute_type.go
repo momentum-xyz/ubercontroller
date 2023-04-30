@@ -159,6 +159,12 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 		},
 		{
 			pluginID:      universe.GetSystemPluginID(),
+			attributeName: "world_avatar",
+			description:   "",
+			options:       nil,
+		},
+		{
+			pluginID:      universe.GetSystemPluginID(),
 			attributeName: "world_settings",
 			description:   "",
 			options:       nil,
