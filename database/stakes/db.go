@@ -30,8 +30,10 @@ const (
     	JOIN object_attribute USING (object_id)
 		WHERE attribute_name = 'name'
   		AND wallet_id = $1`
-	getStakesByObjectID    = `SELECT * FROM stake WHERE object_id = $1`
-	getStakesByWalletID    = `SELECT * FROM stake WHERE wallet_id = $1`
+	getStakesByObjectID = `SELECT * FROM stake WHERE object_id = $1`
+	getStakesByWalletID = `SELECT * FROM stake
+				  INNER JOIN object USING (object_id)
+				  WHERE wallet_id = $1`
 	getStakesWithCount     = `SELECT wallet_id, COUNT(*) AS count FROM stake GROUP BY wallet_id ORDER BY count DESC;`
 	getStakesByLatestStake = `SELECT last_comment FROM stake ORDER BY created_at DESC LIMIT 1;`
 	getWalletsInfoQuery    = `SELECT wallet_id, contract_id, balance, blockchain_name, updated_at
