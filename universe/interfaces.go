@@ -134,6 +134,8 @@ type World interface {
 
 	GetTotalStake() uint8
 
+	GetWorldAvatar() string
+
 	GetCalendar() Calendar
 
 	WriteInfluxPoint(point *influxWrite.Point) error

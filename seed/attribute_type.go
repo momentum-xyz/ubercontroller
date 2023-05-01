@@ -161,7 +161,12 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			pluginID:      universe.GetSystemPluginID(),
 			attributeName: "world_avatar",
 			description:   "",
-			options:       nil,
+			options: &entry.AttributeOptions{
+				"render_auto": map[string]string{
+					"slot_type":    "texture",
+					"content_type": "image",
+				},
+			},
 		},
 		{
 			pluginID:      universe.GetSystemPluginID(),
@@ -173,6 +178,12 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			pluginID:      universe.GetSystemPluginID(),
 			attributeName: "world_meta",
 			description:   "Holds world metadata and decorations",
+			options:       nil,
+		},
+		{
+			pluginID:      universe.GetSystemPluginID(),
+			attributeName: "website_link",
+			description:   "",
 			options:       nil,
 		},
 		{
