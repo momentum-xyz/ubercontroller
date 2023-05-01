@@ -354,9 +354,7 @@ func (t *Table2) saveToDB(wallets []Address, contracts []Address, balances []*en
 			s.WalletID, blockchainUMID, s.ObjectID, s.Amount, "")
 		if err != nil {
 			err = errors.WithMessage(err, "failed to insert stakes to DB")
-			fmt.Println(err)
-			fmt.Println("Ignore this error as not critical")
-			// return err
+			return err
 		}
 	}
 
