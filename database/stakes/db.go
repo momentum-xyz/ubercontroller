@@ -31,7 +31,7 @@ const (
 		WHERE attribute_name = 'name'
   		AND wallet_id = $1`
 	getStakesByObjectID = `SELECT * FROM stake WHERE object_id = $1`
-	getStakesByWalletID = `SELECT * FROM stake
+	getStakesByWalletID = `SELECT stake.* FROM stake
 				  INNER JOIN object USING (object_id)
 				  WHERE wallet_id = $1`
 	getStakesWithCount     = `SELECT wallet_id, COUNT(*) AS count FROM stake GROUP BY wallet_id ORDER BY count DESC;`
