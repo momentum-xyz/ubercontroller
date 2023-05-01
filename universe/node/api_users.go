@@ -221,6 +221,7 @@ func (n *Node) apiUsersGetOwnedWorlds(c *gin.Context) {
 			Name:        &name,
 			Description: utils.GetPTR(world.GetDescription()),
 			AvatarHash:  utils.GetPTR(world.GetWorldAvatar()),
+			WebsiteLink: utils.GetPTR(world.GetWebsiteLink()),
 		}
 
 		ownedWorlds = append(ownedWorlds, ownedWorld)
@@ -282,6 +283,7 @@ func (n *Node) apiUsersGetStakedWorlds(c *gin.Context) {
 				Name:        utils.GetPTR(world.GetName()),
 				Description: utils.GetPTR(world.GetDescription()),
 				AvatarHash:  utils.GetPTR(world.GetWorld().GetWorldAvatar()),
+				WebsiteLink: utils.GetPTR(world.GetWorld().GetWebsiteLink()),
 			}
 			stakedWorlds = append(stakedWorlds, stakedWorld)
 		}

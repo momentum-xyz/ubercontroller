@@ -62,6 +62,7 @@ var (
 			Name           ReservedAttribute
 			Description    ReservedAttribute
 			WorldAvatar    ReservedAttribute
+			WebsiteLink    ReservedAttribute
 			NewsFeedItems  ReservedAttribute
 			PortalDockFace ReservedAttribute
 			Events         ReservedAttribute
@@ -123,6 +124,7 @@ var (
 			Name           ReservedAttribute
 			Description    ReservedAttribute
 			WorldAvatar    ReservedAttribute
+			WebsiteLink    ReservedAttribute
 			NewsFeedItems  ReservedAttribute
 			PortalDockFace ReservedAttribute
 			Events         ReservedAttribute
@@ -133,10 +135,15 @@ var (
 			},
 			Description: ReservedAttribute{
 				Name: "description",
+				Key:  "description",
 			},
 			WorldAvatar: ReservedAttribute{
 				Name: "world_avatar",
 				Key:  "render_hash",
+			},
+			WebsiteLink: ReservedAttribute{
+				Name: "website_link",
+				Key:  "website_link",
 			},
 			NewsFeedItems: ReservedAttribute{
 				Name: "news_feed",
