@@ -223,7 +223,7 @@ func (w *Worlds) apiWorldsGetDetails(c *gin.Context) {
 					UserID:     user.UserID,
 					Name:       stakerName,
 					Stake:      &stakeAmtStr,
-					AvatarHash: nil,
+					AvatarHash: utils.GetPTR(world.GetWorldAvatar()),
 				}
 
 				worldStakers = append(worldStakers, worldStaker)
@@ -249,7 +249,7 @@ func (w *Worlds) apiWorldsGetDetails(c *gin.Context) {
 		StakeTotal:         &totalStakeStr,
 		CreatedAt:          worldEntry.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:          worldEntry.UpdatedAt.Format(time.RFC3339),
-		AvatarHash:         nil,
+		AvatarHash:         utils.GetPTR(world.GetWorldAvatar()),
 		WorldStakers:       worldStakers,
 		LastStakingComment: latestStakeComment,
 	}
@@ -351,7 +351,7 @@ func (w *Worlds) apiWorldsGet(c *gin.Context) {
 			Name:        utils.GetPTR(world.GetName()),
 			Description: utils.GetPTR(world.GetDescription()),
 			StakeTotal:  &totalStakeStr,
-			AvatarHash:  nil,
+			AvatarHash:  utils.GetPTR(world.GetWorldAvatar()),
 		}
 
 		recents = append(recents, recent)

@@ -179,11 +179,11 @@ func (n *Node) GetWorlds() universe.Worlds {
 	return n.worlds
 }
 
-func (n *Node) GetWorldsByOwnerID(userID umid.UMID) map[umid.UMID]universe.Object {
+func (n *Node) GetWorldsByOwnerID(userID umid.UMID) map[umid.UMID]universe.World {
 	n.Children.Mu.RLock()
 	defer n.Children.Mu.RUnlock()
 
-	worlds := make(map[umid.UMID]universe.Object, len(n.Children.Data))
+	worlds := make(map[umid.UMID]universe.World, len(n.Children.Data))
 	for id, world := range n.worlds.GetWorlds() {
 
 		if world.GetOwnerID() == userID {

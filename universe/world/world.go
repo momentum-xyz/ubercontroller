@@ -68,6 +68,17 @@ func (w *World) TempGetSkybox() *websocket.PreparedMessage {
 	return w.skyBoxMsg.Load()
 }
 
+func (w *World) GetWorldAvatar() string {
+	defaultAvatar := ""
+	value, ok := w.GetObjectAttributes().GetValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Object.WorldAvatar.Name),
+	)
+	if !ok || value == nil {
+		return defaultAvatar
+	}
+	return utils.GetFromAnyMap(*value, universe.ReservedAttributes.Object.WorldAvatar.Key, defaultAvatar)
+}
+
 func NewWorld(id umid.UMID, db database.DB) *World {
 	world := &World{
 		db:         db,
