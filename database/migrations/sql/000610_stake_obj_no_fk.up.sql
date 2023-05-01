@@ -1,0 +1,7 @@
+BEGIN;
+
+ALTER TABLE stake
+DROP CONSTRAINT stake_object_fk
+;
+
+COMMIT;

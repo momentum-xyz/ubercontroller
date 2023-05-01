@@ -256,7 +256,7 @@ func (n *Node) apiUsersGetStakedWorlds(c *gin.Context) {
 		return
 	}
 
-	var stakedWorlds []dto.StakedWorld
+	stakedWorlds := make([]dto.StakedWorld, 0)
 	for _, wallet := range wallets {
 		if len(*wallet) != 42 {
 			continue
