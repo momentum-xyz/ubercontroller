@@ -257,6 +257,10 @@ func (n *Node) apiUsersGetStakedWorlds(c *gin.Context) {
 
 	var stakedWorlds []dto.StakedWorld
 	for _, wallet := range wallets {
+		if len(*wallet) != 42 {
+			continue
+		}
+
 		stakes, err := n.db.GetStakesDB().GetStakesByWalletID(c, *wallet)
 		if err != nil {
 			err := errors.WithMessage(err, "Node: apiUsersGetStakedWorlds: failed to get stakes for world")
