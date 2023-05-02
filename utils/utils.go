@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -10,11 +11,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
-
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
+
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
+
+var MASK_V8 = [16]byte{0, 0, 0, 0, 0, 0, 128, 0, 128, 0, 0, 0, 0, 0, 0, 0}
 
 func BinID(id umid.UMID) []byte {
 	binID, err := id.MarshalBinary()
@@ -168,6 +171,24 @@ func GoroutineID() int {
 	id, err := strconv.Atoi(idField)
 	if err != nil {
 		panic(fmt.Sprintf("cannot get goroutine umid: %v", err))
+	}
+	return id
+}
+
+func UMIDToSEQ(id umid.UMID) uint64 {
+	var buf [16]byte
+	for i := 0; i < 16; i++ {
+		buf[i] = id[i] &^ MASK_V8[i]
+	}
+	return binary.LittleEndian.Uint64(buf[8:])
+}
+
+func SEQtoUMID(s uint64) umid.UMID {
+	id := umid.Nil
+	var seq [16]byte
+	binary.LittleEndian.PutUint64(seq[8:], s)
+	for i := 0; i < 16; i++ {
+		id[i] = seq[i] | MASK_V8[i]
 	}
 	return id
 }

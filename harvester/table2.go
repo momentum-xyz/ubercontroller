@@ -29,10 +29,10 @@ type Table2 struct {
 	nftData           map[umid.UMID]string
 	db                *pgxpool.Pool
 	adapter           Adapter
-	harvesterListener func(bcName string, p []*UpdateEvent, s []*StakeEvent, n []*NftEvent)
+	harvesterListener func(bcName string, p []*UpdateEvent, s []*StakeEvent, n []*NftEvent) error
 }
 
-func NewTable2(db *pgxpool.Pool, adapter Adapter, listener func(bcName string, p []*UpdateEvent, s []*StakeEvent, n []*NftEvent)) *Table2 {
+func NewTable2(db *pgxpool.Pool, adapter Adapter, listener func(bcName string, p []*UpdateEvent, s []*StakeEvent, n []*NftEvent) error) *Table2 {
 	return &Table2{
 		blockNumber:       0,
 		data:              make(map[string]map[string]*big.Int),

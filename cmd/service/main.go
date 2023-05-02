@@ -2,20 +2,16 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
 	"github.com/zakaria-chahboun/cute"
 
 	"github.com/momentum-xyz/ubercontroller/config"
-	"github.com/momentum-xyz/ubercontroller/harvester"
-	"github.com/momentum-xyz/ubercontroller/harvester/arbitrum_nova_adapter"
 	"github.com/momentum-xyz/ubercontroller/logger"
 	"github.com/momentum-xyz/ubercontroller/pkg/service"
 	"github.com/momentum-xyz/ubercontroller/types"
@@ -58,33 +54,10 @@ func run(ctx context.Context) error {
 	cute.SetMessageColor(cute.BrightBlue)
 	cute.Println("Node loaded", "Loading time:", tm2.Sub(tm1))
 
-	//harvester.Initialise(ctx, log, cfg, pool)
-	//if cfg.Arbitrum.ArbitrumMOMTokenAddress != "" {
-	//	arbitrumAdapter := arbitrum_nova_adapter.NewArbitrumNovaAdapter(cfg)
-	//	arbitrumAdapter.Run()
-	//	if err := harvester.GetInstance().RegisterAdapter(arbitrumAdapter); err != nil {
-	//		return errors.WithMessage(err, "failed to register arbitrum adapter")
-	//	}
-	//}
-	//err = harvester.SubscribeAllWallets(ctx, harvester.GetInstance(), cfg, pool)
-	//if err != nil {
-	//	log.Error(err)
-	//}
-
-	/**
-	Simplified version of harvester
-	*/
-	if cfg.Arbitrum.ArbitrumMOMTokenAddress != "" {
-		adapter := arbitrum_nova_adapter.NewArbitrumNovaAdapter(cfg)
-		adapter.Run()
-
-		t := harvester.NewTable2(pool, adapter, listener)
-		t.Run()
-	}
-
 	if err := node.Run(); err != nil {
 		return errors.WithMessagef(err, "failed to run node: %s", node.GetID())
 	}
+
 	defer func() {
 		if err := node.Stop(); err != nil {
 			log.Error(errors.WithMessagef(err, "failed to stop node: %s", node.GetID()))
@@ -96,19 +69,4 @@ func run(ctx context.Context) error {
 	cute.Println("Node stopped", "That's all folks!")
 
 	return nil
-}
-
-func listener(bcName string, events []*harvester.UpdateEvent, stakeEvents []*harvester.StakeEvent, nftEvent []*harvester.NftEvent) {
-	fmt.Printf("Table Listener: \n")
-	for k, v := range events {
-		fmt.Printf("%+v %+v %+v %+v \n", k, v.Wallet, v.Contract, v.Amount.String())
-	}
-	if nftEvent != nil && len(nftEvent) > 0 {
-		for _, e := range nftEvent {
-			if e.To != (common.Address{}).Hex() {
-				// TODO 1- create world 2 - find better place for listener
-				fmt.Printf("Mint new world here for wallet:%s, NFT_ID:%s\n", e.To, e.OdysseyID)
-			}
-		}
-	}
 }
