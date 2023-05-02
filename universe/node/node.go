@@ -322,6 +322,11 @@ func (n *Node) Listener(bcName string, events []*harvester.UpdateEvent, stakeEve
 					return nil
 				}
 
+				world, _ := n.GetObjectFromAllObjects(event.OdysseyID)
+				if world != nil {
+					return errors.WithMessage(err, "world already exists")
+				}
+
 				templateValue, _ := n.GetNodeAttributes().GetValue(
 					entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Node.WorldTemplate.Name),
 				)
