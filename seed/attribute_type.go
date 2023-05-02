@@ -105,7 +105,7 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			description:   "State of the video tile",
 			options: &entry.AttributeOptions{
 				"render_auto": map[string]string{
-					"slot_name":    "Block",
+					"slot_name":    "object_texture",
 					"slot_type":    "texture",
 					"value_field":  "value",
 					"content_type": "video",
@@ -161,7 +161,12 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			pluginID:      universe.GetSystemPluginID(),
 			attributeName: "world_avatar",
 			description:   "",
-			options:       nil,
+			options: &entry.AttributeOptions{
+				"render_auto": map[string]string{
+					"slot_type":    "texture",
+					"content_type": "image",
+				},
+			},
 		},
 		{
 			pluginID:      universe.GetSystemPluginID(),
@@ -173,6 +178,12 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			pluginID:      universe.GetSystemPluginID(),
 			attributeName: "world_meta",
 			description:   "Holds world metadata and decorations",
+			options:       nil,
+		},
+		{
+			pluginID:      universe.GetSystemPluginID(),
+			attributeName: "website_link",
+			description:   "",
 			options:       nil,
 		},
 		{
@@ -371,7 +382,7 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			options: &entry.AttributeOptions{
 				"render_auto": map[string]any{
 					"slot_name":    "description",
-					"slot_type":    "Block",
+					"slot_type":    "object_texture",
 					"value_field":  "value",
 					"content_type": "text",
 					"text_render_template": map[string]any{
@@ -437,7 +448,7 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			description:   "State of the image tile",
 			options: &entry.AttributeOptions{
 				"render_auto": map[string]any{
-					"slot_name":    "Block",
+					"slot_name":    "object_texture",
 					"slot_type":    "texture",
 					"content_type": "image",
 				},

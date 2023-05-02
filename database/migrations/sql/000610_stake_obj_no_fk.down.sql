@@ -1,0 +1,11 @@
+
+BEGIN;
+
+ALTER TABLE stake
+ADD CONSTRAINT stake_object_fk
+FOREIGN KEY (object_id)
+REFERENCES object (object_id)
+ON UPDATE CASCADE ON DELETE CASCADE;
+;
+
+COMMIT;

@@ -64,6 +64,7 @@ type RecentWorld struct {
 	Description *string   `json:"description"`
 	StakeTotal  *string   `json:"stake_total,omitempty"`
 	Name        *string   `json:"name"`
+	WebsiteLink *string   `json:"website_link"`
 	AvatarHash  *string   `json:"avatarHash"`
 }
 
@@ -77,6 +78,7 @@ type WorldDetails struct {
 	CreatedAt          string        `json:"createdAt,omitempty"`
 	UpdatedAt          string        `json:"updatedAt,omitempty"`
 	AvatarHash         *string       `json:"avatarHash"`
+	WebsiteLink        *string       `json:"website_link"`
 	WorldStakers       []WorldStaker `json:"stakers"`
 	LastStakingComment *string       `json:"last_staking_comment"`
 }
@@ -168,6 +170,7 @@ type OwnedWorld struct {
 	OwnerName   *string   `json:"owner_name"`
 	Name        *string   `json:"name,omitempty"`
 	Description *string   `json:"description"`
+	WebsiteLink *string   `json:"website_link"`
 	AvatarHash  *string   `json:"avatarHash"`
 }
 
@@ -176,6 +179,7 @@ type StakedWorld struct {
 	OwnerID     umid.UMID `json:"owner_id"`
 	Name        *string   `json:"name,omitempty"`
 	Description *string   `json:"description"`
+	WebsiteLink *string   `json:"website_link"`
 	AvatarHash  *string   `json:"avatarHash"`
 }
 

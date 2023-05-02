@@ -220,7 +220,8 @@ func (n *Node) apiUsersGetOwnedWorlds(c *gin.Context) {
 			OwnerName:   userName,
 			Name:        &name,
 			Description: utils.GetPTR(world.GetDescription()),
-			AvatarHash:  nil,
+			AvatarHash:  utils.GetPTR(world.GetWorldAvatar()),
+			WebsiteLink: utils.GetPTR(world.GetWebsiteLink()),
 		}
 
 		ownedWorlds = append(ownedWorlds, ownedWorld)
@@ -255,8 +256,12 @@ func (n *Node) apiUsersGetStakedWorlds(c *gin.Context) {
 		return
 	}
 
-	var stakedWorlds []dto.StakedWorld
+	stakedWorlds := make([]dto.StakedWorld, 0)
 	for _, wallet := range wallets {
+		if len(*wallet) != 42 {
+			continue
+		}
+
 		stakes, err := n.db.GetStakesDB().GetStakesByWalletID(c, *wallet)
 		if err != nil {
 			err := errors.WithMessage(err, "Node: apiUsersGetStakedWorlds: failed to get stakes for world")
@@ -277,7 +282,8 @@ func (n *Node) apiUsersGetStakedWorlds(c *gin.Context) {
 				OwnerID:     world.GetOwnerID(),
 				Name:        utils.GetPTR(world.GetName()),
 				Description: utils.GetPTR(world.GetDescription()),
-				AvatarHash:  nil,
+				AvatarHash:  utils.GetPTR(world.GetWorld().GetWorldAvatar()),
+				WebsiteLink: utils.GetPTR(world.GetWorld().GetWebsiteLink()),
 			}
 			stakedWorlds = append(stakedWorlds, stakedWorld)
 		}
@@ -325,9 +331,13 @@ func (n *Node) apiUsersTopStakers(c *gin.Context) {
 
 			profile := loadedUser.GetProfile()
 			var userName *string
+			var avatarHash *string
 			if profile != nil {
 				if profile.Name != nil {
 					userName = profile.Name
+				}
+				if profile.AvatarHash != nil {
+					avatarHash = profile.AvatarHash
 				}
 			}
 
@@ -335,7 +345,7 @@ func (n *Node) apiUsersTopStakers(c *gin.Context) {
 				UserID:     loadedUser.GetID(),
 				Name:       userName,
 				StakeCount: utils.GetPTR(stake.Count),
-				AvatarHash: nil,
+				AvatarHash: avatarHash,
 			}
 
 			topStakers = append(topStakers, topStaker)
