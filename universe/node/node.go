@@ -307,7 +307,7 @@ func (n *Node) Run() error {
 	return nil
 }
 
-func (n *Node) Listener(bcName string, events []*harvester.UpdateEvent, stakeEvents []*harvester.StakeEvent, nftEvent []*harvester.NftEvent) {
+func (n *Node) Listener(bcName string, events []*harvester.UpdateEvent, stakeEvents []*harvester.StakeEvent, nftEvent []*harvester.NftEvent) error {
 	fmt.Printf("Table Listener: \n")
 	for k, v := range events {
 		fmt.Printf("%+v %+v %+v %+v \n", k, v.Wallet, v.Contract, v.Amount.String())
@@ -320,7 +320,7 @@ func (n *Node) Listener(bcName string, events []*harvester.UpdateEvent, stakeEve
 
 				user, err := n.db.GetUsersDB().GetUserByWallet(n.ctx, event.To)
 				if user == nil || err != nil {
-					return
+					return nil
 				}
 
 				templateValue, _ := node.GetNodeAttributes().GetValue(
@@ -330,7 +330,7 @@ func (n *Node) Listener(bcName string, events []*harvester.UpdateEvent, stakeEve
 				var worldTemplate tree.WorldTemplate
 				err = utils.MapDecode(*templateValue, &worldTemplate)
 				if err != nil {
-					return
+					return errors.WithMessage(err, "failed to decode template")
 				}
 
 				objectName := "Odyssey#" + strconv.FormatUint(seqID, 10)
@@ -339,13 +339,16 @@ func (n *Node) Listener(bcName string, events []*harvester.UpdateEvent, stakeEve
 				worldTemplate.ObjectName = &objectName
 				worldTemplate.OwnerID = &user.UserID
 
+				n.log.Debugf("Adding odyssey for: %s...", event.OdysseyID)
 				_, err = tree.AddWorldFromTemplate(&worldTemplate, true)
 				if err != nil {
-					return
+					return errors.WithMessage(err, "failed to add world from template")
 				}
 			}
 		}
 	}
+
+	return nil
 }
 
 func (n *Node) Stop() error {
