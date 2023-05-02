@@ -319,7 +319,7 @@ func (n *Node) Listener(bcName string, events []*harvester.UpdateEvent, stakeEve
 				seqID := utils.UMIDToSEQ(event.OdysseyID)
 
 				user, err := n.db.GetUsersDB().GetUserByWallet(n.ctx, event.To)
-				if err != nil {
+				if user == nil || err != nil {
 					return
 				}
 
