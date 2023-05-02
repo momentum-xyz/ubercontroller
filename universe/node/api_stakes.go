@@ -8,6 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
+	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils"
@@ -47,21 +49,47 @@ func (n *Node) apiGetMyStakes(c *gin.Context) {
 		return
 	}
 
-	result := make([]*dto.Stake, 0)
+	stakes := make([]*dto.Stake, 0)
 	for _, w := range wallets {
 		if len(*w) != 42 {
 			continue
 		}
+
 		r, err := n.db.GetStakesDB().GetStakes(c, utils.HexToAddress(*w))
 		if err != nil {
 			err := errors.WithMessagef(err, "Node: apiUsersGetMe: can not get stakes for wallet:%s", *w)
 			api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, n.log)
 			return
 		}
-		result = append(result, r...)
+
+		for _, foundStake := range stakes {
+			if foundStake.Amount == "0" {
+				foundStake.Amount = ""
+			}
+
+			object, ok := n.GetObjectFromAllObjects(foundStake.ObjectID)
+			if !ok {
+				err := errors.New("Node: apiUsersGetMe: failed to get object")
+				api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_object", err, n.log)
+				return
+			}
+
+			pluginID := universe.GetSystemPluginID()
+			attributeID := entry.NewAttributeID(pluginID, universe.ReservedAttributes.Object.WorldAvatar.Name)
+			imageValue, _ := object.GetObjectAttributes().GetValue(attributeID)
+
+			worldAvatarHash := ""
+			if imageValue != nil {
+				worldAvatarHash = utils.GetFromAnyMap(*imageValue, universe.ReservedAttributes.Object.WorldAvatar.Key, "")
+			}
+
+			foundStake.AvatarHash = worldAvatarHash
+		}
+
+		stakes = append(stakes, r...)
 	}
 
-	c.JSON(http.StatusOK, result)
+	c.JSON(http.StatusOK, stakes)
 }
 
 // @Summary Get current user's wallets list

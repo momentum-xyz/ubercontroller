@@ -407,9 +407,10 @@ type Stake struct {
 	Name         string    `json:"name"`
 	WalletID     string    `json:"wallet_id"`
 	BlockchainID umid.UMID `json:"blockchain_id"`
-	Amount       string    `json:"amount"`
+	Amount       string    `json:"amount,omitempty"`
 	Reward       string    `json:"reward"`
 	LastComment  string    `json:"last_comment"`
+	AvatarHash   string    `json:"avatar_hash"`
 	UpdatedAt    time.Time `json:"updated_at"`
 }
 
