@@ -315,7 +315,6 @@ func (n *Node) Listener(bcName string, events []*harvester.UpdateEvent, stakeEve
 	if nftEvent != nil && len(nftEvent) > 0 {
 		for _, event := range nftEvent {
 			if event.To != (ethCommon.Address{}).Hex() {
-				node := universe.GetNode()
 				seqID := utils.UMIDToSEQ(event.OdysseyID)
 
 				user, err := n.db.GetUsersDB().GetUserByWallet(n.ctx, event.To)
@@ -323,7 +322,7 @@ func (n *Node) Listener(bcName string, events []*harvester.UpdateEvent, stakeEve
 					return nil
 				}
 
-				templateValue, _ := node.GetNodeAttributes().GetValue(
+				templateValue, _ := n.GetNodeAttributes().GetValue(
 					entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Node.WorldTemplate.Name),
 				)
 
