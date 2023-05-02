@@ -180,13 +180,13 @@ func UMIDToSEQ(id umid.UMID) uint64 {
 	for i := 0; i < 16; i++ {
 		buf[i] = id[i] &^ MASK_V8[i]
 	}
-	return binary.LittleEndian.Uint64(buf[8:])
+	return binary.BigEndian.Uint64(buf[8:])
 }
 
 func SEQtoUMID(s uint64) umid.UMID {
 	id := umid.Nil
 	var seq [16]byte
-	binary.LittleEndian.PutUint64(seq[8:], s)
+	binary.BigEndian.PutUint64(seq[8:], s)
 	for i := 0; i < 16; i++ {
 		id[i] = seq[i] | MASK_V8[i]
 	}
