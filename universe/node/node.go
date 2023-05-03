@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
-	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
-	"github.com/momentum-xyz/ubercontroller/universe/user"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
-
+	ethCommon "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 	influx_api "github.com/influxdata/influxdb-client-go/v2/api"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -20,14 +19,21 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
+	"github.com/momentum-xyz/ubercontroller/harvester"
+	"github.com/momentum-xyz/ubercontroller/harvester/arbitrum_nova_adapter"
 	"github.com/momentum-xyz/ubercontroller/mplugin"
 	"github.com/momentum-xyz/ubercontroller/seed"
 	"github.com/momentum-xyz/ubercontroller/types"
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/tree"
 	"github.com/momentum-xyz/ubercontroller/universe/object"
 	"github.com/momentum-xyz/ubercontroller/universe/streamchat"
+	"github.com/momentum-xyz/ubercontroller/universe/user"
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 var _ universe.Node = (*Node)(nil)
@@ -250,6 +256,38 @@ func (n *Node) Run() error {
 	}
 	n.SetEnabled(true)
 
+	//harvester.Initialise(ctx, log, cfg, pool)
+	//if cfg.Arbitrum.ArbitrumMOMTokenAddress != "" {
+	//	arbitrumAdapter := arbitrum_nova_adapter.NewArbitrumNovaAdapter(cfg)
+	//	arbitrumAdapter.Run()
+	//	if err := harvester.GetInstance().RegisterAdapter(arbitrumAdapter); err != nil {
+	//		return errors.WithMessage(err, "failed to register arbitrum adapter")
+	//	}
+	//}
+	//err = harvester.SubscribeAllWallets(ctx, harvester.GetInstance(), cfg, pool)
+	//if err != nil {
+	//	log.Error(err)
+	//}
+
+	/**
+	Simplified version of harvester
+	*/
+	if n.cfg.Arbitrum.ArbitrumMOMTokenAddress != "" {
+		adapter := arbitrum_nova_adapter.NewArbitrumNovaAdapter(n.cfg)
+		adapter.Run()
+
+		logger, _ := zap.NewProduction()
+		pgConfig, err := n.cfg.Postgres.GenConfig(logger)
+		pool, err := pgxpool.ConnectConfig(context.Background(), pgConfig)
+		if err != nil {
+			log.Fatal("failed to create db pool")
+		}
+		defer pool.Close()
+
+		t := harvester.NewTable2(pool, adapter, n.Listener)
+		t.Run()
+	}
+
 	// in goroutine for graceful shutdown
 	go func() {
 		if err := n.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -264,6 +302,54 @@ func (n *Node) Run() error {
 
 	if err := n.httpServer.Shutdown(ctx); err != nil {
 		return errors.WithMessage(err, "failed to shutdown http server")
+	}
+
+	return nil
+}
+
+func (n *Node) Listener(bcName string, events []*harvester.UpdateEvent, stakeEvents []*harvester.StakeEvent, nftEvent []*harvester.NftEvent) error {
+	fmt.Printf("Table Listener: \n")
+	for k, v := range events {
+		fmt.Printf("%+v %+v %+v %+v \n", k, v.Wallet, v.Contract, v.Amount.String())
+	}
+	if nftEvent != nil && len(nftEvent) > 0 {
+		for _, event := range nftEvent {
+			if event.To != (ethCommon.Address{}).Hex() {
+				seqID := utils.UMIDToSEQ(event.OdysseyID)
+
+				user, err := n.db.GetUsersDB().GetUserByWallet(n.ctx, event.To)
+				if user == nil || err != nil {
+					return nil
+				}
+
+				world, _ := n.GetObjectFromAllObjects(event.OdysseyID)
+				if world != nil {
+					return errors.WithMessage(err, "world already exists")
+				}
+
+				templateValue, _ := n.GetNodeAttributes().GetValue(
+					entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Node.WorldTemplate.Name),
+				)
+
+				var worldTemplate tree.WorldTemplate
+				err = utils.MapDecode(*templateValue, &worldTemplate)
+				if err != nil {
+					return errors.WithMessage(err, "failed to decode template")
+				}
+
+				objectName := "Odyssey#" + strconv.FormatUint(seqID, 10)
+
+				worldTemplate.ObjectID = &event.OdysseyID
+				worldTemplate.ObjectName = &objectName
+				worldTemplate.OwnerID = &user.UserID
+
+				n.log.Debugf("Adding odyssey for: %s...", event.OdysseyID)
+				_, err = tree.AddWorldFromTemplate(&worldTemplate, true)
+				if err != nil {
+					return errors.WithMessage(err, "failed to add world from template")
+				}
+			}
+		}
 	}
 
 	return nil
