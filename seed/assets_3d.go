@@ -27,7 +27,7 @@ func seedAssets3d(ctx context.Context, node universe.Node) error {
 			Options:   &entry.Asset3dOptions{},
 			Meta: &entry.Asset3dMeta{
 				"name":     "Bucky with image",
-				"type":     dto.GLTFAsset3dType,
+				"type":     dto.BasicAsset3dType,
 				"category": "basic",
 			},
 		},
@@ -36,7 +36,7 @@ func seedAssets3d(ctx context.Context, node universe.Node) error {
 			Options:   &entry.Asset3dOptions{},
 			Meta: &entry.Asset3dMeta{
 				"name":     "Capsule with image",
-				"type":     dto.GLTFAsset3dType,
+				"type":     dto.BasicAsset3dType,
 				"category": "basic",
 			},
 		},
@@ -45,7 +45,7 @@ func seedAssets3d(ctx context.Context, node universe.Node) error {
 			Options:   &entry.Asset3dOptions{},
 			Meta: &entry.Asset3dMeta{
 				"name":     "Cone with image",
-				"type":     dto.GLTFAsset3dType,
+				"type":     dto.BasicAsset3dType,
 				"category": "basic",
 			},
 		},
@@ -54,7 +54,7 @@ func seedAssets3d(ctx context.Context, node universe.Node) error {
 			Options:   &entry.Asset3dOptions{},
 			Meta: &entry.Asset3dMeta{
 				"name":     "Cube with image",
-				"type":     dto.GLTFAsset3dType,
+				"type":     dto.BasicAsset3dType,
 				"category": "basic",
 			},
 		},
@@ -63,7 +63,7 @@ func seedAssets3d(ctx context.Context, node universe.Node) error {
 			Options:   &entry.Asset3dOptions{},
 			Meta: &entry.Asset3dMeta{
 				"name":     "Cylinder with image",
-				"type":     dto.GLTFAsset3dType,
+				"type":     dto.BasicAsset3dType,
 				"category": "basic",
 			},
 		},
@@ -72,7 +72,7 @@ func seedAssets3d(ctx context.Context, node universe.Node) error {
 			Options:   &entry.Asset3dOptions{},
 			Meta: &entry.Asset3dMeta{
 				"name":     "Disc with image",
-				"type":     dto.GLTFAsset3dType,
+				"type":     dto.BasicAsset3dType,
 				"category": "basic",
 			},
 		},
@@ -81,7 +81,7 @@ func seedAssets3d(ctx context.Context, node universe.Node) error {
 			Options:   &entry.Asset3dOptions{},
 			Meta: &entry.Asset3dMeta{
 				"name":     "Dodeca with image",
-				"type":     dto.GLTFAsset3dType,
+				"type":     dto.BasicAsset3dType,
 				"category": "basic",
 			},
 		},
@@ -90,7 +90,7 @@ func seedAssets3d(ctx context.Context, node universe.Node) error {
 			Options:   &entry.Asset3dOptions{},
 			Meta: &entry.Asset3dMeta{
 				"name":     "Icosa with image",
-				"type":     dto.GLTFAsset3dType,
+				"type":     dto.BasicAsset3dType,
 				"category": "basic",
 			},
 		},
@@ -99,7 +99,7 @@ func seedAssets3d(ctx context.Context, node universe.Node) error {
 			Options:   &entry.Asset3dOptions{},
 			Meta: &entry.Asset3dMeta{
 				"name":     "Octo with image",
-				"type":     dto.GLTFAsset3dType,
+				"type":     dto.BasicAsset3dType,
 				"category": "basic",
 			},
 		},
@@ -108,7 +108,7 @@ func seedAssets3d(ctx context.Context, node universe.Node) error {
 			Options:   &entry.Asset3dOptions{},
 			Meta: &entry.Asset3dMeta{
 				"name":     "Quad with image",
-				"type":     dto.GLTFAsset3dType,
+				"type":     dto.BasicAsset3dType,
 				"category": "basic",
 			},
 		},
@@ -117,7 +117,7 @@ func seedAssets3d(ctx context.Context, node universe.Node) error {
 			Options:   &entry.Asset3dOptions{},
 			Meta: &entry.Asset3dMeta{
 				"name":     "Sphere with image",
-				"type":     dto.GLTFAsset3dType,
+				"type":     dto.BasicAsset3dType,
 				"category": "basic",
 			},
 		},
@@ -126,7 +126,7 @@ func seedAssets3d(ctx context.Context, node universe.Node) error {
 			Options:   &entry.Asset3dOptions{},
 			Meta: &entry.Asset3dMeta{
 				"name":     "Torus with image",
-				"type":     dto.GLTFAsset3dType,
+				"type":     dto.BasicAsset3dType,
 				"category": "basic",
 			},
 		},

@@ -6,6 +6,7 @@ type Asset3dType int8
 const (
 	AddressableAssetType Asset3dType = iota
 	GLTFAsset3dType
+	BasicAsset3dType
 )
 
 type FlyToMeType string
