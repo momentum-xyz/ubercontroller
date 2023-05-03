@@ -188,6 +188,12 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 		},
 		{
 			pluginID:      universe.GetSystemPluginID(),
+			attributeName: "last_known_position",
+			description:   "Holds users last known position",
+			options:       nil,
+		},
+		{
+			pluginID:      universe.GetSystemPluginID(),
 			attributeName: "magic_links",
 			description:   "",
 			options:       nil,
