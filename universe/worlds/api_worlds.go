@@ -101,7 +101,7 @@ func (w *Worlds) apiWorldsGetMetaData(c *gin.Context) {
 		worldMeta := dto.WorldNFTMeta{
 			Name:        objectName,
 			Description: "",
-			Image:       "",
+			Image:       w.cfg.Common.RenderInternalURL + "/api/v3/render/get/bd6563cc9fceac3e1ed6fcad752c902d",
 			Attributes:  nil,
 		}
 
