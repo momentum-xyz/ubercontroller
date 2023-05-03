@@ -320,12 +320,13 @@ func (n *Node) Listener(bcName string, events []*harvester.UpdateEvent, stakeEve
 				user, err := n.db.GetUsersDB().GetUserByWallet(n.ctx, event.To)
 				if user == nil || err != nil {
 					n.log.Infof("NFT %d orphan, owner user not found yet.", seqID)
-					return nil
+					continue
 				}
 
 				world, _ := n.GetObjectFromAllObjects(event.OdysseyID)
 				if world != nil {
-					return errors.WithMessage(err, "world already exists")
+					n.log.Infof("NFT %d world already exists", seqID)
+					continue
 				}
 
 				templateValue, _ := n.GetNodeAttributes().GetValue(
