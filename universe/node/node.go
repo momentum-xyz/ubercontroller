@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
 
-	ethCommon "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 	influx_api "github.com/influxdata/influxdb-client-go/v2/api"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -24,11 +22,9 @@ import (
 	"github.com/momentum-xyz/ubercontroller/mplugin"
 	"github.com/momentum-xyz/ubercontroller/seed"
 	"github.com/momentum-xyz/ubercontroller/types"
-	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
-	"github.com/momentum-xyz/ubercontroller/universe/logic/tree"
 	"github.com/momentum-xyz/ubercontroller/universe/object"
 	"github.com/momentum-xyz/ubercontroller/universe/streamchat"
 	"github.com/momentum-xyz/ubercontroller/universe/user"
@@ -302,56 +298,6 @@ func (n *Node) Run() error {
 
 	if err := n.httpServer.Shutdown(ctx); err != nil {
 		return errors.WithMessage(err, "failed to shutdown http server")
-	}
-
-	return nil
-}
-
-func (n *Node) Listener(bcName string, events []*harvester.UpdateEvent, stakeEvents []*harvester.StakeEvent, nftEvent []*harvester.NftEvent) error {
-	fmt.Printf("Table Listener: \n")
-	for k, v := range events {
-		fmt.Printf("%+v %+v %+v %+v \n", k, v.Wallet, v.Contract, v.Amount.String())
-	}
-	if nftEvent != nil && len(nftEvent) > 0 {
-		for _, event := range nftEvent {
-			if event.To != (ethCommon.Address{}).Hex() {
-				seqID := utils.UMIDToSEQ(event.OdysseyID)
-
-				user, err := n.db.GetUsersDB().GetUserByWallet(n.ctx, event.To)
-				if user == nil || err != nil {
-					n.log.Infof("NFT %d orphan, owner user not found yet.", seqID)
-					continue
-				}
-
-				world, _ := n.GetObjectFromAllObjects(event.OdysseyID)
-				if world != nil {
-					n.log.Infof("NFT %d world already exists", seqID)
-					continue
-				}
-
-				templateValue, _ := n.GetNodeAttributes().GetValue(
-					entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Node.WorldTemplate.Name),
-				)
-
-				var worldTemplate tree.WorldTemplate
-				err = utils.MapDecode(*templateValue, &worldTemplate)
-				if err != nil {
-					return errors.WithMessage(err, "failed to decode template")
-				}
-
-				objectName := "Odyssey#" + strconv.FormatUint(seqID, 10)
-
-				worldTemplate.ObjectID = &event.OdysseyID
-				worldTemplate.ObjectName = &objectName
-				worldTemplate.OwnerID = &user.UserID
-
-				n.log.Debugf("Adding odyssey for: %s...", event.OdysseyID)
-				_, err = tree.AddWorldFromTemplate(&worldTemplate, true)
-				if err != nil {
-					return errors.WithMessage(err, "failed to add world from template")
-				}
-			}
-		}
 	}
 
 	return nil

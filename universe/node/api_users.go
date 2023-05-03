@@ -474,6 +474,10 @@ func (n *Node) apiGetOrCreateUserFromWallet(ctx context.Context, wallet string) 
 		return nil, http.StatusInternalServerError, errors.WithMessage(err, "failed to create user from wallet meta")
 	}
 
+	if err := n.checkNFTWorld(ctx, userEntry, wallet); err != nil {
+		return nil, 0, errors.WithMessage(err, "NFT world check")
+	}
+
 	return userEntry, 0, nil
 }
 

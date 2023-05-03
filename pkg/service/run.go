@@ -36,6 +36,7 @@ import (
 	assets3dDB "github.com/momentum-xyz/ubercontroller/database/assets_3d"
 	attributesTypeDB "github.com/momentum-xyz/ubercontroller/database/attribute_types"
 	commonDB "github.com/momentum-xyz/ubercontroller/database/common"
+	nftsDB "github.com/momentum-xyz/ubercontroller/database/nfts"
 	nodeAttributesDB "github.com/momentum-xyz/ubercontroller/database/node_attributes"
 	nodesDB "github.com/momentum-xyz/ubercontroller/database/nodes"
 	objectAttributesDB "github.com/momentum-xyz/ubercontroller/database/object_attributes"
@@ -198,6 +199,7 @@ func createDB(conn *pgxpool.Pool) (database.DB, error) {
 		userAttributesDB.NewDB(conn, common),
 		userUserAttributesDB.NewDB(conn, common),
 		stakes.NewDB(conn),
+		nftsDB.NewDB(conn),
 	), nil
 }
 

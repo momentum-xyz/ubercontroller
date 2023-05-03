@@ -32,6 +32,7 @@ type DB interface {
 	GetUserAttributesDB() UserAttributesDB
 	GetUserUserAttributesDB() UserUserAttributesDB
 	GetStakesDB() StakesDB
+	GetNFTsDB() NFTsDB
 }
 
 type CommonDB interface {
@@ -462,4 +463,8 @@ type StakesDB interface {
 		amount *big.Int,
 		comment string,
 		kind uint8) error
+}
+
+type NFTsDB interface {
+	ListNewByWallet(ctx context.Context, w string) ([]*entry.NFT, error)
 }
