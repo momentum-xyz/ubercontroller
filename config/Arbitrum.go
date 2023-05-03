@@ -15,6 +15,5 @@ func (a *Arbitrum) Init() {
 	a.ArbitrumStakeContractAddress = "0x3A85e361917180567F6a0fb8c68B2b5065126aCA"
 	a.ArbitrumNFTContractAddress = "0xa662897d53ff3cFA9cb44Ed635dB6e152C68C677"
 	a.ArbitrumRPCURL = "https://bcdev.antst.net:8547"
-	//a.ArbitrumRPCURL = "https://nova.arbitrum.io/rpc"
 	a.ArbitrumWSURL = "wss://bcdev.antst.net:8548"
 }
