@@ -55,16 +55,16 @@ func (n *Node) apiGetMyStakes(c *gin.Context) {
 			continue
 		}
 
-		r, err := n.db.GetStakesDB().GetStakes(c, utils.HexToAddress(*w))
+		foundStakes, err := n.db.GetStakesDB().GetStakes(c, utils.HexToAddress(*w))
 		if err != nil {
 			err := errors.WithMessagef(err, "Node: apiUsersGetMe: can not get stakes for wallet:%s", *w)
 			api.AbortRequest(c, http.StatusInternalServerError, "server_error", err, n.log)
 			return
 		}
 
-		for _, foundStake := range stakes {
+		for _, foundStake := range foundStakes {
 			if foundStake.Amount == "0" {
-				foundStake.Amount = ""
+				continue
 			}
 
 			object, ok := n.GetObjectFromAllObjects(foundStake.ObjectID)
@@ -84,9 +84,8 @@ func (n *Node) apiGetMyStakes(c *gin.Context) {
 			}
 
 			foundStake.AvatarHash = worldAvatarHash
+			stakes = append(stakes, foundStake)
 		}
-
-		stakes = append(stakes, r...)
 	}
 
 	c.JSON(http.StatusOK, stakes)
