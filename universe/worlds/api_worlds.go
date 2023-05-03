@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -94,9 +95,17 @@ func (w *Worlds) apiWorldsGetMetaData(c *gin.Context) {
 
 	world, ok := w.GetWorld(worldID)
 	if !ok || world == nil {
-		err := errors.New("Worlds: apiWorldsGetMetaData: world not found")
-		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
-		return
+		seqID := utils.UMIDToSEQ(worldID)
+		objectName := "Odyssey#" + strconv.FormatUint(seqID, 10)
+
+		worldMeta := dto.WorldNFTMeta{
+			Name:        objectName,
+			Description: "",
+			Image:       w.cfg.Common.RenderInternalURL + "/api/v3/render/get/bd6563cc9fceac3e1ed6fcad752c902d",
+			Attributes:  nil,
+		}
+
+		c.JSON(http.StatusOK, worldMeta)
 	}
 
 	attributes := make([]dto.NFTAttributes, 0)
