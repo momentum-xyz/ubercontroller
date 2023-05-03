@@ -319,6 +319,7 @@ func (n *Node) Listener(bcName string, events []*harvester.UpdateEvent, stakeEve
 
 				user, err := n.db.GetUsersDB().GetUserByWallet(n.ctx, event.To)
 				if user == nil || err != nil {
+					n.log.Infof("NFT %d orphan, owner user not found yet.", seqID)
 					return nil
 				}
 
