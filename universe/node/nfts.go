@@ -2,7 +2,6 @@ package node
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 
 	ethCommon "github.com/ethereum/go-ethereum/common"
@@ -12,12 +11,15 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/logic/tree"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/pkg/errors"
+	"go.uber.org/zap/zapcore"
 )
 
 func (n *Node) Listener(bcName string, events []*harvester.UpdateEvent, stakeEvents []*harvester.StakeEvent, nftEvent []*harvester.NftEvent) error {
-	fmt.Printf("Table Listener: \n")
-	for k, v := range events {
-		fmt.Printf("%+v %+v %+v %+v \n", k, v.Wallet, v.Contract, v.Amount.String())
+	if n.log.Level() == zapcore.DebugLevel {
+		n.log.Debugln("Table Listener:")
+		for k, v := range events {
+			n.log.Debugf("%+v %+v %+v %+v \n", k, v.Wallet, v.Contract, v.Amount.String())
+		}
 	}
 	if nftEvent != nil && len(nftEvent) > 0 {
 		for _, event := range nftEvent {

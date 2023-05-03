@@ -212,7 +212,7 @@ func (t *Table2) ProcessLogs(blockNumber uint64, logs []any) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	t.Display()
+	//t.Display()
 }
 
 func (t *Table2) listener(blockNumber uint64, diffs []*BCDiff, stakes []*BCStake) {
