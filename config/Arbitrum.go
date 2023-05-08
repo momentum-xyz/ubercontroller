@@ -12,7 +12,7 @@ type Arbitrum struct {
 func (a *Arbitrum) Init() {
 	a.ArbitrumMOMTokenAddress = "0x567d4e8264dC890571D5392fDB9fbd0e3FCBEe56"
 	a.ArbitrumDADTokenAddress = "0x0244BbA6fcB25eFed05955C4A1B86A458986D2e0"
-	a.ArbitrumStakeContractAddress = "0xb187f16656C30580bB0B0b797DaDB9CFab766156"
+	a.ArbitrumStakeContractAddress = "0x047C0A154271498ee718162b718b3D4F464855e0"
 	a.ArbitrumNFTContractAddress = "0x97E0B10D89a494Eb5cfFCc72853FB0750BD64AcD"
 	a.ArbitrumRPCURL = "https://bcdev.antst.net:8547"
 	a.ArbitrumWSURL = "wss://bcdev.antst.net:8548"
