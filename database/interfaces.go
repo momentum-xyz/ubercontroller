@@ -2,7 +2,10 @@ package database
 
 import (
 	"context"
+	"math/big"
 
+	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
@@ -28,6 +31,8 @@ type DB interface {
 	GetObjectUserAttributesDB() ObjectUserAttributesDB
 	GetUserAttributesDB() UserAttributesDB
 	GetUserUserAttributesDB() UserUserAttributesDB
+	GetStakesDB() StakesDB
+	GetNFTsDB() NFTsDB
 }
 
 type CommonDB interface {
@@ -38,7 +43,9 @@ type NodesDB interface {
 }
 
 type WorldsDB interface {
-	GetWorldIDs(ctx context.Context) ([]umid.UMID, error)
+	GetAllWorldIDs(ctx context.Context) ([]umid.UMID, error)
+	GetWorldIDs(ctx context.Context, sortType universe.SortType, limit string) ([]umid.UMID, error)
+	CheckIsWorldFirstHundred(ctx context.Context, objectTypeID umid.UMID, objectID umid.UMID) (*entry.Object, error)
 	GetWorlds(ctx context.Context) ([]*entry.Object, error)
 }
 
@@ -46,6 +53,7 @@ type ObjectsDB interface {
 	GetObjectByID(ctx context.Context, objectID umid.UMID) (*entry.Object, error)
 	GetObjectIDsByParentID(ctx context.Context, parentID umid.UMID) ([]umid.UMID, error)
 	GetObjectsByParentID(ctx context.Context, parentID umid.UMID) ([]*entry.Object, error)
+	GetObjectsByOwnerID(ctx context.Context, ownerID umid.UMID) ([]*entry.Object, error)
 
 	UpsertObject(ctx context.Context, object *entry.Object) error
 	UpsertObjects(ctx context.Context, objects []*entry.Object) error
@@ -65,10 +73,14 @@ type ObjectsDB interface {
 type UsersDB interface {
 	GetUserByID(ctx context.Context, userID umid.UMID) (*entry.User, error)
 	GetUsersByIDs(ctx context.Context, userIDs []umid.UMID) ([]*entry.User, error)
+	GetAllUsers(ctx context.Context, userTypeID umid.UMID) ([]*entry.User, error)
 	GetUserByWallet(ctx context.Context, wallet string) (*entry.User, error)
 	GetUserWalletByUserID(ctx context.Context, userID umid.UMID) (*string, error)
+	GetUserWalletsByUserID(ctx context.Context, userID umid.UMID) ([]*string, error)
 	GetUserProfileByUserID(ctx context.Context, userID umid.UMID) (*entry.UserProfile, error)
 	GetUsersByUserType(ctx context.Context, userTypeID umid.UMID) ([]*entry.User, error)
+
+	GetUserIDs(ctx context.Context, sortType universe.SortType, limit string, userTypeID umid.UMID) ([]umid.UMID, error)
 
 	CheckIsUserExistsByName(ctx context.Context, name string) (bool, error)
 	CheckIsUserExistsByWallet(ctx context.Context, wallet string) (bool, error)
@@ -323,6 +335,7 @@ type ObjectUserAttributesDB interface {
 type UserAttributesDB interface {
 	GetUserAttributes(ctx context.Context) ([]*entry.UserAttribute, error)
 	GetUserAttributeByID(ctx context.Context, userAttributeID entry.UserAttributeID) (*entry.UserAttribute, error)
+	GetUserAttributeByWallet(ctx context.Context, wallet string) (*entry.UserAttribute, error)
 	GetUserAttributesByUserID(ctx context.Context, userID umid.UMID) ([]*entry.UserAttribute, error)
 	GetUserAttributePayloadByID(ctx context.Context, userAttributeID entry.UserAttributeID) (
 		*entry.AttributePayload, error,
@@ -434,4 +447,24 @@ type UserUserAttributesDB interface {
 	RemoveUserUserAttributesByPluginIDAndSourceUserIDAndTargetUserID(
 		ctx context.Context, pluginID umid.UMID, sourceUserID umid.UMID, targetUserID umid.UMID,
 	) error
+}
+
+type StakesDB interface {
+	GetStakesByWalletID(ctx context.Context, walletID string) ([]*entry.Stake, error)
+	GetStakesByWorldID(ctx context.Context, worldID umid.UMID) ([]*entry.Stake, error)
+	GetStakeByLatestStake(ctx context.Context) (*string, error)
+	GetStakes(ctx context.Context, walletID []byte) ([]*dto.Stake, error)
+	GetStakesWithCount(ctx context.Context) ([]*entry.Stake, error)
+	GetWalletsInfo(ctx context.Context, walletIDs [][]byte) ([]*dto.WalletInfo, error)
+	InsertIntoPendingStakes(ctx context.Context, transactionID []byte,
+		objectID umid.UMID,
+		walletID []byte,
+		blockchainID umid.UMID,
+		amount *big.Int,
+		comment string,
+		kind uint8) error
+}
+
+type NFTsDB interface {
+	ListNewByWallet(ctx context.Context, w string) ([]*entry.NFT, error)
 }

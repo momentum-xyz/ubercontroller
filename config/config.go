@@ -22,6 +22,7 @@ type Config struct {
 	Influx     Influx     `yaml:"influx"`
 	UIClient   UIClient   `yaml:"ui_client"`
 	Streamchat Streamchat `yaml:"streamchat"`
+	Arbitrum   Arbitrum   `yaml:"arbitrum"`
 }
 
 const configFileName = "config.yaml"
@@ -35,6 +36,7 @@ func (x *Config) Init() {
 	x.UIClient.Init()
 	x.Influx.Init()
 	x.Streamchat.Init()
+	x.Arbitrum.Init()
 }
 
 func defConfig() *Config {

@@ -2,7 +2,6 @@ package user_attributes
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"sync"
 
 	"github.com/georgysavva/scany/pgxscan"
@@ -13,11 +12,16 @@ import (
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 const (
-	getUserAttributesQuery           = `SELECT * FROM user_attribute;`
-	getUserAttributeByIDQuery        = `SELECT * FROM user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
+	getUserAttributesQuery        = `SELECT * FROM user_attribute;`
+	getUserAttributeByIDQuery     = `SELECT * FROM user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
+	getUserAttributeByWalletQuery = `SELECT * FROM user_attribute, 
+    									LATERAL jsonb_array_elements_text(value->'wallet') 
+    									AS wallet_address
+										WHERE UPPER(wallet_address) = UPPER($1) LIMIT 1;`
 	getUserAttributesByUserIDQuery   = `SELECT * FROM user_attribute WHERE user_id = $1;`
 	getUserAttributePayloadByIDQuery = `SELECT value, options FROM user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
 	getUserAttributeValueByIDQuery   = `SELECT value FROM user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND user_id = $3;`
@@ -88,6 +92,20 @@ func (db *DB) GetUserAttributeByID(
 	if err := pgxscan.Get(
 		ctx, db.conn, &attribute, getUserAttributeByIDQuery,
 		userAttributeID.PluginID, userAttributeID.Name, userAttributeID.UserID,
+	); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+
+	return &attribute, nil
+}
+
+func (db *DB) GetUserAttributeByWallet(
+	ctx context.Context, wallet string,
+) (*entry.UserAttribute, error) {
+	var attribute entry.UserAttribute
+
+	if err := pgxscan.Get(
+		ctx, db.conn, &attribute, getUserAttributeByWalletQuery, wallet,
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}

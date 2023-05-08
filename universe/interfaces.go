@@ -93,11 +93,14 @@ type Node interface {
 	GetUserUserAttributes() UserUserAttributes
 	GetObjectUserAttributes() ObjectUserAttributes
 
-	CreateUsers(ctx context.Context, users ...*entry.User) error // TODO: refactor, place Users next to Nodes in a universe
+	CreateUsers(
+		ctx context.Context, users ...*entry.User,
+	) error // TODO: refactor, place Users next to Nodes in a universe
 
 	AddAPIRegister(register APIRegister)
 
 	WriteInfluxPoint(point *influxWrite.Point) error
+	LoadUser(userID umid.UMID) (User, error)
 }
 
 type Worlds interface {
@@ -107,11 +110,15 @@ type Worlds interface {
 	APIRegister
 
 	CreateWorld(worldID umid.UMID) (World, error)
+
 	GetWorld(worldID umid.UMID) (World, bool)
 	GetWorlds() map[umid.UMID]World
+
 	FilterWorlds(predicateFn WorldsFilterPredicateFn) map[umid.UMID]World
+
 	AddWorld(world World, updateDB bool) error
 	AddWorlds(worlds []World, updateDB bool) error
+
 	RemoveWorld(world World, updateDB bool) (bool, error)
 	RemoveWorlds(worlds []World, updateDB bool) (bool, error)
 }
@@ -124,6 +131,11 @@ type World interface {
 	ToObject() Object
 
 	GetSettings() *WorldSettings
+
+	GetTotalStake() uint8
+
+	GetWorldAvatar() string
+	GetWebsiteLink() string
 
 	GetCalendar() Calendar
 
@@ -145,6 +157,8 @@ type Object interface {
 
 	GetName() string
 	SetName(name string, updateDB bool) error
+
+	GetDescription() string
 
 	GetParent() Object
 	SetParent(parent Object, updateDB bool) error
@@ -198,7 +212,7 @@ type Object interface {
 	SendAttributes(sendFn func(*websocket.PreparedMessage), recursive bool)
 	SendAllAutoAttributes(sendFn func(msg *websocket.PreparedMessage) error, recursive bool)
 
-	LockUnityObject(user User, state uint32) bool
+	LockUIObject(user User, state uint32) bool
 }
 
 type User interface {
@@ -226,6 +240,8 @@ type User interface {
 
 	//GetPosBuffer() []byte
 	GetLastPosTime() int64
+	GetLastSendPosTime() int64
+	SetLastSendPosTime(int64)
 
 	Update() error
 	ReleaseSendBuffer()

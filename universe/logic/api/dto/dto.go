@@ -2,6 +2,9 @@
 package dto
 
 import (
+	"math/big"
+	"time"
+
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
@@ -10,7 +13,9 @@ import (
 
 type ExploreOptions []ExploreOption
 
-type SearchOptions map[string][]ExploreOption
+type SearchOptions []ExploreOption
+
+type UserSearchResults []UserSearchResult
 
 type Plugins map[umid.UMID]string
 
@@ -47,17 +52,63 @@ type Assets3dMeta map[umid.UMID]Asset3dMeta
 type Asset3dMeta *entry.Asset3dMeta
 
 type ExploreOption struct {
-	ID          umid.UMID       `json:"id"`
-	Name        string          `json:"name"`
-	Description string          `json:"description"`
-	SubObjects  []ExploreOption `json:"subObjects,omitempty"`
+	ID          umid.UMID `json:"id"`
+	Name        *string   `json:"name"`
+	Description *string   `json:"description"`
 }
 
-//type FlyToMe struct {
-//	Pilot     umid.UMID `json:"pilot"`
-//	PilotName string    `json:"pilot_name"`
-//	ObjectID  umid.UMID `json:"object_id"`
-//}
+type RecentWorld struct {
+	ID          umid.UMID `json:"id"`
+	OwnerID     umid.UMID `json:"owner_id"`
+	OwnerName   *string   `json:"owner_name"`
+	Description *string   `json:"description"`
+	StakeTotal  *string   `json:"stake_total,omitempty"`
+	Name        *string   `json:"name"`
+	WebsiteLink *string   `json:"website_link"`
+	AvatarHash  *string   `json:"avatarHash"`
+}
+
+type WorldDetails struct {
+	ID                 umid.UMID     `json:"id"`
+	OwnerID            umid.UMID     `json:"owner_id"`
+	OwnerName          *string       `json:"owner_name"`
+	Description        *string       `json:"description"`
+	StakeTotal         *string       `json:"stake_total,omitempty"`
+	Name               *string       `json:"name"`
+	CreatedAt          string        `json:"createdAt,omitempty"`
+	UpdatedAt          string        `json:"updatedAt,omitempty"`
+	AvatarHash         *string       `json:"avatarHash"`
+	WebsiteLink        *string       `json:"website_link"`
+	WorldStakers       []WorldStaker `json:"stakers"`
+	LastStakingComment *string       `json:"last_staking_comment"`
+}
+
+type WorldNFTMeta struct {
+	Name        string          `json:"name" binding:"required"`
+	Description string          `json:"description"`
+	Image       string          `json:"image"`
+	Attributes  []NFTAttributes `json:"attributes"`
+}
+
+type NFTAttributes struct {
+	TraitType string `json:"trait_type"`
+	Value     string `json:"value"`
+}
+
+type WorldStaker struct {
+	UserID     umid.UMID `json:"user_id"`
+	Name       *string   `json:"name"`
+	Stake      *string   `json:"stake,omitempty"`
+	AvatarHash *string   `json:"avatarHash"`
+}
+
+type TopStaker struct {
+	UserID     umid.UMID `json:"user_id"`
+	Name       *string   `json:"name"`
+	TotalStake *big.Int  `json:"total_stake,omitempty"`
+	StakeCount *uint8    `json:"stake_count,omitempty"`
+	AvatarHash *string   `json:"avatarHash"`
+}
 
 type Profile struct {
 	Bio         *string `json:"bio,omitempty"`
@@ -79,15 +130,29 @@ type HashResponse struct {
 }
 
 type User struct {
-	ID         string  `json:"id"`
-	UserTypeID string  `json:"userTypeId"`
-	Name       string  `json:"name"`
-	Wallet     *string `json:"wallet,omitempty"`
-	Profile    Profile `json:"profile"`
-	JWTToken   *string `json:"token,omitempty"`
-	CreatedAt  string  `json:"createdAt"`
-	UpdatedAt  string  `json:"updatedAt,omitempty"`
-	IsGuest    bool    `json:"isGuest"`
+	ID         umid.UMID `json:"id"`
+	UserTypeID umid.UMID `json:"userTypeId"`
+	Name       string    `json:"name"`
+	Wallet     *string   `json:"wallet,omitempty"`
+	Profile    Profile   `json:"profile"`
+	JWTToken   *string   `json:"token,omitempty"`
+	CreatedAt  string    `json:"createdAt"`
+	UpdatedAt  string    `json:"updatedAt,omitempty"`
+	IsGuest    bool      `json:"isGuest"`
+}
+
+type UserSearchResult struct {
+	ID      umid.UMID `json:"id"`
+	Name    *string   `json:"name,omitempty"`
+	Wallet  *string   `json:"wallet,omitempty"`
+	Profile Profile   `json:"profile,omitempty"`
+}
+
+type RecentUser struct {
+	ID      umid.UMID `json:"id"`
+	Name    *string   `json:"name,omitempty"`
+	Wallet  *string   `json:"wallet,omitempty"`
+	Profile Profile   `json:"profile,omitempty"`
 }
 
 type Object struct {
@@ -97,6 +162,25 @@ type Object struct {
 	Asset2dID    string          `json:"asset_2d_id"`
 	Asset3dID    string          `json:"asset_3d_id"`
 	Transform    cmath.Transform `json:"transform"`
+}
+
+type OwnedWorld struct {
+	ID          umid.UMID `json:"id"`
+	OwnerID     umid.UMID `json:"owner_id"`
+	OwnerName   *string   `json:"owner_name"`
+	Name        *string   `json:"name,omitempty"`
+	Description *string   `json:"description"`
+	WebsiteLink *string   `json:"website_link"`
+	AvatarHash  *string   `json:"avatarHash"`
+}
+
+type StakedWorld struct {
+	ID          umid.UMID `json:"id"`
+	OwnerID     umid.UMID `json:"owner_id"`
+	Name        *string   `json:"name,omitempty"`
+	Description *string   `json:"description"`
+	WebsiteLink *string   `json:"website_link"`
+	AvatarHash  *string   `json:"avatarHash"`
 }
 
 type Asset2d struct {
@@ -316,4 +400,28 @@ type Plugin struct {
 	SubTitle  *string `json:"subTitle,omitempty"`
 	ScriptURL string  `json:"scriptUrl"`
 	IconName  *string `json:"iconName,omitempty"`
+}
+
+type Stake struct {
+	ObjectID     umid.UMID `json:"object_id"`
+	Name         string    `json:"name"`
+	WalletID     string    `json:"wallet_id"`
+	BlockchainID umid.UMID `json:"blockchain_id"`
+	Amount       string    `json:"amount,omitempty"`
+	Reward       string    `json:"reward"`
+	LastComment  string    `json:"last_comment"`
+	AvatarHash   string    `json:"avatar_hash"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+type WalletInfo struct {
+	WalletID       string    `json:"wallet_id"`
+	ContractID     string    `json:"contract_id"`
+	Balance        string    `json:"balance"`
+	BlockchainName string    `json:"blockchain_name"`
+	UpdatedAt      time.Time `json:"updated_at"`
+	Reward         string    `json:"reward"`
+	Transferable   string    `json:"transferable"`
+	Staked         string    `json:"staked"`
+	Unbonding      string    `json:"unbonding"`
 }

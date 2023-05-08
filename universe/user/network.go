@@ -53,17 +53,7 @@ func (u *User) readPump() {
 	for {
 		messageType, message, err := u.conn.ReadMessage()
 		if err != nil {
-			closedByClient := false
-			if ce, ok := err.(*websocket.CloseError); ok {
-				switch ce.Code {
-				case websocket.CloseNormalClosure,
-					websocket.CloseGoingAway,
-					websocket.CloseNoStatusReceived:
-					closedByClient = true
-
-				}
-			}
-			if closedByClient {
+			if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway, websocket.CloseNoStatusReceived) {
 				u.log.Info(
 					errors.WithMessagef(err, "User: read pump: websocket closed by client: %s", u.GetID()),
 				)

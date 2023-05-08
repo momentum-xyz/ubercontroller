@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -38,20 +39,21 @@ type User struct {
 	//rotation     *cmath.Vec3 // going to data part to posMsgBuffer content for simple access
 	//posMsgBuffer []byte
 
-	lastPositionUpdateTimestamp int64
-	userType                    universe.UserType
-	log                         *zap.SugaredLogger
-	ctx                         context.Context
-	send                        chan *websocket.PreparedMessage
-	mu                          deadlock.RWMutex
-	object                      universe.Object
-	world                       universe.World
-	profile                     *entry.UserProfile
-	options                     *entry.UserOptions
-	bufferSends                 atomic.Bool
-	numSendsQueued              atomic.Int64
-	directLock                  sync.Mutex
-	offlineTimer                *generic.TimerSet[umid.UMID]
+	lastPositionUpdateTimestamp     int64
+	lastSendPositionUpdateTimestamp int64
+	userType                        universe.UserType
+	log                             *zap.SugaredLogger
+	ctx                             context.Context
+	send                            chan *websocket.PreparedMessage
+	mu                              deadlock.RWMutex
+	object                          universe.Object
+	world                           universe.World
+	profile                         *entry.UserProfile
+	options                         *entry.UserOptions
+	bufferSends                     atomic.Bool
+	numSendsQueued                  atomic.Int64
+	directLock                      sync.Mutex
+	offlineTimer                    *generic.TimerSet[umid.UMID]
 }
 
 func NewUser(id umid.UMID, db database.DB) *User {
@@ -81,6 +83,7 @@ func (u *User) SetTransform(t cmath.TransformNoScale) {
 }
 
 func (u *User) SetPosition(p cmath.Vec3) {
+	fmt.Printf("Set position for user %+v, as %+v\n", u.id, p)
 	u.transform.Position = p
 }
 
@@ -99,6 +102,9 @@ func (u *User) GetUserDefinition() *posbus.UserData {
 	guestUserTypeID, _ := common.GetGuestUserTypeID()
 	d.IsGuest = u.userType.GetID() == guestUserTypeID
 	d.Name = *u.profile.Name
+	if u.profile.AvatarHash != nil {
+		d.Avatar = *u.profile.AvatarHash
+	}
 	return d
 }
 
@@ -108,6 +114,14 @@ func (u *User) GetUserDefinition() *posbus.UserData {
 
 func (u *User) GetLastPosTime() int64 {
 	return u.lastPositionUpdateTimestamp
+}
+
+func (u *User) GetLastSendPosTime() int64 {
+	return u.lastSendPositionUpdateTimestamp
+}
+
+func (u *User) SetLastSendPosTime(i int64) {
+	u.lastSendPositionUpdateTimestamp = i
 }
 
 func (u *User) GetWorld() universe.World {

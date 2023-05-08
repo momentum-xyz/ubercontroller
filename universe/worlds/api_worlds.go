@@ -2,9 +2,11 @@ package worlds
 
 import (
 	"fmt"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
+	"math/big"
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -16,6 +18,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 // @Summary Get world online users
@@ -68,6 +71,308 @@ func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
 	userDTOs := converters.ToUserDTOs(userEntries, guestUserTypeID, false)
 
 	c.JSON(http.StatusOK, userDTOs)
+}
+
+// @Summary Get world nft meta data
+// @Schemes
+// @Description Returns a json object containing meta-data and traits
+// @Tags worlds
+// @Accept json
+// @Produce json
+// @Param worldID path string true "World UMID"
+// @Success 200 {array} dto.WorldNFTMeta
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/worlds/{object_id}/meta-data [get]
+func (w *Worlds) apiWorldsGetMetaData(c *gin.Context) {
+	worldID, err := umid.Parse(c.Param("objectID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Worlds: apiWorldsGetMetaData: failed to parse world umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
+		return
+	}
+
+	world, ok := w.GetWorld(worldID)
+	if !ok || world == nil {
+		seqID := utils.UMIDToSEQ(worldID)
+		objectName := "Odyssey#" + strconv.FormatUint(seqID, 10)
+
+		worldMeta := dto.WorldNFTMeta{
+			Name:        objectName,
+			Description: "",
+			Image:       w.cfg.Common.RenderInternalURL + "/api/v3/render/get/bd6563cc9fceac3e1ed6fcad752c902d",
+			Attributes:  nil,
+		}
+
+		c.JSON(http.StatusOK, worldMeta)
+	}
+
+	attributes := make([]dto.NFTAttributes, 0)
+
+	worldEntry := world.GetEntry()
+	checkedWorld, _ := w.db.GetWorldsDB().CheckIsWorldFirstHundred(w.ctx, worldEntry.ObjectTypeID, world.GetID())
+	if checkedWorld != nil {
+		attribute := dto.NFTAttributes{
+			TraitType: "type",
+			Value:     "origin",
+		}
+
+		attributes = append(attributes, attribute)
+	}
+
+	pluginID := universe.GetSystemPluginID()
+	attributeID := entry.NewAttributeID(pluginID, universe.ReservedAttributes.Object.WorldAvatar.Name)
+	imageValue, ok := world.GetObjectAttributes().GetValue(attributeID)
+	if !ok {
+		err := errors.New("Worlds: apiWorldsGetMetaData: failed to get image attribute")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_image_attribute", err, w.log)
+		return
+	}
+
+	var worldAvatarHash string
+	if imageValue != nil {
+		worldAvatarHash = utils.GetFromAnyMap(*imageValue, universe.ReservedAttributes.Object.WorldAvatar.Key, "")
+	}
+
+	worldMeta := dto.WorldNFTMeta{
+		Name:        world.GetName(),
+		Description: world.GetDescription(),
+		Image:       worldAvatarHash,
+		Attributes:  attributes,
+	}
+
+	c.JSON(http.StatusOK, worldMeta)
+}
+
+// @Summary Get world details
+// @Schemes
+// @Description Returns a world by ID and its details
+// @Tags worlds
+// @Accept json
+// @Produce json
+// @Param worldID path string true "World UMID"
+// @Success 200 {array} dto.WorldDetails
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/worlds/{object_id} [get]
+func (w *Worlds) apiWorldsGetDetails(c *gin.Context) {
+	worldID, err := umid.Parse(c.Param("objectID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Worlds: apiWorldsGetDetails: failed to parse world umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
+		return
+	}
+
+	world, ok := w.GetWorld(worldID)
+	if !ok || world == nil {
+		err := errors.New("Worlds: apiWorldsGetDetails: world not found")
+		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
+		return
+	}
+
+	node := universe.GetNode()
+	ownerID := world.GetOwnerID()
+	loadedUser, err := node.LoadUser(ownerID)
+	if err != nil {
+		err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to load user")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_load_user", err, w.log)
+		return
+	}
+
+	var ownerName *string
+	profile := loadedUser.GetProfile()
+	if profile != nil {
+		if profile.Name != nil {
+			ownerName = profile.Name
+		}
+	}
+
+	stakes, err := w.db.GetStakesDB().GetStakesByWorldID(c, worldID)
+	if err != nil {
+		err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to get stakes for world")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_stakes", err, w.log)
+		return
+	}
+
+	var worldStakers []dto.WorldStaker
+	var totalStake big.Int
+	if stakes != nil {
+		for _, stake := range stakes {
+			hexAddr := utils.AddressToHex(stake.WalletID)
+			if len(hexAddr) != 42 && !strings.HasPrefix(hexAddr, "0x") {
+				hexAddr = "0x" + hexAddr
+			} else if len(hexAddr) != 66 && !strings.HasPrefix(hexAddr, "0x") {
+				hexAddr = "0x" + hexAddr
+			}
+			user, _ := w.db.GetUsersDB().GetUserByWallet(w.ctx, hexAddr)
+
+			if user != nil {
+				loadedStaker, err := node.LoadUser(user.UserID)
+				if err != nil {
+					err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to load staker")
+					api.AbortRequest(c, http.StatusInternalServerError, "failed_to_load_staker", err, w.log)
+					return
+				}
+
+				stakerProfile := loadedStaker.GetProfile()
+				var stakerName *string
+				var avatarHash *string
+				if stakerProfile != nil {
+					if stakerProfile.Name != nil {
+						stakerName = stakerProfile.Name
+					}
+					if stakerProfile.AvatarHash != nil {
+						avatarHash = stakerProfile.AvatarHash
+					}
+				}
+
+				stakeAmt := (*big.Int)(stake.Amount)
+				stakeAmtStr := stakeAmt.String()
+				totalStake.Add(&totalStake, stakeAmt)
+
+				worldStaker := dto.WorldStaker{
+					UserID:     user.UserID,
+					Name:       stakerName,
+					Stake:      &stakeAmtStr,
+					AvatarHash: avatarHash,
+				}
+
+				worldStakers = append(worldStakers, worldStaker)
+			}
+		}
+	}
+
+	latestStakeComment, err := w.db.GetStakesDB().GetStakeByLatestStake(c)
+	if err != nil {
+		err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to get latest stake comment")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_latest_stake", err, w.log)
+		return
+	}
+
+	totalStakeStr := totalStake.String()
+	worldEntry := world.GetEntry()
+	worldDetails := dto.WorldDetails{
+		ID:                 world.GetID(),
+		OwnerID:            ownerID,
+		OwnerName:          ownerName,
+		Name:               utils.GetPTR(world.GetName()),
+		Description:        utils.GetPTR(world.GetDescription()),
+		StakeTotal:         &totalStakeStr,
+		CreatedAt:          worldEntry.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:          worldEntry.UpdatedAt.Format(time.RFC3339),
+		AvatarHash:         utils.GetPTR(world.GetWorldAvatar()),
+		WebsiteLink:        utils.GetPTR(world.GetWebsiteLink()),
+		WorldStakers:       worldStakers,
+		LastStakingComment: latestStakeComment,
+	}
+
+	c.JSON(http.StatusOK, worldDetails)
+}
+
+// @Summary Get latest worlds
+// @Schemes
+// @Description Returns a list of six latest created worlds
+// @Tags worlds
+// @Accept json
+// @Produce json
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/worlds [get]
+func (w *Worlds) apiWorldsGet(c *gin.Context) {
+	type InQuery struct {
+		Sort  string `form:"sort"`
+		Limit string `form:"limit"`
+	}
+	var inQuery InQuery
+
+	if err := c.ShouldBindQuery(&inQuery); err != nil {
+		err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to bind query")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, w.log)
+		return
+	}
+
+	if inQuery.Limit == "" {
+		inQuery.Limit = "100"
+	}
+
+	var sortType universe.SortType
+	switch inQuery.Sort {
+	case "ASC":
+		sortType = universe.ASC
+	case "DESC":
+		sortType = universe.DESC
+	default:
+		sortType = universe.DESC
+	}
+
+	node := universe.GetNode()
+	recentWorldIDs, err := w.db.GetWorldsDB().GetWorldIDs(w.ctx, sortType, inQuery.Limit)
+	if err != nil {
+		err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to get world ids")
+		api.AbortRequest(c, http.StatusInternalServerError, "get_latest_worlds_failed", err, w.log)
+		return
+	}
+
+	recents := make([]dto.RecentWorld, 0, len(recentWorldIDs))
+
+	for _, worldID := range recentWorldIDs {
+		world, ok := w.GetWorld(worldID)
+		if !ok {
+			err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to get world by id")
+			api.AbortRequest(c, http.StatusInternalServerError, "get_world_by_id_failed", err, w.log)
+			return
+		}
+
+		ownerID := world.GetOwnerID()
+		loadedUser, err := node.LoadUser(ownerID)
+		if err != nil {
+			err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to load user")
+			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_load_user", err, w.log)
+			return
+		}
+
+		var ownerName *string
+		profile := loadedUser.GetProfile()
+		if profile != nil {
+			if profile.Name != nil {
+				ownerName = profile.Name
+			}
+		}
+
+		stakes, err := w.db.GetStakesDB().GetStakesByWorldID(c, worldID)
+		if err != nil {
+			err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to get stakes for world")
+			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_stakes", err, w.log)
+			return
+		}
+
+		var totalStake big.Int
+		if stakes != nil {
+			for _, stake := range stakes {
+				s := (*big.Int)(stake.Amount)
+				totalStake.Add(&totalStake, s)
+			}
+		}
+
+		totalStakeStr := totalStake.String()
+		recent := dto.RecentWorld{
+			ID:          world.GetID(),
+			OwnerID:     ownerID,
+			OwnerName:   ownerName,
+			Name:        utils.GetPTR(world.GetName()),
+			Description: utils.GetPTR(world.GetDescription()),
+			StakeTotal:  &totalStakeStr,
+			AvatarHash:  utils.GetPTR(world.GetWorldAvatar()),
+			WebsiteLink: utils.GetPTR(world.GetWebsiteLink()),
+		}
+
+		recents = append(recents, recent)
+	}
+
+	c.JSON(http.StatusOK, recents)
 }
 
 // @Summary Returns objects and one level of children
@@ -137,7 +442,7 @@ func (w *Worlds) apiWorldsGetObjectsWithChildren(c *gin.Context) {
 }
 
 func (w *Worlds) apiWorldsGetRootOptions(root universe.Object) (dto.ExploreOption, error) {
-	objects := root.GetObjects(false)
+	// objects := root.GetObjects(false)
 	var option dto.ExploreOption
 
 	name, description, err := w.apiWorldsResolveNameDescription(root)
@@ -145,16 +450,15 @@ func (w *Worlds) apiWorldsGetRootOptions(root universe.Object) (dto.ExploreOptio
 		return dto.ExploreOption{}, errors.WithMessage(err, "failed to resolve name or description")
 	}
 
-	foundSubObjects, err := w.apiWorldsGetChildrenOptions(objects, 0, 2)
-	if err != nil {
-		return dto.ExploreOption{}, errors.WithMessage(err, "failed to get children")
-	}
+	//foundSubObjects, err := w.apiWorldsGetChildrenOptions(objects, 0, 2)
+	//if err != nil {
+	//	return dto.ExploreOption{}, errors.WithMessage(err, "failed to get children")
+	//}
 
 	option = dto.ExploreOption{
 		ID:          root.GetID(),
-		Name:        name,
-		Description: description,
-		SubObjects:  foundSubObjects,
+		Name:        utils.GetPTR(name),
+		Description: utils.GetPTR(description),
 	}
 
 	return option, nil
@@ -174,17 +478,16 @@ func (w *Worlds) apiWorldsGetChildrenOptions(
 			return nil, errors.WithMessage(err, "failed to resolve name or description")
 		}
 
-		subObjects := object.GetObjects(false)
-		foundSubObjects, err := w.apiWorldsGetChildrenOptions(subObjects, currentLevel+1, maxLevel)
+		// subObjects := object.GetObjects(false)
+		// foundSubObjects, err := w.apiWorldsGetChildrenOptions(subObjects, currentLevel+1, maxLevel)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to get options")
 		}
 
 		option := dto.ExploreOption{
 			ID:          object.GetID(),
-			Name:        name,
-			Description: description,
-			SubObjects:  foundSubObjects,
+			Name:        utils.GetPTR(name),
+			Description: utils.GetPTR(description),
 		}
 
 		options = append(options, option)
@@ -208,20 +511,18 @@ func (w *Worlds) apiWorldsResolveNameDescription(object universe.Object) (
 	return object.GetName(), description, nil
 }
 
-// @Summary Search objects
+// @Summary Search available worlds
 // @Schemes
-// @Description Returns objects information based on a search query and categorizes the results
+// @Description Returns world information based on a search query and categorizes the results
 // @Tags worlds
 // @Accept json
 // @Produce json
-// @Param world_id path string true "World UMID"
-// @Param query query worlds.apiWorldsSearchObjects.Query true "query params"
 // @Success 200 {object} dto.SearchOptions
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/worlds/{object_id}/explore/search [get]
-func (w *Worlds) apiWorldsSearchObjects(c *gin.Context) {
+// @Router /api/v4/worlds/explore/search [get]
+func (w *Worlds) apiWorldsSearchWorlds(c *gin.Context) {
 	type Query struct {
 		SearchQuery string `form:"query" binding:"required"`
 	}
@@ -229,38 +530,27 @@ func (w *Worlds) apiWorldsSearchObjects(c *gin.Context) {
 	inQuery := Query{}
 
 	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		err := errors.WithMessage(err, "Worlds: apiWorldsSearchObjects: failed to bind query")
+		err := errors.WithMessage(err, "Worlds: apiWorldsSearchWorlds: failed to bind query")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, w.log)
 		return
 	}
 
-	objectID, err := umid.Parse(c.Param("objectID"))
+	worlds, err := w.apiWorldsFilterWorlds(inQuery.SearchQuery)
 	if err != nil {
-		err := errors.WithMessage(err, "Worlds: apiWorldsSearchObjects: failed to parse world umid")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
-		return
-	}
-
-	world, ok := w.GetWorld(objectID)
-	if !ok {
-		err := errors.Errorf("Worlds: apiWorldsSearchObjects: object not found: %s", objectID)
-		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
-		return
-	}
-
-	objects, err := w.apiWorldsFilterObjects(inQuery.SearchQuery, world)
-	if err != nil {
-		err := errors.WithMessage(err, "Worlds: apiWorldsSearchObjects: failed to filter objects")
+		err := errors.WithMessage(err, "Worlds: apiWorldsSearchWorlds: failed to filter objects")
 		api.AbortRequest(c, http.StatusBadRequest, "failed_to_filter", err, w.log)
 		return
 	}
 
-	c.JSON(http.StatusOK, objects)
+	c.JSON(http.StatusOK, worlds)
 }
 
-func (w *Worlds) apiWorldsFilterObjects(searchQuery string, world universe.World) (dto.SearchOptions, error) {
-	predicateFn := func(objectID umid.UMID, object universe.Object) bool {
-		name, _, err := w.apiWorldsResolveNameDescription(object)
+func (w *Worlds) apiWorldsFilterWorlds(searchQuery string) (dto.SearchOptions, error) {
+	node := universe.GetNode()
+	worlds := node.GetWorlds()
+
+	predicateFn := func(worldID umid.UMID, world universe.World) bool {
+		name, _, err := w.apiWorldsResolveNameDescription(world)
 		if err != nil {
 			return false
 		}
@@ -270,27 +560,25 @@ func (w *Worlds) apiWorldsFilterObjects(searchQuery string, world universe.World
 		return strings.Contains(name, searchQuery)
 	}
 
-	objects := world.FilterAllObjects(predicateFn)
+	filteredWorlds := worlds.FilterWorlds(predicateFn)
+	options := make([]dto.ExploreOption, 0, len(filteredWorlds))
 
-	options, err := w.apiWorldsGetChildrenOptions(objects, 0, 1)
-	if err != nil {
-		return nil, errors.WithMessage(err, "failed to get options")
-	}
-
-	group := make(dto.SearchOptions)
-	for _, option := range options {
-		object, ok := world.GetObjectFromAllObjects(option.ID)
-		if !ok {
-			return nil, errors.Errorf("failed to get object: %T", option.ID)
+	for _, filteredWorld := range filteredWorlds {
+		name, description, err := w.apiWorldsResolveNameDescription(filteredWorld)
+		if err != nil {
+			return nil, errors.WithMessage(err, "Worlds: apiWorldsFilterWorlds: failed to get name description")
 		}
 
-		objectType := object.GetObjectType()
-		categoryName := objectType.GetCategoryName()
+		option := dto.ExploreOption{
+			ID:          filteredWorld.GetID(),
+			Name:        utils.GetPTR(name),
+			Description: utils.GetPTR(description),
+		}
 
-		group[categoryName] = append(group[categoryName], option)
+		options = append(options, option)
 	}
 
-	return group, nil
+	return options, nil
 }
 
 // @Summary Teleports user from token to another world
@@ -344,6 +632,57 @@ func (w *Worlds) apiWorldsTeleportUser(c *gin.Context) {
 	}
 
 	fmt.Sprintln(userEntry)
+
+	c.JSON(http.StatusOK, nil)
+}
+
+// @Summary Updates world data
+// @Schemes
+// @Description Returns updates world with new data
+// @Tags worlds
+// @Accept json
+// @Produce json
+// @Param worldID path string true "World UMID"
+// @Success 200 {array} dto.User
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/worlds/{object_id} [patch]
+func (w *Worlds) apiWorldsUpdateByID(c *gin.Context) {
+	type InBody struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		WebsiteLink string `json:"website_link"`
+	}
+
+	inBody := InBody{}
+
+	if err := c.ShouldBindJSON(&inBody); err != nil {
+		err := errors.WithMessage(err, "Worlds: apiWorldsUpdateByID: failed to bind json")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, w.log)
+		return
+	}
+
+	worldID, err := umid.Parse(c.Param("objectID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Worlds: apiWorldsUpdateByID: failed to parse world umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_world_id", err, w.log)
+		return
+	}
+
+	world, ok := w.GetWorld(worldID)
+	if !ok || world == nil {
+		err := errors.New("Worlds: apiWorldsUpdateByID: world not found")
+		api.AbortRequest(c, http.StatusNotFound, "world_not_found", err, w.log)
+		return
+	}
+
+	worldEntry := world.GetEntry()
+	if err := w.db.GetObjectsDB().UpsertObject(c, worldEntry); err != nil {
+		err := errors.New("Worlds: apiWorldsUpdateByID: failed to upsert world")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert", err, w.log)
+		return
+	}
 
 	c.JSON(http.StatusOK, nil)
 }

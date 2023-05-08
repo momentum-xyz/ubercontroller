@@ -57,6 +57,7 @@ func run(ctx context.Context) error {
 	if err := node.Run(); err != nil {
 		return errors.WithMessagef(err, "failed to run node: %s", node.GetID())
 	}
+
 	defer func() {
 		if err := node.Stop(); err != nil {
 			log.Error(errors.WithMessagef(err, "failed to stop node: %s", node.GetID()))

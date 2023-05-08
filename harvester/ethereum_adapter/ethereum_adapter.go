@@ -24,14 +24,15 @@ import (
 )
 
 type EthereumAdapter struct {
-	listener    harvester.AdapterListener
-	umid        umid.UMID
-	rpcURL      string
-	httpURL     string
-	name        string
-	client      *ethclient.Client
-	rpcClient   *rpc.Client
-	contractABI abi.ABI
+	listener         harvester.AdapterListener
+	umid             umid.UMID
+	rpcURL           string
+	httpURL          string
+	name             string
+	client           *ethclient.Client
+	rpcClient        *rpc.Client
+	contractABI      abi.ABI
+	stakeContractABI abi.ABI
 }
 
 func NewEthereumAdapter() *EthereumAdapter {
@@ -60,7 +61,7 @@ func (a *EthereumAdapter) GetLastBlockNumber() (uint64, error) {
 	return number, err
 }
 
-func (a *EthereumAdapter) GetTransferLogs(fromBlock, toBlock int64, addresses []common.Address) ([]*harvester.BCDiff, error) {
+func (a *EthereumAdapter) GetLogs(fromBlock, toBlock int64, addresses []common.Address) ([]*harvester.BCDiff, []*harvester.BCStake, error) {
 
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(fromBlock),
@@ -70,13 +71,20 @@ func (a *EthereumAdapter) GetTransferLogs(fromBlock, toBlock int64, addresses []
 
 	logs, err := a.client.FilterLogs(context.Background(), query)
 	if err != nil {
-		log.Fatal(err)
+		return nil, nil, errors.WithMessage(err, "failed to filter log")
 	}
 
 	logTransferSig := []byte("Transfer(address,address,uint256)")
 	logTransferSigHash := crypto.Keccak256Hash(logTransferSig)
 
+	logStakeSigHash := crypto.Keccak256Hash([]byte(a.stakeContractABI.Events["Stake"].Sig))
+	//fmt.Println(logStakeSigHash)
+	//fmt.Println(a.stakeContractABI.Events["Stake"].ID.Hex())
+
 	diffs := make([]*harvester.BCDiff, 0)
+	stakes := make([]*harvester.BCStake, 0)
+
+	//fmt.Println(a.contractABI.Events)
 
 	for _, vLog := range logs {
 		fmt.Printf("Log Block Number: %d\n", vLog.BlockNumber)
@@ -90,7 +98,7 @@ func (a *EthereumAdapter) GetTransferLogs(fromBlock, toBlock int64, addresses []
 
 			ev, err := a.contractABI.Unpack("Transfer", vLog.Data)
 			if err != nil {
-				log.Fatal(err)
+				return nil, nil, errors.WithMessage(err, "failed to unpack event from ABI")
 			}
 
 			fmt.Println(ev)
@@ -108,10 +116,43 @@ func (a *EthereumAdapter) GetTransferLogs(fromBlock, toBlock int64, addresses []
 			//fmt.Printf("To: %s\n", transferEvent.To)
 			//fmt.Printf("Tokens: %s\n", transferEvent.Amount.String())
 			diffs = append(diffs, &transferEvent)
+		case logStakeSigHash.Hex():
+			//fmt.Println("STAKE")
+			//fmt.Println(vLog)
+
+			ev, err := a.stakeContractABI.Unpack("Stake", vLog.Data)
+			if err != nil {
+				return nil, nil, errors.WithMessage(err, "failed to unpack event from ABI")
+			}
+
+			// Read and convert event params
+			fromWallet := ev[0].(common.Address)
+
+			arr := ev[1].([16]byte)
+			odysseyID, err := umid.FromBytes(arr[:])
+			if err != nil {
+				return nil, nil, errors.WithMessage(err, "failed to parse umid from bytes")
+			}
+
+			amount := ev[2].(*big.Int)
+
+			tokenType := ev[3].(uint8)
+
+			stake := &harvester.BCStake{
+				From:      fromWallet.Hex(),
+				OdysseyID: odysseyID,
+				TokenType: tokenType,
+				Amount:    amount,
+			}
+
+			stakes = append(stakes, stake)
+
+			//fmt.Printf("%+v %+v %+v %+v \n\n", fromWallet.String(), odysseyID.String(), amount, tokenType)
+			//fmt.Println(ev)
 		}
 	}
 
-	return diffs, nil
+	return diffs, stakes, nil
 }
 
 func (a *EthereumAdapter) GetBalance(wallet string, contract string, blockNumber uint64) (*big.Int, error) {
@@ -150,6 +191,12 @@ func (a *EthereumAdapter) Run() {
 		log.Fatal(err)
 	}
 	a.contractABI = contractABI
+
+	stakeContractABI, err := abi.JSON(strings.NewReader(stakeABI))
+	if err != nil {
+		log.Fatal(err)
+	}
+	a.stakeContractABI = stakeContractABI
 
 	a.client, err = ethclient.Dial(a.rpcURL)
 	if err != nil {
@@ -267,7 +314,8 @@ func (a *EthereumAdapter) onNewBlock(b *harvester.BCBlock) {
 	//	},
 	//}
 
-	a.listener(b.Number, diffs)
+	stakes := make([]*harvester.BCStake, 0)
+	a.listener(b.Number, diffs, stakes)
 }
 
 // refer https://github.com/ethereum/web3.py/blob/master/web3/contract.py#L435
@@ -529,4 +577,297 @@ const erc20abi = `[
         "name": "Transfer",
         "type": "event"
     }
+]`
+
+const stakeABI = `[
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "ClaimedUnstaked",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "RewardsClaimed",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "bytes16",
+				"name": "",
+				"type": "bytes16"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "enum MockStaking.Token",
+				"name": "",
+				"type": "uint8"
+			}
+		],
+		"name": "Stake",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "Test",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "Unstake",
+		"type": "event"
+	},
+	{
+		"inputs": [],
+		"name": "MANAGER_ROLE",
+		"outputs": [
+			{
+				"internalType": "bytes32",
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "dad_token",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "mom_token",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "odysseys",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "odyssey_id",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "total_staked_into",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "total_stakers",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes16",
+				"name": "odyssey_id",
+				"type": "bytes16"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "enum MockStaking.Token",
+				"name": "token",
+				"type": "uint8"
+			}
+		],
+		"name": "stake",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "stakers",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "total_rewards",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "total_staked",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "dad_amount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "mom_amount",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "total_staked",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "unstakes",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "dad_amount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "mom_amount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "since",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
 ]`

@@ -1,20 +1,32 @@
 package posbus
 
-import "github.com/momentum-xyz/ubercontroller/logger"
+import (
+	"github.com/niubaoshu/gotiny"
+)
 
-type StringMapAny map[string]any
-
-func (v StringMapAny) MarshalMUS(buf []byte) int {
-	logger.L().Infof("*********** StringMapAny.MarshalMUS is not implemented yet!")
-	return 0
+func init() {
+	// workaround, sometimes when receiving StringAnyMap, we end up in the 'interface' branch of gotiny unmarshalling and not the map handling :/
+	// Needs some more debugging. But for now avoid the panic when handling these.
+	gotiny.Register("")
+	gotiny.Register(true)
+	gotiny.Register(float64(42))
+	gotiny.Register([]any{})
+	gotiny.Register(map[string]any{})
 }
 
-func (v *StringMapAny) UnmarshalMUS(buf []byte) (int, error) {
-	logger.L().Infof("*********** StringMapAny.UnmarshalMUS is not implemented yet!")
-	return 0, nil
+type StringAnyMap map[string]any
+
+func (v StringAnyMap) MarshalMUS(buf []byte) int {
+	b := gotiny.Marshal(&v)
+	copy(buf, b)
+	return len(b)
 }
 
-func (v StringMapAny) SizeMUS() int {
-	logger.L().Infof("*********** StringMapAny.SizeMUS is not implemented yet!")
-	return 0
+func (v *StringAnyMap) UnmarshalMUS(buf []byte) (int, error) {
+	l := gotiny.Unmarshal(buf, v)
+	return l, nil
+}
+
+func (v StringAnyMap) SizeMUS() int {
+	return len(gotiny.Marshal(&v))
 }

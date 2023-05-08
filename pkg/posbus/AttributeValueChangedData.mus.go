@@ -95,7 +95,7 @@ func (v *AttributeValueChangedData) UnmarshalMUS(buf []byte) (int, error) {
 	if err != nil {
 		return i, muserrs.NewFieldError("AttributeName", err)
 	}
-	v.Value = new(StringMapAny)
+	v.Value = new(StringAnyMap)
 	if buf[i] == 0 {
 		i++
 		v.Value = nil
@@ -105,7 +105,7 @@ func (v *AttributeValueChangedData) UnmarshalMUS(buf []byte) (int, error) {
 	} else {
 		i++
 		{
-			var sv StringMapAny
+			var sv StringAnyMap
 			si := 0
 			si, err = sv.UnmarshalMUS(buf[i:])
 			if err == nil {

@@ -7,10 +7,14 @@ import (
 
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
+
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/database/db"
 	"github.com/momentum-xyz/ubercontroller/database/migrations"
+	"github.com/momentum-xyz/ubercontroller/database/stakes"
 	"github.com/momentum-xyz/ubercontroller/seed"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -27,13 +31,12 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/worlds"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
-	"github.com/pkg/errors"
-	"go.uber.org/zap"
 
 	assets2dDB "github.com/momentum-xyz/ubercontroller/database/assets_2d"
 	assets3dDB "github.com/momentum-xyz/ubercontroller/database/assets_3d"
 	attributesTypeDB "github.com/momentum-xyz/ubercontroller/database/attribute_types"
 	commonDB "github.com/momentum-xyz/ubercontroller/database/common"
+	nftsDB "github.com/momentum-xyz/ubercontroller/database/nfts"
 	nodeAttributesDB "github.com/momentum-xyz/ubercontroller/database/node_attributes"
 	nodesDB "github.com/momentum-xyz/ubercontroller/database/nodes"
 	objectAttributesDB "github.com/momentum-xyz/ubercontroller/database/object_attributes"
@@ -195,6 +198,8 @@ func createDB(conn *pgxpool.Pool) (database.DB, error) {
 		objectUserAttributesDB.NewDB(conn, common),
 		userAttributesDB.NewDB(conn, common),
 		userUserAttributesDB.NewDB(conn, common),
+		stakes.NewDB(conn),
+		nftsDB.NewDB(conn),
 	), nil
 }
 

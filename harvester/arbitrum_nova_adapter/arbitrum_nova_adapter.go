@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -14,89 +16,74 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/pkg/errors"
 
+	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/harvester"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 type ArbitrumNovaAdapter struct {
-	listener    harvester.AdapterListener
-	umid        umid.UMID
-	rpcURL      string
-	httpURL     string
-	name        string
-	client      *ethclient.Client
-	rpcClient   *rpc.Client
-	contractABI abi.ABI
+	listener harvester.AdapterListener
+	umid     umid.UMID
+	wsURL    string
+	httpURL  string
+	name     string
+	//client           *ethclient.Client
+	rpcClient *rpc.Client
+	lastBlock uint64
+	contracts *Contracts
 }
 
-func NewArbitrumNovaAdapter() *ArbitrumNovaAdapter {
+func NewArbitrumNovaAdapter(cfg *config.Config) *ArbitrumNovaAdapter {
 	return &ArbitrumNovaAdapter{
-		umid:    umid.MustParse("ccccaaaa-1111-2222-3333-222222222222"),
-		rpcURL:  "wss://bcdev.antst.net:8548",
-		httpURL: "https://bcdev.antst.net:8547",
-		name:    "arbitrum_nova",
+		umid:      umid.MustParse("ccccaaaa-1111-2222-3333-222222222222"),
+		wsURL:     cfg.Arbitrum.ArbitrumWSURL,
+		httpURL:   cfg.Arbitrum.ArbitrumRPCURL,
+		name:      "arbitrum_nova",
+		contracts: NewContracts(&cfg.Arbitrum),
 	}
 }
 
 func (a *ArbitrumNovaAdapter) GetLastBlockNumber() (uint64, error) {
-	number, err := a.client.BlockNumber(context.TODO())
-	return number, err
+	var resp string
+	if err := a.rpcClient.Call(&resp, "eth_blockNumber"); err != nil {
+		return 0, errors.WithMessage(err, "failed to make RPC call to arbitrum:")
+	}
+
+	return hex2int(resp), nil
 }
 
 func (a *ArbitrumNovaAdapter) Run() {
-	contractABI, err := abi.JSON(strings.NewReader(erc20abi))
-	if err != nil {
-		log.Fatal(err)
-	}
-	a.contractABI = contractABI
-
-	a.client, err = ethclient.Dial(a.rpcURL)
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	var err error
 	a.rpcClient, err = rpc.DialHTTP(a.httpURL)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Connected to Ethereum Block Chain: " + a.rpcURL)
+	fmt.Println("Connected to Arbitrum Block Chain: " + a.httpURL)
+	///////
 
-	ch := make(chan *types.Header)
-
-	sub, err := a.client.SubscribeNewHead(context.Background(), ch)
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	ticker := time.NewTicker(1000 * time.Millisecond)
+	done := make(chan bool)
 	go func() {
 		for {
 			select {
-			case err := <-sub.Err():
-				log.Fatal(err)
-			case vLog := <-ch:
-
-				//fmt.Println(vLog.Number)
-				//fmt.Println(vLog.ReceiptHash)
-				//fmt.Println(vLog.ParentHash)
-				//fmt.Println(vLog.Root)
-				//fmt.Println(vLog.TxHash)
-				//fmt.Println(vLog.Hash())
-
-				block := &harvester.BCBlock{
-					Hash: vLog.Hash().String(),
+			case <-done:
+				return
+			case t := <-ticker.C:
+				_ = t
+				//fmt.Println("Tick at", t)
+				n, err := a.GetLastBlockNumber()
+				if err != nil {
+					fmt.Println(err)
 				}
-
-				if vLog.Number != nil {
-					block.Number = vLog.Number.Uint64()
-				}
-
-				if a.listener != nil {
-					a.onNewBlock(block)
+				if a.lastBlock < n {
+					a.lastBlock = n
+					if a.listener != nil {
+						a.listener(n, nil, nil)
+					}
 				}
 			}
 		}
@@ -105,15 +92,6 @@ func (a *ArbitrumNovaAdapter) Run() {
 
 func (a *ArbitrumNovaAdapter) RegisterNewBlockListener(f harvester.AdapterListener) {
 	a.listener = f
-}
-
-func (a *ArbitrumNovaAdapter) onNewBlock(b *harvester.BCBlock) {
-	diffs, err := a.GetTransferLogs(int64(b.Number), int64(b.Number), []common.Address{})
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	a.listener(b.Number, diffs)
 }
 
 func (a *ArbitrumNovaAdapter) GetBalance(wallet string, contract string, blockNumber uint64) (*big.Int, error) {
@@ -129,7 +107,7 @@ func (a *ArbitrumNovaAdapter) GetBalance(wallet string, contract string, blockNu
 	var resp string
 	n := hexutil.EncodeUint64(blockNumber)
 	if err := a.rpcClient.Call(&resp, "eth_call", req, n); err != nil {
-		return nil, errors.WithMessage(err, "failed to make RPC call to ethereum:")
+		return nil, errors.WithMessage(err, "failed to make RPC call to arbitrum:")
 	}
 
 	// remove leading zero of resp
@@ -178,283 +156,230 @@ func (a *ArbitrumNovaAdapter) DecodeTransactionInputData(contractABI *abi.ABI, d
 	return method.Name, inputsMap, nil
 }
 
-func (a *ArbitrumNovaAdapter) GetTransferLogs(fromBlock, toBlock int64, addresses []common.Address) ([]*harvester.BCDiff, error) {
+func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []common.Address) ([]any, error) {
 
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(fromBlock),
 		ToBlock:   big.NewInt(toBlock),
-		Addresses: addresses,
+		Addresses: a.contracts.AllAddresses,
 	}
 
-	logs, err := a.client.FilterLogs(context.Background(), query)
+	bcLogs, err := a.FilterLogs(context.TODO(), query)
 	if err != nil {
-		log.Fatal(err)
+		return nil, errors.WithMessage(err, "failed to filter log")
 	}
+
+	logs := make([]any, 0)
 
 	logTransferSig := []byte("Transfer(address,address,uint256)")
 	logTransferSigHash := crypto.Keccak256Hash(logTransferSig)
 
-	diffs := make([]*harvester.BCDiff, 0)
+	logStakeSigHash := crypto.Keccak256Hash([]byte(a.contracts.StakeABI.Events["Stake"].Sig))
+	logUnstakeSigHash := a.contracts.StakeABI.Events["Unstake"].ID
+	logRestakeSigHash := a.contracts.StakeABI.Events["Restake"].ID
 
-	for _, vLog := range logs {
-		fmt.Printf("Log Block Number: %d\n", vLog.BlockNumber)
-		fmt.Printf("Log Index: %d\n", vLog.Index)
+	logTransferNftHash := a.contracts.NftABI.Events["Transfer"].ID
 
-		switch vLog.Topics[0].Hex() {
-		case logTransferSigHash.Hex():
-			//fmt.Printf("Log Name: Transfer\n")
+	for _, vLog := range bcLogs {
+		//fmt.Printf("Log Block Number: %d\n", vLog.BlockNumber)
+		//fmt.Printf("Log Index: %d\n", vLog.Index)
 
-			var transferEvent harvester.BCDiff
+		// Iterate contracts
+		switch vLog.Address.Hex() {
+		case a.contracts.momTokenAddress.Hex():
+			switch vLog.Topics[0].Hex() {
+			case logTransferSigHash.Hex():
+				//fmt.Printf("Log Name: Transfer\n")
 
-			ev, err := a.contractABI.Unpack("Transfer", vLog.Data)
-			if err != nil {
-				log.Fatal(err)
+				//var transferEvent harvester.BCDiff
+
+				var e harvester.TransferERC20Log
+
+				ev, err := a.contracts.TokenABI.Unpack("Transfer", vLog.Data)
+				if err != nil {
+					return nil, errors.WithMessage(err, "failed to unpack event from ABI")
+				}
+
+				e.Contract = strings.ToLower(vLog.Address.Hex())
+				// Hex and Un Hex here used to remove padding zeros
+				e.From = strings.ToLower(common.HexToAddress(vLog.Topics[1].Hex()).Hex())
+				e.To = strings.ToLower(common.HexToAddress(vLog.Topics[2].Hex()).Hex())
+				if len(ev) > 0 {
+					e.Value = ev[0].(*big.Int)
+				}
+
+				logs = append(logs, &e)
 			}
 
-			fmt.Println(ev)
+		case a.contracts.stakeAddress.Hex():
+			switch vLog.Topics[0].Hex() {
 
-			transferEvent.Token = strings.ToLower(vLog.Address.Hex())
-			// Hex and Un Hex here used to remove padding zeros
-			transferEvent.From = strings.ToLower(common.HexToAddress(vLog.Topics[1].Hex()).Hex())
-			transferEvent.To = strings.ToLower(common.HexToAddress(vLog.Topics[2].Hex()).Hex())
-			if len(ev) > 0 {
-				transferEvent.Amount = ev[0].(*big.Int)
+			case logStakeSigHash.Hex():
+				ev, err := a.contracts.StakeABI.Unpack("Stake", vLog.Data)
+				if err != nil {
+					return nil, errors.WithMessage(err, "failed to unpack event from ABI")
+				}
+
+				// Read and convert event params
+				fromWallet := ev[0].(common.Address)
+
+				arr := ev[1].([16]byte)
+				odysseyID, err := umid.FromBytes(arr[:])
+				if err != nil {
+					return nil, errors.WithMessage(err, "failed to parse umid from bytes")
+				}
+				if odysseyID == umid.MustParse("ccccaaaa-1111-2222-3333-222222222222") ||
+					odysseyID == umid.MustParse("ccccaaaa-1111-2222-3333-222222222244") ||
+					odysseyID == umid.MustParse("ccccaaaa-1111-2222-3333-222222222241") {
+					// Skip test Odyssey IDs
+					continue
+				}
+
+				amount := ev[2].(*big.Int)
+
+				tokenType := ev[3].(uint8)
+
+				totalAmount := ev[4].(*big.Int)
+
+				e := &harvester.StakeLog{
+					UserWallet:   fromWallet.Hex(),
+					OdysseyID:    odysseyID,
+					AmountStaked: amount,
+					TokenType:    tokenType,
+					TotalStaked:  totalAmount,
+				}
+
+				logs = append(logs, e)
+
+			case logUnstakeSigHash.Hex():
+				ev, err := a.contracts.StakeABI.Unpack("Unstake", vLog.Data)
+				if err != nil {
+					return nil, errors.WithMessage(err, "failed to unpack event from ABI")
+				}
+
+				// Read and convert event params
+				fromWallet := ev[0].(common.Address)
+
+				arr := ev[1].([16]byte)
+				odysseyID, err := umid.FromBytes(arr[:])
+				if err != nil {
+					return nil, errors.WithMessage(err, "failed to parse umid from bytes")
+				}
+
+				amount := ev[2].(*big.Int)
+				tokenType := ev[3].(uint8)
+				totalAmount := ev[4].(*big.Int)
+
+				e := &harvester.UnstakeLog{
+					UserWallet:     fromWallet.Hex(),
+					OdysseyID:      odysseyID,
+					AmountUnstaked: amount,
+					TokenType:      tokenType,
+					TotalStaked:    totalAmount,
+				}
+
+				logs = append(logs, e)
+
+			case logRestakeSigHash.Hex():
+				fmt.Println("Restake")
 			}
+		case a.contracts.nftAddress.Hex():
+			fmt.Println("NFT")
 
-			//fmt.Printf("Contract: %s\n", transferEvent.Token)
-			//fmt.Printf("From: %s\n", transferEvent.From)
-			//fmt.Printf("To: %s\n", transferEvent.To)
-			//fmt.Printf("Tokens: %s\n", transferEvent.Amount.String())
-			diffs = append(diffs, &transferEvent)
+			switch vLog.Topics[0].Hex() {
+			case logTransferNftHash.Hex():
+				// TODO Not sure why vLog.Data is empty
+				//ev, err := a.contracts.NftABI.Unpack("Transfer", vLog.Data)
+				//if err != nil {
+				//	return nil, errors.WithMessage(err, "failed to unpack event from ABI")
+				//}
+
+				from := strings.ToLower(common.HexToAddress(vLog.Topics[1].Hex()).Hex())
+				to := strings.ToLower(common.HexToAddress(vLog.Topics[2].Hex()).Hex())
+				itemID := vLog.Topics[3].Big()
+
+				var id umid.UMID
+				itemID.FillBytes(id[:])
+
+				if err != nil {
+					return nil, errors.WithMessage(err, "failed to read umid from bytes")
+				}
+
+				e := &harvester.TransferNFTLog{
+					From:     from,
+					To:       to,
+					TokenID:  id,
+					Contract: strings.ToLower(vLog.Address.Hex()),
+				}
+
+				logs = append(logs, e)
+			}
 		}
+
 	}
 
-	return diffs, nil
+	return logs, nil
 }
 
 func (a *ArbitrumNovaAdapter) GetInfo() (umid umid.UMID, name string, rpcURL string) {
-	return a.umid, a.name, a.rpcURL
+	return a.umid, a.name, a.wsURL
 }
 
-const erc20abi = `[
-    {
-        "constant": true,
-        "inputs": [],
-        "name": "name",
-        "outputs": [
-            {
-                "name": "",
-                "type": "string"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "constant": false,
-        "inputs": [
-            {
-                "name": "_spender",
-                "type": "address"
-            },
-            {
-                "name": "_value",
-                "type": "uint256"
-            }
-        ],
-        "name": "approve",
-        "outputs": [
-            {
-                "name": "",
-                "type": "bool"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "constant": true,
-        "inputs": [],
-        "name": "totalSupply",
-        "outputs": [
-            {
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "constant": false,
-        "inputs": [
-            {
-                "name": "_from",
-                "type": "address"
-            },
-            {
-                "name": "_to",
-                "type": "address"
-            },
-            {
-                "name": "_value",
-                "type": "uint256"
-            }
-        ],
-        "name": "transferFrom",
-        "outputs": [
-            {
-                "name": "",
-                "type": "bool"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "constant": true,
-        "inputs": [],
-        "name": "decimals",
-        "outputs": [
-            {
-                "name": "",
-                "type": "uint8"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "constant": true,
-        "inputs": [
-            {
-                "name": "_owner",
-                "type": "address"
-            }
-        ],
-        "name": "balanceOf",
-        "outputs": [
-            {
-                "name": "balance",
-                "type": "uint256"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "constant": true,
-        "inputs": [],
-        "name": "symbol",
-        "outputs": [
-            {
-                "name": "",
-                "type": "string"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "constant": false,
-        "inputs": [
-            {
-                "name": "_to",
-                "type": "address"
-            },
-            {
-                "name": "_value",
-                "type": "uint256"
-            }
-        ],
-        "name": "transfer",
-        "outputs": [
-            {
-                "name": "",
-                "type": "bool"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "constant": true,
-        "inputs": [
-            {
-                "name": "_owner",
-                "type": "address"
-            },
-            {
-                "name": "_spender",
-                "type": "address"
-            }
-        ],
-        "name": "allowance",
-        "outputs": [
-            {
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "payable": true,
-        "stateMutability": "payable",
-        "type": "fallback"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "name": "owner",
-                "type": "address"
-            },
-            {
-                "indexed": true,
-                "name": "spender",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "name": "value",
-                "type": "uint256"
-            }
-        ],
-        "name": "Approval",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "name": "from",
-                "type": "address"
-            },
-            {
-                "indexed": true,
-                "name": "to",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "name": "value",
-                "type": "uint256"
-            }
-        ],
-        "name": "Transfer",
-        "type": "event"
-    }
-]`
+func (a *ArbitrumNovaAdapter) FilterLogs(ctx context.Context, q ethereum.FilterQuery) ([]types.Log, error) {
+	var result []types.Log
+	arg, err := toFilterArg(q)
+	if err != nil {
+		return nil, err
+	}
+	err = a.rpcClient.CallContext(ctx, &result, "eth_getLogs", arg)
+	return result, err
+}
+
+func toFilterArg(q ethereum.FilterQuery) (interface{}, error) {
+	arg := map[string]interface{}{
+		"address": q.Addresses,
+		"topics":  q.Topics,
+	}
+	if q.BlockHash != nil {
+		arg["blockHash"] = *q.BlockHash
+		if q.FromBlock != nil || q.ToBlock != nil {
+			return nil, fmt.Errorf("cannot specify both BlockHash and FromBlock/ToBlock")
+		}
+	} else {
+		if q.FromBlock == nil {
+			arg["fromBlock"] = "0x0"
+		} else {
+			arg["fromBlock"] = toBlockNumArg(q.FromBlock)
+		}
+		arg["toBlock"] = toBlockNumArg(q.ToBlock)
+	}
+	return arg, nil
+}
+
+func toBlockNumArg(number *big.Int) string {
+	if number == nil {
+		return "latest"
+	}
+	pending := big.NewInt(-1)
+	if number.Cmp(pending) == 0 {
+		return "pending"
+	}
+	finalized := big.NewInt(int64(rpc.FinalizedBlockNumber))
+	if number.Cmp(finalized) == 0 {
+		return "finalized"
+	}
+	safe := big.NewInt(int64(rpc.SafeBlockNumber))
+	if number.Cmp(safe) == 0 {
+		return "safe"
+	}
+	return hexutil.EncodeBig(number)
+}
+
+func hex2int(hexStr string) uint64 {
+	// remove 0x suffix if found in the input string
+	cleaned := strings.Replace(hexStr, "0x", "", -1)
+
+	// base 16 for hexadecimal
+	result, _ := strconv.ParseUint(cleaned, 16, 64)
+	return uint64(result)
+}

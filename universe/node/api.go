@@ -20,6 +20,10 @@ import (
 func (n *Node) RegisterAPI(r *gin.Engine) {
 	n.log.Infof("Registering api for node: %s...", n.GetID())
 
+	if n.cfg.Common.PProfAPI {
+		registerPProfAPI(r.Group("/debug"))
+	}
+
 	if n.cfg.Common.AllowCORS {
 		r.Use(cors.New(cors.Config{
 			AllowOrigins: []string{"*"},
@@ -74,14 +78,25 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 				userMe.GET("/attributes", n.apiGetMeUserAttributeValue)
 
 				userMe.POST("/attach-account", n.apiAttachAccount)
+
+				userMe.GET("/stakes", n.apiGetMyStakes)
+				userMe.POST("/stakes", n.apiAddPendingStakeTransaction)
+
+				userMe.GET("/wallets", n.apiGetMyWallets)
 			}
 
 			verifiedUsers.POST("/mutual-docks", n.apiUsersCreateMutualDocks)
 			verifiedUsers.DELETE("/mutual-docks", n.apiUsersRemoveMutualDocks)
 
+			verifiedUsers.GET("", n.apiUsersGet)
+			verifiedUsers.GET("/search", n.apiUsersSearchUsers)
+			verifiedUsers.GET("/top-stakers", n.apiUsersTopStakers)
+
 			user := verifiedUsers.Group("/:userID")
 			{
 				user.GET("", n.apiUsersGetByID)
+				user.GET("/worlds", n.apiUsersGetOwnedWorlds)
+				user.GET("/staked-worlds", n.apiUsersGetStakedWorlds)
 
 				userAttributesGroup := user.Group("/attributes")
 				{

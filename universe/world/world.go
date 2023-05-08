@@ -2,10 +2,11 @@ package world
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"sync/atomic"
 	"time"
+
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/gorilla/websocket"
 	"github.com/hashicorp/go-multierror"
@@ -29,6 +30,8 @@ var _ universe.World = (*World)(nil)
 // MaxPosUpdateInterval : send user position at least ones per 5 min, even if user is not moving
 const MaxPosUpdateInterval = 60 * 5
 
+const PosUpdateInterval = 500 * time.Millisecond
+
 type World struct {
 	*object.Object
 	ctx              context.Context
@@ -47,12 +50,44 @@ type World struct {
 	lastPosUpdate       int64
 }
 
+func (w *World) LockUIObject(user universe.User, state uint32) bool {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (w *World) GetTotalStake() uint8 {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (w *World) TempSetSkybox(msg *websocket.PreparedMessage) {
 	w.skyBoxMsg.Store(msg)
 }
 
 func (w *World) TempGetSkybox() *websocket.PreparedMessage {
 	return w.skyBoxMsg.Load()
+}
+
+func (w *World) GetWorldAvatar() string {
+	defaultAvatar := ""
+	value, ok := w.GetObjectAttributes().GetValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Object.WorldAvatar.Name),
+	)
+	if !ok || value == nil {
+		return defaultAvatar
+	}
+	return utils.GetFromAnyMap(*value, universe.ReservedAttributes.Object.WorldAvatar.Key, defaultAvatar)
+}
+
+func (w *World) GetWebsiteLink() string {
+	defaultLink := ""
+	value, ok := w.GetObjectAttributes().GetValue(
+		entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Object.WebsiteLink.Name),
+	)
+	if !ok || value == nil {
+		return defaultLink
+	}
+	return utils.GetFromAnyMap(*value, universe.ReservedAttributes.Object.WebsiteLink.Key, defaultLink)
 }
 
 func NewWorld(id umid.UMID, db database.DB) *World {
@@ -136,7 +171,7 @@ func (w *World) Run() error {
 			}
 		}()
 		go w.calendar.Run()
-		ticker := time.NewTicker(500 * time.Millisecond)
+		ticker := time.NewTicker(PosUpdateInterval)
 
 		defer func() {
 			w.calendar.Stop()
@@ -198,22 +233,81 @@ func (w *World) stopObjects() error {
 func (w *World) broadcastPositions() {
 	w.Users.Mu.RLock()
 	numClients := len(w.Users.Data)
-	msg := posbus.UsersTransformList{}
 	currentTime := time.Now().Unix()
 
+	// Need to do some 'reasonable' batching.
+	// - fit inside max message size of a receiving client.
+	// - something reasonable to process in frontend and not lockup UI thread for too long?
+	// Size is about 40b per client with some overhead,
+	// 'default' setting of our websocket client is 32kb
+	// so as a start, something that fits and won't often be triggered?
+	batchSize := 768
+
+	var msgBatches []posbus.UsersTransformList
 	if numClients > 0 {
+		uTransforms := make([]posbus.UserTransform, 0)
 		for _, u := range w.Users.Data {
-			if u.GetLastPosTime() > w.lastPosUpdate || (currentTime-u.GetLastPosTime() >= MaxPosUpdateInterval) {
-				msg.Value = append(msg.Value, posbus.UserTransform{ID: u.GetID(), Transform: *u.GetTransform()})
-				//positionsBuffer.AddPosition(u.GetPosBuffer())
+			if (u.GetLastPosTime() >= w.lastPosUpdate) || ((currentTime - u.GetLastSendPosTime()) > MaxPosUpdateInterval) {
+				u.SetLastSendPosTime(currentTime)
+				uTransforms = append(uTransforms, posbus.UserTransform{ID: u.GetID(), Transform: *u.GetTransform()})
 			}
 		}
+		nrUpdates := len(uTransforms)
+		msgBatches = make([]posbus.UsersTransformList, 0, (nrUpdates+batchSize-1)/batchSize)
+
+		generic.NewButcher(uTransforms).HandleBatchesSync(
+			batchSize,
+			func(batch []posbus.UserTransform) error {
+				msg := posbus.UsersTransformList{}
+				msg.Value = batch
+				msgBatches = append(msgBatches, msg)
+				return nil
+			},
+		)
 	}
 	w.lastPosUpdate = currentTime
 
 	w.Users.Mu.RUnlock()
-	if len(msg.Value) > 0 {
+	for _, msg := range msgBatches {
 		w.Send(posbus.WSMessage(&msg), true)
+	}
+}
+
+// Send posbus.AddUsers containing all current users in the world (excluding themself).
+//
+// Similar to Object.SendSpawnMessage, but not prepared like objects (stored on world).
+// This changes more often and would require some fine-grained hooks into the add/remove user logic.
+// (Also it just changed, since this new user was added)
+func (w *World) SendUsersSpawnMessage(receiver universe.User) {
+	// See broadcastPositions, same logic, just different contents
+	w.Users.Mu.RLock()
+	// Assuming receiver themself is in this list
+	numClients := len(w.Users.Data) - 1
+	batchSize := 100 // Sane size for UserData? contains variable name string.
+	var msgBatches []posbus.AddUsers
+	if numClients > 0 {
+		uDatas := make([]posbus.UserData, 0)
+		for _, u := range w.Users.Data {
+			if u.GetID() != receiver.GetID() {
+				uDatas = append(uDatas, *u.GetUserDefinition())
+			}
+		}
+		nrUpdates := len(uDatas)
+		msgBatches = make([]posbus.AddUsers, 0, (nrUpdates+batchSize-1)/batchSize)
+
+		generic.NewButcher(uDatas).HandleBatchesSync(
+			batchSize,
+			func(batch []posbus.UserData) error {
+				msg := posbus.AddUsers{}
+				msg.Users = batch
+				msgBatches = append(msgBatches, msg)
+				return nil
+			},
+		)
+	}
+	w.Users.Mu.RUnlock()
+	for _, msg := range msgBatches {
+		receiver.Send(posbus.WSMessage(&msg))
 	}
 }
 

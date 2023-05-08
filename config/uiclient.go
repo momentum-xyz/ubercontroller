@@ -1,31 +1,19 @@
 package config
 
 type UIClient struct {
-	AgoraAppID                    string `yaml:"agora_app_id" json:"AGORA_APP_ID" envconfig:"AGORA_APP_ID"`
-	BlockchainWsServer            string `yaml:"blockchain_ws_server" json:"BLOCKCHAIN_WS_SERVER" envconfig:"BLOCKCHAIN_WS_SERVER"`
-	FrontendURL                   string `yaml:"frontend_url" json:"-" envconfig:"FRONTEND_URL"`
-	NFTAdminAddress               string `yaml:"nft_admin_address" json:"NFT_ADMIN_ADDRESS" envconfig:"NFT_ADMIN_ADDRESS"`
-	NFTCollectionOdysseyID        string `yaml:"nft_collection_odyssey_id" json:"NFT_COLLECTION_ODYSSEY_ID" envconfig:"NFT_COLLECTION_ODYSSEY_ID"`
-	StreamchatKey                 string `yaml:"streamchat_key" json:"STREAMCHAT_KEY" envconfig:"STREAMCHAT_KEY"`
-	UnityClientCompanyName        string `yaml:"unity_client_company_name" json:"UNITY_CLIENT_COMPANY_NAME" envconfig:"UNITY_CLIENT_COMPANY_NAME"`
-	UnityClientProductName        string `yaml:"unity_client_product_name" json:"UNITY_CLIENT_PRODUCT_NAME" envconfig:"UNITY_CLIENT_PRODUCT_NAME"`
-	UnityClientProductVersion     string `yaml:"unity_client_product_version" json:"UNITY_CLIENT_PRODUCT_VERSION" envconfig:"UNITY_CLIENT_PRODUCT_VERSION"`
-	UnityClientStreamingAssetsURL string `yaml:"unity_client_streaming_assets_url" json:"UNITY_CLIENT_STREAMING_ASSETS_URL" envconfig:"UNITY_CLIENT_STREAMING_ASSETS_URL"`
-	UnityClientURL                string `yaml:"unity_client_url" json:"UNITY_CLIENT_URL" envconfig:"UNITY_CLIENT_URL"`
-	UnityLoaderFileName           string `yaml:"unity_loader_file_name" json:"UNITY_LOADER_FILE_NAME" envconfig:"UNITY_LOADER_FILE_NAME"`
-	UnityFrameworkFileName        string `yaml:"unity_framework_file_name" json:"UNITY_FRAMEWORK_FILE_NAME" envconfig:"UNITY_FRAMEWORK_FILE_NAME"`
-	UnityDataFileName             string `yaml:"unity_data_file_name" json:"UNITY_DATA_FILE_NAME" envconfig:"UNITY_DATA_FILE_NAME"`
-	UnityCodeFileName             string `yaml:"unity_code_file_name" json:"UNITY_CODE_FILE_NAME" envconfig:"UNITY_CODE_FILE_NAME"`
-	UnityAddressablesURL          string `yaml:"unity_addressables_url" json:"UNITY_CLIENT_ADDRESSABLES_URL" envconfig:"UNITY_CLIENT_ADDRESSABLES_URL"`
+	AgoraAppID             string `yaml:"agora_app_id" json:"AGORA_APP_ID" envconfig:"AGORA_APP_ID"`
+	BlockchainWsServer     string `yaml:"blockchain_ws_server" json:"BLOCKCHAIN_WS_SERVER" envconfig:"BLOCKCHAIN_WS_SERVER"`
+	BlockchainID           string `yaml:"arbitrum_chain_id" json:"BLOCKCHAIN_ID" envconfig:"ARBITRUM_CHAIN_ID"`
+	ContractDAD            string `yaml:"arbitrum_dad_token_address" json:"CONTRACT_DAD_ADDRESS" envconfig:"ARBITRUM_DAD_TOKEN_ADDRESS"`
+	ContractFaucet         string `yaml:"arbitrum_faucet_contract_address" json:"CONTRACT_FAUCET_ADDRESS" envconfig:"ARBITRUM_FAUCET_ADDRESS"`
+	ContractMOM            string `yaml:"arbitrum_mom_token_address" json:"CONTRACT_MOM_ADDRESS" envconfig:"ARBITRUM_MOM_TOKEN_ADDRESS"`
+	ContractNFT            string `yaml:"arbitrum_nft_contract_address" json:"CONTRACT_NFT_ADDRESS" envconfig:"ARBITRUM_NFT_CONTRACT_ADDRESS"`
+	ContractStake          string `yaml:"arbitrum_stake_token_address" json:"CONTRACT_STAKING_ADDRESS" envconfig:"ARBITRUM_STAKE_TOKEN_ADDRESS"`
+	FrontendURL            string `yaml:"frontend_url" json:"-" envconfig:"FRONTEND_URL"`
+	NFTAdminAddress        string `yaml:"nft_admin_address" json:"NFT_ADMIN_ADDRESS" envconfig:"NFT_ADMIN_ADDRESS"`
+	NFTCollectionOdysseyID string `yaml:"nft_collection_odyssey_id" json:"NFT_COLLECTION_ODYSSEY_ID" envconfig:"NFT_COLLECTION_ODYSSEY_ID"`
+	StreamchatKey          string `yaml:"streamchat_key" json:"STREAMCHAT_KEY" envconfig:"STREAMCHAT_KEY"`
 }
 
 func (c *UIClient) Init() {
-	c.UnityClientStreamingAssetsURL = "StreamingAssets"
-	c.UnityClientCompanyName = "Odyssey"
-	c.UnityClientProductName = "Odyssey Momentum"
-	c.UnityClientProductVersion = "0.1"
-	c.UnityLoaderFileName = "WebGL.loader.js"
-	c.UnityFrameworkFileName = "WebGL.framework.js.gz"
-	c.UnityCodeFileName = "WebGL.wasm.gz"
-	c.UnityDataFileName = "WebGL.data.gz"
 }

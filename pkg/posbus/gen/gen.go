@@ -33,6 +33,7 @@ func generateMus() {
 		posbus.MessageDataTypeById(mId)
 		err = musGo.Generate(posbus.MessageDataTypeById(mId), unsafe)
 		if err != nil {
+			fmt.Printf("%x\n", mId)
 			panic(err)
 		}
 	}

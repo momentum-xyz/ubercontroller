@@ -5,15 +5,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
-type PosBusDestinationType byte
-
-const (
-	InvalidPosBusDestinationType    PosBusDestinationType = 0b00
-	ReactPosBusDestinationType      PosBusDestinationType = 0b01
-	UnityPosBusDestinationType      PosBusDestinationType = 0b10
-	ReactUnityPosBusDestinationType PosBusDestinationType = 0b11
-)
-
 type PosBusAutoScopeAttributeOption string
 
 const (
@@ -24,24 +15,24 @@ const (
 	UserPosBusAutoScopeAttributeOption    PosBusAutoScopeAttributeOption = "user"
 )
 
-type UnitySlotType string
+type SlotType string
 
 const (
-	UnitySlotTypeInvalid UnitySlotType = ""
-	UnitySlotTypeTexture UnitySlotType = "texture"
-	UnitySlotTypeString  UnitySlotType = "string"
-	UnitySlotTypeNumber  UnitySlotType = "number"
+	SlotTypeInvalid SlotType = ""
+	SlotTypeTexture SlotType = "texture"
+	SlotTypeString  SlotType = "string"
+	SlotTypeNumber  SlotType = "number"
 )
 
-type UnityContentType string
+type SlotContentType string
 
 const (
-	UnityContentTypeInvalid UnityContentType = ""
-	UnityContentTypeString  UnityContentType = "string"
-	UnityContentTypeNumber  UnityContentType = "number"
-	UnityContentTypeImage   UnityContentType = "image"
-	UnityContentTypeText    UnityContentType = "text"
-	UnityContentTypeVideo   UnityContentType = "video"
+	SlotContentTypeInvalid SlotContentType = ""
+	SlotContentTypeString  SlotContentType = "string"
+	SlotContentTypeNumber  SlotContentType = "number"
+	SlotContentTypeImage   SlotContentType = "image"
+	SlotContentTypeText    SlotContentType = "text"
+	SlotContentTypeVideo   SlotContentType = "video"
 )
 
 type AttributeID AttributeTypeID
@@ -61,17 +52,16 @@ type AttributeValue map[string]any
 type AttributeOptions map[string]any
 
 type PosBusAutoAttributeOption struct {
-	SendTo PosBusDestinationType            `db:"send_to" json:"send_to"`
-	Scope  []PosBusAutoScopeAttributeOption `db:"scope" json:"scope"`
-	Topic  string                           `db:"topic" json:"topic"`
+	Scope []PosBusAutoScopeAttributeOption `db:"scope" json:"scope"`
+	Topic string                           `db:"topic" json:"topic"`
 }
 
-type UnityAutoAttributeOption struct {
-	SlotType           UnitySlotType    `db:"slot_type" json:"slot_type"`
-	SlotName           string           `db:"slot_name" json:"slot_name"`
-	ValueField         string           `db:"value_field" json:"value_field"`
-	ContentType        UnityContentType `db:"content_type" json:"content_type"`
-	TextRenderTemplate string           `db:"text_render_template" json:"text_render_template"`
+type RenderAutoAttributeOption struct {
+	SlotType           SlotType        `db:"slot_type" json:"slot_type"`
+	SlotName           string          `db:"slot_name" json:"slot_name"`
+	ValueField         string          `db:"value_field" json:"value_field"`
+	ContentType        SlotContentType `db:"content_type" json:"content_type"`
+	TextRenderTemplate string          `db:"text_render_template" json:"text_render_template"`
 }
 
 func NewAttribute(attributeID AttributeID, payload *AttributePayload) *Attribute {

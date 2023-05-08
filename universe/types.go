@@ -15,6 +15,7 @@ const (
 
 type ObjectFilterPredicateFn func(objectID umid.UMID, object Object) bool
 type WorldsFilterPredicateFn func(worldID umid.UMID, world World) bool
+type UsersFilterPredicateFn func(userID umid.UMID, user User) bool
 type ObjectsFilterPredicateFn func(objectID umid.UMID, object Object) bool
 type Assets2dFilterPredicateFn func(asset2dID umid.UMID, asset2d Asset2d) bool
 type Assets3dFilterPredicateFn func(asset3dID umid.UMID, asset3d Asset3d) bool
@@ -30,6 +31,13 @@ type WorldSettings struct {
 	ObjectTypes map[string]umid.UMID `db:"object_types" json:"object_types"`
 	Effects     map[string]umid.UMID `db:"effects" json:"effects"`
 }
+
+type SortType string
+
+const (
+	ASC  SortType = "ASC"
+	DESC SortType = "DESC"
+)
 
 type ReservedAttribute struct {
 	Name string
@@ -53,6 +61,8 @@ var (
 		Object struct {
 			Name           ReservedAttribute
 			Description    ReservedAttribute
+			WorldAvatar    ReservedAttribute
+			WebsiteLink    ReservedAttribute
 			NewsFeedItems  ReservedAttribute
 			PortalDockFace ReservedAttribute
 			Events         ReservedAttribute
@@ -113,6 +123,8 @@ var (
 		Object: struct {
 			Name           ReservedAttribute
 			Description    ReservedAttribute
+			WorldAvatar    ReservedAttribute
+			WebsiteLink    ReservedAttribute
 			NewsFeedItems  ReservedAttribute
 			PortalDockFace ReservedAttribute
 			Events         ReservedAttribute
@@ -123,6 +135,15 @@ var (
 			},
 			Description: ReservedAttribute{
 				Name: "description",
+				Key:  "description",
+			},
+			WorldAvatar: ReservedAttribute{
+				Name: "world_avatar",
+				Key:  "render_hash",
+			},
+			WebsiteLink: ReservedAttribute{
+				Name: "website_link",
+				Key:  "website_link",
 			},
 			NewsFeedItems: ReservedAttribute{
 				Name: "news_feed",

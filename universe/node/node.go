@@ -7,11 +7,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
-
 	"github.com/gin-gonic/gin"
 	influx_api "github.com/influxdata/influxdb-client-go/v2/api"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -19,14 +17,19 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
+	"github.com/momentum-xyz/ubercontroller/harvester"
+	"github.com/momentum-xyz/ubercontroller/harvester/arbitrum_nova_adapter"
 	"github.com/momentum-xyz/ubercontroller/mplugin"
 	"github.com/momentum-xyz/ubercontroller/seed"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
 	"github.com/momentum-xyz/ubercontroller/universe/object"
 	"github.com/momentum-xyz/ubercontroller/universe/streamchat"
+	"github.com/momentum-xyz/ubercontroller/universe/user"
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 var _ universe.Node = (*Node)(nil)
@@ -137,6 +140,19 @@ func (n *Node) Initialize(ctx context.Context) error {
 	return n.ToObject().Initialize(ctx)
 }
 
+func (n *Node) LoadUser(userID umid.UMID) (universe.User, error) {
+	newUser := user.NewUser(userID, n.db)
+	if err := newUser.Initialize(n.ctx); err != nil {
+		return nil, errors.WithMessagef(err, "failed to initialize user: %s", userID)
+	}
+
+	if err := newUser.Load(); err != nil {
+		return nil, errors.WithMessagef(err, "failed to load user: %s", userID)
+	}
+
+	return newUser, nil
+}
+
 func (n *Node) ToObject() universe.Object {
 	return n.Object
 }
@@ -163,6 +179,21 @@ func (n *Node) GetObjectUserAttributes() universe.ObjectUserAttributes {
 
 func (n *Node) GetWorlds() universe.Worlds {
 	return n.worlds
+}
+
+func (n *Node) GetWorldsByOwnerID(userID umid.UMID) map[umid.UMID]universe.World {
+	n.Children.Mu.RLock()
+	defer n.Children.Mu.RUnlock()
+
+	worlds := make(map[umid.UMID]universe.World, len(n.Children.Data))
+	for id, world := range n.worlds.GetWorlds() {
+
+		if world.GetOwnerID() == userID {
+			worlds[id] = world
+		}
+	}
+
+	return worlds
 }
 
 func (n *Node) GetAssets2d() universe.Assets2d {
@@ -220,6 +251,38 @@ func (n *Node) Run() error {
 		return errors.WithMessage(err, "failed to run worlds")
 	}
 	n.SetEnabled(true)
+
+	//harvester.Initialise(ctx, log, cfg, pool)
+	//if cfg.Arbitrum.ArbitrumMOMTokenAddress != "" {
+	//	arbitrumAdapter := arbitrum_nova_adapter.NewArbitrumNovaAdapter(cfg)
+	//	arbitrumAdapter.Run()
+	//	if err := harvester.GetInstance().RegisterAdapter(arbitrumAdapter); err != nil {
+	//		return errors.WithMessage(err, "failed to register arbitrum adapter")
+	//	}
+	//}
+	//err = harvester.SubscribeAllWallets(ctx, harvester.GetInstance(), cfg, pool)
+	//if err != nil {
+	//	log.Error(err)
+	//}
+
+	/**
+	Simplified version of harvester
+	*/
+	if n.cfg.Arbitrum.ArbitrumMOMTokenAddress != "" {
+		adapter := arbitrum_nova_adapter.NewArbitrumNovaAdapter(n.cfg)
+		adapter.Run()
+
+		logger, _ := zap.NewProduction()
+		pgConfig, err := n.cfg.Postgres.GenConfig(logger)
+		pool, err := pgxpool.ConnectConfig(context.Background(), pgConfig)
+		if err != nil {
+			log.Fatal("failed to create db pool")
+		}
+		defer pool.Close()
+
+		t := harvester.NewTable2(pool, adapter, n.Listener)
+		t.Run()
+	}
 
 	// in goroutine for graceful shutdown
 	go func() {

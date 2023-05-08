@@ -14,15 +14,6 @@ func (v LockObject) MarshalMUS(buf []byte) int {
 		si := v.ID.MarshalMUS(buf[i:])
 		i += si
 	}
-	{
-		for v.State >= 0x80 {
-			buf[i] = byte(v.State) | 0x80
-			v.State >>= 7
-			i++
-		}
-		buf[i] = byte(v.State)
-		i++
-	}
 	return i
 }
 
@@ -42,32 +33,6 @@ func (v *LockObject) UnmarshalMUS(buf []byte) (int, error) {
 	if err != nil {
 		return i, muserrs.NewFieldError("ID", err)
 	}
-	{
-		if i > len(buf)-1 {
-			return i, muserrs.ErrSmallBuf
-		}
-		shift := 0
-		done := false
-		for l, b := range buf[i:] {
-			if l == 4 && b > 15 {
-				return i, muserrs.ErrOverflow
-			}
-			if b < 0x80 {
-				v.State = v.State | uint32(b)<<shift
-				done = true
-				i += l + 1
-				break
-			}
-			v.State = v.State | uint32(b&0x7F)<<shift
-			shift += 7
-		}
-		if !done {
-			return i, muserrs.ErrSmallBuf
-		}
-	}
-	if err != nil {
-		return i, muserrs.NewFieldError("State", err)
-	}
 	return i, err
 }
 
@@ -77,13 +42,6 @@ func (v LockObject) SizeMUS() int {
 	{
 		ss := v.ID.SizeMUS()
 		size += ss
-	}
-	{
-		for v.State >= 0x80 {
-			v.State >>= 7
-			size++
-		}
-		size++
 	}
 	return size
 }

@@ -3,35 +3,41 @@ package users
 import (
 	"context"
 
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
-
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/ubercontroller/types/entry"
-
 	"github.com/momentum-xyz/ubercontroller/database"
+	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 const (
-	getUserByIDQuery     = `SELECT * FROM "user" WHERE user_id = $1;`
-	getUsersByIDsQuery   = `SELECT * FROM "user" WHERE user_id = ANY($1);`
-	getUserByWalletQuery = `SELECT * FROM "user"
-         						WHERE user_id = (SELECT user_id FROM user_attribute
-         						                    /* Kusama plugin umid */
-         						                	WHERE plugin_id = '86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8'
-         						                    AND attribute_name = 'wallet'
-         						                    AND value->'wallet' ? $1
-         						                );`
+	getUserByIDQuery   = `SELECT * FROM "user" WHERE user_id = $1;`
+	getUsersByIDsQuery = `SELECT * FROM "user" WHERE user_id = ANY($1);`
+	getAllUsersQuery   = `SELECT * FROM "user" WHERE user_type_id = $1;`
+	getUserIDsQuery    = `SELECT user_id FROM "user" 
+               				WHERE user_type_id = $1
+         					ORDER BY created_at `
+	getUserByWalletQuery = `SELECT * FROM "user" WHERE user_id = (SELECT user_id
+							FROM user_attribute,
+							LATERAL jsonb_array_elements_text(value->'wallet') AS wallet_address
+							WHERE UPPER(wallet_address) = UPPER($1) LIMIT 1);`
 	getUsersByUserType = `SELECT * FROM "user" WHERE user_type_id = $1;`
 	getWalletByUserID  = `SELECT value -> 'wallet' ->> 0 AS wallet
 						FROM user_attribute
 						WHERE user_id = $1
 						  AND plugin_id = '86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8'
 						  AND attribute_name = 'wallet'`
+	getWalletsByUserID = `SELECT value -> 'wallet' AS wallets
+						FROM user_attribute
+						WHERE user_id = $1
+						  AND plugin_id = '86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8'
+						  AND attribute_name = 'wallet'`
+	getUserProfileByUserIDQuery    = `SELECT profile FROM "user" WHERE user_id = $1;`
 	checkIsUserExistsByNameQuery   = `SELECT EXISTS(SELECT 1 FROM "user" WHERE profile->>'name' = $1);`
 	checkIsUserExistsByWalletQuery = `SELECT EXISTS(SELECT user_id FROM user_attribute
          						                    /* Kusama plugin umid */
@@ -39,8 +45,6 @@ const (
          						                    AND attribute_name = 'wallet'
          						                    AND value->'wallet' ? $1
          						                );`
-	getUserProfileByUserIDQuery = `SELECT profile FROM "user" WHERE user_id = $1;`
-
 	upsertUserQuery = `INSERT INTO "user"
     						(user_id, user_type_id, profile, options, created_at, updated_at)
 						VALUES
@@ -96,6 +100,23 @@ func (db *DB) GetUsersByIDs(ctx context.Context, userIDs []umid.UMID) ([]*entry.
 	return users, nil
 }
 
+func (db *DB) GetAllUsers(ctx context.Context, userTypeID umid.UMID) ([]*entry.User, error) {
+	var users []*entry.User
+	if err := pgxscan.Select(ctx, db.conn, &users, getAllUsersQuery, userTypeID); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return users, nil
+}
+
+func (db *DB) GetUserIDs(ctx context.Context, sortType universe.SortType, limit string, userTypeID umid.UMID) ([]umid.UMID, error) {
+	limitQuery := " LIMIT " + limit + ";"
+	var userIDs []umid.UMID
+	if err := pgxscan.Select(ctx, db.conn, &userIDs, getUserIDsQuery+string(sortType)+limitQuery, userTypeID); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return userIDs, nil
+}
+
 func (db *DB) GetUserByWallet(ctx context.Context, wallet string) (*entry.User, error) {
 	var user entry.User
 	if err := pgxscan.Get(ctx, db.conn, &user, getUserByWalletQuery, wallet); err != nil {
@@ -112,6 +133,16 @@ func (db *DB) GetUserWalletByUserID(ctx context.Context, userID umid.UMID) (*str
 	}
 
 	return &wallet, nil
+}
+
+func (db *DB) GetUserWalletsByUserID(ctx context.Context, userID umid.UMID) ([]*string, error) {
+	var wallets []*string
+	if err := db.conn.QueryRow(ctx, getWalletsByUserID, userID).
+		Scan(&wallets); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+
+	return wallets, nil
 }
 
 func (db *DB) CheckIsUserExistsByName(ctx context.Context, name string) (bool, error) {

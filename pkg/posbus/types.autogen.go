@@ -22,6 +22,7 @@ const (
 	TypeSignal                MsgType = 0xADC1964D
 	TypeTeleportRequest       MsgType = 0x78DA55D9
 	TypeTriggerVisualEffects  MsgType = 0xD96089C6
+	TypeUnlockObject          MsgType = 0xA54EDEB9
 	TypeUserAction            MsgType = 0xEF1A2E75
 	TypeUserData              MsgType = 0xF702EF5F
 	TypeUserStakedToOdyssey   MsgType = 0x10DACABC
