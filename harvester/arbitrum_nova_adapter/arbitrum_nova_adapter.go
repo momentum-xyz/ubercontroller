@@ -260,8 +260,8 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 				// Read and convert event params
 				fromWallet := ev[0].(common.Address)
 
-				arr := ev[1].([16]byte)
-				odysseyID, err := umid.FromBytes(arr[:])
+				arr := ev[1].(*big.Int)
+				odysseyID, err := umid.FromBytes(arr.FillBytes(make([]byte, 16)))
 				if err != nil {
 					return nil, errors.WithMessage(err, "failed to parse umid from bytes")
 				}
