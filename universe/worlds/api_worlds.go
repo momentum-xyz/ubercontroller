@@ -252,7 +252,6 @@ func (w *Worlds) apiWorldsGetDetails(c *gin.Context) {
 	}
 
 	totalStakeStr := totalStake.String()
-	worldEntry := world.GetEntry()
 	worldDetails := dto.WorldDetails{
 		ID:                 world.GetID(),
 		OwnerID:            ownerID,
@@ -260,8 +259,8 @@ func (w *Worlds) apiWorldsGetDetails(c *gin.Context) {
 		Name:               utils.GetPTR(world.GetName()),
 		Description:        utils.GetPTR(world.GetDescription()),
 		StakeTotal:         &totalStakeStr,
-		CreatedAt:          worldEntry.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:          worldEntry.UpdatedAt.Format(time.RFC3339),
+		CreatedAt:          world.GetCreatedAt().Format(time.RFC3339),
+		UpdatedAt:          world.GetUpdatedAt().Format(time.RFC3339),
 		AvatarHash:         utils.GetPTR(world.GetWorldAvatar()),
 		WebsiteLink:        utils.GetPTR(world.GetWebsiteLink()),
 		WorldStakers:       worldStakers,

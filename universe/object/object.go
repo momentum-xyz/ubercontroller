@@ -3,6 +3,7 @@ package object
 import (
 	"context"
 	"sync/atomic"
+	"time"
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
@@ -64,11 +65,15 @@ type Object struct {
 
 	lockedBy atomic.Value
 
+	createdAt time.Time
+	updatedAt time.Time
+
 	// TODO: replace theta with full calculation of orientation, once Unity is read
 	theta float64
 }
 
 func NewObject(id umid.UMID, db database.DB, world universe.World) *Object {
+	now := time.Now()
 	object := &Object{
 		id:            id,
 		db:            db,
@@ -77,6 +82,8 @@ func NewObject(id umid.UMID, db database.DB, world universe.World) *Object {
 		attributesMsg: generic.NewSyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]](0),
 		renderDataMap: generic.NewSyncMap[entry.SlotType, *posbus.StringAnyMap](0),
 		world:         world,
+		createdAt:     now,
+		updatedAt:     now,
 	}
 	object.objectAttributes = newObjectAttributes(object)
 
@@ -590,6 +597,9 @@ func (o *Object) load(entry *entry.Object) error {
 		return errors.WithMessage(err, "failed to set transform")
 	}
 
+	o.createdAt = entry.CreatedAt
+	o.updatedAt = entry.UpdatedAt
+
 	return nil
 }
 
@@ -722,4 +732,12 @@ func (o *Object) LockUIObject(user universe.User, state uint32) bool {
 	} else {
 		return o.lockedBy.CompareAndSwap(user.GetID(), umid.Nil)
 	}
+}
+
+func (o *Object) GetCreatedAt() time.Time {
+	return o.createdAt
+}
+
+func (o *Object) GetUpdatedAt() time.Time {
+	return o.updatedAt
 }
