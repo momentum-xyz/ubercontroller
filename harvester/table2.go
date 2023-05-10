@@ -101,6 +101,7 @@ func (t *Table2) ProcessLogs(blockNumber uint64, logs []any) {
 	nftEvents := make([]*NftEvent, 0)
 
 	nftLogs := make([]*TransferNFTLog, 0)
+	stakeLogs := make([]*StakeLog, 0)
 
 	for _, log := range logs {
 		switch log.(type) {
@@ -146,10 +147,13 @@ func (t *Table2) ProcessLogs(blockNumber uint64, logs []any) {
 
 			t.stakesData[stake.OdysseyID][stake.UserWallet] = stake.TotalStaked
 			stakeEvents = append(stakeEvents, &StakeEvent{
+				TxHash:    stake.TxHash,
 				Wallet:    stake.UserWallet,
 				OdysseyID: stake.OdysseyID,
 				Amount:    stake.TotalStaked,
 			})
+
+			stakeLogs = append(stakeLogs, stake)
 
 		case *UnstakeLog:
 			stake := log.(*UnstakeLog)
@@ -227,7 +231,7 @@ func (t *Table2) SaveToDB(events []*UpdateEvent, stakeEvents []*StakeEvent, nftL
 	contracts := make([]Address, 0)
 	// Save balance by value to quickly unlock mutex, otherwise have to unlock util DB transaction finished
 	balances := make([]*entry.Balance, 0)
-	stakeEntries := make([]*entry.Stake, 0)
+	stakes := make([]*entry.Stake, 0)
 
 	blockchainUMID, _, _ := t.adapter.GetInfo()
 
@@ -248,23 +252,30 @@ func (t *Table2) SaveToDB(events []*UpdateEvent, stakeEvents []*StakeEvent, nftL
 
 	for _, stake := range stakeEvents {
 		wallets = append(wallets, HexToAddress(stake.Wallet))
-		stakeEntries = append(stakeEntries, &entry.Stake{
+
+		var comment string
+		if stake.TxHash != "" {
+			comment, err = t.GetLastCommentByTxHash(stake.TxHash)
+			if err != nil {
+				return errors.WithMessagef(err, "failed to GetLastCommentByTxHash: %s", stake.TxHash)
+			}
+		}
+
+		stakes = append(stakes, &entry.Stake{
 			WalletID:     HexToAddress(stake.Wallet),
 			BlockchainID: blockchainUMID,
 			ObjectID:     stake.OdysseyID,
-			LastComment:  "",
+			LastComment:  comment,
 			Amount:       (*entry.BigInt)(stake.Amount),
 		})
 	}
 
 	wallets = unique(wallets)
 
-	fmt.Println(stakeEntries)
-
-	return t.saveToDB(wallets, contracts, balances, stakeEntries, nftLogs)
+	return t.saveToDB(wallets, contracts, balances, stakes, nftLogs)
 }
 
-func (t *Table2) saveToDB(wallets []Address, contracts []Address, balances []*entry.Balance, stakeEntries []*entry.Stake, nftLogs []*TransferNFTLog) error {
+func (t *Table2) saveToDB(wallets []Address, contracts []Address, balances []*entry.Balance, stakes []*entry.Stake, nftLogs []*TransferNFTLog) error {
 	blockchainUMID, name, rpcURL := t.adapter.GetInfo()
 
 	tx, err := t.db.BeginTx(context.Background(), pgx.TxOptions{})
@@ -280,7 +291,6 @@ func (t *Table2) saveToDB(wallets []Address, contracts []Address, balances []*en
 				fmt.Println(e)
 			}
 		} else {
-			//fmt.Println("!!! Commit")
 			e := tx.Commit(context.TODO())
 			if e != nil {
 				fmt.Println("???!!!")
@@ -348,12 +358,14 @@ func (t *Table2) saveToDB(wallets []Address, contracts []Address, balances []*en
 	sql = `INSERT INTO stake (wallet_id, blockchain_id, object_id, amount, last_comment, updated_at, created_at)
 			VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
 			ON CONFLICT (blockchain_id, wallet_id, object_id)
-				DO UPDATE SET updated_at = NOW(),
-							  amount     = $4`
+				DO UPDATE SET updated_at   = NOW(),
+				              last_comment = $5,
+							  amount       = $4`
 
-	for _, s := range stakeEntries {
+	for _, s := range stakes {
+
 		_, err = tx.Exec(context.TODO(), sql,
-			s.WalletID, blockchainUMID, s.ObjectID, s.Amount, "")
+			s.WalletID, blockchainUMID, s.ObjectID, s.Amount, s.LastComment)
 		if err != nil {
 			err = errors.WithMessage(err, "failed to insert stakes to DB")
 			return err
@@ -381,6 +393,23 @@ func (t *Table2) saveToDB(wallets []Address, contracts []Address, balances []*en
 	}
 
 	return nil
+}
+
+func (t *Table2) GetLastCommentByTxHash(txHash string) (string, error) {
+	sqlQuery := `SELECT comment FROM pending_stake WHERE transaction_id = $1`
+
+	row := t.db.QueryRow(context.TODO(), sqlQuery, HexToAddress(txHash))
+	var comment string
+	err := row.Scan(&comment)
+	if err == pgx.ErrNoRows {
+		return "", nil
+	}
+
+	if err != nil {
+		return "", errors.WithMessage(err, "failed to scan 'comment' column from row")
+	}
+
+	return comment, err
 }
 
 func (t *Table2) LoadFromDB() error {
