@@ -2,6 +2,7 @@ package universe
 
 import (
 	"context"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -213,6 +214,9 @@ type Object interface {
 	SendAllAutoAttributes(sendFn func(msg *websocket.PreparedMessage) error, recursive bool)
 
 	LockUIObject(user User, state uint32) bool
+
+	GetCreatedAt() time.Time
+	GetUpdatedAt() time.Time
 }
 
 type User interface {

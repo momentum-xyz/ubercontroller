@@ -223,8 +223,8 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 				// Read and convert event params
 				fromWallet := ev[0].(common.Address)
 
-				arr := ev[1].([16]byte)
-				odysseyID, err := umid.FromBytes(arr[:])
+				arr := ev[1].(*big.Int)
+				odysseyID, err := umid.FromBytes(arr.FillBytes(make([]byte, 16)))
 				if err != nil {
 					return nil, errors.WithMessage(err, "failed to parse umid from bytes")
 				}
@@ -235,13 +235,13 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 					continue
 				}
 
+				transactionHash := vLog.TxHash.Hex()
 				amount := ev[2].(*big.Int)
-
 				tokenType := ev[3].(uint8)
-
 				totalAmount := ev[4].(*big.Int)
 
 				e := &harvester.StakeLog{
+					TxHash:       transactionHash,
 					UserWallet:   fromWallet.Hex(),
 					OdysseyID:    odysseyID,
 					AmountStaked: amount,
@@ -260,8 +260,8 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 				// Read and convert event params
 				fromWallet := ev[0].(common.Address)
 
-				arr := ev[1].([16]byte)
-				odysseyID, err := umid.FromBytes(arr[:])
+				arr := ev[1].(*big.Int)
+				odysseyID, err := umid.FromBytes(arr.FillBytes(make([]byte, 16)))
 				if err != nil {
 					return nil, errors.WithMessage(err, "failed to parse umid from bytes")
 				}
