@@ -1,7 +1,6 @@
 package node
 
 import (
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -9,6 +8,7 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 // @Schemes
@@ -37,7 +37,7 @@ func (n *Node) apiSetUserUserSubAttributeValue(c *gin.Context) {
 		return
 	}
 
-	userID, err := umid.Parse(c.Param("userID"))
+	sourceID, err := umid.Parse(c.Param("userID"))
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiSetUserUserSubAttributeValue: failed to parse user umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
@@ -58,8 +58,21 @@ func (n *Node) apiSetUserUserSubAttributeValue(c *gin.Context) {
 		return
 	}
 
+	result, err := n.AssessPermissions(c, pluginID, inBody.AttributeName, targetID, WriteOperation, UserUserAttribute)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSetUserUserSubAttributeValue: failed to assess permissions")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
+		return
+	}
+
+	if !result {
+		err := errors.WithMessage(err, "Node: apiSetUserUserSubAttributeValue: operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+		return
+	}
+
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
-	userUserAttributeID := entry.NewUserUserAttributeID(attributeID, userID, targetID)
+	userUserAttributeID := entry.NewUserUserAttributeID(attributeID, sourceID, targetID)
 
 	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
 		newValue := func() *entry.AttributeValue {

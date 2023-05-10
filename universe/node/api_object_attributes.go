@@ -56,14 +56,7 @@ func (n *Node) apiGetObjectAttributesValue(c *gin.Context) {
 		return
 	}
 
-	userID, err := api.GetUserIDFromContext(c)
-	if err != nil {
-		err = errors.WithMessage(err, "Node: apiGetObjectAttributesValue: failed to get user umid")
-		api.AbortRequest(c, http.StatusInternalServerError, "get_user_id_failed", err, n.log)
-		return
-	}
-
-	result, err := n.AssessPermissions(pluginID, inQuery.AttributeName, userID, objectID, ReadOperation, ObjectAttribute)
+	result, err := n.AssessPermissions(c, pluginID, inQuery.AttributeName, objectID, ReadOperation, ObjectAttribute)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: failed to assess permissions")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
@@ -135,14 +128,7 @@ func (n *Node) apiGetObjectWithChildrenAttributeValues(c *gin.Context) {
 		return
 	}
 
-	userID, err := api.GetUserIDFromContext(c)
-	if err != nil {
-		err = errors.WithMessage(err, "Node: apiGetObjectWithChildrenAttributeValues: failed to get user umid")
-		api.AbortRequest(c, http.StatusInternalServerError, "get_user_id_failed", err, n.log)
-		return
-	}
-
-	result, err := n.AssessPermissions(pluginID, inQuery.AttributeName, userID, objectID, ReadOperation, ObjectAttribute)
+	result, err := n.AssessPermissions(c, pluginID, inQuery.AttributeName, objectID, ReadOperation, ObjectAttribute)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetObjectWithChildrenAttributeValues: failed to assess permissions")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
@@ -221,14 +207,7 @@ func (n *Node) apiSetObjectAttributesValue(c *gin.Context) {
 		return
 	}
 
-	userID, err := api.GetUserIDFromContext(c)
-	if err != nil {
-		err = errors.WithMessage(err, "Node: apiSetObjectAttributesValue: failed to get user umid")
-		api.AbortRequest(c, http.StatusInternalServerError, "get_user_id_failed", err, n.log)
-		return
-	}
-
-	result, err := n.AssessPermissions(pluginID, inBody.AttributeName, userID, objectID, WriteOperation, ObjectAttribute)
+	result, err := n.AssessPermissions(c, pluginID, inBody.AttributeName, objectID, WriteOperation, ObjectAttribute)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiSetObjectAttributesValue: failed to assess permissions")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
@@ -323,14 +302,7 @@ func (n *Node) apiGetObjectAttributeSubValue(c *gin.Context) {
 		return
 	}
 
-	userID, err := api.GetUserIDFromContext(c)
-	if err != nil {
-		err = errors.WithMessage(err, "Node: apiGetObjectSubAttributes: failed to get user umid")
-		api.AbortRequest(c, http.StatusInternalServerError, "get_user_id_failed", err, n.log)
-		return
-	}
-
-	result, err := n.AssessPermissions(pluginID, inQuery.AttributeName, userID, objectID, ReadOperation, ObjectAttribute)
+	result, err := n.AssessPermissions(c, pluginID, inQuery.AttributeName, objectID, ReadOperation, ObjectAttribute)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetObjectSubAttributes: failed to assess permissions")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
@@ -414,14 +386,7 @@ func (n *Node) apiSetObjectAttributeSubValue(c *gin.Context) {
 		return
 	}
 
-	userID, err := api.GetUserIDFromContext(c)
-	if err != nil {
-		err = errors.WithMessage(err, "Node: apiSetObjectAttributeSubValue: failed to get user umid")
-		api.AbortRequest(c, http.StatusInternalServerError, "get_user_id_failed", err, n.log)
-		return
-	}
-
-	result, err := n.AssessPermissions(pluginID, inBody.AttributeName, userID, objectID, WriteOperation, ObjectAttribute)
+	result, err := n.AssessPermissions(c, pluginID, inBody.AttributeName, objectID, WriteOperation, ObjectAttribute)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiSetObjectAttributeSubValue: failed to assess permissions")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
@@ -520,14 +485,7 @@ func (n *Node) apiRemoveObjectAttributeSubValue(c *gin.Context) {
 		return
 	}
 
-	userID, err := api.GetUserIDFromContext(c)
-	if err != nil {
-		err = errors.WithMessage(err, "Node: apiRemoveObjectAttributeSubValue: failed to get user umid")
-		api.AbortRequest(c, http.StatusInternalServerError, "get_user_id_failed", err, n.log)
-		return
-	}
-
-	result, err := n.AssessPermissions(pluginID, inBody.AttributeName, userID, objectID, WriteOperation, ObjectAttribute)
+	result, err := n.AssessPermissions(c, pluginID, inBody.AttributeName, objectID, WriteOperation, ObjectAttribute)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiRemoveObjectAttributeSubValue: failed to assess permissions")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
@@ -608,14 +566,7 @@ func (n *Node) apiRemoveObjectAttributeValue(c *gin.Context) {
 		return
 	}
 
-	userID, err := api.GetUserIDFromContext(c)
-	if err != nil {
-		err = errors.WithMessage(err, "Node: apiRemoveObjectAttributeValue: failed to get user umid")
-		api.AbortRequest(c, http.StatusInternalServerError, "get_user_id_failed", err, n.log)
-		return
-	}
-
-	result, err := n.AssessPermissions(pluginID, inBody.AttributeName, userID, objectID, WriteOperation, ObjectAttribute)
+	result, err := n.AssessPermissions(c, pluginID, inBody.AttributeName, objectID, WriteOperation, ObjectAttribute)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiRemoveObjectAttributeValue: failed to assess permissions")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
