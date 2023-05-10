@@ -235,13 +235,13 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 					continue
 				}
 
+				transactionHash := vLog.TxHash.Hex()
 				amount := ev[2].(*big.Int)
-
 				tokenType := ev[3].(uint8)
-
 				totalAmount := ev[4].(*big.Int)
 
 				e := &harvester.StakeLog{
+					TxHash:       transactionHash,
 					UserWallet:   fromWallet.Hex(),
 					OdysseyID:    odysseyID,
 					AmountStaked: amount,

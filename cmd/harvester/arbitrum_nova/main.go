@@ -58,7 +58,22 @@ func main() {
 	for _, log := range logs {
 		switch log.(type) {
 		case *harvester.TransferERC20Log:
-			fmt.Println(log.(*harvester.TransferERC20Log).Value)
+			l := log.(*harvester.TransferERC20Log)
+			fmt.Printf("%s %s %s \n", l.From, l.To, l.Value)
+			//fmt.Println(log.(*harvester.TransferERC20Log).Value)
+		}
+	}
+
+	for _, log := range logs {
+		switch log.(type) {
+		case *harvester.StakeLog:
+			l := log.(*harvester.StakeLog)
+			fmt.Printf("  stake: %s %s %s %s %s \n", l.TxHash, l.UserWallet, l.OdysseyID, l.AmountStaked, l.TotalStaked)
+			//fmt.Println(log.(*harvester.TransferERC20Log).Value)
+		case *harvester.UnstakeLog:
+			l := log.(*harvester.UnstakeLog)
+			fmt.Printf("unstake: %s %s %s %s \n", l.UserWallet, l.OdysseyID, l.AmountUnstaked, l.TotalStaked)
+			//fmt.Println(log.(*harvester.TransferERC20Log).Value)
 		}
 	}
 
