@@ -8,6 +8,7 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
 	"github.com/momentum-xyz/ubercontroller/utils"
@@ -48,11 +49,6 @@ func (n *Node) AssessPermissions(
 	// If not available fall back to default
 	// Handle exceptions
 
-	defaultPermissions := map[string]string{
-		"read":  "any",
-		"write": "admin+user_owner",
-	}
-
 	attributeID := entry.NewAttributeID(pluginID, attributeName)
 	attributeTypeID := entry.NewAttributeTypeID(pluginID, attributeName)
 	attributeType, ok := n.GetAttributeTypes().GetAttributeType(attributeTypeID)
@@ -60,21 +56,14 @@ func (n *Node) AssessPermissions(
 		return false, errors.New("failed to get attributeType")
 	}
 
-	options := attributeType.GetOptions()
-	permissions := make(map[string]string)
-
-	if options != nil {
-		// Todo: remove hardcode
-		permissions = utils.GetFromAnyMap(*options, "permissions", map[string]string(nil))
-
-		if permissions == nil {
-			permissions = defaultPermissions
-		}
-	}
-
 	userID, err := api.GetUserIDFromContext(c)
 	if err != nil {
 		return false, errors.WithMessage(err, "failed to get userID from context")
+	}
+
+	permissions, err := n.GetPermissions(attributeID, attributeType, attributeKind, ownerID, userID)
+	if err != nil {
+		return false, errors.WithMessage(err, "failed to get permissions")
 	}
 
 	switch operationType {
@@ -85,6 +74,60 @@ func (n *Node) AssessPermissions(
 	}
 
 	return false, nil
+}
+
+func (n *Node) GetPermissions(attributeID entry.AttributeID,
+	attributeType universe.AttributeType,
+	attributeKind AttributeKind, ownerID umid.UMID, userID umid.UMID,
+) (map[string]string, error) {
+	var attributeOptions *entry.AttributeOptions
+	permissionsMap := make(map[string]string)
+	defaultPermissions := map[string]string{
+		"read":  "any",
+		"write": "admin+user_owner",
+	}
+
+	switch attributeKind {
+	case ObjectAttribute:
+		options, ok := n.GetObjectAttributes().GetOptions(attributeID)
+		if !ok {
+			return nil, errors.New("failed to get objectAttribute options")
+		}
+		attributeOptions = options
+	case ObjectUserAttribute:
+		objectUserAttributeID := entry.NewObjectUserAttributeID(attributeID, ownerID, userID)
+		options, ok := n.GetObjectUserAttributes().GetOptions(objectUserAttributeID)
+		if !ok {
+			return nil, errors.New("failed to get objectUserAttribute options")
+		}
+		attributeOptions = options
+	case UserAttribute:
+		userAttributeID := entry.NewUserAttributeID(attributeID, userID)
+		options, ok := n.GetUserAttributes().GetOptions(userAttributeID)
+		if !ok {
+			return nil, errors.New("failed to get userAttribute options")
+		}
+		attributeOptions = options
+	case UserUserAttribute:
+		userUserAttributeID := entry.NewUserUserAttributeID(attributeID, userID, ownerID)
+		options, ok := n.GetUserUserAttributes().GetOptions(userUserAttributeID)
+		if !ok {
+			return nil, errors.New("failed to get userUserAttribute options")
+		}
+		attributeOptions = options
+	default:
+		options := attributeType.GetOptions()
+		attributeOptions = options
+	}
+
+	permissions := utils.GetFromAnyMap(*attributeOptions, "permissions", map[string]string(nil))
+	if permissions != nil {
+		permissionsMap = permissions
+	} else {
+		permissionsMap = defaultPermissions
+	}
+
+	return permissionsMap, nil
 }
 
 func (n *Node) AssessReadOperation(

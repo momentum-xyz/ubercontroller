@@ -1,6 +1,7 @@
 package node
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
@@ -163,6 +164,86 @@ func (n *Node) apiGetObjectWithChildrenAttributeValues(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, objectAttributes)
+}
+
+// @Summary Makes object attribute available to public
+// @Schemes
+// @Description Changes object permissions to be {"write":"user", "read":"any"}
+// @Tags objects
+// @Accept json
+// @Produce json
+// @Param object_id path string true "Object UMID"
+// @Param body body node.apiObjectsSetObjectSubOption.Body true "body params"
+// @Success 202 {object} dto.ObjectSubOptions
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/objects/{object_id}/attributes/publicize [post]
+func (n *Node) apiSetObjectAttributesPublic(c *gin.Context) {
+	type Body struct {
+		PluginID      string `json:"plugin_id" binding:"required"`
+		AttributeName string `json:"attribute_name" binding:"required"`
+	}
+
+	inBody := Body{}
+
+	if err := c.ShouldBindJSON(&inBody); err != nil {
+		err = errors.WithMessage(err, "Node: apiSetObjectAttributesPublic: failed to bind json")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
+	objectID, err := umid.Parse(c.Param("objectID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSetObjectAttributesPublic: failed to parse object umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
+		return
+	}
+
+	object, ok := n.GetObjectFromAllObjects(objectID)
+	if !ok {
+		err := errors.Errorf("Node: apiSetObjectAttributesPublic: object not found: %s", objectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
+		return
+	}
+
+	pluginID, err := umid.Parse(inBody.PluginID)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSetObjectAttributesPublic: failed to parse plugin umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
+		return
+	}
+
+	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
+	attributeOptions, ok := object.GetObjectAttributes().GetOptions(attributeID)
+	fmt.Sprint(attributeOptions)
+
+	//attributeOp
+	//
+	//modifyFn := func(current *entry.ObjectOptions) (*entry.ObjectOptions, error) {
+	//	if current == nil {
+	//		current = &entry.ObjectOptions{}
+	//	}
+	//	if current.Subs == nil {
+	//		current.Subs = make(map[string]any)
+	//	}
+	//
+	//	current.Subs[inBody.SubOptionKey] = inBody.SubOptionValue
+	//
+	//	return current, nil
+	//}
+	//
+	//if _, err := object.SetOptions(modifyFn, true); err != nil {
+	//	err := errors.WithMessage(err, "Node: apiObjectsSetPublic: failed to set options")
+	//	api.AbortRequest(c, http.StatusInternalServerError, "set_options_failed", err, n.log)
+	//	return
+	//}
+
+	//out := dto.ObjectSubOptions{
+	//	inBody.SubOptionKey: inBody.SubOptionValue,
+	//}
+
+	c.JSON(http.StatusAccepted, nil)
 }
 
 // @Summary Set object attribute
