@@ -19,7 +19,7 @@ func (c *UIClient) Init(arb Arbitrum) {
 	c.BlockchainID = arb.BlockchainID
 	c.ContractMOM = arb.MOMTokenAddress
 	c.ContractDAD = arb.DADTokenAddress
-	c.ContractStake = arb.StakeContractAddress
-	c.ContractNFT = arb.NFTContractAddress
-	c.ContractFaucet = arb.FaucetContractAddress
+	c.ContractStake = arb.StakeAddress
+	c.ContractNFT = arb.NFTAddress
+	c.ContractFaucet = arb.FaucetAddress
 }

@@ -57,8 +57,8 @@ func NewContracts(cfg *config.Arbitrum) *Contracts {
 		NftABI:          nftABI,
 		momTokenAddress: common.HexToAddress(cfg.MOMTokenAddress),
 		dadTokenAddress: common.HexToAddress(cfg.DADTokenAddress),
-		stakeAddress:    common.HexToAddress(cfg.StakeContractAddress),
-		nftAddress:      common.HexToAddress(cfg.NFTContractAddress),
+		stakeAddress:    common.HexToAddress(cfg.StakeAddress),
+		nftAddress:      common.HexToAddress(cfg.NFTAddress),
 	}
 
 	allAddresses := make([]common.Address, 0)
