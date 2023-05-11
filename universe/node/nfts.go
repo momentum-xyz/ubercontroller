@@ -10,6 +10,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/tree"
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"github.com/pkg/errors"
 	"go.uber.org/zap/zapcore"
 )
@@ -67,7 +68,7 @@ func (n *Node) Listener(bcName string, events []*harvester.UpdateEvent, stakeEve
 }
 
 // Check if this (new) user has an NFT, create world if it doesn't exist yet.
-func (n *Node) checkNFTWorld(ctx context.Context, user *entry.User, wallet string) error {
+func (n *Node) checkNFTWorld(ctx context.Context, userID umid.UMID, wallet string) error {
 	// TODO:  wallet(s) from entry.User or vice-versa
 	n.log.Debugf("check nft worlds for wallet %s", wallet)
 	nfts, err := n.db.GetNFTsDB().ListNewByWallet(ctx, wallet)
@@ -92,7 +93,7 @@ func (n *Node) checkNFTWorld(ctx context.Context, user *entry.User, wallet strin
 
 		worldTemplate.ObjectID = &nft.ObjectID
 		worldTemplate.ObjectName = &objectName
-		worldTemplate.OwnerID = &user.UserID
+		worldTemplate.OwnerID = &userID
 
 		n.log.Debugf("Adding odyssey for: %s...", nft.ObjectID)
 		_, err = tree.AddWorldFromTemplate(&worldTemplate, true)

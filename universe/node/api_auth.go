@@ -92,7 +92,7 @@ func (n *Node) apiGenChallenge(c *gin.Context) {
 // @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
 // @Router /api/v4/users/me/attach-account [post]
-func (n *Node) apiAttachAccount(c *gin.Context) {
+func (n *Node) apiAttachAccount(ctx *gin.Context) {
 	type InBody struct {
 		Wallet          string `json:"wallet" binding:"required"`
 		Network         string `json:"network"`
@@ -100,22 +100,22 @@ func (n *Node) apiAttachAccount(c *gin.Context) {
 	}
 	var inBody InBody
 
-	if err := c.ShouldBindJSON(&inBody); err != nil {
+	if err := ctx.ShouldBindJSON(&inBody); err != nil {
 		err := errors.WithMessage(err, "Node: apiAttachAccount: failed to bind json")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		api.AbortRequest(ctx, http.StatusBadRequest, "invalid_request_body", err, n.log)
 		return
 	}
 
-	exists, err := n.db.GetUsersDB().CheckIsUserExistsByWallet(c, inBody.Wallet)
+	exists, err := n.db.GetUsersDB().CheckIsUserExistsByWallet(ctx, inBody.Wallet)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiAttachAccount: unable to check if wallet exists")
-		api.AbortRequest(c, http.StatusInternalServerError, "invalid_wallet_query", err, n.log)
+		api.AbortRequest(ctx, http.StatusInternalServerError, "invalid_wallet_query", err, n.log)
 		return
 	}
 
 	if exists {
 		err := errors.Errorf("Node: apiAttachAccount: user with wallet already exists")
-		api.AbortRequest(c, http.StatusBadRequest, "wallet_already_exists", err, n.log)
+		api.AbortRequest(ctx, http.StatusBadRequest, "wallet_already_exists", err, n.log)
 		return
 	}
 
@@ -124,7 +124,7 @@ func (n *Node) apiAttachAccount(c *gin.Context) {
 	challengesAttributeValue, ok := n.GetNodeAttributes().GetValue(challengeAttributeID)
 	if !ok || challengesAttributeValue == nil {
 		err := errors.Errorf("Node: apiAttachAccount: node attribute not found")
-		api.AbortRequest(c, http.StatusInternalServerError, "attribute_not_found", err, n.log)
+		api.AbortRequest(ctx, http.StatusInternalServerError, "attribute_not_found", err, n.log)
 		return
 	}
 
@@ -136,7 +136,7 @@ func (n *Node) apiAttachAccount(c *gin.Context) {
 	}
 	if challenge == "" {
 		err := errors.Errorf("Node: apiAttachAccount: challenge not found")
-		api.AbortRequest(c, http.StatusNotFound, "challenge_not_found", err, n.log)
+		api.AbortRequest(ctx, http.StatusNotFound, "challenge_not_found", err, n.log)
 		return
 	}
 
@@ -150,20 +150,20 @@ func (n *Node) apiAttachAccount(c *gin.Context) {
 	}()
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiAttachAccount: failed to update node attribute value")
-		api.AbortRequest(c, http.StatusInternalServerError, "attribute_update_failed", err, n.log)
+		api.AbortRequest(ctx, http.StatusInternalServerError, "attribute_update_failed", err, n.log)
 		return
 	}
 
 	if !valid {
 		err := errors.Errorf("Node: apiAttachAccount: ethereum signature appears to be invalid")
-		api.AbortRequest(c, http.StatusNotFound, "invalid_signature", err, n.log)
+		api.AbortRequest(ctx, http.StatusNotFound, "invalid_signature", err, n.log)
 		return
 	}
 
-	userID, err := api.GetUserIDFromContext(c)
+	userID, err := api.GetUserIDFromContext(ctx)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiAttachAccount: failed to parse user umid")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
+		api.AbortRequest(ctx, http.StatusBadRequest, "invalid_user_id", err, n.log)
 		return
 	}
 
@@ -203,11 +203,12 @@ func (n *Node) apiAttachAccount(c *gin.Context) {
 	payload, err := n.GetUserAttributes().Upsert(userAttributeID, modifyFn, true)
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiAttachAccount: failed to upsert user attribute")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert", err, n.log)
+		api.AbortRequest(ctx, http.StatusInternalServerError, "failed_to_upsert", err, n.log)
 		return
 	}
+	n.checkNFTWorld(ctx, userID, inBody.Wallet)
 
-	c.JSON(http.StatusAccepted, payload.Value)
+	ctx.JSON(http.StatusAccepted, payload.Value)
 }
 
 // @Summary Generate auth token
