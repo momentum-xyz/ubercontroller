@@ -17,9 +17,9 @@ type UIClient struct {
 
 func (c *UIClient) Init(arb Arbitrum) {
 	c.BlockchainID = arb.BlockchainID
-	c.ContractMOM = arb.ArbitrumMOMTokenAddress
-	c.ContractDAD = arb.ArbitrumDADTokenAddress
-	c.ContractStake = arb.ArbitrumStakeContractAddress
-	c.ContractNFT = arb.ArbitrumNFTContractAddress
-	c.ContractFaucet = arb.ArbitrumFaucetContractAddress
+	c.ContractMOM = arb.MOMTokenAddress
+	c.ContractDAD = arb.DADTokenAddress
+	c.ContractStake = arb.StakeContractAddress
+	c.ContractNFT = arb.NFTContractAddress
+	c.ContractFaucet = arb.FaucetContractAddress
 }
