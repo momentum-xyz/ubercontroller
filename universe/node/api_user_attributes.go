@@ -109,6 +109,19 @@ func (n *Node) apiGetUserAttributeValue(c *gin.Context) {
 		return
 	}
 
+	result, err := n.AssessPermissions(c, pluginID, inQuery.AttributeName, userID, ReadOperation, UserAttribute)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetUserAttributeValue: failed to assess permissions")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
+		return
+	}
+
+	if !result {
+		err := errors.WithMessage(err, "Node: apiGetUserAttributeValue: operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+		return
+	}
+
 	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
 	userAttributeID := entry.NewUserAttributeID(attributeID, userID)
 
@@ -161,6 +174,19 @@ func (n *Node) apiSetUserAttributeValue(c *gin.Context) {
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiSetUserAttributeValue: failed to parse plugin umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
+		return
+	}
+
+	result, err := n.AssessPermissions(c, pluginID, inBody.AttributeName, userID, WriteOperation, UserAttribute)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSetUserAttributeValue: failed to assess permissions")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
+		return
+	}
+
+	if !result {
+		err := errors.WithMessage(err, "Node: apiSetUserAttributeValue: operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
 		return
 	}
 
@@ -240,6 +266,19 @@ func (n *Node) apiGetUserAttributeSubValue(c *gin.Context) {
 		return
 	}
 
+	result, err := n.AssessPermissions(c, pluginID, inQuery.AttributeName, userID, ReadOperation, UserAttribute)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSetUserAttributeValue: failed to assess permissions")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
+		return
+	}
+
+	if !result {
+		err := errors.WithMessage(err, "Node: apiSetUserAttributeValue: operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+		return
+	}
+
 	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
 	userAttributeID := entry.NewUserAttributeID(attributeID, userID)
 
@@ -303,6 +342,19 @@ func (n *Node) apiSetUserAttributeSubValue(c *gin.Context) {
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiSetUserAttributeSubValue: failed to parse plugin umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
+		return
+	}
+
+	result, err := n.AssessPermissions(c, pluginID, inBody.AttributeName, userID, WriteOperation, UserAttribute)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSetUserAttributeSubValue: failed to assess permissions")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
+		return
+	}
+
+	if !result {
+		err := errors.WithMessage(err, "Node: apiSetUserAttributeSubValue: operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
 		return
 	}
 
@@ -386,6 +438,19 @@ func (n *Node) apiRemoveUserAttributeSubValue(c *gin.Context) {
 		return
 	}
 
+	result, err := n.AssessPermissions(c, pluginID, inBody.AttributeName, userID, WriteOperation, UserAttribute)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiRemoveUserAttributeSubValue: failed to assess permissions")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
+		return
+	}
+
+	if !result {
+		err := errors.WithMessage(err, "Node: apiRemoveUserAttributeSubValue: operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+		return
+	}
+
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
 	userAttributeID := entry.NewUserAttributeID(attributeID, userID)
 
@@ -445,6 +510,19 @@ func (n *Node) apiRemoveUserAttributeValue(c *gin.Context) {
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiRemoveUserAttributeValue: failed to parse plugin umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
+		return
+	}
+
+	result, err := n.AssessPermissions(c, pluginID, inBody.AttributeName, userID, WriteOperation, UserAttribute)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiRemoveUserAttributeValue: failed to assess permissions")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
+		return
+	}
+
+	if !result {
+		err := errors.WithMessage(err, "Node: apiRemoveUserAttributeValue: operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
 		return
 	}
 

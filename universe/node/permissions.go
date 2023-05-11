@@ -146,11 +146,12 @@ func (n *Node) AssessReadOperation(
 		return permission, nil
 	case UserAttribute:
 		// any, users, user_owner
-		ownerUser, err := n.LoadUser(ownerID)
+		userAttributeID := entry.NewUserAttributeID(attributeID, userID)
+		userAttribute, err := n.db.GetUserAttributesDB().GetUserAttributeByID(n.ctx, userAttributeID)
 		if err != nil {
-			return false, errors.WithMessage(err, "failed to load user")
+			return false, errors.WithMessage(err, "failed to get user attribute")
 		}
-		if user.GetID() == ownerUser.GetID() {
+		if user.GetID() == userAttribute.UserID {
 			userPermissions = append(userPermissions, UserOwner)
 		}
 
