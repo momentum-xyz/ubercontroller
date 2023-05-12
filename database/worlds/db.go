@@ -30,12 +30,6 @@ const (
          					AND object_id != parent_id
          					ORDER BY created_at DESC
 							LIMIT 6;`
-	checkIsWorldFirstHundred = `WITH first_records AS (
-									SELECT *, ROW_NUMBER() OVER (ORDER BY created_at) AS row_num
-									FROM object WHERE object_type_id = $1
-									)
-									SELECT * FROM first_records 
-									WHERE row_num <= 100 AND object_id = $2;`
 )
 
 var _ database.WorldsDB = (*DB)(nil)
@@ -85,13 +79,4 @@ func (db *DB) GetRecentWorldIDs(ctx context.Context) ([]umid.UMID, error) {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
 	return worldIDs, nil
-}
-
-func (db *DB) CheckIsWorldFirstHundred(ctx context.Context, objectTypeID umid.UMID, objectID umid.UMID) (*entry.Object, error) {
-	var world *entry.Object
-
-	if err := pgxscan.Select(ctx, db.conn, &world, checkIsWorldFirstHundred); err != nil {
-		return nil, errors.WithMessage(err, "failed to query db")
-	}
-	return world, nil
 }

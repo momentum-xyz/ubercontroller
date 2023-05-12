@@ -45,7 +45,6 @@ type NodesDB interface {
 type WorldsDB interface {
 	GetAllWorldIDs(ctx context.Context) ([]umid.UMID, error)
 	GetWorldIDs(ctx context.Context, sortType universe.SortType, limit string) ([]umid.UMID, error)
-	CheckIsWorldFirstHundred(ctx context.Context, objectTypeID umid.UMID, objectID umid.UMID) (*entry.Object, error)
 	GetWorlds(ctx context.Context) ([]*entry.Object, error)
 }
 
