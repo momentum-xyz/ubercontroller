@@ -49,7 +49,7 @@ func SubscribeAllWallets(ctx context.Context, harv *Harvester, cfg *config.Confi
 			continue
 		}
 
-		err := harv.SubscribeForWalletAndContract(ArbitrumNova, w, cfg.Arbitrum.ArbitrumMOMTokenAddress, handlerPointer)
+		err := harv.SubscribeForWalletAndContract(ArbitrumNova, w, cfg.Arbitrum.MOMTokenAddress, handlerPointer)
 		if err != nil {
 			return errors.WithMessage(err, "failed to subscribe wallet/contract")
 		}

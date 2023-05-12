@@ -39,8 +39,8 @@ type ArbitrumNovaAdapter struct {
 func NewArbitrumNovaAdapter(cfg *config.Config) *ArbitrumNovaAdapter {
 	return &ArbitrumNovaAdapter{
 		umid:      umid.MustParse("ccccaaaa-1111-2222-3333-222222222222"),
-		wsURL:     cfg.Arbitrum.ArbitrumWSURL,
-		httpURL:   cfg.Arbitrum.ArbitrumRPCURL,
+		wsURL:     cfg.Arbitrum.WSURL,
+		httpURL:   cfg.Arbitrum.RPCURL,
 		name:      "arbitrum_nova",
 		contracts: NewContracts(&cfg.Arbitrum),
 	}

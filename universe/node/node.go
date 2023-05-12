@@ -268,7 +268,7 @@ func (n *Node) Run() error {
 	/**
 	Simplified version of harvester
 	*/
-	if n.cfg.Arbitrum.ArbitrumMOMTokenAddress != "" {
+	if n.cfg.Arbitrum.MOMTokenAddress != "" {
 		adapter := arbitrum_nova_adapter.NewArbitrumNovaAdapter(n.cfg)
 		adapter.Run()
 
