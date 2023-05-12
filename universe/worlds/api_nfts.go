@@ -60,6 +60,7 @@ func (w *Worlds) nftMetadataDefault(worldID umid.UMID) *dto.WorldNFTMeta {
 		Name:        objectName,
 		Description: "",
 		Image:       w.nftImageDefault(),
+		ExternalURL: w.nftExternalURLDefault(),
 		Attributes:  nil,
 	}
 }
@@ -95,14 +96,23 @@ func (w *Worlds) nftMetadata(world universe.World) (*dto.WorldNFTMeta, error) {
 		Name:        world.GetName(),
 		Description: world.GetDescription(),
 		Image:       w.nftImage(worldAvatarHash),
+		ExternalURL: w.nftExternalURL(world),
 		Attributes:  attributes,
 	}, nil
 }
 
 func (w *Worlds) nftImageDefault() string {
-	return w.nftImage("bd6563cc9fceac3e1ed6fcad752c902d")
+	return w.nftImage("bd6563cc9fceac3e1ed6fcad752c902d") // TODO: node level config
 }
 
 func (w *Worlds) nftImage(imgHash string) string {
 	return w.cfg.Settings.FrontendURL + "/api/v3/render/get/" + imgHash
+}
+
+func (w *Worlds) nftExternalURLDefault() string {
+	return w.cfg.Settings.FrontendURL
+}
+
+func (w *Worlds) nftExternalURL(world universe.World) string {
+	return w.cfg.Settings.FrontendURL + "/odyssey/" + world.GetID().String()
 }
