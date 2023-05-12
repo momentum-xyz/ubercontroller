@@ -94,11 +94,15 @@ func (w *Worlds) nftMetadata(world universe.World) (*dto.WorldNFTMeta, error) {
 	return &dto.WorldNFTMeta{
 		Name:        world.GetName(),
 		Description: world.GetDescription(),
-		Image:       worldAvatarHash,
+		Image:       w.nftImage(worldAvatarHash),
 		Attributes:  attributes,
 	}, nil
 }
 
 func (w *Worlds) nftImageDefault() string {
-	return w.cfg.Settings.FrontendURL + "/api/v3/render/get/bd6563cc9fceac3e1ed6fcad752c902d"
+	return w.nftImage("bd6563cc9fceac3e1ed6fcad752c902d")
+}
+
+func (w *Worlds) nftImage(imgHash string) string {
+	return w.cfg.Settings.FrontendURL + "/api/v3/render/get/" + imgHash
 }
