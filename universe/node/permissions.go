@@ -15,13 +15,13 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
-type OperationType uint
+type OperationType string
 type AttributeKind uint
 type Permission uint
 
 const (
-	ReadOperation OperationType = iota
-	WriteOperation
+	ReadOperation  OperationType = "read"
+	WriteOperation OperationType = "write"
 )
 
 const (
@@ -46,9 +46,6 @@ func (n *Node) AssessPermissions(
 	c *gin.Context, pluginID umid.UMID, attributeName string, ownerID umid.UMID,
 	operationType OperationType, attributeKind AttributeKind,
 ) (bool, error) {
-	// If not available fall back to default
-	// Handle exceptions
-
 	attributeID := entry.NewAttributeID(pluginID, attributeName)
 	attributeTypeID := entry.NewAttributeTypeID(pluginID, attributeName)
 	attributeType, ok := n.GetAttributeTypes().GetAttributeType(attributeTypeID)
@@ -66,14 +63,7 @@ func (n *Node) AssessPermissions(
 		return false, errors.WithMessage(err, "failed to get permissions")
 	}
 
-	switch operationType {
-	case ReadOperation:
-		return n.AssessReadOperation(userID, ownerID, permissions["read"], attributeKind, attributeID)
-	case WriteOperation:
-		return n.AssessWriteOperation(userID, ownerID, permissions["write"], attributeKind, attributeID)
-	}
-
-	return false, nil
+	return n.AssessOperations(userID, ownerID, permissions, attributeKind, attributeID, operationType)
 }
 
 func (n *Node) GetPermissions(attributeID entry.AttributeID,
@@ -130,11 +120,7 @@ func (n *Node) GetPermissions(attributeID entry.AttributeID,
 	return permissionsMap, nil
 }
 
-func (n *Node) AssessReadOperation(
-	userID umid.UMID,
-	ownerID umid.UMID, permissions string,
-	attributeKind AttributeKind, attributeID entry.AttributeID,
-) (bool, error) {
+func (n *Node) GetUserPermissions(userID umid.UMID, permissions string) (universe.User, []string, []string, error) {
 	userPermissions := make([]string, 0)
 	attributeTypePermissions := make([]string, 0)
 	if strings.Contains(permissions, "+") {
@@ -146,17 +132,30 @@ func (n *Node) AssessReadOperation(
 	// Is the user a registered user or a guest?
 	user, err := n.LoadUser(userID)
 	if err != nil {
-		return false, errors.WithMessage(err, "failed to load user")
+		return nil, nil, nil, errors.WithMessage(err, "failed to load user")
 	}
 
 	userType := user.GetUserType()
 	guestUserTypeID, err := common.GetGuestUserTypeID()
 	if err != nil {
-		return false, errors.WithMessage(err, "failed to get guest user type id")
+		return nil, nil, nil, errors.WithMessage(err, "failed to get guest user type id")
 	}
 
 	if userType.GetID() != guestUserTypeID {
 		userPermissions = append(userPermissions, User)
+	}
+
+	return user, userPermissions, attributeTypePermissions, nil
+}
+
+func (n *Node) AssessOperations(
+	userID umid.UMID,
+	ownerID umid.UMID, permissions map[string]string,
+	attributeKind AttributeKind, attributeID entry.AttributeID, operationType OperationType,
+) (bool, error) {
+	user, userPermissions, attributeTypePermissions, err := n.GetUserPermissions(userID, permissions[string(operationType)])
+	if err != nil {
+		return false, errors.WithMessage(err, "failed to get user permissions")
 	}
 
 	switch attributeKind {
@@ -184,9 +183,6 @@ func (n *Node) AssessReadOperation(
 		if isAdmin {
 			userPermissions = append(userPermissions, Admin)
 		}
-		// Then what is the user allowed to do?
-		permission := n.CompareReadPermissions(attributeTypePermissions, userPermissions)
-		return permission, nil
 	case UserAttribute:
 		// any, users, user_owner
 		userAttributeID := entry.NewUserAttributeID(attributeID, userID)
@@ -197,9 +193,6 @@ func (n *Node) AssessReadOperation(
 		if user.GetID() == userAttribute.UserID {
 			userPermissions = append(userPermissions, UserOwner)
 		}
-
-		permission := n.CompareReadPermissions(attributeTypePermissions, userPermissions)
-		return permission, nil
 	case UserUserAttribute:
 		// user_owner == source_user
 		// any, users, user_owner, target_user, user_owner+target_user
@@ -214,45 +207,10 @@ func (n *Node) AssessReadOperation(
 		if user.GetID() == userUserAttribute.TargetUserID {
 			userPermissions = append(userPermissions, TargetUser)
 		}
-
-		permission := n.CompareReadPermissions(attributeTypePermissions, userPermissions)
-		return permission, nil
-	case NodeAttribute:
-		permission := n.CompareReadPermissions(attributeTypePermissions, userPermissions)
-		return permission, nil
 	}
 
-	return false, nil
-}
-
-func (n *Node) AssessWriteOperation(
-	userID umid.UMID, ownerID umid.UMID, permissions string,
-	attributeKind AttributeKind,
-	attributeID entry.AttributeID,
-) (bool, error) {
-	sl := make([]string, 0)
-
-	if strings.Contains(permissions, "+") {
-		sl = strings.Split(permissions, "+")
-	} else {
-		sl = append(sl, permissions)
-	}
-
-	for _, permission := range sl {
-		switch permission {
-		case Owner:
-		case UserOwner:
-			//
-		case Admin:
-			//
-		case User:
-			//
-		case Any:
-			//
-		}
-	}
-
-	return false, nil
+	permission := n.CompareReadPermissions(attributeTypePermissions, userPermissions)
+	return permission, nil
 }
 
 func (n *Node) CompareReadPermissions(attributeTypePermissions []string, userPermissions []string) bool {
@@ -279,6 +237,36 @@ func (n *Node) CompareReadPermissions(attributeTypePermissions []string, userPer
 				return true
 			}
 			return false
+		}
+	}
+
+	return false
+}
+
+func (n *Node) CompareWritePermissions(attributeTypePermissions []string, userPermissions []string) bool {
+	for _, attributeTypePermission := range attributeTypePermissions {
+		switch attributeTypePermission {
+		case Owner:
+		case UserOwner:
+			if slices.Contains(userPermissions, Owner) {
+				return true
+			}
+			return false
+		case Admin:
+			if slices.Contains(userPermissions, Admin) ||
+				slices.Contains(userPermissions, Owner) {
+				return true
+			}
+			return false
+		case User:
+			if slices.Contains(userPermissions, User) ||
+				slices.Contains(userPermissions, Admin) ||
+				slices.Contains(userPermissions, Owner) {
+				return true
+			}
+			return false
+		case Any:
+			return true
 		}
 	}
 
