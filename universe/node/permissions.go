@@ -5,7 +5,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-	"golang.org/x/exp/slices"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -120,14 +119,9 @@ func (n *Node) GetPermissions(attributeID entry.AttributeID,
 	return permissionsMap, nil
 }
 
-func (n *Node) GetUserPermissions(userID umid.UMID, permissions string) (universe.User, []string, []string, error) {
-	userPermissions := make([]string, 0)
-	attributeTypePermissions := make([]string, 0)
-	if strings.Contains(permissions, "+") {
-		attributeTypePermissions = strings.Split(permissions, "+")
-	} else {
-		attributeTypePermissions = append(attributeTypePermissions, permissions)
-	}
+func (n *Node) GetUserPermissions(userID umid.UMID, permissions string) (universe.User, map[string]bool, []string, error) {
+	userPermissions := make(map[string]bool)
+	attributeTypePermissions := strings.Split(permissions, "+")
 
 	// Is the user a registered user or a guest?
 	user, err := n.LoadUser(userID)
@@ -142,7 +136,7 @@ func (n *Node) GetUserPermissions(userID umid.UMID, permissions string) (univers
 	}
 
 	if userType.GetID() != guestUserTypeID {
-		userPermissions = append(userPermissions, User)
+		userPermissions[User] = true
 	}
 
 	return user, userPermissions, attributeTypePermissions, nil
@@ -173,7 +167,7 @@ func (n *Node) AssessOperations(
 
 		objectOwnerID := object.GetOwnerID()
 		if objectOwnerID == userID {
-			userPermissions = append(userPermissions, Owner)
+			userPermissions[Owner] = true
 		}
 
 		isAdmin, err := n.db.GetUserObjectsDB().CheckIsIndirectAdminByID(n.ctx, userObjectID)
@@ -181,7 +175,7 @@ func (n *Node) AssessOperations(
 			return false, errors.WithMessage(err, "failed to check admin status")
 		}
 		if isAdmin {
-			userPermissions = append(userPermissions, Admin)
+			userPermissions[Admin] = true
 		}
 	case UserAttribute:
 		// any, users, user_owner
@@ -191,7 +185,7 @@ func (n *Node) AssessOperations(
 			return false, errors.WithMessage(err, "failed to get user attribute")
 		}
 		if user.GetID() == userAttribute.UserID {
-			userPermissions = append(userPermissions, UserOwner)
+			userPermissions[UserOwner] = true
 		}
 	case UserUserAttribute:
 		// user_owner == source_user
@@ -202,10 +196,10 @@ func (n *Node) AssessOperations(
 			return false, errors.WithMessage(err, "failed to get user user attribute")
 		}
 		if user.GetID() == userUserAttribute.SourceUserID {
-			userPermissions = append(userPermissions, UserOwner)
+			userPermissions[UserOwner] = true
 		}
 		if user.GetID() == userUserAttribute.TargetUserID {
-			userPermissions = append(userPermissions, TargetUser)
+			userPermissions[TargetUser] = true
 		}
 	}
 
@@ -213,27 +207,23 @@ func (n *Node) AssessOperations(
 	return permission, nil
 }
 
-func (n *Node) CompareReadPermissions(attributeTypePermissions []string, userPermissions []string) bool {
+func (n *Node) CompareReadPermissions(attributeTypePermissions []string, userPermissions map[string]bool) bool {
 	for _, attributeTypePermission := range attributeTypePermissions {
 		switch attributeTypePermission {
 		case Any:
 			return true
 		case User:
-			if slices.Contains(userPermissions, User) ||
-				slices.Contains(userPermissions, Admin) ||
-				slices.Contains(userPermissions, Owner) {
+			if userPermissions[User] || userPermissions[Admin] || userPermissions[Owner] {
 				return true
 			}
 			return false
 		case Admin:
-			if slices.Contains(userPermissions, Admin) ||
-				slices.Contains(userPermissions, Owner) {
+			if userPermissions[Admin] || userPermissions[Owner] {
 				return true
 			}
 			return false
-		case Owner:
-		case UserOwner:
-			if slices.Contains(userPermissions, Owner) {
+		case Owner, UserOwner:
+			if userPermissions[Owner] {
 				return true
 			}
 			return false
@@ -243,25 +233,21 @@ func (n *Node) CompareReadPermissions(attributeTypePermissions []string, userPer
 	return false
 }
 
-func (n *Node) CompareWritePermissions(attributeTypePermissions []string, userPermissions []string) bool {
+func (n *Node) CompareWritePermissions(attributeTypePermissions []string, userPermissions map[string]bool) bool {
 	for _, attributeTypePermission := range attributeTypePermissions {
 		switch attributeTypePermission {
-		case Owner:
-		case UserOwner:
-			if slices.Contains(userPermissions, Owner) {
+		case Owner, UserOwner:
+			if userPermissions[Owner] {
 				return true
 			}
 			return false
 		case Admin:
-			if slices.Contains(userPermissions, Admin) ||
-				slices.Contains(userPermissions, Owner) {
+			if userPermissions[Admin] || userPermissions[Owner] {
 				return true
 			}
 			return false
 		case User:
-			if slices.Contains(userPermissions, User) ||
-				slices.Contains(userPermissions, Admin) ||
-				slices.Contains(userPermissions, Owner) {
+			if userPermissions[User] || userPermissions[Admin] || userPermissions[Owner] {
 				return true
 			}
 			return false
