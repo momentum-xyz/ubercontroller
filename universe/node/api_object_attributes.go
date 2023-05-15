@@ -1,7 +1,6 @@
 package node
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
@@ -215,33 +214,43 @@ func (n *Node) apiSetObjectAttributesPublic(c *gin.Context) {
 	}
 
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
-	attributeOptions, ok := object.GetObjectAttributes().GetOptions(attributeID)
-	fmt.Sprint(attributeOptions)
 
-	//attributeOp
-	//
-	//modifyFn := func(current *entry.ObjectOptions) (*entry.ObjectOptions, error) {
-	//	if current == nil {
-	//		current = &entry.ObjectOptions{}
-	//	}
-	//	if current.Subs == nil {
-	//		current.Subs = make(map[string]any)
-	//	}
-	//
-	//	current.Subs[inBody.SubOptionKey] = inBody.SubOptionValue
-	//
-	//	return current, nil
-	//}
-	//
-	//if _, err := object.SetOptions(modifyFn, true); err != nil {
-	//	err := errors.WithMessage(err, "Node: apiObjectsSetPublic: failed to set options")
-	//	api.AbortRequest(c, http.StatusInternalServerError, "set_options_failed", err, n.log)
-	//	return
-	//}
+	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
+		newOptions := func() *entry.AttributeOptions {
+			options := entry.NewAttributeOptions()
+			*options = entry.AttributeOptions{
+				"permissions": map[string]any{
+					"read":  "any",
+					"write": "user",
+				},
+			}
+			return options
+		}
 
-	//out := dto.ObjectSubOptions{
-	//	inBody.SubOptionKey: inBody.SubOptionValue,
-	//}
+		if current == nil {
+			return entry.NewAttributePayload(current.Value, newOptions()), nil
+		}
+
+		if current.Options == nil {
+			current.Options = newOptions()
+			return current, nil
+		}
+
+		*current.Options = entry.AttributeOptions{
+			"permissions": map[string]any{
+				"read":  "any",
+				"write": "user",
+			},
+		}
+
+		return current, nil
+	}
+
+	if _, err := object.GetObjectAttributes().Upsert(attributeID, modifyFn, true); err != nil {
+		err := errors.WithMessage(err, "Node: apiSetObjectAttributesPublic: failed to set options")
+		api.AbortRequest(c, http.StatusInternalServerError, "set_options_failed", err, n.log)
+		return
+	}
 
 	c.JSON(http.StatusAccepted, nil)
 }
