@@ -69,54 +69,59 @@ func (n *Node) GetPermissions(attributeID entry.AttributeID,
 	attributeType universe.AttributeType,
 	attributeKind AttributeKind, ownerID umid.UMID, userID umid.UMID,
 ) (map[string]string, error) {
-	var attributeOptions *entry.AttributeOptions
-	permissionsMap := make(map[string]string)
+	attributeOptions, err := n.GetAttributeOptions(attributeID, attributeKind, attributeType, ownerID, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	permissions := utils.GetFromAnyMap(*attributeOptions, "permissions", map[string]string(nil))
+	if permissions != nil {
+		return permissions, nil
+	}
+
 	defaultPermissions := map[string]string{
 		"read":  "any",
 		"write": "admin+user_owner",
 	}
 
+	return defaultPermissions, nil
+}
+
+func (n *Node) GetAttributeOptions(
+	attributeID entry.AttributeID,
+	attributeKind AttributeKind, attributeType universe.AttributeType, ownerID umid.UMID,
+	userID umid.UMID) (*entry.AttributeOptions, error) {
 	switch attributeKind {
 	case ObjectAttribute:
 		options, ok := n.GetObjectAttributes().GetOptions(attributeID)
 		if !ok {
 			return nil, errors.New("failed to get objectAttribute options")
 		}
-		attributeOptions = options
+		return options, nil
 	case ObjectUserAttribute:
 		objectUserAttributeID := entry.NewObjectUserAttributeID(attributeID, ownerID, userID)
 		options, ok := n.GetObjectUserAttributes().GetOptions(objectUserAttributeID)
 		if !ok {
 			return nil, errors.New("failed to get objectUserAttribute options")
 		}
-		attributeOptions = options
+		return options, nil
 	case UserAttribute:
 		userAttributeID := entry.NewUserAttributeID(attributeID, userID)
 		options, ok := n.GetUserAttributes().GetOptions(userAttributeID)
 		if !ok {
 			return nil, errors.New("failed to get userAttribute options")
 		}
-		attributeOptions = options
+		return options, nil
 	case UserUserAttribute:
 		userUserAttributeID := entry.NewUserUserAttributeID(attributeID, userID, ownerID)
 		options, ok := n.GetUserUserAttributes().GetOptions(userUserAttributeID)
 		if !ok {
 			return nil, errors.New("failed to get userUserAttribute options")
 		}
-		attributeOptions = options
+		return options, nil
 	default:
-		options := attributeType.GetOptions()
-		attributeOptions = options
+		return attributeType.GetOptions(), nil
 	}
-
-	permissions := utils.GetFromAnyMap(*attributeOptions, "permissions", map[string]string(nil))
-	if permissions != nil {
-		permissionsMap = permissions
-	} else {
-		permissionsMap = defaultPermissions
-	}
-
-	return permissionsMap, nil
 }
 
 func (n *Node) GetUserPermissions(userID umid.UMID, permissions string) (universe.User, map[string]bool, []string, error) {
