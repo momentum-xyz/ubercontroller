@@ -3,7 +3,6 @@ package arbitrum_nova_adapter2
 import (
 	"context"
 	"fmt"
-	"github.com/momentum-xyz/ubercontroller/harvester2"
 	"log"
 	"math/big"
 	"strconv"
@@ -21,7 +20,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/config"
-	"github.com/momentum-xyz/ubercontroller/harvester"
+	"github.com/momentum-xyz/ubercontroller/harvester2"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
@@ -162,7 +161,7 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(fromBlock),
 		ToBlock:   big.NewInt(toBlock),
-		Addresses: a.contracts.AllAddresses,
+		Addresses: contracts,
 	}
 
 	bcLogs, err := a.FilterLogs(context.TODO(), query)
@@ -194,17 +193,17 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 
 				//var transferEvent harvester.BCDiff
 
-				var e harvester.TransferERC20Log
+				var e harvester2.TransferERC20Log
 
 				ev, err := a.contracts.TokenABI.Unpack("Transfer", vLog.Data)
 				if err != nil {
 					return nil, errors.WithMessage(err, "failed to unpack event from ABI")
 				}
 
-				e.Contract = strings.ToLower(vLog.Address.Hex())
+				e.Contract = vLog.Address
 				// Hex and Un Hex here used to remove padding zeros
-				e.From = strings.ToLower(common.HexToAddress(vLog.Topics[1].Hex()).Hex())
-				e.To = strings.ToLower(common.HexToAddress(vLog.Topics[2].Hex()).Hex())
+				e.From = common.HexToAddress(vLog.Topics[1].Hex())
+				e.To = common.HexToAddress(vLog.Topics[2].Hex())
 				if len(ev) > 0 {
 					e.Value = ev[0].(*big.Int)
 				}
@@ -241,9 +240,9 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 				tokenType := ev[3].(uint8)
 				totalAmount := ev[4].(*big.Int)
 
-				e := &harvester.StakeLog{
+				e := &harvester2.StakeLog{
 					TxHash:       transactionHash,
-					UserWallet:   fromWallet.Hex(),
+					UserWallet:   fromWallet,
 					OdysseyID:    odysseyID,
 					AmountStaked: amount,
 					TokenType:    tokenType,
@@ -271,8 +270,8 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 				tokenType := ev[3].(uint8)
 				totalAmount := ev[4].(*big.Int)
 
-				e := &harvester.UnstakeLog{
-					UserWallet:     fromWallet.Hex(),
+				e := &harvester2.UnstakeLog{
+					UserWallet:     fromWallet,
 					OdysseyID:      odysseyID,
 					AmountUnstaked: amount,
 					TokenType:      tokenType,
@@ -295,8 +294,8 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 				//	return nil, errors.WithMessage(err, "failed to unpack event from ABI")
 				//}
 
-				from := strings.ToLower(common.HexToAddress(vLog.Topics[1].Hex()).Hex())
-				to := strings.ToLower(common.HexToAddress(vLog.Topics[2].Hex()).Hex())
+				from := common.HexToAddress(vLog.Topics[1].Hex())
+				to := common.HexToAddress(vLog.Topics[2].Hex())
 				itemID := vLog.Topics[3].Big()
 
 				var id umid.UMID
@@ -306,11 +305,11 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 					return nil, errors.WithMessage(err, "failed to read umid from bytes")
 				}
 
-				e := &harvester.TransferNFTLog{
+				e := &harvester2.TransferNFTLog{
 					From:     from,
 					To:       to,
 					TokenID:  id,
-					Contract: strings.ToLower(vLog.Address.Hex()),
+					Contract: vLog.Address,
 				}
 
 				logs = append(logs, e)

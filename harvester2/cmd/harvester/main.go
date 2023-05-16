@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/momentum-xyz/ubercontroller/config"
@@ -9,6 +10,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/harvester2/arbitrum_nova_adapter2"
 	"go.uber.org/zap"
 	"log"
+	"time"
 )
 
 func main() {
@@ -28,9 +30,36 @@ func main() {
 
 	err = harv.RegisterAdapter(a)
 	if err != nil {
+		fmt.Println(err)
+	}
+
+	momAddress := common.HexToAddress("0x567d4e8264dC890571D5392fDB9fbd0e3FCBEe56")
+	mom := (*harvester2.Address)(&momAddress)
+	err = harv.AddTokenContract("arbitrum_nova", mom)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	nftAddress := common.HexToAddress("0x97E0B10D89a494Eb5cfFCc72853FB0750BD64AcD")
+	nft := (*harvester2.Address)(&nftAddress)
+	err = harv.AddNFTContract("arbitrum_nova", nft)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	stakeAddress := common.HexToAddress("0x047C0A154271498ee718162b718b3D4F464855e0")
+	stake := (*harvester2.Address)(&stakeAddress)
+	err = harv.AddStakeContract("arbitrum_nova", stake)
+	if err != nil {
+		fmt.Println(err)
 	}
 
 	walletAddress := common.HexToAddress("0x683642c22feDE752415D4793832Ab75EFdF6223c")
 	wallet := (*harvester2.Address)(&walletAddress)
-	harv.AddWallet("arbitrum_nova", wallet)
+	err = harv.AddWallet("arbitrum_nova", wallet)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	time.Sleep(time.Second)
 }

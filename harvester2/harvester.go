@@ -65,7 +65,7 @@ func (h *Harvester2) AddTokenContract(bcType BCType, contract *Address) error {
 		return errors.New("failed to add token contract, adapter not registered")
 	}
 
-	return nil
+	return h.bc[bcType].AddTokenContract(contract)
 }
 func (h *Harvester2) RemoveTokenContract(bcType BCType, contract *Address) error {
 	if _, ok := h.bc[bcType]; !ok {
@@ -80,7 +80,7 @@ func (h *Harvester2) AddStakeContract(bcType BCType, contract *Address) error {
 		return errors.New("failed to add stake contract, adapter not registered")
 	}
 
-	return nil
+	return h.bc[bcType].AddStakeContract(contract)
 }
 func (h *Harvester2) RemoveStakeContract(bcType BCType, contract *Address) error {
 	if _, ok := h.bc[bcType]; !ok {
@@ -95,8 +95,9 @@ func (h *Harvester2) AddTokenListener(bcType BCType, contract *Address, listener
 		return errors.New("failed to add token listener, adapter not registered")
 	}
 
-	return nil
+	return h.bc[bcType].AddTokenListener(contract, listener)
 }
+
 func (h *Harvester2) AddNFTListener(bcType BCType, contract *Address, listener NFTListener) error {
 	if _, ok := h.bc[bcType]; !ok {
 		return errors.New("failed to add nft listener, adapter not registered")
