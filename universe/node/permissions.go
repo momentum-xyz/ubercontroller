@@ -218,17 +218,17 @@ func (n *Node) CompareReadPermissions(attributeTypePermissions []string, userPer
 		case Any:
 			return true
 		case User:
-			if userPermissions[User] || userPermissions[Admin] || userPermissions[Owner] {
+			if userPermissions[User] || userPermissions[Admin] || userPermissions[Owner] || userPermissions[UserOwner] || userPermissions[TargetUser] {
 				return true
 			}
 			return false
 		case Admin:
-			if userPermissions[Admin] || userPermissions[Owner] {
+			if userPermissions[Admin] || userPermissions[Owner] || userPermissions[UserOwner] || userPermissions[TargetUser] {
 				return true
 			}
 			return false
-		case Owner, UserOwner:
-			if userPermissions[Owner] {
+		case Owner, UserOwner, TargetUser:
+			if userPermissions[Owner] || userPermissions[UserOwner] || userPermissions[TargetUser] {
 				return true
 			}
 			return false
@@ -241,18 +241,18 @@ func (n *Node) CompareReadPermissions(attributeTypePermissions []string, userPer
 func (n *Node) CompareWritePermissions(attributeTypePermissions []string, userPermissions map[string]bool) bool {
 	for _, attributeTypePermission := range attributeTypePermissions {
 		switch attributeTypePermission {
-		case Owner, UserOwner:
-			if userPermissions[Owner] {
+		case Owner, UserOwner, TargetUser:
+			if userPermissions[Owner] || userPermissions[UserOwner] || userPermissions[TargetUser] {
 				return true
 			}
 			return false
 		case Admin:
-			if userPermissions[Admin] || userPermissions[Owner] {
+			if userPermissions[Admin] || userPermissions[Owner] || userPermissions[UserOwner] || userPermissions[TargetUser] {
 				return true
 			}
 			return false
 		case User:
-			if userPermissions[User] || userPermissions[Admin] || userPermissions[Owner] {
+			if userPermissions[User] || userPermissions[Admin] || userPermissions[Owner] || userPermissions[UserOwner] || userPermissions[TargetUser] {
 				return true
 			}
 			return false
