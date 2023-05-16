@@ -74,9 +74,11 @@ func (n *Node) GetPermissions(attributeID entry.AttributeID,
 		return nil, err
 	}
 
-	permissions := utils.GetFromAnyMap(*attributeOptions, "permissions", map[string]string(nil))
-	if permissions != nil {
-		return permissions, nil
+	if attributeOptions != nil {
+		permissions := utils.GetFromAnyMap(*attributeOptions, "permissions", map[string]string(nil))
+		if permissions != nil {
+			return permissions, nil
+		}
 	}
 
 	defaultPermissions := map[string]string{
@@ -131,7 +133,7 @@ func (n *Node) GetUserPermissions(userID umid.UMID, permissions string) (univers
 	// Is the user a registered user or a guest?
 	user, err := n.LoadUser(userID)
 	if err != nil {
-		return nil, nil, nil, errors.WithMessage(err, "failed to load user")
+		return nil, nil, nil, errors.WithMessage(err, "failed to load user, does the user exist?")
 	}
 
 	userType := user.GetUserType()
