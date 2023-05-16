@@ -33,10 +33,10 @@ func (x *Config) Init() {
 	x.Common.Init()
 	x.Postgres.Init()
 	x.Settings.Init()
-	x.UIClient.Init()
 	x.Influx.Init()
 	x.Streamchat.Init()
 	x.Arbitrum.Init()
+	x.UIClient.Init(x.Arbitrum)
 }
 
 func defConfig() *Config {

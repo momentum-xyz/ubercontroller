@@ -87,6 +87,7 @@ type WorldNFTMeta struct {
 	Name        string          `json:"name" binding:"required"`
 	Description string          `json:"description"`
 	Image       string          `json:"image"`
+	ExternalURL string          `json:"external_url"`
 	Attributes  []NFTAttributes `json:"attributes"`
 }
 
