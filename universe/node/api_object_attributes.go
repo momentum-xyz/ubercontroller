@@ -213,6 +213,19 @@ func (n *Node) apiSetObjectAttributesPublic(c *gin.Context) {
 		return
 	}
 
+	result, err := n.AssessPermissions(c, pluginID, inBody.AttributeName, objectID, WriteOperation, ObjectAttribute)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSetObjectAttributesPublic: failed to assess permissions")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
+		return
+	}
+
+	if !result {
+		err := errors.WithMessage(err, "Node: apiSetObjectAttributesPublic: operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+		return
+	}
+
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
 
 	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
