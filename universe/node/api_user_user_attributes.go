@@ -58,7 +58,7 @@ func (n *Node) apiSetUserUserSubAttributeValue(c *gin.Context) {
 		return
 	}
 
-	result, err := n.AssessPermissions(c, pluginID, inBody.AttributeName, targetID, WriteOperation, UserUserAttribute)
+	result, err := n.AssessPermissions(c, pluginID, inBody.AttributeName, sourceID, WriteOperation, UserUserAttribute)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiSetUserUserSubAttributeValue: failed to assess permissions")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
