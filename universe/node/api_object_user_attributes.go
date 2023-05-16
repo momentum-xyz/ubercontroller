@@ -61,6 +61,19 @@ func (n *Node) apiGetObjectUserAttributesValue(c *gin.Context) {
 		return
 	}
 
+	result, err := n.AssessPermissions(c, pluginID, inQuery.AttributeName, objectID, ReadOperation, ObjectUserAttribute)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributesValue: failed to assess permissions")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
+		return
+	}
+
+	if !result {
+		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributesValue: operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+		return
+	}
+
 	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
 	objectUserAttributeID := entry.NewObjectUserAttributeID(attributeID, objectID, userID)
 	out, ok := n.GetObjectUserAttributes().GetValue(objectUserAttributeID)
@@ -119,6 +132,19 @@ func (n *Node) apiSetObjectUserAttributesValue(c *gin.Context) {
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiSetObjectUserAttributesValue: failed to parse plugin umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
+		return
+	}
+
+	result, err := n.AssessPermissions(c, pluginID, inBody.AttributeName, objectID, WriteOperation, ObjectUserAttribute)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSetObjectUserAttributesValue: failed to assess permissions")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
+		return
+	}
+
+	if !result {
+		err := errors.WithMessage(err, "Node: apiSetObjectUserAttributesValue: operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
 		return
 	}
 
@@ -205,6 +231,19 @@ func (n *Node) apiGetObjectUserAttributeSubValue(c *gin.Context) {
 		return
 	}
 
+	result, err := n.AssessPermissions(c, pluginID, inQuery.AttributeName, objectID, ReadOperation, ObjectUserAttribute)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeSubValue: failed to assess permissions")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
+		return
+	}
+
+	if !result {
+		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeSubValue: operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+		return
+	}
+
 	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
 	objectUserAttributeID := entry.NewObjectUserAttributeID(attributeID, objectID, userID)
 	objectUserAttributeValue, ok := n.GetObjectUserAttributes().GetValue(objectUserAttributeID)
@@ -276,6 +315,19 @@ func (n *Node) apiSetObjectUserAttributeSubValue(c *gin.Context) {
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiSetObjectUserAttributeSubValue: failed to parse plugin umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
+		return
+	}
+
+	result, err := n.AssessPermissions(c, pluginID, inBody.AttributeName, objectID, WriteOperation, ObjectUserAttribute)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSetObjectUserAttributeSubValue: failed to assess permissions")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
+		return
+	}
+
+	if !result {
+		err := errors.WithMessage(err, "Node: apiSetObjectUserAttributeSubValue: operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
 		return
 	}
 
@@ -366,6 +418,19 @@ func (n *Node) apiRemoveObjectUserAttributeSubValue(c *gin.Context) {
 		return
 	}
 
+	result, err := n.AssessPermissions(c, pluginID, inBody.AttributeName, objectID, WriteOperation, ObjectUserAttribute)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiRemoveObjectUserAttributeSubValue: failed to assess permissions")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
+		return
+	}
+
+	if !result {
+		err := errors.WithMessage(err, "Node: apiRemoveObjectUserAttributeSubValue: operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+		return
+	}
+
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
 	objectUserAttributeID := entry.NewObjectUserAttributeID(attributeID, objectID, userID)
 
@@ -437,6 +502,19 @@ func (n *Node) apiRemoveObjectUserAttributeValue(c *gin.Context) {
 		return
 	}
 
+	result, err := n.AssessPermissions(c, pluginID, inBody.AttributeName, objectID, WriteOperation, ObjectUserAttribute)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiRemoveObjectUserAttributeValue: failed to assess permissions")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
+		return
+	}
+
+	if !result {
+		err := errors.WithMessage(err, "Node: apiRemoveObjectUserAttributeValue: operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+		return
+	}
+
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
 	objectUserAttributeID := entry.NewObjectUserAttributeID(attributeID, objectID, userID)
 
@@ -489,6 +567,19 @@ func (n *Node) apiGetObjectAllUsersAttributeValuesList(c *gin.Context) {
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetObjectAllUsersAttributeValuesList: failed to parse plugin umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
+		return
+	}
+
+	result, err := n.AssessPermissions(c, pluginID, inQuery.AttributeName, objectID, ReadOperation, ObjectUserAttribute)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectAllUsersAttributeValuesList: failed to assess permissions")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
+		return
+	}
+
+	if !result {
+		err := errors.WithMessage(err, "Node: apiGetObjectAllUsersAttributeValuesList: operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
 		return
 	}
 

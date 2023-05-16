@@ -163,8 +163,6 @@ func (n *Node) AssessOperations(
 	case ObjectUserAttribute:
 		// any, users, admin, user_owner, admin+user_owner
 		userObjectID := entry.NewUserObjectID(userID, ownerID)
-		// What rights does the user have?
-		// Does the user own the object?
 		object, ok := n.GetObjectFromAllObjects(ownerID)
 		if !ok {
 			return false, errors.New("failed to get object from all objects")
