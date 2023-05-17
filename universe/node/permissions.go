@@ -28,7 +28,6 @@ const (
 	ObjectUserAttribute
 	UserAttribute
 	UserUserAttribute
-	NodeAttribute
 )
 
 const (
@@ -36,9 +35,7 @@ const (
 	User       string = "user"
 	UserOwner  string = "user_owner"
 	Admin      string = "admin"
-	Owner      string = "owner"
 	TargetUser string = "target_user"
-	None       string = "none"
 )
 
 func (n *Node) AssessPermissions(
@@ -172,7 +169,7 @@ func (n *Node) AssessOperations(
 
 		objectOwnerID := object.GetOwnerID()
 		if objectOwnerID == userID {
-			userPermissions[Owner] = true
+			userPermissions[UserOwner] = true
 		}
 
 		isAdmin, err := n.db.GetUserObjectsDB().CheckIsIndirectAdminByID(n.ctx, userObjectID)
@@ -218,17 +215,17 @@ func (n *Node) CompareReadPermissions(attributeTypePermissions []string, userPer
 		case Any:
 			return true
 		case User:
-			if userPermissions[User] || userPermissions[Admin] || userPermissions[Owner] || userPermissions[UserOwner] || userPermissions[TargetUser] {
+			if userPermissions[User] || userPermissions[Admin] || userPermissions[UserOwner] || userPermissions[TargetUser] {
 				return true
 			}
 			return false
 		case Admin:
-			if userPermissions[Admin] || userPermissions[Owner] || userPermissions[UserOwner] || userPermissions[TargetUser] {
+			if userPermissions[Admin] || userPermissions[UserOwner] || userPermissions[TargetUser] {
 				return true
 			}
 			return false
-		case Owner, UserOwner, TargetUser:
-			if userPermissions[Owner] || userPermissions[UserOwner] || userPermissions[TargetUser] {
+		case UserOwner, TargetUser:
+			if userPermissions[UserOwner] || userPermissions[TargetUser] {
 				return true
 			}
 			return false
@@ -241,18 +238,18 @@ func (n *Node) CompareReadPermissions(attributeTypePermissions []string, userPer
 func (n *Node) CompareWritePermissions(attributeTypePermissions []string, userPermissions map[string]bool) bool {
 	for _, attributeTypePermission := range attributeTypePermissions {
 		switch attributeTypePermission {
-		case Owner, UserOwner, TargetUser:
-			if userPermissions[Owner] || userPermissions[UserOwner] || userPermissions[TargetUser] {
+		case UserOwner, TargetUser:
+			if userPermissions[UserOwner] || userPermissions[TargetUser] {
 				return true
 			}
 			return false
 		case Admin:
-			if userPermissions[Admin] || userPermissions[Owner] || userPermissions[UserOwner] || userPermissions[TargetUser] {
+			if userPermissions[Admin] || userPermissions[UserOwner] || userPermissions[TargetUser] {
 				return true
 			}
 			return false
 		case User:
-			if userPermissions[User] || userPermissions[Admin] || userPermissions[Owner] || userPermissions[UserOwner] || userPermissions[TargetUser] {
+			if userPermissions[User] || userPermissions[Admin] || userPermissions[UserOwner] || userPermissions[TargetUser] {
 				return true
 			}
 			return false
