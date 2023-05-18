@@ -20,13 +20,17 @@ func addrToHash(addr *common.Address) *common.Hash {
 	return &res
 }
 
-func (a *ArbitrumNovaAdapter) GetNFTBalance(block int64, wallet *common.Address, nftContract common.Address) ([]*umid.UMID, error) {
+func (a *ArbitrumNovaAdapter) GetNFTBalance(block int64, wallet *common.Address, nftContract *common.Address) ([]umid.UMID, error) {
 	transferString := "Transfer(address,address,uint256)"
 	transferTopic := common.BytesToHash(crypto.Keccak256([]byte(transferString)))
 
+	if nftContract == nil {
+		return nil, errors.New("Failed to GetNFTBalance: NFT contract can not be nil")
+	}
+
 	contracts := []common.Address{
 		//mom,
-		nftContract,
+		*nftContract,
 	}
 
 	logs := make([]types.Log, 0)
@@ -43,19 +47,19 @@ func (a *ArbitrumNovaAdapter) GetNFTBalance(block int64, wallet *common.Address,
 
 	fmt.Println(logs)
 
-	m := make(map[*umid.UMID]int8)
+	m := make(map[umid.UMID]int8)
 
 	for _, l := range logsFrom {
 		itemID := l.Topics[3].Big()
 
 		var id umid.UMID
 		itemID.FillBytes(id[:])
-		_, ok := m[&id]
+		_, ok := m[id]
 		if !ok {
-			m[&id] = 0
+			m[id] = 0
 		}
 
-		m[&id] -= 1
+		m[id] -= 1
 	}
 
 	for _, l := range logsTo {
@@ -63,15 +67,15 @@ func (a *ArbitrumNovaAdapter) GetNFTBalance(block int64, wallet *common.Address,
 
 		var id umid.UMID
 		itemID.FillBytes(id[:])
-		_, ok := m[&id]
+		_, ok := m[id]
 		if !ok {
-			m[&id] = 0
+			m[id] = 0
 		}
 
-		m[&id] += 1
+		m[id] += 1
 	}
 
-	ids := make([]*umid.UMID, 0)
+	ids := make([]umid.UMID, 0)
 	for id, i := range m {
 		if i != 0 && i != 1 {
 			fmt.Println("Failed to parse NFT transfers, Something wrong in blockchain history")

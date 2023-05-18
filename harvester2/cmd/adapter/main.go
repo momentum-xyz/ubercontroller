@@ -90,12 +90,15 @@ func main() {
 	_ = w04
 	_ = w78
 
-	ids, err := a.GetNFTBalance(1000, &w78, nft)
+	ids, err := a.GetNFTBalance(1000, &w78, &nft)
 	if err != nil {
 		fmt.Println(err)
 	}
 
 	fmt.Println(ids)
+
+	b, err := a.GetBalance(&w78, &mom, n)
+	fmt.Println(b.String())
 
 	time.Sleep(time.Second * 300)
 }

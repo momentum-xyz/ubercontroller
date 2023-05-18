@@ -12,7 +12,8 @@ type AdapterListener func(blockNumber uint64)
 
 type Adapter interface {
 	GetLastBlockNumber() (uint64, error)
-	GetBalance(wallet string, contract string, blockNumber uint64) (*big.Int, error)
+	GetBalance(wallet *common.Address, contract *common.Address, blockNumber uint64) (*big.Int, error)
+	GetNFTBalance(block int64, wallet *common.Address, nftContract *common.Address) ([]umid.UMID, error)
 	GetLogs(fromBlock, toBlock int64, addresses []common.Address) ([]any, error)
 	RegisterNewBlockListener(f AdapterListener)
 	Run()

@@ -19,6 +19,10 @@ func NewHarvester(db *pgxpool.Pool) *Harvester2 {
 	}
 }
 
+func (h *Harvester2) Display(bcType BCType) {
+	h.bc[bcType].Display()
+}
+
 func (h *Harvester2) RegisterAdapter(adapter Adapter) error {
 	_, bcType, _ := adapter.GetInfo()
 

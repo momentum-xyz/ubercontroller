@@ -94,15 +94,18 @@ func (a *ArbitrumNovaAdapter) RegisterNewBlockListener(f harvester2.AdapterListe
 	a.listener = f
 }
 
-func (a *ArbitrumNovaAdapter) GetBalance(wallet string, contract string, blockNumber uint64) (*big.Int, error) {
+func (a *ArbitrumNovaAdapter) GetBalance(wallet *common.Address, contract *common.Address, blockNumber uint64) (*big.Int, error) {
 	type request struct {
 		To   string `json:"to"`
 		Data string `json:"data"`
 	}
 
+	w := wallet.Hex()
+	c := contract.Hex()
+
 	// "0x70a08231" - crypto.Keccak256Hash([]byte("balanceOf(address)")).String()[0:10]
-	data := "0x70a08231" + fmt.Sprintf("%064s", wallet[2:]) // %064s means that the string is padded with 0 to 64 bytes
-	req := request{contract, data}
+	data := "0x70a08231" + fmt.Sprintf("%064s", w[2:]) // %064s means that the string is padded with 0 to 64 bytes
+	req := request{c, data}
 
 	var resp string
 	n := hexutil.EncodeUint64(blockNumber)
