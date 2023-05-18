@@ -43,7 +43,8 @@ func main() {
 
 	contracts := []common.Address{
 		//common.HexToAddress("0x7F85fB7f42A0c0D40431cc0f7DFDf88be6495e67"),
-		common.HexToAddress("0x567d4e8264dC890571D5392fDB9fbd0e3FCBEe56"), //mom
+		//common.HexToAddress("0x567d4e8264dC890571D5392fDB9fbd0e3FCBEe56"), //mom
+		common.HexToAddress("0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1"), //mom
 	}
 	_ = contracts
 	//diffs, err := a.GetLogs(0, 12, contracts)
@@ -55,7 +56,7 @@ func main() {
 	for k, v := range c.AllAddresses {
 		fmt.Println(k, v)
 	}
-	logs, err := a.GetLogs(0, 616, contracts)
+	logs, err := a.GetLogs(0, 8817433, contracts)
 
 	for _, log := range logs {
 		switch log.(type) {
@@ -78,6 +79,23 @@ func main() {
 			//fmt.Println(log.(*harvester.TransferERC20Log).Value)
 		}
 	}
+
+	mom := common.HexToAddress("0x567d4e8264dC890571D5392fDB9fbd0e3FCBEe56")
+	nft := common.HexToAddress("0x97E0B10D89a494Eb5cfFCc72853FB0750BD64AcD")
+	_ = mom
+	_ = nft
+
+	w04 := common.HexToAddress("0xA058Aa2fCf33993e17D074E6843202E7C94bf267")
+	w78 := common.HexToAddress("0x78B00B17E7e5619113A4e922BC3c8cb290355043")
+	_ = w04
+	_ = w78
+
+	ids, err := a.GetNFTBalance(1000, &w78, nft)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println(ids)
 
 	time.Sleep(time.Second * 300)
 }

@@ -129,6 +129,19 @@ func (m *Matrix) fillMissingData(wg *sync.WaitGroup) {
 
 func (m *Matrix) ProcessLogs(blockNumber uint64, logs []any, wallets map[*Address]bool) {
 
+	for _, log := range logs {
+		switch log.(type) {
+		case *TransferERC20Log:
+			//l := log.(*TransferERC20Log)
+			//c := (*Contract)(&l.Contract)
+			//
+			//w := (*Address)(&l.From)
+			//if wallets[w] {
+			//
+			//	m.tokenMatrix[c][(*Wallet)(w)] =
+			//}
+		}
+	}
 }
 
 func (m *Matrix) AddWallet(wallet *Address) error {
