@@ -130,7 +130,7 @@ func (u *User) writePump() {
 
 		case <-ticker.C:
 			if err := u.SendDirectly(pingMessage); err != nil {
-				u.log.Errorf("user ping: %w\n", err)
+				u.log.Debugf("user ping: %v\n", err)
 				return
 			}
 		}
