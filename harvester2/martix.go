@@ -129,19 +129,17 @@ func (m *Matrix) fillNFTMatrixCell(block uint64, contract *Contract, wallet *Wal
 
 func (m *Matrix) fillTokenMatrixCell(block uint64, contract *Contract, wallet *Wallet, wg *sync.WaitGroup) {
 	//TODO start here Add mutex and set isInit=true
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.tokenMatrix[contract][wallet].isInit {
+		return
+	}
+
 	fmt.Println("fillTokenMatrixCell")
 	b, err := m.adapter.GetBalance((*common.Address)(wallet), (*common.Address)(contract), block)
 	if err != nil {
 		fmt.Println("ERROR: fillTokenMatrixCell: Failed to get token balance")
-	}
-	if _, ok := m.tokenMatrix[contract]; !ok {
-		m.tokenMatrix[contract] = make(map[*Wallet]*TokenCell)
-	}
-	if _, ok := m.tokenMatrix[contract][wallet]; !ok {
-		m.tokenMatrix[contract][wallet] = &TokenCell{
-			isInit: false,
-			value:  big.NewInt(0),
-		}
 	}
 
 	if b == nil {
@@ -149,6 +147,8 @@ func (m *Matrix) fillTokenMatrixCell(block uint64, contract *Contract, wallet *W
 	}
 
 	m.tokenMatrix[contract][wallet].value.Add(m.tokenMatrix[contract][wallet].value, b)
+
+	m.tokenMatrix[contract][wallet].isInit = true
 
 	if wg != nil {
 		wg.Done()
@@ -300,7 +300,10 @@ func (m *Matrix) AddTokenContract(contract *Address) error {
 
 	for wallet := range m.wallets {
 		w := (*Wallet)(wallet)
-		m.tokenMatrix[c][w] = nil
+		m.tokenMatrix[c][w] = &TokenCell{
+			isInit: false,
+			value:  big.NewInt(0),
+		}
 	}
 
 	m.contracts[contract] = true
