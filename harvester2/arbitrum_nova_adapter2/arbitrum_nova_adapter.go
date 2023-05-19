@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum"
@@ -34,6 +35,11 @@ type ArbitrumNovaAdapter struct {
 	rpcClient *rpc.Client
 	lastBlock uint64
 	contracts *Contracts
+
+	// tmp solution, remove it after indexed params added to contract events
+	cache []types.Log
+	block int64
+	mu    sync.Mutex
 }
 
 func NewArbitrumNovaAdapter(cfg *config.Config) *ArbitrumNovaAdapter {
@@ -43,6 +49,8 @@ func NewArbitrumNovaAdapter(cfg *config.Config) *ArbitrumNovaAdapter {
 		httpURL:   cfg.Arbitrum.RPCURL,
 		name:      "arbitrum_nova",
 		contracts: NewContracts(&cfg.Arbitrum),
+		cache:     make([]types.Log, 0),
+		block:     0,
 	}
 }
 

@@ -30,17 +30,6 @@ func main() {
 
 	a.RegisterNewBlockListener(l)
 
-	//token := cfg.Arbitrum.ArbitrumMOMTokenAddress // token smart contract address
-	//wallet := "0x683642c22feDE752415D4793832Ab75EFdF6223c" // user address
-	//wallet := "0x5ab4ef2f56001f2a21c821ef10b717d3c2dc91dd85fa823e9539e1178e5daa32" // user address
-	//for i := 1; i < 100; i++ {
-	//	b, err := a.GetBalance(wallet, token, n)
-	//	if err != nil {
-	//		log.Fatal(err)
-	//	}
-	//	fmt.Printf("Balance: %+v \n", b)
-	//}
-
 	contracts := []common.Address{
 		//common.HexToAddress("0x7F85fB7f42A0c0D40431cc0f7DFDf88be6495e67"),
 		//common.HexToAddress("0x567d4e8264dC890571D5392fDB9fbd0e3FCBEe56"), //mom
@@ -82,8 +71,10 @@ func main() {
 
 	mom := common.HexToAddress("0x567d4e8264dC890571D5392fDB9fbd0e3FCBEe56")
 	nft := common.HexToAddress("0x97E0B10D89a494Eb5cfFCc72853FB0750BD64AcD")
+	stake := common.HexToAddress("0x047C0A154271498ee718162b718b3D4F464855e0")
 	_ = mom
 	_ = nft
+	_ = stake
 
 	w04 := common.HexToAddress("0xA058Aa2fCf33993e17D074E6843202E7C94bf267")
 	w78 := common.HexToAddress("0x78B00B17E7e5619113A4e922BC3c8cb290355043")
@@ -99,6 +90,13 @@ func main() {
 
 	b, err := a.GetBalance(&w78, &mom, n)
 	fmt.Println(b.String())
+
+	s, err := a.GetStakeBalance(1000, &w78, &stake)
+
+	fmt.Println(s)
+	for odyssey, stakes := range s {
+		fmt.Println(odyssey, stakes[0].String(), stakes[1].String(), stakes[2].String())
+	}
 
 	time.Sleep(time.Second * 300)
 }
