@@ -48,7 +48,10 @@ func (u *User) readPump() {
 
 	u.conn.SetReadLimit(inMessageSizeLimit)
 	u.conn.SetReadDeadline(time.Now().Add(pongWait))
-	u.conn.SetPongHandler(func(string) error { u.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
+	u.conn.SetPongHandler(func(string) error {
+		u.conn.SetReadDeadline(time.Now().Add(pongWait))
+		return nil
+	})
 
 	for {
 		messageType, message, err := u.conn.ReadMessage()
@@ -126,10 +129,9 @@ func (u *User) writePump() {
 			}
 
 		case <-ticker.C:
-			if u.bufferSends.Load() == false {
-				if u.SendDirectly(pingMessage) != nil {
-					return
-				}
+			if err := u.SendDirectly(pingMessage); err != nil {
+				u.log.Errorf("user ping: %w\n", err)
+				return
 			}
 		}
 	}
