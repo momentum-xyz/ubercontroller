@@ -160,6 +160,25 @@ func (n *Node) AssessOperations(
 	switch attributeKind {
 	case ObjectAttribute:
 		// any, users, admin
+		object, ok := n.GetObjectFromAllObjects(ownerID)
+		if !ok {
+			return false, errors.New("failed to get object from all objects")
+		}
+
+		objectOwnerID := object.GetOwnerID()
+		if objectOwnerID == userID { // TODO: do this inside the admin check
+			userPermissions[Admin] = true
+		} else {
+			userObjectID := entry.NewUserObjectID(userID, ownerID)
+			isAdmin, err := n.db.GetUserObjectsDB().CheckIsIndirectAdminByID(n.ctx, userObjectID)
+			if err != nil {
+				return false, errors.WithMessage(err, "failed to check admin status")
+			}
+			if isAdmin {
+				userPermissions[Admin] = true
+			}
+		}
+
 	case ObjectUserAttribute:
 		// any, users, admin, user_owner, admin+user_owner
 		userObjectID := entry.NewUserObjectID(userID, ownerID)
