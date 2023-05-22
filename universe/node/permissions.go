@@ -38,6 +38,13 @@ const (
 	TargetUser string = "target_user"
 )
 
+func defaultPermissions() map[string]string {
+	return map[string]string{
+		"read":  "any",
+		"write": "admin+user_owner",
+	}
+}
+
 func (n *Node) AssessPermissions(
 	c *gin.Context, pluginID umid.UMID, attributeName string, ownerID umid.UMID,
 	operationType OperationType, attributeKind AttributeKind,
@@ -66,60 +73,54 @@ func (n *Node) GetPermissions(attributeID entry.AttributeID,
 	attributeType universe.AttributeType,
 	attributeKind AttributeKind, ownerID umid.UMID, userID umid.UMID,
 ) (map[string]string, error) {
-	attributeOptions, err := n.GetAttributeOptions(attributeID, attributeKind, attributeType, ownerID, userID)
-	if err != nil {
-		return nil, err
+
+	attributeOptions, ok := n.GetAttributeOptions(attributeID, attributeKind, attributeType, ownerID, userID)
+	if !ok {
+		return defaultPermissions(), nil
 	}
 
-	if attributeOptions != nil {
-		permissions := utils.GetFromAnyMap(*attributeOptions, "permissions", map[string]string(nil))
-		if permissions != nil {
-			return permissions, nil
-		}
+	permissions := utils.GetFromAnyMap(*attributeOptions, "permissions", map[string]string(nil))
+	if permissions != nil {
+		return permissions, nil
 	}
 
-	defaultPermissions := map[string]string{
-		"read":  "any",
-		"write": "admin+user_owner",
-	}
-
-	return defaultPermissions, nil
+	return defaultPermissions(), nil
 }
 
 func (n *Node) GetAttributeOptions(
 	attributeID entry.AttributeID,
 	attributeKind AttributeKind, attributeType universe.AttributeType, ownerID umid.UMID,
-	userID umid.UMID) (*entry.AttributeOptions, error) {
+	userID umid.UMID) (*entry.AttributeOptions, bool) {
 	switch attributeKind {
 	case ObjectAttribute:
 		options, ok := n.GetObjectAttributes().GetOptions(attributeID)
 		if !ok {
-			return nil, errors.New("failed to get objectAttribute options")
+			return nil, false
 		}
-		return options, nil
+		return options, true
 	case ObjectUserAttribute:
 		objectUserAttributeID := entry.NewObjectUserAttributeID(attributeID, ownerID, userID)
 		options, ok := n.GetObjectUserAttributes().GetOptions(objectUserAttributeID)
 		if !ok {
-			return nil, errors.New("failed to get objectUserAttribute options")
+			return nil, false
 		}
-		return options, nil
+		return options, true
 	case UserAttribute:
 		userAttributeID := entry.NewUserAttributeID(attributeID, userID)
 		options, ok := n.GetUserAttributes().GetOptions(userAttributeID)
 		if !ok {
-			return nil, errors.New("failed to get userAttribute options")
+			return nil, false
 		}
-		return options, nil
+		return options, true
 	case UserUserAttribute:
 		userUserAttributeID := entry.NewUserUserAttributeID(attributeID, userID, ownerID)
 		options, ok := n.GetUserUserAttributes().GetOptions(userUserAttributeID)
 		if !ok {
-			return nil, errors.New("failed to get userUserAttribute options")
+			return nil, false
 		}
-		return options, nil
+		return options, true
 	default:
-		return attributeType.GetOptions(), nil
+		return attributeType.GetOptions(), true
 	}
 }
 
