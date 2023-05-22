@@ -318,7 +318,7 @@ func (n *Node) apiSetObjectAttributesValue(c *gin.Context) {
 	}
 
 	if !result {
-		err := errors.WithMessage(err, "Node: apiSetObjectAttributesValue: operation not permitted")
+		err := errors.New("Node: apiSetObjectAttributesValue: operation not permitted")
 		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
 		return
 	}
