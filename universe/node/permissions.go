@@ -29,21 +29,8 @@ const (
 	UserUserAttribute
 )
 
-const (
-	Any        string = "any"
-	User       string = "user"
-	UserOwner  string = "user_owner"
-	Admin      string = "admin"
-	TargetUser string = "target_user"
-)
-
-type PermissionsOption struct {
-	Read  string `mapstructure:"read"`
-	Write string `mapstructure:"write"`
-}
-
-func defaultPermissions() *PermissionsOption {
-	return &PermissionsOption{
+func defaultPermissions() *entry.PermissionsAttributeOption {
+	return &entry.PermissionsAttributeOption{
 		Read:  "any",
 		Write: "admin+user_owner",
 	}
@@ -76,7 +63,7 @@ func (n *Node) AssessPermissions(
 func (n *Node) getPermissions(attributeID entry.AttributeID,
 	attributeType universe.AttributeType,
 	attributeKind AttributeKind, ownerID umid.UMID, userID umid.UMID,
-) (*PermissionsOption, error) {
+) (*entry.PermissionsAttributeOption, error) {
 
 	attributeOptions, ok := n.getAttributeOptions(attributeID, attributeKind, attributeType, ownerID, userID)
 	if !ok {
@@ -86,7 +73,7 @@ func (n *Node) getPermissions(attributeID entry.AttributeID,
 	attrMap := *attributeOptions
 	permissions, ok := attrMap["permissions"]
 	if ok && permissions != nil {
-		result := &PermissionsOption{}
+		result := &entry.PermissionsAttributeOption{}
 		err := utils.MapDecode(permissions, result) // TODO: move up into the attr getter
 		if err != nil {
 			return nil, err
@@ -134,9 +121,13 @@ func (n *Node) getAttributeOptions(
 	}
 }
 
-func (n *Node) getUserPermissions(userID umid.UMID, permissions string) (universe.User, map[string]bool, []string, error) {
-	userPermissions := make(map[string]bool)
-	attributeTypePermissions := strings.Split(permissions, "+")
+func (n *Node) getUserPermissions(userID umid.UMID, permissions string) (universe.User, map[entry.PermissionsRoleType]bool, []entry.PermissionsRoleType, error) {
+	userPermissions := make(map[entry.PermissionsRoleType]bool)
+	attrPermissions := make([]entry.PermissionsRoleType, 1)
+	// TODO: custom db(json) decoder, do this on input, not here in the middle.
+	for _, v := range strings.Split(permissions, "+") {
+		attrPermissions = append(attrPermissions, entry.PermissionsRoleType(v))
+	}
 
 	// Is the user a registered user or a guest?
 	user, err := n.LoadUser(userID)
@@ -146,14 +137,14 @@ func (n *Node) getUserPermissions(userID umid.UMID, permissions string) (univers
 
 	// Currently we only have guest and normal users,
 	// both are considered as 'user' permission type (for now?)
-	userPermissions[User] = true
+	userPermissions[entry.PermissionUser] = true
 
-	return user, userPermissions, attributeTypePermissions, nil
+	return user, userPermissions, attrPermissions, nil
 }
 
 func (n *Node) assessOperations(
 	userID umid.UMID,
-	ownerID umid.UMID, permissions *PermissionsOption,
+	ownerID umid.UMID, permissions *entry.PermissionsAttributeOption,
 	attributeKind AttributeKind, attributeID entry.AttributeID, operationType OperationType,
 ) (bool, error) {
 	var permission string
@@ -177,7 +168,7 @@ func (n *Node) assessOperations(
 
 		objectOwnerID := object.GetOwnerID()
 		if objectOwnerID == userID {
-			userPermissions[Admin] = true
+			userPermissions[entry.PermissionAdmin] = true
 		} else {
 			userObjectID := entry.NewUserObjectID(userID, ownerID)
 			isAdmin, err := n.db.GetUserObjectsDB().CheckIsIndirectAdminByID(n.ctx, userObjectID)
@@ -185,7 +176,7 @@ func (n *Node) assessOperations(
 				return false, errors.WithMessage(err, "failed to check admin status")
 			}
 			if isAdmin {
-				userPermissions[Admin] = true
+				userPermissions[entry.PermissionAdmin] = true
 			}
 		}
 
@@ -199,7 +190,7 @@ func (n *Node) assessOperations(
 
 		objectOwnerID := object.GetOwnerID()
 		if objectOwnerID == userID {
-			userPermissions[UserOwner] = true
+			userPermissions[entry.PermissionUserOwner] = true
 		}
 
 		isAdmin, err := n.db.GetUserObjectsDB().CheckIsIndirectAdminByID(n.ctx, userObjectID)
@@ -207,7 +198,7 @@ func (n *Node) assessOperations(
 			return false, errors.WithMessage(err, "failed to check admin status")
 		}
 		if isAdmin {
-			userPermissions[Admin] = true
+			userPermissions[entry.PermissionAdmin] = true
 		}
 	case UserAttribute:
 		// any, users, user_owner
@@ -217,7 +208,7 @@ func (n *Node) assessOperations(
 			return false, errors.WithMessage(err, "failed to get user attribute")
 		}
 		if user.GetID() == userAttribute.UserID {
-			userPermissions[UserOwner] = true
+			userPermissions[entry.PermissionUserOwner] = true
 		}
 	case UserUserAttribute:
 		// user_owner == source_user
@@ -228,10 +219,10 @@ func (n *Node) assessOperations(
 			return false, errors.WithMessage(err, "failed to get user user attribute")
 		}
 		if user.GetID() == userUserAttribute.SourceUserID {
-			userPermissions[UserOwner] = true
+			userPermissions[entry.PermissionUserOwner] = true
 		}
 		if user.GetID() == userUserAttribute.TargetUserID {
-			userPermissions[TargetUser] = true
+			userPermissions[entry.PermissionTargetUser] = true
 		}
 	}
 
@@ -239,23 +230,23 @@ func (n *Node) assessOperations(
 	return result, nil
 }
 
-func (n *Node) compareReadPermissions(attributeTypePermissions []string, userPermissions map[string]bool) bool {
+func (n *Node) compareReadPermissions(attributeTypePermissions []entry.PermissionsRoleType, userPermissions map[entry.PermissionsRoleType]bool) bool {
 	for _, attributeTypePermission := range attributeTypePermissions {
 		switch attributeTypePermission {
-		case Any:
+		case entry.PermissionAny:
 			return true
-		case User:
-			if userPermissions[User] || userPermissions[Admin] || userPermissions[UserOwner] || userPermissions[TargetUser] {
+		case entry.PermissionUser:
+			if userPermissions[entry.PermissionUser] || userPermissions[entry.PermissionAdmin] || userPermissions[entry.PermissionUserOwner] || userPermissions[entry.PermissionTargetUser] {
 				return true
 			}
 			return false
-		case Admin:
-			if userPermissions[Admin] || userPermissions[UserOwner] || userPermissions[TargetUser] {
+		case entry.PermissionAdmin:
+			if userPermissions[entry.PermissionAdmin] || userPermissions[entry.PermissionUserOwner] || userPermissions[entry.PermissionTargetUser] {
 				return true
 			}
 			return false
-		case UserOwner, TargetUser:
-			if userPermissions[UserOwner] || userPermissions[TargetUser] {
+		case entry.PermissionUserOwner, entry.PermissionTargetUser:
+			if userPermissions[entry.PermissionUserOwner] || userPermissions[entry.PermissionTargetUser] {
 				return true
 			}
 			return false
@@ -265,25 +256,25 @@ func (n *Node) compareReadPermissions(attributeTypePermissions []string, userPer
 	return false
 }
 
-func (n *Node) CompareWritePermissions(attributeTypePermissions []string, userPermissions map[string]bool) bool {
+func (n *Node) CompareWritePermissions(attributeTypePermissions []entry.PermissionsRoleType, userPermissions map[entry.PermissionsRoleType]bool) bool {
 	for _, attributeTypePermission := range attributeTypePermissions {
 		switch attributeTypePermission {
-		case UserOwner, TargetUser:
-			if userPermissions[UserOwner] || userPermissions[TargetUser] {
+		case entry.PermissionUserOwner, entry.PermissionTargetUser:
+			if userPermissions[entry.PermissionUserOwner] || userPermissions[entry.PermissionTargetUser] {
 				return true
 			}
 			return false
-		case Admin:
-			if userPermissions[Admin] || userPermissions[UserOwner] || userPermissions[TargetUser] {
+		case entry.PermissionAdmin:
+			if userPermissions[entry.PermissionAdmin] || userPermissions[entry.PermissionUserOwner] || userPermissions[entry.PermissionTargetUser] {
 				return true
 			}
 			return false
-		case User:
-			if userPermissions[User] || userPermissions[Admin] || userPermissions[UserOwner] || userPermissions[TargetUser] {
+		case entry.PermissionUser:
+			if userPermissions[entry.PermissionUser] || userPermissions[entry.PermissionAdmin] || userPermissions[entry.PermissionUserOwner] || userPermissions[entry.PermissionTargetUser] {
 				return true
 			}
 			return false
-		case Any:
+		case entry.PermissionAny:
 			return true
 		}
 	}

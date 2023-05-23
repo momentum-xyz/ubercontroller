@@ -64,6 +64,22 @@ type RenderAutoAttributeOption struct {
 	TextRenderTemplate string          `db:"text_render_template" json:"text_render_template"`
 }
 
+type PermissionsRoleType string
+
+const (
+	PermissionAny        PermissionsRoleType = "any"
+	PermissionUser       PermissionsRoleType = "user"
+	PermissionUserOwner  PermissionsRoleType = "user_owner"
+	PermissionAdmin      PermissionsRoleType = "admin"
+	PermissionTargetUser PermissionsRoleType = "target_user"
+)
+
+type PermissionsAttributeOption struct {
+	Read  string `json:"read" mapstructure:"read"`
+	Write string `json:"write" mapstructure:"write"`
+	// TODO: replace string, impl decoder for e.g 'admin+user_owner'
+}
+
 func NewAttribute(attributeID AttributeID, payload *AttributePayload) *Attribute {
 	return &Attribute{
 		AttributeID:      attributeID,
