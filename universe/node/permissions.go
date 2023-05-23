@@ -65,20 +65,20 @@ func (n *Node) AssessPermissions(
 		return false, errors.WithMessage(err, "failed to get userID from context")
 	}
 
-	permissions, err := n.GetPermissions(attributeID, attributeType, attributeKind, ownerID, userID)
+	permissions, err := n.getPermissions(attributeID, attributeType, attributeKind, ownerID, userID)
 	if err != nil {
 		return false, errors.WithMessage(err, "failed to get permissions")
 	}
 
-	return n.AssessOperations(userID, ownerID, permissions, attributeKind, attributeID, operationType)
+	return n.assessOperations(userID, ownerID, permissions, attributeKind, attributeID, operationType)
 }
 
-func (n *Node) GetPermissions(attributeID entry.AttributeID,
+func (n *Node) getPermissions(attributeID entry.AttributeID,
 	attributeType universe.AttributeType,
 	attributeKind AttributeKind, ownerID umid.UMID, userID umid.UMID,
 ) (*PermissionsOption, error) {
 
-	attributeOptions, ok := n.GetAttributeOptions(attributeID, attributeKind, attributeType, ownerID, userID)
+	attributeOptions, ok := n.getAttributeOptions(attributeID, attributeKind, attributeType, ownerID, userID)
 	if !ok {
 		return defaultPermissions(), nil
 	}
@@ -97,7 +97,7 @@ func (n *Node) GetPermissions(attributeID entry.AttributeID,
 	return defaultPermissions(), nil
 }
 
-func (n *Node) GetAttributeOptions(
+func (n *Node) getAttributeOptions(
 	attributeID entry.AttributeID,
 	attributeKind AttributeKind, attributeType universe.AttributeType, ownerID umid.UMID,
 	userID umid.UMID) (*entry.AttributeOptions, bool) {
@@ -134,7 +134,7 @@ func (n *Node) GetAttributeOptions(
 	}
 }
 
-func (n *Node) GetUserPermissions(userID umid.UMID, permissions string) (universe.User, map[string]bool, []string, error) {
+func (n *Node) getUserPermissions(userID umid.UMID, permissions string) (universe.User, map[string]bool, []string, error) {
 	userPermissions := make(map[string]bool)
 	attributeTypePermissions := strings.Split(permissions, "+")
 
@@ -151,7 +151,7 @@ func (n *Node) GetUserPermissions(userID umid.UMID, permissions string) (univers
 	return user, userPermissions, attributeTypePermissions, nil
 }
 
-func (n *Node) AssessOperations(
+func (n *Node) assessOperations(
 	userID umid.UMID,
 	ownerID umid.UMID, permissions *PermissionsOption,
 	attributeKind AttributeKind, attributeID entry.AttributeID, operationType OperationType,
@@ -162,7 +162,7 @@ func (n *Node) AssessOperations(
 	} else {
 		permission = permissions.Read
 	}
-	user, userPermissions, attributeTypePermissions, err := n.GetUserPermissions(userID, permission)
+	user, userPermissions, attributeTypePermissions, err := n.getUserPermissions(userID, permission)
 	if err != nil {
 		return false, errors.WithMessage(err, "failed to get user permissions")
 	}
@@ -235,11 +235,11 @@ func (n *Node) AssessOperations(
 		}
 	}
 
-	result := n.CompareReadPermissions(attributeTypePermissions, userPermissions)
+	result := n.compareReadPermissions(attributeTypePermissions, userPermissions)
 	return result, nil
 }
 
-func (n *Node) CompareReadPermissions(attributeTypePermissions []string, userPermissions map[string]bool) bool {
+func (n *Node) compareReadPermissions(attributeTypePermissions []string, userPermissions map[string]bool) bool {
 	for _, attributeTypePermission := range attributeTypePermissions {
 		switch attributeTypePermission {
 		case Any:
