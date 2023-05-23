@@ -9,7 +9,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
-	"github.com/momentum-xyz/ubercontroller/universe/logic/common"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
@@ -145,15 +144,9 @@ func (n *Node) GetUserPermissions(userID umid.UMID, permissions string) (univers
 		return nil, nil, nil, errors.WithMessage(err, "failed to load user, does the user exist?")
 	}
 
-	userType := user.GetUserType()
-	guestUserTypeID, err := common.GetGuestUserTypeID()
-	if err != nil {
-		return nil, nil, nil, errors.WithMessage(err, "failed to get guest user type id")
-	}
-
-	if userType.GetID() != guestUserTypeID {
-		userPermissions[User] = true
-	}
+	// Currently we only have guest and normal users,
+	// both are considered as 'user' permission type (for now?)
+	userPermissions[User] = true
 
 	return user, userPermissions, attributeTypePermissions, nil
 }
