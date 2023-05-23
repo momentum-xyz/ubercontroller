@@ -38,10 +38,15 @@ const (
 	TargetUser string = "target_user"
 )
 
-func defaultPermissions() map[string]string {
-	return map[string]string{
-		"read":  "any",
-		"write": "admin+user_owner",
+type PermissionsOption struct {
+	Read  string `mapstructure:"read"`
+	Write string `mapstructure:"write"`
+}
+
+func defaultPermissions() *PermissionsOption {
+	return &PermissionsOption{
+		Read:  "any",
+		Write: "admin+user_owner",
 	}
 }
 
@@ -72,16 +77,22 @@ func (n *Node) AssessPermissions(
 func (n *Node) GetPermissions(attributeID entry.AttributeID,
 	attributeType universe.AttributeType,
 	attributeKind AttributeKind, ownerID umid.UMID, userID umid.UMID,
-) (map[string]string, error) {
+) (*PermissionsOption, error) {
 
 	attributeOptions, ok := n.GetAttributeOptions(attributeID, attributeKind, attributeType, ownerID, userID)
 	if !ok {
 		return defaultPermissions(), nil
 	}
 
-	permissions := utils.GetFromAnyMap(*attributeOptions, "permissions", map[string]string(nil))
-	if permissions != nil {
-		return permissions, nil
+	attrMap := *attributeOptions
+	permissions, ok := attrMap["permissions"]
+	if ok && permissions != nil {
+		result := &PermissionsOption{}
+		err := utils.MapDecode(permissions, result) // TODO: move up into the attr getter
+		if err != nil {
+			return nil, err
+		}
+		return result, nil
 	}
 
 	return defaultPermissions(), nil
@@ -149,10 +160,16 @@ func (n *Node) GetUserPermissions(userID umid.UMID, permissions string) (univers
 
 func (n *Node) AssessOperations(
 	userID umid.UMID,
-	ownerID umid.UMID, permissions map[string]string,
+	ownerID umid.UMID, permissions *PermissionsOption,
 	attributeKind AttributeKind, attributeID entry.AttributeID, operationType OperationType,
 ) (bool, error) {
-	user, userPermissions, attributeTypePermissions, err := n.GetUserPermissions(userID, permissions[string(operationType)])
+	var permission string
+	if operationType == WriteOperation {
+		permission = permissions.Write
+	} else {
+		permission = permissions.Read
+	}
+	user, userPermissions, attributeTypePermissions, err := n.GetUserPermissions(userID, permission)
 	if err != nil {
 		return false, errors.WithMessage(err, "failed to get user permissions")
 	}
@@ -166,7 +183,7 @@ func (n *Node) AssessOperations(
 		}
 
 		objectOwnerID := object.GetOwnerID()
-		if objectOwnerID == userID { // TODO: do this inside the admin check
+		if objectOwnerID == userID {
 			userPermissions[Admin] = true
 		} else {
 			userObjectID := entry.NewUserObjectID(userID, ownerID)
@@ -225,8 +242,8 @@ func (n *Node) AssessOperations(
 		}
 	}
 
-	permission := n.CompareReadPermissions(attributeTypePermissions, userPermissions)
-	return permission, nil
+	result := n.CompareReadPermissions(attributeTypePermissions, userPermissions)
+	return result, nil
 }
 
 func (n *Node) CompareReadPermissions(attributeTypePermissions []string, userPermissions map[string]bool) bool {
