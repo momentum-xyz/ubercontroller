@@ -93,7 +93,6 @@ func main() {
 
 	s, err := a.GetStakeBalance(1000, &w78, &stake)
 
-	fmt.Println(s)
 	for odyssey, stakes := range s {
 		fmt.Println(odyssey, stakes[0].String(), stakes[1].String(), stakes[2].String())
 	}

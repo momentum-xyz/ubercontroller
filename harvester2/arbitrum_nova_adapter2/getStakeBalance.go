@@ -1,7 +1,6 @@
 package arbitrum_nova_adapter2
 
 import (
-	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/momentum-xyz/ubercontroller/harvester2"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
@@ -32,8 +31,6 @@ func updateResultForUnstakeCase(result map[umid.UMID]*[3]*big.Int, odysseyID umi
 }
 
 func (a *ArbitrumNovaAdapter) GetStakeBalance(block int64, wallet *common.Address, nftContract *common.Address) (map[umid.UMID]*[3]*big.Int, error) {
-
-	fmt.Println(a.contracts.NftABI.Events)
 	stakeString := "Stake(address,uint256,uint256,uint8,uint256)"
 	unstakeString := "Unstake(address,uint256,uint256,uint8,uint256)"
 	restakeString := "Restake(address,uint256,uint256,uint256,uint8,uint256,uint256)"

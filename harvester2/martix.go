@@ -18,7 +18,7 @@ type Matrix struct {
 	blockNumber uint64
 	tokenMatrix map[*Contract]map[*Wallet]*TokenCell
 	nftMatrix   map[*Contract]map[*Wallet]*NFTCell
-	stakeMatrix map[*Contract]map[*Wallet]map[*umid.UMID]*StakeCell
+	stakeMatrix map[*Contract]map[*Wallet]*StakeCell
 	db          *pgxpool.Pool
 	adapter     Adapter
 
@@ -38,17 +38,15 @@ type NFTCell struct {
 }
 
 type StakeCell struct {
-	isInit         bool
-	TotalAmount    *big.Int
-	TotalDADAmount *big.Int
-	TotalMOMAmount *big.Int
+	isInit bool
+	Stakes map[umid.UMID]*Stake
 }
 
 func NewMatrix(db *pgxpool.Pool, adapter Adapter) *Matrix {
 	return &Matrix{
 		blockNumber: 0,
 		tokenMatrix: make(map[*Contract]map[*Wallet]*TokenCell),
-		stakeMatrix: make(map[*Contract]map[*Wallet]map[*umid.UMID]*StakeCell),
+		stakeMatrix: make(map[*Contract]map[*Wallet]*StakeCell),
 		nftMatrix:   make(map[*Contract]map[*Wallet]*NFTCell),
 		adapter:     adapter,
 		//harvesterListener: listener,
@@ -94,6 +92,43 @@ func (m *Matrix) fillMissingDataForContract(contract *Address, wg *sync.WaitGrou
 	}
 
 	m.ProcessLogs(m.blockNumber, logs, m.wallets)
+	if wg != nil {
+		wg.Done()
+	}
+}
+
+func (m *Matrix) fillStakeMatrixCell(block uint64, contract *Contract, wallet *Wallet, wg *sync.WaitGroup) {
+	fmt.Println("fillStakeMatrixCell")
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.stakeMatrix[contract][wallet].isInit {
+		return
+	}
+	fmt.Println("fillStakeMatrixCell 2")
+
+	stakesMap, err := m.adapter.GetStakeBalance(int64(block), (*common.Address)(wallet), (*common.Address)(contract))
+	if err != nil {
+		fmt.Println("ERROR: fillStakeMatrixCell: Failed to GetStakeBalance")
+	}
+
+	m.stakeMatrix[contract][wallet].isInit = true
+
+	for id, val := range stakesMap {
+		if _, ok := m.stakeMatrix[contract][wallet].Stakes[id]; !ok {
+			m.stakeMatrix[contract][wallet].Stakes[id] = &Stake{
+				TotalAmount:    big.NewInt(0),
+				TotalMOMAmount: big.NewInt(0),
+				TotalDADAmount: big.NewInt(0),
+			}
+		}
+		s := m.stakeMatrix[contract][wallet].Stakes[id]
+		s.TotalAmount.Add(s.TotalAmount, val[0])
+		s.TotalMOMAmount.Add(s.TotalMOMAmount, val[1])
+		s.TotalDADAmount.Add(s.TotalDADAmount, val[2])
+	}
+
 	if wg != nil {
 		wg.Done()
 	}
@@ -180,13 +215,11 @@ func (m *Matrix) fillMissingData(wgMain *sync.WaitGroup) {
 		}
 	}
 
-	for c, val := range m.stakeMatrix {
-		for wallet, stakesMap := range val {
-			if len(stakesMap) == 0 {
-				a := *c
-				contracts = append(contracts, (common.Address)(a))
-				w := *wallet
-				wallets[(common.Address)(w)] = true
+	for contract, val := range m.stakeMatrix {
+		for wallet, cell := range val {
+			if !cell.isInit {
+				wg.Add(1)
+				m.fillStakeMatrixCell(m.blockNumber, contract, wallet, wg)
 			}
 		}
 	}
@@ -251,7 +284,10 @@ func (m *Matrix) addWallet(wallet *Address, wg *sync.WaitGroup) error {
 		}
 	}
 	for c := range m.stakeMatrix {
-		m.stakeMatrix[c][w] = make(map[*umid.UMID]*StakeCell)
+		m.stakeMatrix[c][w] = &StakeCell{
+			isInit: false,
+			Stakes: make(map[umid.UMID]*Stake),
+		}
 	}
 
 	m.wallets[wallet] = true
@@ -324,14 +360,19 @@ func (m *Matrix) AddStakeContract(contract *Address) error {
 
 	c := (*Contract)(contract)
 
-	m.stakeMatrix[c] = make(map[*Wallet]map[*umid.UMID]*StakeCell)
+	m.stakeMatrix[c] = make(map[*Wallet]*StakeCell)
 
 	for wallet := range m.wallets {
 		w := (*Wallet)(wallet)
-		m.stakeMatrix[c][w] = make(map[*umid.UMID]*StakeCell)
+		m.stakeMatrix[c][w] = &StakeCell{
+			isInit: false,
+			Stakes: make(map[umid.UMID]*Stake),
+		}
 	}
 
 	m.contracts[contract] = true
+
+	go m.fillMissingData(nil)
 	return nil
 }
 
@@ -353,6 +394,20 @@ func (m *Matrix) Display() {
 	for contract, value := range m.nftMatrix {
 		for wallet, v := range value {
 			fmt.Printf("%v %v %v \n", (*common.Address)(contract).Hex(), (*common.Address)(wallet).Hex(), v.value)
+		}
+	}
+
+	if len(m.stakeMatrix) == 1 {
+		var stakeContract *Contract
+		for c, _ := range m.stakeMatrix {
+			stakeContract = c
+		}
+		fmt.Println("STAKE Matrix:")
+		fmt.Println("Contract:", (*common.Address)(stakeContract).Hex())
+		for wallet, val := range m.stakeMatrix[stakeContract] {
+			for id, v := range val.Stakes {
+				fmt.Println((*common.Address)(wallet).Hex(), id.String(), val.isInit, v.TotalAmount, v.TotalMOMAmount, v.TotalDADAmount)
+			}
 		}
 	}
 }
