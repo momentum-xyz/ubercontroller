@@ -16,14 +16,14 @@ type Contract Address
 type Matrix struct {
 	mu          deadlock.RWMutex
 	blockNumber uint64
-	tokenMatrix map[*Contract]map[*Wallet]*TokenCell
-	nftMatrix   map[*Contract]map[*Wallet]*NFTCell
-	stakeMatrix map[*Contract]map[*Wallet]*StakeCell
+	tokenMatrix map[Contract]map[Wallet]*TokenCell
+	nftMatrix   map[Contract]map[Wallet]*NFTCell
+	stakeMatrix map[Contract]map[Wallet]*StakeCell
 	db          *pgxpool.Pool
 	adapter     Adapter
 
-	wallets   map[*Address]bool
-	contracts map[*Address]bool
+	wallets   map[Address]bool
+	contracts map[Address]bool
 	//harvesterListener func(bcName string, p []*UpdateEvent, s []*StakeEvent)
 }
 
@@ -45,15 +45,15 @@ type StakeCell struct {
 func NewMatrix(db *pgxpool.Pool, adapter Adapter) *Matrix {
 	return &Matrix{
 		blockNumber: 0,
-		tokenMatrix: make(map[*Contract]map[*Wallet]*TokenCell),
-		stakeMatrix: make(map[*Contract]map[*Wallet]*StakeCell),
-		nftMatrix:   make(map[*Contract]map[*Wallet]*NFTCell),
+		tokenMatrix: make(map[Contract]map[Wallet]*TokenCell),
+		stakeMatrix: make(map[Contract]map[Wallet]*StakeCell),
+		nftMatrix:   make(map[Contract]map[Wallet]*NFTCell),
 		adapter:     adapter,
 		//harvesterListener: listener,
 		db: db,
 
-		wallets:   make(map[*Address]bool),
-		contracts: make(map[*Address]bool),
+		wallets:   make(map[Address]bool),
+		contracts: make(map[Address]bool),
 	}
 }
 
@@ -73,10 +73,7 @@ func (m *Matrix) Run() {
 }
 
 func (m *Matrix) listener(blockNumber uint64) {
-	//t.fastForward()
-	//t.mu.Lock()
-	//t.ProcessDiffs(blockNumber, diffs, stakes)
-	//t.mu.Unlock()
+	m.fastForward()
 }
 
 func (m *Matrix) fillMissingDataForContract(contract *Address, wg *sync.WaitGroup) {
@@ -91,13 +88,13 @@ func (m *Matrix) fillMissingDataForContract(contract *Address, wg *sync.WaitGrou
 		return
 	}
 
-	m.ProcessLogs(m.blockNumber, logs, m.wallets)
+	m.ProcessLogs(m.blockNumber, logs)
 	if wg != nil {
 		wg.Done()
 	}
 }
 
-func (m *Matrix) fillStakeMatrixCell(block uint64, contract *Contract, wallet *Wallet, wg *sync.WaitGroup) {
+func (m *Matrix) fillStakeMatrixCell(block uint64, contract Contract, wallet Wallet, wg *sync.WaitGroup) {
 	fmt.Println("fillStakeMatrixCell")
 
 	m.mu.Lock()
@@ -106,9 +103,8 @@ func (m *Matrix) fillStakeMatrixCell(block uint64, contract *Contract, wallet *W
 	if m.stakeMatrix[contract][wallet].isInit {
 		return
 	}
-	fmt.Println("fillStakeMatrixCell 2")
 
-	stakesMap, err := m.adapter.GetStakeBalance(int64(block), (*common.Address)(wallet), (*common.Address)(contract))
+	stakesMap, err := m.adapter.GetStakeBalance(int64(block), (*common.Address)(&wallet), (*common.Address)(&contract))
 	if err != nil {
 		fmt.Println("ERROR: fillStakeMatrixCell: Failed to GetStakeBalance")
 	}
@@ -134,7 +130,7 @@ func (m *Matrix) fillStakeMatrixCell(block uint64, contract *Contract, wallet *W
 	}
 }
 
-func (m *Matrix) fillNFTMatrixCell(block uint64, contract *Contract, wallet *Wallet, wg *sync.WaitGroup) {
+func (m *Matrix) fillNFTMatrixCell(block uint64, contract Contract, wallet Wallet, wg *sync.WaitGroup) {
 	fmt.Println("fillNFTMatrixCell")
 
 	m.mu.Lock()
@@ -144,12 +140,12 @@ func (m *Matrix) fillNFTMatrixCell(block uint64, contract *Contract, wallet *Wal
 		return
 	}
 
-	nfts, err := m.adapter.GetNFTBalance(int64(block), (*common.Address)(wallet), (*common.Address)(contract))
+	nfts, err := m.adapter.GetNFTBalance(int64(block), (*common.Address)(&wallet), (*common.Address)(&contract))
 	if err != nil {
 		fmt.Println("ERROR: fillNFTMatrixCell: Failed to get NFTs balance")
 	}
 	if _, ok := m.nftMatrix[contract]; !ok {
-		m.nftMatrix[contract] = make(map[*Wallet]*NFTCell)
+		m.nftMatrix[contract] = make(map[Wallet]*NFTCell)
 	}
 
 	for _, nft := range nfts {
@@ -162,8 +158,7 @@ func (m *Matrix) fillNFTMatrixCell(block uint64, contract *Contract, wallet *Wal
 	}
 }
 
-func (m *Matrix) fillTokenMatrixCell(block uint64, contract *Contract, wallet *Wallet, wg *sync.WaitGroup) {
-	//TODO start here Add mutex and set isInit=true
+func (m *Matrix) fillTokenMatrixCell(block uint64, contract Contract, wallet Wallet, wg *sync.WaitGroup) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -172,7 +167,7 @@ func (m *Matrix) fillTokenMatrixCell(block uint64, contract *Contract, wallet *W
 	}
 
 	fmt.Println("fillTokenMatrixCell")
-	b, err := m.adapter.GetBalance((*common.Address)(wallet), (*common.Address)(contract), block)
+	b, err := m.adapter.GetBalance((*common.Address)(&wallet), (*common.Address)(&contract), block)
 	if err != nil {
 		fmt.Println("ERROR: fillTokenMatrixCell: Failed to get token balance")
 	}
@@ -240,11 +235,15 @@ func (m *Matrix) fillMissingData(wgMain *sync.WaitGroup) {
 	//}
 }
 
-func (m *Matrix) ProcessLogs(blockNumber uint64, logs []any, wallets map[*Address]bool) {
+func (m *Matrix) ProcessLogs(blockNumber uint64, logs []any) {
 
 	for _, log := range logs {
-		switch log.(type) {
+
+		switch l := log.(type) {
 		case *TransferERC20Log:
+			if _, ok := m.wallets[(Address)(l.From)]; ok {
+				//m.tokenMatrix[(*Contract)(l.Contract)]
+			}
 			//l := log.(*TransferERC20Log)
 			//c := (*Contract)(&l.Contract)
 			//
@@ -257,11 +256,11 @@ func (m *Matrix) ProcessLogs(blockNumber uint64, logs []any, wallets map[*Addres
 	}
 }
 
-func (m *Matrix) AddWallet(wallet *Address) error {
+func (m *Matrix) AddWallet(wallet Address) error {
 	return m.addWallet(wallet, nil)
 }
 
-func (m *Matrix) addWallet(wallet *Address, wg *sync.WaitGroup) error {
+func (m *Matrix) addWallet(wallet Address, wg *sync.WaitGroup) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -270,7 +269,7 @@ func (m *Matrix) addWallet(wallet *Address, wg *sync.WaitGroup) error {
 		return nil
 	}
 
-	w := (*Wallet)(wallet)
+	w := (Wallet)(wallet)
 	for c := range m.tokenMatrix {
 		m.tokenMatrix[c][w] = &TokenCell{
 			isInit: false,
@@ -297,7 +296,7 @@ func (m *Matrix) addWallet(wallet *Address, wg *sync.WaitGroup) error {
 	return nil
 }
 
-func (m *Matrix) AddNFTContract(contract *Address) error {
+func (m *Matrix) AddNFTContract(contract Address) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -306,11 +305,11 @@ func (m *Matrix) AddNFTContract(contract *Address) error {
 		return nil
 	}
 
-	c := (*Contract)(contract)
-	m.nftMatrix[c] = make(map[*Wallet]*NFTCell)
+	c := (Contract)(contract)
+	m.nftMatrix[c] = make(map[Wallet]*NFTCell)
 
 	for wallet := range m.wallets {
-		w := (*Wallet)(wallet)
+		w := (Wallet)(wallet)
 		// All new cells require initial fill
 		m.nftMatrix[c][w] = &NFTCell{
 			isInit: false,
@@ -322,7 +321,7 @@ func (m *Matrix) AddNFTContract(contract *Address) error {
 	return nil
 }
 
-func (m *Matrix) AddTokenContract(contract *Address) error {
+func (m *Matrix) AddTokenContract(contract Address) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -331,11 +330,11 @@ func (m *Matrix) AddTokenContract(contract *Address) error {
 		return nil
 	}
 
-	c := (*Contract)(contract)
-	m.tokenMatrix[c] = make(map[*Wallet]*TokenCell)
+	c := (Contract)(contract)
+	m.tokenMatrix[c] = make(map[Wallet]*TokenCell)
 
 	for wallet := range m.wallets {
-		w := (*Wallet)(wallet)
+		w := (Wallet)(wallet)
 		m.tokenMatrix[c][w] = &TokenCell{
 			isInit: false,
 			value:  big.NewInt(0),
@@ -349,7 +348,7 @@ func (m *Matrix) AddTokenContract(contract *Address) error {
 	return nil
 }
 
-func (m *Matrix) AddStakeContract(contract *Address) error {
+func (m *Matrix) AddStakeContract(contract Address) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -358,12 +357,12 @@ func (m *Matrix) AddStakeContract(contract *Address) error {
 		return nil
 	}
 
-	c := (*Contract)(contract)
+	c := (Contract)(contract)
 
-	m.stakeMatrix[c] = make(map[*Wallet]*StakeCell)
+	m.stakeMatrix[c] = make(map[Wallet]*StakeCell)
 
 	for wallet := range m.wallets {
-		w := (*Wallet)(wallet)
+		w := (Wallet)(wallet)
 		m.stakeMatrix[c][w] = &StakeCell{
 			isInit: false,
 			Stakes: make(map[umid.UMID]*Stake),
@@ -376,7 +375,7 @@ func (m *Matrix) AddStakeContract(contract *Address) error {
 	return nil
 }
 
-func (m *Matrix) AddTokenListener(contract *Address, listener TokenListener) error {
+func (m *Matrix) AddTokenListener(contract Address, listener TokenListener) error {
 	m.AddTokenContract(contract)
 
 	return nil
@@ -386,28 +385,59 @@ func (m *Matrix) Display() {
 	fmt.Println("Token Matrix:")
 	for contract, value := range m.tokenMatrix {
 		for wallet, v := range value {
-			fmt.Printf("%v %v %v \n", (*common.Address)(contract).Hex(), (*common.Address)(wallet).Hex(), v.value.String())
+			fmt.Printf("%v %v %v \n", (common.Address)(contract).Hex(), (common.Address)(wallet).Hex(), v.value.String())
 		}
 	}
 
 	fmt.Println("NFT Matrix:")
 	for contract, value := range m.nftMatrix {
 		for wallet, v := range value {
-			fmt.Printf("%v %v %v \n", (*common.Address)(contract).Hex(), (*common.Address)(wallet).Hex(), v.value)
+			fmt.Printf("%v %v %v \n", (common.Address)(contract).Hex(), (common.Address)(wallet).Hex(), v.value)
 		}
 	}
 
 	if len(m.stakeMatrix) == 1 {
-		var stakeContract *Contract
+		var stakeContract Contract
 		for c, _ := range m.stakeMatrix {
 			stakeContract = c
 		}
 		fmt.Println("STAKE Matrix:")
-		fmt.Println("Contract:", (*common.Address)(stakeContract).Hex())
+		fmt.Println("Contract:", (common.Address)(stakeContract).Hex())
 		for wallet, val := range m.stakeMatrix[stakeContract] {
 			for id, v := range val.Stakes {
-				fmt.Println((*common.Address)(wallet).Hex(), id.String(), val.isInit, v.TotalAmount, v.TotalMOMAmount, v.TotalDADAmount)
+				fmt.Println((common.Address)(wallet).Hex(), id.String(), val.isInit, v.TotalAmount, v.TotalMOMAmount, v.TotalDADAmount)
 			}
 		}
 	}
+}
+
+func (m *Matrix) fastForward() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	lastBlockNumber, err := m.adapter.GetLastBlockNumber()
+	fmt.Printf("Fast Forward. From: %d to: %d\n", m.blockNumber, lastBlockNumber)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	if m.blockNumber >= lastBlockNumber {
+		// Matrix already processed latest BC block
+		return
+	}
+
+	if len(m.contracts) == 0 {
+		return
+	}
+
+	fmt.Println("Doing Fast Forward")
+
+	logs, err := m.adapter.GetLogs(int64(m.blockNumber)+1, int64(lastBlockNumber), nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	m.ProcessLogs(lastBlockNumber, logs)
 }

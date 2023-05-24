@@ -24,18 +24,18 @@ type Adapter interface {
 type IHarvester2 interface {
 	RegisterAdapter(adapter Adapter)
 
-	AddWallet(bcType BCType, wallet *Address) error
-	RemoveWallet(bcType BCType, wallet *Address) error
+	AddWallet(bcType BCType, wallet Address) error
+	RemoveWallet(bcType BCType, wallet Address) error
 
-	AddNFTContract(bcType BCType, contract *Address) error
-	RemoveNFTContract(bcType BCType, contract *Address) error
+	AddNFTContract(bcType BCType, contract Address) error
+	RemoveNFTContract(bcType BCType, contract Address) error
 
-	AddTokenContract(bcType BCType, contract *Address) error
-	RemoveTokenContract(bcType BCType, contract *Address) error
+	AddTokenContract(bcType BCType, contract Address) error
+	RemoveTokenContract(bcType BCType, contract Address) error
 
-	AddTokenListener(bcType BCType, contract *Address, listener TokenListener) error
-	AddNFTListener(bcType BCType, contract *Address, listener NFTListener) error
-	AddStakeListener(bcType BCType, contract *Address, listener StakeListener) error
+	AddTokenListener(bcType BCType, contract Address, listener TokenListener) error
+	AddNFTListener(bcType BCType, contract Address, listener NFTListener) error
+	AddStakeListener(bcType BCType, contract Address, listener StakeListener) error
 }
 
 type TokenListener func(events []TokenData)

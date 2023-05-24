@@ -32,7 +32,7 @@ func (h *Harvester2) RegisterAdapter(adapter Adapter) error {
 	return nil
 }
 
-func (h *Harvester2) AddWallet(bcType BCType, wallet *Address) error {
+func (h *Harvester2) AddWallet(bcType BCType, wallet Address) error {
 	if _, ok := h.bc[bcType]; !ok {
 		return errors.New("failed to add wallet, adapter not registered")
 	}
@@ -40,7 +40,7 @@ func (h *Harvester2) AddWallet(bcType BCType, wallet *Address) error {
 	return h.bc[bcType].AddWallet(wallet)
 }
 
-func (h *Harvester2) RemoveWallet(bcType BCType, wallet *Address) error {
+func (h *Harvester2) RemoveWallet(bcType BCType, wallet Address) error {
 	if _, ok := h.bc[bcType]; !ok {
 		return errors.New("failed to remove wallet, adapter not registered")
 	}
@@ -48,7 +48,7 @@ func (h *Harvester2) RemoveWallet(bcType BCType, wallet *Address) error {
 	return nil
 }
 
-func (h *Harvester2) AddNFTContract(bcType BCType, contract *Address) error {
+func (h *Harvester2) AddNFTContract(bcType BCType, contract Address) error {
 	if _, ok := h.bc[bcType]; !ok {
 		return errors.New("failed to add nft contract, adapter not registered")
 	}
@@ -56,7 +56,7 @@ func (h *Harvester2) AddNFTContract(bcType BCType, contract *Address) error {
 	return h.bc[bcType].AddNFTContract(contract)
 }
 
-func (h *Harvester2) RemoveNFTContract(bcType BCType, contract *Address) error {
+func (h *Harvester2) RemoveNFTContract(bcType BCType, contract Address) error {
 	if _, ok := h.bc[bcType]; !ok {
 		return errors.New("failed to remove nft contract, adapter not registered")
 	}
@@ -64,14 +64,14 @@ func (h *Harvester2) RemoveNFTContract(bcType BCType, contract *Address) error {
 	return nil
 }
 
-func (h *Harvester2) AddTokenContract(bcType BCType, contract *Address) error {
+func (h *Harvester2) AddTokenContract(bcType BCType, contract Address) error {
 	if _, ok := h.bc[bcType]; !ok {
 		return errors.New("failed to add token contract, adapter not registered")
 	}
 
 	return h.bc[bcType].AddTokenContract(contract)
 }
-func (h *Harvester2) RemoveTokenContract(bcType BCType, contract *Address) error {
+func (h *Harvester2) RemoveTokenContract(bcType BCType, contract Address) error {
 	if _, ok := h.bc[bcType]; !ok {
 		return errors.New("failed to remove token contract, adapter not registered")
 	}
@@ -79,14 +79,14 @@ func (h *Harvester2) RemoveTokenContract(bcType BCType, contract *Address) error
 	return nil
 }
 
-func (h *Harvester2) AddStakeContract(bcType BCType, contract *Address) error {
+func (h *Harvester2) AddStakeContract(bcType BCType, contract Address) error {
 	if _, ok := h.bc[bcType]; !ok {
 		return errors.New("failed to add stake contract, adapter not registered")
 	}
 
 	return h.bc[bcType].AddStakeContract(contract)
 }
-func (h *Harvester2) RemoveStakeContract(bcType BCType, contract *Address) error {
+func (h *Harvester2) RemoveStakeContract(bcType BCType, contract Address) error {
 	if _, ok := h.bc[bcType]; !ok {
 		return errors.New("failed to remove stake contract, adapter not registered")
 	}
@@ -94,7 +94,7 @@ func (h *Harvester2) RemoveStakeContract(bcType BCType, contract *Address) error
 	return nil
 }
 
-func (h *Harvester2) AddTokenListener(bcType BCType, contract *Address, listener TokenListener) error {
+func (h *Harvester2) AddTokenListener(bcType BCType, contract Address, listener TokenListener) error {
 	if _, ok := h.bc[bcType]; !ok {
 		return errors.New("failed to add token listener, adapter not registered")
 	}
@@ -102,14 +102,14 @@ func (h *Harvester2) AddTokenListener(bcType BCType, contract *Address, listener
 	return h.bc[bcType].AddTokenListener(contract, listener)
 }
 
-func (h *Harvester2) AddNFTListener(bcType BCType, contract *Address, listener NFTListener) error {
+func (h *Harvester2) AddNFTListener(bcType BCType, contract Address, listener NFTListener) error {
 	if _, ok := h.bc[bcType]; !ok {
 		return errors.New("failed to add nft listener, adapter not registered")
 	}
 
 	return nil
 }
-func (h *Harvester2) AddStakeListener(bcType BCType, contract *Address, listener StakeListener) error {
+func (h *Harvester2) AddStakeListener(bcType BCType, contract Address, listener StakeListener) error {
 	if _, ok := h.bc[bcType]; !ok {
 		return errors.New("failed to add stake listener, adapter not registered")
 	}

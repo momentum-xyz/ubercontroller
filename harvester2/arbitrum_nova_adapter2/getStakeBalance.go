@@ -46,7 +46,7 @@ func (a *ArbitrumNovaAdapter) GetStakeBalance(block int64, wallet *common.Addres
 	}
 
 	if wallet == nil {
-		return nil, errors.New("nftContract is nil")
+		return nil, errors.New("wallet is nil")
 	}
 
 	logs, err := a.GetLogs(0, block, []common.Address{*nftContract})

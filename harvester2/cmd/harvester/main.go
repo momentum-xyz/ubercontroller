@@ -45,23 +45,23 @@ func main() {
 	_ = w04
 	_ = w78
 
-	err = harv.AddTokenContract("arbitrum_nova", (*harvester2.Address)(&mom))
+	err = harv.AddTokenContract("arbitrum_nova", (harvester2.Address)(mom))
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	err = harv.AddNFTContract("arbitrum_nova", (*harvester2.Address)(&nft))
+	err = harv.AddNFTContract("arbitrum_nova", (harvester2.Address)(nft))
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	err = harv.AddStakeContract("arbitrum_nova", (*harvester2.Address)(&stake))
+	err = harv.AddStakeContract("arbitrum_nova", (harvester2.Address)(stake))
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	err = harv.AddWallet("arbitrum_nova", (*harvester2.Address)(&w78))
-	err = harv.AddWallet("arbitrum_nova", (*harvester2.Address)(&w04))
+	err = harv.AddWallet("arbitrum_nova", (harvester2.Address)(w78))
+	err = harv.AddWallet("arbitrum_nova", (harvester2.Address)(w04))
 	if err != nil {
 		fmt.Println(err)
 	}
