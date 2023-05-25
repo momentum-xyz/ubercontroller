@@ -64,19 +64,21 @@ func (u *User) Teleport(target umid.UMID) error {
 		u.SendDirectly(posbus.WSMessage(&posbus.Signal{Value: posbus.SignalWorldDoesNotExist}))
 		return errors.New("Target world does not exist")
 	}
+	u.leaveCurrentWorld()
+	return world.AddUser(u, true)
+}
+
+func (u *User) leaveCurrentWorld() {
 	if oldWorld := u.GetWorld(); oldWorld != nil {
 		oldWorld.RemoveUser(u, true)
 	}
-	return world.AddUser(u, true)
 }
 
 func (u *User) SignalsHandler(s *posbus.Signal) error {
 	fmt.Printf("Got Signal %+v\n", s)
 	switch s.Value {
 	case posbus.SignalLeaveWorld:
-		if oldWorld := u.GetWorld(); oldWorld != nil {
-			oldWorld.RemoveUser(u, true)
-		}
+		u.leaveCurrentWorld()
 	}
 
 	return nil
