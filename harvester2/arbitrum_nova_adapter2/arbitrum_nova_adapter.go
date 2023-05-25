@@ -258,6 +258,7 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 					AmountStaked: amount,
 					TokenType:    tokenType,
 					TotalStaked:  totalAmount,
+					Contract:     vLog.Address,
 				}
 
 				logs = append(logs, e)
@@ -287,6 +288,7 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 					AmountUnstaked: amount,
 					TokenType:      tokenType,
 					TotalStaked:    totalAmount,
+					Contract:       vLog.Address,
 				}
 
 				logs = append(logs, e)

@@ -1,10 +1,14 @@
 package harvester2
 
 import (
+	"context"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
+	"github.com/pkg/errors"
 	"github.com/sasha-s/go-deadlock"
 	"math/big"
 	"sync"
@@ -41,6 +45,8 @@ type StakeCell struct {
 	isInit bool
 	Stakes map[umid.UMID]*Stake
 }
+
+var ZeroAddress = common.Address{}
 
 func NewMatrix(db *pgxpool.Pool, adapter Adapter) *Matrix {
 	return &Matrix{
@@ -235,25 +241,194 @@ func (m *Matrix) fillMissingData(wgMain *sync.WaitGroup) {
 	//}
 }
 
+func (m *Matrix) getNFTEntriesFromCell(cell *NFTCell, add []*entry.NFT, remove []*entry.NFT, l *TransferNFTLog, blockChainID umid.UMID) {
+	for id, v := range cell.value {
+		if v == 1 {
+			add = append(add, &entry.NFT{
+				WalletID:     l.From.Bytes(),
+				BlockchainID: blockChainID,
+				ObjectID:     id,
+				ContractID:   l.Contract.Bytes(),
+			})
+		} else {
+			remove = append(remove, &entry.NFT{
+				WalletID:     l.From.Bytes(),
+				BlockchainID: blockChainID,
+				ObjectID:     id,
+				ContractID:   l.Contract.Bytes(),
+			})
+		}
+	}
+}
+
 func (m *Matrix) ProcessLogs(blockNumber uint64, logs []any) {
+
+	walletEntries := make([]*entry.Wallet, 0)
+	balanceEntries := make([]*entry.Balance, 0)
+	nftEntriesAdd := make([]*entry.NFT, 0)
+	nftEntriesRemove := make([]*entry.NFT, 0)
+	stakeEntries := make([]*entry.Stake, 0)
+	contractsEntries := make([]*entry.Contract, 0)
+
+	_ = walletEntries
+	//_ = stakeEntries
+	_ = contractsEntries
+
+	updatedWallets := make(map[common.Address]bool)
+	updatedContracts := make(map[common.Address]bool)
+
+	blockChainID, _, _ := m.adapter.GetInfo()
 
 	for _, log := range logs {
 
 		switch l := log.(type) {
 		case *TransferERC20Log:
 			if _, ok := m.wallets[(Address)(l.From)]; ok {
-				//m.tokenMatrix[(*Contract)(l.Contract)]
+				cell := m.tokenMatrix[(Contract)(l.Contract)][(Wallet)(l.From)]
+				cell.value.Sub(cell.value, l.Value)
+				updatedWallets[l.From] = true
+				updatedContracts[l.Contract] = true
+				balanceEntries = append(balanceEntries, &entry.Balance{
+					WalletID:                 l.From.Bytes(),
+					ContractID:               l.Contract.Bytes(),
+					BlockchainID:             blockChainID,
+					LastProcessedBlockNumber: m.blockNumber,
+					Balance:                  (*entry.BigInt)(cell.value),
+				})
 			}
-			//l := log.(*TransferERC20Log)
-			//c := (*Contract)(&l.Contract)
-			//
-			//w := (*Address)(&l.From)
-			//if wallets[w] {
-			//
-			//	m.tokenMatrix[c][(*Wallet)(w)] =
-			//}
+
+			if _, ok := m.wallets[(Address)(l.To)]; ok {
+				cell := m.tokenMatrix[(Contract)(l.Contract)][(Wallet)(l.To)]
+				cell.value.Add(cell.value, l.Value)
+				updatedWallets[l.From] = true
+				updatedContracts[l.Contract] = true
+				balanceEntries = append(balanceEntries, &entry.Balance{
+					WalletID:                 l.To.Bytes(),
+					ContractID:               l.Contract.Bytes(),
+					BlockchainID:             blockChainID,
+					LastProcessedBlockNumber: m.blockNumber,
+					Balance:                  (*entry.BigInt)(cell.value),
+				})
+			}
+
+		case *TransferNFTLog:
+			if _, ok := m.wallets[(Address)(l.From)]; ok {
+				cell := m.nftMatrix[(Contract)(l.Contract)][(Wallet)(l.From)]
+				cell.value[l.TokenID] -= 1
+				updatedWallets[l.From] = true
+				updatedContracts[l.Contract] = true
+				m.getNFTEntriesFromCell(cell, nftEntriesAdd, nftEntriesRemove, l, blockChainID)
+			}
+
+			if _, ok := m.wallets[(Address)(l.To)]; ok {
+				cell := m.nftMatrix[(Contract)(l.Contract)][(Wallet)(l.From)]
+				cell.value[l.TokenID] += 1
+				updatedWallets[l.From] = true
+				updatedContracts[l.Contract] = true
+
+				m.getNFTEntriesFromCell(cell, nftEntriesAdd, nftEntriesRemove, l, blockChainID)
+			}
+
+		case *StakeLog:
+			if _, ok := m.wallets[(Address)(l.UserWallet)]; ok {
+
+				cell := m.stakeMatrix[(Contract)(l.Contract)][(Wallet)(l.UserWallet)]
+				if _, ok := cell.Stakes[l.OdysseyID]; !ok {
+					cell.Stakes[l.OdysseyID] = &Stake{
+						TotalAmount:    big.NewInt(0),
+						TotalDADAmount: big.NewInt(0),
+						TotalMOMAmount: big.NewInt(0),
+					}
+				}
+				if l.TokenType == 0 {
+					cell.Stakes[l.OdysseyID].TotalAmount = l.TotalStaked
+					//TODO mom and dad
+				} else {
+					//TODO mom and dad
+					cell.Stakes[l.OdysseyID].TotalAmount = l.TotalStaked
+				}
+				updatedWallets[l.UserWallet] = true
+				updatedContracts[l.Contract] = true
+
+				stakeEntries = append(stakeEntries, &entry.Stake{
+					WalletID:     l.UserWallet.Bytes(),
+					BlockchainID: blockChainID,
+					ObjectID:     l.OdysseyID,
+					LastComment:  "",
+					Amount:       (*entry.BigInt)(l.TotalStaked),
+				})
+			}
+
+		case *UnstakeLog:
+			if _, ok := m.wallets[(Address)(l.UserWallet)]; ok {
+				cell := m.stakeMatrix[(Contract)(l.Contract)][(Wallet)(l.UserWallet)]
+				cell.Stakes[l.OdysseyID].TotalAmount = l.TotalStaked
+
+				updatedWallets[l.UserWallet] = true
+				updatedContracts[l.Contract] = true
+
+				stakeEntries = append(stakeEntries, &entry.Stake{
+					WalletID:     l.UserWallet.Bytes(),
+					BlockchainID: blockChainID,
+					ObjectID:     l.OdysseyID,
+					LastComment:  "",
+					Amount:       (*entry.BigInt)(l.TotalStaked),
+				})
+			}
+		case *RestakeLog:
+			//todo
 		}
+
 	}
+
+	for w := range updatedWallets {
+		walletEntries = append(walletEntries, &entry.Wallet{
+			WalletID:     w.Bytes(),
+			BlockchainID: blockChainID,
+		})
+	}
+
+	for c := range updatedContracts {
+		contractsEntries = append(contractsEntries, &entry.Contract{
+			ContractID: c.Bytes(),
+			Name:       "",
+		})
+	}
+
+}
+
+func (m *Matrix) saveUpdateToDB(wallets []*entry.Wallet,
+	contracts []*Contract,
+	addNFTs []*entry.NFT,
+	removeNFTs []*entry.NFT,
+	balances []*entry.Balance,
+	stakes []*entry.Stake) error {
+
+	//blockchainUMID, name, rpcURL := m.adapter.GetInfo()
+
+	tx, err := m.db.BeginTx(context.TODO(), pgx.TxOptions{})
+	if err != nil {
+		return errors.WithMessage(err, "failed to begin transaction")
+	}
+	defer func() {
+		if err != nil {
+			fmt.Println("!!! Rollback")
+			e := tx.Rollback(context.TODO())
+			if e != nil {
+				fmt.Println("???")
+				fmt.Println(e)
+			}
+		} else {
+			e := tx.Commit(context.TODO())
+			if e != nil {
+				fmt.Println("???!!!")
+				fmt.Println(e)
+			}
+		}
+	}()
+
+	return nil
+
 }
 
 func (m *Matrix) AddWallet(wallet Address) error {

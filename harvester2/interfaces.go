@@ -110,6 +110,7 @@ type StakeLog struct {
 	AmountStaked *big.Int
 	TokenType    uint8
 	TotalStaked  *big.Int
+	Contract     common.Address
 }
 
 /**
@@ -127,6 +128,7 @@ type UnstakeLog struct {
 	AmountUnstaked *big.Int
 	TokenType      uint8
 	TotalStaked    *big.Int
+	Contract       common.Address
 }
 
 /**
@@ -154,6 +156,7 @@ type RestakeLog struct {
 	TokenType         uint8
 	TotalStakedToFrom *big.Int
 	TotalStakedToTo   *big.Int
+	Contract          common.Address
 }
 
 /**
