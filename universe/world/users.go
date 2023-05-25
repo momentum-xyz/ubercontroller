@@ -141,7 +141,6 @@ func (w *World) noLockRemoveUser(user universe.User, updateDB bool) (bool, error
 	if err != nil {
 		return false, fmt.Errorf("storing last known position: %w", err)
 	}
-	user.Stop()
 
 	delete(w.Users.Data, user.GetID())
 
