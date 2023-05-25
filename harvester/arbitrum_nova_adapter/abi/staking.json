@@ -35,7 +35,7 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "address",
         "name": "user",
         "type": "address"
@@ -73,7 +73,7 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "uint256",
         "name": "odyssey_id",
         "type": "uint256"
@@ -92,19 +92,19 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "address",
         "name": "user",
         "type": "address"
       },
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "uint256",
         "name": "odyssey_from",
         "type": "uint256"
       },
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "uint256",
         "name": "odyssey_to",
         "type": "uint256"
@@ -141,7 +141,7 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "address",
         "name": "user",
         "type": "address"
@@ -254,15 +254,15 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "address",
         "name": "user",
         "type": "address"
       },
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "uint256",
-        "name": "odyssey",
+        "name": "odyssey_id",
         "type": "uint256"
       },
       {
@@ -291,15 +291,15 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "address",
         "name": "user",
         "type": "address"
       },
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "uint256",
-        "name": "odyssey",
+        "name": "odyssey_id",
         "type": "uint256"
       },
       {
@@ -631,6 +631,11 @@
       {
         "internalType": "uint256",
         "name": "total_rewards",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "staked_odysseys_index",
         "type": "uint256"
       }
     ],
