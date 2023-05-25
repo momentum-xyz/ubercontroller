@@ -220,11 +220,10 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 					return nil, errors.WithMessage(err, "failed to unpack event from ABI")
 				}
 
-				// Read and convert event params
-				fromWallet := ev[0].(common.Address)
+				fromWallet := vLog.Topics[1]
 
-				arr := ev[1].(*big.Int)
-				odysseyID, err := umid.FromBytes(arr.FillBytes(make([]byte, 16)))
+				b := vLog.Topics[2].Bytes()[16:]
+				odysseyID, err := umid.FromBytes(b)
 				if err != nil {
 					return nil, errors.WithMessage(err, "failed to parse umid from bytes")
 				}
@@ -236,9 +235,9 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 				}
 
 				transactionHash := vLog.TxHash.Hex()
-				amount := ev[2].(*big.Int)
-				tokenType := ev[3].(uint8)
-				totalAmount := ev[4].(*big.Int)
+				amount := ev[0].(*big.Int)
+				tokenType := ev[1].(uint8)
+				totalAmount := ev[2].(*big.Int)
 
 				e := &harvester.StakeLog{
 					TxHash:       transactionHash,
@@ -258,17 +257,18 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 				}
 
 				// Read and convert event params
-				fromWallet := ev[0].(common.Address)
+				fromWallet := vLog.Topics[1]
 
-				arr := ev[1].(*big.Int)
-				odysseyID, err := umid.FromBytes(arr.FillBytes(make([]byte, 16)))
+				b1 := vLog.Topics[2].Bytes()
+				b2 := b1[16:]
+				odysseyID, err := umid.FromBytes(b2)
 				if err != nil {
 					return nil, errors.WithMessage(err, "failed to parse umid from bytes")
 				}
 
-				amount := ev[2].(*big.Int)
-				tokenType := ev[3].(uint8)
-				totalAmount := ev[4].(*big.Int)
+				amount := ev[0].(*big.Int)
+				tokenType := ev[1].(uint8)
+				totalAmount := ev[2].(*big.Int)
 
 				e := &harvester.UnstakeLog{
 					UserWallet:     fromWallet.Hex(),
