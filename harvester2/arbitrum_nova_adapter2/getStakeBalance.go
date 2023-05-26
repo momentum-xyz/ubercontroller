@@ -30,7 +30,7 @@ func updateResultForUnstakeCase(result map[umid.UMID]*[3]*big.Int, odysseyID umi
 	}
 }
 
-func (a *ArbitrumNovaAdapter) GetStakeBalance(block int64, wallet *common.Address, nftContract *common.Address) (map[umid.UMID]*[3]*big.Int, error) {
+func (a *ArbitrumNovaAdapter) GetStakeBalance(block int64, wallet *common.Address, contract *common.Address) (map[umid.UMID]*[3]*big.Int, error) {
 	stakeString := "Stake(address,uint256,uint256,uint8,uint256)"
 	unstakeString := "Unstake(address,uint256,uint256,uint8,uint256)"
 	restakeString := "Restake(address,uint256,uint256,uint256,uint8,uint256,uint256)"
@@ -41,15 +41,15 @@ func (a *ArbitrumNovaAdapter) GetStakeBalance(block int64, wallet *common.Addres
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	if nftContract == nil {
-		return nil, errors.New("nftContract is nil")
+	if contract == nil {
+		return nil, errors.New("staking Contract is nil")
 	}
 
 	if wallet == nil {
 		return nil, errors.New("wallet is nil")
 	}
 
-	logs, err := a.GetLogs(0, block, []common.Address{*nftContract})
+	logs, err := a.GetLogs(0, block, []common.Address{*contract})
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to GetLogs")
 	}

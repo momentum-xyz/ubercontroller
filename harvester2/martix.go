@@ -75,10 +75,10 @@ func (m *Matrix) Run() {
 	}
 	m.blockNumber = block
 
-	m.adapter.RegisterNewBlockListener(m.listener)
+	m.adapter.RegisterNewBlockListener(m.newBlockTicker)
 }
 
-func (m *Matrix) listener(blockNumber uint64) {
+func (m *Matrix) newBlockTicker(blockNumber uint64) {
 	m.fastForward()
 }
 
@@ -588,6 +588,9 @@ func (m *Matrix) AddNFTContract(contract Address) error {
 	}
 
 	m.contracts[contract] = true
+
+	go m.fillMissingData(nil)
+
 	return nil
 }
 
@@ -652,6 +655,7 @@ func (m *Matrix) AddTokenListener(contract Address, listener TokenListener) erro
 }
 
 func (m *Matrix) Display() {
+	fmt.Println("")
 	fmt.Println("Token Matrix:")
 	for contract, value := range m.tokenMatrix {
 		for wallet, v := range value {

@@ -231,14 +231,15 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 					return nil, errors.WithMessage(err, "failed to unpack event from ABI")
 				}
 
-				// Read and convert event params
-				fromWallet := ev[0].(common.Address)
+				// Hack to remove extra zeroes
+				fromWallet := common.HexToAddress(vLog.Topics[1].Hex())
 
-				arr := ev[1].(*big.Int)
-				odysseyID, err := umid.FromBytes(arr.FillBytes(make([]byte, 16)))
+				b := vLog.Topics[2].Bytes()[16:]
+				odysseyID, err := umid.FromBytes(b)
 				if err != nil {
 					return nil, errors.WithMessage(err, "failed to parse umid from bytes")
 				}
+
 				if odysseyID == umid.MustParse("ccccaaaa-1111-2222-3333-222222222222") ||
 					odysseyID == umid.MustParse("ccccaaaa-1111-2222-3333-222222222244") ||
 					odysseyID == umid.MustParse("ccccaaaa-1111-2222-3333-222222222241") {
@@ -247,9 +248,9 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 				}
 
 				transactionHash := vLog.TxHash.Hex()
-				amount := ev[2].(*big.Int)
-				tokenType := ev[3].(uint8)
-				totalAmount := ev[4].(*big.Int)
+				amount := ev[0].(*big.Int)
+				tokenType := ev[1].(uint8)
+				totalAmount := ev[2].(*big.Int)
 
 				e := &harvester2.StakeLog{
 					TxHash:       transactionHash,
@@ -269,18 +270,18 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 					return nil, errors.WithMessage(err, "failed to unpack event from ABI")
 				}
 
-				// Read and convert event params
-				fromWallet := ev[0].(common.Address)
+				// Hack to remove extra zeroes
+				fromWallet := common.HexToAddress(vLog.Topics[1].Hex())
 
-				arr := ev[1].(*big.Int)
-				odysseyID, err := umid.FromBytes(arr.FillBytes(make([]byte, 16)))
+				b := vLog.Topics[2].Bytes()[16:]
+				odysseyID, err := umid.FromBytes(b)
 				if err != nil {
 					return nil, errors.WithMessage(err, "failed to parse umid from bytes")
 				}
 
-				amount := ev[2].(*big.Int)
-				tokenType := ev[3].(uint8)
-				totalAmount := ev[4].(*big.Int)
+				amount := ev[0].(*big.Int)
+				tokenType := ev[1].(uint8)
+				totalAmount := ev[2].(*big.Int)
 
 				e := &harvester2.UnstakeLog{
 					UserWallet:     fromWallet,

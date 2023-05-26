@@ -35,15 +35,17 @@ func main() {
 
 	mom := common.HexToAddress("0x567d4e8264dC890571D5392fDB9fbd0e3FCBEe56")
 	nft := common.HexToAddress("0x97E0B10D89a494Eb5cfFCc72853FB0750BD64AcD")
-	stake := common.HexToAddress("0x047C0A154271498ee718162b718b3D4F464855e0")
+	stake := common.HexToAddress("0xe9C6d7Cd04614Dde6Ca68B62E6fbf23AC2ECe2F8")
 	_ = mom
 	_ = nft
 	_ = stake
 
 	w04 := common.HexToAddress("0xA058Aa2fCf33993e17D074E6843202E7C94bf267")
 	w78 := common.HexToAddress("0x78B00B17E7e5619113A4e922BC3c8cb290355043")
+	w68 := common.HexToAddress("0x683642c22feDE752415D4793832Ab75EFdF6223c")
 	_ = w04
 	_ = w78
+	_ = w68
 
 	err = harv.AddTokenContract("arbitrum_nova", (harvester2.Address)(mom))
 	if err != nil {
@@ -60,15 +62,21 @@ func main() {
 		fmt.Println(err)
 	}
 
-	err = harv.AddWallet("arbitrum_nova", (harvester2.Address)(w78))
-	err = harv.AddWallet("arbitrum_nova", (harvester2.Address)(w04))
+	//err = harv.AddWallet("arbitrum_nova", (harvester2.Address)(w78))
+	//err = harv.AddWallet("arbitrum_nova", (harvester2.Address)(w04))
+	err = harv.AddWallet("arbitrum_nova", (harvester2.Address)(w68))
 	if err != nil {
 		fmt.Println(err)
 	}
 
 	time.Sleep(time.Second * 3)
 
-	harv.Display("arbitrum_nova")
+	go func() {
+		for {
+			time.Sleep(time.Second * 15)
+			harv.Display("arbitrum_nova")
+		}
+	}()
 
 	time.Sleep(time.Second * 1000)
 }
