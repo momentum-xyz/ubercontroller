@@ -2,6 +2,7 @@ package assets_3d
 
 import (
 	"context"
+
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/pkg/errors"
@@ -25,6 +26,7 @@ type Assets3d struct {
 	cfg    *config.Config
 	db     database.DB
 	assets *generic.SyncMap[umid.UMID, universe.Asset3d]
+	// TODO concatenate Asset3dID and UserID to create a unique key?
 }
 
 func NewAssets3d(db database.DB) *Assets3d {
@@ -70,6 +72,7 @@ func (a *Assets3d) FilterAssets3d(predicateFn universe.Assets3dFilterPredicateFn
 }
 
 func (a *Assets3d) GetAsset3d(asset3dID umid.UMID) (universe.Asset3d, bool) {
+	// TODO add userID
 	asset, ok := a.assets.Load(asset3dID)
 	return asset, ok
 }
@@ -97,6 +100,7 @@ func (a *Assets3d) AddAsset3d(asset3d universe.Asset3d, updateDB bool) error {
 		}
 	}
 
+	// TODO combine Asset3dID and UserID to create a unique key?
 	a.assets.Data[asset3d.GetID()] = asset3d
 
 	return nil
@@ -117,6 +121,7 @@ func (a *Assets3d) AddAssets3d(assets3d []universe.Asset3d, updateDB bool) error
 	}
 
 	for i := range assets3d {
+		// TODO combine Asset3dID and UserID to create a unique key?
 		a.assets.Data[assets3d[i].GetID()] = assets3d[i]
 	}
 
@@ -137,11 +142,13 @@ func (a *Assets3d) RemoveAsset3d(asset3d universe.Asset3d, updateDB bool) (bool,
 		}
 	}
 
+	// TODO combine Asset3dID and UserID to create a unique key?
 	delete(a.assets.Data, asset3d.GetID())
 
 	return true, nil
 }
 
+// TODO add userID
 func (a *Assets3d) RemoveAssets3d(assets3d []universe.Asset3d, updateDB bool) (bool, error) {
 	a.assets.Mu.Lock()
 	defer a.assets.Mu.Unlock()
@@ -169,6 +176,7 @@ func (a *Assets3d) RemoveAssets3d(assets3d []universe.Asset3d, updateDB bool) (b
 	return true, nil
 }
 
+// TODO add userID
 func (a *Assets3d) RemoveAsset3dByID(asset3dID umid.UMID, updateDB bool) (bool, error) {
 	a.assets.Mu.Lock()
 	defer a.assets.Mu.Unlock()
@@ -188,6 +196,7 @@ func (a *Assets3d) RemoveAsset3dByID(asset3dID umid.UMID, updateDB bool) (bool, 
 	return true, nil
 }
 
+// TODO add userID
 func (a *Assets3d) RemoveAssets3dByIDs(assets3dIDs []umid.UMID, updateDB bool) (bool, error) {
 	a.assets.Mu.Lock()
 	defer a.assets.Mu.Unlock()
