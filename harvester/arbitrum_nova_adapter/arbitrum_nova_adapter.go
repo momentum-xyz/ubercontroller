@@ -220,7 +220,8 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 					return nil, errors.WithMessage(err, "failed to unpack event from ABI")
 				}
 
-				fromWallet := vLog.Topics[1]
+				// Hack to remove extra zeroes
+				fromWallet := common.HexToAddress(vLog.Topics[1].Hex())
 
 				b := vLog.Topics[2].Bytes()[16:]
 				odysseyID, err := umid.FromBytes(b)
@@ -256,8 +257,8 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 					return nil, errors.WithMessage(err, "failed to unpack event from ABI")
 				}
 
-				// Read and convert event params
-				fromWallet := vLog.Topics[1]
+				// Hack to remove extra zeroes
+				fromWallet := common.HexToAddress(vLog.Topics[1].Hex())
 
 				b1 := vLog.Topics[2].Bytes()
 				b2 := b1[16:]
