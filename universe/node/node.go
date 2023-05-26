@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	influx_api "github.com/influxdata/influxdb-client-go/v2/api"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -131,6 +132,14 @@ func (n *Node) Initialize(ctx context.Context) error {
 	n.httpServer = &http.Server{
 		Addr:    fmt.Sprintf("%s:%d", cfg.Settings.Address, cfg.Settings.Port),
 		Handler: n.router,
+	}
+
+	if n.cfg.Common.AllowCORS {
+		r.Use(cors.New(cors.Config{
+			AllowOrigins: []string{"*"},
+			AllowMethods: []string{"*"},
+			AllowHeaders: []string{"*"},
+		}))
 	}
 
 	if err := n.chatService.Initialize(ctx); err != nil {
