@@ -49,7 +49,7 @@ func main() {
 
 	contracts := []common.Address{
 		//common.HexToAddress("0x7F85fB7f42A0c0D40431cc0f7DFDf88be6495e67"),
-		common.HexToAddress("0x938c38D417fD1b0a29EA1722C84Ad16fF5dD89c3"), //staking t
+		common.HexToAddress(cfg.Arbitrum.StakeAddress), //staking t
 	}
 	_ = contracts
 	//diffs, err := a.GetLogs(0, 12, contracts)

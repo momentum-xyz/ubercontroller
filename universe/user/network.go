@@ -48,12 +48,19 @@ func (u *User) readPump() {
 
 	u.conn.SetReadLimit(inMessageSizeLimit)
 	u.conn.SetReadDeadline(time.Now().Add(pongWait))
-	u.conn.SetPongHandler(func(string) error { u.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
+	u.conn.SetPongHandler(
+		func(string) error {
+			u.conn.SetReadDeadline(time.Now().Add(pongWait))
+			return nil
+		},
+	)
 
 	for {
 		messageType, message, err := u.conn.ReadMessage()
 		if err != nil {
-			if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway, websocket.CloseNoStatusReceived) {
+			if websocket.IsCloseError(
+				err, websocket.CloseNormalClosure, websocket.CloseGoingAway, websocket.CloseNoStatusReceived,
+			) {
 				u.log.Info(
 					errors.WithMessagef(err, "User: read pump: websocket closed by client: %s", u.GetID()),
 				)
@@ -126,10 +133,9 @@ func (u *User) writePump() {
 			}
 
 		case <-ticker.C:
-			if u.bufferSends.Load() == false {
-				if u.SendDirectly(pingMessage) != nil {
-					return
-				}
+			if err := u.SendDirectly(pingMessage); err != nil {
+				u.log.Debugf("user ping: %v\n", err)
+				return
 			}
 		}
 	}
@@ -193,6 +199,7 @@ func (u *User) close(needToRemoveFromWorld bool) error {
 			if _, err := world.RemoveUser(u, true); err != nil {
 				return errors.WithMessagef(err, "failed to remove user from world: %s", world.GetID())
 			}
+			u.Stop()
 		}
 	}
 

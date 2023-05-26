@@ -1,0 +1,1 @@
+drop table asset_3d_user;
