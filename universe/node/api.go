@@ -27,6 +27,8 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 	if n.cfg.Common.AllowCORS {
 		r.Use(cors.New(cors.Config{
 			AllowOrigins: []string{"*"},
+			AllowMethods: []string{"*"},
+			AllowHeaders: []string{"*"},
 		}))
 	}
 
