@@ -67,11 +67,11 @@ type RenderAutoAttributeOption struct {
 type PermissionsRoleType string
 
 const (
-	PermissionAny        PermissionsRoleType = "any"
-	PermissionUser       PermissionsRoleType = "user"
-	PermissionUserOwner  PermissionsRoleType = "user_owner"
-	PermissionAdmin      PermissionsRoleType = "admin"
-	PermissionTargetUser PermissionsRoleType = "target_user"
+	PermissionAny        PermissionsRoleType = "any"         // Anybody can access.
+	PermissionUser       PermissionsRoleType = "user"        // Only authenticated users, this includes temporary guests.
+	PermissionUserOwner  PermissionsRoleType = "user_owner"  // A user who 'owns' the attribute, this depends on the type of attribute.
+	PermissionAdmin      PermissionsRoleType = "admin"       // A user who has been given the admin role through the object tree (entry.UserObject).
+	PermissionTargetUser PermissionsRoleType = "target_user" // The target of a UserUserAttribute
 )
 
 type PermissionsAttributeOption struct {

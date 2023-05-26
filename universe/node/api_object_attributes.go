@@ -1,6 +1,7 @@
 package node
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
@@ -11,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe/auth"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 )
@@ -19,10 +21,9 @@ import (
 // @Schemes
 // @Description Returns object attribute
 // @Tags objects
-// @Accept json
 // @Produce json
 // @Param object_id path string true "Object UMID"
-// @Param query query node.apiGetObjectAttributesValue.InQuery true "query params"
+// @Param attribute_id query node.apiGetObjectAttributesValue.InQuery true "query params"
 // @Success 200 {object} entry.AttributeValue
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
@@ -30,8 +31,8 @@ import (
 // @Router /api/v4/objects/{object_id}/attributes [get]
 func (n *Node) apiGetObjectAttributesValue(c *gin.Context) {
 	type InQuery struct {
-		PluginID      string `form:"plugin_id" binding:"required"`
-		AttributeName string `form:"attribute_name" binding:"required"`
+		PluginID      string `form:"plugin_id" json:"plugin_id" binding:"required"`
+		AttributeName string `form:"attribute_name" json:"attribute_name" binding:"required"`
 	}
 
 	inQuery := InQuery{}
@@ -48,6 +49,12 @@ func (n *Node) apiGetObjectAttributesValue(c *gin.Context) {
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
 		return
 	}
+	object, ok := n.GetObjectFromAllObjects(objectID)
+	if !ok {
+		err := errors.Errorf("Node: apiGetObjectAttributesValue: object not found: %s", objectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
+		return
+	}
 
 	pluginID, err := umid.Parse(inQuery.PluginID)
 	if err != nil {
@@ -56,27 +63,35 @@ func (n *Node) apiGetObjectAttributesValue(c *gin.Context) {
 		return
 	}
 
-	result, err := n.AssessPermissions(c, pluginID, inQuery.AttributeName, objectID, ReadOperation, ObjectAttribute)
+	userID, err := api.GetUserIDFromContext(c)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: failed to assess permissions")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
+		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: user from context")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user", err, n.log)
 		return
 	}
+	attrType, ok := n.GetAttributeTypes().GetAttributeType(entry.AttributeTypeID{pluginID, inQuery.AttributeName})
+	if !ok {
+		err := fmt.Errorf("attribute type not found")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_attribute", err, n.log)
+		return
+	}
+	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
 
-	if !result {
-		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: operation not permitted")
+	var a auth.AttributePermissionsAuthorizer[entry.AttributeID]
+	a = object.GetObjectAttributes() //TODO: generics getter
+	allowed, err := auth.CheckAttributePermissions(
+		c, *attrType.GetEntry(), a, attributeID, userID,
+		auth.ReadOperation)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: permissions check")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_permissions_check", err, n.log)
+		return
+	} else if !allowed {
+		err := fmt.Errorf("operation not permitted")
 		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
 		return
 	}
 
-	object, ok := n.GetObjectFromAllObjects(objectID)
-	if !ok {
-		err := errors.Errorf("Node: apiGetObjectAttributesValue: object not found: %s", objectID)
-		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
-		return
-	}
-
-	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
 	out, ok := object.GetObjectAttributes().GetValue(attributeID)
 	if !ok {
 		err := errors.Errorf("Node: apiGetObjectAttributesValue: object attribute value not found: %s", attributeID)
@@ -127,19 +142,19 @@ func (n *Node) apiGetObjectWithChildrenAttributeValues(c *gin.Context) {
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
 		return
 	}
-
-	result, err := n.AssessPermissions(c, pluginID, inQuery.AttributeName, objectID, ReadOperation, ObjectAttribute)
+	userID, err := api.GetUserIDFromContext(c)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiGetObjectWithChildrenAttributeValues: failed to assess permissions")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
+		err := errors.WithMessage(err, "user from context")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user", err, n.log)
 		return
 	}
-
-	if !result {
-		err := errors.WithMessage(err, "Node: apiGetObjectWithChildrenAttributeValues: operation not permitted")
-		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+	attrType, ok := n.GetAttributeTypes().GetAttributeType(entry.AttributeTypeID{pluginID, inQuery.AttributeName})
+	if !ok {
+		err := fmt.Errorf("attribute type not found")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_attribute", err, n.log)
 		return
 	}
+	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
 
 	rootObject, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
@@ -148,10 +163,24 @@ func (n *Node) apiGetObjectWithChildrenAttributeValues(c *gin.Context) {
 		return
 	}
 
+	// TODO: either remove this API method, or implement recursive permission checks...
+	var a auth.AttributePermissionsAuthorizer[entry.AttributeID]
+	a = rootObject.GetObjectAttributes() //TODO: generics getter
+	allowed, err := auth.CheckReadAllPermissions(
+		c, *attrType.GetEntry(), a, userID)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: permissions check")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_permissions_check", err, n.log)
+		return
+	} else if !allowed {
+		err := fmt.Errorf("operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+		return
+	}
+
 	objects := rootObject.GetObjects(true)
 	objects[rootObject.GetID()] = rootObject
 
-	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
 	objectAttributes := make(dto.ObjectAttributeValues, len(objects))
 	for _, object := range objects {
 		attributeValue, ok := object.GetObjectAttributes().GetValue(attributeID)
@@ -212,21 +241,29 @@ func (n *Node) apiSetObjectAttributesPublic(c *gin.Context) {
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
 		return
 	}
-
-	result, err := n.AssessPermissions(c, pluginID, inBody.AttributeName, objectID, WriteOperation, ObjectAttribute)
-	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSetObjectAttributesPublic: failed to assess permissions")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
+	userID, err := api.GetUserIDFromContext(c)
+	attrType, ok := n.GetAttributeTypes().GetAttributeType(entry.AttributeTypeID{pluginID, inBody.AttributeName})
+	if !ok {
+		err := fmt.Errorf("attribute type not found")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_attribute", err, n.log)
 		return
 	}
+	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
 
-	if !result {
-		err := errors.WithMessage(err, "Node: apiSetObjectAttributesPublic: operation not permitted")
+	var a auth.AttributePermissionsAuthorizer[entry.AttributeID]
+	a = object.GetObjectAttributes() //TODO: generics getter
+	allowed, err := auth.CheckAttributePermissions(
+		c, *attrType.GetEntry(), a, attributeID, userID,
+		auth.WriteOperation)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: permissions check")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_permissions_check", err, n.log)
+		return
+	} else if !allowed {
+		err := fmt.Errorf("operation not permitted")
 		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
 		return
 	}
-
-	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
 
 	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
 		newOptions := func() *entry.AttributeOptions {
@@ -309,20 +346,14 @@ func (n *Node) apiSetObjectAttributesValue(c *gin.Context) {
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
 		return
 	}
-
-	result, err := n.AssessPermissions(c, pluginID, inBody.AttributeName, objectID, WriteOperation, ObjectAttribute)
-	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSetObjectAttributesValue: failed to assess permissions")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
+	userID, err := api.GetUserIDFromContext(c)
+	attrType, ok := n.GetAttributeTypes().GetAttributeType(entry.AttributeTypeID{pluginID, inBody.AttributeName})
+	if !ok {
+		err := fmt.Errorf("attribute type not found")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_attribute", err, n.log)
 		return
 	}
-
-	if !result {
-		err := errors.New("Node: apiSetObjectAttributesValue: operation not permitted")
-		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
-		return
-	}
-
+	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
 	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
 		err := errors.Errorf("Node: apiSetObjectAttributesValue: object not found: %s", objectID)
@@ -330,8 +361,20 @@ func (n *Node) apiSetObjectAttributesValue(c *gin.Context) {
 		return
 	}
 
-	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
-
+	var a auth.AttributePermissionsAuthorizer[entry.AttributeID]
+	a = object.GetObjectAttributes() //TODO: generics getter
+	allowed, err := auth.CheckAttributePermissions(
+		c, *attrType.GetEntry(), a, attributeID, userID,
+		auth.WriteOperation)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: permissions check")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_permissions_check", err, n.log)
+		return
+	} else if !allowed {
+		err := fmt.Errorf("operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+		return
+	}
 	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
 		newValue := func() *entry.AttributeValue {
 			value := entry.NewAttributeValue()
@@ -405,27 +448,36 @@ func (n *Node) apiGetObjectAttributeSubValue(c *gin.Context) {
 		return
 	}
 
-	result, err := n.AssessPermissions(c, pluginID, inQuery.AttributeName, objectID, ReadOperation, ObjectAttribute)
-	if err != nil {
-		err := errors.WithMessage(err, "Node: apiGetObjectSubAttributes: failed to assess permissions")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
-		return
-	}
-
-	if !result {
-		err := errors.WithMessage(err, "Node: apiGetObjectSubAttributes: operation not permitted")
-		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
-		return
-	}
-
 	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
 		err := errors.Errorf("Node: apiGetObjectAttributeSubValue: object not found: %s", objectID)
 		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 		return
 	}
-
+	attrType, ok := n.GetAttributeTypes().GetAttributeType(entry.AttributeTypeID{pluginID, inQuery.AttributeName})
+	if !ok {
+		err := fmt.Errorf("attribute type not found")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_attribute", err, n.log)
+		return
+	}
+	userID, err := api.GetUserIDFromContext(c)
 	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
+
+	var a auth.AttributePermissionsAuthorizer[entry.AttributeID]
+	a = object.GetObjectAttributes() //TODO: generics getter
+	allowed, err := auth.CheckAttributePermissions(
+		c, *attrType.GetEntry(), a, attributeID, userID,
+		auth.ReadOperation)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: permissions check")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_permissions_check", err, n.log)
+		return
+	} else if !allowed {
+		err := fmt.Errorf("operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+		return
+	}
+
 	attributeValue, ok := object.GetObjectAttributes().GetValue(attributeID)
 	if !ok {
 		err := errors.Errorf("Node: apiGetObjectAttributeSubValue: attribute value not found: %s", attributeID)
@@ -488,28 +540,35 @@ func (n *Node) apiSetObjectAttributeSubValue(c *gin.Context) {
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
 		return
 	}
-
-	result, err := n.AssessPermissions(c, pluginID, inBody.AttributeName, objectID, WriteOperation, ObjectAttribute)
-	if err != nil {
-		err := errors.WithMessage(err, "Node: apiSetObjectAttributeSubValue: failed to assess permissions")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
-		return
-	}
-
-	if !result {
-		err := errors.WithMessage(err, "Node: apiSetObjectAttributeSubValue: operation not permitted")
-		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
-		return
-	}
-
 	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
 		err := errors.Errorf("Node: apiSetObjectAttributeSubValue: object not found: %s", objectID)
 		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 		return
 	}
-
+	attrType, ok := n.GetAttributeTypes().GetAttributeType(entry.AttributeTypeID{pluginID, inBody.AttributeName})
+	if !ok {
+		err := fmt.Errorf("attribute type not found")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_attribute", err, n.log)
+		return
+	}
+	userID, err := api.GetUserIDFromContext(c)
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
+
+	var a auth.AttributePermissionsAuthorizer[entry.AttributeID]
+	a = object.GetObjectAttributes() //TODO: generics getter
+	allowed, err := auth.CheckAttributePermissions(
+		c, *attrType.GetEntry(), a, attributeID, userID,
+		auth.WriteOperation)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: permissions check")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_permissions_check", err, n.log)
+		return
+	} else if !allowed {
+		err := fmt.Errorf("operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+		return
+	}
 
 	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
 		newValue := func() *entry.AttributeValue {
@@ -587,28 +646,35 @@ func (n *Node) apiRemoveObjectAttributeSubValue(c *gin.Context) {
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
 		return
 	}
-
-	result, err := n.AssessPermissions(c, pluginID, inBody.AttributeName, objectID, WriteOperation, ObjectAttribute)
-	if err != nil {
-		err := errors.WithMessage(err, "Node: apiRemoveObjectAttributeSubValue: failed to assess permissions")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
-		return
-	}
-
-	if !result {
-		err := errors.WithMessage(err, "Node: apiRemoveObjectAttributeSubValue: operation not permitted")
-		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
-		return
-	}
-
 	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
 		err := errors.Errorf("Node: apiRemoveObjectAttributeSubValue: object not found: %s", objectID)
 		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 		return
 	}
-
+	attrType, ok := n.GetAttributeTypes().GetAttributeType(entry.AttributeTypeID{pluginID, inBody.AttributeName})
+	if !ok {
+		err := fmt.Errorf("attribute type not found")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_attribute", err, n.log)
+		return
+	}
+	userID, err := api.GetUserIDFromContext(c)
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
+
+	var a auth.AttributePermissionsAuthorizer[entry.AttributeID]
+	a = object.GetObjectAttributes() //TODO: generics getter
+	allowed, err := auth.CheckAttributePermissions(
+		c, *attrType.GetEntry(), a, attributeID, userID,
+		auth.WriteOperation)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: permissions check")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_permissions_check", err, n.log)
+		return
+	} else if !allowed {
+		err := fmt.Errorf("operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+		return
+	}
 
 	modifyFn := func(current *entry.AttributeValue) (*entry.AttributeValue, error) {
 		if current == nil {
@@ -668,28 +734,36 @@ func (n *Node) apiRemoveObjectAttributeValue(c *gin.Context) {
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
 		return
 	}
-
-	result, err := n.AssessPermissions(c, pluginID, inBody.AttributeName, objectID, WriteOperation, ObjectAttribute)
-	if err != nil {
-		err := errors.WithMessage(err, "Node: apiRemoveObjectAttributeValue: failed to assess permissions")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_assess_permissions", err, n.log)
-		return
-	}
-
-	if !result {
-		err := errors.WithMessage(err, "Node: apiRemoveObjectAttributeValue: operation not permitted")
-		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
-		return
-	}
-
 	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
 		err := errors.Errorf("Node: apiRemoveObjectAttributeValue: object not found: %s", objectID)
 		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 		return
 	}
-
+	attrType, ok := n.GetAttributeTypes().GetAttributeType(entry.AttributeTypeID{pluginID, inBody.AttributeName})
+	if !ok {
+		err := fmt.Errorf("attribute type not found")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_attribute", err, n.log)
+		return
+	}
+	userID, err := api.GetUserIDFromContext(c)
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
+
+	var a auth.AttributePermissionsAuthorizer[entry.AttributeID]
+	a = object.GetObjectAttributes() //TODO: generics getter
+	allowed, err := auth.CheckAttributePermissions(
+		c, *attrType.GetEntry(), a, attributeID, userID,
+		auth.WriteOperation)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: permissions check")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_permissions_check", err, n.log)
+		return
+	} else if !allowed {
+		err := fmt.Errorf("operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+		return
+	}
+
 	if _, err := object.GetObjectAttributes().UpdateValue(
 		attributeID, modify.ReplaceWith[entry.AttributeValue](nil), true,
 	); err != nil {

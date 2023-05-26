@@ -257,7 +257,6 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			attributeName: "description",
 			description:   "description",
 			options: &entry.AttributeOptions{
-				"permissions": "admin",
 				"render_type": "texture",
 			},
 		},
@@ -344,6 +343,10 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			attributeName: "VoiceChatUser",
 			description:   "Voice chat users",
 			options: &entry.AttributeOptions{
+				"permissions": map[string]entry.PermissionsRoleType{
+					"read":  entry.PermissionAny,
+					"write": entry.PermissionUser,
+				},
 				"posbus_auto": map[string]any{
 					"scope":   []string{"object"},
 					"topic":   "voice-chat-user",
