@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
 	"github.com/momentum-xyz/ubercontroller"
@@ -22,14 +21,6 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 	if n.cfg.Common.PProfAPI {
 		registerPProfAPI(r.Group("/debug"))
-	}
-
-	if n.cfg.Common.AllowCORS {
-		r.Use(cors.New(cors.Config{
-			AllowOrigins: []string{"*"},
-			AllowMethods: []string{"*"},
-			AllowHeaders: []string{"*"},
-		}))
 	}
 
 	r.GET("/version", n.apiGetVersion)
