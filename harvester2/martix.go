@@ -395,16 +395,18 @@ func (m *Matrix) ProcessLogs(blockNumber uint64, logs []any) {
 		})
 	}
 
+	m.saveUpdateToDB(walletEntries, contractsEntries, nftEntriesAdd, nftEntriesRemove, balanceEntries, stakeEntries)
+
 }
 
 func (m *Matrix) saveUpdateToDB(wallets []*entry.Wallet,
-	contracts []*Contract,
+	contracts []*entry.Contract,
 	addNFTs []*entry.NFT,
 	removeNFTs []*entry.NFT,
 	balances []*entry.Balance,
 	stakes []*entry.Stake) error {
 
-	//blockchainUMID, name, rpcURL := m.adapter.GetInfo()
+	blockchainUMID, name, rpcURL := m.adapter.GetInfo()
 
 	tx, err := m.db.BeginTx(context.TODO(), pgx.TxOptions{})
 	if err != nil {
@@ -426,6 +428,99 @@ func (m *Matrix) saveUpdateToDB(wallets []*entry.Wallet,
 			}
 		}
 	}()
+
+	sql := `INSERT INTO blockchain (blockchain_id, last_processed_block_number, blockchain_name, rpc_url, updated_at)
+							VALUES ($1, $2, $3, $4, NOW())
+							ON CONFLICT (blockchain_id) DO UPDATE SET last_processed_block_number=$2,
+																	  blockchain_name=$3,
+																	  rpc_url=$4,
+																	  updated_at=NOW();`
+
+	val := &entry.Blockchain{
+		BlockchainID:             blockchainUMID,
+		LastProcessedBlockNumber: m.blockNumber,
+		BlockchainName:           (string)(name),
+		RPCURL:                   rpcURL,
+	}
+	_, err = tx.Exec(context.Background(), sql,
+		val.BlockchainID, val.LastProcessedBlockNumber, val.BlockchainName, val.RPCURL)
+	if err != nil {
+		return errors.WithMessage(err, "failed to insert or update blockchain DB query")
+	}
+
+	sql = `INSERT INTO wallet (wallet_id, blockchain_id)
+			VALUES ($1::bytea, $2)
+			ON CONFLICT (blockchain_id, wallet_id) DO NOTHING `
+	for _, w := range wallets {
+		_, err = tx.Exec(context.Background(), sql, w.WalletID, blockchainUMID)
+		if err != nil {
+			err = errors.WithMessage(err, "failed to insert wallet to DB")
+			return err
+		}
+	}
+
+	sql = `INSERT INTO contract (contract_id, name)
+			VALUES ($1, $2)
+			ON CONFLICT (contract_id) DO NOTHING`
+	for _, c := range contracts {
+		_, err = tx.Exec(context.TODO(), sql, c.ContractID, "")
+		if err != nil {
+			err = errors.WithMessage(err, "failed to insert contract to DB")
+			return err
+		}
+	}
+
+	sql = `INSERT INTO balance (wallet_id, contract_id, blockchain_id, balance, last_processed_block_number)
+			VALUES ($1, $2, $3, $4, $5)
+			ON CONFLICT (wallet_id, contract_id, blockchain_id)
+				DO UPDATE SET balance                     = $4,
+							  last_processed_block_number = $5`
+	for _, b := range balances {
+		_, err = tx.Exec(context.TODO(), sql,
+			b.WalletID, b.ContractID, b.BlockchainID, b.Balance, b.LastProcessedBlockNumber)
+		if err != nil {
+			err = errors.WithMessage(err, "failed to insert balance to DB")
+			return err
+		}
+	}
+
+	sql = `INSERT INTO stake (wallet_id, blockchain_id, object_id, amount, last_comment, updated_at, created_at)
+			VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+			ON CONFLICT (blockchain_id, wallet_id, object_id)
+				DO UPDATE SET updated_at   = NOW(),
+				              last_comment = $5,
+							  amount       = $4`
+
+	for _, s := range stakes {
+		_, err = tx.Exec(context.TODO(), sql,
+			s.WalletID, blockchainUMID, s.ObjectID, s.Amount, s.LastComment)
+		if err != nil {
+			err = errors.WithMessage(err, "failed to insert stakes to DB")
+			return err
+		}
+	}
+
+	sql = `INSERT INTO nft (wallet_id, blockchain_id, object_id, contract_id, created_at, updated_at)	
+			VALUES ($1, $2, $3, $4, NOW(), NOW())
+			ON CONFLICT (wallet_id, contract_id, blockchain_id, object_id) DO UPDATE SET updated_at=NOW()`
+
+	deleteSQL := `DELETE FROM nft WHERE object_id = $1`
+
+	for _, nft := range removeNFTs {
+		_, err = tx.Exec(context.TODO(), deleteSQL, nft.ObjectID)
+		if err != nil {
+			err = errors.WithMessage(err, "failed to delete NFT from DB")
+			return err
+		}
+	}
+
+	for _, nft := range addNFTs {
+		_, err = tx.Exec(context.TODO(), sql, nft.WalletID, blockchainUMID, nft.ObjectID, nft.ContractID)
+		if err != nil {
+			err = errors.WithMessage(err, "failed to insert NFT to DB")
+			return err
+		}
+	}
 
 	return nil
 
