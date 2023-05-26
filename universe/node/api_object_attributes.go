@@ -17,26 +17,25 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 )
 
+type queryPluginAttribute struct {
+	PluginID      string `form:"plugin_id" json:"plugin_id" binding:"required"`
+	AttributeName string `form:"attribute_name" json:"attribute_name" binding:"required"`
+}
+
 // @Summary Get object attribute
 // @Schemes
 // @Description Returns object attribute
 // @Tags objects
 // @Produce json
 // @Param object_id path string true "Object UMID"
-// @Param attribute_id query node.apiGetObjectAttributesValue.InQuery true "query params"
+// @Param attribute_id query node.queryPluginAttribute true "query params"
 // @Success 200 {object} entry.AttributeValue
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/attributes [get]
 func (n *Node) apiGetObjectAttributesValue(c *gin.Context) {
-	type InQuery struct {
-		PluginID      string `form:"plugin_id" json:"plugin_id" binding:"required"`
-		AttributeName string `form:"attribute_name" json:"attribute_name" binding:"required"`
-	}
-
-	inQuery := InQuery{}
-
+	inQuery := queryPluginAttribute{}
 	if err := c.ShouldBindQuery(&inQuery); err != nil {
 		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: failed to bind query")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
@@ -109,19 +108,14 @@ func (n *Node) apiGetObjectAttributesValue(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object UMID"
-// @Param query query node.apiGetObjectWithChildrenAttributeValues.InQuery true "query params"
+// @Param query query node.queryPluginAttribute true "query params"
 // @Success 200 {object} dto.ObjectAttributeValues
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/attributes-with-children [get]
 func (n *Node) apiGetObjectWithChildrenAttributeValues(c *gin.Context) {
-	type InQuery struct {
-		PluginID      string `form:"plugin_id" binding:"required"`
-		AttributeName string `form:"attribute_name" binding:"required"`
-	}
-
-	inQuery := InQuery{}
+	inQuery := queryPluginAttribute{}
 
 	if err := c.ShouldBindQuery(&inQuery); err != nil {
 		err := errors.WithMessage(err, "Node: apiGetObjectWithChildrenAttributeValues: failed to bind query")
@@ -201,19 +195,14 @@ func (n *Node) apiGetObjectWithChildrenAttributeValues(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object UMID"
-// @Param body body node.apiObjectsSetObjectSubOption.Body true "body params"
+// @Param body body node.queryPluginAttribute true "body params"
 // @Success 202 {object} dto.ObjectSubOptions
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/attributes/publicize [post]
 func (n *Node) apiSetObjectAttributesPublic(c *gin.Context) {
-	type Body struct {
-		PluginID      string `json:"plugin_id" binding:"required"`
-		AttributeName string `json:"attribute_name" binding:"required"`
-	}
-
-	inBody := Body{}
+	inBody := queryPluginAttribute{}
 
 	if err := c.ShouldBindJSON(&inBody); err != nil {
 		err = errors.WithMessage(err, "Node: apiSetObjectAttributesPublic: failed to bind json")
@@ -325,8 +314,7 @@ func (n *Node) apiSetObjectAttributesPublic(c *gin.Context) {
 // @Router /api/v4/objects/{object_id}/attributes [post]
 func (n *Node) apiSetObjectAttributesValue(c *gin.Context) {
 	type InBody struct {
-		PluginID       string         `json:"plugin_id" binding:"required"`
-		AttributeName  string         `json:"attribute_name" binding:"required"`
+		queryPluginAttribute
 		AttributeValue map[string]any `json:"attribute_value" binding:"required"`
 	}
 
@@ -426,8 +414,7 @@ func (n *Node) apiSetObjectAttributesValue(c *gin.Context) {
 // @Router /api/v4/objects/{object_id}/attributes/sub [get]
 func (n *Node) apiGetObjectAttributeSubValue(c *gin.Context) {
 	type InQuery struct {
-		PluginID        string `form:"plugin_id" binding:"required"`
-		AttributeName   string `form:"attribute_name" binding:"required"`
+		queryPluginAttribute
 		SubAttributeKey string `form:"sub_attribute_key" binding:"required"`
 	}
 
@@ -518,8 +505,7 @@ func (n *Node) apiGetObjectAttributeSubValue(c *gin.Context) {
 // @Router /api/v4/objects/{object_id}/attributes/sub [post]
 func (n *Node) apiSetObjectAttributeSubValue(c *gin.Context) {
 	type Body struct {
-		PluginID          string `json:"plugin_id" binding:"required"`
-		AttributeName     string `json:"attribute_name" binding:"required"`
+		queryPluginAttribute
 		SubAttributeKey   string `json:"sub_attribute_key" binding:"required"`
 		SubAttributeValue any    `json:"sub_attribute_value" binding:"required"`
 	}
@@ -625,8 +611,7 @@ func (n *Node) apiSetObjectAttributeSubValue(c *gin.Context) {
 // @Router /api/v4/objects/{object_id}/attributes/sub [delete]
 func (n *Node) apiRemoveObjectAttributeSubValue(c *gin.Context) {
 	type Body struct {
-		PluginID        string `json:"plugin_id" binding:"required"`
-		AttributeName   string `json:"attribute_name" binding:"required"`
+		queryPluginAttribute
 		SubAttributeKey string `json:"sub_attribute_key" binding:"required"`
 	}
 
@@ -707,19 +692,14 @@ func (n *Node) apiRemoveObjectAttributeSubValue(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object UMID"
-// @Param body body node.apiRemoveObjectAttributeValue.Body true "body params"
+// @Param body body node.queryPluginAttribute true "body params"
 // @Success 200 {object} nil
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/attributes [delete]
 func (n *Node) apiRemoveObjectAttributeValue(c *gin.Context) {
-	type Body struct {
-		PluginID      string `json:"plugin_id" binding:"required"`
-		AttributeName string `json:"attribute_name" binding:"required"`
-	}
-
-	var inBody Body
+	var inBody queryPluginAttribute
 	if err := c.ShouldBindJSON(&inBody); err != nil {
 		err = errors.WithMessage(err, "Node: apiRemoveObjectAttributeValue: failed to bind json")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
