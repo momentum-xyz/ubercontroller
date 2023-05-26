@@ -242,6 +242,11 @@ func (n *Node) apiSetObjectAttributesPublic(c *gin.Context) {
 		return
 	}
 	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSetObjectAttributesPublic: user from context")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user", err, n.log)
+		return
+	}
 	attrType, ok := n.GetAttributeTypes().GetAttributeType(entry.AttributeTypeID{pluginID, inBody.AttributeName})
 	if !ok {
 		err := fmt.Errorf("attribute type not found")
@@ -747,6 +752,11 @@ func (n *Node) apiRemoveObjectAttributeValue(c *gin.Context) {
 		return
 	}
 	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiRemoveObjectAttributeValue: user from context")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user", err, n.log)
+		return
+	}
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
 
 	var a auth.AttributePermissionsAuthorizer[entry.AttributeID]
