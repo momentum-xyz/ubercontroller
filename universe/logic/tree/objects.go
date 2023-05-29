@@ -56,7 +56,11 @@ func AddObjectFromTemplate(objectTemplate *ObjectTemplate, updateDB bool) (umid.
 	// TODO: should be available for admin or owner of parent
 	var asset3d universe.Asset3d
 	if objectTemplate.Asset3dID != nil {
-		asset3d, ok = node.GetAssets3d().GetAsset3d(*objectTemplate.Asset3dID)
+		assetUserId := universe.AssetUserIDPair{
+			AssetID: *objectTemplate.Asset3dID,
+			UserID:  *objectTemplate.OwnerID,
+		}
+		asset3d, ok = node.GetAssets3d().GetAsset3d(assetUserId)
 		if !ok {
 			return umid.Nil, errors.Errorf("asset 3d not found: %s", objectTemplate.Asset3dID)
 		}

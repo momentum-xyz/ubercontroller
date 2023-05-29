@@ -18,7 +18,7 @@ type WorldsFilterPredicateFn func(worldID umid.UMID, world World) bool
 type UsersFilterPredicateFn func(userID umid.UMID, user User) bool
 type ObjectsFilterPredicateFn func(objectID umid.UMID, object Object) bool
 type Assets2dFilterPredicateFn func(asset2dID umid.UMID, asset2d Asset2d) bool
-type Assets3dFilterPredicateFn func(asset3dID umid.UMID, asset3d Asset3d) bool
+type Assets3dFilterPredicateFn func(asset3dUserID AssetUserIDPair, asset3d Asset3d) bool
 type PluginsFilterPredicateFn func(pluginID umid.UMID, plugin Plugin) bool
 type AttributeTypesFilterPredicateFn func(attributeTypeID entry.AttributeTypeID, attributeType AttributeType) bool
 type ObjectTypesFilterPredicateFn func(objectTypeID umid.UMID, objectType ObjectType) bool
@@ -30,6 +30,11 @@ type WorldSettings struct {
 	Attributes  map[string]umid.UMID `db:"attributes" json:"attributes"`
 	ObjectTypes map[string]umid.UMID `db:"object_types" json:"object_types"`
 	Effects     map[string]umid.UMID `db:"effects" json:"effects"`
+}
+
+type AssetUserIDPair struct {
+	AssetID umid.UMID
+	UserID  umid.UMID
 }
 
 type SortType string

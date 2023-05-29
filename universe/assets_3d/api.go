@@ -18,14 +18,14 @@ func (a *Assets3d) RegisterAPI(r *gin.Engine) {
 		{
 			authorizedAdmin := assets3d.Group("", middleware.AuthorizeAdmin(a.log))
 			{
-				authorizedAdmin.POST("", a.apiAddAssets3d)
+				// authorizedAdmin.POST("", a.apiAddAssets3d)
 				authorizedAdmin.POST("/upload", a.apiUploadAsset3d)
-				authorizedAdmin.DELETE("", a.apiRemoveAssets3dByIDs)
+				// authorizedAdmin.DELETE("", a.apiRemoveAssets3dByIDs)
 			}
 
 			assets3d.GET("", a.apiGetAssets3d)
-			assets3d.GET("/meta", a.apiGetAssets3dMeta)
-			assets3d.GET("/options", a.apiGetAssets3dOptions)
+			// assets3d.GET("/meta", a.apiGetAssets3dMeta)
+			// assets3d.GET("/options", a.apiGetAssets3dOptions)
 			assets3d.DELETE("/:asset3dID", a.apiRemoveAsset3dByID)
 			assets3d.PATCH("/:asset3dID", a.apiUpdateAsset3dByID)
 		}

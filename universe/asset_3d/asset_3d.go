@@ -2,8 +2,9 @@ package asset_3d
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"sync"
+
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -26,17 +27,25 @@ type Asset3d struct {
 	entry *entry.Asset3d
 }
 
-func NewAsset3d(id umid.UMID, db database.DB) *Asset3d {
+func NewAsset3d(assetUserID universe.AssetUserIDPair, db database.DB) *Asset3d {
 	return &Asset3d{
 		db: db,
 		entry: &entry.Asset3d{
-			Asset3dID: id,
+			Asset3dID: assetUserID.AssetID,
+			UserID:    assetUserID.UserID,
 		},
 	}
 }
 
 func (a *Asset3d) GetID() umid.UMID {
 	return a.entry.Asset3dID
+}
+
+func (a *Asset3d) GetUserAssetIDPair() universe.AssetUserIDPair {
+	return universe.AssetUserIDPair{
+		AssetID: a.entry.Asset3dID,
+		UserID:  a.entry.UserID,
+	}
 }
 
 func (a *Asset3d) Initialize(ctx context.Context) error {
@@ -63,7 +72,11 @@ func (a *Asset3d) SetMeta(meta *entry.Asset3dMeta, updateDB bool) error {
 	defer a.mu.Unlock()
 
 	if updateDB {
-		if err := a.db.GetAssets3dDB().UpdateAssetMeta(a.ctx, a.entry.Asset3dID, meta); err != nil {
+		assetUserId := universe.AssetUserIDPair{
+			AssetID: a.entry.Asset3dID,
+			UserID:  a.entry.UserID,
+		}
+		if err := a.db.GetAssets3dDB().UpdateAssetMeta(a.ctx, assetUserId, meta); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}

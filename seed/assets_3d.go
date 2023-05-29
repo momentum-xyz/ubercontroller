@@ -133,7 +133,12 @@ func seedAssets3d(ctx context.Context, node universe.Node) error {
 	}
 
 	for _, item := range items {
-		asset, err := node.GetAssets3d().CreateAsset3d(item.Asset3dID)
+		assetUserId := universe.AssetUserIDPair{
+			AssetID: item.Asset3dID,
+			UserID:  umid.MustParse("00000000-0000-0000-0000-000000000003"), // Odin
+		}
+
+		asset, err := node.GetAssets3d().CreateAsset3d(assetUserId)
 		if err != nil {
 			return errors.WithMessagef(err, "failed to create asset_3d: %s", item.Asset3dID)
 		}

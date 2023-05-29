@@ -284,20 +284,23 @@ func (n *Node) apiUpdateObject(c *gin.Context) {
 	}
 
 	var asset3d universe.Asset3d
-	if inBody.Asset3dID != "" {
-		asset3dID, err := umid.Parse(inBody.Asset3dID)
-		if err != nil {
-			err := errors.WithMessage(err, "Node: apiUpdateObject: failed to parse asset 3d umid")
-			api.AbortRequest(c, http.StatusBadRequest, "invalid_asset_3d_id", err, n.log)
-			return
-		}
-		asset3d, ok = n.GetAssets3d().GetAsset3d(asset3dID)
-		if !ok {
-			err := errors.Errorf("Node: apiUpdateObject: 3D asset not found: %s", asset3dID)
-			api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
-			return
-		}
-	}
+	// if inBody.Asset3dID != "" {
+	// asset3dID, err := umid.Parse(inBody.Asset3dID)
+	// if err != nil {
+	// 	err := errors.WithMessage(err, "Node: apiUpdateObject: failed to parse asset 3d umid")
+	// 	api.AbortRequest(c, http.StatusBadRequest, "invalid_asset_3d_id", err, n.log)
+	// 	return
+	// }
+
+	// !!! TODO how do we get the user id here???
+
+	// asset3d, ok = n.GetAssets3d().GetAsset3d(asset3dID)
+	// if !ok {
+	// 	err := errors.Errorf("Node: apiUpdateObject: 3D asset not found: %s", asset3dID)
+	// 	api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
+	// 	return
+	// }
+	// }
 	if asset3d != nil {
 		if err := object.SetAsset3D(asset3d, true); err != nil {
 			err := errors.Errorf("Node: apiUpdateObject: failed to update 3d asset: %s", asset3d.GetID())

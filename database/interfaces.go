@@ -114,11 +114,11 @@ type Assets3dDB interface {
 	UpsertAsset(ctx context.Context, asset3d *entry.Asset3d) error
 	UpsertAssets(ctx context.Context, assets3d []*entry.Asset3d) error
 
-	UpdateAssetMeta(ctx context.Context, asset3dID umid.UMID, meta *entry.Asset3dMeta) error
+	UpdateAssetMeta(ctx context.Context, assetUserID universe.AssetUserIDPair, meta *entry.Asset3dMeta) error
 	UpdateAssetOptions(ctx context.Context, asset3dID umid.UMID, options *entry.Asset3dOptions) error
 
-	RemoveAssetByID(ctx context.Context, asset3dID umid.UMID) error
-	RemoveAssetsByIDs(ctx context.Context, asset3dIDs []umid.UMID) error
+	RemoveAssetByID(ctx context.Context, assetUserID universe.AssetUserIDPair) error
+	// RemoveAssetsByIDs(ctx context.Context, asset3dIDs []umid.UMID) error
 }
 
 type PluginsDB interface {

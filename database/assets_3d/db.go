@@ -3,6 +3,7 @@ package assets_3d
 import (
 	"context"
 
+	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/georgysavva/scany/pgxscan"
@@ -34,7 +35,7 @@ const (
 						DO UPDATE SET
 							meta = $3, is_private = $4, updated_at = CURRENT_TIMESTAMP;`
 
-	updateAssetMetaQuery = `UPDATE asset_3d_user SET meta = $2, updated_at = CURRENT_TIMESTAMP WHERE asset_3d_id = $1 AND user_id = $2;`
+	updateAssetMetaQuery = `UPDATE asset_3d_user SET meta = $3, updated_at = CURRENT_TIMESTAMP WHERE asset_3d_id = $1 AND user_id = $2;`
 
 	updateAssetOptionsQuery = `UPDATE asset_3d SET options = $2, updated_at = CURRENT_TIMESTAMP WHERE asset_3d_id = $1;`
 
@@ -102,24 +103,24 @@ func (db *DB) UpsertAssets(ctx context.Context, assets3d []*entry.Asset3d) error
 }
 
 // TODO add userID
-func (db *DB) RemoveAssetByID(ctx context.Context, asset3dID umid.UMID) error {
-	if _, err := db.conn.Exec(ctx, removeAssetByIDQuery, asset3dID); err != nil {
+func (db *DB) RemoveAssetByID(ctx context.Context, assetUserID universe.AssetUserIDPair) error {
+	if _, err := db.conn.Exec(ctx, removeAssetByIDQuery, assetUserID.AssetID, assetUserID.UserID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
 // TODO add userID
-func (db *DB) RemoveAssetsByIDs(ctx context.Context, asset3dIDs []umid.UMID) error {
-	if _, err := db.conn.Exec(ctx, removeAssetsByIDsQuery, asset3dIDs); err != nil {
-		return errors.WithMessage(err, "failed to exec db")
-	}
-	return nil
-}
+// func (db *DB) RemoveAssetsByIDs(ctx context.Context, asset3dIDs []umid.UMID) error {
+// 	if _, err := db.conn.Exec(ctx, removeAssetsByIDsQuery, asset3dIDs); err != nil {
+// 		return errors.WithMessage(err, "failed to exec db")
+// 	}
+// 	return nil
+// }
 
 // TODO add userID
-func (db *DB) UpdateAssetMeta(ctx context.Context, asset3dID umid.UMID, meta *entry.Asset3dMeta) error {
-	if _, err := db.conn.Exec(ctx, updateAssetMetaQuery, asset3dID, meta); err != nil {
+func (db *DB) UpdateAssetMeta(ctx context.Context, assetUserID universe.AssetUserIDPair, meta *entry.Asset3dMeta) error {
+	if _, err := db.conn.Exec(ctx, updateAssetMetaQuery, assetUserID.AssetID, assetUserID.UserID, meta); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil

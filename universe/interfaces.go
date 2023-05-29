@@ -367,21 +367,23 @@ type Assets3d interface {
 	LoadSaver
 	APIRegister
 
-	CreateAsset3d(asset3dID umid.UMID) (Asset3d, error)
-	GetAsset3d(asset3dID umid.UMID) (Asset3d, bool)
-	GetAssets3d() map[umid.UMID]Asset3d
-	FilterAssets3d(predicateFn Assets3dFilterPredicateFn) map[umid.UMID]Asset3d
+	CreateAsset3d(assetUserID AssetUserIDPair) (Asset3d, error)
+	GetAsset3d(assetUserID AssetUserIDPair) (Asset3d, bool)
+	GetAssets3d() map[AssetUserIDPair]Asset3d
+	FilterAssets3d(predicateFn Assets3dFilterPredicateFn) map[AssetUserIDPair]Asset3d
 	AddAsset3d(asset3d Asset3d, updateDB bool) error
 	AddAssets3d(assets3d []Asset3d, updateDB bool) error
 	RemoveAsset3d(asset3d Asset3d, updateDB bool) (bool, error)
-	RemoveAssets3d(assets3d []Asset3d, updateDB bool) (bool, error)
-	RemoveAsset3dByID(assets3dID umid.UMID, updateDB bool) (bool, error)
-	RemoveAssets3dByIDs(assets3dIDs []umid.UMID, updateDB bool) (bool, error)
+	// RemoveAssets3d(assets3d []Asset3d, updateDB bool) (bool, error)
+	RemoveAsset3dByID(assets3dID AssetUserIDPair, updateDB bool) (bool, error)
+	// RemoveAssets3dByIDs(assets3dIDs []umid.UMID, updateDB bool) (bool, error)
 }
 
 type Asset3d interface {
 	IDer
 	Initializer
+
+	GetUserAssetIDPair() AssetUserIDPair
 
 	GetMeta() *entry.Asset3dMeta
 	SetMeta(meta *entry.Asset3dMeta, updateDB bool) error
