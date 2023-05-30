@@ -64,6 +64,22 @@ type RenderAutoAttributeOption struct {
 	TextRenderTemplate string          `db:"text_render_template" json:"text_render_template"`
 }
 
+type PermissionsRoleType string
+
+const (
+	PermissionAny        PermissionsRoleType = "any"         // Anybody can access.
+	PermissionUser       PermissionsRoleType = "user"        // Only authenticated users, this includes temporary guests.
+	PermissionUserOwner  PermissionsRoleType = "user_owner"  // A user who 'owns' the attribute, this depends on the type of attribute.
+	PermissionAdmin      PermissionsRoleType = "admin"       // A user who has been given the admin role through the object tree (entry.UserObject).
+	PermissionTargetUser PermissionsRoleType = "target_user" // The target of a UserUserAttribute
+)
+
+type PermissionsAttributeOption struct {
+	Read  string `json:"read" mapstructure:"read"`
+	Write string `json:"write" mapstructure:"write"`
+	// TODO: replace string, impl decoder for e.g 'admin+user_owner'
+}
+
 func NewAttribute(attributeID AttributeID, payload *AttributePayload) *Attribute {
 	return &Attribute{
 		AttributeID:      attributeID,

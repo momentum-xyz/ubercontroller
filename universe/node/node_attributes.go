@@ -1,12 +1,15 @@
 package node
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 var _ universe.NodeAttributes = (*nodeAttributes)(nil)
@@ -243,4 +246,30 @@ func (na *nodeAttributes) Len() int {
 	defer na.node.Mu.RUnlock()
 
 	return len(na.data)
+}
+
+// AttributePermissionsAuthorizer
+func (na *nodeAttributes) GetUserRoles(
+	ctx context.Context,
+	attrType entry.AttributeType,
+	targetID entry.AttributeID,
+	userID umid.UMID,
+) ([]entry.PermissionsRoleType, error) {
+	var roles []entry.PermissionsRoleType
+	// owner is always considered an admin, TODO: add this to check function
+	if na.node.GetOwnerID() == userID {
+		roles = append(roles, entry.PermissionAdmin)
+	} else { // we have to lookup through the db user tree
+		userObjectID := entry.NewUserObjectID(userID, na.node.GetID())
+		isAdmin, err := na.node.db.GetUserObjectsDB().CheckIsIndirectAdminByID(ctx, userObjectID)
+		if err != nil {
+			return nil, errors.WithMessage(err, "failed to check admin status")
+		}
+		if isAdmin {
+			roles = append(roles, entry.PermissionAdmin)
+		}
+	}
+	return roles, nil
+	na.node.GetOwnerID()
+	return nil, nil
 }

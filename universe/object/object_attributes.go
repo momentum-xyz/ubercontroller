@@ -1,6 +1,8 @@
 package object
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -8,6 +10,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/logic/common/slot"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 var _ universe.ObjectAttributes = (*objectAttributes)(nil)
@@ -361,4 +364,28 @@ func (o *Object) calendarOnObjectAttributeChanged(
 	}
 
 	return nil
+}
+
+// AttributePermissionsAuthorizer
+func (oa *objectAttributes) GetUserRoles(
+	ctx context.Context,
+	attrType entry.AttributeType,
+	targetID entry.AttributeID,
+	userID umid.UMID,
+) ([]entry.PermissionsRoleType, error) {
+	var roles []entry.PermissionsRoleType
+	// owner is always considered an admin, TODO: add this to check function
+	if oa.object.GetOwnerID() == userID {
+		roles = append(roles, entry.PermissionAdmin)
+	} else { // we have to lookup through the db user tree
+		userObjectID := entry.NewUserObjectID(userID, oa.object.GetID())
+		isAdmin, err := oa.object.db.GetUserObjectsDB().CheckIsIndirectAdminByID(ctx, userObjectID)
+		if err != nil {
+			return nil, errors.WithMessage(err, "failed to check admin status")
+		}
+		if isAdmin {
+			roles = append(roles, entry.PermissionAdmin)
+		}
+	}
+	return roles, nil
 }

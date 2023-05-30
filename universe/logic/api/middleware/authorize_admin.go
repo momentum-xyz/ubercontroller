@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -11,6 +10,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 func AuthorizeAdmin(log *zap.SugaredLogger) gin.HandlerFunc {

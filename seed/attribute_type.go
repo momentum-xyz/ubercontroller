@@ -257,7 +257,6 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			attributeName: "description",
 			description:   "description",
 			options: &entry.AttributeOptions{
-				"permissions": "admin",
 				"render_type": "texture",
 			},
 		},

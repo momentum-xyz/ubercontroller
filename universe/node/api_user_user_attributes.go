@@ -1,14 +1,16 @@
 package node
 
 import (
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe/auth"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 // @Schemes
@@ -37,7 +39,7 @@ func (n *Node) apiSetUserUserSubAttributeValue(c *gin.Context) {
 		return
 	}
 
-	userID, err := umid.Parse(c.Param("userID"))
+	sourceID, err := umid.Parse(c.Param("userID"))
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiSetUserUserSubAttributeValue: failed to parse user umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
@@ -57,9 +59,33 @@ func (n *Node) apiSetUserUserSubAttributeValue(c *gin.Context) {
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
 		return
 	}
-
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "user from context")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user", err, n.log)
+		return
+	}
+	attrType, ok := n.GetAttributeTypes().GetAttributeType(entry.AttributeTypeID{pluginID, inBody.AttributeName})
+	if !ok {
+		err := fmt.Errorf("attribute type not found")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_attribute", err, n.log)
+		return
+	}
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
-	userUserAttributeID := entry.NewUserUserAttributeID(attributeID, userID, targetID)
+	userUserAttributeID := entry.NewUserUserAttributeID(attributeID, sourceID, targetID)
+
+	allowed, err := auth.CheckAttributePermissions(
+		c, *attrType.GetEntry(), n.GetUserUserAttributes(), userUserAttributeID, userID,
+		auth.WriteOperation)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSetUserUserSubAttributeValue: permissions check")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_permissions_check", err, n.log)
+		return
+	} else if !allowed {
+		err := fmt.Errorf("operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+		return
+	}
 
 	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
 		newValue := func() *entry.AttributeValue {

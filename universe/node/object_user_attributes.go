@@ -1,6 +1,9 @@
 package node
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 
@@ -8,6 +11,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 var _ universe.ObjectUserAttributes = (*objectUserAttributes)(nil)
@@ -210,4 +214,29 @@ func (n *Node) onObjectUserAttributeChanged(
 			)
 		}
 	}()
+}
+
+// AttributePermissionsAuthorizer
+func (oua *objectUserAttributes) GetUserRoles(
+	ctx context.Context,
+	attrType entry.AttributeType,
+	targetID entry.ObjectUserAttributeID,
+	userID umid.UMID,
+) ([]entry.PermissionsRoleType, error) {
+	var roles []entry.PermissionsRoleType
+	object, ok := oua.node.GetObjectFromAllObjects(targetID.ObjectID)
+	if !ok {
+		return nil, errors.New("ObjectUserAttribute roles: object not found")
+	}
+	objectRoles, err := object.GetObjectAttributes().GetUserRoles(
+		ctx, attrType, entry.NewAttributeID(attrType.PluginID, attrType.Name), userID)
+	if err != nil {
+		return nil, fmt.Errorf("ObjectUserAttribute roles: %w", err)
+	}
+	roles = append(roles, objectRoles...)
+
+	if targetID.UserID == userID {
+		roles = append(roles, entry.PermissionUserOwner)
+	} // TODO: user members, walk the user tree for indirect ownership...
+	return roles, nil
 }

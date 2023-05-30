@@ -124,6 +124,8 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 			{
 				objectAdmin := object.Group("", middleware.AuthorizeAdmin(n.log))
 				{
+					objectAdmin.POST("/attributes/publicize", n.apiSetObjectAttributesPublic)
+
 					objectAdmin.POST("/options/sub", n.apiObjectsSetObjectSubOption)
 					objectAdmin.DELETE("/options/sub", n.apiObjectsRemoveObjectSubOption)
 
