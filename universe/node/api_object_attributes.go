@@ -313,7 +313,7 @@ func (n *Node) apiSetObjectAttributesValue(c *gin.Context) {
 	}
 
 	allowed, err := auth.CheckAttributePermissions(
-		c, *attrType.GetEntry(), object.GetParent().GetObjectAttributes(), attributeID, userID,
+		c, *attrType.GetEntry(), object.GetObjectAttributes(), attributeID, userID,
 		auth.WriteOperation)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: permissions check")
