@@ -19,6 +19,7 @@ run: build
 	./bin/ubercontroller
 
 test:
+	mkdir -p build
 	go test -v -race -coverprofile=build/coverage.txt $$(go list ./... | grep -v  -E "ubercontroller/(build|cmd|docs)")
 
 build-docs:
