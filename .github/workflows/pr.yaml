@@ -10,8 +10,14 @@ jobs:
     name: Checks
     runs-on: self-hosted  # ubuntu-latest
     steps:
-      - uses: actions/checkout@24cb9080177205b6e8c946b17badbe402adc938f  # v3.40
-      - uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9  # v4.0.0
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
+      - id: go-fixup
+        # Workaround for setup-go on self-hosted runner, without a $HOME
+        name: Go fixup
+        run: |
+          echo "GOMODCACHE=/opt/go-cache/mod" >> $GITHUB_ENV
+          echo "GOCACHE=/opt/go-cache/build" >> $GITHUB_ENV
+      - uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753  # v4.0.1
         with:
           go-version-file: 'go.mod'
           cache: false  # does not help on self-hosted
