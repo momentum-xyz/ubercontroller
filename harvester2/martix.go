@@ -131,6 +131,8 @@ func (m *Matrix) fillStakeMatrixCell(block uint64, contract Contract, wallet Wal
 		s.TotalDADAmount.Add(s.TotalDADAmount, val[2])
 	}
 
+	m.saveAllToDB()
+
 	if wg != nil {
 		wg.Done()
 	}
@@ -159,6 +161,8 @@ func (m *Matrix) fillNFTMatrixCell(block uint64, contract Contract, wallet Walle
 	}
 	m.nftMatrix[contract][wallet].isInit = true
 
+	m.saveAllToDB()
+
 	if wg != nil {
 		wg.Done()
 	}
@@ -185,6 +189,8 @@ func (m *Matrix) fillTokenMatrixCell(block uint64, contract Contract, wallet Wal
 	m.tokenMatrix[contract][wallet].value.Add(m.tokenMatrix[contract][wallet].value, b)
 
 	m.tokenMatrix[contract][wallet].isInit = true
+
+	m.saveAllToDB()
 
 	if wg != nil {
 		wg.Done()
@@ -342,10 +348,10 @@ func (m *Matrix) ProcessLogs(blockNumber uint64, logs []any) {
 				}
 				if l.TokenType == 0 {
 					cell.Stakes[l.OdysseyID].TotalAmount = l.TotalStaked
-					//TODO mom and dad
+					cell.Stakes[l.OdysseyID].TotalMOMAmount.Add(cell.Stakes[l.OdysseyID].TotalMOMAmount, l.AmountStaked)
 				} else {
-					//TODO mom and dad
 					cell.Stakes[l.OdysseyID].TotalAmount = l.TotalStaked
+					cell.Stakes[l.OdysseyID].TotalDADAmount.Add(cell.Stakes[l.OdysseyID].TotalDADAmount, l.AmountStaked)
 				}
 				updatedWallets[l.UserWallet] = true
 				updatedContracts[l.Contract] = true
@@ -395,7 +401,13 @@ func (m *Matrix) ProcessLogs(blockNumber uint64, logs []any) {
 		})
 	}
 
-	m.saveUpdateToDB(walletEntries, contractsEntries, nftEntriesAdd, nftEntriesRemove, balanceEntries, stakeEntries)
+	m.blockNumber = blockNumber
+
+	err := m.saveUpdateToDB(walletEntries, contractsEntries, nftEntriesAdd, nftEntriesRemove, balanceEntries, stakeEntries)
+	if err != nil {
+		err = errors.WithMessage(err, "failed to saveUpdateToDB")
+		fmt.Println(err)
+	}
 
 }
 
@@ -524,6 +536,100 @@ func (m *Matrix) saveUpdateToDB(wallets []*entry.Wallet,
 
 	return nil
 
+}
+
+func (m *Matrix) saveAllToDB() {
+	//m.mu.Lock()
+	//defer m.mu.Unlock()
+
+	contracts := make([]*entry.Contract, 0)
+	wallets := make([]*entry.Wallet, 0)
+	addNFTs := make([]*entry.NFT, 0)
+	removeNFTs := make([]*entry.NFT, 0)
+	balances := make([]*entry.Balance, 0)
+	stakes := make([]*entry.Stake, 0)
+
+	_ = contracts
+	_ = wallets
+	_ = addNFTs
+	_ = removeNFTs
+	_ = balances
+	_ = stakes
+
+	blockChainID, _, _ := m.adapter.GetInfo()
+
+	for c := range m.contracts {
+		contracts = append(contracts, &entry.Contract{
+			ContractID: (common.Address)(c).Bytes(),
+			Name:       "",
+		})
+	}
+
+	for w := range m.wallets {
+		wallets = append(wallets, &entry.Wallet{
+			WalletID:     (common.Address)(w).Bytes(),
+			BlockchainID: blockChainID,
+		})
+	}
+
+	for c, val := range m.nftMatrix {
+		for w, cell := range val {
+			if !cell.isInit {
+				continue
+			}
+			for id, v := range cell.value {
+				e := &entry.NFT{
+					WalletID:     (common.Address)(w).Bytes(),
+					BlockchainID: blockChainID,
+					ObjectID:     id,
+					ContractID:   (common.Address)(c).Bytes(),
+				}
+				if v == 1 {
+					addNFTs = append(addNFTs, e)
+				} else {
+					removeNFTs = append(removeNFTs, e)
+				}
+			}
+		}
+	}
+
+	for c, val := range m.tokenMatrix {
+		for w, cell := range val {
+			if !cell.isInit {
+				continue
+			}
+			balances = append(balances, &entry.Balance{
+				WalletID:                 (common.Address)(w).Bytes(),
+				ContractID:               (common.Address)(c).Bytes(),
+				BlockchainID:             blockChainID,
+				LastProcessedBlockNumber: m.blockNumber,
+				Balance:                  (*entry.BigInt)(cell.value),
+			})
+		}
+	}
+
+	for _, val := range m.stakeMatrix {
+		for w, cell := range val {
+			if !cell.isInit {
+				continue
+			}
+			for id, stake := range cell.Stakes {
+				stakes = append(stakes, &entry.Stake{
+					WalletID:     (common.Address)(w).Bytes(),
+					BlockchainID: blockChainID,
+					ObjectID:     id,
+					LastComment:  "",
+					Amount:       (*entry.BigInt)(stake.TotalAmount),
+				})
+			}
+		}
+	}
+
+	err := m.saveUpdateToDB(wallets, contracts, addNFTs, removeNFTs, balances, stakes)
+	if err != nil {
+		err = errors.WithMessage(err, "failed to saveUpdateToDB")
+		fmt.Println(err)
+	}
 }
 
 func (m *Matrix) AddWallet(wallet Address) error {

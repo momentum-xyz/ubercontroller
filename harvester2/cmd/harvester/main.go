@@ -62,8 +62,8 @@ func main() {
 		fmt.Println(err)
 	}
 
-	//err = harv.AddWallet("arbitrum_nova", (harvester2.Address)(w78))
-	//err = harv.AddWallet("arbitrum_nova", (harvester2.Address)(w04))
+	err = harv.AddWallet("arbitrum_nova", (harvester2.Address)(w78))
+	err = harv.AddWallet("arbitrum_nova", (harvester2.Address)(w04))
 	err = harv.AddWallet("arbitrum_nova", (harvester2.Address)(w68))
 	if err != nil {
 		fmt.Println(err)
