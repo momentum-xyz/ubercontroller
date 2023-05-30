@@ -151,7 +151,7 @@ func permissionsFromOptions(options entry.AttributeOptions) (*entry.PermissionsA
 		result := &entry.PermissionsAttributeOption{}
 		err := utils.MapDecode(permissions, result)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to parse permission options %+v: %w", permissions, err)
 		}
 		return result, nil
 	}
