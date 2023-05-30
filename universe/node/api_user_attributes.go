@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/momentum-xyz/ubercontroller/universe/attributes"
 	"github.com/momentum-xyz/ubercontroller/universe/auth"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
@@ -23,26 +24,13 @@ import (
 // @Accept json
 // @Produce json
 // @Param user_id path string true "User UMID"
-// @Param query query node.apiGetMeUserAttributeValue.InQuery true "query params"
+// @Param query query attributes.QueryPluginAttribute true "query params"
 // @Success 200 {user} entry.AttributeValue
 // @Failure 500 {user} api.HTTPError
 // @Failure 400 {user} api.HTTPError
 // @Failure 404 {user} api.HTTPError
 // @Router /api/v4/users/me/attributes [get]
 func (n *Node) apiGetMeUserAttributeValue(c *gin.Context) {
-	type InQuery struct {
-		PluginID      string `form:"plugin_id" binding:"required"`
-		AttributeName string `form:"attribute_name" binding:"required"`
-	}
-
-	inQuery := InQuery{}
-
-	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		err := errors.WithMessage(err, "Node: apiGetMeUserAttributeValue: failed to bind query")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
-		return
-	}
-
 	userID, err := api.GetUserIDFromContext(c)
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiGetMeUserAttributeValue: failed to get user umid")
@@ -50,14 +38,13 @@ func (n *Node) apiGetMeUserAttributeValue(c *gin.Context) {
 		return
 	}
 
-	pluginID, err := umid.Parse(inQuery.PluginID)
+	_, attributeID, err := attributes.PluginAttributeFromQuery(c, n)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiGetMeUserAttributeValue: failed to parse plugin umid")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
+		err := fmt.Errorf("failed to get plugin attribute: %w", err)
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_attribute", err, n.log)
 		return
 	}
 
-	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
 	userAttributeID := entry.NewUserAttributeID(attributeID, userID)
 
 	// TODO: permission check? In theory we could have 'hidden' user attrs used by admins or plugins.
@@ -79,23 +66,17 @@ func (n *Node) apiGetMeUserAttributeValue(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param user_id path string true "User UMID"
-// @Param query query node.apiGetUserAttributeValue.InQuery true "query params"
+// @Param query query attributes.QueryPluginAttribute true "query params"
 // @Success 200 {user} entry.AttributeValue
 // @Failure 500 {user} api.HTTPError
 // @Failure 400 {user} api.HTTPError
 // @Failure 404 {user} api.HTTPError
 // @Router /api/v4/users/{user_id}/attributes [get]
 func (n *Node) apiGetUserAttributeValue(c *gin.Context) {
-	type InQuery struct {
-		PluginID      string `form:"plugin_id" binding:"required"`
-		AttributeName string `form:"attribute_name" binding:"required"`
-	}
-
-	inQuery := InQuery{}
-
-	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		err := errors.WithMessage(err, "Node: apiGetUserAttributeValue: failed to bind query")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiGetUserAttributeValue: failed to get user umid")
+		api.AbortRequest(c, http.StatusInternalServerError, "get_user_id_failed", err, n.log)
 		return
 	}
 
@@ -106,26 +87,13 @@ func (n *Node) apiGetUserAttributeValue(c *gin.Context) {
 		return
 	}
 
-	pluginID, err := umid.Parse(inQuery.PluginID)
+	attrType, attributeID, err := attributes.PluginAttributeFromQuery(c, n)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiGetUserAttributeValue: failed to parse plugin umid")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
+		err := fmt.Errorf("failed to get plugin attribute: %w", err)
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_attribute", err, n.log)
 		return
 	}
 
-	attrType, ok := n.GetAttributeTypes().GetAttributeType(entry.AttributeTypeID{pluginID, inQuery.AttributeName})
-	if !ok {
-		err := fmt.Errorf("attribute type not found")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_attribute", err, n.log)
-		return
-	}
-	userID, err := api.GetUserIDFromContext(c)
-	if err != nil {
-		err = errors.WithMessage(err, "Node: apiGetUserAttributeValue: failed to get user umid")
-		api.AbortRequest(c, http.StatusInternalServerError, "get_user_id_failed", err, n.log)
-		return
-	}
-	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
 	userAttributeID := entry.NewUserAttributeID(attributeID, targetUserID)
 
 	allowed, err := auth.CheckAttributePermissions(
@@ -166,8 +134,7 @@ func (n *Node) apiGetUserAttributeValue(c *gin.Context) {
 // @Router /api/v4/users/{user_id}/attributes [post]
 func (n *Node) apiSetUserAttributeValue(c *gin.Context) {
 	type InBody struct {
-		PluginID       string         `json:"plugin_id" binding:"required"`
-		AttributeName  string         `json:"attribute_name" binding:"required"`
+		attributes.QueryPluginAttribute
 		AttributeValue map[string]any `json:"attribute_value" binding:"required"`
 	}
 
@@ -267,8 +234,7 @@ func (n *Node) apiSetUserAttributeValue(c *gin.Context) {
 // @Router /api/v4/users/{user_id}/attributes/sub [get]
 func (n *Node) apiGetUserAttributeSubValue(c *gin.Context) {
 	type InQuery struct {
-		PluginID        string `form:"plugin_id" binding:"required"`
-		AttributeName   string `form:"attribute_name" binding:"required"`
+		attributes.QueryPluginAttribute
 		SubAttributeKey string `form:"sub_attribute_key" binding:"required"`
 	}
 
@@ -357,8 +323,7 @@ func (n *Node) apiGetUserAttributeSubValue(c *gin.Context) {
 // @Router /api/v4/users/{user_id}/attributes/sub [post]
 func (n *Node) apiSetUserAttributeSubValue(c *gin.Context) {
 	type Body struct {
-		PluginID          string `json:"plugin_id" binding:"required"`
-		AttributeName     string `json:"attribute_name" binding:"required"`
+		attributes.QueryPluginAttribute
 		SubAttributeKey   string `json:"sub_attribute_key" binding:"required"`
 		SubAttributeValue any    `json:"sub_attribute_value" binding:"required"`
 	}
@@ -463,8 +428,7 @@ func (n *Node) apiSetUserAttributeSubValue(c *gin.Context) {
 // @Router /api/v4/users/{user_id}/attributes/sub [delete]
 func (n *Node) apiRemoveUserAttributeSubValue(c *gin.Context) {
 	type Body struct {
-		PluginID        string `json:"plugin_id" binding:"required"`
-		AttributeName   string `json:"attribute_name" binding:"required"`
+		attributes.QueryPluginAttribute
 		SubAttributeKey string `json:"sub_attribute_key" binding:"required"`
 	}
 
@@ -552,8 +516,7 @@ func (n *Node) apiRemoveUserAttributeSubValue(c *gin.Context) {
 // @Router /api/v4/users/{user_id}/attributes [delete]
 func (n *Node) apiRemoveUserAttributeValue(c *gin.Context) {
 	type Body struct {
-		PluginID      string `json:"plugin_id" binding:"required"`
-		AttributeName string `json:"attribute_name" binding:"required"`
+		attributes.QueryPluginAttribute
 	}
 
 	var inBody Body

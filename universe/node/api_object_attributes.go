@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
@@ -13,15 +12,11 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe/attributes"
 	"github.com/momentum-xyz/ubercontroller/universe/auth"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 )
-
-type queryPluginAttribute struct {
-	PluginID      string `form:"plugin_id" json:"plugin_id" binding:"required"`
-	AttributeName string `form:"attribute_name" json:"attribute_name" binding:"required"`
-}
 
 // @Summary Get object attribute
 // @Schemes
@@ -29,7 +24,7 @@ type queryPluginAttribute struct {
 // @Tags objects
 // @Produce json
 // @Param object_id path string true "Object UMID"
-// @Param attribute_id query node.queryPluginAttribute true "query params"
+// @Param attribute_id query attributes.QueryPluginAttribute true "query params"
 // @Success 200 {object} entry.AttributeValue
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
@@ -56,7 +51,7 @@ func (n *Node) apiGetObjectAttributesValue(c *gin.Context) {
 		return
 	}
 
-	attrType, attributeID, err := n.apiPluginAttributeFromQuery(c)
+	attrType, attributeID, err := attributes.PluginAttributeFromQuery(c, n)
 	if err != nil {
 		err := fmt.Errorf("node: apiGetObjectAttributesValue: failed to get plugin attribute: %w", err)
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_attribute", err, n.log)
@@ -93,7 +88,7 @@ func (n *Node) apiGetObjectAttributesValue(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object UMID"
-// @Param query query node.queryPluginAttribute true "query params"
+// @Param query query attributes.QueryPluginAttribute true "query params"
 // @Success 200 {object} dto.ObjectAttributeValues
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
@@ -114,7 +109,7 @@ func (n *Node) apiGetObjectWithChildrenAttributeValues(c *gin.Context) {
 		return
 	}
 
-	attrType, attributeID, err := n.apiPluginAttributeFromQuery(c)
+	attrType, attributeID, err := attributes.PluginAttributeFromQuery(c, n)
 	if err != nil {
 		err := fmt.Errorf("node: apiGetObjectWithChildrenAttributeValues: failed to get plugin attribute: %w", err)
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_attribute", err, n.log)
@@ -164,7 +159,7 @@ func (n *Node) apiGetObjectWithChildrenAttributeValues(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object UMID"
-// @Param body body node.queryPluginAttribute true "body params"
+// @Param body body attributes.QueryPluginAttribute true "body params"
 // @Success 202 {object} dto.ObjectSubOptions
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
@@ -192,7 +187,7 @@ func (n *Node) apiSetObjectAttributesPublic(c *gin.Context) {
 		return
 	}
 
-	attrType, attributeID, err := n.apiPluginAttributeFromQuery(c)
+	attrType, attributeID, err := attributes.PluginAttributeFromQuery(c, n)
 	if err != nil {
 		err := fmt.Errorf("node: apiGetObjectWithChildrenAttributeValues: failed to get plugin attribute: %w", err)
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_attribute", err, n.log)
@@ -267,7 +262,7 @@ func (n *Node) apiSetObjectAttributesPublic(c *gin.Context) {
 // @Router /api/v4/objects/{object_id}/attributes [post]
 func (n *Node) apiSetObjectAttributesValue(c *gin.Context) {
 	type InBody struct {
-		queryPluginAttribute
+		attributes.QueryPluginAttribute
 		AttributeValue map[string]any `json:"attribute_value" binding:"required"`
 	}
 
@@ -370,7 +365,7 @@ func (n *Node) apiSetObjectAttributesValue(c *gin.Context) {
 // @Router /api/v4/objects/{object_id}/attributes/sub [get]
 func (n *Node) apiGetObjectAttributeSubValue(c *gin.Context) {
 	type InQuery struct {
-		queryPluginAttribute
+		attributes.QueryPluginAttribute
 		SubAttributeKey string `form:"sub_attribute_key" binding:"required"`
 	}
 
@@ -464,7 +459,7 @@ func (n *Node) apiGetObjectAttributeSubValue(c *gin.Context) {
 // @Router /api/v4/objects/{object_id}/attributes/sub [post]
 func (n *Node) apiSetObjectAttributeSubValue(c *gin.Context) {
 	type Body struct {
-		queryPluginAttribute
+		attributes.QueryPluginAttribute
 		SubAttributeKey   string `json:"sub_attribute_key" binding:"required"`
 		SubAttributeValue any    `json:"sub_attribute_value" binding:"required"`
 	}
@@ -573,7 +568,7 @@ func (n *Node) apiSetObjectAttributeSubValue(c *gin.Context) {
 // @Router /api/v4/objects/{object_id}/attributes/sub [delete]
 func (n *Node) apiRemoveObjectAttributeSubValue(c *gin.Context) {
 	type Body struct {
-		queryPluginAttribute
+		attributes.QueryPluginAttribute
 		SubAttributeKey string `json:"sub_attribute_key" binding:"required"`
 	}
 
@@ -657,7 +652,7 @@ func (n *Node) apiRemoveObjectAttributeSubValue(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object UMID"
-// @Param body body node.queryPluginAttribute true "body params"
+// @Param body body attributes.QueryPluginAttribute true "body params"
 // @Success 200 {object} nil
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
@@ -684,7 +679,7 @@ func (n *Node) apiRemoveObjectAttributeValue(c *gin.Context) {
 		return
 	}
 
-	attrType, attributeID, err := n.apiPluginAttributeFromQuery(c)
+	attrType, attributeID, err := attributes.PluginAttributeFromQuery(c, n)
 	if err != nil {
 		err := fmt.Errorf("node: apiGetObjectAttributesValue: failed to get plugin attribute: %w", err)
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_attribute", err, n.log)
@@ -713,25 +708,4 @@ func (n *Node) apiRemoveObjectAttributeValue(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, nil)
-}
-
-// TODO: refactor this whole file to an object_attribute package,
-// so we don't need these kinds of silly names to avoid collisions.
-func (n *Node) apiPluginAttributeFromQuery(c *gin.Context) (universe.AttributeType, entry.AttributeID, error) {
-	var attrID entry.AttributeID
-	inQuery := queryPluginAttribute{}
-	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		return nil, attrID, fmt.Errorf("failed to bind query: %w", err)
-	}
-	pluginID, err := umid.Parse(inQuery.PluginID)
-	if err != nil {
-		return nil, attrID, fmt.Errorf("failed to parse plugin ID: %w", err)
-	}
-	attrType, ok := n.GetAttributeTypes().GetAttributeType(
-		entry.AttributeTypeID{PluginID: pluginID, Name: inQuery.AttributeName})
-	if !ok {
-		return nil, attrID, fmt.Errorf("attribute type for %+v not found", inQuery)
-	}
-	attrID = entry.NewAttributeID(pluginID, inQuery.AttributeName)
-	return attrType, attrID, nil
 }

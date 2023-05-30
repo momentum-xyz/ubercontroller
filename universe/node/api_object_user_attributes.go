@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe/attributes"
 	"github.com/momentum-xyz/ubercontroller/universe/auth"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
@@ -22,23 +23,17 @@ import (
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object UMID"
-// @Param query query node.apiGetObjectUserAttributesValue.InQuery true "query params"
+// @Param query query attributes.QueryPluginAttribute true "query params"
 // @Success 200 {object} entry.AttributeValue
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/{user_id}/attributes [get]
 func (n *Node) apiGetObjectUserAttributesValue(c *gin.Context) {
-	type InQuery struct {
-		PluginID      string `form:"plugin_id" binding:"required"`
-		AttributeName string `form:"attribute_name" binding:"required"`
-	}
-
-	inQuery := InQuery{}
-
-	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributesValue: failed to bind query")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "user from context")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user", err, n.log)
 		return
 	}
 
@@ -56,27 +51,14 @@ func (n *Node) apiGetObjectUserAttributesValue(c *gin.Context) {
 		return
 	}
 
-	pluginID, err := umid.Parse(inQuery.PluginID)
+	attrType, attributeID, err := attributes.PluginAttributeFromQuery(c, n)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributesValue: failed to parse plugin umid")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
-		return
-	}
-	attrType, ok := n.GetAttributeTypes().GetAttributeType(entry.AttributeTypeID{pluginID, inQuery.AttributeName})
-	if !ok {
-		err := fmt.Errorf("attribute type not found")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_attribute", err, n.log)
+		err := fmt.Errorf("failed to get plugin attribute from query: %w", err)
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_attribute", err, n.log)
 		return
 	}
 
-	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
 	objectUserAttributeID := entry.NewObjectUserAttributeID(attributeID, objectID, targetUserID)
-	userID, err := api.GetUserIDFromContext(c)
-	if err != nil {
-		err := errors.WithMessage(err, "user from context")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_user", err, n.log)
-		return
-	}
 
 	allowed, err := auth.CheckAttributePermissions(
 		c, *attrType.GetEntry(), n.GetObjectUserAttributes(), objectUserAttributeID, userID,
@@ -116,8 +98,7 @@ func (n *Node) apiGetObjectUserAttributesValue(c *gin.Context) {
 // @Router /api/v4/objects/{object_id}/{user_id}/attributes [post]
 func (n *Node) apiSetObjectUserAttributesValue(c *gin.Context) {
 	type InBody struct {
-		PluginID       string         `json:"plugin_id" binding:"required"`
-		AttributeName  string         `json:"attribute_name" binding:"required"`
+		attributes.QueryPluginAttribute
 		AttributeValue map[string]any `json:"attribute_value" binding:"required"`
 	}
 
@@ -223,8 +204,7 @@ func (n *Node) apiSetObjectUserAttributesValue(c *gin.Context) {
 // @Router /api/v4/objects/{object_id}/{user_id}/attributes/sub [get]
 func (n *Node) apiGetObjectUserAttributeSubValue(c *gin.Context) {
 	type InQuery struct {
-		PluginID        string `form:"plugin_id" binding:"required"`
-		AttributeName   string `form:"attribute_name" binding:"required"`
+		attributes.QueryPluginAttribute
 		SubAttributeKey string `form:"sub_attribute_key" binding:"required"`
 	}
 
@@ -321,8 +301,7 @@ func (n *Node) apiGetObjectUserAttributeSubValue(c *gin.Context) {
 // @Router /api/v4/objects/{object_id}/{user_id}/attributes/sub [post]
 func (n *Node) apiSetObjectUserAttributeSubValue(c *gin.Context) {
 	type Body struct {
-		PluginID          string `json:"plugin_id" binding:"required"`
-		AttributeName     string `json:"attribute_name" binding:"required"`
+		attributes.QueryPluginAttribute
 		SubAttributeKey   string `json:"sub_attribute_key" binding:"required"`
 		SubAttributeValue any    `json:"sub_attribute_value" binding:"required"`
 	}
@@ -433,8 +412,7 @@ func (n *Node) apiSetObjectUserAttributeSubValue(c *gin.Context) {
 // @Router /api/v4/objects/{object_id}/{user_id}/attributes/sub [delete]
 func (n *Node) apiRemoveObjectUserAttributeSubValue(c *gin.Context) {
 	type Body struct {
-		PluginID        string `json:"plugin_id" binding:"required"`
-		AttributeName   string `json:"attribute_name" binding:"required"`
+		attributes.QueryPluginAttribute
 		SubAttributeKey string `json:"sub_attribute_key" binding:"required"`
 	}
 
@@ -530,8 +508,7 @@ func (n *Node) apiRemoveObjectUserAttributeSubValue(c *gin.Context) {
 // @Router /api/v4/objects/{object_id}/{user_id}/attributes [delete]
 func (n *Node) apiRemoveObjectUserAttributeValue(c *gin.Context) {
 	type Body struct {
-		PluginID      string `json:"plugin_id" binding:"required"`
-		AttributeName string `json:"attribute_name" binding:"required"`
+		attributes.QueryPluginAttribute
 	}
 
 	var inBody Body
@@ -607,23 +584,17 @@ func (n *Node) apiRemoveObjectUserAttributeValue(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object UMID"
-// @Param query query node.apiGetObjectAllUsersAttributeValuesList.InQuery true "query params"
+// @Param query query attributes.QueryPluginAttribute true "query params"
 // @Success 200 {object} map[umid.UMID]entry.AttributeValue
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/all-users/attributes [get]
 func (n *Node) apiGetObjectAllUsersAttributeValuesList(c *gin.Context) {
-	type InQuery struct {
-		PluginID      string `form:"plugin_id" binding:"required"`
-		AttributeName string `form:"attribute_name" binding:"required"`
-	}
-
-	inQuery := InQuery{}
-
-	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		err := errors.WithMessage(err, "Node: apiGetObjectAllUsersAttributeValuesList: failed to bind query")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "user from context")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user", err, n.log)
 		return
 	}
 
@@ -634,22 +605,10 @@ func (n *Node) apiGetObjectAllUsersAttributeValuesList(c *gin.Context) {
 		return
 	}
 
-	pluginID, err := umid.Parse(inQuery.PluginID)
+	attrType, attributeID, err := attributes.PluginAttributeFromQuery(c, n)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiGetObjectAllUsersAttributeValuesList: failed to parse plugin umid")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
-		return
-	}
-	attrType, ok := n.GetAttributeTypes().GetAttributeType(entry.AttributeTypeID{pluginID, inQuery.AttributeName})
-	if !ok {
-		err := fmt.Errorf("attribute type not found")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_attribute", err, n.log)
-		return
-	}
-	userID, err := api.GetUserIDFromContext(c)
-	if err != nil {
-		err := errors.WithMessage(err, "user from context")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_user", err, n.log)
+		err := fmt.Errorf("failed to get plugin attribute: %w", err)
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_attribute", err, n.log)
 		return
 	}
 
@@ -666,8 +625,7 @@ func (n *Node) apiGetObjectAllUsersAttributeValuesList(c *gin.Context) {
 	}
 
 	sua, err := n.db.GetObjectUserAttributesDB().GetObjectUserAttributesByObjectAttributeID(
-		n.ctx, entry.NewObjectAttributeID(entry.NewAttributeID(pluginID, inQuery.AttributeName), objectID),
-	)
+		n.ctx, entry.NewObjectAttributeID(attributeID, objectID))
 	if err != nil {
 		err := errors.WithMessage(
 			err, "Node: apiGetObjectAllUsersAttributeValuesList: failed to get object user attributes",
