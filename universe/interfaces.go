@@ -285,14 +285,14 @@ type UserObjects interface {
 }
 
 type AttributeOptionsGetter[ID comparable] interface {
+	// Get the options set directly on this object.
 	GetOptions(attributeID ID) (*entry.AttributeOptions, bool)
+	// Get the merged options of this object and its parent type.
 	GetEffectiveOptions(attributeID ID) (*entry.AttributeOptions, bool)
 }
 
 type AttributeUserRoleGetter[T comparable] interface {
 	// Retrieve roles a user has on an plugin attribute.
-	// This can be an existing attribute (given attrID)
-	// or before creating a new one (attrId is nil)
 	GetUserRoles(
 		ctx context.Context,
 		attrType entry.AttributeType,

@@ -22,7 +22,7 @@ import (
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object UMID"
-// @Param query query node.apiGetObjectAttributesValue.InQuery true "query params"
+// @Param query query node.apiGetObjectUserAttributesValue.InQuery true "query params"
 // @Success 200 {object} entry.AttributeValue
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
@@ -108,7 +108,7 @@ func (n *Node) apiGetObjectUserAttributesValue(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object UMID"
-// @Param body body node.apiSetObjectAttributesValue.InBody true "body params"
+// @Param body body node.apiSetObjectUserAttributesValue.InBody true "body params"
 // @Success 202 {object} entry.AttributeValue
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
@@ -215,7 +215,7 @@ func (n *Node) apiSetObjectUserAttributesValue(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object UMID"
-// @Param query query node.apiGetObjectAttributeSubValue.InQuery true "query params"
+// @Param query query node.apiGetObjectUserAttributeSubValue.InQuery true "query params"
 // @Success 200 {object} dto.ObjectSubAttributes
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
@@ -313,7 +313,7 @@ func (n *Node) apiGetObjectUserAttributeSubValue(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object UMID"
-// @Param body body node.apiSetObjectAttributeSubValue.Body true "body params"
+// @Param body body node.apiSetObjectUserAttributeSubValue.Body true "body params"
 // @Success 202 {object} dto.ObjectSubAttributes
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
@@ -425,7 +425,7 @@ func (n *Node) apiSetObjectUserAttributeSubValue(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object UMID"
-// @Param body body node.apiRemoveObjectAttributeSubValue.Body true "body params"
+// @Param body body node.apiRemoveObjectUserAttributeSubValue.Body true "body params"
 // @Success 200 {object} nil
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
@@ -522,7 +522,7 @@ func (n *Node) apiRemoveObjectUserAttributeSubValue(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object UMID"
-// @Param body body node.apiRemoveObjectAttributeValue.Body true "body params"
+// @Param body body node.apiRemoveObjectUserAttributeValue.Body true "body params"
 // @Success 200 {object} nil
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
