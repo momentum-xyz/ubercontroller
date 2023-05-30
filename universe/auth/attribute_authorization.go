@@ -36,10 +36,10 @@ type AttributePermissionsAuthorizer[T comparable] interface {
 }
 
 // Check authorization for an operation on an plugin attribute.
-func CheckAttributePermissions[ID comparable](
+func CheckAttributePermissions[ID comparable, S AttributePermissionsAuthorizer[ID]](
 	ctx context.Context,
 	attrType entry.AttributeType,
-	attrStore AttributePermissionsAuthorizer[ID],
+	attrStore S,
 	targetID ID,
 	userID umid.UMID, // The user executing
 	opType operationType,
@@ -66,10 +66,10 @@ func CheckAttributePermissions[ID comparable](
 }
 
 // Check if user is authorized to read all attributes.
-func CheckReadAllPermissions[ID comparable](
+func CheckReadAllPermissions[ID comparable, T AttributePermissionsAuthorizer[ID]](
 	ctx context.Context,
 	attrType entry.AttributeType,
-	attrStore AttributePermissionsAuthorizer[ID],
+	attrStore T,
 	userID umid.UMID, // The user executing
 ) (bool, error) {
 	// This is an edge case, that is a big TODO to do properly.

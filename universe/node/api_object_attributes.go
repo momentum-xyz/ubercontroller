@@ -63,10 +63,8 @@ func (n *Node) apiGetObjectAttributesValue(c *gin.Context) {
 		return
 	}
 
-	var a auth.AttributePermissionsAuthorizer[entry.AttributeID]
-	a = object.GetObjectAttributes() //TODO: generics getter
 	allowed, err := auth.CheckAttributePermissions(
-		c, *attrType.GetEntry(), a, attributeID, userID,
+		c, *attrType.GetEntry(), object.GetObjectAttributes(), attributeID, userID,
 		auth.ReadOperation)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: permissions check")
@@ -131,10 +129,8 @@ func (n *Node) apiGetObjectWithChildrenAttributeValues(c *gin.Context) {
 	}
 
 	// TODO: either remove this API method, or implement recursive permission checks...
-	var a auth.AttributePermissionsAuthorizer[entry.AttributeID]
-	a = rootObject.GetObjectAttributes() //TODO: generics getter
-	allowed, err := auth.CheckReadAllPermissions(
-		c, *attrType.GetEntry(), a, userID)
+	allowed, err := auth.CheckReadAllPermissions[entry.AttributeID](
+		c, *attrType.GetEntry(), rootObject.GetObjectAttributes(), userID)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: permissions check")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_permissions_check", err, n.log)
@@ -203,10 +199,8 @@ func (n *Node) apiSetObjectAttributesPublic(c *gin.Context) {
 		return
 	}
 
-	var a auth.AttributePermissionsAuthorizer[entry.AttributeID]
-	a = object.GetObjectAttributes() //TODO: generics getter
 	allowed, err := auth.CheckAttributePermissions(
-		c, *attrType.GetEntry(), a, attributeID, userID,
+		c, *attrType.GetEntry(), object.GetObjectAttributes(), attributeID, userID,
 		auth.WriteOperation)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: permissions check")
@@ -318,10 +312,8 @@ func (n *Node) apiSetObjectAttributesValue(c *gin.Context) {
 		return
 	}
 
-	var a auth.AttributePermissionsAuthorizer[entry.AttributeID]
-	a = object.GetObjectAttributes() //TODO: generics getter
 	allowed, err := auth.CheckAttributePermissions(
-		c, *attrType.GetEntry(), a, attributeID, userID,
+		c, *attrType.GetEntry(), object.GetParent().GetObjectAttributes(), attributeID, userID,
 		auth.WriteOperation)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: permissions check")
@@ -424,10 +416,8 @@ func (n *Node) apiGetObjectAttributeSubValue(c *gin.Context) {
 	}
 	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
 
-	var a auth.AttributePermissionsAuthorizer[entry.AttributeID]
-	a = object.GetObjectAttributes() //TODO: generics getter
 	allowed, err := auth.CheckAttributePermissions(
-		c, *attrType.GetEntry(), a, attributeID, userID,
+		c, *attrType.GetEntry(), object.GetObjectAttributes(), attributeID, userID,
 		auth.ReadOperation)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: permissions check")
@@ -628,10 +618,8 @@ func (n *Node) apiRemoveObjectAttributeSubValue(c *gin.Context) {
 	}
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
 
-	var a auth.AttributePermissionsAuthorizer[entry.AttributeID]
-	a = object.GetObjectAttributes() //TODO: generics getter
 	allowed, err := auth.CheckAttributePermissions(
-		c, *attrType.GetEntry(), a, attributeID, userID,
+		c, *attrType.GetEntry(), object.GetObjectAttributes(), attributeID, userID,
 		auth.WriteOperation)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: permissions check")
@@ -703,10 +691,8 @@ func (n *Node) apiRemoveObjectAttributeValue(c *gin.Context) {
 		return
 	}
 
-	var a auth.AttributePermissionsAuthorizer[entry.AttributeID]
-	a = object.GetObjectAttributes() //TODO: generics getter
 	allowed, err := auth.CheckAttributePermissions(
-		c, *attrType.GetEntry(), a, attributeID, userID,
+		c, *attrType.GetEntry(), object.GetObjectAttributes(), attributeID, userID,
 		auth.WriteOperation)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: permissions check")

@@ -74,10 +74,8 @@ func (n *Node) apiSetUserUserSubAttributeValue(c *gin.Context) {
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
 	userUserAttributeID := entry.NewUserUserAttributeID(attributeID, sourceID, targetID)
 
-	var a auth.AttributePermissionsAuthorizer[entry.UserUserAttributeID]
-	a = n.GetUserUserAttributes() //TODO: generics getter
 	allowed, err := auth.CheckAttributePermissions(
-		c, *attrType.GetEntry(), a, userUserAttributeID, userID,
+		c, *attrType.GetEntry(), n.GetUserUserAttributes(), userUserAttributeID, userID,
 		auth.WriteOperation)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiSetUserUserSubAttributeValue: permissions check")

@@ -78,10 +78,8 @@ func (n *Node) apiGetObjectUserAttributesValue(c *gin.Context) {
 		return
 	}
 
-	var a auth.AttributePermissionsAuthorizer[entry.ObjectUserAttributeID]
-	a = n.GetObjectUserAttributes() //TODO: generics getter
 	allowed, err := auth.CheckAttributePermissions(
-		c, *attrType.GetEntry(), a, objectUserAttributeID, userID,
+		c, *attrType.GetEntry(), n.GetObjectUserAttributes(), objectUserAttributeID, userID,
 		auth.ReadOperation)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributesValue: permissions check")
@@ -166,10 +164,8 @@ func (n *Node) apiSetObjectUserAttributesValue(c *gin.Context) {
 		return
 	}
 
-	var a auth.AttributePermissionsAuthorizer[entry.ObjectUserAttributeID]
-	a = n.GetObjectUserAttributes() //TODO: generics getter
 	allowed, err := auth.CheckAttributePermissions(
-		c, *attrType.GetEntry(), a, objectUserAttributeID, userID,
+		c, *attrType.GetEntry(), n.GetObjectUserAttributes(), objectUserAttributeID, userID,
 		auth.WriteOperation)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributesValue: permissions check")
@@ -275,10 +271,8 @@ func (n *Node) apiGetObjectUserAttributeSubValue(c *gin.Context) {
 		return
 	}
 
-	var a auth.AttributePermissionsAuthorizer[entry.ObjectUserAttributeID]
-	a = n.GetObjectUserAttributes() //TODO: generics getter
 	allowed, err := auth.CheckAttributePermissions(
-		c, *attrType.GetEntry(), a, objectUserAttributeID, userID,
+		c, *attrType.GetEntry(), n.GetObjectUserAttributes(), objectUserAttributeID, userID,
 		auth.ReadOperation)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributesValue: permissions check")
@@ -376,10 +370,8 @@ func (n *Node) apiSetObjectUserAttributeSubValue(c *gin.Context) {
 		return
 	}
 
-	var a auth.AttributePermissionsAuthorizer[entry.ObjectUserAttributeID]
-	a = n.GetObjectUserAttributes() //TODO: generics getter
 	allowed, err := auth.CheckAttributePermissions(
-		c, *attrType.GetEntry(), a, objectUserAttributeID, userID,
+		c, *attrType.GetEntry(), n.GetObjectUserAttributes(), objectUserAttributeID, userID,
 		auth.WriteOperation)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributesValue: permissions check")
@@ -489,10 +481,8 @@ func (n *Node) apiRemoveObjectUserAttributeSubValue(c *gin.Context) {
 		return
 	}
 
-	var a auth.AttributePermissionsAuthorizer[entry.ObjectUserAttributeID]
-	a = n.GetObjectUserAttributes() //TODO: generics getter
 	allowed, err := auth.CheckAttributePermissions(
-		c, *attrType.GetEntry(), a, objectUserAttributeID, userID,
+		c, *attrType.GetEntry(), n.GetObjectUserAttributes(), objectUserAttributeID, userID,
 		auth.WriteOperation)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributesValue: permissions check")
@@ -586,10 +576,8 @@ func (n *Node) apiRemoveObjectUserAttributeValue(c *gin.Context) {
 		return
 	}
 
-	var a auth.AttributePermissionsAuthorizer[entry.ObjectUserAttributeID]
-	a = n.GetObjectUserAttributes() //TODO: generics getter
 	allowed, err := auth.CheckAttributePermissions(
-		c, *attrType.GetEntry(), a, objectUserAttributeID, userID,
+		c, *attrType.GetEntry(), n.GetObjectUserAttributes(), objectUserAttributeID, userID,
 		auth.WriteOperation)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributesValue: permissions check")
@@ -665,10 +653,8 @@ func (n *Node) apiGetObjectAllUsersAttributeValuesList(c *gin.Context) {
 		return
 	}
 
-	var a auth.AttributePermissionsAuthorizer[entry.ObjectUserAttributeID]
-	a = n.GetObjectUserAttributes() //TODO: generics getter
-	allowed, err := auth.CheckReadAllPermissions(
-		c, *attrType.GetEntry(), a, userID)
+	allowed, err := auth.CheckReadAllPermissions[entry.ObjectUserAttributeID](
+		c, *attrType.GetEntry(), n.GetObjectUserAttributes(), userID)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributesValue: permissions check")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_permissions_check", err, n.log)

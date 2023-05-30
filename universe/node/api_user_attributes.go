@@ -128,10 +128,8 @@ func (n *Node) apiGetUserAttributeValue(c *gin.Context) {
 	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
 	userAttributeID := entry.NewUserAttributeID(attributeID, targetUserID)
 
-	var a auth.AttributePermissionsAuthorizer[entry.UserAttributeID]
-	a = n.GetUserAttributes() // TODO: generics
 	allowed, err := auth.CheckAttributePermissions(
-		c, *attrType.GetEntry(), a, userAttributeID, userID,
+		c, *attrType.GetEntry(), n.GetUserAttributes(), userAttributeID, userID,
 		auth.ReadOperation,
 	)
 	if err != nil {
@@ -209,10 +207,8 @@ func (n *Node) apiSetUserAttributeValue(c *gin.Context) {
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
 	userAttributeID := entry.NewUserAttributeID(attributeID, targetUserID)
 
-	var a auth.AttributePermissionsAuthorizer[entry.UserAttributeID]
-	a = n.GetUserAttributes() // TODO: generics
 	allowed, err := auth.CheckAttributePermissions(
-		c, *attrType.GetEntry(), a, userAttributeID, userID,
+		c, *attrType.GetEntry(), n.GetUserAttributes(), userAttributeID, userID,
 		auth.WriteOperation,
 	)
 	if err != nil {
@@ -312,10 +308,8 @@ func (n *Node) apiGetUserAttributeSubValue(c *gin.Context) {
 	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
 	userAttributeID := entry.NewUserAttributeID(attributeID, targetUserID)
 
-	var a auth.AttributePermissionsAuthorizer[entry.UserAttributeID]
-	a = n.GetUserAttributes() // TODO: generics
 	allowed, err := auth.CheckAttributePermissions(
-		c, *attrType.GetEntry(), a, userAttributeID, userID,
+		c, *attrType.GetEntry(), n.GetUserAttributes(), userAttributeID, userID,
 		auth.ReadOperation,
 	)
 	if err != nil {
@@ -405,10 +399,8 @@ func (n *Node) apiSetUserAttributeSubValue(c *gin.Context) {
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
 	userAttributeID := entry.NewUserAttributeID(attributeID, targetUserID)
 
-	var a auth.AttributePermissionsAuthorizer[entry.UserAttributeID]
-	a = n.GetUserAttributes() // TODO: generics
 	allowed, err := auth.CheckAttributePermissions(
-		c, *attrType.GetEntry(), a, userAttributeID, userID,
+		c, *attrType.GetEntry(), n.GetUserAttributes(), userAttributeID, userID,
 		auth.WriteOperation,
 	)
 	if err != nil {
@@ -512,10 +504,8 @@ func (n *Node) apiRemoveUserAttributeSubValue(c *gin.Context) {
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
 	userAttributeID := entry.NewUserAttributeID(attributeID, targetUserID)
 
-	var a auth.AttributePermissionsAuthorizer[entry.UserAttributeID]
-	a = n.GetUserAttributes() // TODO: generics
 	allowed, err := auth.CheckAttributePermissions(
-		c, *attrType.GetEntry(), a, userAttributeID, userID,
+		c, *attrType.GetEntry(), n.GetUserAttributes(), userAttributeID, userID,
 		auth.WriteOperation,
 	)
 	if err != nil {
@@ -601,10 +591,8 @@ func (n *Node) apiRemoveUserAttributeValue(c *gin.Context) {
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
 	userAttributeID := entry.NewUserAttributeID(attributeID, targetUserID)
 
-	var a auth.AttributePermissionsAuthorizer[entry.UserAttributeID]
-	a = n.GetUserAttributes() // TODO: generics
 	allowed, err := auth.CheckAttributePermissions(
-		c, *attrType.GetEntry(), a, userAttributeID, userID,
+		c, *attrType.GetEntry(), n.GetUserAttributes(), userAttributeID, userID,
 		auth.WriteOperation,
 	)
 	if err != nil {
