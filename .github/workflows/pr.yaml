@@ -1,0 +1,25 @@
+name: PR checks
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+  pull-requests: read
+jobs:
+  checks:
+    name: Checks
+    runs-on: self-hosted  # ubuntu-latest
+    steps:
+      - uses: actions/checkout@24cb9080177205b6e8c946b17badbe402adc938f  # v3.40
+      - uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9  # v4.0.0
+        with:
+          go-version-file: 'go.mod'
+          cache: false  # does not help on self-hosted
+      - name: Run tests
+        run: make test
+      - name: Test build
+        run: make build
+      - name: Check dirty git
+        run: git diff --no-ext-diff --quiet
+      - name: Sanity check build
+        run: ./bin/controller -h

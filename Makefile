@@ -19,7 +19,7 @@ run: build
 	./bin/ubercontroller
 
 test:
-	go test -v -race ./...
+	go test -v -race -coverprofile=build/coverage.txt $$(go list ./... | grep -v  -E "ubercontroller/(build|cmd|docs)")
 
 build-docs:
 	swag init -g api.go -d universe/node,./,universe/streamchat -o build/docs/
