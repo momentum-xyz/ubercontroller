@@ -28,6 +28,6 @@ jobs:
       - name: Check dirty git
         run: git diff --no-ext-diff --quiet
       - name: Sanity check build
-        run: ./bin/controller -h
+        run: ./bin/ubercontroller -h
       - name: Test build docs
         run: make build-docs
