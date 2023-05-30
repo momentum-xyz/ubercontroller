@@ -212,9 +212,9 @@ func (n *Node) apiSetObjectUserAttributesValue(c *gin.Context) {
 	c.JSON(http.StatusAccepted, objectUserAttribute.Value)
 }
 
-// @Summary Get object sub attributes
+// @Summary Get object user sub attribute
 // @Schemes
-// @Description Returns object sub attributes
+// @Description Returns object user sub attributes
 // @Tags objects
 // @Accept json
 // @Produce json
