@@ -299,6 +299,11 @@ func (n *Node) apiSetObjectAttributesValue(c *gin.Context) {
 		return
 	}
 	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "user from context")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user", err, n.log)
+		return
+	}
 	attrType, ok := n.GetAttributeTypes().GetAttributeType(entry.AttributeTypeID{pluginID, inBody.AttributeName})
 	if !ok {
 		err := fmt.Errorf("attribute type not found")
@@ -412,6 +417,11 @@ func (n *Node) apiGetObjectAttributeSubValue(c *gin.Context) {
 		return
 	}
 	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "user from context")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user", err, n.log)
+		return
+	}
 	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
 
 	var a auth.AttributePermissionsAuthorizer[entry.AttributeID]
@@ -503,12 +513,15 @@ func (n *Node) apiSetObjectAttributeSubValue(c *gin.Context) {
 		return
 	}
 	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "user from context")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user", err, n.log)
+		return
+	}
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
 
-	var a auth.AttributePermissionsAuthorizer[entry.AttributeID]
-	a = object.GetObjectAttributes() //TODO: generics getter
 	allowed, err := auth.CheckAttributePermissions(
-		c, *attrType.GetEntry(), a, attributeID, userID,
+		c, *attrType.GetEntry(), object.GetObjectAttributes(), attributeID, userID,
 		auth.WriteOperation)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: permissions check")
@@ -608,6 +621,11 @@ func (n *Node) apiRemoveObjectAttributeSubValue(c *gin.Context) {
 		return
 	}
 	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "user from context")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user", err, n.log)
+		return
+	}
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
 
 	var a auth.AttributePermissionsAuthorizer[entry.AttributeID]
