@@ -36,9 +36,12 @@ type IHarvester2 interface {
 	AddTokenListener(bcType BCType, contract Address, listener TokenListener) error
 	AddNFTListener(bcType BCType, contract Address, listener NFTListener) error
 	AddStakeListener(bcType BCType, contract Address, listener StakeListener) error
+
+	GetWalletTokenData(bcType BCType, contract Address, wallet Address) (*TokenData, error)
+	GetWalletNFTData(bcType BCType, contract Address, wallet Address) (*NFTData, error)
 }
 
-type TokenListener func(events []TokenData)
+type TokenListener func(events []*TokenData)
 type NFTListener func(events []*NFTData)
 type StakeListener func(events []*StakeData)
 

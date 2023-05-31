@@ -94,25 +94,50 @@ func (h *Harvester2) RemoveStakeContract(bcType BCType, contract Address) error 
 	return nil
 }
 
-func (h *Harvester2) AddTokenListener(bcType BCType, contract Address, listener TokenListener) error {
+func (h *Harvester2) AddTokenListener(bcType BCType, contract Address, event string, listener TokenListener) error {
 	if _, ok := h.bc[bcType]; !ok {
 		return errors.New("failed to add token listener, adapter not registered")
 	}
 
-	return h.bc[bcType].AddTokenListener(contract, listener)
+	return h.bc[bcType].AddTokenListener(contract, event, listener)
 }
 
-func (h *Harvester2) AddNFTListener(bcType BCType, contract Address, listener NFTListener) error {
+func (h *Harvester2) AddNFTListener(bcType BCType, contract Address, event string, listener NFTListener) error {
 	if _, ok := h.bc[bcType]; !ok {
 		return errors.New("failed to add nft listener, adapter not registered")
 	}
 
-	return nil
+	return h.bc[bcType].AddNFTListener(contract, event, listener)
 }
+
+//func (h *Harvester2) AddWalletNFTListener(bcType BCType, contract Address, event string, listener NFTListener) error {
+//	if _, ok := h.bc[bcType]; !ok {
+//		return errors.New("failed to add  wallet nft listener, adapter not registered")
+//	}
+//
+//	return nil
+//}
+
 func (h *Harvester2) AddStakeListener(bcType BCType, contract Address, listener StakeListener) error {
 	if _, ok := h.bc[bcType]; !ok {
 		return errors.New("failed to add stake listener, adapter not registered")
 	}
 
 	return nil
+}
+
+func (h *Harvester2) GetWalletTokenData(bcType BCType, contract Address, wallet Address) (*TokenData, error) {
+	if _, ok := h.bc[bcType]; !ok {
+		return nil, errors.New("failed to GetWalletTokenData, adapter not registered")
+	}
+
+	return h.bc[bcType].GetWalletTokenData(contract, wallet)
+}
+
+func (h *Harvester2) GetWalletNFTData(bcType BCType, contract Address, wallet Address) (*NFTData, error) {
+	if _, ok := h.bc[bcType]; !ok {
+		return nil, errors.New("failed to GetWalletNFTData, adapter not registered")
+	}
+
+	return h.bc[bcType].GetWalletNFTData(contract, wallet)
 }
