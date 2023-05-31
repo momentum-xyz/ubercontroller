@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe/attributes"
 	"github.com/momentum-xyz/ubercontroller/universe/auth"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
@@ -25,8 +26,7 @@ import (
 // @Router /api/v4/users/attributes/sub/{user_id}/{target_id} [post]
 func (n *Node) apiSetUserUserSubAttributeValue(c *gin.Context) {
 	type InBody struct {
-		PluginID          string `json:"plugin_id" binding:"required"`
-		AttributeName     string `json:"attribute_name" binding:"required"`
+		attributes.QueryPluginAttribute
 		SubAttributeKey   string `json:"sub_attribute_key" binding:"required"`
 		SubAttributeValue any    `json:"sub_attribute_value" binding:"required"`
 	}
