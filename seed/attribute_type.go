@@ -130,7 +130,12 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			pluginID:      universe.GetKusamaPluginID(),
 			attributeName: "wallet",
 			description:   "Kusama/Substrate wallet",
-			options:       nil,
+			options: &entry.AttributeOptions{
+				"permissions": entry.PermissionsAttributeOption{
+					Read:  string(entry.PermissionAdmin),
+					Write: string(entry.PermissionAdmin),
+				},
+			},
 		},
 		//
 		{
