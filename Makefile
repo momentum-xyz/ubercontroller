@@ -19,10 +19,11 @@ run: build
 	./bin/ubercontroller
 
 test:
-	go test -v -race ./...
+	mkdir -p build
+	go test -v -race -coverprofile=build/coverage.txt $$(go list ./... | grep -v  -E "ubercontroller/(build|cmd|docs)")
 
 build-docs:
-	swag init -g api.go -d universe/node,./,universe/streamchat -o build/docs/
+	go run github.com/swaggo/swag/cmd/swag@v1.8.8 init -g api.go -d universe/node,./,universe/streamchat -o build/docs/
 
 docker-build: DOCKER_BUILDKIT=1
 docker-build:

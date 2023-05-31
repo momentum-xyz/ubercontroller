@@ -284,11 +284,29 @@ type UserObjects interface {
 	RemoveMany(userObjectIDs []entry.UserObjectID, updateDB bool) (bool, error)
 }
 
+type AttributeOptionsGetter[ID comparable] interface {
+	// Get the options set directly on this object.
+	GetOptions(attributeID ID) (*entry.AttributeOptions, bool)
+	// Get the merged options of this object and its parent type.
+	GetEffectiveOptions(attributeID ID) (*entry.AttributeOptions, bool)
+}
+
+type AttributeUserRoleGetter[T comparable] interface {
+	// Retrieve roles a user has on an plugin attribute.
+	GetUserRoles(
+		ctx context.Context,
+		attrType entry.AttributeType,
+		targetID T,
+		userID umid.UMID,
+	) ([]entry.PermissionsRoleType, error)
+}
+
 type Attributes[ID comparable] interface {
+	AttributeUserRoleGetter[ID]
+	AttributeOptionsGetter[ID]
+
 	GetPayload(attributeID ID) (*entry.AttributePayload, bool)
 	GetValue(attributeID ID) (*entry.AttributeValue, bool)
-	GetOptions(attributeID ID) (*entry.AttributeOptions, bool)
-	GetEffectiveOptions(attributeID ID) (*entry.AttributeOptions, bool)
 
 	Upsert(attributeID ID, modifyFn modify.Fn[entry.AttributePayload], updateDB bool) (*entry.AttributePayload, error)
 

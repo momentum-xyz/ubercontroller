@@ -2,8 +2,9 @@ package object_user_attributes
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"sync"
+
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4"
@@ -16,11 +17,19 @@ import (
 )
 
 const (
-	getObjectUserAttributesQuery                    = `SELECT * FROM object_user_attribute;`
-	getObjectUserAttributeByIDQuery                 = `SELECT * FROM object_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND object_id = $3 AND user_id = $4;`
-	getObjectUserAttributePayloadByIDQuery          = `SELECT value, options FROM object_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND object_id = $3 AND user_id = $4;`
-	getObjectUserAttributeValueByIDQuery            = `SELECT value FROM object_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND object_id = $3 AND user_id = $4;`
-	getObjectUserAttributeOptionsByIDQuery          = `SELECT options FROM object_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND object_id = $3 AND user_id = $4;`
+	getObjectUserAttributesQuery           = `SELECT * FROM object_user_attribute;`
+	getObjectUserAttributeByIDQuery        = `SELECT * FROM object_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND object_id = $3 AND user_id = $4;`
+	getObjectUserAttributePayloadByIDQuery = `SELECT value, options FROM object_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND object_id = $3 AND user_id = $4;`
+	getObjectUserAttributeValueByIDQuery   = `SELECT value FROM object_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND object_id = $3 AND user_id = $4;`
+	getObjectUserAttributeOptionsByIDQuery = `
+		SELECT COALESCE(a_type.options, '{}'::jsonb) || COALESCE(oua.options, '{}'::jsonb) as options
+		FROM attribute_type as a_type
+		LEFT JOIN object_user_attribute as oua ON
+  			oua.plugin_id=a_type.plugin_id AND
+  			oua.attribute_name=a_type.attribute_name AND
+  			oua.object_id = $3 AND oua.user_id = $4
+  		WHERE a_type.plugin_id = $1 AND a_type.attribute_name = $2
+		;`
 	getObjectUserAttributesByObjectIDQuery          = `SELECT * FROM object_user_attribute WHERE object_id = $1;`
 	getObjectUserAttributesByUserIDQuery            = `SELECT * FROM object_user_attribute WHERE user_id = $1;`
 	getObjectUserAttributesByObjectIDAndUserIDQuery = `SELECT * FROM object_user_attribute WHERE object_id = $1 AND user_id = $2;`

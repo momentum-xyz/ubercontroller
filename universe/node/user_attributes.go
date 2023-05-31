@@ -1,6 +1,8 @@
 package node
 
 import (
+	"context"
+
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 
@@ -8,6 +10,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 var _ universe.UserAttributes = (*userAttributes)(nil)
@@ -185,4 +188,18 @@ func (n *Node) onUserAttributeChanged(
 			)
 		}
 	}()
+}
+
+// AttributePermissionsAuthorizer
+func (ua *userAttributes) GetUserRoles(
+	ctx context.Context,
+	attrType entry.AttributeType,
+	targetID entry.UserAttributeID,
+	userID umid.UMID,
+) ([]entry.PermissionsRoleType, error) {
+	var roles []entry.PermissionsRoleType
+	if targetID.UserID == userID {
+		roles = append(roles, entry.PermissionUserOwner)
+	} // TODO: user members, so walk the db user tree...
+	return roles, nil
 }

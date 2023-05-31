@@ -1,8 +1,11 @@
 package node
 
 import (
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
+	"fmt"
 	"net/http"
+
+	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 
@@ -10,34 +13,33 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe/auth"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 )
+
+type queryPluginAttribute struct {
+	PluginID      string `form:"plugin_id" json:"plugin_id" binding:"required"`
+	AttributeName string `form:"attribute_name" json:"attribute_name" binding:"required"`
+}
 
 // @Summary Get object attribute
 // @Schemes
 // @Description Returns object attribute
 // @Tags objects
-// @Accept json
 // @Produce json
 // @Param object_id path string true "Object UMID"
-// @Param query query node.apiGetObjectAttributesValue.InQuery true "query params"
+// @Param attribute_id query node.queryPluginAttribute true "query params"
 // @Success 200 {object} entry.AttributeValue
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/attributes [get]
 func (n *Node) apiGetObjectAttributesValue(c *gin.Context) {
-	type InQuery struct {
-		PluginID      string `form:"plugin_id" binding:"required"`
-		AttributeName string `form:"attribute_name" binding:"required"`
-	}
-
-	inQuery := InQuery{}
-
-	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: failed to bind query")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: user from context")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user", err, n.log)
 		return
 	}
 
@@ -47,14 +49,6 @@ func (n *Node) apiGetObjectAttributesValue(c *gin.Context) {
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
 		return
 	}
-
-	pluginID, err := umid.Parse(inQuery.PluginID)
-	if err != nil {
-		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: failed to parse plugin umid")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
-		return
-	}
-
 	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
 		err := errors.Errorf("Node: apiGetObjectAttributesValue: object not found: %s", objectID)
@@ -62,7 +56,26 @@ func (n *Node) apiGetObjectAttributesValue(c *gin.Context) {
 		return
 	}
 
-	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
+	attrType, attributeID, err := n.apiPluginAttributeFromQuery(c)
+	if err != nil {
+		err := fmt.Errorf("node: apiGetObjectAttributesValue: failed to get plugin attribute: %w", err)
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_attribute", err, n.log)
+		return
+	}
+
+	allowed, err := auth.CheckAttributePermissions(
+		c, *attrType.GetEntry(), object.GetObjectAttributes(), attributeID, userID,
+		auth.ReadOperation)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: permissions check")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_permissions_check", err, n.log)
+		return
+	} else if !allowed {
+		err := fmt.Errorf("operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+		return
+	}
+
 	out, ok := object.GetObjectAttributes().GetValue(attributeID)
 	if !ok {
 		err := errors.Errorf("Node: apiGetObjectAttributesValue: object attribute value not found: %s", attributeID)
@@ -80,23 +93,17 @@ func (n *Node) apiGetObjectAttributesValue(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object UMID"
-// @Param query query node.apiGetObjectWithChildrenAttributeValues.InQuery true "query params"
+// @Param query query node.queryPluginAttribute true "query params"
 // @Success 200 {object} dto.ObjectAttributeValues
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/attributes-with-children [get]
 func (n *Node) apiGetObjectWithChildrenAttributeValues(c *gin.Context) {
-	type InQuery struct {
-		PluginID      string `form:"plugin_id" binding:"required"`
-		AttributeName string `form:"attribute_name" binding:"required"`
-	}
-
-	inQuery := InQuery{}
-
-	if err := c.ShouldBindQuery(&inQuery); err != nil {
-		err := errors.WithMessage(err, "Node: apiGetObjectWithChildrenAttributeValues: failed to bind query")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "user from context")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user", err, n.log)
 		return
 	}
 
@@ -107,10 +114,10 @@ func (n *Node) apiGetObjectWithChildrenAttributeValues(c *gin.Context) {
 		return
 	}
 
-	pluginID, err := umid.Parse(inQuery.PluginID)
+	attrType, attributeID, err := n.apiPluginAttributeFromQuery(c)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiGetObjectWithChildrenAttributeValues: failed to parse plugin umid")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
+		err := fmt.Errorf("node: apiGetObjectWithChildrenAttributeValues: failed to get plugin attribute: %w", err)
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_attribute", err, n.log)
 		return
 	}
 
@@ -121,10 +128,22 @@ func (n *Node) apiGetObjectWithChildrenAttributeValues(c *gin.Context) {
 		return
 	}
 
+	// TODO: either remove this API method, or implement recursive permission checks...
+	allowed, err := auth.CheckReadAllPermissions[entry.AttributeID](
+		c, *attrType.GetEntry(), rootObject.GetObjectAttributes(), userID)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: permissions check")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_permissions_check", err, n.log)
+		return
+	} else if !allowed {
+		err := fmt.Errorf("operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+		return
+	}
+
 	objects := rootObject.GetObjects(true)
 	objects[rootObject.GetID()] = rootObject
 
-	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
 	objectAttributes := make(dto.ObjectAttributeValues, len(objects))
 	for _, object := range objects {
 		attributeValue, ok := object.GetObjectAttributes().GetValue(attributeID)
@@ -136,6 +155,101 @@ func (n *Node) apiGetObjectWithChildrenAttributeValues(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, objectAttributes)
+}
+
+// @Summary Makes object attribute available to public
+// @Schemes
+// @Description Changes object permissions to be {"write":"user", "read":"any"}
+// @Tags objects
+// @Accept json
+// @Produce json
+// @Param object_id path string true "Object UMID"
+// @Param body body node.queryPluginAttribute true "body params"
+// @Success 202 {object} dto.ObjectSubOptions
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/objects/{object_id}/attributes/publicize [post]
+func (n *Node) apiSetObjectAttributesPublic(c *gin.Context) {
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSetObjectAttributesPublic: user from context")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user", err, n.log)
+		return
+	}
+
+	objectID, err := umid.Parse(c.Param("objectID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSetObjectAttributesPublic: failed to parse object umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
+		return
+	}
+
+	object, ok := n.GetObjectFromAllObjects(objectID)
+	if !ok {
+		err := errors.Errorf("Node: apiSetObjectAttributesPublic: object not found: %s", objectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
+		return
+	}
+
+	attrType, attributeID, err := n.apiPluginAttributeFromQuery(c)
+	if err != nil {
+		err := fmt.Errorf("node: apiGetObjectWithChildrenAttributeValues: failed to get plugin attribute: %w", err)
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_attribute", err, n.log)
+		return
+	}
+
+	allowed, err := auth.CheckAttributePermissions(
+		c, *attrType.GetEntry(), object.GetObjectAttributes(), attributeID, userID,
+		auth.WriteOperation)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: permissions check")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_permissions_check", err, n.log)
+		return
+	} else if !allowed {
+		err := fmt.Errorf("operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+		return
+	}
+
+	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
+		newOptions := func() *entry.AttributeOptions {
+			options := entry.NewAttributeOptions()
+			*options = entry.AttributeOptions{
+				"permissions": map[string]any{
+					"read":  "any",
+					"write": "user",
+				},
+			}
+			return options
+		}
+
+		if current == nil {
+			return entry.NewAttributePayload(current.Value, newOptions()), nil
+		}
+
+		if current.Options == nil {
+			current.Options = newOptions()
+			return current, nil
+		}
+
+		*current.Options = entry.AttributeOptions{
+			"permissions": map[string]any{
+				"read":  "any",
+				"write": "user",
+			},
+		}
+
+		return current, nil
+	}
+
+	if _, err := object.GetObjectAttributes().Upsert(attributeID, modifyFn, true); err != nil {
+		err := errors.WithMessage(err, "Node: apiSetObjectAttributesPublic: failed to set options")
+		api.AbortRequest(c, http.StatusInternalServerError, "set_options_failed", err, n.log)
+		return
+	}
+
+	c.JSON(http.StatusAccepted, nil)
 }
 
 // @Summary Set object attribute
@@ -153,8 +267,7 @@ func (n *Node) apiGetObjectWithChildrenAttributeValues(c *gin.Context) {
 // @Router /api/v4/objects/{object_id}/attributes [post]
 func (n *Node) apiSetObjectAttributesValue(c *gin.Context) {
 	type InBody struct {
-		PluginID       string         `json:"plugin_id" binding:"required"`
-		AttributeName  string         `json:"attribute_name" binding:"required"`
+		queryPluginAttribute
 		AttributeValue map[string]any `json:"attribute_value" binding:"required"`
 	}
 
@@ -179,7 +292,19 @@ func (n *Node) apiSetObjectAttributesValue(c *gin.Context) {
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
 		return
 	}
-
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "user from context")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user", err, n.log)
+		return
+	}
+	attrType, ok := n.GetAttributeTypes().GetAttributeType(entry.AttributeTypeID{pluginID, inBody.AttributeName})
+	if !ok {
+		err := fmt.Errorf("attribute type not found")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_attribute", err, n.log)
+		return
+	}
+	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
 	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
 		err := errors.Errorf("Node: apiSetObjectAttributesValue: object not found: %s", objectID)
@@ -187,8 +312,18 @@ func (n *Node) apiSetObjectAttributesValue(c *gin.Context) {
 		return
 	}
 
-	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
-
+	allowed, err := auth.CheckAttributePermissions(
+		c, *attrType.GetEntry(), object.GetObjectAttributes(), attributeID, userID,
+		auth.WriteOperation)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: permissions check")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_permissions_check", err, n.log)
+		return
+	} else if !allowed {
+		err := fmt.Errorf("operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+		return
+	}
 	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
 		newValue := func() *entry.AttributeValue {
 			value := entry.NewAttributeValue()
@@ -235,8 +370,7 @@ func (n *Node) apiSetObjectAttributesValue(c *gin.Context) {
 // @Router /api/v4/objects/{object_id}/attributes/sub [get]
 func (n *Node) apiGetObjectAttributeSubValue(c *gin.Context) {
 	type InQuery struct {
-		PluginID        string `form:"plugin_id" binding:"required"`
-		AttributeName   string `form:"attribute_name" binding:"required"`
+		queryPluginAttribute
 		SubAttributeKey string `form:"sub_attribute_key" binding:"required"`
 	}
 
@@ -268,8 +402,33 @@ func (n *Node) apiGetObjectAttributeSubValue(c *gin.Context) {
 		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 		return
 	}
-
+	attrType, ok := n.GetAttributeTypes().GetAttributeType(entry.AttributeTypeID{pluginID, inQuery.AttributeName})
+	if !ok {
+		err := fmt.Errorf("attribute type not found")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_attribute", err, n.log)
+		return
+	}
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "user from context")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user", err, n.log)
+		return
+	}
 	attributeID := entry.NewAttributeID(pluginID, inQuery.AttributeName)
+
+	allowed, err := auth.CheckAttributePermissions(
+		c, *attrType.GetEntry(), object.GetObjectAttributes(), attributeID, userID,
+		auth.ReadOperation)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: permissions check")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_permissions_check", err, n.log)
+		return
+	} else if !allowed {
+		err := fmt.Errorf("operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+		return
+	}
+
 	attributeValue, ok := object.GetObjectAttributes().GetValue(attributeID)
 	if !ok {
 		err := errors.Errorf("Node: apiGetObjectAttributeSubValue: attribute value not found: %s", attributeID)
@@ -305,8 +464,7 @@ func (n *Node) apiGetObjectAttributeSubValue(c *gin.Context) {
 // @Router /api/v4/objects/{object_id}/attributes/sub [post]
 func (n *Node) apiSetObjectAttributeSubValue(c *gin.Context) {
 	type Body struct {
-		PluginID          string `json:"plugin_id" binding:"required"`
-		AttributeName     string `json:"attribute_name" binding:"required"`
+		queryPluginAttribute
 		SubAttributeKey   string `json:"sub_attribute_key" binding:"required"`
 		SubAttributeValue any    `json:"sub_attribute_value" binding:"required"`
 	}
@@ -332,15 +490,38 @@ func (n *Node) apiSetObjectAttributeSubValue(c *gin.Context) {
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
 		return
 	}
-
 	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
 		err := errors.Errorf("Node: apiSetObjectAttributeSubValue: object not found: %s", objectID)
 		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 		return
 	}
-
+	attrType, ok := n.GetAttributeTypes().GetAttributeType(entry.AttributeTypeID{pluginID, inBody.AttributeName})
+	if !ok {
+		err := fmt.Errorf("attribute type not found")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_attribute", err, n.log)
+		return
+	}
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "user from context")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user", err, n.log)
+		return
+	}
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
+
+	allowed, err := auth.CheckAttributePermissions(
+		c, *attrType.GetEntry(), object.GetObjectAttributes(), attributeID, userID,
+		auth.WriteOperation)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: permissions check")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_permissions_check", err, n.log)
+		return
+	} else if !allowed {
+		err := fmt.Errorf("operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+		return
+	}
 
 	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
 		newValue := func() *entry.AttributeValue {
@@ -392,8 +573,7 @@ func (n *Node) apiSetObjectAttributeSubValue(c *gin.Context) {
 // @Router /api/v4/objects/{object_id}/attributes/sub [delete]
 func (n *Node) apiRemoveObjectAttributeSubValue(c *gin.Context) {
 	type Body struct {
-		PluginID        string `json:"plugin_id" binding:"required"`
-		AttributeName   string `json:"attribute_name" binding:"required"`
+		queryPluginAttribute
 		SubAttributeKey string `json:"sub_attribute_key" binding:"required"`
 	}
 
@@ -418,15 +598,38 @@ func (n *Node) apiRemoveObjectAttributeSubValue(c *gin.Context) {
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
 		return
 	}
-
 	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
 		err := errors.Errorf("Node: apiRemoveObjectAttributeSubValue: object not found: %s", objectID)
 		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
 		return
 	}
-
+	attrType, ok := n.GetAttributeTypes().GetAttributeType(entry.AttributeTypeID{pluginID, inBody.AttributeName})
+	if !ok {
+		err := fmt.Errorf("attribute type not found")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_attribute", err, n.log)
+		return
+	}
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "user from context")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user", err, n.log)
+		return
+	}
 	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
+
+	allowed, err := auth.CheckAttributePermissions(
+		c, *attrType.GetEntry(), object.GetObjectAttributes(), attributeID, userID,
+		auth.WriteOperation)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: permissions check")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_permissions_check", err, n.log)
+		return
+	} else if !allowed {
+		err := fmt.Errorf("operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+		return
+	}
 
 	modifyFn := func(current *entry.AttributeValue) (*entry.AttributeValue, error) {
 		if current == nil {
@@ -454,22 +657,17 @@ func (n *Node) apiRemoveObjectAttributeSubValue(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object UMID"
-// @Param body body node.apiRemoveObjectAttributeValue.Body true "body params"
+// @Param body body node.queryPluginAttribute true "body params"
 // @Success 200 {object} nil
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/attributes [delete]
 func (n *Node) apiRemoveObjectAttributeValue(c *gin.Context) {
-	type Body struct {
-		PluginID      string `json:"plugin_id" binding:"required"`
-		AttributeName string `json:"attribute_name" binding:"required"`
-	}
-
-	var inBody Body
-	if err := c.ShouldBindJSON(&inBody); err != nil {
-		err = errors.WithMessage(err, "Node: apiRemoveObjectAttributeValue: failed to bind json")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiRemoveObjectAttributeValue: user from context")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user", err, n.log)
 		return
 	}
 
@@ -479,14 +677,6 @@ func (n *Node) apiRemoveObjectAttributeValue(c *gin.Context) {
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
 		return
 	}
-
-	pluginID, err := umid.Parse(inBody.PluginID)
-	if err != nil {
-		err := errors.WithMessage(err, "Node: apiRemoveObjectAttributeValue: failed to parse plugin umid")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
-		return
-	}
-
 	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
 		err := errors.Errorf("Node: apiRemoveObjectAttributeValue: object not found: %s", objectID)
@@ -494,7 +684,26 @@ func (n *Node) apiRemoveObjectAttributeValue(c *gin.Context) {
 		return
 	}
 
-	attributeID := entry.NewAttributeID(pluginID, inBody.AttributeName)
+	attrType, attributeID, err := n.apiPluginAttributeFromQuery(c)
+	if err != nil {
+		err := fmt.Errorf("node: apiGetObjectAttributesValue: failed to get plugin attribute: %w", err)
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_attribute", err, n.log)
+		return
+	}
+
+	allowed, err := auth.CheckAttributePermissions(
+		c, *attrType.GetEntry(), object.GetObjectAttributes(), attributeID, userID,
+		auth.WriteOperation)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectAttributesValue: permissions check")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_permissions_check", err, n.log)
+		return
+	} else if !allowed {
+		err := fmt.Errorf("operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+		return
+	}
+
 	if _, err := object.GetObjectAttributes().UpdateValue(
 		attributeID, modify.ReplaceWith[entry.AttributeValue](nil), true,
 	); err != nil {
@@ -504,4 +713,25 @@ func (n *Node) apiRemoveObjectAttributeValue(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, nil)
+}
+
+// TODO: refactor this whole file to an object_attribute package,
+// so we don't need these kinds of silly names to avoid collisions.
+func (n *Node) apiPluginAttributeFromQuery(c *gin.Context) (universe.AttributeType, entry.AttributeID, error) {
+	var attrID entry.AttributeID
+	inQuery := queryPluginAttribute{}
+	if err := c.ShouldBindQuery(&inQuery); err != nil {
+		return nil, attrID, fmt.Errorf("failed to bind query: %w", err)
+	}
+	pluginID, err := umid.Parse(inQuery.PluginID)
+	if err != nil {
+		return nil, attrID, fmt.Errorf("failed to parse plugin ID: %w", err)
+	}
+	attrType, ok := n.GetAttributeTypes().GetAttributeType(
+		entry.AttributeTypeID{PluginID: pluginID, Name: inQuery.AttributeName})
+	if !ok {
+		return nil, attrID, fmt.Errorf("attribute type for %+v not found", inQuery)
+	}
+	attrID = entry.NewAttributeID(pluginID, inQuery.AttributeName)
+	return attrType, attrID, nil
 }
