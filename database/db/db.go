@@ -13,6 +13,7 @@ type DB struct {
 	database.CommonDB
 	database.NodesDB
 	database.WorldsDB
+	database.ActivitiesDB
 	database.ObjectsDB
 	database.UsersDB
 	database.Assets2dDB
@@ -37,6 +38,7 @@ func NewDB(
 	nodes database.NodesDB,
 	worlds database.WorldsDB,
 	objects database.ObjectsDB,
+	activities database.ActivitiesDB,
 	users database.UsersDB,
 	assets2d database.Assets2dDB,
 	assets3d database.Assets3dDB,
@@ -58,6 +60,7 @@ func NewDB(
 		CommonDB:               common,
 		NodesDB:                nodes,
 		WorldsDB:               worlds,
+		ActivitiesDB:           activities,
 		ObjectsDB:              objects,
 		UsersDB:                users,
 		Assets2dDB:             assets2d,
@@ -87,6 +90,10 @@ func (DB *DB) GetNodesDB() database.NodesDB {
 
 func (DB *DB) GetWorldsDB() database.WorldsDB {
 	return DB.WorldsDB
+}
+
+func (DB *DB) GetActivitiesDB() database.ActivitiesDB {
+	return DB.ActivitiesDB
 }
 
 func (DB *DB) GetObjectsDB() database.ObjectsDB {

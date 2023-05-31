@@ -18,6 +18,7 @@ type DB interface {
 	GetNodesDB() NodesDB
 	GetWorldsDB() WorldsDB
 	GetObjectsDB() ObjectsDB
+	GetActivitiesDB() ActivitiesDB
 	GetUsersDB() UsersDB
 	GetAssets2dDB() Assets2dDB
 	GetAssets3dDB() Assets3dDB
@@ -46,6 +47,9 @@ type WorldsDB interface {
 	GetAllWorldIDs(ctx context.Context) ([]umid.UMID, error)
 	GetWorldIDs(ctx context.Context, sortType universe.SortType, limit string) ([]umid.UMID, error)
 	GetWorlds(ctx context.Context) ([]*entry.Object, error)
+}
+
+type ActivitiesDB interface {
 }
 
 type ObjectsDB interface {
