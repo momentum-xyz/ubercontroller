@@ -3,6 +3,7 @@ package activity
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -93,4 +94,11 @@ func (a *Activity) LoadFromEntry(entry *entry.Activity) error {
 	a.entry = entry
 
 	return nil
+}
+
+func (a *Activity) GetCreatedAt() time.Time {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+
+	return a.entry.CreatedAt
 }

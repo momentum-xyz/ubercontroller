@@ -2,6 +2,7 @@ package activities
 
 import (
 	"context"
+	"sort"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -75,19 +76,41 @@ func (a *Activities) GetActivities() map[umid.UMID]universe.Activity {
 	return activities
 }
 
-func (a *Activities) GetActivitiesByObjectID(objectID *umid.UMID) map[umid.UMID]universe.Activity {
+func (a *Activities) GetPaginatedActivitiesByObjectID(objectID *umid.UMID, page int, pageSize int) []universe.Activity {
 	a.activities.Mu.RLock()
 	defer a.activities.Mu.RUnlock()
 
-	activities := make(map[umid.UMID]universe.Activity, len(a.activities.Data))
+	if page < 1 {
+		page = 1
+	}
 
-	for id, asset := range a.activities.Data {
-		if asset.GetObjectID() == objectID {
-			activities[id] = asset
+	const maxPageSize = 100
+	if pageSize > maxPageSize {
+		pageSize = maxPageSize
+	}
+
+	var allActivities []universe.Activity
+	for _, activity := range a.activities.Data {
+		if activity.GetObjectID() == objectID {
+			allActivities = append(allActivities, activity)
 		}
 	}
 
-	return activities
+	sort.Slice(allActivities, func(i, j int) bool {
+		return allActivities[i].GetCreatedAt().Before(allActivities[j].GetCreatedAt())
+	})
+
+	start := (page - 1) * pageSize
+	end := start + pageSize
+	if end > len(allActivities) {
+		end = len(allActivities)
+	}
+
+	if start >= end {
+		return []universe.Activity{}
+	}
+
+	return allActivities[start:end]
 }
 
 func (a *Activities) GetActivitiesByUserID(userID *umid.UMID) map[umid.UMID]universe.Activity {

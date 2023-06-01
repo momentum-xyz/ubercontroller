@@ -391,6 +391,8 @@ type Activity interface {
 
 	GetEntry() *entry.Activity
 	LoadFromEntry(entry *entry.Activity) error
+
+	GetCreatedAt() time.Time
 }
 
 type Activities interface {
@@ -402,7 +404,7 @@ type Activities interface {
 
 	GetActivity(activityID umid.UMID) (Activity, bool)
 	GetActivities() map[umid.UMID]Activity
-	GetActivitiesByObjectID(objectID *umid.UMID) map[umid.UMID]Activity
+	GetPaginatedActivitiesByObjectID(objectID *umid.UMID, page int, pageSize int) []Activity
 	GetActivitiesByUserID(userID *umid.UMID) map[umid.UMID]Activity
 
 	AddActivity(activity Activity, updateDB bool) error
