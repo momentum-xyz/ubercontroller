@@ -153,7 +153,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 				object.GET("/all-users/attributes", n.apiGetObjectAllUsersAttributeValuesList)
 
-				// object.GET("/timeline", n.apiTimelineForObject)
+				object.GET("/timeline", n.apiTimelineForObject)
 			}
 
 			objectUser := verifiedObjects.Group("/:objectID/:userID")

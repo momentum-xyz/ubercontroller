@@ -14,8 +14,8 @@ type Vec3 struct {
 
 type Activity struct {
 	ActivityID umid.UMID     `db:"activity_id" json:"activity_id"`
-	UserID     umid.UMID     `db:"user_id" json:"user_id"`
-	ObjectID   umid.UMID     `db:"object_id" json:"object_id"`
+	UserID     *umid.UMID    `db:"user_id" json:"user_id"`
+	ObjectID   *umid.UMID    `db:"object_id" json:"object_id"`
 	Type       *string       `db:"type" json:"type"`
 	Data       *ActivityData `db:"data" json:"data"`
 	CreatedAt  time.Time     `db:"created_at" json:"created_at"`
@@ -24,25 +24,4 @@ type Activity struct {
 type ActivityData struct {
 	Position       Vec3 `db:"position" json:"position"`
 	Asset3dOptions any  `db:"asset_3d_options" json:"asset_3d_options,omitempty"`
-}
-
-type ActivityChildPlacement struct {
-	Algo    *string        `db:"algo" json:"algo,omitempty"`
-	Options map[string]any `db:"options" json:"options,omitempty"`
-}
-
-type ActivityAttributeID struct {
-	AttributeID
-	ActivityID umid.UMID `db:"activity_id" json:"activity_id"`
-}
-
-type ActivityUserAttributeID struct {
-	AttributeID
-	ActivityID umid.UMID `db:"activity_id" json:"activity_id"`
-	UserID     umid.UMID `db:"user_id" json:"user_id"`
-}
-
-type ActivityAttribute struct {
-	ActivityAttributeID
-	*AttributePayload
 }

@@ -75,6 +75,36 @@ func (a *Activities) GetActivities() map[umid.UMID]universe.Activity {
 	return activities
 }
 
+func (a *Activities) GetActivitiesByObjectID(objectID *umid.UMID) map[umid.UMID]universe.Activity {
+	a.activities.Mu.RLock()
+	defer a.activities.Mu.RUnlock()
+
+	activities := make(map[umid.UMID]universe.Activity, len(a.activities.Data))
+
+	for id, asset := range a.activities.Data {
+		if asset.GetObjectID() == objectID {
+			activities[id] = asset
+		}
+	}
+
+	return activities
+}
+
+func (a *Activities) GetActivitiesByUserID(userID *umid.UMID) map[umid.UMID]universe.Activity {
+	a.activities.Mu.RLock()
+	defer a.activities.Mu.RUnlock()
+
+	activities := make(map[umid.UMID]universe.Activity, len(a.activities.Data))
+
+	for id, asset := range a.activities.Data {
+		if asset.GetUserID() == userID {
+			activities[id] = asset
+		}
+	}
+
+	return activities
+}
+
 func (a *Activities) AddActivity(activity universe.Activity, updateDB bool) error {
 	a.activities.Mu.Lock()
 	defer a.activities.Mu.Unlock()

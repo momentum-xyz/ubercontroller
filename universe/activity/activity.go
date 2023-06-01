@@ -57,6 +57,27 @@ func (a *Activity) GetData() *entry.ActivityData {
 	return a.entry.Data
 }
 
+func (a *Activity) GetType() *string {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+
+	return a.entry.Type
+}
+
+func (a *Activity) GetObjectID() *umid.UMID {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+
+	return a.entry.ObjectID
+}
+
+func (a *Activity) GetUserID() *umid.UMID {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+
+	return a.entry.UserID
+}
+
 func (a *Activity) GetEntry() *entry.Activity {
 	a.mu.RLock()
 	defer a.mu.RUnlock()

@@ -385,7 +385,9 @@ type Activity interface {
 	Initializer
 
 	GetData() *entry.ActivityData
-	// SetData(modifyFn modify.Fn[entry.Asset2dOptions], updateDB bool) (*entry.Asset2dOptions, error)
+	GetType() *string
+	GetObjectID() *umid.UMID
+	GetUserID() *umid.UMID
 
 	GetEntry() *entry.Activity
 	LoadFromEntry(entry *entry.Activity) error
@@ -396,7 +398,18 @@ type Activities interface {
 	LoadSaver
 	APIRegister
 
+	CreateActivity(activityID umid.UMID) (Activity, error)
+
+	GetActivity(activityID umid.UMID) (Activity, bool)
 	GetActivities() map[umid.UMID]Activity
+	GetActivitiesByObjectID(objectID *umid.UMID) map[umid.UMID]Activity
+	GetActivitiesByUserID(userID *umid.UMID) map[umid.UMID]Activity
+
+	AddActivity(activity Activity, updateDB bool) error
+	AddActivities(activities []Activity, updateDB bool) error
+
+	RemoveActivity(activity Activity, updateDB bool) (bool, error)
+	RemoveActivities(activities2d []Activity, updateDB bool) (bool, error)
 }
 
 type Assets3d interface {
