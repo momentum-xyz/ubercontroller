@@ -380,6 +380,25 @@ type Asset2d interface {
 	LoadFromEntry(entry *entry.Asset2d) error
 }
 
+type Activity interface {
+	IDer
+	Initializer
+
+	GetData() *entry.ActivityData
+	// SetData(modifyFn modify.Fn[entry.Asset2dOptions], updateDB bool) (*entry.Asset2dOptions, error)
+
+	GetEntry() *entry.Activity
+	LoadFromEntry(entry *entry.Activity) error
+}
+
+type Activities interface {
+	Initializer
+	LoadSaver
+	APIRegister
+
+	GetActivities() map[umid.UMID]Activity
+}
+
 type Assets3d interface {
 	Initializer
 	LoadSaver

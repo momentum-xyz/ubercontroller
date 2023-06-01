@@ -16,6 +16,7 @@ import (
 )
 
 const (
+	getActivitiesQuery            = `SELECT * FROM activity;`
 	getActivityByIDQuery          = `SELECT * FROM activity WHERE activity_id = $1;`
 	getActivityIDsByParentIDQuery = `SELECT activity_id FROM activity WHERE parent_id = $1;`
 	getActivitiesByUserIDQuery    = `SELECT * FROM activity WHERE user_id = $1;`
@@ -48,6 +49,14 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 		conn:   conn,
 		common: commonDB,
 	}
+}
+
+func (db *DB) GetActivities(ctx context.Context) ([]*entry.Activity, error) {
+	var activities []*entry.Activity
+	if err := pgxscan.Select(ctx, db.conn, &activities, getActivitiesQuery); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return activities, nil
 }
 
 func (db *DB) GetActivityByID(ctx context.Context, activityID umid.UMID) (*entry.Activity, error) {

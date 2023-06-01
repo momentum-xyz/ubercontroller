@@ -50,12 +50,16 @@ type WorldsDB interface {
 }
 
 type ActivitiesDB interface {
+	GetActivities(ctx context.Context) ([]*entry.Activity, error)
+
 	GetActivityByID(ctx context.Context, activityID umid.UMID) (*entry.Activity, error)
 	GetActivityIDsByParentID(ctx context.Context, parentID umid.UMID) ([]umid.UMID, error)
 	GetActivitiesByUserID(ctx context.Context, userID umid.UMID) ([]*entry.Activity, error)
 	GetActivitiesByObjectID(ctx context.Context, objectID umid.UMID) ([]*entry.Activity, error)
+
 	RemoveActivityByID(ctx context.Context, activityID umid.UMID) error
 	RemoveActivitiesByIDs(ctx context.Context, activityIDs []umid.UMID) error
+
 	UpdateActivityData(ctx context.Context, activityID umid.UMID, options *entry.ActivityData) error
 	UpsertActivity(ctx context.Context, activity *entry.Activity) error
 	UpsertActivities(ctx context.Context, activities []*entry.Activity) error

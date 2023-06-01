@@ -152,6 +152,8 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 				object.GET("/attributes/sub", n.apiGetObjectAttributeSubValue)
 
 				object.GET("/all-users/attributes", n.apiGetObjectAllUsersAttributeValuesList)
+
+				// object.GET("/timeline", n.apiTimelineForObject)
 			}
 
 			objectUser := verifiedObjects.Group("/:objectID/:userID")

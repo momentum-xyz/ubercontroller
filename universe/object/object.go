@@ -31,16 +31,15 @@ import (
 var _ universe.Object = (*Object)(nil)
 
 type Object struct {
-	id       umid.UMID
-	world    universe.World
-	ctx      context.Context
-	log      *zap.SugaredLogger
-	CFG      *config.Config
-	db       database.DB
-	enabled  atomic.Bool
-	Users    *generic.SyncMap[umid.UMID, universe.User]
-	Children *generic.SyncMap[umid.UMID, universe.Object]
-	//Mu               sync.RWMutex
+	id               umid.UMID
+	world            universe.World
+	ctx              context.Context
+	log              *zap.SugaredLogger
+	CFG              *config.Config
+	db               database.DB
+	enabled          atomic.Bool
+	Users            *generic.SyncMap[umid.UMID, universe.User]
+	Children         *generic.SyncMap[umid.UMID, universe.Object]
 	Mu               deadlock.RWMutex
 	ownerID          umid.UMID
 	transform        *cmath.Transform
@@ -50,6 +49,7 @@ type Object struct {
 	asset3d          universe.Asset3d
 	objectType       universe.ObjectType
 	effectiveOptions *entry.ObjectOptions
+	activities       *entry.Activity
 	objectAttributes *objectAttributes // WARNING: the Object is sharing the same mutex ("Mu") with it
 
 	spawnMsg      atomic.Pointer[websocket.PreparedMessage]
