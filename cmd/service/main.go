@@ -17,11 +17,16 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types"
 )
 
+// Build version, overridden with flag during build.
+var version = "devel"
+
 var log = logger.L()
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+
+	log.Debugf("Version: %s", version)
 
 	if err := run(ctx); err != nil {
 		log.Fatal(errors.WithMessage(err, "failed to run service"))

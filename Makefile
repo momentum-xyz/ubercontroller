@@ -1,5 +1,7 @@
-DOCKER_IMAGE="ubercontroller"
-DOCKER_TAG="develop"
+BUILD_VERSION ?= $(shell git describe --tags --dirty)
+DOCKER_IMAGE  ?= ubercontroller
+DOCKER_TAG    ?= develop
+LDFLAGS       ?=
 
 all: build
 
@@ -12,7 +14,7 @@ gen-clean:
 	find . -type f \( -name "*.mus.go" -o -name "*.autogen.go" \) | xargs rm
 
 build: gen
-	go build -trimpath -o ./bin/ubercontroller ./cmd/service
+	go build -ldflags "${LDFLAGS} -X main.version=${BUILD_VERSION}" -buildvcs=false -trimpath -o ./bin/ubercontroller ./cmd/service
 	cd plugins && make
 
 run: build
@@ -27,7 +29,7 @@ build-docs:
 
 docker-build: DOCKER_BUILDKIT=1
 docker-build:
-	docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
+	docker build --build-arg BUILD_VERSION=${BUILD_VERSION} -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
 
 # docker run ...
 docker: docker-build
