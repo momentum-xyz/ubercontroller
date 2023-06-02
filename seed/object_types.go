@@ -159,12 +159,7 @@ func seedObjectTypes(node universe.Node) error {
 		}
 
 		if item.asset3dID != nil {
-			assetUserId := universe.AssetUserIDPair{
-				AssetID: *item.asset3dID,
-				UserID:  umid.MustParse("00000000-0000-0000-0000-000000000003"),
-			}
-
-			asset3d, ok := node.GetAssets3d().GetAsset3d(assetUserId)
+			asset3d, ok := node.GetAssets3d().GetAsset3d(*item.asset3dID)
 			if !ok {
 				return fmt.Errorf("failed to create object type: asset_3d not found: %s", item.asset3dID)
 			}

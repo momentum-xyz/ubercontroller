@@ -110,15 +110,18 @@ type Assets2dDB interface {
 
 type Assets3dDB interface {
 	GetAssets(ctx context.Context) ([]*entry.Asset3d, error)
+	GetUserAssets(ctx context.Context) ([]*entry.UserAsset3d, error)
 
 	UpsertAsset(ctx context.Context, asset3d *entry.Asset3d) error
-	UpsertAssets(ctx context.Context, assets3d []*entry.Asset3d) error
+	UpsertUserAsset(ctx context.Context, userAsset3d *entry.UserAsset3d) error
+	UpsertAssets(ctx context.Context, assets3d []*entry.Asset3d, userAssets3d []*entry.UserAsset3d) error
 
-	UpdateAssetMeta(ctx context.Context, assetUserID universe.AssetUserIDPair, meta *entry.Asset3dMeta) error
+	UpdateAssetMeta(ctx context.Context, assetID umid.UMID, meta *entry.Asset3dMeta) error
 	UpdateAssetOptions(ctx context.Context, asset3dID umid.UMID, options *entry.Asset3dOptions) error
 
-	RemoveAssetByID(ctx context.Context, assetUserID universe.AssetUserIDPair) error
-	// RemoveAssetsByIDs(ctx context.Context, asset3dIDs []umid.UMID) error
+	UpdateUserAssetMeta(ctx context.Context, assetUserID universe.AssetUserIDPair, meta *entry.Asset3dMeta) error
+
+	RemoveUserAssetByID(ctx context.Context, assetUserID universe.AssetUserIDPair) error
 }
 
 type PluginsDB interface {

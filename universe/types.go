@@ -18,7 +18,7 @@ type WorldsFilterPredicateFn func(worldID umid.UMID, world World) bool
 type UsersFilterPredicateFn func(userID umid.UMID, user User) bool
 type ObjectsFilterPredicateFn func(objectID umid.UMID, object Object) bool
 type Assets2dFilterPredicateFn func(asset2dID umid.UMID, asset2d Asset2d) bool
-type Assets3dFilterPredicateFn func(asset3dUserID AssetUserIDPair, asset3d Asset3d) bool
+type Assets3dFilterPredicateFn func(asset3dUserID AssetUserIDPair, asset3d UserAsset3d) bool
 type PluginsFilterPredicateFn func(pluginID umid.UMID, plugin Plugin) bool
 type AttributeTypesFilterPredicateFn func(attributeTypeID entry.AttributeTypeID, attributeType AttributeType) bool
 type ObjectTypesFilterPredicateFn func(objectTypeID umid.UMID, objectType ObjectType) bool

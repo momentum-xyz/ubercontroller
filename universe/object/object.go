@@ -584,13 +584,7 @@ func (o *Object) load(entry *entry.Object) error {
 	}
 
 	if entry.Asset3dID != nil {
-		userAssetID := universe.AssetUserIDPair{
-			AssetID: *entry.Asset3dID,
-			// UserID:  entry.OwnerID,
-			UserID: umid.MustParse("00000000-0000-0000-0000-000000000003"), // TEMP, doesn't work otherwise
-		}
-
-		asset3d, ok := node.GetAssets3d().GetAsset3d(userAssetID)
+		asset3d, ok := node.GetAssets3d().GetAsset3d(*entry.Asset3dID)
 		if !ok {
 			return errors.Errorf("failed to get asset 3d: %s", entry.Asset3dID)
 		}

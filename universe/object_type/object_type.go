@@ -2,8 +2,9 @@ package object_type
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"sync"
+
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -268,11 +269,7 @@ func (ot *ObjectType) LoadFromEntry(row *entry.ObjectType) error {
 	}
 
 	if row.Asset3dID != nil {
-		assetUserID := universe.AssetUserIDPair{
-			AssetID: *row.Asset3dID,
-			UserID:  umid.MustParse("00000000-0000-0000-0000-000000000003"),
-		}
-		asset3d, ok := node.GetAssets3d().GetAsset3d(assetUserID)
+		asset3d, ok := node.GetAssets3d().GetAsset3d(*row.Asset3dID)
 		if !ok {
 			return errors.Errorf("asset 3d not found: %s", row.Asset3dID)
 		}

@@ -17,9 +17,8 @@ import (
 )
 
 const (
-	getAssetsQuery = `SELECT au.asset_3d_id, au.user_id, au.meta || a.meta as meta, a.options, au.is_private, a.created_at, a.updated_at
-										FROM asset_3d_user as au
-										JOIN asset_3d as a USING (asset_3d_id);`
+	getAssetsQuery     = `SELECT * FROM asset_3d;`
+	getUserAssetsQuery = `SELECT * FROM asset_3d_user;`
 
 	upsertAssetQuery = `INSERT INTO asset_3d
 							(asset_3d_id, meta, options, created_at, updated_at)
@@ -35,7 +34,8 @@ const (
 						DO UPDATE SET
 							meta = $3, is_private = $4, updated_at = CURRENT_TIMESTAMP;`
 
-	updateAssetMetaQuery = `UPDATE asset_3d_user SET meta = $3, updated_at = CURRENT_TIMESTAMP WHERE asset_3d_id = $1 AND user_id = $2;`
+	updateAssetMetaQuery     = `UPDATE asset_3d SET meta = $2, updated_at = CURRENT_TIMESTAMP WHERE asset_3d_id = $1;`
+	updateUserAssetMetaQuery = `UPDATE asset_3d_user SET meta = $3, updated_at = CURRENT_TIMESTAMP WHERE asset_3d_id = $1 AND user_id = $2;`
 
 	updateAssetOptionsQuery = `UPDATE asset_3d SET options = $2, updated_at = CURRENT_TIMESTAMP WHERE asset_3d_id = $1;`
 
@@ -65,26 +65,37 @@ func (db *DB) GetAssets(ctx context.Context) ([]*entry.Asset3d, error) {
 	return assets, nil
 }
 
-func (db *DB) UpsertAsset(ctx context.Context, asset3d *entry.Asset3d) error {
-	// TODO pick only 'category' and 'type' fields from meta map
-	if _, err := db.conn.Exec(ctx, upsertAssetQuery, asset3d.Asset3dID, asset3d.Meta, asset3d.Options); err != nil {
-		return errors.WithMessage(err, "failed to exec db")
+func (db *DB) GetUserAssets(ctx context.Context) ([]*entry.UserAsset3d, error) {
+	var assets []*entry.UserAsset3d
+	if err := pgxscan.Select(ctx, db.conn, &assets, getUserAssetsQuery); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
 	}
+	return assets, nil
+}
 
-	if _, err := db.conn.Exec(ctx, upsertUserAssetQuery, asset3d.Asset3dID, asset3d.UserID, asset3d.Meta, asset3d.Private); err != nil {
+func (db *DB) UpsertAsset(ctx context.Context, asset3d *entry.Asset3d) error {
+	if _, err := db.conn.Exec(ctx, upsertAssetQuery, asset3d.Asset3dID, asset3d.Meta, asset3d.Options); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 
 	return nil
 }
 
-func (db *DB) UpsertAssets(ctx context.Context, assets3d []*entry.Asset3d) error {
+func (db *DB) UpsertUserAsset(ctx context.Context, userAsset3d *entry.UserAsset3d) error {
+	if _, err := db.conn.Exec(ctx, upsertUserAssetQuery, userAsset3d.Asset3dID, userAsset3d.UserID, userAsset3d.Meta, userAsset3d.Private); err != nil {
+		return errors.WithMessage(err, "failed to exec db")
+	}
+
+	return nil
+}
+
+func (db *DB) UpsertAssets(ctx context.Context, assets3d []*entry.Asset3d, userAssets3d []*entry.UserAsset3d) error {
 	batch := &pgx.Batch{}
 	for _, asset := range assets3d {
-		// TODO pick only 'category' and 'type' fields from meta map
 		batch.Queue(upsertAssetQuery, asset.Asset3dID, asset.Meta, asset.Options)
-
-		batch.Queue(upsertUserAssetQuery, asset.Asset3dID, asset.UserID, asset.Meta, asset.Private)
+	}
+	for _, userAsset := range userAssets3d {
+		batch.Queue(upsertUserAssetQuery, userAsset.Asset3dID, userAsset.UserID, userAsset.Meta, userAsset.Private)
 	}
 
 	batchRes := db.conn.SendBatch(ctx, batch)
@@ -102,15 +113,13 @@ func (db *DB) UpsertAssets(ctx context.Context, assets3d []*entry.Asset3d) error
 	return errs.ErrorOrNil()
 }
 
-// TODO add userID
-func (db *DB) RemoveAssetByID(ctx context.Context, assetUserID universe.AssetUserIDPair) error {
+func (db *DB) RemoveUserAssetByID(ctx context.Context, assetUserID universe.AssetUserIDPair) error {
 	if _, err := db.conn.Exec(ctx, removeAssetByIDQuery, assetUserID.AssetID, assetUserID.UserID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
 }
 
-// TODO add userID
 // func (db *DB) RemoveAssetsByIDs(ctx context.Context, asset3dIDs []umid.UMID) error {
 // 	if _, err := db.conn.Exec(ctx, removeAssetsByIDsQuery, asset3dIDs); err != nil {
 // 		return errors.WithMessage(err, "failed to exec db")
@@ -118,9 +127,15 @@ func (db *DB) RemoveAssetByID(ctx context.Context, assetUserID universe.AssetUse
 // 	return nil
 // }
 
-// TODO add userID
-func (db *DB) UpdateAssetMeta(ctx context.Context, assetUserID universe.AssetUserIDPair, meta *entry.Asset3dMeta) error {
-	if _, err := db.conn.Exec(ctx, updateAssetMetaQuery, assetUserID.AssetID, assetUserID.UserID, meta); err != nil {
+func (db *DB) UpdateAssetMeta(ctx context.Context, assetID umid.UMID, meta *entry.Asset3dMeta) error {
+	if _, err := db.conn.Exec(ctx, updateAssetMetaQuery, assetID, meta); err != nil {
+		return errors.WithMessage(err, "failed to exec db")
+	}
+	return nil
+}
+
+func (db *DB) UpdateUserAssetMeta(ctx context.Context, assetUserID universe.AssetUserIDPair, meta *entry.Asset3dMeta) error {
+	if _, err := db.conn.Exec(ctx, updateUserAssetMetaQuery, assetUserID.AssetID, assetUserID.UserID, meta); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil
