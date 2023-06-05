@@ -114,7 +114,7 @@ func seedAssets3d(ctx context.Context, node universe.Node) error {
 	}
 
 	for _, item := range items {
-		asset, err, isNewInstance := node.GetAssets3d().CreateAsset3dIfMissing(item.Asset3dID)
+		asset, err, isNewInstance := node.GetAssets3d().CreateAsset3d(item.Asset3dID)
 		if err != nil {
 			return errors.WithMessagef(err, "failed to create asset_3d: %s", item.Asset3dID)
 		}

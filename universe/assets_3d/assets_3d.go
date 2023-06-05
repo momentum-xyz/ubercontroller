@@ -55,20 +55,7 @@ func (a *Assets3d) Initialize(ctx context.Context) error {
 	return nil
 }
 
-func (a *Assets3d) CreateAsset3d(asset3dID umid.UMID) (universe.Asset3d, error) {
-	asset3d := asset_3d.NewAsset3d(asset3dID, a.db)
-
-	if err := asset3d.Initialize(a.ctx); err != nil {
-		return nil, errors.WithMessagef(err, "failed to initialize asset 3d: %s", asset3dID)
-	}
-	if err := a.AddAsset3d(asset3d, false); err != nil {
-		return nil, errors.WithMessagef(err, "failed to add asset 3d: %s", asset3dID)
-	}
-
-	return asset3d, nil
-}
-
-func (a *Assets3d) CreateAsset3dIfMissing(asset3dID umid.UMID) (universe.Asset3d, error, bool) {
+func (a *Assets3d) CreateAsset3d(asset3dID umid.UMID) (universe.Asset3d, error, bool) {
 	a.assets.Mu.Lock()
 	defer a.assets.Mu.Unlock()
 
@@ -218,7 +205,7 @@ func (a *Assets3d) Load() error {
 	}
 
 	for _, assetEntry := range entriesAssets {
-		asset3d, err := a.CreateAsset3d(assetEntry.Asset3dID)
+		asset3d, err, _ := a.CreateAsset3d(assetEntry.Asset3dID)
 		if err != nil {
 			return errors.WithMessagef(err, "failed to create new asset 3d: %s", assetEntry.Asset3dID)
 		}

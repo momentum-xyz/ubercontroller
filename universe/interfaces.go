@@ -385,8 +385,8 @@ type Assets3d interface {
 	LoadSaver
 	APIRegister
 
-	CreateAsset3d(assetID umid.UMID) (Asset3d, error)
-	CreateAsset3dIfMissing(assetID umid.UMID) (Asset3d, error, bool)
+	// Create new instance if doesn't exist, returns the existing/created asset3d and bool isCreated
+	CreateAsset3d(assetID umid.UMID) (Asset3d, error, bool)
 	CreateUserAsset3d(assetID umid.UMID, userID umid.UMID, isPrivate bool) (UserAsset3d, error)
 
 	GetAsset3d(assetID umid.UMID) (Asset3d, bool)

@@ -196,7 +196,7 @@ func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 		return
 	}
 
-	baseAsset, err, isNewInstance := a.CreateAsset3dIfMissing(assetID)
+	baseAsset, err, isNewInstance := a.CreateAsset3d(assetID)
 	if err != nil {
 		err := errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to get or create asset3d")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_or_create_asset3d", err, a.log)
