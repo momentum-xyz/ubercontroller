@@ -233,7 +233,7 @@ func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 
 	if isNewInstance {
 		if err := baseAsset.SetMeta(&baseMeta, false); err != nil {
-			err = errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to set meta")
+			err = errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to set base meta")
 			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_meta", err, a.log)
 			return
 		}
@@ -247,7 +247,7 @@ func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 	}
 
 	if err := newUserAsset.SetMeta(&meta, true); err != nil {
-		err = errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to set meta")
+		err = errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to set user asset meta")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_meta", err, a.log)
 		return
 	}
