@@ -22,7 +22,7 @@ import (
 // @Produce json
 // @Success 200 {object} node.apiTimelineForObject.Out
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/{object_id}/timeline [get]
+// @Router /api/v4/objects/{object_id}/timeline [get]
 func (n *Node) apiTimelineForObject(c *gin.Context) {
 	type InQuery struct {
 		Page     string `form:"page" binding:"required"`

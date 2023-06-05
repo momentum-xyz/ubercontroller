@@ -62,6 +62,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		//}
 
 		vx.POST("/media/upload/image", n.apiMediaUploadImage)
+		vx.POST("/media/upload/video", n.apiMediaUploadVideo)
 
 		verifiedUsers := verified.Group("/users")
 		{

@@ -22,6 +22,7 @@ type Activity struct {
 }
 
 type ActivityData struct {
-	Position       Vec3 `db:"position" json:"position"`
-	Asset3dOptions any  `db:"asset_3d_options" json:"asset_3d_options,omitempty"`
+	Position    Vec3    `db:"position" json:"position"`
+	Description *string `db:"description" json:"description"`
+	Hash        *string `db:"hash" json:"hash"`
 }
