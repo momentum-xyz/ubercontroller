@@ -22,7 +22,7 @@ func (a *Assets3d) RegisterAPI(r *gin.Engine) {
 			}
 
 			assets3d.GET("", a.apiGetAssets3d)
-			// assets3d.GET("/options", a.apiGetAssets3dOptions)
+			assets3d.GET("/options", a.apiGetAssets3dOptions)
 			assets3d.DELETE("/:asset3dID", a.apiRemoveAsset3dByID)
 			assets3d.PATCH("/:asset3dID", a.apiUpdateAsset3dByID)
 		}
