@@ -2,23 +2,23 @@ package generic
 
 import (
 	"context"
+	"errors"
 
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"github.com/momentum-xyz/ubercontroller/types"
-	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
+// TODO: why-o-why? get rid of this global.
 var generic struct {
 	ctx context.Context
 	log *zap.SugaredLogger
 }
 
-func Initialize(ctx context.Context) error {
-	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
+func Initialize(ctx types.LoggerContext) error {
+	log := ctx.Logger()
 	if log == nil {
-		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
+		return errors.New("failed to get logger from context")
 	}
 
 	generic.ctx = ctx

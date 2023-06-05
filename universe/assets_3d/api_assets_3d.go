@@ -2,11 +2,12 @@ package assets_3d
 
 import (
 	"encoding/json"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"mime/multipart"
 	"net/http"
 	"path/filepath"
 	"time"
+
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -87,7 +88,7 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 // @Success 200 {object} nil
 // @Failure 400	{object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/assets-3d/{object_id} [post]
+// @Router /api/v4/assets-3d [post]
 func (a *Assets3d) apiAddAssets3d(c *gin.Context) {
 	type InBody struct {
 		Assets3dIDs []string `form:"assets3d_ids[]" binding:"required"`
@@ -258,7 +259,7 @@ func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 // @Success 200 {object} nil
 // @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/assets-3d/{object_id} [delete]
+// @Router /api/v4/assets-3d [delete]
 func (a *Assets3d) apiRemoveAssets3dByIDs(c *gin.Context) {
 	type InBody struct {
 		Assets3dIDs []string `form:"assets3d_ids[]" binding:"required"`
@@ -395,9 +396,10 @@ func (a *Assets3d) apiGetAssets3dMeta(c *gin.Context) {
 // @Tags assets3d
 // @Accept json
 // @Produce json
+// @Param asset3dID path string true "Asset3D UMID"
 // @Success 200 {object} nil
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/assets-3d/{object_id}/{asset3d_id} [delete]
+// @Router /api/v4/assets-3d/{asset3dID} [delete]
 func (a *Assets3d) apiRemoveAsset3dByID(c *gin.Context) {
 	uid, err := umid.Parse(c.Param("asset3dID"))
 	if err != nil {

@@ -19,7 +19,6 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/types"
-	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 //go:embed sql/*
@@ -79,11 +78,11 @@ func createNewDatabase(ctx context.Context, log *zap.SugaredLogger, cfg *config.
 	return nil
 }
 
-func MigrateDatabase(ctx context.Context, cfg *config.Postgres) error {
-	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
-	if log == nil {
-		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
-	}
+func MigrateDatabase(ctx interface {
+	context.Context
+	types.LoggerContext
+}, cfg *config.Postgres) error {
+	log := ctx.Logger()
 
 	db, err := pgDBMigrationsConnect(ctx, log, cfg)
 	if err != nil {

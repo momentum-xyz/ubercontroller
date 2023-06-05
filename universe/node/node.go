@@ -37,7 +37,7 @@ var _ universe.Node = (*Node)(nil)
 
 type Node struct {
 	*object.Object
-	ctx        context.Context
+	ctx        types.NodeContext
 	cfg        *config.Config
 	log        *zap.SugaredLogger
 	db         database.DB
@@ -104,19 +104,10 @@ func NewNode(
 	return node
 }
 
-func (n *Node) Initialize(ctx context.Context) error {
-	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
-	if log == nil {
-		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
-	}
-	cfg := utils.GetFromAny(ctx.Value(types.ConfigContextKey), (*config.Config)(nil))
-	if cfg == nil {
-		return errors.Errorf("failed to get config from context: %T", ctx.Value(types.ConfigContextKey))
-	}
-
+func (n *Node) Initialize(ctx types.NodeContext) error {
 	n.ctx = ctx
-	n.log = log
-	n.cfg = cfg
+	n.log = ctx.Logger()
+	n.cfg = ctx.Config()
 
 	consoleWriter := zapcore.Lock(os.Stdout)
 	gin.DefaultWriter = consoleWriter
@@ -130,7 +121,7 @@ func (n *Node) Initialize(ctx context.Context) error {
 
 	n.router = r
 	n.httpServer = &http.Server{
-		Addr:    fmt.Sprintf("%s:%d", cfg.Settings.Address, cfg.Settings.Port),
+		Addr:    fmt.Sprintf("%s:%d", n.cfg.Settings.Address, n.cfg.Settings.Port),
 		Handler: n.router,
 	}
 
@@ -147,6 +138,14 @@ func (n *Node) Initialize(ctx context.Context) error {
 	}
 
 	return n.ToObject().Initialize(ctx)
+}
+
+func (n *Node) GetConfig() *config.Config {
+	return n.cfg
+}
+
+func (n *Node) GetLogger() *zap.SugaredLogger {
+	return n.log
 }
 
 func (n *Node) LoadUser(userID umid.UMID) (universe.User, error) {

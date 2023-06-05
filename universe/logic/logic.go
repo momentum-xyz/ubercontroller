@@ -2,10 +2,10 @@ package logic
 
 import (
 	"context"
+	"errors"
+
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/types"
-	"github.com/momentum-xyz/ubercontroller/utils"
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 
@@ -15,14 +15,18 @@ var logic struct {
 	cfg *config.Config
 }
 
-func Initialize(ctx context.Context) error {
-	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
+func Initialize(ctx interface {
+	context.Context
+	types.LoggerContext
+	types.ConfigContext
+}) error {
+	log := ctx.Logger()
 	if log == nil {
-		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
+		return errors.New("failed to get logger from context")
 	}
-	cfg := utils.GetFromAny(ctx.Value(types.ConfigContextKey), (*config.Config)(nil))
+	cfg := ctx.Config()
 	if cfg == nil {
-		return errors.Errorf("failed to get config from context: %T", ctx.Value(types.ConfigContextKey))
+		return errors.New("failed to get config from context")
 	}
 
 	logic.ctx = ctx

@@ -2,9 +2,10 @@ package plugin
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"plugin"
 	"sync"
+
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -42,14 +43,9 @@ func NewPlugin(id umid.UMID, db database.DB) *Plugin {
 	}
 }
 
-func (p *Plugin) Initialize(ctx context.Context) error {
-	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
-	if log == nil {
-		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
-	}
-
+func (p *Plugin) Initialize(ctx types.LoggerContext) error {
 	p.ctx = ctx
-	p.log = log
+	p.log = ctx.Logger()
 
 	return nil
 }
