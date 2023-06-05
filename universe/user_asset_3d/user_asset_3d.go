@@ -96,8 +96,8 @@ func (a *UserAsset3d) SetMeta(meta *entry.Asset3dMeta, updateDB bool) error {
 }
 
 func (a *UserAsset3d) IsPrivate() bool {
-	a.mu.Lock()
-	defer a.mu.Unlock()
+	a.mu.RLock()
+	defer a.mu.RUnlock()
 
 	return a.entry.Private
 }
