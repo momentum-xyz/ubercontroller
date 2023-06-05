@@ -385,9 +385,16 @@ type Activity interface {
 	Initializer
 
 	GetData() *entry.ActivityData
+	SetData(data *entry.ActivityData, updateDB bool) error
+
 	GetType() *string
+	SetType(activityType *string, updateDB bool) error
+
 	GetObjectID() *umid.UMID
+	SetObjectID(objectID *umid.UMID) error
+
 	GetUserID() *umid.UMID
+	SetUserID(userID *umid.UMID) error
 
 	GetEntry() *entry.Activity
 	LoadFromEntry(entry *entry.Activity) error

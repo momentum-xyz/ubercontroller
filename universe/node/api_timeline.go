@@ -16,7 +16,7 @@ import (
 // @Param pageSize query int false "Number of items per page"
 // @Summary Get timeline for object
 // @Schemes
-// @Description Returns a timeline for an object
+// @Description Returns a timeline for an object, collection of activities == timeline
 // @Tags timeline
 // @Accept json
 // @Produce json
@@ -72,6 +72,66 @@ func (n *Node) apiTimelineForObject(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, out)
+}
+
+// @Summary Adds an activity to a timeline
+// @Schemes
+// @Description Creates a new activity for a timeline
+// @Tags timeline
+// @Accept json
+// @Produce json
+// @Success 200 {object} node.apiTimelineForObject.Out
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/objects/{object_id}/timeline [post]
+func (n *Node) apiTimelineAddForObject(c *gin.Context) {
+	type InBody struct {
+		Type string `json:"type" binding:"required"`
+		Hash string `json:"hash" binding:"required"`
+	}
+	var inBody InBody
+
+	if err := c.ShouldBindJSON(&inBody); err != nil {
+		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to bind json")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
+		return
+	}
+
+	objectID, err := umid.Parse(c.Param("objectID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to parse object umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
+		return
+	}
+
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: user from context")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user", err, n.log)
+		return
+	}
+
+	user, ok := n.GetUser(userID, true)
+	if !ok {
+		err := errors.Errorf("Node: apiTimelineAddForObject: failed to find user in node: %s", userID)
+		api.AbortRequest(c, http.StatusNotFound, "user_not_found", err, n.log)
+		return
+	}
+
+	position := user.GetPosition()
+	activity, err := n.activities.CreateActivity(umid.New())
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to create activity")
+		api.AbortRequest(c, http.StatusInternalServerError, "invalid_user", err, n.log)
+		return
+	}
+
+	//Todo: implement setters
+	activity.SetObjectID()
+	activity.SetUserID()
+	activity.SetType()
+	activity.SetData()
+
+	c.JSON(http.StatusOK, nil)
 }
 
 // @Summary Get timeline for user

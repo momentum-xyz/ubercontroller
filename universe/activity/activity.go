@@ -58,11 +58,21 @@ func (a *Activity) GetData() *entry.ActivityData {
 	return a.entry.Data
 }
 
+func (a *Activity) SetData(data *entry.ActivityData, updateDB bool) error {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (a *Activity) GetType() *string {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
 	return a.entry.Type
+}
+
+func (a *Activity) SetType(activityType *string, updateDB bool) error {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (a *Activity) GetObjectID() *umid.UMID {
@@ -72,11 +82,21 @@ func (a *Activity) GetObjectID() *umid.UMID {
 	return a.entry.ObjectID
 }
 
+func (a *Activity) SetObjectID(objectID *umid.UMID) error {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (a *Activity) GetUserID() *umid.UMID {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
 	return a.entry.UserID
+}
+
+func (a *Activity) SetUserID(userID *umid.UMID) error {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (a *Activity) GetEntry() *entry.Activity {
