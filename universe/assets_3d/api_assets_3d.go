@@ -279,55 +279,6 @@ func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 	c.JSON(http.StatusAccepted, out)
 }
 
-// @Summary Delete 3d assets
-// @Schemes
-// @Description Deletes 3d assets by list of ids
-// @Tags assets3d
-// @Accept json
-// @Produce json
-// @Param body body assets_3d.apiRemoveAssets3dByIDs.InBody true "body params"
-// @Success 200 {object} nil
-// @Failure 400 {object} api.HTTPError
-// @Failure 500 {object} api.HTTPError
-// @Router /api/v4/assets-3d/{object_id} [delete]
-// func (a *Assets3d) apiRemoveAssets3dByIDs(c *gin.Context) {
-// 	type InBody struct {
-// 		Assets3dIDs []string `form:"assets3d_ids[]" binding:"required"`
-// 	}
-// 	var inBody InBody
-
-// 	if err := c.ShouldBindJSON(&inBody); err != nil {
-// 		err := errors.WithMessage(err, "Assets3d: apiRemoveAssets3dByIDs: failed to bind json")
-// 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, a.log)
-// 		return
-// 	}
-
-// 	uids := make([]umid.UMID, 0, len(inBody.Assets3dIDs))
-// 	for i := range inBody.Assets3dIDs {
-// 		uid, err := umid.Parse(inBody.Assets3dIDs[i])
-// 		if err != nil {
-// 			err := errors.WithMessage(err, "Assets3d: apiRemoveAssets3dByIDs: failed to parse uuid")
-// 			api.AbortRequest(c, http.StatusInternalServerError, "invalid_uuid_parse", err, a.log)
-// 			return
-// 		}
-// 		uids[i] = uid
-// 	}
-
-// 	removed, err := a.RemoveAssets3dByIDs(uids, true)
-// 	if err != nil {
-// 		err := errors.WithMessage(err, "Assets3d: apiRemoveAssets3dByIDs: failed to remove assets3d")
-// 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_remove_assets3d_by_ids", err, a.log)
-// 		return
-// 	}
-// 	if !removed {
-// 		err := errors.WithMessage(err, "Assets3d: apiRemoveAssets3dByIDs: failed to remove assets3d")
-// 		api.AbortRequest(c, http.StatusNotFound, "assets3d_not_removed", err, a.log)
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusOK, nil)
-// }
-
 // @Summary Get 3d assets options
 // @Schemes
 // @Description Returns list of 3d assets options
@@ -373,52 +324,6 @@ func (a *Assets3d) apiGetAssets3dOptions(c *gin.Context) {
 
 	c.JSON(http.StatusOK, out)
 }
-
-// @Summary Get 3d assets meta
-// @Schemes
-// @Description Returns a list of 3d assets meta
-// @Tags assets3d
-// @Accept json
-// @Produce json
-// @Param query query assets_3d.apiGetAssets3dMeta.InQuery true "query params"
-// @Success 200 {object} dto.Assets3dMeta
-// @Failure 400 {object} api.HTTPError
-// @Failure 500 {object} api.HTTPError
-// @Router /api/v4/assets-3d/{object_id}/meta [get]
-// func (a *Assets3d) apiGetAssets3dMeta(c *gin.Context) {
-// 	type InQuery struct {
-// 		Assets3dIDs []string `form:"assets3d_ids[]" binding:"required"`
-// 	}
-// 	var inQuery InQuery
-
-// 	if err := c.ShouldBindQuery(&inQuery); err != nil {
-// 		err := errors.WithMessage(err, "Assets3d: apiGetAssets3dMeta: failed to bind json")
-// 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, a.log)
-// 		return
-// 	}
-
-// 	out := make(dto.Assets3dMeta, len(inQuery.Assets3dIDs))
-
-// 	for i := range inQuery.Assets3dIDs {
-// 		asset3dID, err := umid.Parse(inQuery.Assets3dIDs[i])
-// 		if err != nil {
-// 			err := errors.WithMessagef(err, "Assets3d: apiGetAssets3dMeta: failed to parse uuid")
-// 			api.AbortRequest(c, http.StatusBadRequest, "invalid_asset3d_uuid", err, a.log)
-// 			return
-// 		}
-
-// 		gotAsset3d, ok := a.GetAsset3d(asset3dID)
-// 		if !ok {
-// 			err = errors.Errorf("Assets3d: apiGetAsset3dMeta: failed to get asset3d")
-// 			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_asset3d", err, a.log)
-// 			return
-// 		}
-
-// 		out[asset3dID] = dto.Asset3dMeta(gotAsset3d.GetMeta())
-// 	}
-
-// 	c.JSON(http.StatusOK, out)
-// }
 
 // @Summary Delete a 3d asset by its umid
 // @Schemes
