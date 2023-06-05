@@ -407,14 +407,14 @@ func (a *Assets3d) apiUpdateAsset3dByID(c *gin.Context) {
 		return
 	}
 
-	asset3d, ok := a.GetUserAsset3d(asset3dID, userID)
+	userAsset3d, ok := a.GetUserAsset3d(asset3dID, userID)
 	if !ok {
 		err = errors.WithMessagef(err, "Assets3d: apiUpdateAsset3dByID: asset3d not found: %s", asset3dID)
 		api.AbortRequest(c, http.StatusNotFound, "not_found", err, a.log)
 		return
 	}
 
-	oldMeta := asset3d.GetMeta()
+	oldMeta := userAsset3d.GetMeta()
 	newMeta, err := merge.Auto[entry.Asset3dMeta](&inBody.Meta, oldMeta)
 	if err != nil {
 		err = errors.WithMessagef(err, "Assets3d: apiUpdateAsset3dByID: failed to merge meta")
@@ -422,11 +422,11 @@ func (a *Assets3d) apiUpdateAsset3dByID(c *gin.Context) {
 		return
 	}
 
-	if err := asset3d.SetMeta(newMeta, true); err != nil {
+	if err := userAsset3d.SetMeta(newMeta, true); err != nil {
 		err = errors.WithMessagef(err, "Assets3d: apiUpdateAsset3dByID: failed to set meta")
 		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, a.log)
 		return
 	}
 
-	c.JSON(http.StatusOK, asset3d.GetEntry())
+	c.JSON(http.StatusOK, userAsset3d.GetEntry())
 }
