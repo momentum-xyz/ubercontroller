@@ -1,8 +1,9 @@
 package user_asset_3d
 
 import (
-	"context"
 	"sync"
+
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -11,14 +12,12 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/utils"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 var _ universe.UserAsset3d = (*UserAsset3d)(nil)
 
 type UserAsset3d struct {
-	ctx     context.Context
+	ctx     types.LoggerContext
 	log     *zap.SugaredLogger
 	db      database.DB
 	mu      sync.RWMutex
@@ -57,14 +56,9 @@ func (a *UserAsset3d) GetAsset3d() *universe.Asset3d {
 	return a.asset3d
 }
 
-func (a *UserAsset3d) Initialize(ctx context.Context) error {
-	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
-	if log == nil {
-		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
-	}
-
+func (a *UserAsset3d) Initialize(ctx types.LoggerContext) error {
 	a.ctx = ctx
-	a.log = log
+	a.log = ctx.Logger()
 
 	return nil
 }

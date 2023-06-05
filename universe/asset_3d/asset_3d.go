@@ -1,7 +1,6 @@
 package asset_3d
 
 import (
-	"context"
 	"sync"
 
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
@@ -13,14 +12,13 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
 var _ universe.Asset3d = (*Asset3d)(nil)
 
 type Asset3d struct {
-	ctx   context.Context
+	ctx   types.LoggerContext
 	log   *zap.SugaredLogger
 	db    database.DB
 	mu    sync.RWMutex
@@ -40,14 +38,9 @@ func (a *Asset3d) GetID() umid.UMID {
 	return a.entry.Asset3dID
 }
 
-func (a *Asset3d) Initialize(ctx context.Context) error {
-	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
-	if log == nil {
-		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
-	}
-
+func (a *Asset3d) Initialize(ctx types.LoggerContext) error {
 	a.ctx = ctx
-	a.log = log
+	a.log = ctx.Logger()
 
 	return nil
 }

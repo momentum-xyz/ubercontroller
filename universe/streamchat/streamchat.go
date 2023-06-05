@@ -7,11 +7,8 @@ import (
 	"time"
 
 	stream "github.com/GetStream/stream-chat-go/v6"
-	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/utils"
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"golang.org/x/net/context"
 )
@@ -35,21 +32,14 @@ func NewStreamChat() *StreamChat {
 	return &StreamChat{}
 }
 
-func (s *StreamChat) Initialize(ctx context.Context) error {
-	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
-	if log == nil {
-		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
-	}
-	cfg := utils.GetFromAny(ctx.Value(types.ConfigContextKey), (*config.Config)(nil))
-	if cfg == nil {
-		return errors.Errorf("failed to get config from context: %T", ctx.Value(types.ConfigContextKey))
-	}
+func (s *StreamChat) Initialize(ctx types.NodeContext) error {
+	cfg := ctx.Config()
 	apiKey := cfg.Streamchat.APIKey
 	apiSecret := cfg.Streamchat.APISecret
 
 	s.node = universe.GetNode()
 	s.ctx = ctx
-	s.log = log
+	s.log = ctx.Logger()
 	s.apiKey = apiKey
 	s.apiSecret = apiSecret
 	return nil

@@ -2,8 +2,9 @@ package attribute_type
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"sync"
+
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/momentum-xyz/ubercontroller/universe"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
-	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
@@ -38,14 +38,10 @@ func NewAttributeType(id entry.AttributeTypeID, db database.DB) *AttributeType {
 	}
 }
 
-func (a *AttributeType) Initialize(ctx context.Context) error {
-	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
-	if log == nil {
-		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
-	}
+func (a *AttributeType) Initialize(ctx types.LoggerContext) error {
 
 	a.ctx = ctx
-	a.log = log
+	a.log = ctx.Logger()
 
 	return nil
 }

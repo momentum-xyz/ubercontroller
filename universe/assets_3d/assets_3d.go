@@ -1,7 +1,7 @@
 package assets_3d
 
 import (
-	"context"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -14,14 +14,12 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/asset_3d"
 	"github.com/momentum-xyz/ubercontroller/universe/user_asset_3d"
-	"github.com/momentum-xyz/ubercontroller/utils"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 var _ universe.Assets3d = (*Assets3d)(nil)
 
 type Assets3d struct {
-	ctx        context.Context
+	ctx        types.LoggerContext
 	log        *zap.SugaredLogger
 	cfg        *config.Config
 	db         database.DB
@@ -37,20 +35,10 @@ func NewAssets3d(db database.DB) *Assets3d {
 	}
 }
 
-func (a *Assets3d) Initialize(ctx context.Context) error {
-	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
-	if log == nil {
-		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
-	}
-
-	cfg := utils.GetFromAny(ctx.Value(types.ConfigContextKey), (*config.Config)(nil))
-	if cfg == nil {
-		return errors.Errorf("failed to get config from context: %T", ctx.Value(types.ConfigContextKey))
-	}
-
+func (a *Assets3d) Initialize(ctx types.NodeContext) error {
 	a.ctx = ctx
-	a.log = log
-	a.cfg = cfg
+	a.log = ctx.Logger()
+	a.cfg = ctx.Config()
 
 	return nil
 }
@@ -59,12 +47,12 @@ func (a *Assets3d) CreateAsset3d(asset3dID umid.UMID) (universe.Asset3d, error, 
 	a.assets.Mu.Lock()
 	defer a.assets.Mu.Unlock()
 
-	asset3d := a.assets.Data[asset3dID]
-	if asset3d != nil {
-		return asset3d, nil, false
+	existingAsset3d := a.assets.Data[asset3dID]
+	if existingAsset3d != nil {
+		return existingAsset3d, nil, false
 	}
 
-	asset3d = asset_3d.NewAsset3d(asset3dID, a.db)
+	asset3d := asset_3d.NewAsset3d(asset3dID, a.db)
 
 	if err := asset3d.Initialize(a.ctx); err != nil {
 		return nil, errors.WithMessagef(err, "failed to initialize asset 3d: %s", asset3dID), false

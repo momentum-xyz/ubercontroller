@@ -328,9 +328,10 @@ func (a *Assets3d) apiGetAssets3dOptions(c *gin.Context) {
 // @Tags assets3d
 // @Accept json
 // @Produce json
+// @Param asset3dID path string true "Asset3D UMID"
 // @Success 200 {object} nil
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/assets-3d/{object_id}/{asset3d_id} [delete]
+// @Router /api/v4/assets-3d/{asset3dID} [delete]
 func (a *Assets3d) apiRemoveAsset3dByID(c *gin.Context) {
 	uid, err := umid.Parse(c.Param("asset3dID"))
 	if err != nil {

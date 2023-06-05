@@ -7,17 +7,30 @@ package generic
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"reflect"
 	"sync"
 	"testing"
 
-	"github.com/momentum-xyz/ubercontroller/logger"
+	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/types"
+	"go.uber.org/zap"
 )
 
 func TestMain(m *testing.M) {
-	if err := Initialize(context.WithValue(context.Background(), types.LoggerContextKey, logger.L())); err != nil {
+	cfg := &config.Config{} //TODO: proper test config getter
+	ctx, err := types.NewNodeContext(
+		context.Background(),
+		zap.NewExample().Sugar(),
+		cfg,
+	)
+	if err != nil {
+		fmt.Printf("Failed to create context: %s", err)
+		os.Exit(1)
+	}
+	if err := Initialize(ctx); err != nil {
+		fmt.Printf("Failed to initialize: %s", err)
 		os.Exit(1)
 	}
 

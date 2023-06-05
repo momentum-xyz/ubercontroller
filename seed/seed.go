@@ -1,9 +1,9 @@
 package seed
 
 import (
-	"context"
 	"fmt"
 
+	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/momentum-xyz/ubercontroller/database"
@@ -13,7 +13,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
-func Node(ctx context.Context, node universe.Node, db database.DB) error {
+func Node(ctx types.NodeContext, node universe.Node, db database.DB) error {
 	group, groupCtx := errgroup.WithContext(ctx)
 
 	group.Go(
@@ -54,7 +54,7 @@ func Node(ctx context.Context, node universe.Node, db database.DB) error {
 
 	group.Go(
 		func() error {
-			return seedMedia(groupCtx)
+			return seedMedia(groupCtx, node)
 		},
 	)
 

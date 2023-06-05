@@ -36,19 +36,21 @@ func main() {
 func run(ctx context.Context) error {
 	cfg := config.GetConfig()
 
-	ctx = context.WithValue(ctx, types.LoggerContextKey, log)
-	ctx = context.WithValue(ctx, types.ConfigContextKey, cfg)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+	nodeCtx, err := types.NewNodeContext(ctx, log, cfg)
+	if err != nil {
+		return errors.WithMessage(err, "failed to create context")
+	}
 
 	tm1 := time.Now()
-	pool, err := service.CreateDBConnection(ctx, &cfg.Postgres)
+	pool, err := service.CreateDBConnection(nodeCtx, &cfg.Postgres)
 	if err != nil {
 		return errors.WithMessage(err, "failed to create db connection")
 	}
 	defer pool.Close()
 
-	node, err := service.LoadNode(ctx, cfg, pool)
+	node, err := service.LoadNode(nodeCtx, cfg, pool)
 	if err != nil {
 		return errors.WithMessage(err, "loading node")
 	}

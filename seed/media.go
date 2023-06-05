@@ -3,35 +3,27 @@ package seed
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
 
-	"go.uber.org/zap"
-
-	"github.com/momentum-xyz/ubercontroller/config"
-	"github.com/momentum-xyz/ubercontroller/types"
+	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
-	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
-func seedMedia(ctx context.Context) error {
-	cfg := utils.GetFromAny(ctx.Value(types.ConfigContextKey), (*config.Config)(nil))
-	if cfg == nil {
-		return errors.New("failed to get config from context")
-	}
+func seedMedia(ctx context.Context, node universe.Node) error {
+	cfg := node.GetConfig()
 
 	basePath := cfg.Settings.SeedDataFiles
 	client := &http.Client{}
 
-	return seedPath(ctx, client, basePath)
+	return seedPath(ctx, node, client, basePath)
 }
 
-func seedPath(ctx context.Context, client *http.Client, basePath string) error {
-	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
+func seedPath(ctx context.Context, node universe.Node, client *http.Client, basePath string) error {
+	log := node.GetLogger()
 	return filepath.WalkDir(basePath, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			return fmt.Errorf("seed data files: %w", err)
@@ -44,7 +36,7 @@ func seedPath(ctx context.Context, client *http.Client, basePath string) error {
 
 			defer file.Close()
 
-			fHash, err := uploadSeedFile(ctx, client, file)
+			fHash, err := uploadSeedFile(ctx, node, client, file)
 			if err != nil {
 				return fmt.Errorf("upload seed data file: %w", err)
 			}
@@ -58,12 +50,9 @@ func seedPath(ctx context.Context, client *http.Client, basePath string) error {
 	})
 }
 
-func uploadSeedFile(ctx context.Context, client *http.Client, f *os.File) (string, error) {
-	cfg := utils.GetFromAny(ctx.Value(types.ConfigContextKey), (*config.Config)(nil))
-	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
-	if cfg == nil {
-		return "", errors.New("failed to get config from context")
-	}
+func uploadSeedFile(ctx context.Context, node universe.Node, client *http.Client, f *os.File) (string, error) {
+	cfg := node.GetConfig()
+	log := node.GetLogger()
 
 	ext := filepath.Ext(f.Name())
 
