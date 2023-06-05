@@ -39,8 +39,7 @@ const (
 
 	updateAssetOptionsQuery = `UPDATE asset_3d SET options = $2, updated_at = CURRENT_TIMESTAMP WHERE asset_3d_id = $1;`
 
-	removeAssetByIDQuery   = `DELETE FROM asset_3d_user WHERE asset_3d_id = $1 AND user_id = $2;`
-	removeAssetsByIDsQuery = `DELETE FROM asset_3d_user WHERE asset_3d_id = ANY($1) AND user_id = $2;`
+	removeAssetByIDQuery = `DELETE FROM asset_3d_user WHERE asset_3d_id = $1 AND user_id = $2;`
 )
 
 var _ database.Assets3dDB = (*DB)(nil)
@@ -119,13 +118,6 @@ func (db *DB) RemoveUserAssetByID(ctx context.Context, assetUserID universe.Asse
 	}
 	return nil
 }
-
-// func (db *DB) RemoveAssetsByIDs(ctx context.Context, asset3dIDs []umid.UMID) error {
-// 	if _, err := db.conn.Exec(ctx, removeAssetsByIDsQuery, asset3dIDs); err != nil {
-// 		return errors.WithMessage(err, "failed to exec db")
-// 	}
-// 	return nil
-// }
 
 func (db *DB) UpdateAssetMeta(ctx context.Context, assetID umid.UMID, meta *entry.Asset3dMeta) error {
 	if _, err := db.conn.Exec(ctx, updateAssetMetaQuery, assetID, meta); err != nil {
