@@ -158,8 +158,8 @@ func (a *Assets3d) AddAsset3d(asset3d universe.Asset3d, updateDB bool) error {
 }
 
 func (a *Assets3d) AddUserAsset3d(userAsset3d universe.UserAsset3d, updateDB bool) error {
-	a.assets.Mu.Lock()
-	defer a.assets.Mu.Unlock()
+	a.userAssets.Mu.Lock()
+	defer a.userAssets.Mu.Unlock()
 
 	if updateDB {
 		if err := a.db.GetAssets3dDB().UpsertUserAsset(a.ctx, userAsset3d.GetEntry()); err != nil {
@@ -173,8 +173,8 @@ func (a *Assets3d) AddUserAsset3d(userAsset3d universe.UserAsset3d, updateDB boo
 }
 
 func (a *Assets3d) RemoveUserAsset3dByID(assetUserID universe.AssetUserIDPair, updateDB bool) (bool, error) {
-	a.assets.Mu.Lock()
-	defer a.assets.Mu.Unlock()
+	a.userAssets.Mu.Lock()
+	defer a.userAssets.Mu.Unlock()
 
 	if _, ok := a.userAssets.Data[assetUserID]; !ok {
 		return false, nil
@@ -237,6 +237,8 @@ func (a *Assets3d) Save() error {
 
 	a.assets.Mu.RLock()
 	defer a.assets.Mu.RUnlock()
+	a.userAssets.Mu.RLock()
+	defer a.userAssets.Mu.RUnlock()
 
 	entriesAssets := make([]*entry.Asset3d, 0, len(a.assets.Data))
 	for _, asset3d := range a.assets.Data {
