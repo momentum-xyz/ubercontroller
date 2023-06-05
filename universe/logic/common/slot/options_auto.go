@@ -2,13 +2,11 @@ package slot
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
 
-	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
@@ -71,7 +69,7 @@ func GetOptionAutoOption(
 }
 
 func PrerenderAutoValue(
-	ctx context.Context, option *entry.RenderAutoAttributeOption, value *entry.AttributeValue,
+	ctx types.ConfigContext, option *entry.RenderAutoAttributeOption, value *entry.AttributeValue,
 ) (*dto.HashResponse, error) {
 	if option == nil || option.SlotType != "texture" || value == nil {
 		return nil, nil
@@ -141,12 +139,9 @@ func PrerenderAutoValue(
 	return hash, nil
 }
 
-func renderFrame(ctx context.Context, textJob []byte) (*dto.HashResponse, error) {
+func renderFrame(ctx types.ConfigContext, textJob []byte) (*dto.HashResponse, error) {
 	// need config for the media-manager render URLs
-	cfg := utils.GetFromAny(ctx.Value(types.ConfigContextKey), (*config.Config)(nil))
-	if cfg == nil {
-		return nil, errors.Errorf("failed to get config from context: %T", ctx.Value(types.ConfigContextKey))
-	}
+	cfg := ctx.Config()
 
 	req, err := http.NewRequest("POST", cfg.Common.RenderInternalURL+"/render/addframe", bytes.NewBuffer(textJob))
 	if err != nil {
@@ -173,12 +168,9 @@ func renderFrame(ctx context.Context, textJob []byte) (*dto.HashResponse, error)
 	return response, nil
 }
 
-func renderVideo(ctx context.Context, url []byte) (*dto.HashResponse, error) {
+func renderVideo(ctx types.ConfigContext, url []byte) (*dto.HashResponse, error) {
 	// need config for the media-manager render URLs
-	cfg := utils.GetFromAny(ctx.Value(types.ConfigContextKey), (*config.Config)(nil))
-	if cfg == nil {
-		return nil, errors.Errorf("failed to get config from context: %T", ctx.Value(types.ConfigContextKey))
-	}
+	cfg := ctx.Config()
 
 	req, err := http.NewRequest("POST", cfg.Common.RenderInternalURL+"/render/addtube", bytes.NewBuffer(url))
 	if err != nil {

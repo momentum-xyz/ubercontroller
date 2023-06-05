@@ -1,7 +1,6 @@
 package object
 
 import (
-	"context"
 	"sync/atomic"
 	"time"
 
@@ -33,7 +32,7 @@ var _ universe.Object = (*Object)(nil)
 type Object struct {
 	id       umid.UMID
 	world    universe.World
-	ctx      context.Context
+	ctx      types.NodeContext
 	log      *zap.SugaredLogger
 	CFG      *config.Config
 	db       database.DB
@@ -145,19 +144,10 @@ func (o *Object) GetObjectAttributes() universe.ObjectAttributes {
 	return o.objectAttributes
 }
 
-func (o *Object) Initialize(ctx context.Context) error {
-	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
-	if log == nil {
-		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
-	}
-	cfg := utils.GetFromAny(ctx.Value(types.ConfigContextKey), (*config.Config)(nil))
-	if cfg == nil {
-		return errors.Errorf("failed to get config from context: %T", ctx.Value(types.ConfigContextKey))
-	}
-
+func (o *Object) Initialize(ctx types.NodeContext) error {
 	o.ctx = ctx
-	o.log = log
-	o.CFG = cfg
+	o.log = ctx.Logger()
+	o.CFG = ctx.Config()
 	o.numSendsQueued.Store(chanIsClosed)
 	o.lockedBy.Store(umid.Nil)
 

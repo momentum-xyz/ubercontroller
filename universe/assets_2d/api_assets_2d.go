@@ -1,12 +1,13 @@
 package assets_2d
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"github.com/pkg/errors"
-	"net/http"
 )
 
 // @Summary Get 2d asset
@@ -18,7 +19,7 @@ import (
 // @Param asset2dID path string true "Asset2d UMID"
 // @Success 200 {array} dto.Asset2d
 // @Failure 400 {object} api.HTTPError
-// @Router /api/v4/assets-2d [get]
+// @Router /api/v4/assets-2d/{asset2dID} [get]
 func (a *Assets2d) apiGetAsset2d(c *gin.Context) {
 	asset2dID, err := umid.Parse(c.Param("asset2dID"))
 	if err != nil {

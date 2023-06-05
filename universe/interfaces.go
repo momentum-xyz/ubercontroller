@@ -7,8 +7,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	influxWrite "github.com/influxdata/influxdb-client-go/v2/api/write"
+	"go.uber.org/zap"
 
+	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
+	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
@@ -21,7 +24,7 @@ type IDer interface {
 }
 
 type Initializer interface {
-	Initialize(ctx context.Context) error
+	Initialize(ctx types.NodeContext) error
 }
 
 type Enabler interface {
@@ -77,6 +80,9 @@ type Node interface {
 	APIRegister
 	ObjectsCacher
 
+	GetConfig() *config.Config
+	GetLogger() *zap.SugaredLogger
+
 	ToObject() Object
 
 	GetWorlds() Worlds
@@ -105,7 +111,6 @@ type Node interface {
 }
 
 type Worlds interface {
-	Initializer
 	RunStopper
 	LoadSaver
 	APIRegister
@@ -221,7 +226,6 @@ type Object interface {
 
 type User interface {
 	IDer
-	Initializer
 	RunStopper
 
 	GetWorld() World
@@ -352,7 +356,6 @@ type ObjectUserAttributes interface {
 }
 
 type Assets2d interface {
-	Initializer
 	LoadSaver
 	APIRegister
 
@@ -368,7 +371,6 @@ type Assets2d interface {
 
 type Asset2d interface {
 	IDer
-	Initializer
 
 	GetMeta() entry.Asset2dMeta
 	SetMeta(meta entry.Asset2dMeta, updateDB bool) error
@@ -381,7 +383,6 @@ type Asset2d interface {
 }
 
 type Assets3d interface {
-	Initializer
 	LoadSaver
 	APIRegister
 
@@ -399,8 +400,6 @@ type Assets3d interface {
 
 type Asset3d interface {
 	IDer
-	Initializer
-
 	GetMeta() *entry.Asset3dMeta
 	SetMeta(meta *entry.Asset3dMeta, updateDB bool) error
 
@@ -412,7 +411,6 @@ type Asset3d interface {
 }
 
 type Plugins interface {
-	Initializer
 	LoadSaver
 	APIRegister
 
@@ -428,7 +426,6 @@ type Plugins interface {
 
 type Plugin interface {
 	IDer
-	Initializer
 
 	GetMeta() entry.PluginMeta
 	SetMeta(meta entry.PluginMeta, updateDB bool) error
@@ -441,7 +438,6 @@ type Plugin interface {
 }
 
 type AttributeTypes interface {
-	Initializer
 	LoadSaver
 	APIRegister
 
@@ -456,8 +452,6 @@ type AttributeTypes interface {
 }
 
 type AttributeType interface {
-	Initializer
-
 	GetID() entry.AttributeTypeID
 	GetName() string
 	GetPluginID() umid.UMID
@@ -473,7 +467,6 @@ type AttributeType interface {
 }
 
 type ObjectTypes interface {
-	Initializer
 	LoadSaver
 	APIRegister
 
@@ -489,7 +482,6 @@ type ObjectTypes interface {
 
 type ObjectType interface {
 	IDer
-	Initializer
 
 	GetName() string
 	SetName(name string, updateDB bool) error
@@ -514,7 +506,6 @@ type ObjectType interface {
 }
 
 type UserTypes interface {
-	Initializer
 	LoadSaver
 	APIRegister
 
@@ -530,7 +521,6 @@ type UserTypes interface {
 
 type UserType interface {
 	IDer
-	Initializer
 
 	GetName() string
 	SetName(name string, updateDB bool) error
@@ -546,7 +536,6 @@ type UserType interface {
 }
 
 type Calendar interface {
-	Initializer
 	RunStopper
 
 	OnAttributeUpsert(attributeID entry.AttributeID, value any)

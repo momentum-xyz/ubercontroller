@@ -1,8 +1,6 @@
 package worlds
 
 import (
-	"context"
-
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -13,14 +11,13 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/world"
-	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 var _ universe.Worlds = (*Worlds)(nil)
 
 type Worlds struct {
-	ctx    context.Context
+	ctx    types.NodeContext
 	log    *zap.SugaredLogger
 	cfg    *config.Config
 	db     database.DB
@@ -34,19 +31,10 @@ func NewWorlds(db database.DB) *Worlds {
 	}
 }
 
-func (w *Worlds) Initialize(ctx context.Context) error {
-	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
-	if log == nil {
-		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
-	}
-	cfg := utils.GetFromAny(ctx.Value(types.ConfigContextKey), (*config.Config)(nil))
-	if cfg == nil {
-		return errors.Errorf("failed to get config from context: %T", ctx.Value(types.ConfigContextKey))
-	}
-
+func (w *Worlds) Initialize(ctx types.NodeContext) error {
 	w.ctx = ctx
-	w.log = log
-	w.cfg = cfg
+	w.log = ctx.Logger()
+	w.cfg = ctx.Config()
 
 	return nil
 }

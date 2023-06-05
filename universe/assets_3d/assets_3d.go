@@ -1,7 +1,6 @@
 package assets_3d
 
 import (
-	"context"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/pkg/errors"
@@ -14,13 +13,12 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/asset_3d"
-	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 var _ universe.Assets3d = (*Assets3d)(nil)
 
 type Assets3d struct {
-	ctx    context.Context
+	ctx    types.LoggerContext
 	log    *zap.SugaredLogger
 	cfg    *config.Config
 	db     database.DB
@@ -34,20 +32,10 @@ func NewAssets3d(db database.DB) *Assets3d {
 	}
 }
 
-func (a *Assets3d) Initialize(ctx context.Context) error {
-	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
-	if log == nil {
-		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
-	}
-
-	cfg := utils.GetFromAny(ctx.Value(types.ConfigContextKey), (*config.Config)(nil))
-	if cfg == nil {
-		return errors.Errorf("failed to get config from context: %T", ctx.Value(types.ConfigContextKey))
-	}
-
+func (a *Assets3d) Initialize(ctx types.NodeContext) error {
 	a.ctx = ctx
-	a.log = log
-	a.cfg = cfg
+	a.log = ctx.Logger()
+	a.cfg = ctx.Config()
 
 	return nil
 }

@@ -1,7 +1,6 @@
 package user_types
 
 import (
-	"context"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/pkg/errors"
@@ -13,13 +12,12 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/user_type"
-	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 var _ universe.UserTypes = (*UserTypes)(nil)
 
 type UserTypes struct {
-	ctx       context.Context
+	ctx       types.LoggerContext
 	log       *zap.SugaredLogger
 	db        database.DB
 	userTypes *generic.SyncMap[umid.UMID, universe.UserType]
@@ -32,14 +30,9 @@ func NewUserTypes(db database.DB) *UserTypes {
 	}
 }
 
-func (u *UserTypes) Initialize(ctx context.Context) error {
-	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
-	if log == nil {
-		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
-	}
-
+func (u *UserTypes) Initialize(ctx types.LoggerContext) error {
 	u.ctx = ctx
-	u.log = log
+	u.log = ctx.Logger()
 
 	return nil
 }

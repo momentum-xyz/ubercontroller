@@ -22,7 +22,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 var _ universe.User = (*User)(nil)
@@ -200,14 +199,9 @@ func (u *User) GetProfile() *entry.UserProfile {
 	return u.profile
 }
 
-func (u *User) Initialize(ctx context.Context) error {
-	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
-	if log == nil {
-		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
-	}
-
+func (u *User) Initialize(ctx types.LoggerContext) error {
 	u.ctx = ctx
-	u.log = log
+	u.log = ctx.Logger()
 	u.bufferSends.Store(true)
 	u.numSendsQueued.Store(chanIsClosed)
 	//u.posMsgBuffer = posbus.NewSendTransformBuffer(u.GetID())

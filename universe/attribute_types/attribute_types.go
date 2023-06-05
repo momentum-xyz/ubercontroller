@@ -1,8 +1,6 @@
 package attribute_types
 
 import (
-	"context"
-
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -12,13 +10,12 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/attribute_type"
-	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 var _ universe.AttributeTypes = (*AttributeTypes)(nil)
 
 type AttributeTypes struct {
-	ctx            context.Context
+	ctx            types.LoggerContext
 	log            *zap.SugaredLogger
 	db             database.DB
 	attributeTypes *generic.SyncMap[entry.AttributeTypeID, universe.AttributeType]
@@ -31,14 +28,9 @@ func NewAttributeTypes(db database.DB) *AttributeTypes {
 	}
 }
 
-func (a *AttributeTypes) Initialize(ctx context.Context) error {
-	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
-	if log == nil {
-		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
-	}
-
+func (a *AttributeTypes) Initialize(ctx types.LoggerContext) error {
 	a.ctx = ctx
-	a.log = log
+	a.log = ctx.Logger()
 
 	return nil
 }
