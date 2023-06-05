@@ -2,7 +2,6 @@ package assets_3d
 
 import (
 	"encoding/json"
-	"fmt"
 	"mime/multipart"
 	"net/http"
 	"path/filepath"
@@ -61,7 +60,7 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 
 		asset3d := userAsset3d.GetAsset3d()
 		if asset3d == nil {
-			fmt.Printf("asset3d is nil, strange! %+v\n", userAsset3d.GetAssetUserIDPair())
+			a.log.Debugf("asset3d is nil, strange! %+v\n", userAsset3d.GetAssetUserIDPair())
 			return false
 		}
 
@@ -186,8 +185,6 @@ func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 		api.AbortRequest(c, http.StatusBadRequest, "failed_to_decode", err, a.log)
 		return
 	}
-
-	fmt.Printf("Upload to mm response: %+v\n", response)
 
 	assetID, err := umid.Parse(response.Hash)
 	if err != nil {
