@@ -57,10 +57,6 @@ func (a *UserAsset3d) GetAsset3d() *universe.Asset3d {
 	return a.asset3d
 }
 
-func (a *UserAsset3d) IsPrivate() bool {
-	return a.entry.Private
-}
-
 func (a *UserAsset3d) Initialize(ctx context.Context) error {
 	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
 	if log == nil {
@@ -95,6 +91,32 @@ func (a *UserAsset3d) SetMeta(meta *entry.Asset3dMeta, updateDB bool) error {
 	}
 
 	a.entry.Meta = meta
+
+	return nil
+}
+
+func (a *UserAsset3d) IsPrivate() bool {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	return a.entry.Private
+}
+
+func (a *UserAsset3d) SetIsPrivate(isPrivate bool, updateDB bool) error {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	if updateDB {
+		assetUserId := universe.AssetUserIDPair{
+			AssetID: a.entry.Asset3dID,
+			UserID:  a.entry.UserID,
+		}
+		if err := a.db.GetAssets3dDB().UpdateUserAssetIsPrivate(a.ctx, assetUserId, isPrivate); err != nil {
+			return errors.WithMessage(err, "failed to update db")
+		}
+	}
+
+	a.entry.Private = isPrivate
 
 	return nil
 }

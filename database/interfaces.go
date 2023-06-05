@@ -120,6 +120,7 @@ type Assets3dDB interface {
 	UpdateAssetOptions(ctx context.Context, asset3dID umid.UMID, options *entry.Asset3dOptions) error
 
 	UpdateUserAssetMeta(ctx context.Context, assetUserID universe.AssetUserIDPair, meta *entry.Asset3dMeta) error
+	UpdateUserAssetIsPrivate(ctx context.Context, assetUserID universe.AssetUserIDPair, isPrivate bool) error
 
 	RemoveUserAssetByID(ctx context.Context, assetUserID universe.AssetUserIDPair) error
 }

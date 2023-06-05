@@ -34,8 +34,9 @@ const (
 						DO UPDATE SET
 							meta = $3, is_private = $4, updated_at = CURRENT_TIMESTAMP;`
 
-	updateAssetMetaQuery     = `UPDATE asset_3d SET meta = $2, updated_at = CURRENT_TIMESTAMP WHERE asset_3d_id = $1;`
-	updateUserAssetMetaQuery = `UPDATE asset_3d_user SET meta = $3, updated_at = CURRENT_TIMESTAMP WHERE asset_3d_id = $1 AND user_id = $2;`
+	updateAssetMetaQuery          = `UPDATE asset_3d SET meta = $2, updated_at = CURRENT_TIMESTAMP WHERE asset_3d_id = $1;`
+	updateUserAssetMetaQuery      = `UPDATE asset_3d_user SET meta = $3, updated_at = CURRENT_TIMESTAMP WHERE asset_3d_id = $1 AND user_id = $2;`
+	updateUserAssetIsPrivateQuery = `UPDATE asset_3d_user SET is_private = $3, updated_at = CURRENT_TIMESTAMP WHERE asset_3d_id = $1 AND user_id = $2;`
 
 	updateAssetOptionsQuery = `UPDATE asset_3d SET options = $2, updated_at = CURRENT_TIMESTAMP WHERE asset_3d_id = $1;`
 
@@ -128,6 +129,13 @@ func (db *DB) UpdateAssetMeta(ctx context.Context, assetID umid.UMID, meta *entr
 
 func (db *DB) UpdateUserAssetMeta(ctx context.Context, assetUserID universe.AssetUserIDPair, meta *entry.Asset3dMeta) error {
 	if _, err := db.conn.Exec(ctx, updateUserAssetMetaQuery, assetUserID.AssetID, assetUserID.UserID, meta); err != nil {
+		return errors.WithMessage(err, "failed to exec db")
+	}
+	return nil
+}
+
+func (db *DB) UpdateUserAssetIsPrivate(ctx context.Context, assetUserID universe.AssetUserIDPair, isPrivate bool) error {
+	if _, err := db.conn.Exec(ctx, updateUserAssetIsPrivateQuery, assetUserID.AssetID, assetUserID.UserID, isPrivate); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil

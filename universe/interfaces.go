@@ -423,12 +423,14 @@ type UserAsset3d interface {
 	GetAssetUserIDPair() AssetUserIDPair
 	GetAssetID() umid.UMID
 	GetUserID() umid.UMID
-	IsPrivate() bool
 
 	GetAsset3d() *Asset3d
 
 	GetMeta() *entry.Asset3dMeta
 	SetMeta(meta *entry.Asset3dMeta, updateDB bool) error
+
+	IsPrivate() bool
+	SetIsPrivate(isPrivate bool, updateDB bool) error
 
 	GetEntry() *entry.UserAsset3d
 	LoadFromEntry(entry *entry.UserAsset3d) error

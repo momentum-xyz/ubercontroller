@@ -381,7 +381,8 @@ func (a *Assets3d) apiRemoveAsset3dByID(c *gin.Context) {
 // @Router /api/v4/assets-3d/{object_id}/{asset3d_id} [patch]
 func (a *Assets3d) apiUpdateAsset3dByID(c *gin.Context) {
 	type InBody struct {
-		Meta entry.Asset3dMeta `json:"meta" binding:"required"`
+		Meta      *entry.Asset3dMeta `json:"meta"`
+		IsPrivate *bool              `json:"is_private"`
 	}
 	var inBody InBody
 	if err := c.ShouldBindJSON(&inBody); err != nil {
@@ -411,18 +412,28 @@ func (a *Assets3d) apiUpdateAsset3dByID(c *gin.Context) {
 		return
 	}
 
-	oldMeta := userAsset3d.GetMeta()
-	newMeta, err := merge.Auto[entry.Asset3dMeta](&inBody.Meta, oldMeta)
-	if err != nil {
-		err = errors.WithMessagef(err, "Assets3d: apiUpdateAsset3dByID: failed to merge meta")
-		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, a.log)
-		return
+	if inBody.Meta != nil {
+		oldMeta := userAsset3d.GetMeta()
+		newMeta, err := merge.Auto[entry.Asset3dMeta](inBody.Meta, oldMeta)
+		if err != nil {
+			err = errors.WithMessagef(err, "Assets3d: apiUpdateAsset3dByID: failed to merge meta")
+			api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, a.log)
+			return
+		}
+
+		if err := userAsset3d.SetMeta(newMeta, true); err != nil {
+			err = errors.WithMessagef(err, "Assets3d: apiUpdateAsset3dByID: failed to set meta")
+			api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, a.log)
+			return
+		}
 	}
 
-	if err := userAsset3d.SetMeta(newMeta, true); err != nil {
-		err = errors.WithMessagef(err, "Assets3d: apiUpdateAsset3dByID: failed to set meta")
-		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, a.log)
-		return
+	if inBody.IsPrivate != nil {
+		if err := userAsset3d.SetIsPrivate(*inBody.IsPrivate, true); err != nil {
+			err = errors.WithMessagef(err, "Assets3d: apiUpdateAsset3dByID: failed to set private")
+			api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, a.log)
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, userAsset3d.GetEntry())
