@@ -61,7 +61,7 @@ type ActivitiesDB interface {
 	RemoveActivitiesByIDs(ctx context.Context, activityIDs []umid.UMID) error
 
 	UpdateActivityData(ctx context.Context, activityID umid.UMID, options *entry.ActivityData) error
-	UpdateActivityType(ctx context.Context, activityID umid.UMID, activityType *string) error
+	UpdateActivityType(ctx context.Context, activityID umid.UMID, activityType *entry.ActivityType) error
 	UpdateActivityObjectID(ctx context.Context, activityID umid.UMID, objectID *umid.UMID) error
 	UpdateActivityUserID(ctx context.Context, activityID umid.UMID, userID *umid.UMID) error
 

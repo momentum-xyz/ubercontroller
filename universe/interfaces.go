@@ -389,8 +389,8 @@ type Activity interface {
 	GetData() *entry.ActivityData
 	SetData(modifyFn modify.Fn[entry.ActivityData], updateDB bool) (*entry.ActivityData, error)
 
-	GetType() *string
-	SetType(activityType *string, updateDB bool) error
+	GetType() *entry.ActivityType
+	SetType(activityType *entry.ActivityType, updateDB bool) error
 
 	GetObjectID() *umid.UMID
 	SetObjectID(objectID *umid.UMID, updateDB bool) error

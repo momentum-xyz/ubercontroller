@@ -72,14 +72,14 @@ func (a *Activity) SetData(modifyFn modify.Fn[entry.ActivityData], updateDB bool
 	return data, nil
 }
 
-func (a *Activity) GetType() *string {
+func (a *Activity) GetType() *entry.ActivityType {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
 	return a.entry.Type
 }
 
-func (a *Activity) SetType(activityType *string, updateDB bool) error {
+func (a *Activity) SetType(activityType *entry.ActivityType, updateDB bool) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 

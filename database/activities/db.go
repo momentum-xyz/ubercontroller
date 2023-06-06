@@ -115,7 +115,7 @@ func (db *DB) UpdateActivityData(ctx context.Context, activityID umid.UMID, opti
 	return nil
 }
 
-func (db *DB) UpdateActivityType(ctx context.Context, activityID umid.UMID, activityType *string) error {
+func (db *DB) UpdateActivityType(ctx context.Context, activityID umid.UMID, activityType *entry.ActivityType) error {
 	if _, err := db.conn.Exec(ctx, updateActivityTypeQuery, activityID, activityType); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}

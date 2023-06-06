@@ -141,7 +141,13 @@ func (n *Node) apiTimelineAddForObject(c *gin.Context) {
 		return
 	}
 
-	err = newActivity.SetType(&inBody.Type, true)
+	if !IsValidActivityType(inBody.Type) {
+		err := errors.New("Node: apiTimelineAddForObject: invalid activity type")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_type", err, n.log)
+		return
+	}
+
+	err = newActivity.SetType((*entry.ActivityType)(&inBody.Type), true)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to set activity type")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_type", err, n.log)
@@ -203,4 +209,13 @@ func (n *Node) apiTimelineForUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, out)
+}
+
+func IsValidActivityType(t string) bool {
+	switch entry.ActivityType(t) {
+	case entry.ActivityTypeVideo, entry.ActivityTypeScreenshot:
+		return true
+	default:
+		return false
+	}
 }
