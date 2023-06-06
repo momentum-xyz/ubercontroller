@@ -17,6 +17,8 @@ type SearchOptions []ExploreOption
 
 type UserSearchResults []UserSearchResult
 
+type Activities map[umid.UMID]Activity
+
 type Plugins map[umid.UMID]string
 
 type PluginsMeta map[umid.UMID]PluginMeta
@@ -55,6 +57,15 @@ type ExploreOption struct {
 	ID          umid.UMID `json:"id"`
 	Name        *string   `json:"name"`
 	Description *string   `json:"description"`
+}
+
+type Activity struct {
+	ActivityID umid.UMID           `json:"activity_id"`
+	UserID     *umid.UMID          `json:"user_id"`
+	ObjectID   *umid.UMID          `json:"object_id"`
+	Type       *entry.ActivityType `json:"type"`
+	Data       *entry.ActivityData `json:"data"`
+	CreatedAt  time.Time           `json:"created_at"`
 }
 
 type RecentWorld struct {

@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"math/big"
+	"time"
 
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
@@ -64,6 +65,7 @@ type ActivitiesDB interface {
 	UpdateActivityType(ctx context.Context, activityID umid.UMID, activityType *entry.ActivityType) error
 	UpdateActivityObjectID(ctx context.Context, activityID umid.UMID, objectID *umid.UMID) error
 	UpdateActivityUserID(ctx context.Context, activityID umid.UMID, userID *umid.UMID) error
+	UpdateActivityCreatedAt(ctx context.Context, activityID umid.UMID, createdAt time.Time) error
 
 	UpsertActivity(ctx context.Context, activity *entry.Activity) error
 	UpsertActivities(ctx context.Context, activities []*entry.Activity) error

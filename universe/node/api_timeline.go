@@ -10,6 +10,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
@@ -59,14 +60,29 @@ func (n *Node) apiTimelineForObject(c *gin.Context) {
 	}
 
 	activities := n.activities.GetPaginatedActivitiesByObjectID(&objectID, page, pageSize)
+	dtoActivities := make([]dto.Activity, 0, len(activities))
+
+	for _, activity := range activities {
+		act := dto.Activity{
+			ActivityID: activity.GetID(),
+			UserID:     activity.GetUserID(),
+			ObjectID:   activity.GetObjectID(),
+			Type:       activity.GetType(),
+			Data:       activity.GetData(),
+			CreatedAt:  activity.GetCreatedAt(),
+		}
+
+		dtoActivities = append(dtoActivities, act)
+	}
+
 	type Out struct {
-		Activities []universe.Activity `json:"activities"`
-		Page       int                 `json:"page"`
-		PageSize   int                 `json:"pageSize"`
-		TotalCount int                 `json:"totalCount"`
+		Activities []dto.Activity `json:"activities"`
+		Page       int            `json:"page"`
+		PageSize   int            `json:"pageSize"`
+		TotalCount int            `json:"totalCount"`
 	}
 	out := Out{
-		Activities: activities,
+		Activities: dtoActivities,
 		Page:       page,
 		PageSize:   pageSize,
 		TotalCount: len(activities),

@@ -150,7 +150,21 @@ func (a *Activity) LoadFromEntry(entry *entry.Activity) error {
 		return errors.Errorf("activity ids mismatch: %s != %s", entry.ActivityID, a.GetID())
 	}
 
-	a.entry = entry
+	if err := a.SetObjectID(entry.ObjectID, false); err != nil {
+		return errors.WithMessage(err, "failed to set object ID")
+	}
+	if err := a.SetUserID(entry.UserID, false); err != nil {
+		return errors.WithMessage(err, "failed to set user ID")
+	}
+	if err := a.SetType(entry.Type, false); err != nil {
+		return errors.WithMessage(err, "failed to set type")
+	}
+	if err := a.SetCreatedAt(entry.CreatedAt, false); err != nil {
+		return errors.WithMessage(err, "failed to set created at")
+	}
+	if _, err := a.SetData(modify.MergeWith(entry.Data), false); err != nil {
+		return errors.WithMessage(err, "failed to set data")
+	}
 
 	return nil
 }
@@ -160,4 +174,19 @@ func (a *Activity) GetCreatedAt() time.Time {
 	defer a.mu.RUnlock()
 
 	return a.entry.CreatedAt
+}
+
+func (a *Activity) SetCreatedAt(createdAt time.Time, updateDB bool) error {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+
+	if updateDB {
+		if err := a.db.GetActivitiesDB().UpdateActivityCreatedAt(a.ctx, a.GetID(), createdAt); err != nil {
+			return errors.WithMessage(err, "failed to update db")
+		}
+	}
+
+	a.entry.CreatedAt = createdAt
+
+	return nil
 }

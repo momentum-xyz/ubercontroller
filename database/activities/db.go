@@ -2,6 +2,7 @@ package activities
 
 import (
 	"context"
+	"time"
 
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
@@ -31,10 +32,11 @@ const (
 						DO UPDATE SET
 							user_id = $2, object_id = $3, "type" = $4, "data" = $5;`
 
-	updateActivityDataQuery     = `UPDATE activity SET data = $2 WHERE activity_id = $1;`
-	updateActivityTypeQuery     = `UPDATE activity SET "type" = $2 WHERE activity_id = $1;`
-	updateActivityUserIDQuery   = `UPDATE activity SET user_id = $2 WHERE activity_id = $1;`
-	updateActivityObjectIDQuery = `UPDATE activity SET object_id = $2 WHERE activity_id = $1;`
+	updateActivityDataQuery      = `UPDATE activity SET data = $2 WHERE activity_id = $1;`
+	updateActivityTypeQuery      = `UPDATE activity SET "type" = $2 WHERE activity_id = $1;`
+	updateActivityUserIDQuery    = `UPDATE activity SET user_id = $2 WHERE activity_id = $1;`
+	updateActivityObjectIDQuery  = `UPDATE activity SET object_id = $2 WHERE activity_id = $1;`
+	updateActivityCreatedAtQuery = `UPDATE activity SET created_at = $2 WHERE activity_id = $1;`
 
 	removeActivityByIDQuery    = `DELETE FROM activity WHERE activity_id = $1;`
 	removeActivitiesByIDsQuery = `DELETE FROM activity WHERE activity_id = ANY($1);`
@@ -131,6 +133,13 @@ func (db *DB) UpdateActivityUserID(ctx context.Context, activityID umid.UMID, us
 
 func (db *DB) UpdateActivityObjectID(ctx context.Context, activityID umid.UMID, objectID *umid.UMID) error {
 	if _, err := db.conn.Exec(ctx, updateActivityObjectIDQuery, activityID, objectID); err != nil {
+		return errors.WithMessage(err, "failed to exec db")
+	}
+	return nil
+}
+
+func (db *DB) UpdateActivityCreatedAt(ctx context.Context, activityID umid.UMID, createdAt time.Time) error {
+	if _, err := db.conn.Exec(ctx, updateActivityCreatedAtQuery, activityID, createdAt); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil

@@ -215,6 +215,10 @@ func (n *Node) GetAssets3d() universe.Assets3d {
 	return n.assets3d
 }
 
+func (n *Node) GetActivities() universe.Activities {
+	return n.activities
+}
+
 func (n *Node) GetPlugins() universe.Plugins {
 	return n.plugins
 }
@@ -346,6 +350,7 @@ func (n *Node) Load() error {
 			group, _ = errgroup.WithContext(ctx)
 			group.Go(n.GetObjectAttributes().Load)
 			group.Go(n.GetObjectTypes().Load)
+			group.Go(n.GetActivities().Load)
 			if err := group.Wait(); err != nil {
 				return errors.WithMessage(err, "failed to load additional data")
 			}

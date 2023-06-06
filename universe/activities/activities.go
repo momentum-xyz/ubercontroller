@@ -77,7 +77,7 @@ func (a *Activities) GetPaginatedActivitiesByObjectID(objectID *umid.UMID, page 
 
 	var allActivities []universe.Activity
 	for _, activity := range a.activities.Data {
-		if activity.GetObjectID() == objectID {
+		if *activity.GetObjectID() == *objectID {
 			allActivities = append(allActivities, activity)
 		}
 	}

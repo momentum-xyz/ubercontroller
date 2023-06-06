@@ -402,6 +402,7 @@ type Activity interface {
 	LoadFromEntry(entry *entry.Activity) error
 
 	GetCreatedAt() time.Time
+	SetCreatedAt(createdAt time.Time, updateDB bool) error
 }
 
 type Activities interface {
