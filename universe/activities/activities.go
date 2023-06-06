@@ -1,7 +1,6 @@
 package activities
 
 import (
-	"context"
 	"sort"
 
 	"github.com/pkg/errors"
@@ -13,14 +12,13 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/activity"
-	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 var _ universe.Activities = (*Activities)(nil)
 
 type Activities struct {
-	ctx        context.Context
+	ctx        types.NodeContext
 	log        *zap.SugaredLogger
 	db         database.DB
 	activities *generic.SyncMap[umid.UMID, universe.Activity]
@@ -33,14 +31,9 @@ func NewActivities(db database.DB) *Activities {
 	}
 }
 
-func (a *Activities) Initialize(ctx context.Context) error {
-	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
-	if log == nil {
-		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
-	}
-
+func (a *Activities) Initialize(ctx types.NodeContext) error {
 	a.ctx = ctx
-	a.log = log
+	a.log = ctx.Logger()
 
 	return nil
 }

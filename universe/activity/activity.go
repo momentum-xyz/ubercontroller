@@ -1,7 +1,6 @@
 package activity
 
 import (
-	"context"
 	"sync"
 	"time"
 
@@ -12,7 +11,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
@@ -20,7 +18,7 @@ import (
 var _ universe.Activity = (*Activity)(nil)
 
 type Activity struct {
-	ctx   context.Context
+	ctx   types.NodeContext
 	log   *zap.SugaredLogger
 	db    database.DB
 	mu    sync.RWMutex
@@ -40,14 +38,9 @@ func (a *Activity) GetID() umid.UMID {
 	return a.entry.ActivityID
 }
 
-func (a *Activity) Initialize(ctx context.Context) error {
-	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
-	if log == nil {
-		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
-	}
-
+func (a *Activity) Initialize(ctx types.NodeContext) error {
 	a.ctx = ctx
-	a.log = log
+	a.log = ctx.Logger()
 
 	return nil
 }
