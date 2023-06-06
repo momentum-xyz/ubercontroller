@@ -25,11 +25,11 @@ type Asset3d struct {
 	entry *entry.Asset3d
 }
 
-func NewAsset3d(id umid.UMID, db database.DB) *Asset3d {
+func NewAsset3d(assetID umid.UMID, db database.DB) *Asset3d {
 	return &Asset3d{
 		db: db,
 		entry: &entry.Asset3d{
-			Asset3dID: id,
+			Asset3dID: assetID,
 		},
 	}
 }

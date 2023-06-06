@@ -17,6 +17,19 @@ For local development:
  - configure the database connection in config.yaml
  - make run
 
+### Local development with remote Media Manager
+
+You need to have kubectl configured with dev env and do port-forwarding to dev instance:
+
+```
+kubectl port-forward deploy/media-manager-deployment 4002:4000
+```
+
+In `config.yaml` add the following to **common** section:
+
+```
+render_internal_url: 'http://localhost:4002'
+```
 
 ## Swagger Documentation
 1. Install [swag](https://github.com/swaggo/swag) cli tool

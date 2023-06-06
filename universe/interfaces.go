@@ -386,16 +386,22 @@ type Assets3d interface {
 	LoadSaver
 	APIRegister
 
-	CreateAsset3d(asset3dID umid.UMID) (Asset3d, error)
-	GetAsset3d(asset3dID umid.UMID) (Asset3d, bool)
+	// Create new instance if doesn't exist, returns the existing/created asset3d and bool isCreated
+	CreateAsset3d(assetID umid.UMID) (Asset3d, error, bool)
+	CreateUserAsset3d(assetID umid.UMID, userID umid.UMID, isPrivate bool) (UserAsset3d, error)
+
+	GetAsset3d(assetID umid.UMID) (Asset3d, bool)
+	GetUserAsset3d(assetID umid.UMID, userID umid.UMID) (UserAsset3d, bool)
+
 	GetAssets3d() map[umid.UMID]Asset3d
-	FilterAssets3d(predicateFn Assets3dFilterPredicateFn) map[umid.UMID]Asset3d
+	GetUserAssets3d() map[AssetUserIDPair]UserAsset3d
+
+	FilterUserAssets3d(predicateFn Assets3dFilterPredicateFn) map[AssetUserIDPair]UserAsset3d
+
 	AddAsset3d(asset3d Asset3d, updateDB bool) error
-	AddAssets3d(assets3d []Asset3d, updateDB bool) error
-	RemoveAsset3d(asset3d Asset3d, updateDB bool) (bool, error)
-	RemoveAssets3d(assets3d []Asset3d, updateDB bool) (bool, error)
-	RemoveAsset3dByID(assets3dID umid.UMID, updateDB bool) (bool, error)
-	RemoveAssets3dByIDs(assets3dIDs []umid.UMID, updateDB bool) (bool, error)
+	AddUserAsset3d(asset3d UserAsset3d, updateDB bool) error
+
+	RemoveUserAsset3dByID(assets3dID AssetUserIDPair, updateDB bool) (bool, error)
 }
 
 type Asset3d interface {
@@ -408,6 +414,23 @@ type Asset3d interface {
 
 	GetEntry() *entry.Asset3d
 	LoadFromEntry(entry *entry.Asset3d) error
+}
+
+type UserAsset3d interface {
+	GetAssetUserIDPair() AssetUserIDPair
+	GetAssetID() umid.UMID
+	GetUserID() umid.UMID
+
+	GetAsset3d() *Asset3d
+
+	GetMeta() *entry.Asset3dMeta
+	SetMeta(meta *entry.Asset3dMeta, updateDB bool) error
+
+	IsPrivate() bool
+	SetIsPrivate(isPrivate bool, updateDB bool) error
+
+	GetEntry() *entry.UserAsset3d
+	LoadFromEntry(entry *entry.UserAsset3d) error
 }
 
 type Plugins interface {

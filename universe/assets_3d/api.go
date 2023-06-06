@@ -14,20 +14,12 @@ func (a *Assets3d) RegisterAPI(r *gin.Engine) {
 
 	vx := r.Group(fmt.Sprintf("/api/v%d", ubercontroller.APIMajorVersion))
 	{
-		assets3d := vx.Group("/assets-3d/:objectID", middleware.VerifyUser(a.log))
-		{
-			authorizedAdmin := assets3d.Group("", middleware.AuthorizeAdmin(a.log))
-			{
-				authorizedAdmin.POST("", a.apiAddAssets3d)
-				authorizedAdmin.POST("/upload", a.apiUploadAsset3d)
-				authorizedAdmin.DELETE("", a.apiRemoveAssets3dByIDs)
-			}
+		assets3d := vx.Group("/assets-3d", middleware.VerifyUser(a.log))
 
-			assets3d.GET("", a.apiGetAssets3d)
-			assets3d.GET("/meta", a.apiGetAssets3dMeta)
-			assets3d.GET("/options", a.apiGetAssets3dOptions)
-			assets3d.DELETE("/:asset3dID", a.apiRemoveAsset3dByID)
-			assets3d.PATCH("/:asset3dID", a.apiUpdateAsset3dByID)
-		}
+		assets3d.GET("", a.apiGetAssets3d)
+		assets3d.GET("/options", a.apiGetAssets3dOptions)
+		assets3d.POST("/upload", a.apiUploadAsset3d)
+		assets3d.DELETE("/:asset3dID", a.apiRemoveAsset3dByID)
+		assets3d.PATCH("/:asset3dID", a.apiUpdateAsset3dByID)
 	}
 }
