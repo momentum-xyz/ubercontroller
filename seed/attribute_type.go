@@ -386,6 +386,16 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 		},
 		//
 		{
+			pluginID:      universe.GetSystemPluginID(),
+			attributeName: "spatial_audio",
+			description:   "Spatial audio",
+			options: &entry.AttributeOptions{
+				"posbus_auto": entry.PosBusAutoAttributeOption{
+					Scope: []entry.PosBusAutoScopeAttributeOption{entry.WorldPosBusAutoScopeAttributeOption},
+				},
+			},
+		},
+		{
 			pluginID:      umid.MustParse(textPluginID),
 			attributeName: "state",
 			description:   "State of the text tile",
