@@ -1,7 +1,6 @@
 package object_types
 
 import (
-	"context"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/pkg/errors"
@@ -13,13 +12,12 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/object_type"
-	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 var _ universe.ObjectTypes = (*ObjectTypes)(nil)
 
 type ObjectTypes struct {
-	ctx         context.Context
+	ctx         types.LoggerContext
 	log         *zap.SugaredLogger
 	db          database.DB
 	objectTypes *generic.SyncMap[umid.UMID, universe.ObjectType]
@@ -32,14 +30,9 @@ func NewObjectTypes(db database.DB) *ObjectTypes {
 	}
 }
 
-func (ot *ObjectTypes) Initialize(ctx context.Context) error {
-	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
-	if log == nil {
-		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
-	}
-
+func (ot *ObjectTypes) Initialize(ctx types.LoggerContext) error {
 	ot.ctx = ctx
-	ot.log = log
+	ot.log = ctx.Logger()
 
 	return nil
 }

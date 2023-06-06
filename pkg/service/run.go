@@ -8,7 +8,6 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
@@ -30,7 +29,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/plugins"
 	"github.com/momentum-xyz/ubercontroller/universe/user_types"
 	"github.com/momentum-xyz/ubercontroller/universe/worlds"
-	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	activitiesDB "github.com/momentum-xyz/ubercontroller/database/activities"
@@ -55,7 +53,9 @@ import (
 )
 
 // Load a Node
-func LoadNode(ctx context.Context, cfg *config.Config, pool *pgxpool.Pool) (universe.Node, error) {
+func LoadNode(
+	ctx types.NodeContext,
+	cfg *config.Config, pool *pgxpool.Pool) (universe.Node, error) {
 	//todo: change to pool
 	if err := universe.InitializeIDs(
 		umid.MustParse("f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0"),
@@ -91,7 +91,7 @@ func LoadNode(ctx context.Context, cfg *config.Config, pool *pgxpool.Pool) (univ
 	return node, nil
 }
 
-func loadNode(ctx context.Context, node universe.Node, nodeEntry *entry.Node, db database.DB) error {
+func loadNode(ctx types.NodeContext, node universe.Node, nodeEntry *entry.Node, db database.DB) error {
 
 	if nodeEntry == nil {
 		if err := seed.Node(ctx, node, db); err != nil {
@@ -105,7 +105,7 @@ func loadNode(ctx context.Context, node universe.Node, nodeEntry *entry.Node, db
 	return nil
 }
 
-func createNode(ctx context.Context, db database.DB, nodeEntry *entry.Node) (universe.Node, error) {
+func createNode(ctx types.NodeContext, db database.DB, nodeEntry *entry.Node) (universe.Node, error) {
 	worlds := worlds.NewWorlds(db)
 	assets2d := assets_2d.NewAssets2d(db)
 	assets3d := assets_3d.NewAssets3d(db)
@@ -165,8 +165,8 @@ func createNode(ctx context.Context, db database.DB, nodeEntry *entry.Node) (uni
 	return node, nil
 }
 
-func CreateDBConnection(ctx context.Context, cfg *config.Postgres) (*pgxpool.Pool, error) {
-	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
+func CreateDBConnection(ctx types.LoggerContext, cfg *config.Postgres) (*pgxpool.Pool, error) {
+	log := ctx.Logger()
 	config, err := cfg.GenConfig(log.Desugar())
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to gen postgres config")

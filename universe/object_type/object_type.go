@@ -2,8 +2,9 @@ package object_type
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"sync"
+
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -50,14 +51,9 @@ func (ot *ObjectType) GetID() umid.UMID {
 	return ot.id
 }
 
-func (ot *ObjectType) Initialize(ctx context.Context) error {
-	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
-	if log == nil {
-		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
-	}
-
+func (ot *ObjectType) Initialize(ctx types.LoggerContext) error {
 	ot.ctx = ctx
-	ot.log = log
+	ot.log = ctx.Logger()
 
 	return nil
 }

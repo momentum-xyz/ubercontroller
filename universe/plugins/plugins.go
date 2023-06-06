@@ -1,7 +1,6 @@
 package plugins
 
 import (
-	"context"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"golang.org/x/sync/errgroup"
@@ -15,13 +14,12 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/plugin"
-	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 var _ universe.Plugins = (*Plugins)(nil)
 
 type Plugins struct {
-	ctx     context.Context
+	ctx     types.LoggerContext
 	log     *zap.SugaredLogger
 	db      database.DB
 	plugins *generic.SyncMap[umid.UMID, universe.Plugin]
@@ -34,14 +32,9 @@ func NewPlugins(db database.DB) *Plugins {
 	}
 }
 
-func (p *Plugins) Initialize(ctx context.Context) error {
-	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
-	if log == nil {
-		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
-	}
-
+func (p *Plugins) Initialize(ctx types.LoggerContext) error {
 	p.ctx = ctx
-	p.log = log
+	p.log = ctx.Logger()
 
 	return nil
 }

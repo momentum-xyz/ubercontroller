@@ -191,8 +191,10 @@ type Asset2d struct {
 
 type Asset3d struct {
 	ID        string      `json:"id"`
+	UserID    string      `json:"user_id"`
 	Name      string      `json:"name,omitempty"`
 	Meta      Asset3dMeta `json:"meta,omitempty"`
+	Private   bool        `json:"is_private"`
 	CreatedAt string      `json:"createdAt,omitempty"`
 	UpdatedAt string      `json:"updatedAt,omitempty"`
 }

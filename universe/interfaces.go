@@ -7,8 +7,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	influxWrite "github.com/influxdata/influxdb-client-go/v2/api/write"
+	"go.uber.org/zap"
 
+	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
+	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
@@ -21,7 +24,7 @@ type IDer interface {
 }
 
 type Initializer interface {
-	Initialize(ctx context.Context) error
+	Initialize(ctx types.NodeContext) error
 }
 
 type Enabler interface {
@@ -77,6 +80,9 @@ type Node interface {
 	APIRegister
 	ObjectsCacher
 
+	GetConfig() *config.Config
+	GetLogger() *zap.SugaredLogger
+
 	ToObject() Object
 
 	GetWorlds() Worlds
@@ -105,7 +111,6 @@ type Node interface {
 }
 
 type Worlds interface {
-	Initializer
 	RunStopper
 	LoadSaver
 	APIRegister
@@ -221,7 +226,6 @@ type Object interface {
 
 type User interface {
 	IDer
-	Initializer
 	RunStopper
 
 	GetWorld() World
@@ -352,7 +356,6 @@ type ObjectUserAttributes interface {
 }
 
 type Assets2d interface {
-	Initializer
 	LoadSaver
 	APIRegister
 
@@ -368,7 +371,6 @@ type Assets2d interface {
 
 type Asset2d interface {
 	IDer
-	Initializer
 
 	GetMeta() entry.Asset2dMeta
 	SetMeta(meta entry.Asset2dMeta, updateDB bool) error
@@ -422,26 +424,29 @@ type Activities interface {
 }
 
 type Assets3d interface {
-	Initializer
 	LoadSaver
 	APIRegister
 
-	CreateAsset3d(asset3dID umid.UMID) (Asset3d, error)
-	GetAsset3d(asset3dID umid.UMID) (Asset3d, bool)
+	// Create new instance if doesn't exist, returns the existing/created asset3d and bool isCreated
+	CreateAsset3d(assetID umid.UMID) (Asset3d, error, bool)
+	CreateUserAsset3d(assetID umid.UMID, userID umid.UMID, isPrivate bool) (UserAsset3d, error)
+
+	GetAsset3d(assetID umid.UMID) (Asset3d, bool)
+	GetUserAsset3d(assetID umid.UMID, userID umid.UMID) (UserAsset3d, bool)
+
 	GetAssets3d() map[umid.UMID]Asset3d
-	FilterAssets3d(predicateFn Assets3dFilterPredicateFn) map[umid.UMID]Asset3d
+	GetUserAssets3d() map[AssetUserIDPair]UserAsset3d
+
+	FilterUserAssets3d(predicateFn Assets3dFilterPredicateFn) map[AssetUserIDPair]UserAsset3d
+
 	AddAsset3d(asset3d Asset3d, updateDB bool) error
-	AddAssets3d(assets3d []Asset3d, updateDB bool) error
-	RemoveAsset3d(asset3d Asset3d, updateDB bool) (bool, error)
-	RemoveAssets3d(assets3d []Asset3d, updateDB bool) (bool, error)
-	RemoveAsset3dByID(assets3dID umid.UMID, updateDB bool) (bool, error)
-	RemoveAssets3dByIDs(assets3dIDs []umid.UMID, updateDB bool) (bool, error)
+	AddUserAsset3d(asset3d UserAsset3d, updateDB bool) error
+
+	RemoveUserAsset3dByID(assets3dID AssetUserIDPair, updateDB bool) (bool, error)
 }
 
 type Asset3d interface {
 	IDer
-	Initializer
-
 	GetMeta() *entry.Asset3dMeta
 	SetMeta(meta *entry.Asset3dMeta, updateDB bool) error
 
@@ -452,8 +457,24 @@ type Asset3d interface {
 	LoadFromEntry(entry *entry.Asset3d) error
 }
 
+type UserAsset3d interface {
+	GetAssetUserIDPair() AssetUserIDPair
+	GetAssetID() umid.UMID
+	GetUserID() umid.UMID
+
+	GetAsset3d() *Asset3d
+
+	GetMeta() *entry.Asset3dMeta
+	SetMeta(meta *entry.Asset3dMeta, updateDB bool) error
+
+	IsPrivate() bool
+	SetIsPrivate(isPrivate bool, updateDB bool) error
+
+	GetEntry() *entry.UserAsset3d
+	LoadFromEntry(entry *entry.UserAsset3d) error
+}
+
 type Plugins interface {
-	Initializer
 	LoadSaver
 	APIRegister
 
@@ -469,7 +490,6 @@ type Plugins interface {
 
 type Plugin interface {
 	IDer
-	Initializer
 
 	GetMeta() entry.PluginMeta
 	SetMeta(meta entry.PluginMeta, updateDB bool) error
@@ -482,7 +502,6 @@ type Plugin interface {
 }
 
 type AttributeTypes interface {
-	Initializer
 	LoadSaver
 	APIRegister
 
@@ -497,8 +516,6 @@ type AttributeTypes interface {
 }
 
 type AttributeType interface {
-	Initializer
-
 	GetID() entry.AttributeTypeID
 	GetName() string
 	GetPluginID() umid.UMID
@@ -514,7 +531,6 @@ type AttributeType interface {
 }
 
 type ObjectTypes interface {
-	Initializer
 	LoadSaver
 	APIRegister
 
@@ -530,7 +546,6 @@ type ObjectTypes interface {
 
 type ObjectType interface {
 	IDer
-	Initializer
 
 	GetName() string
 	SetName(name string, updateDB bool) error
@@ -555,7 +570,6 @@ type ObjectType interface {
 }
 
 type UserTypes interface {
-	Initializer
 	LoadSaver
 	APIRegister
 
@@ -571,7 +585,6 @@ type UserTypes interface {
 
 type UserType interface {
 	IDer
-	Initializer
 
 	GetName() string
 	SetName(name string, updateDB bool) error
@@ -587,7 +600,6 @@ type UserType interface {
 }
 
 type Calendar interface {
-	Initializer
 	RunStopper
 
 	OnAttributeUpsert(attributeID entry.AttributeID, value any)

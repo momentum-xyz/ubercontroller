@@ -132,7 +132,7 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			description:   "Kusama/Substrate wallet",
 			options: &entry.AttributeOptions{
 				"permissions": entry.PermissionsAttributeOption{
-					Read:  string(entry.PermissionAdmin),
+					Read:  string(entry.PermissionAdmin) + "+" + string(entry.PermissionUserOwner),
 					Write: string(entry.PermissionAdmin),
 				},
 			},

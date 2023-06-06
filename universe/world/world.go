@@ -13,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/mplugin"
 	"github.com/momentum-xyz/ubercontroller/types"
@@ -110,18 +109,9 @@ func (w *World) corePluginInitFunc(pi mplugin.PluginInterface) (mplugin.PluginIn
 	return instance, nil
 }
 
-func (w *World) Initialize(ctx context.Context) error {
-	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
-	if log == nil {
-		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
-	}
-	cfg := utils.GetFromAny(ctx.Value(types.ConfigContextKey), (*config.Config)(nil))
-	if cfg == nil {
-		return errors.Errorf("failed to get config from context: %T", ctx.Value(types.ConfigContextKey))
-	}
-
+func (w *World) Initialize(ctx types.NodeContext) error {
 	w.ctx, w.cancel = context.WithCancel(ctx)
-	w.log = log
+	w.log = ctx.Logger()
 
 	if err := w.calendar.Initialize(ctx); err != nil {
 		return errors.WithMessage(err, "failed to initialize calendar")

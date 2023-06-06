@@ -1,10 +1,6 @@
 package assets_2d
 
 import (
-	"context"
-
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
-
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -14,13 +10,13 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/asset_2d"
-	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 var _ universe.Assets2d = (*Assets2d)(nil)
 
 type Assets2d struct {
-	ctx    context.Context
+	ctx    types.LoggerContext
 	log    *zap.SugaredLogger
 	db     database.DB
 	assets *generic.SyncMap[umid.UMID, universe.Asset2d]
@@ -33,14 +29,10 @@ func NewAssets2d(db database.DB) *Assets2d {
 	}
 }
 
-func (a *Assets2d) Initialize(ctx context.Context) error {
-	log := utils.GetFromAny(ctx.Value(types.LoggerContextKey), (*zap.SugaredLogger)(nil))
-	if log == nil {
-		return errors.Errorf("failed to get logger from context: %T", ctx.Value(types.LoggerContextKey))
-	}
+func (a *Assets2d) Initialize(ctx types.NodeContext) error {
 
 	a.ctx = ctx
-	a.log = log
+	a.log = ctx.Logger()
 
 	return nil
 }

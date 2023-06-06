@@ -7,19 +7,13 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/ubercontroller/config"
-	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 )
 
 func seedAssets2d(ctx context.Context, node universe.Node) error {
-	cfg := utils.GetFromAny(ctx.Value(types.ConfigContextKey), (*config.Config)(nil))
-	if cfg == nil {
-		return errors.New("failed to get config from context")
-	}
+	cfg := node.GetConfig()
 	baseUrl := cfg.Settings.FrontendURL
 	miroUrl, gdriveUrl, videoUrl, err := generatePluginUrls(baseUrl)
 	if err != nil {
