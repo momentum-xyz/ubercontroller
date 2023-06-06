@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
@@ -121,15 +122,48 @@ func (n *Node) apiTimelineAddForObject(c *gin.Context) {
 	activity, err := n.activities.CreateActivity(umid.New())
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to create activity")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_create_activity", err, n.log)
+		return
+	}
+
+	err = activity.SetObjectID(&objectID, true)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to set object ID")
 		api.AbortRequest(c, http.StatusInternalServerError, "invalid_user", err, n.log)
 		return
 	}
 
-	//Todo: implement setters
-	activity.SetObjectID()
-	activity.SetUserID()
-	activity.SetType()
-	activity.SetData()
+	err = activity.SetUserID(&userID, true)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to set user ID")
+		api.AbortRequest(c, http.StatusInternalServerError, "invalid_user", err, n.log)
+		return
+	}
+
+	err = activity.SetType(&inBody.Type, true)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to set activity type")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_type", err, n.log)
+		return
+	}
+
+	modifyFn := func(current *entry.ActivityData) (*entry.ActivityData, error) {
+		if current == nil {
+			current = &entry.ActivityData{}
+		}
+
+		current.Position = &position
+		current.Hash = &inBody.Hash
+
+		return current, nil
+	}
+
+	_, err = activity.SetData(modifyFn, true)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to set activity data")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_data", err, n.log)
+		return
+	}
 
 	c.JSON(http.StatusOK, nil)
 }

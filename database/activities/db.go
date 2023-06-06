@@ -31,7 +31,10 @@ const (
 						DO UPDATE SET
 							user_id = $2, object_id = $3, "type" = $4, "data" = $5;`
 
-	updateActivityDataQuery = `UPDATE activity SET data = $2, updated_at = CURRENT_TIMESTAMP WHERE activity_id = $1;`
+	updateActivityDataQuery     = `UPDATE activity SET data = $2, updated_at = CURRENT_TIMESTAMP WHERE activity_id = $1;`
+	updateActivityTypeQuery     = `UPDATE activity SET "type" = $2, updated_at = CURRENT_TIMESTAMP WHERE activity_id = $1;`
+	updateActivityUserIDQuery   = `UPDATE activity SET user_id = $2, updated_at = CURRENT_TIMESTAMP WHERE activity_id = $1;`
+	updateActivityObjectIDQuery = `UPDATE activity SET object_id = $2, updated_at = CURRENT_TIMESTAMP WHERE activity_id = $1;`
 
 	removeActivityByIDQuery    = `DELETE FROM activity WHERE activity_id = $1;`
 	removeActivitiesByIDsQuery = `DELETE FROM activity WHERE activity_id = ANY($1);`
@@ -107,6 +110,27 @@ func (db *DB) RemoveActivitiesByIDs(ctx context.Context, activityIDs []umid.UMID
 
 func (db *DB) UpdateActivityData(ctx context.Context, activityID umid.UMID, options *entry.ActivityData) error {
 	if _, err := db.conn.Exec(ctx, updateActivityDataQuery, activityID, options); err != nil {
+		return errors.WithMessage(err, "failed to exec db")
+	}
+	return nil
+}
+
+func (db *DB) UpdateActivityType(ctx context.Context, activityID umid.UMID, activityType *string) error {
+	if _, err := db.conn.Exec(ctx, updateActivityTypeQuery, activityID, activityType); err != nil {
+		return errors.WithMessage(err, "failed to exec db")
+	}
+	return nil
+}
+
+func (db *DB) UpdateActivityUserID(ctx context.Context, activityID umid.UMID, userID *umid.UMID) error {
+	if _, err := db.conn.Exec(ctx, updateActivityUserIDQuery, activityID, userID); err != nil {
+		return errors.WithMessage(err, "failed to exec db")
+	}
+	return nil
+}
+
+func (db *DB) UpdateActivityObjectID(ctx context.Context, activityID umid.UMID, objectID *umid.UMID) error {
+	if _, err := db.conn.Exec(ctx, updateActivityObjectIDQuery, activityID, objectID); err != nil {
 		return errors.WithMessage(err, "failed to exec db")
 	}
 	return nil

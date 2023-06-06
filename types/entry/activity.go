@@ -3,14 +3,9 @@ package entry
 import (
 	"time"
 
+	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
-
-type Vec3 struct {
-	X float32 `json:"x" db:"x"`
-	Y float32 `json:"y" db:"y"`
-	Z float32 `json:"z" db:"z"`
-}
 
 type Activity struct {
 	ActivityID umid.UMID     `db:"activity_id" json:"activity_id"`
@@ -22,7 +17,7 @@ type Activity struct {
 }
 
 type ActivityData struct {
-	Position    Vec3    `db:"position" json:"position"`
-	Description *string `db:"description" json:"description"`
-	Hash        *string `db:"hash" json:"hash"`
+	Position    *cmath.Vec3 `db:"position" json:"position"`
+	Description *string     `db:"description" json:"description"`
+	Hash        *string     `db:"hash" json:"hash"`
 }

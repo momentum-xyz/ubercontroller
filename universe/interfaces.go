@@ -385,16 +385,16 @@ type Activity interface {
 	Initializer
 
 	GetData() *entry.ActivityData
-	SetData(data *entry.ActivityData, updateDB bool) error
+	SetData(modifyFn modify.Fn[entry.ActivityData], updateDB bool) (*entry.ActivityData, error)
 
 	GetType() *string
 	SetType(activityType *string, updateDB bool) error
 
 	GetObjectID() *umid.UMID
-	SetObjectID(objectID *umid.UMID) error
+	SetObjectID(objectID *umid.UMID, updateDB bool) error
 
 	GetUserID() *umid.UMID
-	SetUserID(userID *umid.UMID) error
+	SetUserID(userID *umid.UMID, updateDB bool) error
 
 	GetEntry() *entry.Activity
 	LoadFromEntry(entry *entry.Activity) error

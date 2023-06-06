@@ -13,6 +13,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/modify"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
@@ -58,9 +59,24 @@ func (a *Activity) GetData() *entry.ActivityData {
 	return a.entry.Data
 }
 
-func (a *Activity) SetData(data *entry.ActivityData, updateDB bool) error {
-	//TODO implement me
-	panic("implement me")
+func (a *Activity) SetData(modifyFn modify.Fn[entry.ActivityData], updateDB bool) (*entry.ActivityData, error) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	data, err := modifyFn(a.entry.Data)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to modify data")
+	}
+
+	if updateDB {
+		if err := a.db.GetActivitiesDB().UpdateActivityData(a.ctx, a.entry.ActivityID, data); err != nil {
+			return nil, errors.WithMessage(err, "failed to update db")
+		}
+	}
+
+	a.entry.Data = data
+
+	return data, nil
 }
 
 func (a *Activity) GetType() *string {
@@ -71,8 +87,18 @@ func (a *Activity) GetType() *string {
 }
 
 func (a *Activity) SetType(activityType *string, updateDB bool) error {
-	//TODO implement me
-	panic("implement me")
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	if updateDB {
+		if err := a.db.GetActivitiesDB().UpdateActivityType(a.ctx, a.entry.ActivityID, activityType); err != nil {
+			return errors.WithMessage(err, "failed to update db")
+		}
+	}
+
+	a.entry.Type = activityType
+
+	return nil
 }
 
 func (a *Activity) GetObjectID() *umid.UMID {
@@ -82,9 +108,19 @@ func (a *Activity) GetObjectID() *umid.UMID {
 	return a.entry.ObjectID
 }
 
-func (a *Activity) SetObjectID(objectID *umid.UMID) error {
-	//TODO implement me
-	panic("implement me")
+func (a *Activity) SetObjectID(objectID *umid.UMID, updateDB bool) error {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	if updateDB {
+		if err := a.db.GetActivitiesDB().UpdateActivityObjectID(a.ctx, a.GetID(), objectID); err != nil {
+			return errors.WithMessage(err, "failed to update db")
+		}
+	}
+
+	a.entry.ObjectID = objectID
+
+	return nil
 }
 
 func (a *Activity) GetUserID() *umid.UMID {
@@ -94,9 +130,19 @@ func (a *Activity) GetUserID() *umid.UMID {
 	return a.entry.UserID
 }
 
-func (a *Activity) SetUserID(userID *umid.UMID) error {
-	//TODO implement me
-	panic("implement me")
+func (a *Activity) SetUserID(userID *umid.UMID, updateDB bool) error {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	if updateDB {
+		if err := a.db.GetActivitiesDB().UpdateActivityUserID(a.ctx, a.GetID(), userID); err != nil {
+			return errors.WithMessage(err, "failed to update db")
+		}
+	}
+
+	a.entry.UserID = userID
+
+	return nil
 }
 
 func (a *Activity) GetEntry() *entry.Activity {
