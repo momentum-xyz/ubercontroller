@@ -86,8 +86,9 @@ func (n *Node) apiTimelineForObject(c *gin.Context) {
 // @Router /api/v4/objects/{object_id}/timeline [post]
 func (n *Node) apiTimelineAddForObject(c *gin.Context) {
 	type InBody struct {
-		Type string `json:"type" binding:"required"`
-		Hash string `json:"hash" binding:"required"`
+		Type        string `json:"type" binding:"required"`
+		Hash        string `json:"hash" binding:"required"`
+		Description string `json:"description"`
 	}
 	var inBody InBody
 
@@ -111,36 +112,36 @@ func (n *Node) apiTimelineAddForObject(c *gin.Context) {
 		return
 	}
 
-	user, ok := n.GetUser(userID, true)
-	if !ok {
-		err := errors.Errorf("Node: apiTimelineAddForObject: failed to find user in node: %s", userID)
-		api.AbortRequest(c, http.StatusNotFound, "user_not_found", err, n.log)
+	user, err := n.LoadUser(userID)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to load user")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_load_user", err, n.log)
 		return
 	}
 
 	position := user.GetPosition()
-	activity, err := n.activities.CreateActivity(umid.New())
+	newActivity, err := n.activities.CreateActivity(umid.New())
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to create activity")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_create_activity", err, n.log)
 		return
 	}
 
-	err = activity.SetObjectID(&objectID, true)
+	err = newActivity.SetObjectID(&objectID, true)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to set object ID")
 		api.AbortRequest(c, http.StatusInternalServerError, "invalid_user", err, n.log)
 		return
 	}
 
-	err = activity.SetUserID(&userID, true)
+	err = newActivity.SetUserID(&userID, true)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to set user ID")
 		api.AbortRequest(c, http.StatusInternalServerError, "invalid_user", err, n.log)
 		return
 	}
 
-	err = activity.SetType(&inBody.Type, true)
+	err = newActivity.SetType(&inBody.Type, true)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to set activity type")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_type", err, n.log)
@@ -154,18 +155,26 @@ func (n *Node) apiTimelineAddForObject(c *gin.Context) {
 
 		current.Position = &position
 		current.Hash = &inBody.Hash
+		current.Description = &inBody.Description
 
 		return current, nil
 	}
 
-	_, err = activity.SetData(modifyFn, true)
+	_, err = newActivity.SetData(modifyFn, true)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to set activity data")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_data", err, n.log)
 		return
 	}
 
-	c.JSON(http.StatusOK, nil)
+	err = n.activities.AddActivity(newActivity, true)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to add activity")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_add_activity", err, n.log)
+		return
+	}
+
+	c.JSON(http.StatusOK, true)
 }
 
 // @Summary Get timeline for user
