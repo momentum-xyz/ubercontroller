@@ -57,16 +57,9 @@ func (a *Activities) GetActivity(activityID umid.UMID) (universe.Activity, bool)
 }
 
 func (a *Activities) GetActivities() map[umid.UMID]universe.Activity {
-	a.activities.Mu.RLock()
-	defer a.activities.Mu.RUnlock()
-
-	activities := make(map[umid.UMID]universe.Activity, len(a.activities.Data))
-
-	for id, asset := range a.activities.Data {
-		activities[id] = asset
-	}
-
-	return activities
+	return a.activities.Map(func(k umid.UMID, v universe.Activity) universe.Activity {
+		return v
+	})
 }
 
 func (a *Activities) GetPaginatedActivitiesByObjectID(objectID *umid.UMID, page int, pageSize int) []universe.Activity {
@@ -220,8 +213,6 @@ func (a *Activities) Load() error {
 			return errors.WithMessagef(err, "failed to load activity from entry: %s", assetEntry.ActivityID)
 		}
 	}
-
-	universe.GetNode().AddAPIRegister(a)
 
 	a.log.Infof("Activities loaded: %d", a.activities.Len())
 

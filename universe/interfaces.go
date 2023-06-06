@@ -407,7 +407,6 @@ type Activity interface {
 type Activities interface {
 	Initializer
 	LoadSaver
-	APIRegister
 
 	CreateActivity(activityID umid.UMID) (Activity, error)
 
