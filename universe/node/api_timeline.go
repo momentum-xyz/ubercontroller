@@ -180,7 +180,136 @@ func (n *Node) apiTimelineAddForObject(c *gin.Context) {
 		return
 	}
 
+	c.JSON(http.StatusCreated, true)
+}
+
+// @Summary Edits an activity to a timeline
+// @Schemes
+// @Description Edits an existing activity for a timeline
+// @Tags timeline
+// @Accept json
+// @Produce json
+// @Success 200 {object} node.apiTimelineForObject.Out
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/objects/{object_id}/timeline [patch]
+func (n *Node) apiTimelineEditForObject(c *gin.Context) {
+	type InBody struct {
+		ActivityID  string `json:"activity_id"`
+		Type        string `json:"type"`
+		Hash        string `json:"hash"`
+		Description string `json:"description"`
+	}
+	var inBody InBody
+
+	if err := c.ShouldBindJSON(&inBody); err != nil {
+		err := errors.WithMessage(err, "Node: apiTimelineEditForObject: failed to bind json")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
+		return
+	}
+
+	activityID, err := umid.Parse(inBody.ActivityID)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiTimelineEditForObject: failed to parse activity umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_activity_id", err, n.log)
+		return
+	}
+
+	existingActivity, ok := n.activities.GetActivity(activityID)
+	if !ok {
+		err := errors.New("Node: apiTimelineEditForObject: failed to find existing activity")
+		api.AbortRequest(c, http.StatusNotFound, "activity_not_found", err, n.log)
+		return
+	}
+
+	if inBody.Type != "" {
+		if !IsValidActivityType(inBody.Type) {
+			err := errors.New("Node: apiTimelineEditForObject: invalid activity type")
+			api.AbortRequest(c, http.StatusBadRequest, "invalid_type", err, n.log)
+			return
+		}
+
+		err = existingActivity.SetType((*entry.ActivityType)(&inBody.Type), true)
+		if err != nil {
+			err := errors.WithMessage(err, "Node: apiTimelineEditForObject: failed to set activity type")
+			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_type", err, n.log)
+			return
+		}
+	}
+
+	modifyFn := func(current *entry.ActivityData) (*entry.ActivityData, error) {
+		if current == nil {
+			current = &entry.ActivityData{}
+		}
+		if inBody.Hash != "" {
+			current.Hash = &inBody.Hash
+		}
+		if inBody.Description != "" {
+			current.Description = &inBody.Description
+		}
+
+		return current, nil
+	}
+
+	_, err = existingActivity.SetData(modifyFn, true)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiTimelineEditForObject: failed to set activity data")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_data", err, n.log)
+		return
+	}
+
+	err = n.activities.Save()
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiTimelineEditForObject: failed to save activity")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_save", err, n.log)
+		return
+	}
+
 	c.JSON(http.StatusOK, true)
+}
+
+// @Summary Remove an item from a timeline
+// @Schemes
+// @Description Removes an item from the timeline of an object
+// @Tags timeline
+// @Accept json
+// @Produce json
+// @Success 200 {object} node.apiTimelineForObject.Out
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/objects/{object_id}/timeline [delete]
+func (n *Node) apiTimelineRemoveForObject(c *gin.Context) {
+	type InBody struct {
+		ActivityID string `json:"activity_id" binding:"required"`
+	}
+	var inBody InBody
+
+	if err := c.ShouldBindJSON(&inBody); err != nil {
+		err := errors.WithMessage(err, "Node: apiTimelineRemoveForObject: failed to bind json")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
+		return
+	}
+
+	activityID, err := umid.Parse(inBody.ActivityID)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiTimelineRemoveForObject: failed to parse activity umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_activity_id", err, n.log)
+		return
+	}
+
+	activity, ok := n.activities.GetActivity(activityID)
+	if !ok {
+		err := errors.New("Node: apiTimelineRemoveForObject: activity not found")
+		api.AbortRequest(c, http.StatusNotFound, "activity_not_found", err, n.log)
+		return
+	}
+
+	ok, err = n.activities.RemoveActivity(activity, true)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiTimelineRemoveForObject: failed to remove activity")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_remove", err, n.log)
+		return
+	}
+
+	c.JSON(http.StatusOK, ok)
 }
 
 // @Summary Get timeline for user

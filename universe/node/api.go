@@ -153,6 +153,8 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 				{
 					timeline.GET("", n.apiTimelineForObject)
 					timeline.POST("", n.apiTimelineAddForObject)
+					timeline.PATCH("", n.apiTimelineEditForObject)
+					timeline.DELETE("", n.apiTimelineRemoveForObject)
 				}
 			}
 
