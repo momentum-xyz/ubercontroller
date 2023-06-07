@@ -56,12 +56,8 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 		verified := vx.Group("", middleware.VerifyUser(n.log))
 
-		//verifiedMedia := verified.Group("/media")
-		//{
-		//	verifiedMedia.POST("/upload/image", n.apiMediaUploadImage)
-		//}
-
 		vx.POST("/media/upload/image", n.apiMediaUploadImage)
+		vx.POST("/media/upload/video", n.apiMediaUploadVideo)
 
 		verifiedUsers := verified.Group("/users")
 		{
@@ -152,6 +148,14 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 				object.GET("/attributes/sub", n.apiGetObjectAttributeSubValue)
 
 				object.GET("/all-users/attributes", n.apiGetObjectAllUsersAttributeValuesList)
+
+				timeline := object.Group("/timeline")
+				{
+					timeline.GET("", n.apiTimelineForObject)
+					timeline.POST("", n.apiTimelineAddForObject)
+					timeline.PATCH("", n.apiTimelineEditForObject)
+					timeline.DELETE("", n.apiTimelineRemoveForObject)
+				}
 			}
 
 			objectUser := verifiedObjects.Group("/:objectID/:userID")

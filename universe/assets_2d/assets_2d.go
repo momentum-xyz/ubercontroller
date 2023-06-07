@@ -1,8 +1,6 @@
 package assets_2d
 
 import (
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
-
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -12,6 +10,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/asset_2d"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 var _ universe.Assets2d = (*Assets2d)(nil)

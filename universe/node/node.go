@@ -47,6 +47,7 @@ type Node struct {
 	worlds         universe.Worlds
 	assets2d       universe.Assets2d
 	assets3d       universe.Assets3d
+	activities     universe.Activities
 	objectTypes    universe.ObjectTypes
 	userTypes      universe.UserTypes
 	attributeTypes universe.AttributeTypes
@@ -75,6 +76,7 @@ func NewNode(
 	worlds universe.Worlds,
 	assets2D universe.Assets2d,
 	assets3D universe.Assets3d,
+	activities universe.Activities,
 	plugins universe.Plugins,
 	objectTypes universe.ObjectTypes,
 	userTypes universe.UserTypes,
@@ -86,6 +88,7 @@ func NewNode(
 		worlds:          worlds,
 		assets2d:        assets2D,
 		assets3d:        assets3D,
+		activities:      activities,
 		plugins:         plugins,
 		objectTypes:     objectTypes,
 		userTypes:       userTypes,
@@ -210,6 +213,10 @@ func (n *Node) GetAssets2d() universe.Assets2d {
 
 func (n *Node) GetAssets3d() universe.Assets3d {
 	return n.assets3d
+}
+
+func (n *Node) GetActivities() universe.Activities {
+	return n.activities
 }
 
 func (n *Node) GetPlugins() universe.Plugins {
@@ -343,6 +350,7 @@ func (n *Node) Load() error {
 			group, _ = errgroup.WithContext(ctx)
 			group.Go(n.GetObjectAttributes().Load)
 			group.Go(n.GetObjectTypes().Load)
+			group.Go(n.GetActivities().Load)
 			if err := group.Wait(); err != nil {
 				return errors.WithMessage(err, "failed to load additional data")
 			}

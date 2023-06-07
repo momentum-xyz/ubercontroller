@@ -382,6 +382,47 @@ type Asset2d interface {
 	LoadFromEntry(entry *entry.Asset2d) error
 }
 
+type Activity interface {
+	IDer
+	Initializer
+
+	GetData() *entry.ActivityData
+	SetData(modifyFn modify.Fn[entry.ActivityData], updateDB bool) (*entry.ActivityData, error)
+
+	GetType() *entry.ActivityType
+	SetType(activityType *entry.ActivityType, updateDB bool) error
+
+	GetObjectID() *umid.UMID
+	SetObjectID(objectID *umid.UMID, updateDB bool) error
+
+	GetUserID() *umid.UMID
+	SetUserID(userID *umid.UMID, updateDB bool) error
+
+	GetEntry() *entry.Activity
+	LoadFromEntry(entry *entry.Activity) error
+
+	GetCreatedAt() time.Time
+	SetCreatedAt(createdAt time.Time, updateDB bool) error
+}
+
+type Activities interface {
+	Initializer
+	LoadSaver
+
+	CreateActivity(activityID umid.UMID) (Activity, error)
+
+	GetActivity(activityID umid.UMID) (Activity, bool)
+	GetActivities() map[umid.UMID]Activity
+	GetPaginatedActivitiesByObjectID(objectID *umid.UMID, page int, pageSize int) []Activity
+	GetActivitiesByUserID(userID *umid.UMID) map[umid.UMID]Activity
+
+	AddActivity(activity Activity, updateDB bool) error
+	AddActivities(activities []Activity, updateDB bool) error
+
+	RemoveActivity(activity Activity, updateDB bool) (bool, error)
+	RemoveActivities(activities2d []Activity, updateDB bool) (bool, error)
+}
+
 type Assets3d interface {
 	LoadSaver
 	APIRegister

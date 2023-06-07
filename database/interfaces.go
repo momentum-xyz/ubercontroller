@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"math/big"
+	"time"
 
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
@@ -18,6 +19,7 @@ type DB interface {
 	GetNodesDB() NodesDB
 	GetWorldsDB() WorldsDB
 	GetObjectsDB() ObjectsDB
+	GetActivitiesDB() ActivitiesDB
 	GetUsersDB() UsersDB
 	GetAssets2dDB() Assets2dDB
 	GetAssets3dDB() Assets3dDB
@@ -46,6 +48,27 @@ type WorldsDB interface {
 	GetAllWorldIDs(ctx context.Context) ([]umid.UMID, error)
 	GetWorldIDs(ctx context.Context, sortType universe.SortType, limit string) ([]umid.UMID, error)
 	GetWorlds(ctx context.Context) ([]*entry.Object, error)
+}
+
+type ActivitiesDB interface {
+	GetActivities(ctx context.Context) ([]*entry.Activity, error)
+
+	GetActivityByID(ctx context.Context, activityID umid.UMID) (*entry.Activity, error)
+	GetActivityIDsByParentID(ctx context.Context, parentID umid.UMID) ([]umid.UMID, error)
+	GetActivitiesByUserID(ctx context.Context, userID umid.UMID) ([]*entry.Activity, error)
+	GetActivitiesByObjectID(ctx context.Context, objectID umid.UMID) ([]*entry.Activity, error)
+
+	RemoveActivityByID(ctx context.Context, activityID umid.UMID) error
+	RemoveActivitiesByIDs(ctx context.Context, activityIDs []umid.UMID) error
+
+	UpdateActivityData(ctx context.Context, activityID umid.UMID, options *entry.ActivityData) error
+	UpdateActivityType(ctx context.Context, activityID umid.UMID, activityType *entry.ActivityType) error
+	UpdateActivityObjectID(ctx context.Context, activityID umid.UMID, objectID *umid.UMID) error
+	UpdateActivityUserID(ctx context.Context, activityID umid.UMID, userID *umid.UMID) error
+	UpdateActivityCreatedAt(ctx context.Context, activityID umid.UMID, createdAt time.Time) error
+
+	UpsertActivity(ctx context.Context, activity *entry.Activity) error
+	UpsertActivities(ctx context.Context, activities []*entry.Activity) error
 }
 
 type ObjectsDB interface {

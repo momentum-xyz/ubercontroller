@@ -19,6 +19,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/universe/activities"
 	"github.com/momentum-xyz/ubercontroller/universe/assets_2d"
 	"github.com/momentum-xyz/ubercontroller/universe/assets_3d"
 	"github.com/momentum-xyz/ubercontroller/universe/attribute_types"
@@ -30,6 +31,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/worlds"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
+	activitiesDB "github.com/momentum-xyz/ubercontroller/database/activities"
 	assets2dDB "github.com/momentum-xyz/ubercontroller/database/assets_2d"
 	assets3dDB "github.com/momentum-xyz/ubercontroller/database/assets_3d"
 	attributesTypeDB "github.com/momentum-xyz/ubercontroller/database/attribute_types"
@@ -107,6 +109,7 @@ func createNode(ctx types.NodeContext, db database.DB, nodeEntry *entry.Node) (u
 	worlds := worlds.NewWorlds(db)
 	assets2d := assets_2d.NewAssets2d(db)
 	assets3d := assets_3d.NewAssets3d(db)
+	activities := activities.NewActivities(db)
 	plugins := plugins.NewPlugins(db)
 	objectTypes := object_types.NewObjectTypes(db)
 	userTypes := user_types.NewUserTypes(db)
@@ -123,6 +126,7 @@ func createNode(ctx types.NodeContext, db database.DB, nodeEntry *entry.Node) (u
 		worlds,
 		assets2d,
 		assets3d,
+		activities,
 		plugins,
 		objectTypes,
 		userTypes,
@@ -138,6 +142,9 @@ func createNode(ctx types.NodeContext, db database.DB, nodeEntry *entry.Node) (u
 	}
 	if err := assets3d.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize assets 3d")
+	}
+	if err := activities.Initialize(ctx); err != nil {
+		return nil, errors.WithMessage(err, "failed to initialize activities")
 	}
 	if err := plugins.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize plugins")
@@ -185,6 +192,7 @@ func createDB(conn *pgxpool.Pool) (database.DB, error) {
 		nodesDB.NewDB(conn, common),
 		worldsDB.NewDB(conn, common, objects),
 		objects,
+		activitiesDB.NewDB(conn, common),
 		usersDB.NewDB(conn, common),
 		assets2dDB.NewDB(conn, common),
 		assets3dDB.NewDB(conn, common),
