@@ -2,14 +2,14 @@ package object
 
 import (
 	"github.com/hashicorp/go-multierror"
+	pb "github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
-	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/common/posbus"
 	"github.com/pkg/errors"
 )
 
 func (o *Object) posBusAutoOnObjecteAttributeChanged(
-	changeType universe.AttributeChangeType, attributeID entry.AttributeID, value *entry.AttributeValue,
+	changeType pb.AttributeChangeType, attributeID entry.AttributeID, value *entry.AttributeValue,
 	effectiveOptions *entry.AttributeOptions,
 ) error {
 	autoOption, err := posbus.GetOptionAutoOption(effectiveOptions)

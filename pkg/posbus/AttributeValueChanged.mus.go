@@ -2,13 +2,20 @@
 
 package posbus
 
-import "github.com/ymz-ncnk/muserrs"
+import (
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
+	"github.com/ymz-ncnk/muserrs"
+)
 
 // MarshalMUS fills buf with the MUS encoding of v.
 func (v AttributeValueChanged) MarshalMUS(buf []byte) int {
 	i := 0
 	{
-		length := len(v.Topic)
+		si := v.PluginID.MarshalMUS(buf[i:])
+		i += si
+	}
+	{
+		length := len(v.AttributeName)
 		{
 			uv := uint64(length)
 			if length < 0 {
@@ -29,7 +36,7 @@ func (v AttributeValueChanged) MarshalMUS(buf []byte) int {
 		if len(buf[i:]) < length {
 			panic(muserrs.ErrSmallBuf)
 		}
-		i += copy(buf[i:], v.Topic)
+		i += copy(buf[i:], v.AttributeName)
 	}
 	{
 		length := len(v.ChangeType)
@@ -55,9 +62,16 @@ func (v AttributeValueChanged) MarshalMUS(buf []byte) int {
 		}
 		i += copy(buf[i:], v.ChangeType)
 	}
-	{
-		si := v.Data.MarshalMUS(buf[i:])
-		i += si
+	if v.Value == nil {
+		buf[i] = 0
+		i++
+	} else {
+		buf[i] = 1
+		i++
+		{
+			si := (*v.Value).MarshalMUS(buf[i:])
+			i += si
+		}
 	}
 	return i
 }
@@ -66,6 +80,18 @@ func (v AttributeValueChanged) MarshalMUS(buf []byte) int {
 func (v *AttributeValueChanged) UnmarshalMUS(buf []byte) (int, error) {
 	i := 0
 	var err error
+	{
+		var sv umid.UMID
+		si := 0
+		si, err = sv.UnmarshalMUS(buf[i:])
+		if err == nil {
+			v.PluginID = sv
+			i += si
+		}
+	}
+	if err != nil {
+		return i, muserrs.NewFieldError("PluginID", err)
+	}
 	{
 		var length int
 		{
@@ -106,11 +132,11 @@ func (v *AttributeValueChanged) UnmarshalMUS(buf []byte) (int, error) {
 		if len(buf) < i+length {
 			return i, muserrs.ErrSmallBuf
 		}
-		v.Topic = string(buf[i : i+length])
+		v.AttributeName = string(buf[i : i+length])
 		i += length
 	}
 	if err != nil {
-		return i, muserrs.NewFieldError("Topic", err)
+		return i, muserrs.NewFieldError("AttributeName", err)
 	}
 	{
 		var length int
@@ -158,17 +184,27 @@ func (v *AttributeValueChanged) UnmarshalMUS(buf []byte) (int, error) {
 	if err != nil {
 		return i, muserrs.NewFieldError("ChangeType", err)
 	}
-	{
-		var sv AttributeValueChangedData
-		si := 0
-		si, err = sv.UnmarshalMUS(buf[i:])
-		if err == nil {
-			v.Data = sv
-			i += si
+	v.Value = new(StringAnyMap)
+	if buf[i] == 0 {
+		i++
+		v.Value = nil
+	} else if buf[i] != 1 {
+		i++
+		return i, muserrs.ErrWrongByte
+	} else {
+		i++
+		{
+			var sv StringAnyMap
+			si := 0
+			si, err = sv.UnmarshalMUS(buf[i:])
+			if err == nil {
+				(*v.Value) = sv
+				i += si
+			}
 		}
 	}
 	if err != nil {
-		return i, muserrs.NewFieldError("Data", err)
+		return i, muserrs.NewFieldError("Value", err)
 	}
 	return i, err
 }
@@ -177,7 +213,11 @@ func (v *AttributeValueChanged) UnmarshalMUS(buf []byte) (int, error) {
 func (v AttributeValueChanged) SizeMUS() int {
 	size := 0
 	{
-		length := len(v.Topic)
+		ss := v.PluginID.SizeMUS()
+		size += ss
+	}
+	{
+		length := len(v.AttributeName)
 		{
 			uv := uint64(length<<1) ^ uint64(length>>63)
 			{
@@ -188,7 +228,7 @@ func (v AttributeValueChanged) SizeMUS() int {
 				size++
 			}
 		}
-		size += len(v.Topic)
+		size += len(v.AttributeName)
 	}
 	{
 		length := len(v.ChangeType)
@@ -204,9 +244,12 @@ func (v AttributeValueChanged) SizeMUS() int {
 		}
 		size += len(v.ChangeType)
 	}
-	{
-		ss := v.Data.SizeMUS()
-		size += ss
+	size++
+	if v.Value != nil {
+		{
+			ss := (*v.Value).SizeMUS()
+			size += ss
+		}
 	}
 	return size
 }

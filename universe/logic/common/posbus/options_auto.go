@@ -5,7 +5,6 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
-	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/pkg/errors"
 )
@@ -29,25 +28,18 @@ func GetOptionAutoOption(options *entry.AttributeOptions) (*entry.PosBusAutoAttr
 }
 
 func GetOptionAutoMessage(
-	option *entry.PosBusAutoAttributeOption, changeType universe.AttributeChangeType,
+	option *entry.PosBusAutoAttributeOption, changeType posbus.AttributeChangeType,
 	attributeID entry.AttributeID, value *entry.AttributeValue,
 ) (*websocket.PreparedMessage, error) {
 	if option == nil {
 		return nil, nil
 	}
 
-	topic := option.Topic
-	if topic == "" {
-		topic = attributeID.PluginID.String()
-	}
-
 	data := posbus.AttributeValueChanged{
-		Topic:      topic,
-		ChangeType: string(changeType),
-		Data: posbus.AttributeValueChangedData{
-			AttributeName: attributeID.Name,
-			Value:         (*posbus.StringAnyMap)(value),
-		},
+		PluginID:      attributeID.PluginID,
+		ChangeType:    string(changeType),
+		AttributeName: attributeID.Name,
+		Value:         (*posbus.StringAnyMap)(value),
 	}
 
 	return posbus.WSMessage(&data), nil

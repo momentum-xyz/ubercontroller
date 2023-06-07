@@ -7,6 +7,7 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
@@ -96,7 +97,7 @@ func (oua *objectUserAttributes) Upsert(
 				value = payload.Value
 			}
 			oua.node.onObjectUserAttributeChanged(
-				universe.ChangedAttributeChangeType, objectUserAttributeID, value, nil,
+				posbus.ChangedAttributeChangeType, objectUserAttributeID, value, nil,
 			)
 		}()
 	}
@@ -116,7 +117,7 @@ func (oua *objectUserAttributes) UpdateValue(
 
 	if oua.node.GetEnabled() {
 		go oua.node.onObjectUserAttributeChanged(
-			universe.ChangedAttributeChangeType, objectUserAttributeID, value, nil,
+			posbus.ChangedAttributeChangeType, objectUserAttributeID, value, nil,
 		)
 	}
 
@@ -144,7 +145,7 @@ func (oua *objectUserAttributes) UpdateOptions(
 				return
 			}
 			oua.node.onObjectUserAttributeChanged(
-				universe.ChangedAttributeChangeType, objectUserAttributeID, value, nil,
+				posbus.ChangedAttributeChangeType, objectUserAttributeID, value, nil,
 			)
 		}()
 	}
@@ -169,7 +170,7 @@ func (oua *objectUserAttributes) Remove(objectUserAttributeID entry.ObjectUserAt
 
 	if oua.node.GetEnabled() {
 		go oua.node.onObjectUserAttributeChanged(
-			universe.RemovedAttributeChangeType, objectUserAttributeID, nil, effectiveOptions,
+			posbus.RemovedAttributeChangeType, objectUserAttributeID, nil, effectiveOptions,
 		)
 	}
 
@@ -188,7 +189,7 @@ func (oua *objectUserAttributes) Len() int {
 }
 
 func (n *Node) onObjectUserAttributeChanged(
-	changeType universe.AttributeChangeType, objectUserAttributeID entry.ObjectUserAttributeID,
+	changeType posbus.AttributeChangeType, objectUserAttributeID entry.ObjectUserAttributeID,
 	value *entry.AttributeValue, effectiveOptions *entry.AttributeOptions,
 ) {
 	if effectiveOptions == nil {

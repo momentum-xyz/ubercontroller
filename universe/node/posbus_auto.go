@@ -4,13 +4,14 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 
+	pb "github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/common/posbus"
 )
 
 func (n *Node) posBusAutoOnUserAttributeChanged(
-	changeType universe.AttributeChangeType, userAttributeID entry.UserAttributeID, value *entry.AttributeValue,
+	changeType pb.AttributeChangeType, userAttributeID entry.UserAttributeID, value *entry.AttributeValue,
 	effectiveOptions *entry.AttributeOptions,
 ) error {
 	autoOption, err := posbus.GetOptionAutoOption(effectiveOptions)
@@ -75,7 +76,7 @@ func (n *Node) posBusAutoOnUserAttributeChanged(
 }
 
 func (n *Node) posBusAutoOnUserUserAttributeChanged(
-	changeType universe.AttributeChangeType, userUserAttributeID entry.UserUserAttributeID, value *entry.AttributeValue,
+	changeType pb.AttributeChangeType, userUserAttributeID entry.UserUserAttributeID, value *entry.AttributeValue,
 	effectiveOptions *entry.AttributeOptions,
 ) error {
 	autoOption, err := posbus.GetOptionAutoOption(effectiveOptions)
@@ -140,7 +141,7 @@ func (n *Node) posBusAutoOnUserUserAttributeChanged(
 }
 
 func (n *Node) posBusAutoOnObjectUserAttributeChanged(
-	changeType universe.AttributeChangeType, objectUserAttributeID entry.ObjectUserAttributeID,
+	changeType pb.AttributeChangeType, objectUserAttributeID entry.ObjectUserAttributeID,
 	value *entry.AttributeValue, effectiveOptions *entry.AttributeOptions,
 ) error {
 	autoOption, err := posbus.GetOptionAutoOption(effectiveOptions)

@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/common/slot"
@@ -181,7 +182,7 @@ func (oa *objectAttributes) Upsert(
 		if payload != nil {
 			value = payload.Value
 		}
-		go oa.object.onObjectAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
+		go oa.object.onObjectAttributeChanged(posbus.ChangedAttributeChangeType, attributeID, value, nil)
 	}
 
 	return payload, nil
@@ -218,7 +219,7 @@ func (oa *objectAttributes) UpdateValue(
 	oa.data[attributeID] = payload
 
 	if oa.object.GetEnabled() {
-		go oa.object.onObjectAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
+		go oa.object.onObjectAttributeChanged(posbus.ChangedAttributeChangeType, attributeID, value, nil)
 	}
 
 	return value, nil
@@ -259,7 +260,7 @@ func (oa *objectAttributes) UpdateOptions(
 		if payload != nil {
 			value = payload.Value
 		}
-		go oa.object.onObjectAttributeChanged(universe.ChangedAttributeChangeType, attributeID, value, nil)
+		go oa.object.onObjectAttributeChanged(posbus.ChangedAttributeChangeType, attributeID, value, nil)
 	}
 
 	return options, nil
@@ -289,7 +290,7 @@ func (oa *objectAttributes) Remove(attributeID entry.AttributeID, updateDB bool)
 	delete(oa.data, attributeID)
 
 	if oa.object.GetEnabled() {
-		go oa.object.onObjectAttributeChanged(universe.RemovedAttributeChangeType, attributeID, nil, effectiveOptions)
+		go oa.object.onObjectAttributeChanged(posbus.RemovedAttributeChangeType, attributeID, nil, effectiveOptions)
 	}
 
 	return true, nil
@@ -303,7 +304,7 @@ func (oa *objectAttributes) Len() int {
 }
 
 func (o *Object) onObjectAttributeChanged(
-	changeType universe.AttributeChangeType, attributeID entry.AttributeID,
+	changeType posbus.AttributeChangeType, attributeID entry.AttributeID,
 	value *entry.AttributeValue, effectiveOptions *entry.AttributeOptions,
 ) {
 	go o.calendarOnObjectAttributeChanged(changeType, attributeID, value, effectiveOptions)
@@ -346,7 +347,7 @@ func (o *Object) onObjectAttributeChanged(
 }
 
 func (o *Object) calendarOnObjectAttributeChanged(
-	changeType universe.AttributeChangeType, attributeID entry.AttributeID, value *entry.AttributeValue,
+	changeType posbus.AttributeChangeType, attributeID entry.AttributeID, value *entry.AttributeValue,
 	effectiveOptions *entry.AttributeOptions,
 ) error {
 	world := o.GetWorld()
@@ -355,9 +356,9 @@ func (o *Object) calendarOnObjectAttributeChanged(
 	}
 
 	switch changeType {
-	case universe.ChangedAttributeChangeType:
+	case posbus.ChangedAttributeChangeType:
 		world.GetCalendar().OnAttributeUpsert(attributeID, value)
-	case universe.RemovedAttributeChangeType:
+	case posbus.RemovedAttributeChangeType:
 		world.GetCalendar().OnAttributeRemove(attributeID)
 	default:
 		return errors.Errorf("unsupported change type: %s", changeType)

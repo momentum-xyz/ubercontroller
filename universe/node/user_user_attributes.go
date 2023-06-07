@@ -6,6 +6,7 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
@@ -90,7 +91,7 @@ func (uua *userUserAttributes) Upsert(
 			if payload != nil {
 				value = payload.Value
 			}
-			uua.node.onUserUserAttributeChanged(universe.ChangedAttributeChangeType, userUserAttributeID, value, nil)
+			uua.node.onUserUserAttributeChanged(posbus.ChangedAttributeChangeType, userUserAttributeID, value, nil)
 		}()
 	}
 
@@ -106,7 +107,7 @@ func (uua *userUserAttributes) UpdateValue(
 	}
 
 	if uua.node.GetEnabled() {
-		go uua.node.onUserUserAttributeChanged(universe.ChangedAttributeChangeType, userUserAttributeID, value, nil)
+		go uua.node.onUserUserAttributeChanged(posbus.ChangedAttributeChangeType, userUserAttributeID, value, nil)
 	}
 
 	return value, nil
@@ -130,7 +131,7 @@ func (uua *userUserAttributes) UpdateOptions(
 				)
 				return
 			}
-			uua.node.onUserUserAttributeChanged(universe.ChangedAttributeChangeType, userUserAttributeID, value, nil)
+			uua.node.onUserUserAttributeChanged(posbus.ChangedAttributeChangeType, userUserAttributeID, value, nil)
 		}()
 	}
 
@@ -151,7 +152,7 @@ func (uua *userUserAttributes) Remove(userUserAttributeID entry.UserUserAttribut
 	}
 
 	if uua.node.GetEnabled() {
-		go uua.node.onUserUserAttributeChanged(universe.RemovedAttributeChangeType, userUserAttributeID, nil, effectiveOptions)
+		go uua.node.onUserUserAttributeChanged(posbus.RemovedAttributeChangeType, userUserAttributeID, nil, effectiveOptions)
 	}
 
 	return true, nil
@@ -169,7 +170,7 @@ func (uua *userUserAttributes) Len() int {
 }
 
 func (n *Node) onUserUserAttributeChanged(
-	changeType universe.AttributeChangeType, userUserAttributeID entry.UserUserAttributeID, value *entry.AttributeValue,
+	changeType posbus.AttributeChangeType, userUserAttributeID entry.UserUserAttributeID, value *entry.AttributeValue,
 	effectiveOptions *entry.AttributeOptions,
 ) {
 	if effectiveOptions == nil {
