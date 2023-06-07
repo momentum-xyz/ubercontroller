@@ -76,6 +76,7 @@ func seedAssets2d(ctx context.Context, node universe.Node) error {
 		},
 	}
 
+	// TODO: make this idempotent, so we can trigger it on every startup and avoid writing data migrations for these.
 	for _, item := range items {
 		asset, err := node.GetAssets2d().CreateAsset2d(item.Asset2dID)
 		if err != nil {

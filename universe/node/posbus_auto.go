@@ -4,20 +4,22 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 
+	pb "github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/common/posbus"
 )
 
 func (n *Node) posBusAutoOnUserAttributeChanged(
-	changeType universe.AttributeChangeType, userAttributeID entry.UserAttributeID, value *entry.AttributeValue,
+	changeType pb.AttributeChangeType, userAttributeID entry.UserAttributeID, value *entry.AttributeValue,
 	effectiveOptions *entry.AttributeOptions,
 ) error {
 	autoOption, err := posbus.GetOptionAutoOption(effectiveOptions)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to get auto option: %+v", userAttributeID)
 	}
-	autoMessage, err := posbus.GetOptionAutoMessage(autoOption, changeType, userAttributeID.AttributeID, value)
+	targetID := userAttributeID.UserID
+	autoMessage, err := posbus.GetOptionAutoMessage(autoOption, changeType, userAttributeID.AttributeID, targetID, value)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to get auto message: %+v", userAttributeID)
 	}
@@ -75,14 +77,16 @@ func (n *Node) posBusAutoOnUserAttributeChanged(
 }
 
 func (n *Node) posBusAutoOnUserUserAttributeChanged(
-	changeType universe.AttributeChangeType, userUserAttributeID entry.UserUserAttributeID, value *entry.AttributeValue,
+	changeType pb.AttributeChangeType, userUserAttributeID entry.UserUserAttributeID, value *entry.AttributeValue,
 	effectiveOptions *entry.AttributeOptions,
 ) error {
 	autoOption, err := posbus.GetOptionAutoOption(effectiveOptions)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to get auto option: %+v", userUserAttributeID)
 	}
-	autoMessage, err := posbus.GetOptionAutoMessage(autoOption, changeType, userUserAttributeID.AttributeID, value)
+	targetID := userUserAttributeID.TargetUserID
+	// TODO: pass the source into the message
+	autoMessage, err := posbus.GetOptionAutoMessage(autoOption, changeType, userUserAttributeID.AttributeID, targetID, value)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to get auto message: %+v", userUserAttributeID)
 	}
@@ -140,14 +144,15 @@ func (n *Node) posBusAutoOnUserUserAttributeChanged(
 }
 
 func (n *Node) posBusAutoOnObjectUserAttributeChanged(
-	changeType universe.AttributeChangeType, objectUserAttributeID entry.ObjectUserAttributeID,
+	changeType pb.AttributeChangeType, objectUserAttributeID entry.ObjectUserAttributeID,
 	value *entry.AttributeValue, effectiveOptions *entry.AttributeOptions,
 ) error {
 	autoOption, err := posbus.GetOptionAutoOption(effectiveOptions)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to get auto option: %+v", objectUserAttributeID)
 	}
-	autoMessage, err := posbus.GetOptionAutoMessage(autoOption, changeType, objectUserAttributeID.AttributeID, value)
+	targetID := objectUserAttributeID.ObjectID
+	autoMessage, err := posbus.GetOptionAutoMessage(autoOption, changeType, objectUserAttributeID.AttributeID, targetID, value)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to get auto message: %+v", objectUserAttributeID)
 	}

@@ -5,14 +5,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
-type AttributeChangeType string
-
-const (
-	InvalidAttributeChangeType AttributeChangeType = ""
-	ChangedAttributeChangeType AttributeChangeType = "attribute_changed"
-	RemovedAttributeChangeType AttributeChangeType = "attribute_removed"
-)
-
 type ObjectFilterPredicateFn func(objectID umid.UMID, object Object) bool
 type WorldsFilterPredicateFn func(worldID umid.UMID, world World) bool
 type UsersFilterPredicateFn func(userID umid.UMID, user User) bool
