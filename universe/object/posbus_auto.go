@@ -16,7 +16,8 @@ func (o *Object) posBusAutoOnObjecteAttributeChanged(
 	if err != nil {
 		return errors.WithMessagef(err, "failed to get auto option: %+v", attributeID)
 	}
-	autoMessage, err := posbus.GetOptionAutoMessage(autoOption, changeType, attributeID, value)
+	targetID := o.GetID()
+	autoMessage, err := posbus.GetOptionAutoMessage(autoOption, changeType, attributeID, targetID, value)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to get auto message: %+v", attributeID)
 	}

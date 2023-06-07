@@ -20,6 +20,8 @@ type AttributeValueChanged struct {
 	ChangeType string `json:"change_type"`
 	// The new value, in case of change/new.
 	Value *StringAnyMap `json:"value"`
+	// ID of the related object/user
+	TargetID umid.UMID `json:"target_id"`
 }
 
 func (r *AttributeValueChanged) GetType() MsgType {

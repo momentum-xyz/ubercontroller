@@ -2,6 +2,7 @@ package posbus
 
 import (
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/gorilla/websocket"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -29,7 +30,7 @@ func GetOptionAutoOption(options *entry.AttributeOptions) (*entry.PosBusAutoAttr
 
 func GetOptionAutoMessage(
 	option *entry.PosBusAutoAttributeOption, changeType posbus.AttributeChangeType,
-	attributeID entry.AttributeID, value *entry.AttributeValue,
+	attributeID entry.AttributeID, targetID umid.UMID, value *entry.AttributeValue,
 ) (*websocket.PreparedMessage, error) {
 	if option == nil {
 		return nil, nil
@@ -39,6 +40,7 @@ func GetOptionAutoMessage(
 		PluginID:      attributeID.PluginID,
 		ChangeType:    string(changeType),
 		AttributeName: attributeID.Name,
+		TargetID:      targetID,
 		Value:         (*posbus.StringAnyMap)(value),
 	}
 

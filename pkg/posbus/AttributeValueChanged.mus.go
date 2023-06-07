@@ -73,6 +73,10 @@ func (v AttributeValueChanged) MarshalMUS(buf []byte) int {
 			i += si
 		}
 	}
+	{
+		si := v.TargetID.MarshalMUS(buf[i:])
+		i += si
+	}
 	return i
 }
 
@@ -206,6 +210,18 @@ func (v *AttributeValueChanged) UnmarshalMUS(buf []byte) (int, error) {
 	if err != nil {
 		return i, muserrs.NewFieldError("Value", err)
 	}
+	{
+		var sv umid.UMID
+		si := 0
+		si, err = sv.UnmarshalMUS(buf[i:])
+		if err == nil {
+			v.TargetID = sv
+			i += si
+		}
+	}
+	if err != nil {
+		return i, muserrs.NewFieldError("TargetID", err)
+	}
 	return i, err
 }
 
@@ -250,6 +266,10 @@ func (v AttributeValueChanged) SizeMUS() int {
 			ss := (*v.Value).SizeMUS()
 			size += ss
 		}
+	}
+	{
+		ss := v.TargetID.SizeMUS()
+		size += ss
 	}
 	return size
 }
