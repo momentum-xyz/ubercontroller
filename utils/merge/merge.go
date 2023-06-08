@@ -3,16 +3,13 @@ package merge
 import (
 	"bytes"
 	"fmt"
+
 	"github.com/goccy/go-reflect"
 	"github.com/pkg/errors"
-
-	"github.com/momentum-xyz/ubercontroller/logger"
 )
 
 type Trigger func(path string, new, current, result any) (any, bool, error)
 type TriggerFn func(new, current, result any) (any, bool, error)
-
-var log = logger.L()
 
 func NewTrigger(path string, triggerFn TriggerFn) Trigger {
 	return func(p string, n, c, r any) (any, bool, error) {
@@ -89,7 +86,7 @@ func AppendTriggerFn(new, current, result any) (any, bool, error) {
 }
 
 func DebugTriggerFn(path string, new, current, result any) (any, bool, error) {
-	log.Debugf("Merge: debug trigger fn: path: %s, new: %+v, current: %+v, result: %+v", path, new, current, result)
+	fmt.Printf("Merge: debug trigger fn: path: %s, new: %+v, current: %+v, result: %+v", path, new, current, result)
 	return nil, false, nil
 }
 
@@ -315,7 +312,7 @@ func mergeAddPathKey(path string, key any) string {
 	}
 
 	if _, err := fmt.Fprintf(res, "%+v", key); err != nil {
-		log.Errorf(
+		fmt.Printf(
 			"Utils: mergeAddPathKey: failed to fprintf: %+v", errors.WithStack(err),
 		)
 		return "invalid-path-key"

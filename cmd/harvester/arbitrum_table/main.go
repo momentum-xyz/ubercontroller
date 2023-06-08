@@ -17,16 +17,22 @@ import (
 func main() {
 	fmt.Println("Arbitrum Table Debugger")
 
-	cfg := config.GetConfig()
+	cfg, err := config.GetConfig()
+	if err != nil {
+		log.Fatal("failed to get config")
+	}
 	logger, _ := zap.NewProduction()
 	pgConfig, err := cfg.Postgres.GenConfig(logger)
+	if err != nil {
+		log.Fatalf("failed to create db config: %s", err)
+	}
 	pool, err := pgxpool.ConnectConfig(context.Background(), pgConfig)
 	if err != nil {
 		log.Fatal("failed to create db pool")
 	}
 	defer pool.Close()
 
-	a := arbitrum_nova_adapter.NewArbitrumNovaAdapter()
+	a := arbitrum_nova_adapter.NewArbitrumNovaAdapter(cfg)
 	a.Run()
 
 	t := harvester.NewTable(pool, a, listener)

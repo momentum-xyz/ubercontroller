@@ -3,16 +3,17 @@ package node
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"net/http"
 	"net/url"
 	"os/exec"
 	"path"
 
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
+
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/ubercontroller/logger"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -55,7 +56,6 @@ const StatusInProgress = "in progress"
 const StatusDone = "done"
 const StatusFailed = "failed"
 
-var log = logger.L()
 var store = generic.NewSyncMap[umid.UMID, StoreItem](0)
 
 // @Summary Get wallet metadata
@@ -143,7 +143,7 @@ func (n *Node) apiDriveTest(c *gin.Context) {
 
 	err := n.createWorld(umid.MustParse("e18d6d31-f62e-4dd0-ae62-a985135a1a34"), "Test World")
 	if err != nil {
-		log.Error(err)
+		n.log.Error(err)
 	}
 
 	out := Out{
@@ -204,7 +204,7 @@ func (n *Node) mint(jobID umid.UMID, wallet string, meta NFTMeta, blockHash stri
 			item.Error = err
 			store.Store(jobID, item)
 		}
-		log.Error(err)
+		n.log.Error(err)
 		return
 	}
 
@@ -222,7 +222,7 @@ func (n *Node) mint(jobID umid.UMID, wallet string, meta NFTMeta, blockHash stri
 		if errors.As(err, &exitErr) {
 			log.Error(string(exitErr.Stderr))
 		}
-		log.Error(err)
+		n.log.Error(err)
 		return
 	}
 	fmt.Println(string(output))
@@ -236,7 +236,7 @@ func (n *Node) mint(jobID umid.UMID, wallet string, meta NFTMeta, blockHash stri
 			item.Error = err
 			store.Store(jobID, item)
 		}
-		log.Error(err)
+		n.log.Error(err)
 		return
 	}
 
@@ -249,7 +249,7 @@ func (n *Node) mint(jobID umid.UMID, wallet string, meta NFTMeta, blockHash stri
 			item.Error = err
 			store.Store(jobID, item)
 		}
-		log.Error(err)
+		n.log.Error(err)
 		return
 	}
 
@@ -262,7 +262,7 @@ func (n *Node) mint(jobID umid.UMID, wallet string, meta NFTMeta, blockHash stri
 			item.NodeJSOut = &nodeJSOut
 			store.Store(jobID, item)
 		}
-		log.Error(item.Error)
+		n.log.Error(item.Error)
 		return
 	}
 
@@ -304,7 +304,7 @@ func (n *Node) mint(jobID umid.UMID, wallet string, meta NFTMeta, blockHash stri
 			item.Error = err
 			store.Store(jobID, item)
 		}
-		log.Error(err)
+		n.log.Error(err)
 		return
 	}
 
@@ -318,7 +318,7 @@ func (n *Node) mint(jobID umid.UMID, wallet string, meta NFTMeta, blockHash stri
 			item.Error = err
 			store.Store(jobID, item)
 		}
-		log.Error(err)
+		n.log.Error(err)
 		return
 	}
 

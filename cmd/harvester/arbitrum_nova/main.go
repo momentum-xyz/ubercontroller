@@ -13,7 +13,10 @@ import (
 )
 
 func main() {
-	cfg := config.GetConfig()
+	cfg, err := config.GetConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
 	a := arbitrum_nova_adapter.NewArbitrumNovaAdapter(cfg)
 
 	a.Run()

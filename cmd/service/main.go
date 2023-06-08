@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 	"os"
 	"os/signal"
@@ -20,21 +21,23 @@ import (
 // Build version, overridden with flag during build.
 var version = "devel"
 
-var log = logger.L()
-
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	log.Debugf("Version: %s", version)
-
 	if err := run(ctx); err != nil {
-		log.Fatal(errors.WithMessage(err, "failed to run service"))
+		fmt.Printf("Failed to run service: %v", err)
 	}
 }
 
 func run(ctx context.Context) error {
-	cfg := config.GetConfig()
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return errors.WithMessage(err, "failed to get config")
+	}
+
+	log := logger.L()
+	log.Debugf("Version: %s", version)
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
