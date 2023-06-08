@@ -17,7 +17,10 @@ import (
 func main() {
 	fmt.Println("Harvester Debugger")
 
-	cfg := config.GetConfig()
+	cfg, err := config.GetConfig()
+	if err != nil {
+		log.Fatal("failed to get config")
+	}
 	logger, _ := zap.NewProduction()
 	pgConfig, err := cfg.Postgres.GenConfig(logger)
 	pool, err := pgxpool.ConnectConfig(context.Background(), pgConfig)

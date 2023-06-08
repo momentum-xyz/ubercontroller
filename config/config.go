@@ -1,13 +1,12 @@
 package config
 
 import (
+	"fmt"
 	"io"
 	"os"
-	"strings"
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/pborman/getopt/v2"
-	"github.com/pkg/errors"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/yaml.v3"
 
@@ -26,8 +25,6 @@ type Config struct {
 }
 
 const configFileName = "config.yaml"
-
-var log = logger.L()
 
 func (x *Config) Init() {
 	x.Common.Init()
@@ -72,20 +69,20 @@ func readFile(cfg *Config) error {
 
 	f, err := os.Open(configFileName)
 	if err != nil {
-		return errors.WithMessage(err, "failed to open file")
+		return fmt.Errorf("failed to open config file: %w", err)
 	}
 	defer f.Close()
 
 	data, err := io.ReadAll(f)
 	if err != nil {
 		if err != io.EOF {
-			return errors.WithMessage(err, "failed to read file")
+			return fmt.Errorf("failed to read config file: %w", err)
 		}
 		return nil
 	}
 
 	if err := yaml.Unmarshal(data, cfg); err != nil {
-		return errors.WithMessage(err, "failed to unmarshal data")
+		return fmt.Errorf("failed to unmarhal config: %w", err)
 	}
 
 	return nil
@@ -97,36 +94,23 @@ func readEnv(cfg *Config) error {
 
 func prettyPrint(cfg *Config) {
 	d, _ := yaml.Marshal(cfg)
-	log.Infof("--- Config ---\n%s\n\n", string(d))
+	fmt.Printf("--- Config ---\n%s\n\n", string(d))
 }
 
 // GetConfig : get config file
-func GetConfig() *Config {
+func GetConfig() (*Config, error) {
 	cfg := defConfig()
 
 	if err := readFile(cfg); err != nil {
-		log.Fatalf("GetConfig: failed to read file: %s", err)
+		return nil, fmt.Errorf("GetConfig: %w", err)
 	}
 	if err := readEnv(cfg); err != nil {
-		log.Fatalf("GetConfig: failed to read env: %s", err)
+		return nil, fmt.Errorf("GetConfig: %w", err)
 	}
 	readOpts(cfg)
 
 	logger.SetLevel(zapcore.Level(cfg.Settings.LogLevel))
 	prettyPrint(cfg)
 
-	return cfg
-}
-
-func getEnv(key string) (string, bool) {
-	key = strings.ToUpper(key)
-
-	for _, e := range os.Environ() {
-		pair := strings.SplitN(e, "=", 2)
-		if pair[0] == key {
-			return pair[1], true
-		}
-	}
-
-	return "", false
+	return cfg, nil
 }
