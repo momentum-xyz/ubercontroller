@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/kelseyhightower/envconfig"
-	"github.com/pborman/getopt/v2"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/yaml.v3"
 
@@ -40,18 +39,6 @@ func defConfig() *Config {
 	var cfg Config
 	cfg.Init()
 	return &cfg
-}
-
-func readOpts(cfg *Config) {
-	helpFlag := false
-	getopt.Flag(&helpFlag, 'h', "display help")
-	getopt.Flag(&cfg.Settings.LogLevel, 'l', "be verbose")
-
-	getopt.Parse()
-	if helpFlag {
-		getopt.Usage()
-		os.Exit(0)
-	}
 }
 
 func fileExists(filename string) bool {
@@ -107,7 +94,6 @@ func GetConfig() (*Config, error) {
 	if err := readEnv(cfg); err != nil {
 		return nil, fmt.Errorf("GetConfig: %w", err)
 	}
-	readOpts(cfg)
 
 	logger.SetLevel(zapcore.Level(cfg.Settings.LogLevel))
 	prettyPrint(cfg)
