@@ -17,7 +17,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/seed"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
-	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/activities"
 	"github.com/momentum-xyz/ubercontroller/universe/assets_2d"
@@ -62,9 +61,6 @@ func LoadNode(
 		umid.MustParse("86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8"),
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize universe")
-	}
-	if err := generic.Initialize(ctx); err != nil {
-		return nil, errors.WithMessage(err, "failed to initialize generic package")
 	}
 	if err := logic.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize logic package")

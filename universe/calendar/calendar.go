@@ -64,7 +64,7 @@ func (c *Calendar) update() {
 	for i := range nextEvents {
 		d := nextEvents[i].Start.Sub(time.Now())
 		if d > 0 {
-			c.timerSet.Set(nextEvents[i].EventID, d, c.tick)
+			c.timerSet.Set(c.ctx, nextEvents[i].EventID, d, c.tick)
 		}
 	}
 }

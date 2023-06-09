@@ -162,7 +162,7 @@ func (u *User) SetOfflineTimer() (bool, error) {
 	u.mu.RLock()
 	defer u.mu.RUnlock()
 
-	u.offlineTimer.Set(u.id, time.Minute*20, u.DeleteTemporaryUser)
+	u.offlineTimer.Set(u.ctx, u.id, time.Minute*20, u.DeleteTemporaryUser)
 	u.log.Infof("Timer set: %s", u.GetID())
 	return true, nil
 }
