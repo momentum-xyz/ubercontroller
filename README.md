@@ -36,3 +36,26 @@ render_internal_url: 'http://localhost:4002'
 2. Run `swag init -g universe/node/api.go` to generate documentation
 3. Open in browser http://localhost:4000/swagger/index.html
 
+## Database migrations
+
+Changes to the database are managed as SQL scripts in `database/migrations`
+with [go-migrate](https://github.com/golang-migrate/migrate). See its documentation for detailed instructions. The short version:
+
+```
+go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+migrate create -ext sql -dir database/migrations/sql/ -seq <SHORT_NAME_FOR_MIGRATION>
+```
+Two empty .sql files will be created in `database/migrations/sql`.
+Implemented them and to test it:
+```
+migrate -source file://database/migrations/sql/ -database postgres://momentum:momentum@localhost:4321/momentum?sslmode=disable up
+```
+
+And to revert the change:
+```
+migrate -source file://database/migrations/sql/ -database postgres://momentum:momentum@localhost:4321/momentum?sslmode=disable down 1
+```
+
+If something goes wrong, it will leave the database in a 'dirty' state.
+To resolve you have to manually bring back the database to a known state (so use a single transaction in the SQL scripts to make this easier).
+After that edit the `schema_migration` table and set the version number back and flip the dirty boolean.
