@@ -71,24 +71,40 @@ func LoadNode(
 		return nil, errors.WithMessage(err, "failed to create db")
 	}
 
-	nodeEntry, err := getNodeEntry(ctx, db)
-	if err != nil {
-		return nil, errors.WithMessage(err, "failed to get node entry")
-	}
-
-	node, err := createNode(ctx, db, nodeEntry)
+	node, err := getNode(ctx, db)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to create node")
 	}
 
-	if err := loadNode(ctx, node, nodeEntry, db); err != nil {
+	if err := loadNode(ctx, node, db); err != nil {
 		return nil, errors.WithMessagef(err, "failed to load node: %s", node.GetID())
 	}
 	return node, nil
 }
 
-func loadNode(ctx types.NodeContext, node universe.Node, nodeEntry *entry.Node, db database.DB) error {
+// Seed the database of a node.
+func SeedNode(ctx types.NodeContext, cfg *config.Config, pool *pgxpool.Pool) error {
+	db, err := createDB(pool)
+	if err != nil {
+		return errors.WithMessage(err, "failed to create db")
+	}
+	node, err := getNode(ctx, db)
+	if err != nil {
+		return errors.WithMessage(err, "failed to create node")
+	}
+	return seed.Node(ctx, node, db)
+}
 
+func getNode(ctx types.NodeContext, db database.DB) (universe.Node, error) {
+	nodeEntry, err := getNodeEntry(ctx, db)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to get node entry")
+	}
+	return createNode(ctx, db, nodeEntry)
+}
+
+func loadNode(ctx types.NodeContext, node universe.Node, db database.DB) error {
+	nodeEntry := node.GetEntry()
 	if nodeEntry == nil {
 		if err := seed.Node(ctx, node, db); err != nil {
 			return errors.WithMessage(err, "failed to seed node")
@@ -97,7 +113,6 @@ func loadNode(ctx types.NodeContext, node universe.Node, nodeEntry *entry.Node, 
 	if err := node.Load(); err != nil {
 		return errors.WithMessage(err, "failed to load node")
 	}
-
 	return nil
 }
 
