@@ -524,6 +524,7 @@ func (o *Object) saveObjects(objects map[umid.UMID]universe.Object) error {
 
 	// saving objects attributes
 	if err := generic.NewButcher(objList).HandleItems(
+		o.ctx,
 		int(o.CFG.Postgres.MAXCONNS), // modify batchSize when database consumption while saving will be changed
 		func(object universe.Object) error {
 			if err := object.GetObjectAttributes().Save(); err != nil {

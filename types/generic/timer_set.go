@@ -2,9 +2,8 @@ package generic
 
 import (
 	"context"
+	"fmt"
 	"time"
-
-	"github.com/pkg/errors"
 )
 
 type TimerFunc[T comparable] func(key T) error
@@ -19,7 +18,7 @@ func NewTimerSet[T comparable]() *TimerSet[T] {
 	}
 }
 
-func (t *TimerSet[T]) Set(key T, delay time.Duration, fn TimerFunc[T]) {
+func (t *TimerSet[T]) Set(ctx context.Context, key T, delay time.Duration, fn TimerFunc[T]) {
 	t.timers.Mu.Lock()
 	defer t.timers.Mu.Unlock()
 
@@ -28,7 +27,7 @@ func (t *TimerSet[T]) Set(key T, delay time.Duration, fn TimerFunc[T]) {
 		stopFn.Value()()
 	}
 
-	ctx, cancel := context.WithTimeout(generic.ctx, delay)
+	ctx, cancel := context.WithTimeout(ctx, delay)
 	stopFn = NewUnique(cancel)
 	t.timers.Data[key] = stopFn
 
@@ -48,7 +47,8 @@ func (t *TimerSet[T]) Set(key T, delay time.Duration, fn TimerFunc[T]) {
 		case <-ctx.Done():
 			if ctx.Err() == context.DeadlineExceeded {
 				if err := fn(key); err != nil {
-					generic.log.Warn(errors.WithMessagef(err, "TimerSet: Set: function call failed: %+v", key))
+					//TODO: return error
+					fmt.Printf("TimerSet: Set: function call failed: %+v", key)
 				}
 			}
 		}

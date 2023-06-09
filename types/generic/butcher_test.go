@@ -7,32 +7,13 @@ package generic
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"reflect"
 	"sync"
 	"testing"
-
-	"github.com/momentum-xyz/ubercontroller/config"
-	"github.com/momentum-xyz/ubercontroller/types"
-	"go.uber.org/zap"
 )
 
 func TestMain(m *testing.M) {
-	cfg := &config.Config{} //TODO: proper test config getter
-	ctx, err := types.NewNodeContext(
-		context.Background(),
-		zap.NewExample().Sugar(),
-		cfg,
-	)
-	if err != nil {
-		fmt.Printf("Failed to create context: %s", err)
-		os.Exit(1)
-	}
-	if err := Initialize(ctx); err != nil {
-		fmt.Printf("Failed to initialize: %s", err)
-		os.Exit(1)
-	}
 
 	code := m.Run()
 
@@ -54,7 +35,7 @@ func TestButcher_HandleItems(t *testing.T) {
 	}
 
 	batchSize := 2
-	err := b.HandleItems(batchSize, itemHandler)
+	err := b.HandleItems(context.Background(), batchSize, itemHandler)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -74,7 +55,7 @@ func TestButcher_HandleItems_Error(t *testing.T) {
 	}
 
 	batchSize := 2
-	err := b.HandleItems(batchSize, itemHandler)
+	err := b.HandleItems(context.Background(), batchSize, itemHandler)
 	if err == nil {
 		t.Errorf("Expected error, got nil")
 	}
@@ -134,7 +115,7 @@ func TestButcher_HandleBatchesAsync(t *testing.T) {
 	}
 
 	batchSize := 2
-	err := b.HandleBatchesAsync(batchSize, batchHandler)
+	err := b.HandleBatchesAsync(context.Background(), batchSize, batchHandler)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -154,7 +135,7 @@ func TestButcher_HandleBatchesAsync_Error(t *testing.T) {
 	}
 
 	batchSize := 2
-	err := b.HandleBatchesAsync(batchSize, batchHandler)
+	err := b.HandleBatchesAsync(context.Background(), batchSize, batchHandler)
 	if err == nil {
 		t.Errorf("Expected error, got nil")
 	}
