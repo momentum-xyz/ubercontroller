@@ -396,6 +396,26 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			},
 		},
 		{
+			pluginID:      universe.GetSystemPluginID(),
+			attributeName: "soundtrack",
+			description:   "Playlist",
+			options: &entry.AttributeOptions{
+				"posbus_auto": entry.PosBusAutoAttributeOption{
+					Scope: []entry.PosBusAutoScopeAttributeOption{entry.ObjectPosBusAutoScopeAttributeOption},
+				},
+			},
+		},
+		{
+			pluginID:      universe.GetSystemPluginID(),
+			attributeName: "shaders",
+			description:   "3D shader FX",
+			options: &entry.AttributeOptions{
+				"posbus_auto": entry.PosBusAutoAttributeOption{
+					Scope: []entry.PosBusAutoScopeAttributeOption{entry.WorldPosBusAutoScopeAttributeOption},
+				},
+			},
+		},
+		{
 			pluginID:      umid.MustParse(textPluginID),
 			attributeName: "state",
 			description:   "State of the text tile",
