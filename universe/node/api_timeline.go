@@ -91,9 +91,9 @@ func (n *Node) apiTimelineForObject(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// @Summary Adds an activity to a timeline
+// @Summary Adds a post to a timeline
 // @Schemes
-// @Description Creates a new activity for a timeline
+// @Description Creates a new post for a timeline
 // @Tags timeline
 // @Accept json
 // @Produce json
@@ -143,15 +143,13 @@ func (n *Node) apiTimelineAddForObject(c *gin.Context) {
 		return
 	}
 
-	err = newActivity.SetObjectID(&objectID, true)
-	if err != nil {
+	if err := newActivity.SetObjectID(&objectID, true); err != nil {
 		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to set object ID")
 		api.AbortRequest(c, http.StatusInternalServerError, "invalid_user", err, n.log)
 		return
 	}
 
-	err = newActivity.SetUserID(&userID, true)
-	if err != nil {
+	if err := newActivity.SetUserID(&userID, true); err != nil {
 		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to set user ID")
 		api.AbortRequest(c, http.StatusInternalServerError, "invalid_user", err, n.log)
 		return
@@ -163,8 +161,7 @@ func (n *Node) apiTimelineAddForObject(c *gin.Context) {
 		return
 	}
 
-	err = newActivity.SetType((*entry.ActivityType)(&inBody.Type), true)
-	if err != nil {
+	if err := newActivity.SetType((*entry.ActivityType)(&inBody.Type), true); err != nil {
 		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to set activity type")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_type", err, n.log)
 		return
@@ -189,10 +186,9 @@ func (n *Node) apiTimelineAddForObject(c *gin.Context) {
 		return
 	}
 
-	err = n.activities.AddActivity(newActivity, true)
-	if err != nil {
-		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to add activity")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_add_activity", err, n.log)
+	if err := n.InjectActivity(newActivity); err != nil {
+		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to inject activity")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_inject_activity", err, n.log)
 		return
 	}
 
@@ -266,17 +262,9 @@ func (n *Node) apiTimelineEditForObject(c *gin.Context) {
 		return current, nil
 	}
 
-	_, err = existingActivity.SetData(modifyFn, true)
-	if err != nil {
-		err := errors.WithMessage(err, "Node: apiTimelineEditForObject: failed to set activity data")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_data", err, n.log)
-		return
-	}
-
-	err = n.activities.Save()
-	if err != nil {
-		err := errors.WithMessage(err, "Node: apiTimelineEditForObject: failed to save activity")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_save", err, n.log)
+	if err := n.ModifyActivity(existingActivity, modifyFn); err != nil {
+		err := errors.WithMessage(err, "Node: apiTimelineEditForObject: failed to modify activity")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_modify_activity", err, n.log)
 		return
 	}
 
@@ -318,10 +306,9 @@ func (n *Node) apiTimelineRemoveForObject(c *gin.Context) {
 		return
 	}
 
-	ok, err = n.activities.RemoveActivity(activity, true)
-	if err != nil {
+	if err := n.RemoveActivity(activity); err != nil {
 		err := errors.WithMessage(err, "Node: apiTimelineRemoveForObject: failed to remove activity")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_remove", err, n.log)
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_remove_activity", err, n.log)
 		return
 	}
 
