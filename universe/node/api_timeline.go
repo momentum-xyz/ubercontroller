@@ -203,10 +203,9 @@ func (n *Node) apiTimelineAddForObject(c *gin.Context) {
 // @Produce json
 // @Success 200 {object} node.apiTimelineForObject.Out
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/objects/{object_id}/timeline [patch]
+// @Router /api/v4/objects/{object_id}/timeline/{activity_id} [patch]
 func (n *Node) apiTimelineEditForObject(c *gin.Context) {
 	type InBody struct {
-		ActivityID  string `json:"activity_id"`
 		Type        string `json:"type"`
 		Hash        string `json:"hash"`
 		Description string `json:"description"`
@@ -219,7 +218,7 @@ func (n *Node) apiTimelineEditForObject(c *gin.Context) {
 		return
 	}
 
-	activityID, err := umid.Parse(inBody.ActivityID)
+	activityID, err := umid.Parse(c.Param("activityID"))
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiTimelineEditForObject: failed to parse activity umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_activity_id", err, n.log)
@@ -279,22 +278,11 @@ func (n *Node) apiTimelineEditForObject(c *gin.Context) {
 // @Produce json
 // @Success 200 {object} node.apiTimelineForObject.Out
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/objects/{object_id}/timeline [delete]
+// @Router /api/v4/objects/{object_id}/timeline/{activity_id} [delete]
 func (n *Node) apiTimelineRemoveForObject(c *gin.Context) {
-	type InBody struct {
-		ActivityID string `json:"activity_id" binding:"required"`
-	}
-	var inBody InBody
-
-	if err := c.ShouldBindJSON(&inBody); err != nil {
-		err := errors.WithMessage(err, "Node: apiTimelineRemoveForObject: failed to bind json")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
-		return
-	}
-
-	activityID, err := umid.Parse(inBody.ActivityID)
+	activityID, err := umid.Parse(c.Param("activityID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiTimelineRemoveForObject: failed to parse activity umid")
+		err := errors.WithMessage(err, "Node: apiTimelineEditForObject: failed to parse activity umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_activity_id", err, n.log)
 		return
 	}
