@@ -26,6 +26,8 @@ func main() {
 	//}
 
 	err = musGo.Generate(reflect.TypeOf((*entry.SlotType)(nil)).Elem(), unsafe)
+	err = musGo.Generate(reflect.TypeOf((*entry.ActivityData)(nil)).Elem(), unsafe)
+	err = musGo.Generate(reflect.TypeOf((*entry.ActivityType)(nil)).Elem(), unsafe)
 	if err != nil {
 		panic(err)
 	}
