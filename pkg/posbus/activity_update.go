@@ -1,6 +1,9 @@
 package posbus
 
-import "github.com/momentum-xyz/ubercontroller/utils/umid"
+import (
+	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
+)
 
 // TODO: does musgo support type aliases/const like this?
 type ActivityUpdateType string
@@ -13,12 +16,12 @@ const (
 )
 
 type ActivityUpdate struct {
-	ActivityId umid.UMID     `json:"activity_id"`
-	ChangeType string        `json:"change_type"`
-	Type       string        `json:"type"`
-	Data       *StringAnyMap `json:"data"`
-	UserId     umid.UMID     `json:"user_id"`
-	ObjectId   umid.UMID     `json:"object_id"`
+	ActivityId umid.UMID           `json:"activity_id"`
+	ChangeType string              `json:"change_type"`
+	Type       *entry.ActivityType `json:"type"`
+	Data       *entry.ActivityData `json:"data"`
+	UserId     umid.UMID           `json:"user_id"`
+	ObjectId   umid.UMID           `json:"object_id"`
 }
 
 func (r *ActivityUpdate) GetType() MsgType {
