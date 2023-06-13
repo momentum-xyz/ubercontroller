@@ -14,14 +14,13 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
-// @Param page query int false "Page number"
-// @Param pageSize query int false "Number of items per page"
 // @Summary Get timeline for object
 // @Schemes
 // @Description Returns a timeline for an object, collection of activities == timeline
 // @Tags timeline
 // @Accept json
 // @Produce json
+// @Param query query node.apiTimelineForObject.InQuery true "query params"
 // @Success 200 {object} node.apiTimelineForObject.Out
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/timeline [get]
@@ -91,12 +90,13 @@ func (n *Node) apiTimelineForObject(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// @Summary Adds an activity to a timeline
+// @Summary Adds a post to a timeline
 // @Schemes
-// @Description Creates a new activity for a timeline
+// @Description Creates a new post for a timeline
 // @Tags timeline
 // @Accept json
 // @Produce json
+// @Param body body node.apiTimelineAddForObject.InBody true "body params"
 // @Success 200 {object} node.apiTimelineForObject.Out
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/timeline [post]
@@ -143,15 +143,13 @@ func (n *Node) apiTimelineAddForObject(c *gin.Context) {
 		return
 	}
 
-	err = newActivity.SetObjectID(&objectID, true)
-	if err != nil {
+	if err := newActivity.SetObjectID(&objectID, true); err != nil {
 		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to set object ID")
 		api.AbortRequest(c, http.StatusInternalServerError, "invalid_user", err, n.log)
 		return
 	}
 
-	err = newActivity.SetUserID(&userID, true)
-	if err != nil {
+	if err := newActivity.SetUserID(&userID, true); err != nil {
 		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to set user ID")
 		api.AbortRequest(c, http.StatusInternalServerError, "invalid_user", err, n.log)
 		return
@@ -163,8 +161,7 @@ func (n *Node) apiTimelineAddForObject(c *gin.Context) {
 		return
 	}
 
-	err = newActivity.SetType((*entry.ActivityType)(&inBody.Type), true)
-	if err != nil {
+	if err := newActivity.SetType((*entry.ActivityType)(&inBody.Type), true); err != nil {
 		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to set activity type")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_type", err, n.log)
 		return
@@ -189,10 +186,9 @@ func (n *Node) apiTimelineAddForObject(c *gin.Context) {
 		return
 	}
 
-	err = n.activities.AddActivity(newActivity, true)
-	if err != nil {
-		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to add activity")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_add_activity", err, n.log)
+	if err := n.InjectActivity(newActivity); err != nil {
+		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to inject activity")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_inject_activity", err, n.log)
 		return
 	}
 
@@ -205,12 +201,12 @@ func (n *Node) apiTimelineAddForObject(c *gin.Context) {
 // @Tags timeline
 // @Accept json
 // @Produce json
+// @Param body body node.apiTimelineEditForObject.InBody true "body params"
 // @Success 200 {object} node.apiTimelineForObject.Out
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/objects/{object_id}/timeline [patch]
+// @Router /api/v4/objects/{object_id}/timeline/{activity_id} [patch]
 func (n *Node) apiTimelineEditForObject(c *gin.Context) {
 	type InBody struct {
-		ActivityID  string `json:"activity_id"`
 		Type        string `json:"type"`
 		Hash        string `json:"hash"`
 		Description string `json:"description"`
@@ -223,7 +219,7 @@ func (n *Node) apiTimelineEditForObject(c *gin.Context) {
 		return
 	}
 
-	activityID, err := umid.Parse(inBody.ActivityID)
+	activityID, err := umid.Parse(c.Param("activityID"))
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiTimelineEditForObject: failed to parse activity umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_activity_id", err, n.log)
@@ -266,17 +262,9 @@ func (n *Node) apiTimelineEditForObject(c *gin.Context) {
 		return current, nil
 	}
 
-	_, err = existingActivity.SetData(modifyFn, true)
-	if err != nil {
-		err := errors.WithMessage(err, "Node: apiTimelineEditForObject: failed to set activity data")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_data", err, n.log)
-		return
-	}
-
-	err = n.activities.Save()
-	if err != nil {
-		err := errors.WithMessage(err, "Node: apiTimelineEditForObject: failed to save activity")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_save", err, n.log)
+	if err := n.ModifyActivity(existingActivity, modifyFn); err != nil {
+		err := errors.WithMessage(err, "Node: apiTimelineEditForObject: failed to modify activity")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_modify_activity", err, n.log)
 		return
 	}
 
@@ -291,22 +279,11 @@ func (n *Node) apiTimelineEditForObject(c *gin.Context) {
 // @Produce json
 // @Success 200 {object} node.apiTimelineForObject.Out
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/objects/{object_id}/timeline [delete]
+// @Router /api/v4/objects/{object_id}/timeline/{activity_id} [delete]
 func (n *Node) apiTimelineRemoveForObject(c *gin.Context) {
-	type InBody struct {
-		ActivityID string `json:"activity_id" binding:"required"`
-	}
-	var inBody InBody
-
-	if err := c.ShouldBindJSON(&inBody); err != nil {
-		err := errors.WithMessage(err, "Node: apiTimelineRemoveForObject: failed to bind json")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
-		return
-	}
-
-	activityID, err := umid.Parse(inBody.ActivityID)
+	activityID, err := umid.Parse(c.Param("activityID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiTimelineRemoveForObject: failed to parse activity umid")
+		err := errors.WithMessage(err, "Node: apiTimelineEditForObject: failed to parse activity umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_activity_id", err, n.log)
 		return
 	}
@@ -318,10 +295,9 @@ func (n *Node) apiTimelineRemoveForObject(c *gin.Context) {
 		return
 	}
 
-	ok, err = n.activities.RemoveActivity(activity, true)
-	if err != nil {
+	if err := n.RemoveActivity(activity); err != nil {
 		err := errors.WithMessage(err, "Node: apiTimelineRemoveForObject: failed to remove activity")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_remove", err, n.log)
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_remove_activity", err, n.log)
 		return
 	}
 
