@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"flag"
+	"log"
 	"math/rand"
 	"os"
 	"os/signal"
@@ -20,21 +22,32 @@ import (
 // Build version, overridden with flag during build.
 var version = "devel"
 
-var log = logger.L()
-
 func main() {
+	seedOnly := flag.Bool("seed", false, "Only seed the database.")
+	flag.Parse()
+
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	log.Debugf("Version: %s", version)
-
-	if err := run(ctx); err != nil {
-		log.Fatal(errors.WithMessage(err, "failed to run service"))
+	if *seedOnly {
+		if err := runSeeder(ctx); err != nil {
+			log.Fatal(errors.WithMessage(err, "failed to run seeder"))
+		}
+	} else {
+		if err := run(ctx); err != nil {
+			log.Fatal(errors.WithMessage(err, "failed to run service"))
+		}
 	}
 }
 
 func run(ctx context.Context) error {
-	cfg := config.GetConfig()
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return errors.WithMessage(err, "failed to get config")
+	}
+
+	log := logger.L()
+	log.Debugf("Version: %s", version)
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -75,5 +88,34 @@ func run(ctx context.Context) error {
 	cute.SetMessageColor(cute.BrightBlue)
 	cute.Println("Node stopped", "That's all folks!")
 
+	return nil
+}
+
+func runSeeder(ctx context.Context) error {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return errors.WithMessage(err, "failed to get config")
+	}
+	log := logger.L()
+	log.Debugf("Version: %s", version)
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	nodeCtx, err := types.NewNodeContext(ctx, log, cfg)
+	if err != nil {
+		return errors.WithMessage(err, "failed to create context")
+	}
+	pool, err := service.CreateDBConnection(nodeCtx, &cfg.Postgres)
+	if err != nil {
+		return errors.WithMessage(err, "failed to create db connection")
+	}
+	defer pool.Close()
+
+	log.Debug("Seed node.")
+	err = service.SeedNode(nodeCtx, cfg, pool)
+	if err != nil {
+		return errors.WithMessage(err, "failed to seed nope")
+	}
+	log.Debug("Seeded node.")
 	return nil
 }

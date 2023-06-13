@@ -7,23 +7,22 @@
 
 CREATE TABLE activity
 (
-    activity_id uuid NOT NULL,
+    activity_id uuid PRIMARY KEY,
     user_id     uuid NOT NULL,
     object_id   uuid NOT NULL,
     type        varchar(255) NOT NULL,
     data        jsonb NOT NULL,
     created_at  timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-    CONSTRAINT PK_1 PRIMARY KEY ( activity_id ),
-    CONSTRAINT FK_34 FOREIGN KEY ( user_id ) REFERENCES "user" ( user_id ) ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT FK_35 FOREIGN KEY ( object_id ) REFERENCES object ( object_id ) ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT FK_ACTIVITY_USER FOREIGN KEY ( user_id ) REFERENCES "user" ( user_id ) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT FK_ACTIVITY_OBJECT FOREIGN KEY ( object_id ) REFERENCES object ( object_id ) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE INDEX FK_1 ON activity
+CREATE INDEX ACTIVITY_USER_IDX ON activity
 (
     user_id
 );
 
-CREATE INDEX FK_2 ON activity
+CREATE INDEX ACTIVITY_OBJECT_IDX ON activity
 (
     object_id
 );
@@ -35,17 +34,17 @@ CREATE TABLE user_activity
     user_id     uuid NOT NULL,
     activity_id uuid NOT NULL,
     created_at  timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-    CONSTRAINT PK_1 PRIMARY KEY ( user_id, activity_id ),
-    CONSTRAINT FK_38 FOREIGN KEY ( activity_id ) REFERENCES activity ( activity_id ) ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT FK_39 FOREIGN KEY ( user_id ) REFERENCES "user" ( user_id ) ON DELETE CASCADE ON UPDATE CASCADE
+    PRIMARY KEY ( user_id, activity_id ),
+    CONSTRAINT FK_UA_ACTIVITY FOREIGN KEY ( activity_id ) REFERENCES activity ( activity_id ) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT FK_UA_USER FOREIGN KEY ( user_id ) REFERENCES "user" ( user_id ) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE INDEX FK_1 ON user_activity
+CREATE INDEX UA_ACTIVITY_IDX ON user_activity
 (
     activity_id
 );
 
-CREATE INDEX FK_2 ON user_activity
+CREATE INDEX UA_USER_IDX ON user_activity
 (
     user_id
 );
@@ -57,17 +56,17 @@ CREATE TABLE object_activity
     object_id   uuid NOT NULL,
     activity_id uuid NOT NULL,
     created_at  timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-    CONSTRAINT PK_1 PRIMARY KEY ( object_id, activity_id ),
-    CONSTRAINT FK_36 FOREIGN KEY ( object_id ) REFERENCES object ( object_id ) ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT FK_37 FOREIGN KEY ( activity_id ) REFERENCES activity ( activity_id ) ON DELETE CASCADE ON UPDATE CASCADE
+    PRIMARY KEY ( object_id, activity_id ),
+    CONSTRAINT FK_OA_OBJECT FOREIGN KEY ( object_id ) REFERENCES object ( object_id ) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT FK_OA_ACTIVITY FOREIGN KEY ( activity_id ) REFERENCES activity ( activity_id ) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE INDEX FK_1 ON object_activity
+CREATE INDEX OA_OBJECT_IDX ON object_activity
 (
     object_id
 );
 
-CREATE INDEX FK_2 ON object_activity
+CREATE INDEX OA_ACTIVITY_IDX ON object_activity
 (
     activity_id
 );

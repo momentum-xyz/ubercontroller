@@ -17,12 +17,18 @@ import (
 func main() {
 	fmt.Println("Table 2")
 
-	cfg := config.GetConfig()
+	cfg, err := config.GetConfig()
+	if err != nil {
+		log.Fatalf("failed to get config: %s", err)
+	}
 	logger, _ := zap.NewProduction()
 	pgConfig, err := cfg.Postgres.GenConfig(logger)
+	if err != nil {
+		log.Fatalf("failed to create db config: %s", err)
+	}
 	pool, err := pgxpool.ConnectConfig(context.Background(), pgConfig)
 	if err != nil {
-		log.Fatal("failed to create db pool")
+		log.Fatalf("failed to create db pool: %s", err)
 	}
 	defer pool.Close()
 

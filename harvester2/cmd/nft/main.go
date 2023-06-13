@@ -3,20 +3,27 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/harvester2"
 	"github.com/momentum-xyz/ubercontroller/harvester2/arbitrum_nova_adapter2"
 	"go.uber.org/zap"
-	"log"
-	"time"
 )
 
 func main() {
-	cfg := config.GetConfig()
+	cfg, err := config.GetConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
 	logger, _ := zap.NewProduction()
 	pgConfig, err := cfg.Postgres.GenConfig(logger)
+	if err != nil {
+		log.Fatal(err)
+	}
 	pool, err := pgxpool.ConnectConfig(context.TODO(), pgConfig)
 	if err != nil {
 		log.Fatal("failed to create db pool")

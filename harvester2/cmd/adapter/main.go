@@ -2,16 +2,20 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/harvester2"
 	"github.com/momentum-xyz/ubercontroller/harvester2/arbitrum_nova_adapter2"
-	"log"
-	"time"
 )
 
 func main() {
-	cfg := config.GetConfig()
+	cfg, err := config.GetConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
 	a := arbitrum_nova_adapter2.NewArbitrumNovaAdapter(cfg)
 
 	a.Run()

@@ -7,17 +7,16 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
-	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/common/slot"
 )
 
 func (o *Object) renderAutoOnObjectAttributeChanged(
-	changeType universe.AttributeChangeType,
+	changeType posbus.AttributeChangeType,
 	attributeID entry.AttributeID,
 	value *entry.AttributeValue,
 	effectiveOptions *entry.AttributeOptions,
 ) error {
-	o.log.Infof("attribute Unuty Auto processing for %+v %+v", o.GetID(), attributeID)
+	o.log.Infof("attribute render auto processing for %+v %+v", o.GetID(), attributeID)
 	autoOption, err := slot.GetOptionAutoOption(attributeID, effectiveOptions)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to get auto option: %+v", attributeID)

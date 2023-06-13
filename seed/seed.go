@@ -14,8 +14,10 @@ import (
 )
 
 func Node(ctx types.NodeContext, node universe.Node, db database.DB) error {
+	log := ctx.Logger()
 	group, groupCtx := errgroup.WithContext(ctx)
 
+	log.Debugln("Seeding node...")
 	group.Go(
 		func() error {
 			return seedPlugins(groupCtx, node)

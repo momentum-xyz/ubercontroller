@@ -3,14 +3,15 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/momentum-xyz/ubercontroller/config"
-	"log"
-	"math/big"
 )
 
 func main() {
@@ -48,7 +49,10 @@ func main() {
 }
 
 func GetRPClient() *rpc.Client {
-	cfg := config.GetConfig()
+	cfg, err := config.GetConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
 	rpcClient, err := rpc.DialHTTP(cfg.Arbitrum.RPCURL)
 	if err != nil {
 		log.Fatal(err)

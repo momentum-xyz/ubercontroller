@@ -3,9 +3,10 @@ package node
 import (
 	"context"
 	"encoding/json"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"net/http"
 	"os/exec"
+
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -208,7 +209,7 @@ func (n *Node) updateUserProfileWorker(
 			item.Error = err
 			updateProfileStore.Store(jobID, item)
 		}
-		log.Error(err)
+		n.log.Error(err)
 		return
 	}
 
@@ -233,7 +234,7 @@ func (n *Node) updateUserProfileWorker(
 			item.Error = err
 			updateProfileStore.Store(jobID, item)
 		}
-		log.Error(err)
+		n.log.Error(err)
 		return
 	}
 
@@ -247,7 +248,7 @@ func (n *Node) updateUserProfileWorker(
 			item.Error = err
 			updateProfileStore.Store(jobID, item)
 		}
-		log.Error(err)
+		n.log.Error(err)
 		return
 	}
 
@@ -260,7 +261,7 @@ func (n *Node) updateUserProfileWorker(
 			item.Error = err
 			updateProfileStore.Store(jobID, item)
 		}
-		log.Error(err)
+		n.log.Error(err)
 		return
 	}
 
@@ -272,7 +273,7 @@ func (n *Node) updateUserProfileWorker(
 			item.Error = err
 			updateProfileStore.Store(jobID, item)
 		}
-		log.Error(err)
+		n.log.Error(err)
 		return
 	}
 

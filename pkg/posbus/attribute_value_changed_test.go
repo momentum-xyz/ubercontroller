@@ -5,6 +5,7 @@ import (
 
 	"github.com/goccy/go-reflect"
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
+	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
 func TestAttributeValueChangedMarshalling(t *testing.T) {
@@ -19,13 +20,11 @@ func TestAttributeValueChangedMarshalling(t *testing.T) {
 		{
 			name: "flat",
 			in: posbus.AttributeValueChanged{
-				ChangeType: "attribute_changed",
-				Topic:      "foo",
-				Data: posbus.AttributeValueChangedData{
-					AttributeName: "bar",
-					Value: &posbus.StringAnyMap{
-						"baz": map[string]any{"qux": "quux"},
-					},
+				ChangeType:    "attribute_changed",
+				PluginID:      universe.GetSystemPluginID(),
+				AttributeName: "bar",
+				Value: &posbus.StringAnyMap{
+					"baz": map[string]any{"qux": "quux"},
 				},
 			},
 		},

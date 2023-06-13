@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -11,24 +12,27 @@ import (
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/harvester"
 	"github.com/momentum-xyz/ubercontroller/harvester/arbitrum_nova_adapter"
-	"github.com/momentum-xyz/ubercontroller/logger"
 )
-
-var log = logger.L()
 
 func main() {
 	fmt.Println("Harvester Debugger")
 
-	cfg := config.GetConfig()
 	logger, _ := zap.NewProduction()
+	cfg, err := config.GetConfig()
+	if err != nil {
+		logger.Fatal(fmt.Sprintf("failed to get config: %s", err))
+	}
 	pgConfig, err := cfg.Postgres.GenConfig(logger)
+	if err != nil {
+		logger.Fatal(fmt.Sprintf("failed to create db config: %s", err))
+	}
 	pool, err := pgxpool.ConnectConfig(context.Background(), pgConfig)
 	if err != nil {
-		log.Fatal("failed to create db pool")
+		logger.Fatal(fmt.Sprintf("failed to create db pool: %s", err))
 	}
 	defer pool.Close()
 
-	harvester.Initialise(context.Background(), log, cfg, pool)
+	harvester.Initialise(context.Background(), logger.Sugar(), cfg, pool)
 
 	// ** Ethereum Adapter
 	adapter := arbitrum_nova_adapter.NewArbitrumNovaAdapter(cfg)

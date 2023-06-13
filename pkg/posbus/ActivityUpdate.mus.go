@@ -8,35 +8,11 @@ import (
 )
 
 // MarshalMUS fills buf with the MUS encoding of v.
-func (v AttributeValueChanged) MarshalMUS(buf []byte) int {
+func (v ActivityUpdate) MarshalMUS(buf []byte) int {
 	i := 0
 	{
-		si := v.PluginID.MarshalMUS(buf[i:])
+		si := v.ActivityId.MarshalMUS(buf[i:])
 		i += si
-	}
-	{
-		length := len(v.AttributeName)
-		{
-			uv := uint64(length)
-			if length < 0 {
-				uv = ^(uv << 1)
-			} else {
-				uv = uv << 1
-			}
-			{
-				for uv >= 0x80 {
-					buf[i] = byte(uv) | 0x80
-					uv >>= 7
-					i++
-				}
-				buf[i] = byte(uv)
-				i++
-			}
-		}
-		if len(buf[i:]) < length {
-			panic(muserrs.ErrSmallBuf)
-		}
-		i += copy(buf[i:], v.AttributeName)
 	}
 	{
 		length := len(v.ChangeType)
@@ -62,26 +38,54 @@ func (v AttributeValueChanged) MarshalMUS(buf []byte) int {
 		}
 		i += copy(buf[i:], v.ChangeType)
 	}
-	if v.Value == nil {
+	{
+		length := len(v.Type)
+		{
+			uv := uint64(length)
+			if length < 0 {
+				uv = ^(uv << 1)
+			} else {
+				uv = uv << 1
+			}
+			{
+				for uv >= 0x80 {
+					buf[i] = byte(uv) | 0x80
+					uv >>= 7
+					i++
+				}
+				buf[i] = byte(uv)
+				i++
+			}
+		}
+		if len(buf[i:]) < length {
+			panic(muserrs.ErrSmallBuf)
+		}
+		i += copy(buf[i:], v.Type)
+	}
+	if v.Data == nil {
 		buf[i] = 0
 		i++
 	} else {
 		buf[i] = 1
 		i++
 		{
-			si := (*v.Value).MarshalMUS(buf[i:])
+			si := (*v.Data).MarshalMUS(buf[i:])
 			i += si
 		}
 	}
 	{
-		si := v.TargetID.MarshalMUS(buf[i:])
+		si := v.UserId.MarshalMUS(buf[i:])
+		i += si
+	}
+	{
+		si := v.ObjectId.MarshalMUS(buf[i:])
 		i += si
 	}
 	return i
 }
 
 // UnmarshalMUS parses the MUS-encoded buf, and sets the result to *v.
-func (v *AttributeValueChanged) UnmarshalMUS(buf []byte) (int, error) {
+func (v *ActivityUpdate) UnmarshalMUS(buf []byte) (int, error) {
 	i := 0
 	var err error
 	{
@@ -89,58 +93,12 @@ func (v *AttributeValueChanged) UnmarshalMUS(buf []byte) (int, error) {
 		si := 0
 		si, err = sv.UnmarshalMUS(buf[i:])
 		if err == nil {
-			v.PluginID = sv
+			v.ActivityId = sv
 			i += si
 		}
 	}
 	if err != nil {
-		return i, muserrs.NewFieldError("PluginID", err)
-	}
-	{
-		var length int
-		{
-			var uv uint64
-			{
-				if i > len(buf)-1 {
-					return i, muserrs.ErrSmallBuf
-				}
-				shift := 0
-				done := false
-				for l, b := range buf[i:] {
-					if l == 9 && b > 1 {
-						return i, muserrs.ErrOverflow
-					}
-					if b < 0x80 {
-						uv = uv | uint64(b)<<shift
-						done = true
-						i += l + 1
-						break
-					}
-					uv = uv | uint64(b&0x7F)<<shift
-					shift += 7
-				}
-				if !done {
-					return i, muserrs.ErrSmallBuf
-				}
-			}
-			if uv&1 == 1 {
-				uv = ^(uv >> 1)
-			} else {
-				uv = uv >> 1
-			}
-			length = int(uv)
-		}
-		if length < 0 {
-			return i, muserrs.ErrNegativeLength
-		}
-		if len(buf) < i+length {
-			return i, muserrs.ErrSmallBuf
-		}
-		v.AttributeName = string(buf[i : i+length])
-		i += length
-	}
-	if err != nil {
-		return i, muserrs.NewFieldError("AttributeName", err)
+		return i, muserrs.NewFieldError("ActivityId", err)
 	}
 	{
 		var length int
@@ -188,10 +146,56 @@ func (v *AttributeValueChanged) UnmarshalMUS(buf []byte) (int, error) {
 	if err != nil {
 		return i, muserrs.NewFieldError("ChangeType", err)
 	}
-	v.Value = new(StringAnyMap)
+	{
+		var length int
+		{
+			var uv uint64
+			{
+				if i > len(buf)-1 {
+					return i, muserrs.ErrSmallBuf
+				}
+				shift := 0
+				done := false
+				for l, b := range buf[i:] {
+					if l == 9 && b > 1 {
+						return i, muserrs.ErrOverflow
+					}
+					if b < 0x80 {
+						uv = uv | uint64(b)<<shift
+						done = true
+						i += l + 1
+						break
+					}
+					uv = uv | uint64(b&0x7F)<<shift
+					shift += 7
+				}
+				if !done {
+					return i, muserrs.ErrSmallBuf
+				}
+			}
+			if uv&1 == 1 {
+				uv = ^(uv >> 1)
+			} else {
+				uv = uv >> 1
+			}
+			length = int(uv)
+		}
+		if length < 0 {
+			return i, muserrs.ErrNegativeLength
+		}
+		if len(buf) < i+length {
+			return i, muserrs.ErrSmallBuf
+		}
+		v.Type = string(buf[i : i+length])
+		i += length
+	}
+	if err != nil {
+		return i, muserrs.NewFieldError("Type", err)
+	}
+	v.Data = new(StringAnyMap)
 	if buf[i] == 0 {
 		i++
-		v.Value = nil
+		v.Data = nil
 	} else if buf[i] != 1 {
 		i++
 		return i, muserrs.ErrWrongByte
@@ -202,49 +206,47 @@ func (v *AttributeValueChanged) UnmarshalMUS(buf []byte) (int, error) {
 			si := 0
 			si, err = sv.UnmarshalMUS(buf[i:])
 			if err == nil {
-				(*v.Value) = sv
+				(*v.Data) = sv
 				i += si
 			}
 		}
 	}
 	if err != nil {
-		return i, muserrs.NewFieldError("Value", err)
+		return i, muserrs.NewFieldError("Data", err)
 	}
 	{
 		var sv umid.UMID
 		si := 0
 		si, err = sv.UnmarshalMUS(buf[i:])
 		if err == nil {
-			v.TargetID = sv
+			v.UserId = sv
 			i += si
 		}
 	}
 	if err != nil {
-		return i, muserrs.NewFieldError("TargetID", err)
+		return i, muserrs.NewFieldError("UserId", err)
+	}
+	{
+		var sv umid.UMID
+		si := 0
+		si, err = sv.UnmarshalMUS(buf[i:])
+		if err == nil {
+			v.ObjectId = sv
+			i += si
+		}
+	}
+	if err != nil {
+		return i, muserrs.NewFieldError("ObjectId", err)
 	}
 	return i, err
 }
 
 // SizeMUS returns the size of the MUS-encoded v.
-func (v AttributeValueChanged) SizeMUS() int {
+func (v ActivityUpdate) SizeMUS() int {
 	size := 0
 	{
-		ss := v.PluginID.SizeMUS()
+		ss := v.ActivityId.SizeMUS()
 		size += ss
-	}
-	{
-		length := len(v.AttributeName)
-		{
-			uv := uint64(length<<1) ^ uint64(length>>63)
-			{
-				for uv >= 0x80 {
-					uv >>= 7
-					size++
-				}
-				size++
-			}
-		}
-		size += len(v.AttributeName)
 	}
 	{
 		length := len(v.ChangeType)
@@ -260,15 +262,33 @@ func (v AttributeValueChanged) SizeMUS() int {
 		}
 		size += len(v.ChangeType)
 	}
-	size++
-	if v.Value != nil {
+	{
+		length := len(v.Type)
 		{
-			ss := (*v.Value).SizeMUS()
+			uv := uint64(length<<1) ^ uint64(length>>63)
+			{
+				for uv >= 0x80 {
+					uv >>= 7
+					size++
+				}
+				size++
+			}
+		}
+		size += len(v.Type)
+	}
+	size++
+	if v.Data != nil {
+		{
+			ss := (*v.Data).SizeMUS()
 			size += ss
 		}
 	}
 	{
-		ss := v.TargetID.SizeMUS()
+		ss := v.UserId.SizeMUS()
+		size += ss
+	}
+	{
+		ss := v.ObjectId.SizeMUS()
 		size += ss
 	}
 	return size

@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log"
 	"reflect"
 	"runtime"
 	"strconv"
@@ -22,7 +23,8 @@ var MASK_V8 = [16]byte{0, 0, 0, 0, 0, 0, 128, 0, 128, 0, 0, 0, 0, 0, 0, 0}
 func BinID(id umid.UMID) []byte {
 	binID, err := id.MarshalBinary()
 	if err != nil {
-		log.Errorf("Utils: BinID: failed to marshal binary: %+v", errors.WithStack(err))
+		// TODO: return the error!
+		log.Printf("Utils: BinID: failed to marshal binary: %+v", errors.WithStack(err))
 		return nil
 	}
 	return binID

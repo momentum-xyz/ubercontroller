@@ -2,13 +2,15 @@ package calendar
 
 import (
 	"context"
-	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"time"
+
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
+	"github.com/momentum-xyz/ubercontroller/types"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
+	"go.uber.org/zap"
 
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/ubercontroller/logger"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -17,6 +19,7 @@ import (
 
 type Calendar struct {
 	ctx      context.Context
+	log      *zap.SugaredLogger
 	world    universe.World
 	timerSet *generic.TimerSet[string]
 }
@@ -29,8 +32,6 @@ type Event struct {
 	EventID  string     `json:"eventId"`
 }
 
-var log = logger.L()
-
 func NewCalendar(w universe.World) *Calendar {
 	calendar := &Calendar{
 		timerSet: generic.NewTimerSet[string](),
@@ -40,8 +41,9 @@ func NewCalendar(w universe.World) *Calendar {
 	return calendar
 }
 
-func (c *Calendar) Initialize(ctx context.Context) error {
+func (c *Calendar) Initialize(ctx types.LoggerContext) error {
 	c.ctx = ctx
+	c.log = ctx.Logger()
 	return nil
 }
 
@@ -54,7 +56,7 @@ func (c *Calendar) Run() error {
 func (c *Calendar) update() {
 	objects := c.world.GetAllObjects()
 
-	events := getAllEvents(objects)
+	events := c.getAllEvents(objects)
 	nextEvents := findNextEvents(events)
 
 	c.timerSet.StopAll()
@@ -62,7 +64,7 @@ func (c *Calendar) update() {
 	for i := range nextEvents {
 		d := nextEvents[i].Start.Sub(time.Now())
 		if d > 0 {
-			c.timerSet.Set(nextEvents[i].EventID, d, c.tick)
+			c.timerSet.Set(c.ctx, nextEvents[i].EventID, d, c.tick)
 		}
 	}
 }
@@ -92,7 +94,7 @@ func (c *Calendar) tick(eventID string) error {
 
 func (c *Calendar) getEventByID(eventID string) *Event {
 	objects := c.world.GetAllObjects()
-	events := getAllEvents(objects)
+	events := c.getAllEvents(objects)
 	for _, e := range events {
 		if e.EventID == eventID {
 			return &e
@@ -137,7 +139,7 @@ func findNextEvents(events []Event) []Event {
 	return result2
 }
 
-func getAllEvents(objects map[umid.UMID]universe.Object) []Event {
+func (c *Calendar) getAllEvents(objects map[umid.UMID]universe.Object) []Event {
 	attributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Object.Events.Name)
 
 	//a := c.world.GetObjectAttributesValue(true)
@@ -158,7 +160,7 @@ func getAllEvents(objects map[umid.UMID]universe.Object) []Event {
 			for _, event := range attribute {
 				e, err := getEvent(&objectID, event)
 				if err != nil {
-					log.Error(err)
+					c.log.Error(err)
 				}
 				if e != nil {
 					events = append(events, *e)

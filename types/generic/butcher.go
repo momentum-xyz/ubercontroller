@@ -1,6 +1,8 @@
 package generic
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
 )
@@ -18,9 +20,9 @@ func NewButcher[T any](data []T) *Butcher[T] {
 	}
 }
 
-func (b *Butcher[T]) HandleItems(batchSize int, itemHandler BatchItemFn[T]) error {
+func (b *Butcher[T]) HandleItems(ctx context.Context, batchSize int, itemHandler BatchItemFn[T]) error {
 	handler := func(batch []T) error {
-		group, _ := errgroup.WithContext(generic.ctx)
+		group, _ := errgroup.WithContext(ctx)
 		for i := range batch {
 			item := batch[i]
 
@@ -56,9 +58,9 @@ func (b *Butcher[T]) HandleBatchesSync(batchSize int, batchHandler BatchFn[T]) e
 	return nil
 }
 
-func (b *Butcher[T]) HandleBatchesAsync(batchSize int, batchHandler BatchFn[T]) error {
+func (b *Butcher[T]) HandleBatchesAsync(ctx context.Context, batchSize int, batchHandler BatchFn[T]) error {
 	data := b.data
-	group, _ := errgroup.WithContext(generic.ctx)
+	group, _ := errgroup.WithContext(ctx)
 	for len(data) > 0 {
 		batch := data
 		if len(data) > batchSize {

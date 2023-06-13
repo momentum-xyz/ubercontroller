@@ -1,14 +1,12 @@
 package utils
 
 import (
+	"log"
+
 	"github.com/goccy/go-reflect"
 
 	"github.com/pkg/errors"
-
-	"github.com/momentum-xyz/ubercontroller/logger"
 )
-
-var log = logger.L()
 
 func GetPTR[T any](v T) *T {
 	return &v
@@ -33,7 +31,8 @@ func GetFromAny[V any](val any, defaultValue V) V {
 		return v
 	}
 
-	log.Errorf(
+	// TODO: return the error!
+	log.Printf(
 		"Utils: GetFromAny: invalid value type: %+v", errors.WithStack(errors.Errorf("%T != %T", val, defaultValue)),
 	)
 

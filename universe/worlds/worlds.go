@@ -185,6 +185,7 @@ func (w *Worlds) Load() error {
 
 	butcher := generic.NewButcher(worldIDs)
 	if err := butcher.HandleItems(
+		w.ctx,
 		int(w.cfg.Postgres.MAXCONNS), // modify batchSize when database consumption while loading will be changed
 		func(worldID umid.UMID) error {
 			world, err := w.CreateWorld(worldID)

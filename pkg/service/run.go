@@ -17,7 +17,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/seed"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
-	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/activities"
 	"github.com/momentum-xyz/ubercontroller/universe/assets_2d"
@@ -63,9 +62,6 @@ func LoadNode(
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize universe")
 	}
-	if err := generic.Initialize(ctx); err != nil {
-		return nil, errors.WithMessage(err, "failed to initialize generic package")
-	}
 	if err := logic.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize logic package")
 	}
@@ -75,25 +71,42 @@ func LoadNode(
 		return nil, errors.WithMessage(err, "failed to create db")
 	}
 
-	nodeEntry, err := getNodeEntry(ctx, db)
-	if err != nil {
-		return nil, errors.WithMessage(err, "failed to get node entry")
-	}
-
-	node, err := createNode(ctx, db, nodeEntry)
+	is_new, node, err := getNode(ctx, db)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to create node")
 	}
 
-	if err := loadNode(ctx, node, nodeEntry, db); err != nil {
+	if err := loadNode(ctx, node, db, is_new); err != nil {
 		return nil, errors.WithMessagef(err, "failed to load node: %s", node.GetID())
 	}
 	return node, nil
 }
 
-func loadNode(ctx types.NodeContext, node universe.Node, nodeEntry *entry.Node, db database.DB) error {
+// Seed the database of a node.
+func SeedNode(ctx types.NodeContext, cfg *config.Config, pool *pgxpool.Pool) error {
+	db, err := createDB(pool)
+	if err != nil {
+		return errors.WithMessage(err, "failed to create db")
+	}
+	_, node, err := getNode(ctx, db)
+	if err != nil {
+		return errors.WithMessage(err, "failed to create node")
+	}
+	return seed.Node(ctx, node, db)
+}
 
-	if nodeEntry == nil {
+func getNode(ctx types.NodeContext, db database.DB) (bool, universe.Node, error) {
+	nodeEntry, err := getNodeEntry(ctx, db)
+	if err != nil {
+		return false, nil, errors.WithMessage(err, "failed to get node entry")
+	}
+	is_new := nodeEntry == nil
+	node, err := createNode(ctx, db, nodeEntry)
+	return is_new, node, err
+}
+
+func loadNode(ctx types.NodeContext, node universe.Node, db database.DB, is_new bool) error {
+	if is_new {
 		if err := seed.Node(ctx, node, db); err != nil {
 			return errors.WithMessage(err, "failed to seed node")
 		}
@@ -101,7 +114,6 @@ func loadNode(ctx types.NodeContext, node universe.Node, nodeEntry *entry.Node, 
 	if err := node.Load(); err != nil {
 		return errors.WithMessage(err, "failed to load node")
 	}
-
 	return nil
 }
 

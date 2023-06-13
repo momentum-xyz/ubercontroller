@@ -291,7 +291,7 @@ func (n *Node) Run() error {
 		pgConfig, err := n.cfg.Postgres.GenConfig(logger)
 		pool, err := pgxpool.ConnectConfig(context.Background(), pgConfig)
 		if err != nil {
-			log.Fatal("failed to create db pool")
+			n.log.Fatal("failed to create db pool")
 		}
 		defer pool.Close()
 

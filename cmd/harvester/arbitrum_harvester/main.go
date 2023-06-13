@@ -17,12 +17,18 @@ import (
 func main() {
 	fmt.Println("Harvester Debugger")
 
-	cfg := config.GetConfig()
 	logger, _ := zap.NewProduction()
+	cfg, err := config.GetConfig()
+	if err != nil {
+		logger.Fatal("failed to create db pool")
+	}
 	pgConfig, err := cfg.Postgres.GenConfig(logger)
+	if err != nil {
+		logger.Fatal("failed to create db config")
+	}
 	pool, err := pgxpool.ConnectConfig(context.Background(), pgConfig)
 	if err != nil {
-		log.Fatal("failed to create db pool")
+		logger.Fatal("failed to create db pool")
 	}
 	defer pool.Close()
 
