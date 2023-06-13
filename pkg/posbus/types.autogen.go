@@ -3,6 +3,7 @@ package posbus
 const (
 	TypeActivityUpdate        MsgType = 0xCA57695D
 	TypeAddObjects            MsgType = 0x2452A9C1
+	TypeAddPendingStake       MsgType = 0xF020D682
 	TypeAddUsers              MsgType = 0xF51F2AFF
 	TypeAttributeValueChanged MsgType = 0x10DACDB7
 	TypeEventStart            MsgType = 0xAA854D2C
