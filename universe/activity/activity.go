@@ -94,19 +94,19 @@ func (a *Activity) SetType(activityType *entry.ActivityType, updateDB bool) erro
 	return nil
 }
 
-func (a *Activity) GetObjectID() *umid.UMID {
+func (a *Activity) GetObjectID() umid.UMID {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
 	return a.entry.ObjectID
 }
 
-func (a *Activity) SetObjectID(objectID *umid.UMID, updateDB bool) error {
+func (a *Activity) SetObjectID(objectID umid.UMID, updateDB bool) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
 	if updateDB {
-		if err := a.db.GetActivitiesDB().UpdateActivityObjectID(a.ctx, a.GetID(), objectID); err != nil {
+		if err := a.db.GetActivitiesDB().UpdateActivityObjectID(a.ctx, a.GetID(), &objectID); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
@@ -116,19 +116,19 @@ func (a *Activity) SetObjectID(objectID *umid.UMID, updateDB bool) error {
 	return nil
 }
 
-func (a *Activity) GetUserID() *umid.UMID {
+func (a *Activity) GetUserID() umid.UMID {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
 	return a.entry.UserID
 }
 
-func (a *Activity) SetUserID(userID *umid.UMID, updateDB bool) error {
+func (a *Activity) SetUserID(userID umid.UMID, updateDB bool) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
 	if updateDB {
-		if err := a.db.GetActivitiesDB().UpdateActivityUserID(a.ctx, a.GetID(), userID); err != nil {
+		if err := a.db.GetActivitiesDB().UpdateActivityUserID(a.ctx, a.GetID(), &userID); err != nil {
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}

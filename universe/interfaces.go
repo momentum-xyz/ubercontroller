@@ -392,11 +392,11 @@ type Activity interface {
 	GetType() *entry.ActivityType
 	SetType(activityType *entry.ActivityType, updateDB bool) error
 
-	GetObjectID() *umid.UMID
-	SetObjectID(objectID *umid.UMID, updateDB bool) error
+	GetObjectID() umid.UMID
+	SetObjectID(objectID umid.UMID, updateDB bool) error
 
-	GetUserID() *umid.UMID
-	SetUserID(userID *umid.UMID, updateDB bool) error
+	GetUserID() umid.UMID
+	SetUserID(userID umid.UMID, updateDB bool) error
 
 	GetEntry() *entry.Activity
 	LoadFromEntry(entry *entry.Activity) error
@@ -414,7 +414,7 @@ type Activities interface {
 	GetActivity(activityID umid.UMID) (Activity, bool)
 	GetActivities() map[umid.UMID]Activity
 	GetPaginatedActivitiesByObjectID(objectID *umid.UMID, page int, pageSize int) []Activity
-	GetActivitiesByUserID(userID *umid.UMID) map[umid.UMID]Activity
+	GetActivitiesByUserID(userID umid.UMID) map[umid.UMID]Activity
 
 	AddActivity(activity Activity, updateDB bool) error
 	AddActivities(activities []Activity, updateDB bool) error

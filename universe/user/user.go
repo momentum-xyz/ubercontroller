@@ -47,6 +47,7 @@ type User struct {
 	mu                              deadlock.RWMutex
 	object                          universe.Object
 	world                           universe.World
+	activities                      *entry.Activity
 	profile                         *entry.UserProfile
 	options                         *entry.UserOptions
 	bufferSends                     atomic.Bool

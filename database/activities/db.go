@@ -4,8 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
-
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
@@ -14,6 +12,7 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 const (

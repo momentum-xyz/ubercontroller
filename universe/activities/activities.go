@@ -77,7 +77,7 @@ func (a *Activities) GetPaginatedActivitiesByObjectID(objectID *umid.UMID, page 
 
 	var allActivities []universe.Activity
 	for _, activity := range a.activities.Data {
-		if *activity.GetObjectID() == *objectID {
+		if activity.GetObjectID() == *objectID {
 			allActivities = append(allActivities, activity)
 		}
 	}
@@ -99,7 +99,7 @@ func (a *Activities) GetPaginatedActivitiesByObjectID(objectID *umid.UMID, page 
 	return allActivities[start:end]
 }
 
-func (a *Activities) GetActivitiesByUserID(userID *umid.UMID) map[umid.UMID]universe.Activity {
+func (a *Activities) GetActivitiesByUserID(userID umid.UMID) map[umid.UMID]universe.Activity {
 	a.activities.Mu.RLock()
 	defer a.activities.Mu.RUnlock()
 

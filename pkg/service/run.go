@@ -38,11 +38,13 @@ import (
 	nftsDB "github.com/momentum-xyz/ubercontroller/database/nfts"
 	nodeAttributesDB "github.com/momentum-xyz/ubercontroller/database/node_attributes"
 	nodesDB "github.com/momentum-xyz/ubercontroller/database/nodes"
+	objectActivitiesDB "github.com/momentum-xyz/ubercontroller/database/object_activities"
 	objectAttributesDB "github.com/momentum-xyz/ubercontroller/database/object_attributes"
 	objectTypesDB "github.com/momentum-xyz/ubercontroller/database/object_types"
 	objectUserAttributesDB "github.com/momentum-xyz/ubercontroller/database/object_user_attributes"
 	objectsDB "github.com/momentum-xyz/ubercontroller/database/objects"
 	pluginsDB "github.com/momentum-xyz/ubercontroller/database/plugins"
+	userActivitiesDB "github.com/momentum-xyz/ubercontroller/database/user_activities"
 	userAttributesDB "github.com/momentum-xyz/ubercontroller/database/user_attributes"
 	userObjectsDB "github.com/momentum-xyz/ubercontroller/database/user_objects"
 	userTypesDB "github.com/momentum-xyz/ubercontroller/database/user_types"
@@ -205,6 +207,8 @@ func createDB(conn *pgxpool.Pool) (database.DB, error) {
 		worldsDB.NewDB(conn, common, objects),
 		objects,
 		activitiesDB.NewDB(conn, common),
+		userActivitiesDB.NewDB(conn, common),
+		objectActivitiesDB.NewDB(conn, common),
 		usersDB.NewDB(conn, common),
 		assets2dDB.NewDB(conn, common),
 		assets3dDB.NewDB(conn, common),

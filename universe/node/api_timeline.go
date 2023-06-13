@@ -143,13 +143,13 @@ func (n *Node) apiTimelineAddForObject(c *gin.Context) {
 		return
 	}
 
-	if err := newActivity.SetObjectID(&objectID, true); err != nil {
+	if err := newActivity.SetObjectID(objectID, true); err != nil {
 		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to set object ID")
 		api.AbortRequest(c, http.StatusInternalServerError, "invalid_user", err, n.log)
 		return
 	}
 
-	if err := newActivity.SetUserID(&userID, true); err != nil {
+	if err := newActivity.SetUserID(userID, true); err != nil {
 		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to set user ID")
 		api.AbortRequest(c, http.StatusInternalServerError, "invalid_user", err, n.log)
 		return
@@ -321,7 +321,7 @@ func (n *Node) apiTimelineForUser(c *gin.Context) {
 		return
 	}
 
-	activities := n.activities.GetActivitiesByUserID(&userID)
+	activities := n.activities.GetActivitiesByUserID(userID)
 	type Out struct {
 		Activities map[umid.UMID]universe.Activity `json:"activities"`
 	}
