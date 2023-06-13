@@ -171,11 +171,13 @@ func (w *Worlds) apiWorldsGetDetails(c *gin.Context) {
 		}
 	}
 
-	latestStakeComment, err := w.db.GetStakesDB().GetStakeByLatestStake(c)
-	if err != nil {
-		err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to get latest stake comment")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_latest_stake", err, w.log)
-		return
+	latestStakeComment := ""
+	var lastStakeTimestamp time.Time
+	for _, stake := range stakes {
+		if stake.CreatedAt.After(lastStakeTimestamp) && stake.LastComment != "" {
+			latestStakeComment = stake.LastComment
+			lastStakeTimestamp = stake.CreatedAt
+		}
 	}
 
 	totalStakeStr := totalStake.String()
@@ -191,7 +193,7 @@ func (w *Worlds) apiWorldsGetDetails(c *gin.Context) {
 		AvatarHash:         utils.GetPTR(world.GetWorldAvatar()),
 		WebsiteLink:        utils.GetPTR(world.GetWebsiteLink()),
 		WorldStakers:       worldStakers,
-		LastStakingComment: latestStakeComment,
+		LastStakingComment: &latestStakeComment,
 	}
 
 	c.JSON(http.StatusOK, worldDetails)
