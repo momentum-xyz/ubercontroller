@@ -14,14 +14,13 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
-// @Param page query int false "Page number"
-// @Param pageSize query int false "Number of items per page"
 // @Summary Get timeline for object
 // @Schemes
 // @Description Returns a timeline for an object, collection of activities == timeline
 // @Tags timeline
 // @Accept json
 // @Produce json
+// @Param query query node.apiTimelineForObject.InQuery true "query params"
 // @Success 200 {object} node.apiTimelineForObject.Out
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/timeline [get]
@@ -97,6 +96,7 @@ func (n *Node) apiTimelineForObject(c *gin.Context) {
 // @Tags timeline
 // @Accept json
 // @Produce json
+// @Param body body node.apiTimelineAddForObject.InBody true "body params"
 // @Success 200 {object} node.apiTimelineForObject.Out
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/timeline [post]
@@ -201,6 +201,7 @@ func (n *Node) apiTimelineAddForObject(c *gin.Context) {
 // @Tags timeline
 // @Accept json
 // @Produce json
+// @Param body body node.apiTimelineEditForObject.InBody true "body params"
 // @Success 200 {object} node.apiTimelineForObject.Out
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/timeline/{activity_id} [patch]
