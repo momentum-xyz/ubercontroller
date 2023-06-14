@@ -95,6 +95,8 @@ type ObjectsDB interface {
 }
 
 type ObjectActivitiesDB interface {
+	GetObjectIDsByActivityID(ctx context.Context, activityID umid.UMID) ([]umid.UMID, error)
+
 	UpsertObjectActivity(ctx context.Context, objectActivity *entry.ObjectActivity) error
 	UpsertObjectActivities(ctx context.Context, objectActivities []*entry.ObjectActivity) error
 }
