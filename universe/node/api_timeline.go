@@ -59,7 +59,7 @@ func (n *Node) apiTimelineForObject(c *gin.Context) {
 		return
 	}
 
-	activities := n.activities.GetPaginatedActivitiesByObjectID(&objectID, page, pageSize)
+	activities, activitiesTotalCount := n.activities.GetPaginatedActivitiesByObjectID(&objectID, page, pageSize)
 	dtoActivities := make([]dto.Activity, 0, len(activities))
 
 	for _, activity := range activities {
@@ -117,7 +117,7 @@ func (n *Node) apiTimelineForObject(c *gin.Context) {
 		Activities: dtoActivities,
 		Page:       page,
 		PageSize:   pageSize,
-		TotalCount: len(activities),
+		TotalCount: activitiesTotalCount,
 	}
 
 	c.JSON(http.StatusOK, out)
