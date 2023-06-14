@@ -3,6 +3,7 @@ package node
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -177,13 +178,19 @@ func (n *Node) apiTimelineAddForObject(c *gin.Context) {
 
 	if err := newActivity.SetObjectID(objectID, true); err != nil {
 		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to set object ID")
-		api.AbortRequest(c, http.StatusInternalServerError, "invalid_user", err, n.log)
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_object_id", err, n.log)
 		return
 	}
 
 	if err := newActivity.SetUserID(userID, true); err != nil {
 		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to set user ID")
-		api.AbortRequest(c, http.StatusInternalServerError, "invalid_user", err, n.log)
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_user_id", err, n.log)
+		return
+	}
+
+	if err := newActivity.SetCreatedAt(time.Now(), true); err != nil {
+		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to set created_at")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_created_at", err, n.log)
 		return
 	}
 
