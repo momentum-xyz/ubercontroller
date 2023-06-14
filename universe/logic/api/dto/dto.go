@@ -65,6 +65,9 @@ type Activity struct {
 	ObjectID   umid.UMID           `json:"object_id"`
 	Type       *entry.ActivityType `json:"type"`
 	Data       *entry.ActivityData `json:"data"`
+	AvatarHash *string             `json:"avatar_hash"`
+	WorldName  string              `json:"world_name"`
+	UserName   *string             `json:"user_name"`
 	CreatedAt  time.Time           `json:"created_at"`
 }
 

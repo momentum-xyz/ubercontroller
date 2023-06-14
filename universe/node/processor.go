@@ -6,7 +6,6 @@ import (
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 func (n *Node) NotifyActivityProcessor(activity universe.Activity, updateType posbus.ActivityUpdateType) error {
@@ -28,25 +27,14 @@ func (n *Node) NotifyActivityProcessor(activity universe.Activity, updateType po
 		if !ok {
 			return errors.New("failed to get object from all objects")
 		}
-		var activityData posbus.StringAnyMap
-		if err := utils.MapDecode(activity.GetData(), activityData); err != nil {
-			return errors.WithMessage(err, "failed to marshal activity data")
-		}
-
-		var strActivityType string
-		if activity.GetType() != nil {
-			strActivityType = string(*activity.GetType())
-		} else {
-			strActivityType = ""
-		}
 
 		msg := posbus.WSMessage(&posbus.ActivityUpdate{
 			ActivityId: activity.GetID(),
 			UserId:     activity.GetUserID(),
 			ObjectId:   activity.GetObjectID(),
 			ChangeType: string(updateType),
-			Type:       strActivityType,
-			Data:       &activityData,
+			Type:       activity.GetType(),
+			Data:       activity.GetData(),
 		})
 		if err := object.Send(msg, true); err != nil {
 			return errors.WithMessage(err, "failed to send ws message")
