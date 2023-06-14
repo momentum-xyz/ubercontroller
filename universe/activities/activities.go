@@ -76,14 +76,14 @@ func (a *Activities) GetPaginatedActivitiesByObjectID(objectID *umid.UMID, page 
 	}
 
 	var allActivities []universe.Activity
-	for _, activity := range a.activities.Data {
-		if *activity.GetObjectID() == *objectID {
-			allActivities = append(allActivities, activity)
+	for _, activityD := range a.activities.Data {
+		if activityD.GetObjectID() == *objectID {
+			allActivities = append(allActivities, activityD)
 		}
 	}
 
 	sort.Slice(allActivities, func(i, j int) bool {
-		return allActivities[i].GetCreatedAt().Before(allActivities[j].GetCreatedAt())
+		return allActivities[i].GetCreatedAt().After(allActivities[j].GetCreatedAt())
 	})
 
 	start := (page - 1) * pageSize
@@ -99,7 +99,7 @@ func (a *Activities) GetPaginatedActivitiesByObjectID(objectID *umid.UMID, page 
 	return allActivities[start:end]
 }
 
-func (a *Activities) GetActivitiesByUserID(userID *umid.UMID) map[umid.UMID]universe.Activity {
+func (a *Activities) GetActivitiesByUserID(userID umid.UMID) map[umid.UMID]universe.Activity {
 	a.activities.Mu.RLock()
 	defer a.activities.Mu.RUnlock()
 

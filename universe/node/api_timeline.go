@@ -62,12 +62,44 @@ func (n *Node) apiTimelineForObject(c *gin.Context) {
 	dtoActivities := make([]dto.Activity, 0, len(activities))
 
 	for _, activity := range activities {
+		user, err := n.LoadUser(activity.GetUserID())
+		if err != nil {
+			err := errors.WithMessage(err, "Node: apiTimelineForObject: failed to load user")
+			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_load_user", err, n.log)
+			return
+		}
+
+		var avatarHash, userName string
+		profile := user.GetProfile()
+
+		if profile != nil {
+			avatarHash = ""
+			if profile.AvatarHash != nil {
+				avatarHash = *profile.AvatarHash
+			}
+
+			userName = ""
+			if profile.Name != nil {
+				userName = *profile.Name
+			}
+		}
+
+		object, ok := n.GetObjectFromAllObjects(activity.GetObjectID())
+		if !ok {
+			err := errors.WithMessage(err, "Node: apiTimelineForObject: failed to get object from all objects")
+			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_object", err, n.log)
+			return
+		}
+
 		act := dto.Activity{
 			ActivityID: activity.GetID(),
 			UserID:     activity.GetUserID(),
 			ObjectID:   activity.GetObjectID(),
 			Type:       activity.GetType(),
 			Data:       activity.GetData(),
+			AvatarHash: &avatarHash,
+			WorldName:  object.GetName(),
+			UserName:   &userName,
 			CreatedAt:  activity.GetCreatedAt(),
 		}
 
@@ -143,13 +175,13 @@ func (n *Node) apiTimelineAddForObject(c *gin.Context) {
 		return
 	}
 
-	if err := newActivity.SetObjectID(&objectID, true); err != nil {
+	if err := newActivity.SetObjectID(objectID, true); err != nil {
 		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to set object ID")
 		api.AbortRequest(c, http.StatusInternalServerError, "invalid_user", err, n.log)
 		return
 	}
 
-	if err := newActivity.SetUserID(&userID, true); err != nil {
+	if err := newActivity.SetUserID(userID, true); err != nil {
 		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to set user ID")
 		api.AbortRequest(c, http.StatusInternalServerError, "invalid_user", err, n.log)
 		return
@@ -321,7 +353,7 @@ func (n *Node) apiTimelineForUser(c *gin.Context) {
 		return
 	}
 
-	activities := n.activities.GetActivitiesByUserID(&userID)
+	activities := n.activities.GetActivitiesByUserID(userID)
 	type Out struct {
 		Activities map[umid.UMID]universe.Activity `json:"activities"`
 	}
