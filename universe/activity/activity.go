@@ -23,6 +23,8 @@ type Activity struct {
 	db    database.DB
 	mu    sync.RWMutex
 	entry *entry.Activity
+
+	collector universe.Collector
 }
 
 func NewActivity(id umid.UMID, db database.DB) *Activity {
@@ -143,6 +145,13 @@ func (a *Activity) GetEntry() *entry.Activity {
 	defer a.mu.RUnlock()
 
 	return a.entry
+}
+
+func (a *Activity) GetCollector() universe.Collector {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+
+	return a.collector
 }
 
 func (a *Activity) LoadFromEntry(entry *entry.Activity) error {

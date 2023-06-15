@@ -225,7 +225,7 @@ func (n *Node) apiTimelineAddForObject(c *gin.Context) {
 		return
 	}
 
-	if err := n.InjectActivity(newActivity); err != nil {
+	if err := newActivity.GetCollector().Inject(newActivity); err != nil {
 		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to inject activity")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_inject_activity", err, n.log)
 		return
@@ -301,7 +301,7 @@ func (n *Node) apiTimelineEditForObject(c *gin.Context) {
 		return current, nil
 	}
 
-	if err := n.ModifyActivity(existingActivity, modifyFn); err != nil {
+	if err := existingActivity.GetCollector().Modify(existingActivity, modifyFn); err != nil {
 		err := errors.WithMessage(err, "Node: apiTimelineEditForObject: failed to modify activity")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_modify_activity", err, n.log)
 		return
@@ -334,7 +334,7 @@ func (n *Node) apiTimelineRemoveForObject(c *gin.Context) {
 		return
 	}
 
-	if err := n.RemoveActivity(activity); err != nil {
+	if err := activity.GetCollector().Remove(activity); err != nil {
 		err := errors.WithMessage(err, "Node: apiTimelineRemoveForObject: failed to remove activity")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_remove_activity", err, n.log)
 		return
