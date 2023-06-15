@@ -1,7 +1,6 @@
 package user
 
 import (
-	"context"
 	"fmt"
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
@@ -17,8 +16,8 @@ func (u *User) OnMessage(buf []byte) error {
 		return err
 	}
 	switch msg.GetType() {
-	case posbus.TypeAddPendingStake:
-		return u.AddPendingStake()
+	case posbus.TypeUserStakedToOdyssey:
+		return u.UserStakedToOdyssey(msg.(*posbus.UserStakedToOdyssey))
 	case posbus.TypeMyTransform:
 		return u.UpdatePosition(msg.(*posbus.MyTransform))
 		//FIXME
@@ -51,18 +50,24 @@ func (u *User) OnMessage(buf []byte) error {
 	return nil
 }
 
-func AddPendingStake(msg *posbus.AddPendingStake) error {
-	msg.TransactionID
-	err := universe.GetNode().GetDB().GetStakesDB().InsertIntoPendingStakes(
-		context.TODO(),
-		transactionID,
-		inBody.OdysseyID,
-		wallet,
-		umid.MustParse("ccccaaaa-1111-2222-3333-222222222222"),
-		amount,
-		inBody.Comment,
-		0)
-	return err
+func (u *User) UserStakedToOdyssey(msg *posbus.UserStakedToOdyssey) error {
+
+	//u.db.GetStakesDB().InsertIntoPendingStakes(context.TODO())
+	//universe.GetNode().(node.Node)
+	fmt.Println(msg)
+	//msg.TransactionID
+	//err := universe.GetNode().GetDB().GetStakesDB().InsertIntoPendingStakes(
+	//	context.TODO(),
+	//	transactionID,
+	//	inBody.OdysseyID,
+	//	wallet,
+	//	umid.MustParse("ccccaaaa-1111-2222-3333-222222222222"),
+	//	amount,
+	//	inBody.Comment,
+	//	0)
+	//return err
+
+	return nil
 }
 
 func (u *User) UpdateObjectTransform(msg *posbus.ObjectTransform) error {
