@@ -2,6 +2,7 @@ package universe
 
 import (
 	"context"
+	"github.com/momentum-xyz/ubercontroller/database"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -79,6 +80,8 @@ type Node interface {
 	Loader
 	APIRegister
 	ObjectsCacher
+
+	GetDB() database.DB
 
 	GetConfig() *config.Config
 	GetLogger() *zap.SugaredLogger

@@ -107,6 +107,10 @@ func NewNode(
 	return node
 }
 
+func (n *Node) GetDB() database.DB {
+	return n.db
+}
+
 func (n *Node) Initialize(ctx types.NodeContext) error {
 	n.ctx = ctx
 	n.log = ctx.Logger()
