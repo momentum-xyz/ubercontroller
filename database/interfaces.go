@@ -5,13 +5,12 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
-
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 type DB interface {
@@ -20,6 +19,8 @@ type DB interface {
 	GetWorldsDB() WorldsDB
 	GetObjectsDB() ObjectsDB
 	GetActivitiesDB() ActivitiesDB
+	GetObjectActivitiesDB() ObjectActivitiesDB
+	GetUserActivitiesDB() UserActivitiesDB
 	GetUsersDB() UsersDB
 	GetAssets2dDB() Assets2dDB
 	GetAssets3dDB() Assets3dDB
@@ -90,6 +91,18 @@ type ObjectsDB interface {
 
 	RemoveObjectByID(ctx context.Context, objectID umid.UMID) error
 	RemoveObjectsByIDs(ctx context.Context, objectIDs []umid.UMID) error
+}
+
+type ObjectActivitiesDB interface {
+	GetObjectIDsByActivityID(ctx context.Context, activityID umid.UMID) ([]umid.UMID, error)
+
+	UpsertObjectActivity(ctx context.Context, objectActivity *entry.ObjectActivity) error
+	UpsertObjectActivities(ctx context.Context, objectActivities []*entry.ObjectActivity) error
+}
+
+type UserActivitiesDB interface {
+	UpsertUserActivity(ctx context.Context, userActivity *entry.UserActivity) error
+	UpsertUserActivities(ctx context.Context, userActivities []*entry.UserActivity) error
 }
 
 type UsersDB interface {

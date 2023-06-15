@@ -3,6 +3,7 @@
 package posbus
 
 import (
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"github.com/ymz-ncnk/muserrs"
 )
@@ -38,29 +39,16 @@ func (v ActivityUpdate) MarshalMUS(buf []byte) int {
 		}
 		i += copy(buf[i:], v.ChangeType)
 	}
-	{
-		length := len(v.Type)
+	if v.Type == nil {
+		buf[i] = 0
+		i++
+	} else {
+		buf[i] = 1
+		i++
 		{
-			uv := uint64(length)
-			if length < 0 {
-				uv = ^(uv << 1)
-			} else {
-				uv = uv << 1
-			}
-			{
-				for uv >= 0x80 {
-					buf[i] = byte(uv) | 0x80
-					uv >>= 7
-					i++
-				}
-				buf[i] = byte(uv)
-				i++
-			}
+			si := (*v.Type).MarshalMUS(buf[i:])
+			i += si
 		}
-		if len(buf[i:]) < length {
-			panic(muserrs.ErrSmallBuf)
-		}
-		i += copy(buf[i:], v.Type)
 	}
 	if v.Data == nil {
 		buf[i] = 0
@@ -146,53 +134,29 @@ func (v *ActivityUpdate) UnmarshalMUS(buf []byte) (int, error) {
 	if err != nil {
 		return i, muserrs.NewFieldError("ChangeType", err)
 	}
-	{
-		var length int
+	v.Type = new(entry.ActivityType)
+	if buf[i] == 0 {
+		i++
+		v.Type = nil
+	} else if buf[i] != 1 {
+		i++
+		return i, muserrs.ErrWrongByte
+	} else {
+		i++
 		{
-			var uv uint64
-			{
-				if i > len(buf)-1 {
-					return i, muserrs.ErrSmallBuf
-				}
-				shift := 0
-				done := false
-				for l, b := range buf[i:] {
-					if l == 9 && b > 1 {
-						return i, muserrs.ErrOverflow
-					}
-					if b < 0x80 {
-						uv = uv | uint64(b)<<shift
-						done = true
-						i += l + 1
-						break
-					}
-					uv = uv | uint64(b&0x7F)<<shift
-					shift += 7
-				}
-				if !done {
-					return i, muserrs.ErrSmallBuf
-				}
+			var sv entry.ActivityType
+			si := 0
+			si, err = sv.UnmarshalMUS(buf[i:])
+			if err == nil {
+				(*v.Type) = sv
+				i += si
 			}
-			if uv&1 == 1 {
-				uv = ^(uv >> 1)
-			} else {
-				uv = uv >> 1
-			}
-			length = int(uv)
 		}
-		if length < 0 {
-			return i, muserrs.ErrNegativeLength
-		}
-		if len(buf) < i+length {
-			return i, muserrs.ErrSmallBuf
-		}
-		v.Type = string(buf[i : i+length])
-		i += length
 	}
 	if err != nil {
 		return i, muserrs.NewFieldError("Type", err)
 	}
-	v.Data = new(StringAnyMap)
+	v.Data = new(entry.ActivityData)
 	if buf[i] == 0 {
 		i++
 		v.Data = nil
@@ -202,7 +166,7 @@ func (v *ActivityUpdate) UnmarshalMUS(buf []byte) (int, error) {
 	} else {
 		i++
 		{
-			var sv StringAnyMap
+			var sv entry.ActivityData
 			si := 0
 			si, err = sv.UnmarshalMUS(buf[i:])
 			if err == nil {
@@ -262,19 +226,12 @@ func (v ActivityUpdate) SizeMUS() int {
 		}
 		size += len(v.ChangeType)
 	}
-	{
-		length := len(v.Type)
+	size++
+	if v.Type != nil {
 		{
-			uv := uint64(length<<1) ^ uint64(length>>63)
-			{
-				for uv >= 0x80 {
-					uv >>= 7
-					size++
-				}
-				size++
-			}
+			ss := (*v.Type).SizeMUS()
+			size += ss
 		}
-		size += len(v.Type)
 	}
 	size++
 	if v.Data != nil {
