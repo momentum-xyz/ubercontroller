@@ -241,9 +241,9 @@ func (n *Node) apiUpdateObject(c *gin.Context) {
 	// not supporting 're-parenting' and changing type'. Have to delete and recreate for that.
 	// Update/edit the positioning is done through unity edit mode.
 	type InBody struct {
-		ObjectName string `json:"object_name"`
-		Asset2dID  string `json:"asset_2d_id"`
-		Asset3dID  string `json:"asset_3d_id"`
+		ObjectName string  `json:"object_name"`
+		Asset2dID  *string `json:"asset_2d_id"`
+		Asset3dID  string  `json:"asset_3d_id"`
 	}
 	var inBody InBody
 
@@ -261,25 +261,34 @@ func (n *Node) apiUpdateObject(c *gin.Context) {
 	}
 
 	var asset2d universe.Asset2d
-	if inBody.Asset2dID != "" {
-		asset2dID, err := umid.Parse(inBody.Asset2dID)
-		if err != nil {
-			err := errors.WithMessage(err, "Node: apiUpdateObject: failed to parse asset 2d umid")
-			api.AbortRequest(c, http.StatusBadRequest, "invalid_asset_2d_id", err, n.log)
-			return
-		}
-		asset2d, ok = n.GetAssets2d().GetAsset2d(asset2dID)
-		if !ok {
-			err := errors.Errorf("Node: apiUpdateObject: 2D asset not found: %s", asset2dID)
-			api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
-			return
-		}
-	}
-	if asset2d != nil {
-		if err := object.SetAsset2D(asset2d, true); err != nil {
-			err := errors.Errorf("Node: apiUpdateObject: failed to update 2d asset: %s", asset2d.GetID())
-			api.AbortRequest(c, http.StatusInternalServerError, "object_asset_2d", err, n.log)
-			return
+	if inBody.Asset2dID != nil {
+		if *inBody.Asset2dID != "" {
+			asset2dID, err := umid.Parse(*inBody.Asset2dID)
+			if err != nil {
+				err := errors.WithMessage(err, "Node: apiUpdateObject: failed to parse asset 2d umid")
+				api.AbortRequest(c, http.StatusBadRequest, "invalid_asset_2d_id", err, n.log)
+				return
+			}
+			asset2d, ok = n.GetAssets2d().GetAsset2d(asset2dID)
+			if !ok {
+				err := errors.Errorf("Node: apiUpdateObject: 2D asset not found: %s", asset2dID)
+				api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
+				return
+			}
+			if asset2d != nil {
+				if err := object.SetAsset2D(asset2d, true); err != nil {
+					err := errors.Errorf("Node: apiUpdateObject: failed to update 2d asset: %s", asset2d.GetID())
+					api.AbortRequest(c, http.StatusInternalServerError, "object_asset_2d", err, n.log)
+					return
+				}
+			}
+		} else { // empty string asset 2d, allow resetting it
+			if err := object.SetAsset2D(nil, true); err != nil {
+				err := errors.Errorf("Node: apiUpdateObject: failed to clear 2d asset: %s", asset2d.GetID())
+				api.AbortRequest(c, http.StatusInternalServerError, "object_asset_2d", err, n.log)
+				return
+			}
+
 		}
 	}
 

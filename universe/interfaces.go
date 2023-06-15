@@ -413,6 +413,7 @@ type Activities interface {
 
 	GetActivity(activityID umid.UMID) (Activity, bool)
 	GetActivities() map[umid.UMID]Activity
+
 	GetPaginatedActivitiesByObjectID(objectID *umid.UMID, page int, pageSize int) ([]Activity, int)
 	GetActivitiesByUserID(userID umid.UMID) map[umid.UMID]Activity
 
