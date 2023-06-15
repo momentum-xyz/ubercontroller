@@ -3,6 +3,7 @@ package activities
 import (
 	"context"
 
+	"github.com/georgysavva/scany/pgxscan"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -10,9 +11,12 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 const (
+	getObjectIDsByActivityIDQuery = `SELECT object_id FROM object_activity WHERE activity_id = $1;`
+
 	upsertObjectActivityQuery = `INSERT INTO object_activity
     						(object_id, activity_id,
     						created_at)
@@ -35,6 +39,14 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 		conn:   conn,
 		common: commonDB,
 	}
+}
+
+func (db *DB) GetObjectIDsByActivityID(ctx context.Context, activityID umid.UMID) ([]umid.UMID, error) {
+	var ids []umid.UMID
+	if err := pgxscan.Select(ctx, db.conn, &ids, getObjectIDsByActivityIDQuery, activityID); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+	return ids, nil
 }
 
 func (db *DB) UpsertObjectActivity(ctx context.Context, objectActivity *entry.ObjectActivity) error {

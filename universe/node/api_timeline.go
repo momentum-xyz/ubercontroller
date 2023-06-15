@@ -3,6 +3,7 @@ package node
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -26,8 +27,8 @@ import (
 // @Router /api/v4/objects/{object_id}/timeline [get]
 func (n *Node) apiTimelineForObject(c *gin.Context) {
 	type InQuery struct {
-		Page     string `form:"page" binding:"required"`
-		PageSize string `form:"pageSize" binding:"required"`
+		StartIndex string `form:"startIndex" binding:"required"`
+		PageSize   string `form:"pageSize" binding:"required"`
 	}
 	var inQuery InQuery
 
@@ -44,10 +45,10 @@ func (n *Node) apiTimelineForObject(c *gin.Context) {
 		return
 	}
 
-	page, err := strconv.Atoi(inQuery.Page)
+	startIndex, err := strconv.Atoi(inQuery.StartIndex)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiTimelineForObject: failed to convert page to integer")
-		api.AbortRequest(c, http.StatusBadRequest, "invalid_page_number", err, n.log)
+		err := errors.WithMessage(err, "Node: apiTimelineForObject: failed to convert startIndex to integer")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_start_index_number", err, n.log)
 		return
 	}
 
@@ -58,7 +59,7 @@ func (n *Node) apiTimelineForObject(c *gin.Context) {
 		return
 	}
 
-	activities := n.activities.GetPaginatedActivitiesByObjectID(&objectID, page, pageSize)
+	activities, activitiesTotalCount := n.activities.GetPaginatedActivitiesByObjectID(&objectID, startIndex, pageSize)
 	dtoActivities := make([]dto.Activity, 0, len(activities))
 
 	for _, activity := range activities {
@@ -108,15 +109,15 @@ func (n *Node) apiTimelineForObject(c *gin.Context) {
 
 	type Out struct {
 		Activities []dto.Activity `json:"activities"`
-		Page       int            `json:"page"`
+		StartIndex int            `json:"startIndex"`
 		PageSize   int            `json:"pageSize"`
 		TotalCount int            `json:"totalCount"`
 	}
 	out := Out{
 		Activities: dtoActivities,
-		Page:       page,
+		StartIndex: startIndex,
 		PageSize:   pageSize,
-		TotalCount: len(activities),
+		TotalCount: activitiesTotalCount,
 	}
 
 	c.JSON(http.StatusOK, out)
@@ -177,13 +178,19 @@ func (n *Node) apiTimelineAddForObject(c *gin.Context) {
 
 	if err := newActivity.SetObjectID(objectID, true); err != nil {
 		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to set object ID")
-		api.AbortRequest(c, http.StatusInternalServerError, "invalid_user", err, n.log)
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_object_id", err, n.log)
 		return
 	}
 
 	if err := newActivity.SetUserID(userID, true); err != nil {
 		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to set user ID")
-		api.AbortRequest(c, http.StatusInternalServerError, "invalid_user", err, n.log)
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_user_id", err, n.log)
+		return
+	}
+
+	if err := newActivity.SetCreatedAt(time.Now(), true); err != nil {
+		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to set created_at")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_set_created_at", err, n.log)
 		return
 	}
 

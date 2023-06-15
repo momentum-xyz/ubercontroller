@@ -5,13 +5,12 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
-
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 type DB interface {
@@ -95,6 +94,8 @@ type ObjectsDB interface {
 }
 
 type ObjectActivitiesDB interface {
+	GetObjectIDsByActivityID(ctx context.Context, activityID umid.UMID) ([]umid.UMID, error)
+
 	UpsertObjectActivity(ctx context.Context, objectActivity *entry.ObjectActivity) error
 	UpsertObjectActivities(ctx context.Context, objectActivities []*entry.ObjectActivity) error
 }
