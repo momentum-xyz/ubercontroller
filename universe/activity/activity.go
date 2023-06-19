@@ -18,21 +18,21 @@ import (
 var _ universe.Activity = (*Activity)(nil)
 
 type Activity struct {
-	ctx   types.NodeContext
-	log   *zap.SugaredLogger
-	db    database.DB
-	mu    sync.RWMutex
-	entry *entry.Activity
-
-	collector universe.Collector
+	ctx        types.NodeContext
+	log        *zap.SugaredLogger
+	db         database.DB
+	mu         sync.RWMutex
+	entry      *entry.Activity
+	activities universe.Activities
 }
 
-func NewActivity(id umid.UMID, db database.DB) *Activity {
+func NewActivity(id umid.UMID, db database.DB, activities universe.Activities) *Activity {
 	return &Activity{
 		db: db,
 		entry: &entry.Activity{
 			ActivityID: id,
 		},
+		activities: activities,
 	}
 }
 
@@ -45,6 +45,13 @@ func (a *Activity) Initialize(ctx types.NodeContext) error {
 	a.log = ctx.Logger()
 
 	return nil
+}
+
+func (a *Activity) GetActivities() universe.Activities {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+
+	return a.activities
 }
 
 func (a *Activity) GetData() *entry.ActivityData {
@@ -145,13 +152,6 @@ func (a *Activity) GetEntry() *entry.Activity {
 	defer a.mu.RUnlock()
 
 	return a.entry
-}
-
-func (a *Activity) GetCollector() universe.Collector {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-
-	return a.collector
 }
 
 func (a *Activity) LoadFromEntry(entry *entry.Activity) error {

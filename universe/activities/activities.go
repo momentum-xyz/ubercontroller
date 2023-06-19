@@ -39,7 +39,7 @@ func (a *Activities) Initialize(ctx types.NodeContext) error {
 }
 
 func (a *Activities) CreateActivity(activityID umid.UMID) (universe.Activity, error) {
-	activity := activity.NewActivity(activityID, a.db)
+	activity := activity.NewActivity(activityID, a.db, a)
 
 	if err := activity.Initialize(a.ctx); err != nil {
 		return nil, errors.WithMessagef(err, "failed to initialize activity: %s", activityID)

@@ -396,7 +396,7 @@ type Activity interface {
 	IDer
 	Initializer
 
-	GetCollector() Collector
+	GetActivities() Activities
 
 	GetData() *entry.ActivityData
 	SetData(modifyFn modify.Fn[entry.ActivityData], updateDB bool) (*entry.ActivityData, error)
