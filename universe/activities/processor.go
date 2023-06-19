@@ -15,8 +15,7 @@ func (a *Activities) NotifyProcessor(activity universe.Activity, updateType posb
 		if err := a.handleNewActivity(activity); err != nil {
 			return err
 		}
-	case posbus.ChangedActivityUpdateType:
-	case posbus.RemovedActivityUpdateType:
+	case posbus.ChangedActivityUpdateType, posbus.RemovedActivityUpdateType:
 		if err := a.handleChangedRemovedActivity(activity); err != nil {
 			return err
 		}
@@ -54,8 +53,11 @@ func (a *Activities) handleChangedRemovedActivity(activity universe.Activity) er
 		go func(objectID umid.UMID) {
 			if err := a.sendMessageToPosBus(activity, objectID, posbus.RemovedActivityUpdateType); err != nil {
 				errCh <- err
+			} else {
+				errCh <- nil
 			}
 		}(objectID)
+
 	}
 
 	for range objectIDs {
