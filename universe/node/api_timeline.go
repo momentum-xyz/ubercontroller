@@ -85,7 +85,7 @@ func (n *Node) apiTimelineForObject(c *gin.Context) {
 			}
 		}
 
-		object, ok := n.GetObjectFromAllObjects(activity.GetObjectID())
+		object, ok := n.GetObjectFromAllObjects(objectID)
 		if !ok {
 			err := errors.WithMessage(err, "Node: apiTimelineForObject: failed to get object from all objects")
 			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_object", err, n.log)
@@ -322,7 +322,7 @@ func (n *Node) apiTimelineAddForObject(c *gin.Context) {
 		}
 	}
 
-	object, ok := n.GetObjectFromAllObjects(newActivity.GetObjectID())
+	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
 		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to get object from all objects")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_object", err, n.log)
