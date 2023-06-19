@@ -231,7 +231,41 @@ func (n *Node) apiTimelineAddForObject(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, true)
+	var avatarHash, userName string
+	profile := user.GetProfile()
+
+	if profile != nil {
+		avatarHash = ""
+		if profile.AvatarHash != nil {
+			avatarHash = *profile.AvatarHash
+		}
+
+		userName = ""
+		if profile.Name != nil {
+			userName = *profile.Name
+		}
+	}
+
+	object, ok := n.GetObjectFromAllObjects(newActivity.GetObjectID())
+	if !ok {
+		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to get object from all objects")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_object", err, n.log)
+		return
+	}
+
+	out := dto.Activity{
+		ActivityID: newActivity.GetID(),
+		UserID:     newActivity.GetUserID(),
+		ObjectID:   newActivity.GetObjectID(),
+		Type:       newActivity.GetType(),
+		Data:       newActivity.GetData(),
+		AvatarHash: &avatarHash,
+		WorldName:  object.GetName(),
+		UserName:   &userName,
+		CreatedAt:  newActivity.GetCreatedAt(),
+	}
+
+	c.JSON(http.StatusCreated, out)
 }
 
 // @Summary Edits an activity to a timeline
