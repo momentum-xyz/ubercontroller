@@ -123,6 +123,82 @@ func (n *Node) apiTimelineForObject(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
+// @Summary Get timeline for object by activity id
+// @Schemes
+// @Description Returns a timeline for an object, collection of activities == timeline
+// @Tags timeline
+// @Accept json
+// @Produce json
+// @Param query query node.apiTimelineForObject.InQuery true "query params"
+// @Success 200 {object} node.apiTimelineForObject.Out
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/objects/{object_id}/timeline/{activity_id} [get]
+func (n *Node) apiTimelineForObjectById(c *gin.Context) {
+	activityID, err := umid.Parse(c.Param("activityID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiTimelineForObjectById: failed to parse activity umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_activity_id", err, n.log)
+		return
+	}
+
+	objectID, err := umid.Parse(c.Param("objectID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiTimelineForObjectById: failed to parse object umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
+		return
+	}
+
+	activity, ok := n.activities.GetActivity(activityID)
+	if !ok {
+		err := errors.WithMessage(err, "Node: apiTimelineForObjectById: failed to get activity by id")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_activity", err, n.log)
+		return
+	}
+
+	user, err := n.LoadUser(activity.GetUserID())
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiTimelineForObjectById: failed to load user")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_load_user", err, n.log)
+		return
+	}
+
+	var avatarHash, userName string
+	profile := user.GetProfile()
+
+	if profile != nil {
+		avatarHash = ""
+		if profile.AvatarHash != nil {
+			avatarHash = *profile.AvatarHash
+		}
+
+		userName = ""
+		if profile.Name != nil {
+			userName = *profile.Name
+		}
+	}
+
+	object, ok := n.GetObjectFromAllObjects(objectID)
+	if !ok {
+		err := errors.WithMessage(err, "Node: apiTimelineForObjectById: failed to get object from all objects")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_object", err, n.log)
+		return
+	}
+
+	out := dto.Activity{
+		ActivityID: activity.GetID(),
+		UserID:     activity.GetUserID(),
+		ObjectID:   activity.GetObjectID(),
+		Type:       activity.GetType(),
+		Data:       activity.GetData(),
+		AvatarHash: &avatarHash,
+		WorldName:  object.GetName(),
+		UserName:   &userName,
+		CreatedAt:  activity.GetCreatedAt(),
+	}
+
+	c.JSON(http.StatusOK, out)
+}
+
 // @Summary Adds a post to a timeline
 // @Schemes
 // @Description Creates a new post for a timeline
@@ -231,7 +307,41 @@ func (n *Node) apiTimelineAddForObject(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, true)
+	var avatarHash, userName string
+	profile := user.GetProfile()
+
+	if profile != nil {
+		avatarHash = ""
+		if profile.AvatarHash != nil {
+			avatarHash = *profile.AvatarHash
+		}
+
+		userName = ""
+		if profile.Name != nil {
+			userName = *profile.Name
+		}
+	}
+
+	object, ok := n.GetObjectFromAllObjects(newActivity.GetObjectID())
+	if !ok {
+		err := errors.WithMessage(err, "Node: apiTimelineAddForObject: failed to get object from all objects")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_object", err, n.log)
+		return
+	}
+
+	out := dto.Activity{
+		ActivityID: newActivity.GetID(),
+		UserID:     newActivity.GetUserID(),
+		ObjectID:   newActivity.GetObjectID(),
+		Type:       newActivity.GetType(),
+		Data:       newActivity.GetData(),
+		AvatarHash: &avatarHash,
+		WorldName:  object.GetName(),
+		UserName:   &userName,
+		CreatedAt:  newActivity.GetCreatedAt(),
+	}
+
+	c.JSON(http.StatusCreated, out)
 }
 
 // @Summary Edits an activity to a timeline

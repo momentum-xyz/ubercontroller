@@ -58,6 +58,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 		vx.POST("/media/upload/image", n.apiMediaUploadImage)
 		vx.POST("/media/upload/video", n.apiMediaUploadVideo)
+		vx.POST("/media/upload/audio", n.apiMediaUploadAudio)
 
 		verifiedUsers := verified.Group("/users")
 		{
@@ -156,6 +157,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 					pd := timeline.Group("/:activityID")
 					{
+						pd.GET("", n.apiTimelineForObjectById)
 						pd.PATCH("", n.apiTimelineEditForObject)
 						pd.DELETE("", n.apiTimelineRemoveForObject)
 					}
