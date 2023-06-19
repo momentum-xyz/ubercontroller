@@ -117,6 +117,11 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		{
 			verifiedObjects.POST("", n.apiObjectsCreateObject)
 
+			newsfeed := verifiedObjects.Group("/newsfeed")
+			{
+				newsfeed.GET("", n.apiNewsfeedOverview)
+			}
+
 			object := verifiedObjects.Group("/:objectID")
 			{
 				objectAdmin := object.Group("", middleware.AuthorizeAdmin(n.log))
@@ -176,12 +181,6 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 				objectUser.GET("/attributes/sub", n.apiGetObjectUserAttributeSubValue)
 			}
-		}
-
-		newsfeed := vx.Group("/newsfeed")
-		{
-			newsfeed.POST("", n.apiNewsFeedAddItem)
-			newsfeed.GET("", n.apiNewsFeedGetAll)
 		}
 	}
 }
