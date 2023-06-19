@@ -157,6 +157,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 					pd := timeline.Group("/:activityID")
 					{
+						pd.GET("", n.apiTimelineForObjectById)
 						pd.PATCH("", n.apiTimelineEditForObject)
 						pd.DELETE("", n.apiTimelineRemoveForObject)
 					}
