@@ -36,14 +36,12 @@ func (a *Activities) Modify(activity universe.Activity, modifyFn modify.Fn[entry
 }
 
 func (a *Activities) Remove(activity universe.Activity) error {
-	ok, err := a.RemoveActivity(activity, true)
+	if err := a.NotifyProcessor(activity, posbus.RemovedActivityUpdateType); err != nil {
+		return errors.WithMessage(err, "failed to notify activity processor")
+	}
+	_, err := a.RemoveActivity(activity, true)
 	if err != nil {
 		return errors.WithMessage(err, "failed to remove activity")
-	}
-	if ok {
-		if err := a.NotifyProcessor(activity, posbus.RemovedActivityUpdateType); err != nil {
-			return errors.WithMessage(err, "failed to notify activity processor")
-		}
 	}
 
 	return nil
