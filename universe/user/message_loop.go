@@ -73,7 +73,7 @@ func (u *User) UserStakedToOdyssey(msg *posbus.UserStakedToOdyssey) error {
 	}
 
 	err = u.db.GetStakesDB().InsertIntoPendingStakes(context.TODO(), transactionID,
-		msg.ObjectID, wallet, umid.MustParse("ccccaaaa-1111-2222-3333-222222222222"), amount, msg.Comment, 0)
+		msg.ObjectID, wallet, umid.MustParse("ccccaaaa-1111-2222-3333-222222222222"), amount, msg.Comment, uint8(msg.Kind))
 	if err != nil {
 		err := errors.New("failed to insert into pending stakes")
 		return err
