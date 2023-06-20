@@ -13,7 +13,7 @@ func (a *Activities) Inject(activity universe.Activity) error {
 	if err := a.AddActivity(activity, true); err != nil {
 		return errors.WithMessage(err, "failed to inject activity")
 	}
-	if err := a.NotifyProcessor(activity, posbus.NewActivityUpdateType); err != nil {
+	if err := a.NotifyProcessor(activity, posbus.NewActivityUpdateType, nil); err != nil {
 		return errors.WithMessage(err, "failed to notify activity processor")
 	}
 
@@ -28,7 +28,11 @@ func (a *Activities) Modify(activity universe.Activity, modifyFn modify.Fn[entry
 	if err := a.Save(); err != nil {
 		return errors.WithMessage(err, "failed to save activity")
 	}
-	if err := a.NotifyProcessor(activity, posbus.ChangedActivityUpdateType); err != nil {
+	objectIDs, err := a.db.GetObjectActivitiesDB().GetObjectIDsByActivityID(a.ctx, activity.GetID())
+	if err != nil {
+		return errors.WithMessage(err, "failed to get objectIds by activityId")
+	}
+	if err := a.NotifyProcessor(activity, posbus.ChangedActivityUpdateType, objectIDs); err != nil {
 		return errors.WithMessage(err, "failed to notify activity processor")
 	}
 
@@ -36,12 +40,18 @@ func (a *Activities) Modify(activity universe.Activity, modifyFn modify.Fn[entry
 }
 
 func (a *Activities) Remove(activity universe.Activity) error {
-	if err := a.NotifyProcessor(activity, posbus.RemovedActivityUpdateType); err != nil {
-		return errors.WithMessage(err, "failed to notify activity processor")
+	objectIDs, err := a.db.GetObjectActivitiesDB().GetObjectIDsByActivityID(a.ctx, activity.GetID())
+	if err != nil {
+		return errors.WithMessage(err, "failed to get objectIds by activityId")
 	}
-	_, err := a.RemoveActivity(activity, true)
+	ok, err := a.RemoveActivity(activity, true)
 	if err != nil {
 		return errors.WithMessage(err, "failed to remove activity")
+	}
+	if ok {
+		if err := a.NotifyProcessor(activity, posbus.RemovedActivityUpdateType, objectIDs); err != nil {
+			return errors.WithMessage(err, "failed to notify activity processor")
+		}
 	}
 
 	return nil
