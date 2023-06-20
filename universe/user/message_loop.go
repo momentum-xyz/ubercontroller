@@ -62,7 +62,7 @@ func (u *User) Teleport(target umid.UMID) error {
 	if !ok {
 		// send buffer is locked at this point, so direct:
 		u.SendDirectly(posbus.WSMessage(&posbus.Signal{Value: posbus.SignalWorldDoesNotExist}))
-		return errors.New("Target world does not exist")
+		return fmt.Errorf("Target world %s does not exist", target)
 	}
 	u.leaveCurrentWorld()
 	return world.AddUser(u, true)
