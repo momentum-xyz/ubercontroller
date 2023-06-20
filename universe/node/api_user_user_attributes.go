@@ -19,9 +19,10 @@ import (
 // @Tags users
 // @Accept json
 // @Produce json
+// @Param user_id path string true "User UMID"
+// @Param target_id path string true "Target user UMID"
 // @Param body body node.apiSetUserUserSubAttributeValue.InBody true "body params"
 // @Success 200 {object} entry.AttributeValue
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Router /api/v4/users/attributes/sub/{user_id}/{target_id} [post]
 func (n *Node) apiSetUserUserSubAttributeValue(c *gin.Context) {

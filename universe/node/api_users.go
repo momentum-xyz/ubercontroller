@@ -27,7 +27,6 @@ import (
 // @Accept json
 // @Produce json
 // @Success 200 {object} dto.User
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/users/me [get]
@@ -64,8 +63,8 @@ func (n *Node) apiUsersGetMe(c *gin.Context) {
 // @Tags users
 // @Accept json
 // @Produce json
+// @Param user_id path string true "User UMID"
 // @Success 200 {object} dto.User
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/users/{user_id} [get]
@@ -103,7 +102,6 @@ func (n *Node) apiUsersGetByID(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Success 200 {array} dto.RecentUser
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/users [get]
@@ -182,8 +180,8 @@ func (n *Node) apiUsersGet(c *gin.Context) {
 // @Tags users
 // @Accept json
 // @Produce json
+// @Param user_id path string true "User UMID"
 // @Success 200 {array} dto.OwnedWorld
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/users/{user_id}/worlds [get]
@@ -236,8 +234,8 @@ func (n *Node) apiUsersGetOwnedWorlds(c *gin.Context) {
 // @Tags users
 // @Accept json
 // @Produce json
+// @Param user_id path string true "User UMID"
 // @Success 200 {array} dto.StakedWorld
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/users/{user_id}/staked-worlds [get]
@@ -298,7 +296,6 @@ func (n *Node) apiUsersGetStakedWorlds(c *gin.Context) {
 // @Tags users
 // @Accept json
 // @Produce json
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/users/top-stakers [get]
@@ -362,7 +359,6 @@ func (n *Node) apiUsersTopStakers(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Success 200 {object} dto.UserSearchResult
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/users/search [get]

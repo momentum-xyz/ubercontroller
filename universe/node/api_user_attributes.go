@@ -23,7 +23,6 @@ import (
 // @Tags users
 // @Accept json
 // @Produce json
-// @Param user_id path string true "User UMID"
 // @Param query query attributes.QueryPluginAttribute true "query params"
 // @Success 200 {object} entry.AttributeValue
 // @Failure 400 {object} api.HTTPError

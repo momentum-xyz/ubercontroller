@@ -26,9 +26,8 @@ import (
 // @Tags worlds
 // @Accept json
 // @Produce json
-// @Param worldID path string true "World UMID"
+// @Param object_id path string true "World UMID"
 // @Success 200 {array} dto.User
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/worlds/{object_id}/online-users [get]
@@ -78,9 +77,8 @@ func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
 // @Tags worlds
 // @Accept json
 // @Produce json
-// @Param worldID path string true "World UMID"
+// @Param object_id path string true "World UMID"
 // @Success 200 {array} dto.WorldDetails
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/worlds/{object_id} [get]
@@ -309,10 +307,9 @@ func (w *Worlds) apiWorldsGet(c *gin.Context) {
 // @Tags worlds
 // @Accept json
 // @Produce json
-// @Param world_id path string true "World UMID"
+// @Param object_id path string true "World UMID"
 // @Param query query worlds.apiWorldsGetObjectsWithChildren.Query true "query params"
 // @Success 200 {object} dto.ExploreOption
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/worlds/{object_id}/explore [get]
@@ -515,9 +512,8 @@ func (w *Worlds) apiWorldsFilterWorlds(searchQuery string) (dto.SearchOptions, e
 // @Tags worlds
 // @Accept json
 // @Produce json
-// @Param world_id path string true "World UMID"
+// @Param object_id path string true "World UMID"
 // @Success 200 {object} nil
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/worlds/{object_id}/teleport-user [post]
@@ -570,9 +566,8 @@ func (w *Worlds) apiWorldsTeleportUser(c *gin.Context) {
 // @Tags worlds
 // @Accept json
 // @Produce json
-// @Param worldID path string true "World UMID"
+// @Param object_id path string true "World UMID"
 // @Success 200 {array} dto.User
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/worlds/{object_id} [patch]

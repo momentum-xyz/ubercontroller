@@ -1,9 +1,10 @@
 package worlds
 
 import (
+	"net/http"
+
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -19,7 +20,6 @@ import (
 // @Produce json
 // @Param world_id path string true "World UMID"
 // @Success 200 {object} nil
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/worlds/{object_id}/fly-to-me [post]

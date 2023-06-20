@@ -584,7 +584,6 @@ func (n *Node) apiRemoveObjectUserAttributeValue(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object UMID"
-// @Param user_id path string true "User UMID"
 // @Param query query attributes.QueryPluginAttribute true "query params"
 // @Success 200 {object} map[umid.UMID]entry.AttributeValue
 // @Failure 400 {object} api.HTTPError
