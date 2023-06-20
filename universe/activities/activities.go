@@ -39,7 +39,7 @@ func (a *Activities) Initialize(ctx types.NodeContext) error {
 }
 
 func (a *Activities) CreateActivity(activityID umid.UMID) (universe.Activity, error) {
-	activity := activity.NewActivity(activityID, a.db)
+	activity := activity.NewActivity(activityID, a.db, a)
 
 	if err := activity.Initialize(a.ctx); err != nil {
 		return nil, errors.WithMessagef(err, "failed to initialize activity: %s", activityID)
@@ -60,6 +60,38 @@ func (a *Activities) GetActivities() map[umid.UMID]universe.Activity {
 	return a.activities.Map(func(k umid.UMID, v universe.Activity) universe.Activity {
 		return v
 	})
+}
+
+func (a *Activities) GetPaginatedActivities(startIndex int, pageSize int) ([]universe.Activity, int) {
+	a.activities.Mu.RLock()
+	defer a.activities.Mu.RUnlock()
+
+	const maxPageSize = 100
+	if pageSize > maxPageSize {
+		pageSize = maxPageSize
+	}
+
+	var allActivities []universe.Activity
+	for _, activityD := range a.activities.Data {
+		allActivities = append(allActivities, activityD)
+	}
+
+	totalActivities := len(allActivities)
+
+	sort.Slice(allActivities, func(i, j int) bool {
+		return allActivities[i].GetCreatedAt().After(allActivities[j].GetCreatedAt())
+	})
+
+	end := startIndex + pageSize
+	if end > len(allActivities) {
+		end = len(allActivities)
+	}
+
+	if startIndex >= end {
+		return []universe.Activity{}, totalActivities
+	}
+
+	return allActivities[startIndex:end], totalActivities
 }
 
 func (a *Activities) GetPaginatedActivitiesByObjectID(objectID *umid.UMID, startIndex int, pageSize int) ([]universe.Activity, int) {

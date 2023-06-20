@@ -40,6 +40,16 @@ type Stopper interface {
 	Stop() error
 }
 
+type Collector interface {
+	Inject(activity Activity) error
+	Modify(activity Activity, modifyFn modify.Fn[entry.ActivityData]) error
+	Remove(activity Activity) error
+}
+
+type Processor interface {
+	NotifyProcessor(activity Activity, updateType posbus.ActivityUpdateType) error
+}
+
 type RunStopper interface {
 	Runner
 	Stopper
@@ -386,6 +396,8 @@ type Activity interface {
 	IDer
 	Initializer
 
+	GetActivities() Activities
+
 	GetData() *entry.ActivityData
 	SetData(modifyFn modify.Fn[entry.ActivityData], updateDB bool) (*entry.ActivityData, error)
 
@@ -408,12 +420,15 @@ type Activity interface {
 type Activities interface {
 	Initializer
 	LoadSaver
+	Collector
+	Processor
 
 	CreateActivity(activityID umid.UMID) (Activity, error)
 
 	GetActivity(activityID umid.UMID) (Activity, bool)
 	GetActivities() map[umid.UMID]Activity
 
+	GetPaginatedActivities(page int, pageSize int) ([]Activity, int)
 	GetPaginatedActivitiesByObjectID(objectID *umid.UMID, page int, pageSize int) ([]Activity, int)
 	GetActivitiesByUserID(userID umid.UMID) map[umid.UMID]Activity
 

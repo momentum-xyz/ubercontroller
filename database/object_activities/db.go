@@ -18,13 +18,11 @@ const (
 	getObjectIDsByActivityIDQuery = `SELECT object_id FROM object_activity WHERE activity_id = $1;`
 
 	upsertObjectActivityQuery = `INSERT INTO object_activity
-    						(object_id, activity_id,
-    						created_at)
-						VALUES
-							($1, $2, CURRENT_TIMESTAMP)
-						ON CONFLICT (object_id)
-						DO UPDATE SET
-							activity_id = $2;`
+									(object_id, activity_id, created_at)
+								VALUES
+    								($1, $2, CURRENT_TIMESTAMP)
+								ON CONFLICT (object_id, activity_id)
+								DO NOTHING;`
 )
 
 var _ database.ObjectActivitiesDB = (*DB)(nil)

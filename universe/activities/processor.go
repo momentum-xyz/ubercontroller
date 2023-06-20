@@ -1,4 +1,4 @@
-package node
+package activities
 
 import (
 	"github.com/pkg/errors"
@@ -9,15 +9,14 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
-func (n *Node) NotifyActivityProcessor(activity universe.Activity, updateType posbus.ActivityUpdateType) error {
+func (a *Activities) NotifyProcessor(activity universe.Activity, updateType posbus.ActivityUpdateType) error {
 	switch updateType {
 	case posbus.NewActivityUpdateType:
-		if err := n.handleNewActivity(activity); err != nil {
+		if err := a.handleNewActivity(activity); err != nil {
 			return err
 		}
-	case posbus.ChangedActivityUpdateType:
-	case posbus.RemovedActivityUpdateType:
-		if err := n.handleChangedRemovedActivity(activity); err != nil {
+	case posbus.ChangedActivityUpdateType, posbus.RemovedActivityUpdateType:
+		if err := a.handleChangedRemovedActivity(activity, updateType); err != nil {
 			return err
 		}
 	default:
@@ -27,24 +26,24 @@ func (n *Node) NotifyActivityProcessor(activity universe.Activity, updateType po
 	return nil
 }
 
-func (n *Node) handleNewActivity(activity universe.Activity) error {
+func (a *Activities) handleNewActivity(activity universe.Activity) error {
 	objectActivityID := entry.NewObjectActivityID(activity.GetObjectID(), activity.GetID())
 	objectActivity := entry.NewObjectActivity(objectActivityID)
-	if err := n.db.GetObjectActivitiesDB().UpsertObjectActivity(n.ctx, objectActivity); err != nil {
+	if err := a.db.GetObjectActivitiesDB().UpsertObjectActivity(a.ctx, objectActivity); err != nil {
 		return errors.WithMessage(err, "failed to upsert object activity")
 	}
 
 	userActivityID := entry.NewUserActivityID(activity.GetUserID(), activity.GetID())
 	userActivity := entry.NewUserActivity(userActivityID)
-	if err := n.db.GetUserActivitiesDB().UpsertUserActivity(n.ctx, userActivity); err != nil {
+	if err := a.db.GetUserActivitiesDB().UpsertUserActivity(a.ctx, userActivity); err != nil {
 		return errors.WithMessage(err, "failed to upsert user activity")
 	}
 
-	return n.sendMessageToPosBus(activity, activity.GetObjectID(), posbus.NewActivityUpdateType)
+	return a.sendMessageToPosBus(activity, activity.GetObjectID(), posbus.NewActivityUpdateType)
 }
 
-func (n *Node) handleChangedRemovedActivity(activity universe.Activity) error {
-	objectIDs, err := n.db.GetObjectActivitiesDB().GetObjectIDsByActivityID(n.ctx, activity.GetID())
+func (a *Activities) handleChangedRemovedActivity(activity universe.Activity, updateType posbus.ActivityUpdateType) error {
+	objectIDs, err := a.db.GetObjectActivitiesDB().GetObjectIDsByActivityID(a.ctx, activity.GetID())
 	if err != nil {
 		return errors.WithMessage(err, "failed to get objectIds by activityId")
 	}
@@ -52,10 +51,13 @@ func (n *Node) handleChangedRemovedActivity(activity universe.Activity) error {
 	errCh := make(chan error)
 	for _, objectID := range objectIDs {
 		go func(objectID umid.UMID) {
-			if err := n.sendMessageToPosBus(activity, objectID, posbus.RemovedActivityUpdateType); err != nil {
+			if err := a.sendMessageToPosBus(activity, objectID, updateType); err != nil {
 				errCh <- err
+			} else {
+				errCh <- nil
 			}
 		}(objectID)
+
 	}
 
 	for range objectIDs {
@@ -67,7 +69,8 @@ func (n *Node) handleChangedRemovedActivity(activity universe.Activity) error {
 	return nil
 }
 
-func (n *Node) sendMessageToPosBus(activity universe.Activity, objectID umid.UMID, updateType posbus.ActivityUpdateType) error {
+func (a *Activities) sendMessageToPosBus(activity universe.Activity, objectID umid.UMID, updateType posbus.ActivityUpdateType) error {
+	n := universe.GetNode()
 	object, ok := n.GetObjectFromAllObjects(objectID)
 	if !ok {
 		return errors.Errorf("failed to get object from all objects: %v", objectID)

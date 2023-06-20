@@ -18,9 +18,8 @@ const (
     						created_at)
 						VALUES
 							($1, $2, CURRENT_TIMESTAMP)
-						ON CONFLICT (user_id)
-						DO UPDATE SET
-							user_id = $2;`
+						ON CONFLICT (user_id, activity_id)
+						DO NOTHING;`
 )
 
 var _ database.UserActivitiesDB = (*DB)(nil)
