@@ -369,6 +369,12 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 		},
 		{
 			pluginID:      universe.GetSystemPluginID(),
+			attributeName: "timeline_last_seen",
+			description:   "Last recorded activity of user viewing timeline",
+			options:       nil,
+		},
+		{
+			pluginID:      universe.GetSystemPluginID(),
 			attributeName: "last_known_position",
 			description:   "Last known position for user in the world",
 			options:       nil,
