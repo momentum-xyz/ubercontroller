@@ -1,14 +1,15 @@
 package user
 
 import (
+	"context"
+	"encoding/hex"
 	"fmt"
-
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
-	"github.com/pkg/errors"
-
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
+	"github.com/pkg/errors"
+	"math/big"
 )
 
 func (u *User) OnMessage(buf []byte) error {
@@ -17,6 +18,8 @@ func (u *User) OnMessage(buf []byte) error {
 		return err
 	}
 	switch msg.GetType() {
+	case posbus.TypeUserStakedToOdyssey:
+		return u.UserStakedToOdyssey(msg.(*posbus.UserStakedToOdyssey))
 	case posbus.TypeMyTransform:
 		return u.UpdatePosition(msg.(*posbus.MyTransform))
 		//FIXME
@@ -44,6 +47,36 @@ func (u *User) OnMessage(buf []byte) error {
 		return u.HandleHighFive(msg.(*posbus.HighFive))
 	default:
 		return errors.Errorf("unknown message: %d", msg.GetType())
+	}
+
+	return nil
+}
+
+func (u *User) UserStakedToOdyssey(msg *posbus.UserStakedToOdyssey) error {
+	transactionID, err := hexToAddress(msg.TransactionHash)
+	if err != nil {
+		err = errors.WithMessage(err, "failed to convert TransactionHash to address")
+		return err
+	}
+
+	wallet, err := hexToAddress(msg.Wallet)
+	if err != nil {
+		err = errors.WithMessage(err, "failed to convert TransactionHash to address")
+		return err
+	}
+
+	big := big.NewInt(0)
+	amount, ok := big.SetString(msg.Amount, 10)
+	if !ok {
+		err := errors.New("failed to parse amount from string to bigInt")
+		return err
+	}
+
+	err = u.db.GetStakesDB().InsertIntoPendingStakes(context.TODO(), transactionID,
+		msg.ObjectID, wallet, umid.MustParse("ccccaaaa-1111-2222-3333-222222222222"), amount, msg.Comment, uint8(msg.Kind))
+	if err != nil {
+		err := errors.New("failed to insert into pending stakes")
+		return err
 	}
 
 	return nil
@@ -199,4 +232,12 @@ func (u *User) HandleHighFive(m *posbus.HighFive) error {
 	//go u.SendHighFiveStats(target)
 
 	return nil
+}
+
+func hexToAddress(s string) ([]byte, error) {
+	b, err := hex.DecodeString(s[2:])
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
 }
