@@ -307,12 +307,12 @@ func (w *Worlds) apiWorldsGet(c *gin.Context) {
 // @Tags worlds
 // @Accept json
 // @Produce json
-// @Param object_id path string true "World UMID"
+// @Param world_id path string true "World UMID"
 // @Param query query worlds.apiWorldsGetObjectsWithChildren.Query true "query params"
 // @Success 200 {object} dto.ExploreOption
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Router /api/v4/worlds/{object_id}/explore [get]
+// @Router /api/v4/worlds/{world_id}/explore [get]
 func (w *Worlds) apiWorldsGetObjectsWithChildren(c *gin.Context) {
 	type Query struct {
 		ObjectID string `form:"object_id" binding:"required"`
