@@ -1,13 +1,15 @@
 package user
 
 import (
+	"context"
+	"encoding/hex"
 	"fmt"
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
-	"github.com/pkg/errors"
-
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
+	"github.com/pkg/errors"
+	"math/big"
 )
 
 func (u *User) OnMessage(buf []byte) error {
@@ -51,21 +53,31 @@ func (u *User) OnMessage(buf []byte) error {
 }
 
 func (u *User) UserStakedToOdyssey(msg *posbus.UserStakedToOdyssey) error {
+	transactionID, err := hexToAddress(msg.TransactionHash)
+	if err != nil {
+		err = errors.WithMessage(err, "failed to convert TransactionHash to address")
+		return err
+	}
 
-	//u.db.GetStakesDB().InsertIntoPendingStakes(context.TODO())
-	//universe.GetNode().(node.Node)
-	fmt.Println(msg)
-	//msg.TransactionID
-	//err := universe.GetNode().GetDB().GetStakesDB().InsertIntoPendingStakes(
-	//	context.TODO(),
-	//	transactionID,
-	//	inBody.OdysseyID,
-	//	wallet,
-	//	umid.MustParse("ccccaaaa-1111-2222-3333-222222222222"),
-	//	amount,
-	//	inBody.Comment,
-	//	0)
-	//return err
+	wallet, err := hexToAddress(msg.Wallet)
+	if err != nil {
+		err = errors.WithMessage(err, "failed to convert TransactionHash to address")
+		return err
+	}
+
+	big := big.NewInt(0)
+	amount, ok := big.SetString(msg.Amount, 10)
+	if !ok {
+		err := errors.New("failed to parse amount from string to bigInt")
+		return err
+	}
+
+	err = u.db.GetStakesDB().InsertIntoPendingStakes(context.TODO(), transactionID,
+		msg.ObjectID, wallet, umid.MustParse("ccccaaaa-1111-2222-3333-222222222222"), amount, msg.Comment, 0)
+	if err != nil {
+		err := errors.New("failed to insert into pending stakes")
+		return err
+	}
 
 	return nil
 }
@@ -220,4 +232,12 @@ func (u *User) HandleHighFive(m *posbus.HighFive) error {
 	//go u.SendHighFiveStats(target)
 
 	return nil
+}
+
+func hexToAddress(s string) ([]byte, error) {
+	b, err := hex.DecodeString(s[2:])
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
 }
