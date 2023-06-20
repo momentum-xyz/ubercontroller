@@ -416,7 +416,7 @@ func (n *Node) apiSetUserAttributeSubValue(c *gin.Context) {
 // @Produce json
 // @Param user_id path string true "User UMID"
 // @Param body body node.apiRemoveUserAttributeSubValue.Body true "body params"
-// @Success 200 {object} ""
+// @Success 200 ""
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
@@ -504,7 +504,7 @@ func (n *Node) apiRemoveUserAttributeSubValue(c *gin.Context) {
 // @Produce json
 // @Param user_id path string true "User UMID"
 // @Param body body node.apiRemoveUserAttributeValue.Body true "body params"
-// @Success 200 {object} ""
+// @Success 200 ""
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/users/{user_id}/attributes [delete]
