@@ -27,6 +27,8 @@ type ActivityData struct {
 type ActivityType string
 
 const (
-	ActivityTypeVideo      ActivityType = "video"
-	ActivityTypeScreenshot ActivityType = "screenshot"
+	ActivityTypeVideo        ActivityType = "video"
+	ActivityTypeScreenshot   ActivityType = "screenshot"
+	ActivityTypeWorldCreated ActivityType = "world_created"
+	ActivityTypeStake        ActivityType = "stake"
 )
