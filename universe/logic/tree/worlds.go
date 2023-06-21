@@ -162,7 +162,7 @@ func addNewWorldCreatedActivity(id umid.UMID) error {
 		return errors.WithMessage(err, "failed to set created_at")
 	}
 
-	aType := entry.ActivityWorldCreate
+	aType := entry.ActivityTypeWorldCreated
 	if err := a.SetType(&aType, true); err != nil {
 		return errors.WithMessage(err, "failed to set activity type")
 	}
