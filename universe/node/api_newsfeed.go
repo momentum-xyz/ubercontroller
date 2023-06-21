@@ -7,8 +7,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
+	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
+	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 // @Summary Get the current newsfeed
@@ -81,16 +84,30 @@ func (n *Node) apiNewsfeedOverview(c *gin.Context) {
 			return
 		}
 
+		attributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Object.WorldAvatar.Name)
+		objectAttributeValue, ok := object.GetObjectAttributes().GetValue(attributeID)
+		if !ok {
+			err := errors.WithMessage(err, "Node: apiNewsfeedOverview: failed to get object attribute value")
+			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_object_attribute_value", err, n.log)
+			return
+		}
+
+		var worldAvatarHash string
+		if objectAttributeValue != nil {
+			worldAvatarHash = utils.GetFromAnyMap(*objectAttributeValue, universe.ReservedAttributes.Object.WorldAvatar.Key, "")
+		}
+
 		act := dto.Activity{
-			ActivityID: activity.GetID(),
-			UserID:     activity.GetUserID(),
-			ObjectID:   activity.GetObjectID(),
-			Type:       activity.GetType(),
-			Data:       activity.GetData(),
-			AvatarHash: &avatarHash,
-			WorldName:  object.GetName(),
-			UserName:   &userName,
-			CreatedAt:  activity.GetCreatedAt(),
+			ActivityID:      activity.GetID(),
+			UserID:          activity.GetUserID(),
+			ObjectID:        activity.GetObjectID(),
+			Type:            activity.GetType(),
+			Data:            activity.GetData(),
+			AvatarHash:      &avatarHash,
+			WorldName:       object.GetName(),
+			WorldAvatarHash: &worldAvatarHash,
+			UserName:        &userName,
+			CreatedAt:       activity.GetCreatedAt(),
 		}
 
 		dtoActivities = append(dtoActivities, act)

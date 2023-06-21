@@ -1,6 +1,9 @@
 package activities
 
 import (
+	"sync"
+
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
@@ -43,25 +46,30 @@ func (a *Activities) handleNewActivity(activity universe.Activity) error {
 }
 
 func (a *Activities) handleChangedRemovedActivity(activity universe.Activity, updateType posbus.ActivityUpdateType, objectIDs []umid.UMID) error {
-	errCh := make(chan error)
+	var wg sync.WaitGroup
+	errCh := make(chan error, len(objectIDs))
+
 	for _, objectID := range objectIDs {
+		wg.Add(1)
 		go func(objectID umid.UMID) {
+			defer wg.Done()
 			if err := a.sendMessageToPosBus(activity, objectID, updateType); err != nil {
 				errCh <- err
-			} else {
-				errCh <- nil
 			}
 		}(objectID)
-
 	}
 
-	for range objectIDs {
-		if err := <-errCh; err != nil {
-			return err
-		}
+	go func() {
+		wg.Wait()
+		close(errCh)
+	}()
+
+	var result *multierror.Error
+	for err := range errCh {
+		result = multierror.Append(result, err)
 	}
 
-	return nil
+	return result.ErrorOrNil()
 }
 
 func (a *Activities) sendMessageToPosBus(activity universe.Activity, objectID umid.UMID, updateType posbus.ActivityUpdateType) error {

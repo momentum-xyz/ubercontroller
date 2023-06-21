@@ -60,15 +60,16 @@ type ExploreOption struct {
 }
 
 type Activity struct {
-	ActivityID umid.UMID           `json:"activity_id"`
-	UserID     umid.UMID           `json:"user_id"`
-	ObjectID   umid.UMID           `json:"object_id"`
-	Type       *entry.ActivityType `json:"type"`
-	Data       *entry.ActivityData `json:"data"`
-	AvatarHash *string             `json:"avatar_hash"`
-	WorldName  string              `json:"world_name"`
-	UserName   *string             `json:"user_name"`
-	CreatedAt  time.Time           `json:"created_at"`
+	ActivityID      umid.UMID           `json:"activity_id"`
+	UserID          umid.UMID           `json:"user_id"`
+	ObjectID        umid.UMID           `json:"object_id"`
+	Type            *entry.ActivityType `json:"type"`
+	Data            *entry.ActivityData `json:"data"`
+	AvatarHash      *string             `json:"avatar_hash"`
+	WorldName       string              `json:"world_name"`
+	WorldAvatarHash *string             `json:"world_avatar_hash"`
+	UserName        *string             `json:"user_name"`
+	CreatedAt       time.Time           `json:"created_at"`
 }
 
 type RecentWorld struct {
