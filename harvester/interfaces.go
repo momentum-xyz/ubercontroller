@@ -25,6 +25,7 @@ type TransferERC20Log struct {
  */
 //event Stake(address user, bytes16 odyssey, uint256 amount_staked, Token token, uint256 total_staked);
 type StakeLog struct {
+	LogIndex     uint
 	TxHash       string
 	UserWallet   string
 	OdysseyID    umid.UMID
@@ -116,6 +117,7 @@ type UpdateEvent struct {
 
 type StakeEvent struct {
 	TxHash    string
+	LogIndex  string
 	Wallet    string
 	OdysseyID umid.UMID
 	Amount    *big.Int

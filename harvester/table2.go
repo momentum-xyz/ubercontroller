@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v4"
@@ -148,6 +149,7 @@ func (t *Table2) ProcessLogs(blockNumber uint64, logs []any) {
 			t.stakesData[stake.OdysseyID][stake.UserWallet] = stake.TotalStaked
 			stakeEvents = append(stakeEvents, &StakeEvent{
 				TxHash:    stake.TxHash,
+				LogIndex:  strconv.FormatUint(uint64(stake.LogIndex), 10),
 				Wallet:    stake.UserWallet,
 				OdysseyID: stake.OdysseyID,
 				Amount:    stake.TotalStaked,

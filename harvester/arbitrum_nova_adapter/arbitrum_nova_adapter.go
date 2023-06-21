@@ -242,6 +242,7 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 
 				e := &harvester.StakeLog{
 					TxHash:       transactionHash,
+					LogIndex:     vLog.Index,
 					UserWallet:   fromWallet.Hex(),
 					OdysseyID:    odysseyID,
 					AmountStaked: amount,

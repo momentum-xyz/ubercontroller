@@ -3,6 +3,7 @@ package node
 import (
 	"context"
 	"strconv"
+	"time"
 
 	ethCommon "github.com/ethereum/go-ethereum/common"
 	"github.com/momentum-xyz/ubercontroller/harvester"
@@ -62,6 +63,97 @@ func (n *Node) Listener(bcName string, events []*harvester.UpdateEvent, stakeEve
 				}
 			}
 		}
+	}
+
+	return AddStakeActivities(stakeEvents)
+}
+
+func AddStakeActivities(stakeEvents []*harvester.StakeEvent) error {
+	node := universe.GetNode()
+	activities := node.GetActivities().GetActivities()
+
+	newStakeEvents := make([]*harvester.StakeEvent, 0)
+
+	for _, s := range stakeEvents {
+		exists := false
+		for _, a := range activities {
+			if a.GetData().BCTxHash != nil && a.GetData().BCLogIndex != nil {
+				if *a.GetData().BCTxHash == s.TxHash && *a.GetData().BCLogIndex == s.LogIndex {
+					exists = true
+				}
+			}
+		}
+
+		if !exists {
+			newStakeEvents = append(newStakeEvents, s)
+		}
+	}
+
+	for _, s := range newStakeEvents {
+		err := AddStakeActivity(s)
+		if err != nil {
+			return errors.WithMessage(err, "failed to AddStakeActivity")
+		}
+	}
+
+	return nil
+}
+
+func AddStakeActivity(stakeEvent *harvester.StakeEvent) error {
+	node := universe.GetNode()
+	a, err := node.GetActivities().CreateActivity(umid.New())
+	if err != nil {
+		return errors.WithMessage(err, "failed to CreateActivity")
+	}
+
+	world, ok := node.GetWorlds().GetWorld(stakeEvent.OdysseyID)
+	if !ok {
+		return errors.New("world not found by id:" + stakeEvent.OdysseyID.String())
+	}
+
+	if err := a.SetObjectID(stakeEvent.OdysseyID, true); err != nil {
+		return errors.WithMessage(err, "failed to set object ID")
+	}
+
+	if err := a.SetUserID(world.GetOwnerID(), true); err != nil {
+		return errors.WithMessage(err, "failed to set user ID")
+	}
+
+	if err := a.SetCreatedAt(time.Now(), true); err != nil {
+		return errors.WithMessage(err, "failed to set created_at")
+	}
+
+	aType := entry.ActivityTypeStake
+	if err := a.SetType(&aType, true); err != nil {
+		return errors.WithMessage(err, "failed to set activity type")
+	}
+
+	modifyFn := func(current *entry.ActivityData) (*entry.ActivityData, error) {
+		if current == nil {
+			current = &entry.ActivityData{}
+		}
+
+		current.BCTxHash = &stakeEvent.TxHash
+		current.BCLogIndex = &stakeEvent.LogIndex
+		symbol := "MOM"
+		current.TokenSymbol = &symbol
+		amount := stakeEvent.Amount.String()
+		current.TokenAmount = &amount
+
+		//current.Position = &position
+		//current.Hash = &inBody.Hash
+		//current.Description = &inBody.Description
+
+		return current, nil
+	}
+
+	_, err = a.SetData(modifyFn, true)
+	if err != nil {
+		return errors.New("failed to set activity data")
+	}
+
+	if err := a.GetActivities().Inject(a); err != nil {
+		return errors.New("failed to inject activity")
 	}
 
 	return nil
