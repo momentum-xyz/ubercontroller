@@ -375,6 +375,31 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 		},
 		{
 			pluginID:      universe.GetSystemPluginID(),
+			attributeName: "blockadelabs",
+			description:   "Blockadelabs API key storage attribute",
+			options: &entry.AttributeOptions{
+				"permissions": entry.PermissionsAttributeOption{
+					Read:  string(entry.PermissionAdmin),
+					Write: string(entry.PermissionAdmin),
+				},
+			},
+		},
+		{
+			pluginID:      universe.GetSystemPluginID(),
+			attributeName: "skybox_ai",
+			description:   "Generated skybox storage attribute",
+			options: &entry.AttributeOptions{
+				"permissions": entry.PermissionsAttributeOption{
+					Read:  string(entry.PermissionAdmin) + "+" + string(entry.PermissionUserOwner),
+					Write: string(entry.PermissionAdmin) + "+" + string(entry.PermissionUserOwner),
+				},
+				"posbus_auto": entry.PosBusAutoAttributeOption{
+					Scope: []entry.PosBusAutoScopeAttributeOption{entry.UserPosBusAutoScopeAttributeOption},
+				},
+			},
+		},
+		{
+			pluginID:      universe.GetSystemPluginID(),
 			attributeName: "last_known_position",
 			description:   "Last known position for user in the world",
 			options:       nil,
