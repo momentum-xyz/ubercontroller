@@ -83,16 +83,13 @@ func (n *Node) apiNewsfeedOverview(c *gin.Context) {
 			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_object", err, n.log)
 			return
 		}
-
+		
+		var worldAvatarHash string
 		attributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Object.WorldAvatar.Name)
 		objectAttributeValue, ok := object.GetObjectAttributes().GetValue(attributeID)
-		if !ok {
-			err := errors.WithMessage(err, "Node: apiNewsfeedOverview: failed to get object attribute value")
-			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_object_attribute_value", err, n.log)
-			return
+		if !ok || objectAttributeValue == nil {
+			worldAvatarHash = ""
 		}
-
-		var worldAvatarHash string
 		if objectAttributeValue != nil {
 			worldAvatarHash = utils.GetFromAnyMap(*objectAttributeValue, universe.ReservedAttributes.Object.WorldAvatar.Key, "")
 		}
