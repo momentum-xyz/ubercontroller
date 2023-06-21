@@ -3,6 +3,7 @@ package tree
 import (
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"math/rand"
+	"time"
 
 	"github.com/pkg/errors"
 
@@ -16,7 +17,7 @@ type WorldTemplate struct {
 	ObjectTemplate
 }
 
-func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (umid.UMID, error) {
+func addWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (umid.UMID, error) {
 	node := universe.GetNode()
 
 	// loading
@@ -122,4 +123,70 @@ func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (umid.UMI
 	}
 
 	return *worldID, nil
+}
+
+// This func wraps create world function with add activity
+func AddWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (umid.UMID, error) {
+	id, err := addWorldFromTemplate(worldTemplate, updateDB)
+	if id != umid.Nil && err == nil {
+		err := addNewWorldCreatedActivity(id)
+		if err != nil {
+			return id, errors.WithMessage(err, "failed to AddNewOdysseyActivity")
+		}
+	}
+
+	return id, err
+}
+
+func addNewWorldCreatedActivity(id umid.UMID) error {
+	node := universe.GetNode()
+	a, err := node.GetActivities().CreateActivity(umid.New())
+	if err != nil {
+		return errors.WithMessage(err, "failed to CreateActivity")
+	}
+
+	world, ok := node.GetWorlds().GetWorld(id)
+	if !ok {
+		return errors.New("world not found by id:" + id.String())
+	}
+
+	if err := a.SetObjectID(id, true); err != nil {
+		return errors.WithMessage(err, "failed to set object ID")
+	}
+
+	if err := a.SetUserID(world.GetOwnerID(), true); err != nil {
+		return errors.WithMessage(err, "failed to set user ID")
+	}
+
+	if err := a.SetCreatedAt(time.Now(), true); err != nil {
+		return errors.WithMessage(err, "failed to set created_at")
+	}
+
+	aType := entry.ActivityTypeWorldCreated
+	if err := a.SetType(&aType, true); err != nil {
+		return errors.WithMessage(err, "failed to set activity type")
+	}
+
+	modifyFn := func(current *entry.ActivityData) (*entry.ActivityData, error) {
+		if current == nil {
+			current = &entry.ActivityData{}
+		}
+
+		//current.Position = &position
+		//current.Hash = &inBody.Hash
+		//current.Description = &inBody.Description
+
+		return current, nil
+	}
+
+	_, err = a.SetData(modifyFn, true)
+	if err != nil {
+		return errors.New("failed to set activity data")
+	}
+
+	if err := a.GetActivities().Inject(a); err != nil {
+		return errors.New("failed to inject activity")
+	}
+
+	return nil
 }

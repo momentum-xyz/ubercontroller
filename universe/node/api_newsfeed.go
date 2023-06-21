@@ -83,7 +83,7 @@ func (n *Node) apiNewsfeedOverview(c *gin.Context) {
 			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_object", err, n.log)
 			return
 		}
-
+		
 		var worldAvatarHash string
 		attributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Object.WorldAvatar.Name)
 		objectAttributeValue, ok := object.GetObjectAttributes().GetValue(attributeID)
