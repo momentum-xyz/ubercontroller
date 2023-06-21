@@ -25,13 +25,13 @@ func (a *Activities) Inject(activity universe.Activity) error {
 }
 
 func (a *Activities) Modify(activity universe.Activity, modifyFn modify.Fn[entry.ActivityData]) error {
-	_, err := activity.SetData(modifyFn, true)
-	if err != nil {
-		return errors.WithMessage(err, "failed to set activity data")
-	}
 	objectIDs, err := a.db.GetObjectActivitiesDB().GetObjectIDsByActivityID(a.ctx, activity.GetID())
 	if err != nil {
 		return errors.WithMessage(err, "failed to get objectIds by activityId")
+	}
+	_, dErr := activity.SetData(modifyFn, true)
+	if dErr != nil {
+		return errors.WithMessage(err, "failed to set activity data")
 	}
 	if err := a.Save(); err != nil {
 		return errors.WithMessage(err, "failed to save activity")
