@@ -23,12 +23,10 @@ import (
 // @Tags users
 // @Accept json
 // @Produce json
-// @Param user_id path string true "User UMID"
 // @Param query query attributes.QueryPluginAttribute true "query params"
-// @Success 200 {user} entry.AttributeValue
-// @Failure 500 {user} api.HTTPError
-// @Failure 400 {user} api.HTTPError
-// @Failure 404 {user} api.HTTPError
+// @Success 200 {object} entry.AttributeValue
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
 // @Router /api/v4/users/me/attributes [get]
 func (n *Node) apiGetMeUserAttributeValue(c *gin.Context) {
 	userID, err := api.GetUserIDFromContext(c)
@@ -67,10 +65,9 @@ func (n *Node) apiGetMeUserAttributeValue(c *gin.Context) {
 // @Produce json
 // @Param user_id path string true "User UMID"
 // @Param query query attributes.QueryPluginAttribute true "query params"
-// @Success 200 {user} entry.AttributeValue
-// @Failure 500 {user} api.HTTPError
-// @Failure 400 {user} api.HTTPError
-// @Failure 404 {user} api.HTTPError
+// @Success 200 {object} entry.AttributeValue
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
 // @Router /api/v4/users/{user_id}/attributes [get]
 func (n *Node) apiGetUserAttributeValue(c *gin.Context) {
 	userID, err := api.GetUserIDFromContext(c)
@@ -127,10 +124,9 @@ func (n *Node) apiGetUserAttributeValue(c *gin.Context) {
 // @Produce json
 // @Param user_id path string true "User UMID"
 // @Param body body node.apiSetUserAttributeValue.InBody true "body params"
-// @Success 202 {user} entry.AttributeValue
-// @Failure 500 {user} api.HTTPError
-// @Failure 400 {user} api.HTTPError
-// @Failure 404 {user} api.HTTPError
+// @Success 202 {object} entry.AttributeValue
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
 // @Router /api/v4/users/{user_id}/attributes [post]
 func (n *Node) apiSetUserAttributeValue(c *gin.Context) {
 	type InBody struct {
@@ -227,10 +223,9 @@ func (n *Node) apiSetUserAttributeValue(c *gin.Context) {
 // @Produce json
 // @Param user_id path string true "User UMID"
 // @Param query query node.apiGetUserAttributeSubValue.InQuery true "query params"
-// @Success 200 {user} dto.UserSubAttributes
-// @Failure 500 {user} api.HTTPError
-// @Failure 400 {user} api.HTTPError
-// @Failure 404 {user} api.HTTPError
+// @Success 200 {object} dto.UserSubAttributes
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
 // @Router /api/v4/users/{user_id}/attributes/sub [get]
 func (n *Node) apiGetUserAttributeSubValue(c *gin.Context) {
 	type InQuery struct {
@@ -316,10 +311,9 @@ func (n *Node) apiGetUserAttributeSubValue(c *gin.Context) {
 // @Produce json
 // @Param user_id path string true "User UMID"
 // @Param body body node.apiSetUserAttributeSubValue.Body true "body params"
-// @Success 202 {user} dto.UserSubAttributes
-// @Failure 500 {user} api.HTTPError
-// @Failure 400 {user} api.HTTPError
-// @Failure 404 {user} api.HTTPError
+// @Success 202 {object} dto.UserSubAttributes
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
 // @Router /api/v4/users/{user_id}/attributes/sub [post]
 func (n *Node) apiSetUserAttributeSubValue(c *gin.Context) {
 	type Body struct {
@@ -421,10 +415,10 @@ func (n *Node) apiSetUserAttributeSubValue(c *gin.Context) {
 // @Produce json
 // @Param user_id path string true "User UMID"
 // @Param body body node.apiRemoveUserAttributeSubValue.Body true "body params"
-// @Success 200 {user} nil
-// @Failure 500 {user} api.HTTPError
-// @Failure 400 {user} api.HTTPError
-// @Failure 404 {user} api.HTTPError
+// @Success 200 ""
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
 // @Router /api/v4/users/{user_id}/attributes/sub [delete]
 func (n *Node) apiRemoveUserAttributeSubValue(c *gin.Context) {
 	type Body struct {
@@ -509,10 +503,9 @@ func (n *Node) apiRemoveUserAttributeSubValue(c *gin.Context) {
 // @Produce json
 // @Param user_id path string true "User UMID"
 // @Param body body node.apiRemoveUserAttributeValue.Body true "body params"
-// @Success 200 {user} nil
-// @Failure 500 {user} api.HTTPError
-// @Failure 400 {user} api.HTTPError
-// @Failure 404 {user} api.HTTPError
+// @Success 200 ""
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
 // @Router /api/v4/users/{user_id}/attributes [delete]
 func (n *Node) apiRemoveUserAttributeValue(c *gin.Context) {
 	type Body struct {

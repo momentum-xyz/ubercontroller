@@ -12,14 +12,14 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
-func (a *Activities) NotifyProcessor(activity universe.Activity, updateType posbus.ActivityUpdateType) error {
+func (a *Activities) NotifyProcessor(activity universe.Activity, updateType posbus.ActivityUpdateType, objectIDs []umid.UMID) error {
 	switch updateType {
 	case posbus.NewActivityUpdateType:
 		if err := a.handleNewActivity(activity); err != nil {
 			return err
 		}
 	case posbus.ChangedActivityUpdateType, posbus.RemovedActivityUpdateType:
-		if err := a.handleChangedRemovedActivity(activity, updateType); err != nil {
+		if err := a.handleChangedRemovedActivity(activity, updateType, objectIDs); err != nil {
 			return err
 		}
 	default:
@@ -45,12 +45,7 @@ func (a *Activities) handleNewActivity(activity universe.Activity) error {
 	return a.sendMessageToPosBus(activity, activity.GetObjectID(), posbus.NewActivityUpdateType)
 }
 
-func (a *Activities) handleChangedRemovedActivity(activity universe.Activity, updateType posbus.ActivityUpdateType) error {
-	objectIDs, err := a.db.GetObjectActivitiesDB().GetObjectIDsByActivityID(a.ctx, activity.GetID())
-	if err != nil {
-		return errors.WithMessage(err, "failed to get objectIds by activityId")
-	}
-
+func (a *Activities) handleChangedRemovedActivity(activity universe.Activity, updateType posbus.ActivityUpdateType, objectIDs []umid.UMID) error {
 	var wg sync.WaitGroup
 	errCh := make(chan error, len(objectIDs))
 

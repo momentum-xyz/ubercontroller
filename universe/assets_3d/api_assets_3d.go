@@ -285,8 +285,7 @@ func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 // @Param query query assets_3d.apiGetAssets3dOptions.InQuery true "query params"
 // @Success 200 {object} dto.Assets3dOptions
 // @Failure 400 {object} api.HTTPError
-// @Failure 500 {object} api.HTTPError
-// @Router /api/v4/assets-3d/{object_id}/options [get]
+// @Router /api/v4/assets-3d/options [get]
 func (a *Assets3d) apiGetAssets3dOptions(c *gin.Context) {
 	type InQuery struct {
 		Assets3dIDs []string `form:"assets3d_ids[]" binding:"required"`

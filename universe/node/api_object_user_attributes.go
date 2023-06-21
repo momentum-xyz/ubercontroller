@@ -23,9 +23,9 @@ import (
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object UMID"
+// @Param user_id path string true "User UMID"
 // @Param query query attributes.QueryPluginAttribute true "query params"
 // @Success 200 {object} entry.AttributeValue
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/{user_id}/attributes [get]
@@ -90,9 +90,9 @@ func (n *Node) apiGetObjectUserAttributesValue(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object UMID"
+// @Param user_id path string true "User UMID"
 // @Param body body node.apiSetObjectUserAttributesValue.InBody true "body params"
 // @Success 202 {object} entry.AttributeValue
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/{user_id}/attributes [post]
@@ -196,9 +196,9 @@ func (n *Node) apiSetObjectUserAttributesValue(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object UMID"
+// @Param user_id path string true "User UMID"
 // @Param query query node.apiGetObjectUserAttributeSubValue.InQuery true "query params"
 // @Success 200 {object} dto.ObjectSubAttributes
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/{user_id}/attributes/sub [get]
@@ -293,9 +293,9 @@ func (n *Node) apiGetObjectUserAttributeSubValue(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object UMID"
+// @Param user_id path string true "User UMID"
 // @Param body body node.apiSetObjectUserAttributeSubValue.Body true "body params"
 // @Success 202 {object} dto.ObjectSubAttributes
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/{user_id}/attributes/sub [post]
@@ -404,9 +404,9 @@ func (n *Node) apiSetObjectUserAttributeSubValue(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object UMID"
+// @Param user_id path string true "User UMID"
 // @Param body body node.apiRemoveObjectUserAttributeSubValue.Body true "body params"
 // @Success 200 {object} nil
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/{user_id}/attributes/sub [delete]
@@ -500,9 +500,9 @@ func (n *Node) apiRemoveObjectUserAttributeSubValue(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object UMID"
+// @Param user_id path string true "User UMID"
 // @Param body body node.apiRemoveObjectUserAttributeValue.Body true "body params"
 // @Success 200 {object} nil
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/{user_id}/attributes [delete]
@@ -586,7 +586,6 @@ func (n *Node) apiRemoveObjectUserAttributeValue(c *gin.Context) {
 // @Param object_id path string true "Object UMID"
 // @Param query query attributes.QueryPluginAttribute true "query params"
 // @Success 200 {object} map[umid.UMID]entry.AttributeValue
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/all-users/attributes [get]

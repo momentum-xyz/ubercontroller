@@ -47,7 +47,7 @@ type Collector interface {
 }
 
 type Processor interface {
-	NotifyProcessor(activity Activity, updateType posbus.ActivityUpdateType) error
+	NotifyProcessor(activity Activity, updateType posbus.ActivityUpdateType, objectIDs []umid.UMID) error
 }
 
 type RunStopper interface {

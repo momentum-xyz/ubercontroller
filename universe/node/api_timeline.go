@@ -21,6 +21,7 @@ import (
 // @Tags timeline
 // @Accept json
 // @Produce json
+// @Param object_id path string true "World or object UMID"
 // @Param query query node.apiTimelineForObject.InQuery true "query params"
 // @Success 200 {object} node.apiTimelineForObject.Out
 // @Failure 404 {object} api.HTTPError
@@ -129,6 +130,8 @@ func (n *Node) apiTimelineForObject(c *gin.Context) {
 // @Tags timeline
 // @Accept json
 // @Produce json
+// @Param object_id path string true "World or object UMID"
+// @Param activity_id path string true "Activity UMID"
 // @Param query query node.apiTimelineForObject.InQuery true "query params"
 // @Success 200 {object} node.apiTimelineForObject.Out
 // @Failure 404 {object} api.HTTPError
@@ -205,6 +208,7 @@ func (n *Node) apiTimelineForObjectById(c *gin.Context) {
 // @Tags timeline
 // @Accept json
 // @Produce json
+// @Param object_id path string true "World or object UMID"
 // @Param body body node.apiTimelineAddForObject.InBody true "body params"
 // @Success 200 {object} node.apiTimelineForObject.Out
 // @Failure 404 {object} api.HTTPError
@@ -350,6 +354,8 @@ func (n *Node) apiTimelineAddForObject(c *gin.Context) {
 // @Tags timeline
 // @Accept json
 // @Produce json
+// @Param object_id path string true "World or object UMID"
+// @Param activity_id path string true "Activity UMID"
 // @Param body body node.apiTimelineEditForObject.InBody true "body params"
 // @Success 200 {object} node.apiTimelineForObject.Out
 // @Failure 404 {object} api.HTTPError
@@ -426,6 +432,8 @@ func (n *Node) apiTimelineEditForObject(c *gin.Context) {
 // @Tags timeline
 // @Accept json
 // @Produce json
+// @Param object_id path string true "World or object UMID"
+// @Param activity_id path string true "Activity UMID"
 // @Success 200 {object} node.apiTimelineForObject.Out
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/timeline/{activity_id} [delete]
@@ -459,6 +467,7 @@ func (n *Node) apiTimelineRemoveForObject(c *gin.Context) {
 // @Tags timeline
 // @Accept json
 // @Produce json
+// @Param user_id path string true "User UMID"
 // @Success 200 {object} node.apiTimelineForObject.Out
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/{user_id}/timeline [get]
