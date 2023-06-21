@@ -15,10 +15,10 @@ import (
 // @Schemes
 // @Description Sends an image file to the media manager and returns a hash
 // @Tags media
-// @Accept json
+// @Accept multipart/form-data
+// @Param file formData file true "image file"
 // @Produce json
 // @Success 200 {object} dto.HashResponse
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Router /api/v4/media/upload/image [post]
 func (n *Node) apiMediaUploadImage(c *gin.Context) {
@@ -72,10 +72,10 @@ func (n *Node) apiMediaUploadImage(c *gin.Context) {
 // @Schemes
 // @Description Sends a video file to the media manager and returns a hash
 // @Tags media
-// @Accept json
+// @Accept multipart/form-data
+// @Param file formData file true "image file"
 // @Produce json
 // @Success 200 {object} dto.HashResponse
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Router /api/v4/media/upload/video [post]
 func (n *Node) apiMediaUploadVideo(c *gin.Context) {
@@ -129,10 +129,10 @@ func (n *Node) apiMediaUploadVideo(c *gin.Context) {
 // @Schemes
 // @Description Sends an audio file to the media manager and returns its hash
 // @Tags media
-// @Accept json
+// @Accept multipart/form-data
+// @Param file formData file true "image file"
 // @Produce json
 // @Success 200 {object} dto.HashResponse
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Router /api/v4/media/upload/audio [post]
 func (n *Node) apiMediaUploadAudio(c *gin.Context) {
