@@ -492,7 +492,7 @@ func (n *Node) apiTimelineForUser(c *gin.Context) {
 
 func IsValidActivityType(t string) bool {
 	switch entry.ActivityType(t) {
-	case entry.ActivityTypeVideo, entry.ActivityTypeScreenshot:
+	case entry.ActivityTypeVideo, entry.ActivityTypeScreenshot, entry.ActivityTypeWorldCreated, entry.ActivityTypeStake:
 		return true
 	default:
 		return false
