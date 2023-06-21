@@ -25,10 +25,14 @@ func (a *Activities) Modify(activity universe.Activity, modifyFn modify.Fn[entry
 	if err != nil {
 		return errors.WithMessage(err, "failed to set activity data")
 	}
+	objectIDs, err := a.db.GetObjectActivitiesDB().GetObjectIDsByActivityID(a.ctx, activity.GetID())
+	if err != nil {
+		return errors.WithMessage(err, "failed to get objectIds by activityId")
+	}
 	if err := a.Save(); err != nil {
 		return errors.WithMessage(err, "failed to save activity")
 	}
-	if err := a.NotifyProcessor(activity, posbus.ChangedActivityUpdateType); err != nil {
+	if err := a.NotifyProcessor(activity, posbus.ChangedActivityUpdateType, objectIDs); err != nil {
 		return errors.WithMessage(err, "failed to notify activity processor")
 	}
 
