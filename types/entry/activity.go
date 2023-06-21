@@ -27,4 +27,5 @@ type ActivityType string
 const (
 	ActivityTypeVideo      ActivityType = "video"
 	ActivityTypeScreenshot ActivityType = "screenshot"
+	ActivityWorldCreate    ActivityType = "world_create"
 )

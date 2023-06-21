@@ -96,6 +96,7 @@ type Node interface {
 	ToObject() Object
 
 	GetWorlds() Worlds
+	GetActivities() Activities
 	GetAssets2d() Assets2d
 	GetAssets3d() Assets3d
 	GetObjectTypes() ObjectTypes
