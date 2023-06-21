@@ -83,6 +83,68 @@ func (v ActivityData) MarshalMUS(buf []byte) int {
 			i += copy(buf[i:], (*v.Hash))
 		}
 	}
+	if v.TokenSymbol == nil {
+		buf[i] = 0
+		i++
+	} else {
+		buf[i] = 1
+		i++
+		{
+			length := len((*v.TokenSymbol))
+			{
+				uv := uint64(length)
+				if length < 0 {
+					uv = ^(uv << 1)
+				} else {
+					uv = uv << 1
+				}
+				{
+					for uv >= 0x80 {
+						buf[i] = byte(uv) | 0x80
+						uv >>= 7
+						i++
+					}
+					buf[i] = byte(uv)
+					i++
+				}
+			}
+			if len(buf[i:]) < length {
+				panic(muserrs.ErrSmallBuf)
+			}
+			i += copy(buf[i:], (*v.TokenSymbol))
+		}
+	}
+	if v.TokenAmount == nil {
+		buf[i] = 0
+		i++
+	} else {
+		buf[i] = 1
+		i++
+		{
+			length := len((*v.TokenAmount))
+			{
+				uv := uint64(length)
+				if length < 0 {
+					uv = ^(uv << 1)
+				} else {
+					uv = uv << 1
+				}
+				{
+					for uv >= 0x80 {
+						buf[i] = byte(uv) | 0x80
+						uv >>= 7
+						i++
+					}
+					buf[i] = byte(uv)
+					i++
+				}
+			}
+			if len(buf[i:]) < length {
+				panic(muserrs.ErrSmallBuf)
+			}
+			i += copy(buf[i:], (*v.TokenAmount))
+		}
+	}
 	return i
 }
 
@@ -224,6 +286,118 @@ func (v *ActivityData) UnmarshalMUS(buf []byte) (int, error) {
 	if err != nil {
 		return i, muserrs.NewFieldError("Hash", err)
 	}
+	v.TokenSymbol = new(string)
+	if buf[i] == 0 {
+		i++
+		v.TokenSymbol = nil
+	} else if buf[i] != 1 {
+		i++
+		return i, muserrs.ErrWrongByte
+	} else {
+		i++
+		{
+			var length int
+			{
+				var uv uint64
+				{
+					if i > len(buf)-1 {
+						return i, muserrs.ErrSmallBuf
+					}
+					shift := 0
+					done := false
+					for l, b := range buf[i:] {
+						if l == 9 && b > 1 {
+							return i, muserrs.ErrOverflow
+						}
+						if b < 0x80 {
+							uv = uv | uint64(b)<<shift
+							done = true
+							i += l + 1
+							break
+						}
+						uv = uv | uint64(b&0x7F)<<shift
+						shift += 7
+					}
+					if !done {
+						return i, muserrs.ErrSmallBuf
+					}
+				}
+				if uv&1 == 1 {
+					uv = ^(uv >> 1)
+				} else {
+					uv = uv >> 1
+				}
+				length = int(uv)
+			}
+			if length < 0 {
+				return i, muserrs.ErrNegativeLength
+			}
+			if len(buf) < i+length {
+				return i, muserrs.ErrSmallBuf
+			}
+			(*v.TokenSymbol) = string(buf[i : i+length])
+			i += length
+		}
+	}
+	if err != nil {
+		return i, muserrs.NewFieldError("TokenSymbol", err)
+	}
+	v.TokenAmount = new(string)
+	if buf[i] == 0 {
+		i++
+		v.TokenAmount = nil
+	} else if buf[i] != 1 {
+		i++
+		return i, muserrs.ErrWrongByte
+	} else {
+		i++
+		{
+			var length int
+			{
+				var uv uint64
+				{
+					if i > len(buf)-1 {
+						return i, muserrs.ErrSmallBuf
+					}
+					shift := 0
+					done := false
+					for l, b := range buf[i:] {
+						if l == 9 && b > 1 {
+							return i, muserrs.ErrOverflow
+						}
+						if b < 0x80 {
+							uv = uv | uint64(b)<<shift
+							done = true
+							i += l + 1
+							break
+						}
+						uv = uv | uint64(b&0x7F)<<shift
+						shift += 7
+					}
+					if !done {
+						return i, muserrs.ErrSmallBuf
+					}
+				}
+				if uv&1 == 1 {
+					uv = ^(uv >> 1)
+				} else {
+					uv = uv >> 1
+				}
+				length = int(uv)
+			}
+			if length < 0 {
+				return i, muserrs.ErrNegativeLength
+			}
+			if len(buf) < i+length {
+				return i, muserrs.ErrSmallBuf
+			}
+			(*v.TokenAmount) = string(buf[i : i+length])
+			i += length
+		}
+	}
+	if err != nil {
+		return i, muserrs.NewFieldError("TokenAmount", err)
+	}
 	return i, err
 }
 
@@ -269,6 +443,40 @@ func (v ActivityData) SizeMUS() int {
 				}
 			}
 			size += len((*v.Hash))
+		}
+	}
+	size++
+	if v.TokenSymbol != nil {
+		{
+			length := len((*v.TokenSymbol))
+			{
+				uv := uint64(length<<1) ^ uint64(length>>63)
+				{
+					for uv >= 0x80 {
+						uv >>= 7
+						size++
+					}
+					size++
+				}
+			}
+			size += len((*v.TokenSymbol))
+		}
+	}
+	size++
+	if v.TokenAmount != nil {
+		{
+			length := len((*v.TokenAmount))
+			{
+				uv := uint64(length<<1) ^ uint64(length>>63)
+				{
+					for uv >= 0x80 {
+						uv >>= 7
+						size++
+					}
+					size++
+				}
+			}
+			size += len((*v.TokenAmount))
 		}
 	}
 	return size

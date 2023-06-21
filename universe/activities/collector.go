@@ -13,7 +13,11 @@ func (a *Activities) Inject(activity universe.Activity) error {
 	if err := a.AddActivity(activity, true); err != nil {
 		return errors.WithMessage(err, "failed to inject activity")
 	}
-	if err := a.NotifyProcessor(activity, posbus.NewActivityUpdateType, nil); err != nil {
+	objectIDs, err := a.db.GetObjectActivitiesDB().GetObjectIDsByActivityID(a.ctx, activity.GetID())
+	if err != nil {
+		return errors.WithMessage(err, "failed to get objectIds by activityId")
+	}
+	if err := a.NotifyProcessor(activity, posbus.NewActivityUpdateType, objectIDs); err != nil {
 		return errors.WithMessage(err, "failed to notify activity processor")
 	}
 
@@ -21,16 +25,16 @@ func (a *Activities) Inject(activity universe.Activity) error {
 }
 
 func (a *Activities) Modify(activity universe.Activity, modifyFn modify.Fn[entry.ActivityData]) error {
-	_, err := activity.SetData(modifyFn, true)
+	objectIDs, err := a.db.GetObjectActivitiesDB().GetObjectIDsByActivityID(a.ctx, activity.GetID())
 	if err != nil {
+		return errors.WithMessage(err, "failed to get objectIds by activityId")
+	}
+	_, dErr := activity.SetData(modifyFn, true)
+	if dErr != nil {
 		return errors.WithMessage(err, "failed to set activity data")
 	}
 	if err := a.Save(); err != nil {
 		return errors.WithMessage(err, "failed to save activity")
-	}
-	objectIDs, err := a.db.GetObjectActivitiesDB().GetObjectIDsByActivityID(a.ctx, activity.GetID())
-	if err != nil {
-		return errors.WithMessage(err, "failed to get objectIds by activityId")
 	}
 	if err := a.NotifyProcessor(activity, posbus.ChangedActivityUpdateType, objectIDs); err != nil {
 		return errors.WithMessage(err, "failed to notify activity processor")

@@ -20,12 +20,15 @@ type ActivityData struct {
 	Position    *cmath.Vec3 `db:"position" json:"position"`
 	Description *string     `db:"description" json:"description"`
 	Hash        *string     `db:"hash" json:"hash"`
+	TokenSymbol *string     `db:"token_symbol" json:"token_symbol"`
+	TokenAmount *string     `db:"token_amount" json:"token_amount"`
 }
 
 type ActivityType string
 
 const (
-	ActivityTypeVideo      ActivityType = "video"
-	ActivityTypeScreenshot ActivityType = "screenshot"
-	ActivityWorldCreate    ActivityType = "world_create"
+	ActivityTypeVideo        ActivityType = "video"
+	ActivityTypeScreenshot   ActivityType = "screenshot"
+	ActivityTypeWorldCreated ActivityType = "world_created"
+	ActivityTypeStake        ActivityType = "stake"
 )
