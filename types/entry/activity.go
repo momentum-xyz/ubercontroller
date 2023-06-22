@@ -22,6 +22,8 @@ type ActivityData struct {
 	Hash        *string     `db:"hash" json:"hash"`
 	TokenSymbol *string     `db:"token_symbol" json:"token_symbol"`
 	TokenAmount *string     `db:"token_amount" json:"token_amount"`
+	BCTxHash    *string     `db:"bc_tx_hash" json:"bc_tx_hash"`
+	BCLogIndex  *string     `db:"bc_log_index" json:"bc_log_index"`
 }
 
 type ActivityType string
