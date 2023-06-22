@@ -180,6 +180,13 @@ type Object struct {
 	Transform    cmath.Transform `json:"transform"`
 }
 
+type Member struct {
+	ObjectID   *umid.UMID `json:"object_id"`
+	UserID     *umid.UMID `json:"user_id"`
+	Name       *string    `json:"name"`
+	AvatarHash *string    `json:"avatar_hash"`
+}
+
 type OwnedWorld struct {
 	ID          umid.UMID `json:"id"`
 	OwnerID     umid.UMID `json:"owner_id"`
