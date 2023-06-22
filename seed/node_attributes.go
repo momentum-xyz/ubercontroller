@@ -57,6 +57,12 @@ func seedNodeAttributes(ctx context.Context, node universe.Node) error {
 		},
 		{
 			pluginID:      universe.GetSystemPluginID(),
+			attributeName: "blockadelabs",
+			value:         &entry.AttributeValue{},
+			options:       nil,
+		},
+		{
+			pluginID:      universe.GetSystemPluginID(),
 			attributeName: "world_template",
 			value: &entry.AttributeValue{
 				"objects":        []any{},
