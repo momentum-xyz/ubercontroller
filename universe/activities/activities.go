@@ -109,8 +109,11 @@ func (a *Activities) GetPaginatedActivitiesByObjectID(objectID *umid.UMID, start
 
 	var allActivities []universe.Activity
 	for _, activityD := range a.activities.Data {
-		if activityD.GetObjectID() == *objectID {
-			allActivities = append(allActivities, activityD)
+		activityType := activityD.GetType()
+		if activityType != nil && activityD.GetObjectID() == *objectID {
+			if *activityType == entry.ActivityTypeVideo || *activityType == entry.ActivityTypeScreenshot {
+				allActivities = append(allActivities, activityD)
+			}
 		}
 	}
 
