@@ -6,8 +6,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
+	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
+	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
@@ -18,7 +20,7 @@ import (
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object UMID"
-// @Success 200 {object} entry.AttributeValue
+// @Success 200 {object} dto.Member
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/members [get]
@@ -47,7 +49,7 @@ func (n *Node) apiMembersGetForObject(c *gin.Context) {
 			return
 		}
 
-		var avatarHash, userName string
+		var avatarHash, userName, userRole string
 		profile := user.GetProfile()
 		if profile != nil {
 			avatarHash = ""
@@ -61,11 +63,17 @@ func (n *Node) apiMembersGetForObject(c *gin.Context) {
 			}
 		}
 
+		userObjectValue := filteredUserObject.Value
+		if userObjectValue != nil {
+			userRole = utils.GetFromAnyMap(*userObjectValue, universe.ReservedAttributes.User.Role.Key, "")
+		}
+
 		member := dto.Member{
 			ObjectID:   &filteredUserObject.ObjectID,
 			UserID:     &filteredUserObject.UserID,
 			Name:       &userName,
 			AvatarHash: &avatarHash,
+			Role:       &userRole,
 		}
 
 		members = append(members, member)

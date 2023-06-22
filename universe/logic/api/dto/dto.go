@@ -185,6 +185,7 @@ type Member struct {
 	UserID     *umid.UMID `json:"user_id"`
 	Name       *string    `json:"name"`
 	AvatarHash *string    `json:"avatar_hash"`
+	Role       *string    `json:"role"`
 }
 
 type OwnedWorld struct {
