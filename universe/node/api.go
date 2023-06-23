@@ -27,6 +27,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 	r.GET("/health", n.apiHealthCheck)
 	r.GET("/posbus", n.apiPosBusHandler)
 	r.GET("/iot", n.apiIOTHandler)
+	r.POST("/skybox-webhook", n.apiPostSkyboxWebHook)
 
 	vx := r.Group(fmt.Sprintf("/api/v%d", ubercontroller.APIMajorVersion))
 	{
@@ -59,6 +60,9 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		vx.POST("/media/upload/image", n.apiMediaUploadImage)
 		vx.POST("/media/upload/video", n.apiMediaUploadVideo)
 		vx.POST("/media/upload/audio", n.apiMediaUploadAudio)
+
+		verified.GET("/skybox/styles", n.apiGetSkyboxStyles)
+		verified.POST("/skybox/generate", n.apiPostSkyboxGenerate)
 
 		verifiedUsers := verified.Group("/users")
 		{
