@@ -283,6 +283,7 @@ type User interface {
 // UserObjects ignores "updateDB" flag
 type UserObjects interface {
 	GetValue(userObjectID entry.UserObjectID) (*entry.UserObjectValue, bool)
+	GetUserObjectsByObjectID(objectID umid.UMID) ([]*entry.UserObject, error)
 
 	GetObjectIndirectAdmins(objectID umid.UMID) ([]*umid.UMID, bool)
 	CheckIsIndirectAdmin(userObjectID entry.UserObjectID) (bool, error)

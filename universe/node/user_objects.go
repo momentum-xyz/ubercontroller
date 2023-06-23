@@ -2,8 +2,9 @@ package node
 
 import (
 	"github.com/jackc/pgx/v4"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"github.com/pkg/errors"
+
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -36,6 +37,15 @@ func (uo *userObjects) GetObjectIndirectAdmins(objectID umid.UMID) ([]*umid.UMID
 		return nil, false
 	}
 	return admins, true
+}
+
+func (uo *userObjects) GetUserObjectsByObjectID(objectID umid.UMID) ([]*entry.UserObject, error) {
+	values, err := uo.node.db.GetUserObjectsDB().GetUserObjectsByObjectID(uo.node.ctx, objectID)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to get user objects by object ID")
+	}
+
+	return values, nil
 }
 
 func (uo *userObjects) CheckIsIndirectAdmin(userObjectID entry.UserObjectID) (bool, error) {

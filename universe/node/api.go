@@ -171,6 +171,11 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 						pd.DELETE("", n.apiTimelineRemoveForObject)
 					}
 				}
+
+				members := object.Group("/members", middleware.AuthorizeAdmin(n.log))
+				{
+					members.GET("", n.apiMembersGetForObject)
+				}
 			}
 
 			objectUser := verifiedObjects.Group("/:objectID/:userID")
