@@ -72,6 +72,7 @@ var (
 		}
 		User struct {
 			HighFive ReservedAttribute
+			Role     ReservedAttribute
 		}
 	}{
 		Node: struct {
@@ -176,10 +177,15 @@ var (
 		},
 		User: struct {
 			HighFive ReservedAttribute
+			Role     ReservedAttribute
 		}{
 			HighFive: ReservedAttribute{
 				Name: "high_five",
 				Key:  "counter",
+			},
+			Role: ReservedAttribute{
+				Name: "role",
+				Key:  "role",
 			},
 		},
 	}
