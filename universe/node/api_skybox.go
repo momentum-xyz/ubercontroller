@@ -264,6 +264,12 @@ func (n *Node) apiPostSkyboxGenerate(c *gin.Context) {
 
 	var modifyFunc modify.Fn[entry.AttributePayload]
 	modifyFunc = func(payload *entry.AttributePayload) (*entry.AttributePayload, error) {
+		if payload == nil {
+			payload = &entry.AttributePayload{
+				Value:   &entry.AttributeValue{},
+				Options: nil,
+			}
+		}
 		val := *payload.Value
 		val[response.ObfuscatedId] = response
 
