@@ -73,8 +73,8 @@ var stylesCache = StylesCache{
 	value:   nil,
 }
 
-var skyboxIDToUserID = make(map[string]umid.UMID)
-var skyboxIDToWorldID = make(map[string]umid.UMID)
+var skyboxIDToUserID = make(map[int]umid.UMID)
+var skyboxIDToWorldID = make(map[int]umid.UMID)
 
 // @Summary Get lists the known blockadelabs art styles
 // @Schemes
@@ -249,8 +249,8 @@ func (n *Node) apiPostSkyboxGenerate(c *gin.Context) {
 		return
 	}
 
-	skyboxIDToUserID[response.ObfuscatedId] = userID
-	skyboxIDToWorldID[response.ObfuscatedId] = inBody.WorldID
+	skyboxIDToUserID[response.Id] = userID
+	skyboxIDToWorldID[response.Id] = inBody.WorldID
 
 	attrID = entry.NewAttributeID(universe.GetSystemPluginID(), "skybox_ai")
 	objectUserAttributeID := entry.ObjectUserAttributeID{
@@ -271,7 +271,7 @@ func (n *Node) apiPostSkyboxGenerate(c *gin.Context) {
 			}
 		}
 		val := *payload.Value
-		val[response.ObfuscatedId] = response
+		val[strconv.Itoa(response.Id)] = response
 
 		return payload, nil
 	}
@@ -311,7 +311,7 @@ func (n *Node) apiPostSkyboxWebHook(c *gin.Context) {
 		n.log.Error(err)
 	}
 
-	_, ok := skyboxIDToWorldID[inBody.ObfuscatedId]
+	_, ok := skyboxIDToWorldID[inBody.Id]
 	if !ok {
 		err := errors.New("Node: apiPostSkyboxWebHook: no world_id for given 'obfuscated_id'")
 		n.log.Error(err)
@@ -319,7 +319,7 @@ func (n *Node) apiPostSkyboxWebHook(c *gin.Context) {
 		return
 	}
 
-	_, ok = skyboxIDToUserID[inBody.ObfuscatedId]
+	_, ok = skyboxIDToUserID[inBody.Id]
 	if !ok {
 		err := errors.New("Node: apiPostSkyboxWebHook: no user_id for given 'obfuscated_id'")
 		n.log.Error(err)
@@ -330,17 +330,14 @@ func (n *Node) apiPostSkyboxWebHook(c *gin.Context) {
 	attrID := entry.NewAttributeID(universe.GetSystemPluginID(), "skybox_ai")
 	objectUserAttributeID := entry.ObjectUserAttributeID{
 		AttributeID: attrID,
-		ObjectID:    skyboxIDToWorldID[inBody.ObfuscatedId],
-		UserID:      skyboxIDToUserID[inBody.ObfuscatedId],
+		ObjectID:    skyboxIDToWorldID[inBody.Id],
+		UserID:      skyboxIDToUserID[inBody.Id],
 	}
-
-	m := make(entry.AttributeValue)
-	m[inBody.ObfuscatedId] = inBody
 
 	var modifyFunc modify.Fn[entry.AttributePayload]
 	modifyFunc = func(payload *entry.AttributePayload) (*entry.AttributePayload, error) {
 		val := *payload.Value
-		val[inBody.ObfuscatedId] = inBody
+		val[strconv.Itoa(inBody.Id)] = inBody
 
 		return payload, nil
 	}
