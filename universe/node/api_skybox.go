@@ -3,15 +3,17 @@ package node
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/momentum-xyz/ubercontroller/types/entry"
-	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/utils/modify"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
+
+	"github.com/momentum-xyz/ubercontroller"
+	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/utils/modify"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -213,7 +215,9 @@ func (n *Node) apiPostSkyboxGenerate(c *gin.Context) {
 	form := url.Values{}
 	form.Add("skybox_style_id", strconv.Itoa(inBody.SkyboxStyleID))
 	form.Add("prompt", inBody.Prompt)
-	form.Add("webhook_url", n.cfg.Settings.FrontendURL+"/skybox-webhook")
+	form.Add("webhook_url", fmt.Sprintf("%s/api/v%d/webhook/skybox-blockadelabs", n.cfg.Settings.FrontendURL, ubercontroller.APIMajorVersion))
+
+	n.log.Info("apiPostSkyboxGenerate: form: ", form)
 
 	r, err := http.PostForm(apiUrl, form)
 	if err != nil {

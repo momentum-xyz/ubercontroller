@@ -27,10 +27,14 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 	r.GET("/health", n.apiHealthCheck)
 	r.GET("/posbus", n.apiPosBusHandler)
 	r.GET("/iot", n.apiIOTHandler)
-	r.POST("/skybox-webhook", n.apiPostSkyboxWebHook)
 
 	vx := r.Group(fmt.Sprintf("/api/v%d", ubercontroller.APIMajorVersion))
 	{
+		webhook := vx.Group("/webhook")
+		{
+			webhook.POST("/skybox-blockadelabs", n.apiPostSkyboxWebHook)
+		}
+
 		drive := vx.Group("/drive")
 		{
 			drive.GET("/wallet-meta", n.apiGetWalletMeta)
