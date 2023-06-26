@@ -38,7 +38,7 @@ type StyleItem struct {
 	SkyboxStyleFamilies []any  `json:"skybox_style_families"`
 }
 
-type CreateSkyboxResponse struct {
+type SkyboxStatus struct {
 	Id                int         `json:"id"`
 	Message           *string     `json:"message"`
 	ObfuscatedId      string      `json:"obfuscated_id"`
@@ -233,7 +233,7 @@ func (n *Node) apiPostSkyboxGenerate(c *gin.Context) {
 		return
 	}
 
-	response := CreateSkyboxResponse{}
+	response := SkyboxStatus{}
 
 	err = json.Unmarshal(body, &response)
 	if err != nil {
@@ -262,12 +262,15 @@ func (n *Node) apiPostSkyboxGenerate(c *gin.Context) {
 	m := make(entry.AttributeValue)
 	m[response.ObfuscatedId] = response
 
-	var p = entry.AttributePayload{
-		Value:   &m,
-		Options: nil,
+	var modifyFunc modify.Fn[entry.AttributePayload]
+	modifyFunc = func(payload *entry.AttributePayload) (*entry.AttributePayload, error) {
+		val := *payload.Value
+		val[response.ObfuscatedId] = response
+
+		return payload, nil
 	}
 
-	_, err = n.objectUserAttributes.Upsert(objectUserAttributeID, modify.MergeWith(&p), true)
+	_, err = n.objectUserAttributes.Upsert(objectUserAttributeID, modifyFunc, true)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetSkyboxStyles: failed to upsert attribute skybox_ai")
 		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
@@ -275,8 +278,8 @@ func (n *Node) apiPostSkyboxGenerate(c *gin.Context) {
 	}
 
 	type Out struct {
-		Success bool                 `json:"success"`
-		Data    CreateSkyboxResponse `json:"data"`
+		Success bool         `json:"success"`
+		Data    SkyboxStatus `json:"data"`
 	}
 	out := Out{
 		Success: true,
@@ -287,7 +290,7 @@ func (n *Node) apiPostSkyboxGenerate(c *gin.Context) {
 }
 
 func (n *Node) apiPostSkyboxWebHook(c *gin.Context) {
-	var inBody CreateSkyboxResponse
+	var inBody SkyboxStatus
 	if err := c.ShouldBindJSON(&inBody); err != nil {
 		err = errors.WithMessage(err, "Node: apiPostSkyboxWebHook: failed to bind json")
 		n.log.Error(err)
@@ -302,6 +305,22 @@ func (n *Node) apiPostSkyboxWebHook(c *gin.Context) {
 		n.log.Error(err)
 	}
 
+	_, ok := skyboxIDToWorldID[inBody.ObfuscatedId]
+	if !ok {
+		err := errors.New("Node: apiPostSkyboxWebHook: no world_id for given 'obfuscated_id'")
+		n.log.Error(err)
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
+	_, ok = skyboxIDToUserID[inBody.ObfuscatedId]
+	if !ok {
+		err := errors.New("Node: apiPostSkyboxWebHook: no user_id for given 'obfuscated_id'")
+		n.log.Error(err)
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
 	attrID := entry.NewAttributeID(universe.GetSystemPluginID(), "skybox_ai")
 	objectUserAttributeID := entry.ObjectUserAttributeID{
 		AttributeID: attrID,
@@ -312,13 +331,14 @@ func (n *Node) apiPostSkyboxWebHook(c *gin.Context) {
 	m := make(entry.AttributeValue)
 	m[inBody.ObfuscatedId] = inBody
 
-	var p = entry.AttributePayload{
-		Value:   &m,
-		Options: nil,
-	}
+	var modifyFunc modify.Fn[entry.AttributePayload]
+	modifyFunc = func(payload *entry.AttributePayload) (*entry.AttributePayload, error) {
+		val := *payload.Value
+		val[inBody.ObfuscatedId] = inBody
 
-	// TODO Start here merge function fail for some reasons (same way create attribute without error on line 266)
-	_, err := n.objectUserAttributes.Upsert(objectUserAttributeID, modify.MergeWith(&p), true)
+		return payload, nil
+	}
+	_, err := n.objectUserAttributes.Upsert(objectUserAttributeID, modifyFunc, true)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetSkyboxStyles: failed to upsert attribute skybox_ai")
 		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
