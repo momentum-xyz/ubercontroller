@@ -7,8 +7,13 @@ import (
 func init() {
 	// workaround, sometimes when receiving StringAnyMap, we end up in the 'interface' branch of gotiny unmarshalling and not the map handling :/
 	// Needs some more debugging. But for now avoid the panic when handling these.
-	gotiny.Register("")
+	str := ""
+	gotiny.Register(str)
+	gotiny.Register(&str)
 	gotiny.Register(true)
+	num := 42
+	gotiny.Register(num)
+	gotiny.Register(&num)
 	gotiny.Register(float64(42))
 	gotiny.Register([]any{})
 	gotiny.Register(map[string]any{})
