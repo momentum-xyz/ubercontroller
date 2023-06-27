@@ -180,6 +180,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 				members := object.Group("/members", middleware.AuthorizeAdmin(n.log))
 				{
 					members.GET("", n.apiMembersGetForObject)
+					members.POST("", n.apiPostMemberForObject)
 				}
 			}
 
