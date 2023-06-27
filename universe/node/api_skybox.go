@@ -12,6 +12,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
+	"github.com/momentum-xyz/ubercontroller/universe/auth"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
@@ -89,22 +90,12 @@ var skyboxIDToWorldID = make(map[int]umid.UMID)
 func (n *Node) apiGetSkyboxStyles(c *gin.Context) {
 	agoTime := time.Now().Add(-time.Minute * 10)
 	if stylesCache.updated.Before(agoTime) {
-		attrID := entry.NewAttributeID(universe.GetSystemPluginID(), "blockadelabs")
-		attr, ok := n.nodeAttributes.GetValue(attrID)
-		if !ok {
-			err := errors.New("Node: apiGetSkyboxStyles: 'blockadelabs' node attribute not found")
+		apiKey, _, err := n.getApiKeyAndSecret()
+		if err != nil {
+			err := errors.WithMessage(err, "Node: apiGetSkyboxStyles: failed to getApiKeyAndSecret")
 			api.AbortRequest(c, http.StatusNotFound, "node_attribute_not_found", err, n.log)
 			return
 		}
-
-		if attr == nil {
-			err := errors.New("Node: apiGetSkyboxStyles: 'blockadelabs' node attribute is nul")
-			api.AbortRequest(c, http.StatusNotFound, "node_attribute_not_found", err, n.log)
-			return
-		}
-		apiKey := utils.GetFromAnyMap(*attr, "api_key", "")
-		secret := utils.GetFromAnyMap(*attr, "secret", "")
-		_ = secret
 
 		url := "https://backend.blockadelabs.com/api/v1/skybox/styles"
 		req, err := http.NewRequest(http.MethodGet, url, nil)
@@ -114,7 +105,7 @@ func (n *Node) apiGetSkyboxStyles(c *gin.Context) {
 			return
 		}
 
-		req.Header.Set("x-api-key", apiKey)
+		req.Header.Set("x-api-key", *apiKey)
 		client := http.Client{
 			Timeout: 20 * time.Second,
 		}
@@ -191,26 +182,42 @@ func (n *Node) apiPostSkyboxGenerate(c *gin.Context) {
 	}
 	_ = userID
 
-	//TODO check that world exists and user has permissions
-
-	attrID := entry.NewAttributeID(universe.GetSystemPluginID(), "blockadelabs")
-	attr, ok := n.nodeAttributes.GetValue(attrID)
+	attrType, ok := n.GetAttributeTypes().GetAttributeType(
+		entry.AttributeTypeID{PluginID: universe.GetSystemPluginID(), Name: "skybox_ai"})
 	if !ok {
-		err := errors.New("Node: apiPostSkyboxGenerate: 'blockadelabs' node attribute not found")
+		err := errors.WithMessage(err, "Node: apiPostSkyboxGenerate: failed to parse user umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
+		return
+	}
+
+	attributeID := entry.AttributeID{
+		PluginID: universe.GetSystemPluginID(),
+		Name:     "skybox_ai",
+	}
+
+	objectUserAttributeID := entry.NewObjectUserAttributeID(attributeID, inBody.WorldID, userID)
+
+	allowed, err := auth.CheckAttributePermissions(
+		c, *attrType.GetEntry(), n.GetObjectUserAttributes(), objectUserAttributeID, userID,
+		auth.WriteOperation)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiPostSkyboxGenerate: permissions check")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_permissions_check", err, n.log)
+		return
+	} else if !allowed {
+		err := fmt.Errorf("operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+		return
+	}
+
+	apiKey, _, err := n.getApiKeyAndSecret()
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiPostSkyboxGenerate: failed to getApiKeyAndSecret")
 		api.AbortRequest(c, http.StatusNotFound, "node_attribute_not_found", err, n.log)
 		return
 	}
 
-	if attr == nil {
-		err := errors.New("Node: apiPostSkyboxGenerate: 'blockadelabs' node attribute is nul")
-		api.AbortRequest(c, http.StatusNotFound, "node_attribute_not_found", err, n.log)
-		return
-	}
-	apiKey := utils.GetFromAnyMap(*attr, "api_key", "")
-	secret := utils.GetFromAnyMap(*attr, "secret", "")
-	_ = secret
-
-	apiUrl := "https://backend.blockadelabs.com/api/v1/skybox?api_key=" + apiKey
+	apiUrl := "https://backend.blockadelabs.com/api/v1/skybox?api_key=" + *apiKey
 
 	form := url.Values{}
 	form.Add("skybox_style_id", strconv.Itoa(inBody.SkyboxStyleID))
@@ -221,7 +228,9 @@ func (n *Node) apiPostSkyboxGenerate(c *gin.Context) {
 
 	r, err := http.PostForm(apiUrl, form)
 	if err != nil {
-		fmt.Println(err)
+		err := errors.WithMessage(err, "Node: apiPostSkyboxGenerate: failed to send post request to blockadelabs API")
+		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+		return
 	}
 	defer r.Body.Close()
 
@@ -237,27 +246,20 @@ func (n *Node) apiPostSkyboxGenerate(c *gin.Context) {
 
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		err := errors.New("Node: apiGetSkyboxStyles: failed to Unmarshal blockadelabs API response")
+		err := errors.New("Node: apiPostSkyboxGenerate: failed to Unmarshal blockadelabs API response")
 		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
 		return
 	}
 
 	if response.Message != nil {
 		// if blockade labs server has internal error it return only 'message' field with error string
-		err := errors.New("Node: apiGetSkyboxStyles: blockadelabs API response error: " + *response.Message)
+		err := errors.New("Node: apiPostSkyboxGenerate: blockadelabs API response error: " + *response.Message)
 		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
 		return
 	}
 
 	skyboxIDToUserID[response.Id] = userID
 	skyboxIDToWorldID[response.Id] = inBody.WorldID
-
-	attrID = entry.NewAttributeID(universe.GetSystemPluginID(), "skybox_ai")
-	objectUserAttributeID := entry.ObjectUserAttributeID{
-		AttributeID: attrID,
-		ObjectID:    inBody.WorldID,
-		UserID:      userID,
-	}
 
 	m := make(entry.AttributeValue)
 	m[response.ObfuscatedId] = response
@@ -278,7 +280,7 @@ func (n *Node) apiPostSkyboxGenerate(c *gin.Context) {
 
 	_, err = n.objectUserAttributes.Upsert(objectUserAttributeID, modifyFunc, true)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiGetSkyboxStyles: failed to upsert attribute skybox_ai")
+		err := errors.WithMessage(err, "Node: apiPostSkyboxGenerate: failed to upsert attribute skybox_ai")
 		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
 		return
 	}
@@ -304,16 +306,14 @@ func (n *Node) apiPostSkyboxWebHook(c *gin.Context) {
 		return
 	}
 
-	fmt.Println(inBody)
-
-	if inBody.ObfuscatedId == "" {
-		err := errors.New("Node: apiPostSkyboxWebHook: body missing required 'obfuscated_id' field")
+	if inBody.Id == 0 {
+		err := errors.New("Node: apiPostSkyboxWebHook: body missing required 'id' field")
 		n.log.Error(err)
 	}
 
 	_, ok := skyboxIDToWorldID[inBody.Id]
 	if !ok {
-		err := errors.New("Node: apiPostSkyboxWebHook: no world_id for given 'obfuscated_id'")
+		err := errors.New("Node: apiPostSkyboxWebHook: no world_id for given 'id'")
 		n.log.Error(err)
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
 		return
@@ -321,7 +321,7 @@ func (n *Node) apiPostSkyboxWebHook(c *gin.Context) {
 
 	_, ok = skyboxIDToUserID[inBody.Id]
 	if !ok {
-		err := errors.New("Node: apiPostSkyboxWebHook: no user_id for given 'obfuscated_id'")
+		err := errors.New("Node: apiPostSkyboxWebHook: no user_id for given 'id'")
 		n.log.Error(err)
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
 		return
@@ -349,4 +349,187 @@ func (n *Node) apiPostSkyboxWebHook(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, "ok")
+}
+
+// @Summary Delete skybox by ID
+// @Schemes
+// @Description Delete skybox by ID
+// @Tags skybox
+// @Accept json
+// @Produce json
+// @Param body body node.apiRemoveSkyboxByID.Body true "body params"
+// @Param skyboxID path string true "SkyboxID int"
+// @Success 200 {object} int
+// @Failure 500 {object} api.HTTPError
+// @Router /api/v4/skybox/{skyboxID} [delete]
+func (n *Node) apiRemoveSkyboxByID(c *gin.Context) {
+
+	id, err := strconv.ParseInt(c.Param("skyboxID"), 10, 32)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiRemoveSkyboxByID: failed to parse skyboxID")
+		api.AbortRequest(c, http.StatusInternalServerError, "invalid_uuid_parse", err, n.log)
+		return
+	}
+
+	type Body struct {
+		WorldID umid.UMID `json:"world_id" binding:"required"`
+	}
+
+	var inBody Body
+	if err := c.ShouldBindJSON(&inBody); err != nil {
+		err = errors.WithMessage(err, "Node: apiRemoveSkyboxByID: failed to bind json")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiRemoveSkyboxByID: failed to get user umid from context")
+		api.AbortRequest(c, http.StatusInternalServerError, "get_user_id_failed", err, n.log)
+		return
+	}
+	_ = userID
+
+	attrType, ok := n.GetAttributeTypes().GetAttributeType(
+		entry.AttributeTypeID{PluginID: universe.GetSystemPluginID(), Name: "skybox_ai"})
+	if !ok {
+		err := errors.WithMessage(err, "Node: apiRemoveSkyboxByID: failed to parse user umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
+		return
+	}
+
+	attributeID := entry.AttributeID{
+		PluginID: universe.GetSystemPluginID(),
+		Name:     "skybox_ai",
+	}
+
+	objectUserAttributeID := entry.NewObjectUserAttributeID(attributeID, inBody.WorldID, userID)
+
+	allowed, err := auth.CheckAttributePermissions(
+		c, *attrType.GetEntry(), n.GetObjectUserAttributes(), objectUserAttributeID, userID,
+		auth.WriteOperation)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiRemoveSkyboxByID: permissions check")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_permissions_check", err, n.log)
+		return
+	} else if !allowed {
+		err := fmt.Errorf("operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+		return
+	}
+
+	attr, ok := n.GetObjectUserAttributes().GetValue(objectUserAttributeID)
+	if !ok {
+		err := errors.Errorf("Node: apiRemoveSkyboxByID: object attribute value not found: %s", attributeID)
+		api.AbortRequest(c, http.StatusNotFound, "attribute_not_found", err, n.log)
+		return
+	}
+
+	apiKey, _, err := n.getApiKeyAndSecret()
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiRemoveSkyboxByID: failed to getApiKeyAndSecret")
+		api.AbortRequest(c, http.StatusNotFound, "node_attribute_not_found", err, n.log)
+		return
+	}
+
+	skybox, ok := (*attr)[strconv.Itoa(int(id))]
+	if !ok {
+		err := errors.Errorf("Node: apiRemoveSkyboxByID: skybox with id not found: %d", id)
+		api.AbortRequest(c, http.StatusNotFound, "skybox_not_found", err, n.log)
+		return
+	}
+	s := skybox.(map[string]any)
+	statusValue := s["status"].(string)
+
+	if statusValue != "complete" {
+		url := "https://backend.blockadelabs.com/api/v1/imagine/requests/" + strconv.Itoa(int(id))
+		req, err := http.NewRequest(http.MethodDelete, url, nil)
+		if err != nil {
+			err := errors.New("Node: apiRemoveSkyboxByID: failed to create request to blockadelabs API")
+			api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+			return
+		}
+
+		req.Header.Set("x-api-key", *apiKey)
+		client := http.Client{
+			Timeout: 20 * time.Second,
+		}
+
+		res, err := client.Do(req)
+		if err != nil {
+			err := errors.New("Node: apiRemoveSkyboxByID: failed to send request to blockadelabs API")
+			api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+			return
+		}
+
+		resBody, err := io.ReadAll(res.Body)
+		if err != nil {
+			err := errors.New("Node: apiRemoveSkyboxByID: failed to read blockadelabs API response")
+			api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+			return
+		}
+		_ = resBody
+	}
+
+	url := "https://backend.blockadelabs.com/api/v1/imagine/deleteImagine/" + strconv.Itoa(int(id))
+	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	if err != nil {
+		err := errors.New("Node: apiRemoveSkyboxByID: failed to create request to blockadelabs API")
+		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+		return
+	}
+
+	req.Header.Set("x-api-key", *apiKey)
+	client := http.Client{
+		Timeout: 20 * time.Second,
+	}
+
+	res, err := client.Do(req)
+	if err != nil {
+		err := errors.New("Node: apiRemoveSkyboxByID: failed to send request to blockadelabs API")
+		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+		return
+	}
+
+	resBody, err := io.ReadAll(res.Body)
+	if err != nil {
+		err := errors.New("Node: apiRemoveSkyboxByID: failed to read blockadelabs API response")
+		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+		return
+	}
+	_ = resBody
+
+	var modifyFunc modify.Fn[entry.AttributePayload]
+	modifyFunc = func(payload *entry.AttributePayload) (*entry.AttributePayload, error) {
+		val := *payload.Value
+		delete(val, strconv.Itoa(int(id)))
+
+		return payload, nil
+	}
+	_, err = n.objectUserAttributes.Upsert(objectUserAttributeID, modifyFunc, true)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiRemoveSkyboxByID: failed to upsert attribute skybox_ai")
+		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+		return
+	}
+
+	c.JSON(http.StatusOK, id)
+}
+
+func (n *Node) getApiKeyAndSecret() (*string, *string, error) {
+	attrID := entry.NewAttributeID(universe.GetSystemPluginID(), "blockadelabs")
+	attr, ok := n.nodeAttributes.GetValue(attrID)
+	if !ok {
+		err := errors.New("'blockadelabs' node attribute not found")
+		return nil, nil, err
+	}
+
+	if attr == nil {
+		err := errors.New("'blockadelabs' node attribute is nul")
+		return nil, nil, err
+	}
+	apiKey := utils.GetFromAnyMap(*attr, "api_key", "")
+	secret := utils.GetFromAnyMap(*attr, "secret", "")
+
+	return &apiKey, &secret, nil
 }

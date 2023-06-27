@@ -67,6 +67,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 		verified.GET("/skybox/styles", n.apiGetSkyboxStyles)
 		verified.POST("/skybox/generate", n.apiPostSkyboxGenerate)
+		verified.DELETE("/skybox/:skyboxID", n.apiRemoveSkyboxByID)
 
 		verifiedUsers := verified.Group("/users")
 		{
