@@ -261,9 +261,6 @@ func (n *Node) apiPostSkyboxGenerate(c *gin.Context) {
 	skyboxIDToUserID[response.Id] = userID
 	skyboxIDToWorldID[response.Id] = inBody.WorldID
 
-	m := make(entry.AttributeValue)
-	m[response.ObfuscatedId] = response
-
 	var modifyFunc modify.Fn[entry.AttributePayload]
 	modifyFunc = func(payload *entry.AttributePayload) (*entry.AttributePayload, error) {
 		if payload == nil {
