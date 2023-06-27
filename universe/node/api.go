@@ -181,6 +181,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 				{
 					members.GET("", n.apiMembersGetForObject)
 					members.POST("", n.apiPostMemberForObject)
+					members.DELETE(":userID", n.apiDeleteMemberFromObject)
 				}
 			}
 

@@ -169,3 +169,42 @@ func (n *Node) apiPostMemberForObject(c *gin.Context) {
 
 	c.JSON(http.StatusOK, nil)
 }
+
+// @Summary Delete member from object
+// @Schemes
+// @Description Delete member from object
+// @Tags members
+// @Accept json
+// @Produce json
+// @Param objectID path string true "ObjectID UMID"
+// @Param userID path string true "UserID UMID"
+// @Success 200 {object} int
+// @Failure 400 {object} api.HTTPError
+// @Failure 500 {object} api.HTTPError
+// @Router /api/v4/objects/{object_id}/members/user_id [delete]
+func (n *Node) apiDeleteMemberFromObject(c *gin.Context) {
+
+	objectID, err := umid.Parse(c.Param("objectID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiDeleteMemberFromObject: failed to parse object umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
+		return
+	}
+
+	userID, err := umid.Parse(c.Param("userID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiDeleteMemberFromObject: failed to parse object umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
+		return
+	}
+
+	id := entry.NewUserObjectID(userID, objectID)
+	_, err = n.userObjects.Remove(id, true)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiDeleteMemberFromObject: failed to remove user_object")
+		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+		return
+	}
+
+	c.JSON(http.StatusOK, nil)
+}
