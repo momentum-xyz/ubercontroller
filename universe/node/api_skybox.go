@@ -273,7 +273,11 @@ func (n *Node) apiPostSkyboxGenerate(c *gin.Context) {
 			}
 		}
 		val := *payload.Value
-		val[strconv.Itoa(response.Id)] = response
+
+		var mp map[string]any
+		utils.MapEncode(response, &mp)
+
+		val[strconv.Itoa(response.Id)] = mp
 
 		return payload, nil
 	}
@@ -337,7 +341,11 @@ func (n *Node) apiPostSkyboxWebHook(c *gin.Context) {
 	var modifyFunc modify.Fn[entry.AttributePayload]
 	modifyFunc = func(payload *entry.AttributePayload) (*entry.AttributePayload, error) {
 		val := *payload.Value
-		val[strconv.Itoa(inBody.Id)] = inBody
+
+		var mp map[string]any
+		utils.MapEncode(inBody, &mp)
+
+		val[strconv.Itoa(inBody.Id)] = mp
 
 		return payload, nil
 	}
