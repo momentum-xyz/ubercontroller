@@ -91,7 +91,7 @@ func (n *Node) apiGenChallenge(c *gin.Context) {
 // @Success 200 {object} nil
 // @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/users/me/attach-account [post]
+// @Router /api/v4/auth/attach-account [post]
 func (n *Node) apiAttachAccount(ctx *gin.Context) {
 	type InBody struct {
 		Wallet          string `json:"wallet" binding:"required"`
