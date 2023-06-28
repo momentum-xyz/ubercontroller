@@ -2,6 +2,7 @@ package node
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -372,4 +373,94 @@ func (n *Node) apiGuestToken(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, outUser)
+}
+
+// @Summary Remove wallet
+// @Schemes
+// @Description Remove wallet
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param body body node.apiDeleteWallet.InBody true "body params"
+// @Success 200 {object} nil
+// @Failure 400 {object} api.HTTPError
+// @Failure 500 {object} api.HTTPError
+// @Router /api/v4/users/me/remove-wallet [delete]
+func (n *Node) apiDeleteWallet(c *gin.Context) {
+	type InBody struct {
+		Wallet string `json:"wallet" binding:"required"`
+	}
+	var inBody InBody
+
+	if err := c.ShouldBindJSON(&inBody); err != nil {
+		err := errors.WithMessage(err, "Node: apiDeleteWallet: failed to bind json")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiDeleteWallet: failed to get user umid from context")
+		api.AbortRequest(c, http.StatusInternalServerError, "get_user_id_failed", err, n.log)
+		return
+	}
+
+	walletKey := universe.ReservedAttributes.Kusama.User.Wallet.Key
+	walletAttributeID := entry.NewAttributeID(universe.GetKusamaPluginID(), walletKey)
+	userAttributeID := entry.NewUserAttributeID(walletAttributeID, userID)
+
+	modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
+		if current == nil {
+			return current, errors.New("attribute is nil")
+		}
+
+		if current.Value == nil {
+			return current, errors.New("attribute value is nil")
+		}
+
+		walletSlice := utils.GetFromAny((*current.Value)[walletKey], []any{})
+		if walletSlice == nil {
+			return current, errors.New("wallets slice is nil")
+		}
+
+		totalValidWallets := 0
+		index := -1
+		for i, w := range walletSlice {
+			wallet, ok := w.(string)
+			if !ok {
+				return nil, errors.New("can not cast wallet item to string")
+			}
+			if strings.HasPrefix(wallet, "0x") {
+				totalValidWallets++
+			}
+			if strings.ToLower(wallet) == strings.ToLower(inBody.Wallet) {
+				index = i
+			}
+		}
+
+		if totalValidWallets < 2 {
+			return nil, errors.New("can not remove last wallet")
+		}
+
+		if index == -1 {
+			return nil, errors.New("such wallet not attached to user")
+		}
+
+		newWallets := make([]any, 0)
+		newWallets = append(newWallets, walletSlice[:index]...)
+		newWallets = append(newWallets, walletSlice[index+1:]...)
+
+		(*current.Value)[walletKey] = newWallets
+
+		return current, nil
+	}
+
+	_, err = n.GetUserAttributes().Upsert(userAttributeID, modifyFn, true)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiDeleteWallet: failed to upsert user attribute")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert", err, n.log)
+		return
+	}
+
+	c.JSON(http.StatusOK, nil)
 }

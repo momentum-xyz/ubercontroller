@@ -77,6 +77,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 				userMe.GET("/attributes", n.apiGetMeUserAttributeValue)
 
 				userMe.POST("/attach-account", n.apiAttachAccount)
+				userMe.DELETE("/remove-wallet", n.apiDeleteWallet)
 
 				userMe.GET("/stakes", n.apiGetMyStakes)
 				userMe.POST("/stakes", n.apiAddPendingStakeTransaction)
