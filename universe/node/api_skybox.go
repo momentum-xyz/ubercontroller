@@ -538,3 +538,87 @@ func (n *Node) getApiKeyAndSecret() (*string, *string, error) {
 
 	return &apiKey, &secret, nil
 }
+
+// @Summary Get skybox image by ID
+// @Schemes
+// @Description Return Get skybox image by ID
+// @Tags skybox
+// @Accept json
+// @Produce image/jpeg
+// @Success 200 {object} nil
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/skybox/{skyboxID} [get]
+func (n *Node) apiGetSkyboxByID(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("skyboxID"), 10, 32)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetSkyboxByID: failed to parse skyboxID")
+		api.AbortRequest(c, http.StatusInternalServerError, "invalid_uuid_parse", err, n.log)
+		return
+	}
+
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetSkyboxByID: failed to get user umid from context")
+		api.AbortRequest(c, http.StatusInternalServerError, "get_user_id_failed", err, n.log)
+		return
+	}
+	_ = userID
+
+	attributeID := entry.AttributeID{
+		PluginID: universe.GetSystemPluginID(),
+		Name:     "skybox_ai",
+	}
+
+	worldID, ok := skyboxIDToWorldID[int(id)]
+	if !ok {
+		err := errors.New("Node: apiGetSkyboxByID: no world_id for given 'id'")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
+	objectUserAttributeID := entry.NewObjectUserAttributeID(attributeID, worldID, userID)
+
+	attr, ok := n.GetObjectUserAttributes().GetValue(objectUserAttributeID)
+	if !ok {
+		err := errors.Errorf("Node: apiGetSkyboxByID: object attribute value not found: %s", attributeID)
+		api.AbortRequest(c, http.StatusNotFound, "attribute_not_found", err, n.log)
+		return
+	}
+
+	skybox, ok := (*attr)[strconv.Itoa(int(id))]
+	if !ok {
+		err := errors.Errorf("Node: apiGetSkyboxByID: skybox with id not found: %d", id)
+		api.AbortRequest(c, http.StatusNotFound, "skybox_not_found", err, n.log)
+		return
+	}
+
+	s := skybox.(map[string]any)
+	statusValue := s["status"].(string)
+	if statusValue != "complete" {
+		err := errors.New("Node: apiGetSkyboxByID: image not generated yet. Current status: " + statusValue)
+		api.AbortRequest(c, http.StatusNotFound, "image_not_found", err, n.log)
+		return
+	}
+
+	fileUrl := s["file_url"].(string)
+
+	resp, err := http.Get(fileUrl)
+	defer resp.Body.Close()
+
+	fileBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		err := errors.New("Node: apiGetSkyboxByID: failed to read response body")
+		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+		return
+	}
+
+	c.Writer.Header().Set("Content-Type", "image/jpeg")
+	//c.Writer.Header().Set("Content-Length", strconv.Itoa(len(fileBytes)))
+	_, err = c.Writer.Write(fileBytes)
+	if err != nil {
+		err := errors.New("Node: apiGetSkyboxByID: failed to write fileBytes")
+		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+		return
+	}
+}
