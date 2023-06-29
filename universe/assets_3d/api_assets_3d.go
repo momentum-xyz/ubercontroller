@@ -26,11 +26,10 @@ import (
 // @Tags assets3d
 // @Accept json
 // @Produce json
-// @Param object_id path string true "Object UMID"
 // @Param query query assets_3d.apiGetAssets3d.InQuery true "query params"
 // @Success 200 {array} dto.Asset3d
 // @Failure 400 {object} api.HTTPError
-// @Router /api/v4/assets-3d/{object_id} [get]
+// @Router /api/v4/assets-3d [get]
 func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 	type InQuery struct {
 		Category string `form:"category" json:"category"`
@@ -114,11 +113,10 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 // @Tags assets3d
 // @Accept multipart/form-data
 // @Produce json
-// @Param object_id path string true "Object UMID"
 // @Success 202 {object} dto.Asset3d
 // @Failure 400	{object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/assets-3d/{object_id}/upload [post]
+// @Router /api/v4/assets-3d/upload [post]
 // TODO: swag doc for multipart, it does not get *multipart.FileHeader
 func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 	type InBody struct {
