@@ -181,7 +181,7 @@ func (n *Node) apiPostMemberForObject(c *gin.Context) {
 // @Success 200 {object} int
 // @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/objects/{object_id}/members/user_id [delete]
+// @Router /api/v4/objects/{objectID}/members/user_id [delete]
 func (n *Node) apiDeleteMemberFromObject(c *gin.Context) {
 
 	objectID, err := umid.Parse(c.Param("objectID"))

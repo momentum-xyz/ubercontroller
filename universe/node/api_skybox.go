@@ -545,6 +545,7 @@ func (n *Node) getApiKeyAndSecret() (*string, *string, error) {
 // @Tags skybox
 // @Accept json
 // @Produce image/jpeg
+// @Param skyboxID path string true "SkyboxID int"
 // @Success 200 {object} nil
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
