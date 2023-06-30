@@ -388,6 +388,19 @@ func (n *Node) apiTimelineEditForObject(c *gin.Context) {
 		return
 	}
 
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiTimelineEditForObject: failed to get user umid from context")
+		api.AbortRequest(c, http.StatusInternalServerError, "get_user_id_failed", err, n.log)
+		return
+	}
+
+	if userID != existingActivity.GetUserID() {
+		err := errors.New("Node: apiTimelineEditForObject: can edit only own activities")
+		api.AbortRequest(c, http.StatusForbidden, "forbidden", err, n.log)
+		return
+	}
+
 	if inBody.Type != "" {
 		if !IsValidActivityType(inBody.Type) {
 			err := errors.New("Node: apiTimelineEditForObject: invalid activity type")
@@ -440,7 +453,7 @@ func (n *Node) apiTimelineEditForObject(c *gin.Context) {
 func (n *Node) apiTimelineRemoveForObject(c *gin.Context) {
 	activityID, err := umid.Parse(c.Param("activityID"))
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiTimelineEditForObject: failed to parse activity umid")
+		err := errors.WithMessage(err, "Node: apiTimelineRemoveForObject: failed to parse activity umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_activity_id", err, n.log)
 		return
 	}
@@ -452,9 +465,44 @@ func (n *Node) apiTimelineRemoveForObject(c *gin.Context) {
 		return
 	}
 
-	if err := activity.GetActivities().Remove(activity); err != nil {
-		err := errors.WithMessage(err, "Node: apiTimelineRemoveForObject: failed to remove activity")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_remove_activity", err, n.log)
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiTimelineRemoveForObject: failed to get user umid from context")
+		api.AbortRequest(c, http.StatusInternalServerError, "get_user_id_failed", err, n.log)
+		return
+	}
+
+	if userID == activity.GetUserID() {
+		if err := activity.GetActivities().Remove(activity); err != nil {
+			err := errors.WithMessage(err, "Node: apiTimelineRemoveForObject: failed to remove activity")
+			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_remove_activity", err, n.log)
+			return
+		}
+
+		c.JSON(http.StatusOK, ok)
+		return
+	}
+
+	isAdmin, err := n.userObjects.CheckIsIndirectAdmin(entry.UserObjectID{
+		UserID:   userID,
+		ObjectID: activity.GetObjectID(),
+	})
+	if err != nil {
+		err := errors.New("Node: apiTimelineRemoveForObject: failed to check is indirect admin")
+		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+		return
+	}
+
+	if !isAdmin {
+		err := errors.New("Node: apiTimelineRemoveForObject: not admin")
+		api.AbortRequest(c, http.StatusForbidden, "forbidden", err, n.log)
+		return
+	}
+
+	err = n.db.GetObjectActivitiesDB().DeleteObjectActivity(c, activityID)
+	if err != nil {
+		err := errors.New("Node: apiTimelineRemoveForObject: failed to delete object activity")
+		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
 		return
 	}
 

@@ -16,6 +16,7 @@ import (
 
 const (
 	getObjectIDsByActivityIDQuery = `SELECT object_id FROM object_activity WHERE activity_id = $1;`
+	deleteObjectActivityQuery     = `DELETE FROM object_activity WHERE activity_id = $1;`
 
 	upsertObjectActivityQuery = `INSERT INTO object_activity
 									(object_id, activity_id, created_at)
@@ -37,6 +38,13 @@ func NewDB(conn *pgxpool.Pool, commonDB database.CommonDB) *DB {
 		conn:   conn,
 		common: commonDB,
 	}
+}
+
+func (db *DB) DeleteObjectActivity(ctx context.Context, activityID umid.UMID) error {
+	if _, err := db.conn.Exec(ctx, deleteObjectActivityQuery, activityID); err != nil {
+		return errors.WithMessage(err, "failed to exec db")
+	}
+	return nil
 }
 
 func (db *DB) GetObjectIDsByActivityID(ctx context.Context, activityID umid.UMID) ([]umid.UMID, error) {
