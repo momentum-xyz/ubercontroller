@@ -40,33 +40,15 @@ type StyleItem struct {
 }
 
 type SkyboxStatus struct {
-	Id                int         `json:"id"`
-	Message           *string     `json:"message"`
-	ObfuscatedId      string      `json:"obfuscated_id"`
-	UserId            int         `json:"user_id"`
-	Title             string      `json:"title"`
-	Prompt            string      `json:"prompt"`
-	Seed              int         `json:"seed"`
-	NegativeText      interface{} `json:"negative_text"`
-	Username          string      `json:"username"`
-	Status            string      `json:"status"`
-	QueuePosition     int         `json:"queue_position"`
-	FileUrl           string      `json:"file_url"`
-	ThumbUrl          string      `json:"thumb_url"`
-	DepthMapUrl       string      `json:"depth_map_url"`
-	RemixImagineId    interface{} `json:"remix_imagine_id"`
-	RemixObfuscatedId interface{} `json:"remix_obfuscated_id"`
-	IsMyFavorite      bool        `json:"isMyFavorite"`
-	CreatedAt         time.Time   `json:"created_at"`
-	UpdatedAt         time.Time   `json:"updated_at"`
-	ErrorMessage      interface{} `json:"error_message"`
-	PusherChannel     string      `json:"pusher_channel"`
-	PusherEvent       string      `json:"pusher_event"`
-	Type              string      `json:"type"`
-	SkyboxStyleId     int         `json:"skybox_style_id"`
-	SkyboxId          int         `json:"skybox_id"`
-	SkyboxStyleName   string      `json:"skybox_style_name"`
-	SkyboxName        string      `json:"skybox_name"`
+	Id            int         `json:"id"`
+	Message       *string     `json:"message"`
+	Status        string      `json:"status"`
+	FileUrl       string      `json:"file_url"`
+	ThumbUrl      string      `json:"thumb_url"`
+	CreatedAt     time.Time   `json:"created_at"`
+	UpdatedAt     time.Time   `json:"updated_at"`
+	ErrorMessage  interface{} `json:"error_message"`
+	SkyboxStyleId int         `json:"skybox_style_id"`
 }
 
 var stylesCache = StylesCache{
@@ -76,6 +58,22 @@ var stylesCache = StylesCache{
 
 var skyboxIDToUserID = make(map[int]umid.UMID)
 var skyboxIDToWorldID = make(map[int]umid.UMID)
+
+func (s *SkyboxStatus) ToMap() map[string]any {
+	m := make(map[string]any)
+	m["id"] = s.Id
+	m["message"] = s.Message
+	m["status"] = s.Status
+	m["file_url"] = s.FileUrl
+	m["thumb_url"] = s.ThumbUrl
+	layout := "2006-01-02T15:04:05Z0700"
+	m["created_at"] = s.CreatedAt.Format(layout)
+	m["updated_at"] = s.UpdatedAt.Format(layout)
+	m["error_message"] = s.ErrorMessage
+	m["skybox_style_id"] = s.SkyboxStyleId
+
+	return m
+}
 
 // @Summary Get lists the known blockadelabs art styles
 // @Schemes
@@ -271,10 +269,7 @@ func (n *Node) apiPostSkyboxGenerate(c *gin.Context) {
 		}
 		val := *payload.Value
 
-		var mp map[string]any
-		utils.MapEncode(response, &mp)
-
-		val[strconv.Itoa(response.Id)] = mp
+		val[strconv.Itoa(response.Id)] = response.ToMap()
 
 		return payload, nil
 	}
@@ -339,10 +334,7 @@ func (n *Node) apiPostSkyboxWebHook(c *gin.Context) {
 	modifyFunc = func(payload *entry.AttributePayload) (*entry.AttributePayload, error) {
 		val := *payload.Value
 
-		var mp map[string]any
-		utils.MapEncode(inBody, &mp)
-
-		val[strconv.Itoa(inBody.Id)] = mp
+		val[strconv.Itoa(inBody.Id)] = inBody.ToMap()
 
 		return payload, nil
 	}
