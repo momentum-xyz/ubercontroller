@@ -269,6 +269,35 @@ func (n *Node) apiPostSkyboxGenerate(c *gin.Context) {
 		}
 		val := *payload.Value
 
+		maxSkyboxItemsPerAttribute := 10
+		if len(val) > maxSkyboxItemsPerAttribute {
+			oldest := time.Now()
+			oldestID := ""
+			for skyboxID, s := range val {
+				m, ok := s.(map[string]any)
+				if !ok {
+					continue
+				}
+				str, ok := m["created_at"].(string)
+				if !ok {
+					continue
+				}
+				layout := "2006-01-02T15:04:05Z0700"
+				t, err := time.Parse(layout, str)
+				if err != nil {
+					continue
+				}
+				if t.Before(oldest) {
+					oldest = t
+					oldestID = skyboxID
+				}
+			}
+
+			if oldestID != "" {
+				delete(val, oldestID)
+			}
+		}
+
 		val[strconv.Itoa(response.Id)] = response.ToMap()
 
 		return payload, nil
