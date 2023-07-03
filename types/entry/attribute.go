@@ -22,6 +22,7 @@ const (
 	SlotTypeTexture SlotType = "texture"
 	SlotTypeString  SlotType = "string"
 	SlotTypeNumber  SlotType = "number"
+	SlotTypeAudio   SlotType = "audio"
 )
 
 type SlotContentType string
@@ -33,6 +34,7 @@ const (
 	SlotContentTypeImage   SlotContentType = "image"
 	SlotContentTypeText    SlotContentType = "text"
 	SlotContentTypeVideo   SlotContentType = "video"
+	SlotContentTypeAudio   SlotContentType = "audio"
 )
 
 type AttributeID AttributeTypeID

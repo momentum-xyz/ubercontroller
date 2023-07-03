@@ -117,6 +117,10 @@ func (o *Object) UpdateAutoTextureMap(
 			return nil
 		}
 		data = val
+	case entry.SlotTypeAudio:
+		// TODO: really need a more flexible render_auto system,
+		// audio requires multiple fields, so for now, pass through the whole value:
+		data = (*value)
 	}
 
 	// store to the full list and update message (one which send on spawn)

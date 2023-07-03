@@ -424,6 +424,11 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 				"posbus_auto": entry.PosBusAutoAttributeOption{
 					Scope: []entry.PosBusAutoScopeAttributeOption{entry.WorldPosBusAutoScopeAttributeOption},
 				},
+				"render_auto": entry.RenderAutoAttributeOption{
+					SlotType:    entry.SlotTypeAudio,
+					ContentType: entry.SlotContentTypeAudio,
+					SlotName:    "spatial",
+				},
 			},
 		},
 		{
