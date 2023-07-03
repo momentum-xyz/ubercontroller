@@ -7,7 +7,7 @@ type SetWorld struct {
 	Name            string    `json:"name"`
 	Avatar          umid.UMID `json:"avatar"`
 	Owner           umid.UMID `json:"owner"`
-	Avatar3DAssetID umid.UMID `json:"avatar_3d_asset_id"`
+	Avatar3DAssetID umid.UMID `json:"avatar_3d_asset_id" gopy:"avatar_3d_asset_id"`
 }
 
 func init() {
