@@ -88,7 +88,7 @@ func (s *SkyboxStatus) ToMap() map[string]any {
 func (n *Node) apiGetSkyboxStyles(c *gin.Context) {
 	agoTime := time.Now().Add(-time.Minute * 10)
 	if stylesCache.updated.Before(agoTime) {
-		apiKey, _, err := n.getApiKeyAndSecret()
+		apiKey, _, err := n.getApiBlockadelabsKeyAndSecret()
 		if err != nil {
 			err := errors.WithMessage(err, "Node: apiGetSkyboxStyles: failed to getApiKeyAndSecret")
 			api.AbortRequest(c, http.StatusNotFound, "node_attribute_not_found", err, n.log)
@@ -208,7 +208,7 @@ func (n *Node) apiPostSkyboxGenerate(c *gin.Context) {
 		return
 	}
 
-	apiKey, _, err := n.getApiKeyAndSecret()
+	apiKey, _, err := n.getApiBlockadelabsKeyAndSecret()
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiPostSkyboxGenerate: failed to getApiKeyAndSecret")
 		api.AbortRequest(c, http.StatusNotFound, "node_attribute_not_found", err, n.log)
@@ -451,7 +451,7 @@ func (n *Node) apiRemoveSkyboxByID(c *gin.Context) {
 		return
 	}
 
-	apiKey, _, err := n.getApiKeyAndSecret()
+	apiKey, _, err := n.getApiBlockadelabsKeyAndSecret()
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiRemoveSkyboxByID: failed to getApiKeyAndSecret")
 		api.AbortRequest(c, http.StatusNotFound, "node_attribute_not_found", err, n.log)
@@ -542,7 +542,7 @@ func (n *Node) apiRemoveSkyboxByID(c *gin.Context) {
 	c.JSON(http.StatusOK, id)
 }
 
-func (n *Node) getApiKeyAndSecret() (*string, *string, error) {
+func (n *Node) getApiBlockadelabsKeyAndSecret() (*string, *string, error) {
 	attrID := entry.NewAttributeID(universe.GetSystemPluginID(), "blockadelabs")
 	attr, ok := n.nodeAttributes.GetValue(attrID)
 	if !ok {
