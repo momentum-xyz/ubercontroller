@@ -386,6 +386,17 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 		},
 		{
 			pluginID:      universe.GetSystemPluginID(),
+			attributeName: "leonardo",
+			description:   "Leonardo API key storage attribute",
+			options: &entry.AttributeOptions{
+				"permissions": entry.PermissionsAttributeOption{
+					Read:  string(entry.PermissionAdmin),
+					Write: string(entry.PermissionAdmin),
+				},
+			},
+		},
+		{
+			pluginID:      universe.GetSystemPluginID(),
 			attributeName: "skybox_ai",
 			description:   "Generated skybox storage attribute",
 			options: &entry.AttributeOptions{
