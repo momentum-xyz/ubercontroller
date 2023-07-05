@@ -56,7 +56,7 @@ type GenerationResponse struct {
 // @Accept json
 // @Produce json
 // @Param leonardoID path string true "LeonardoID string"
-// @Success 200 {object} node.apiPostSkyboxGenerate.Out
+// @Success 200 {object} node.apiGetImageGeneration.Out
 // @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
 // @Router /api/v4/leonardo/generate/{leonardo_id} [get]
@@ -125,7 +125,7 @@ func (n *Node) apiGetImageGeneration(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param body body node.apiPostGetImageGenerationID.Body true "body params"
-// @Success 200 {object} node.apiPostSkyboxGenerate.Out
+// @Success 200 {object} node.apiPostImageGenerationID.Out
 // @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
 // @Router /api/v4/leonardo/generate [post]
