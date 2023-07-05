@@ -49,17 +49,17 @@ type GenerationResponse struct {
 	} `json:"generations_by_pk"`
 }
 
-// @Summary Get images be generation id
+// @Summary Get images by generation id
 // @Schemes
 // @Description Returns an array of images by generation id
-// @Tags ai-images
+// @Tags leonardo
 // @Accept json
 // @Produce json
 // @Param leonardoID path string true "LeonardoID string"
 // @Success 200 {object} node.apiPostSkyboxGenerate.Out
 // @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/ai-image/generate/{leonardo_id} [get]
+// @Router /api/v4/leonardo/generate/{leonardo_id} [get]
 func (n *Node) apiGetImageGeneration(c *gin.Context) {
 	leonardoID := c.Param("leonardoID")
 
@@ -121,14 +121,14 @@ func (n *Node) apiGetImageGeneration(c *gin.Context) {
 // @Summary Create a Generation of Images
 // @Schemes
 // @Description Returns a generation id with which the images can be fetched
-// @Tags ai-images
+// @Tags leonardo
 // @Accept json
 // @Produce json
 // @Param body body node.apiPostGetImageGenerationID.Body true "body params"
 // @Success 200 {object} node.apiPostSkyboxGenerate.Out
 // @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/ai-image/generate [post]
+// @Router /api/v4/leonardo/generate [post]
 func (n *Node) apiPostImageGenerationID(c *gin.Context) {
 	type Body struct {
 		Prompt string `json:"prompt" binding:"required"`
