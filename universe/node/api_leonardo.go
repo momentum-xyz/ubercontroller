@@ -21,29 +21,16 @@ type LeonardoResponse struct {
 }
 
 type GeneratedImage struct {
-	URL       string `json:"url"`
-	NSFW      bool   `json:"nsfw"`
-	ID        string `json:"id"`
-	LikeCount int    `json:"likeCount"`
+	URL  string `json:"url"`
+	NSFW bool   `json:"nsfw"`
+	ID   string `json:"id"`
 }
 
 type GenerationResponse struct {
 	GenerationsByPK struct {
 		GeneratedImages []GeneratedImage `json:"generated_images"`
-		ModelID         string           `json:"modelId"`
 		Prompt          string           `json:"prompt"`
-		NegativePrompt  string           `json:"negativePrompt"`
-		ImageHeight     int              `json:"imageHeight"`
-		ImageWidth      int              `json:"imageWidth"`
-		InferenceSteps  int              `json:"inferenceSteps"`
-		Seed            int              `json:"seed"`
-		Public          bool             `json:"public"`
-		Scheduler       string           `json:"scheduler"`
-		SdVersion       string           `json:"sdVersion"`
 		Status          string           `json:"status"`
-		PresetStyle     *string          `json:"presetStyle"`
-		InitStrength    *float64         `json:"initStrength"`
-		GuidanceScale   int              `json:"guidanceScale"`
 		ID              string           `json:"id"`
 		CreatedAt       string           `json:"createdAt"`
 	} `json:"generations_by_pk"`
