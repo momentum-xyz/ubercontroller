@@ -592,7 +592,7 @@ func (n *Node) apiObjectsGetObjectSubOptions(c *gin.Context) {
 // @Produce json
 // @Param object_id path string true "Object UMID"
 // @Param body body node.apiClaimAndCustomise.Body true "body params"
-// @Success 200 {object} true
+// @Success 200 {object} nil
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 403 {object} api.HTTPError
