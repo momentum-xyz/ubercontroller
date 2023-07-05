@@ -135,6 +135,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 			object := verifiedObjects.Group("/:objectID")
 			{
+				object.POST("/claim-and-customise", n.apiClaimAndCustomise)
 				objectAdmin := object.Group("", middleware.AuthorizeAdmin(n.log))
 				{
 					objectAdmin.POST("/attributes/publicize", n.apiSetObjectAttributesPublic)
