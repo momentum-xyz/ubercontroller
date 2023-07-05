@@ -111,7 +111,7 @@ func (n *Node) apiGetImageGeneration(c *gin.Context) {
 // @Tags leonardo
 // @Accept json
 // @Produce json
-// @Param body body node.apiPostGetImageGenerationID.Body true "body params"
+// @Param body body node.apiPostImageGenerationID.Body true "body params"
 // @Success 200 {object} node.apiPostImageGenerationID.Out
 // @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
@@ -123,20 +123,20 @@ func (n *Node) apiPostImageGenerationID(c *gin.Context) {
 
 	var inBody Body
 	if err := c.ShouldBindJSON(&inBody); err != nil {
-		err = errors.WithMessage(err, "Node: apiPostGetImageGenerationID: failed to bind json")
+		err = errors.WithMessage(err, "Node: apiPostImageGenerationID: failed to bind json")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
 		return
 	}
 
 	if len(inBody.Prompt) > 550 {
-		err := errors.New("Node: apiPostGetImageGenerationID: prompt length must be less than 550")
+		err := errors.New("Node: apiPostImageGenerationID: prompt length must be less than 550")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
 		return
 	}
 
 	userID, err := api.GetUserIDFromContext(c)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiPostGetImageGenerationID: failed to get user umid from context")
+		err := errors.WithMessage(err, "Node: apiPostImageGenerationID: failed to get user umid from context")
 		api.AbortRequest(c, http.StatusInternalServerError, "get_user_id_failed", err, n.log)
 		return
 	}
@@ -144,7 +144,7 @@ func (n *Node) apiPostImageGenerationID(c *gin.Context) {
 
 	apiKey, err := n.getApiLeonardoKeyAndSecret()
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiPostGetImageGenerationID: failed to getApiKeyAndSecret")
+		err := errors.WithMessage(err, "Node: apiPostImageGenerationID: failed to getApiKeyAndSecret")
 		api.AbortRequest(c, http.StatusNotFound, "node_attribute_not_found", err, n.log)
 		return
 	}
@@ -160,7 +160,7 @@ func (n *Node) apiPostImageGenerationID(c *gin.Context) {
 
 	req, err := http.NewRequest("POST", apiUrl, reqBody)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiPostGetImageGenerationID: failed to create new request to blockadelabs API")
+		err := errors.WithMessage(err, "Node: apiPostImageGenerationID: failed to create new request to blockadelabs API")
 		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
 		return
 	}
@@ -171,7 +171,7 @@ func (n *Node) apiPostImageGenerationID(c *gin.Context) {
 	client := &http.Client{}
 	r, err := client.Do(req)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiPostGetImageGenerationID: failed to send post request to blockadelabs API")
+		err := errors.WithMessage(err, "Node: apiPostImageGenerationID: failed to send post request to blockadelabs API")
 		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
 		return
 	}
