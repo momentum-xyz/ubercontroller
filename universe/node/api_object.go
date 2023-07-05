@@ -633,12 +633,6 @@ func (n *Node) apiClaimAndCustomise(c *gin.Context) {
 		return
 	}
 
-	if object.GetOwnerID() == userID {
-		err = errors.New("Node: apiClaimAndCustomise: admin can not customise object")
-		api.AbortRequest(c, http.StatusBadRequest, "bad_request", err, n.log)
-		return
-	}
-
 	userObjects, err := n.userObjects.GetUserObjectsByObjectID(object.GetID())
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiClaimAndCustomise: failed to GetUserObjectsByObjectID")
