@@ -626,6 +626,12 @@ func (n *Node) apiClaimAndCustomise(c *gin.Context) {
 		return
 	}
 
+	if object.GetObjectType().GetID() != universe.CustomisableObjectTypeID {
+		err = errors.New("Node: apiClaimAndCustomise: object not customisable")
+		api.AbortRequest(c, http.StatusForbidden, "forbidden", err, n.log)
+		return
+	}
+
 	userID, err := api.GetUserIDFromContext(c)
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiClaimAndCustomise: failed to get user umid")

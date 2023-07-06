@@ -9,6 +9,8 @@ var ids = struct {
 	kusamaPluginID umid.UMID
 }{}
 
+var CustomisableObjectTypeID = umid.MustParse("4ed3a5bb-53f8-4511-941b-079029111111")
+
 func InitializeIDs(systemPluginID, kusamaPluginID umid.UMID) error {
 	ids.systemPluginID = systemPluginID
 	ids.kusamaPluginID = kusamaPluginID
