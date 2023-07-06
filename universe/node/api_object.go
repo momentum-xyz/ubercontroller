@@ -702,3 +702,82 @@ func (n *Node) apiClaimAndCustomise(c *gin.Context) {
 
 	c.JSON(http.StatusAccepted, true)
 }
+
+// @Summary Unclaim and clear object customisation
+// @Schemes
+// @Description Unclaim and clear object customisation
+// @Tags objects
+// @Accept json
+// @Produce json
+// @Param object_id path string true "Object UMID"
+// @Success 200 {object} nil
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 403 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/objects/{object_id}/unclaim-and-clear-customisation [post]
+func (n *Node) apiUnclaimAndClearCustomisation(c *gin.Context) {
+	objectID, err := umid.Parse(c.Param("objectID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiUnclaimAndClearCustomisation: failed to parse object umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
+		return
+	}
+
+	object, ok := n.GetObjectFromAllObjects(objectID)
+	if !ok {
+		err := errors.Errorf("Node: apiUnclaimAndClearCustomisation: object not found: %s", objectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
+		return
+	}
+
+	if object.GetObjectType().GetID() != universe.CustomisableObjectTypeID {
+		err = errors.New("Node: apiUnclaimAndClearCustomisation: object not customisable")
+		api.AbortRequest(c, http.StatusForbidden, "forbidden", err, n.log)
+		return
+	}
+
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiUnclaimAndClearCustomisation: failed to get user umid")
+		api.AbortRequest(c, http.StatusInternalServerError, "get_user_id_failed", err, n.log)
+		return
+	}
+
+	userObjectID := entry.NewUserObjectID(userID, objectID)
+	value, ok := n.userObjects.GetValue(userObjectID)
+	if !ok {
+		err = errors.New("Node: apiUnclaimAndClearCustomisation: object not claimed by this user")
+		api.AbortRequest(c, http.StatusForbidden, "forbidden", err, n.log)
+		return
+	}
+
+	if value == nil {
+		err = errors.New("Node: apiUnclaimAndClearCustomisation: object not claimed by this user")
+		api.AbortRequest(c, http.StatusForbidden, "forbidden", err, n.log)
+		return
+	}
+
+	if (*value)["role"] != "admin" {
+		err = errors.New("Node: apiUnclaimAndClearCustomisation: object not claimed by this user")
+		api.AbortRequest(c, http.StatusForbidden, "forbidden", err, n.log)
+		return
+	}
+
+	_, err = n.userObjects.Remove(userObjectID, true)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiUnclaimAndClearCustomisation: failed to remove user_object")
+		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+		return
+	}
+
+	attributeID := entry.NewAttributeID(universe.GetSystemPluginID(), "user_customisable_data")
+	_, err = n.GetObjectAttributes().Remove(attributeID, true)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiUnclaimAndClearCustomisation: failed to remove object attribute")
+		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+		return
+	}
+
+	c.JSON(http.StatusAccepted, true)
+}
