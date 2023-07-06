@@ -71,7 +71,7 @@ func main() {
 		switch log.(type) {
 		case *harvester.StakeLog:
 			l := log.(*harvester.StakeLog)
-			fmt.Printf("  stake: %s %s %s %s %s \n", l.TxHash, l.UserWallet, l.OdysseyID, l.AmountStaked, l.TotalStaked)
+			fmt.Printf("  stake: %s %s %s %d %s %s \n", l.TxHash, l.UserWallet, l.OdysseyID, l.TokenType, l.AmountStaked, l.TotalStaked)
 			//fmt.Println(log.(*harvester.TransferERC20Log).Value)
 		case *harvester.UnstakeLog:
 			l := log.(*harvester.UnstakeLog)

@@ -26,7 +26,7 @@ type Table2 struct {
 	mu                deadlock.RWMutex
 	blockNumber       uint64
 	data              map[string]map[string]*big.Int
-	stakesData        map[umid.UMID]map[string]*big.Int
+	stakesData        map[umid.UMID]map[string]map[uint8]*big.Int
 	nftData           map[umid.UMID]string
 	db                *pgxpool.Pool
 	adapter           Adapter
@@ -37,7 +37,7 @@ func NewTable2(db *pgxpool.Pool, adapter Adapter, listener func(bcName string, p
 	return &Table2{
 		blockNumber:       0,
 		data:              make(map[string]map[string]*big.Int),
-		stakesData:        make(map[umid.UMID]map[string]*big.Int),
+		stakesData:        make(map[umid.UMID]map[string]map[uint8]*big.Int),
 		nftData:           make(map[umid.UMID]string),
 		adapter:           adapter,
 		harvesterListener: listener,
@@ -141,58 +141,50 @@ func (t *Table2) ProcessLogs(blockNumber uint64, logs []any) {
 
 		case *StakeLog:
 			stake := log.(*StakeLog)
-			_, ok := t.stakesData[stake.OdysseyID]
-			if !ok {
-				t.stakesData[stake.OdysseyID] = make(map[string]*big.Int)
-			}
 
-			t.stakesData[stake.OdysseyID][stake.UserWallet] = stake.TotalStaked
+			createIfEmpty(t.stakesData, stake.OdysseyID, stake.UserWallet, stake.TokenType)
+
+			t.stakesData[stake.OdysseyID][stake.UserWallet][stake.TokenType].Add(t.stakesData[stake.OdysseyID][stake.UserWallet][stake.TokenType], stake.AmountStaked)
 			stakeEvents = append(stakeEvents, &StakeEvent{
 				TxHash:    stake.TxHash,
 				LogIndex:  strconv.FormatUint(uint64(stake.LogIndex), 10),
 				Wallet:    stake.UserWallet,
+				Kind:      stake.TokenType,
 				OdysseyID: stake.OdysseyID,
-				Amount:    stake.TotalStaked,
+				Amount:    t.stakesData[stake.OdysseyID][stake.UserWallet][stake.TokenType],
 			})
 
 			stakeLogs = append(stakeLogs, stake)
 
 		case *UnstakeLog:
 			stake := log.(*UnstakeLog)
-			_, ok := t.stakesData[stake.OdysseyID]
-			if !ok {
-				t.stakesData[stake.OdysseyID] = make(map[string]*big.Int)
-			}
 
-			t.stakesData[stake.OdysseyID][stake.UserWallet] = stake.TotalStaked
+			createIfEmpty(t.stakesData, stake.OdysseyID, stake.UserWallet, stake.TokenType)
+
+			t.stakesData[stake.OdysseyID][stake.UserWallet][stake.TokenType].Sub(t.stakesData[stake.OdysseyID][stake.UserWallet][stake.TokenType], stake.AmountUnstaked)
 			stakeEvents = append(stakeEvents, &StakeEvent{
 				Wallet:    stake.UserWallet,
 				OdysseyID: stake.OdysseyID,
-				Amount:    stake.TotalStaked,
+				Amount:    t.stakesData[stake.OdysseyID][stake.UserWallet][stake.TokenType],
 			})
 		case *RestakeLog:
 			stake := log.(*RestakeLog)
 
-			_, ok := t.stakesData[stake.FromOdysseyID]
-			if !ok {
-				t.stakesData[stake.FromOdysseyID] = make(map[string]*big.Int)
-			}
-			t.stakesData[stake.FromOdysseyID][stake.UserWallet] = stake.TotalStakedToFrom
+			createIfEmpty(t.stakesData, stake.FromOdysseyID, stake.UserWallet, stake.TokenType)
+
 			stakeEvents = append(stakeEvents, &StakeEvent{
 				Wallet:    stake.UserWallet,
 				OdysseyID: stake.FromOdysseyID,
-				Amount:    stake.TotalStakedToFrom,
+				Amount:    t.stakesData[stake.FromOdysseyID][stake.UserWallet][stake.TokenType],
 			})
 
-			_, ok = t.stakesData[stake.ToOdysseyID]
-			if !ok {
-				t.stakesData[stake.ToOdysseyID] = make(map[string]*big.Int)
-			}
-			t.stakesData[stake.ToOdysseyID][stake.UserWallet] = stake.TotalStakedToTo
+			createIfEmpty(t.stakesData, stake.ToOdysseyID, stake.UserWallet, stake.TokenType)
+
+			t.stakesData[stake.ToOdysseyID][stake.UserWallet][stake.TokenType].Add(t.stakesData[stake.ToOdysseyID][stake.UserWallet][stake.TokenType], stake.Amount)
 			stakeEvents = append(stakeEvents, &StakeEvent{
 				Wallet:    stake.UserWallet,
 				OdysseyID: stake.ToOdysseyID,
-				Amount:    stake.TotalStakedToTo,
+				Amount:    t.stakesData[stake.ToOdysseyID][stake.UserWallet][stake.TokenType],
 			})
 		case *TransferNFTLog:
 			e := log.(*TransferNFTLog)
@@ -219,6 +211,20 @@ func (t *Table2) ProcessLogs(blockNumber uint64, logs []any) {
 		log.Fatal(err)
 	}
 	//t.Display()
+}
+
+func createIfEmpty(m map[umid.UMID]map[string]map[uint8]*big.Int, odysseyID umid.UMID, wallet string, tokenType uint8) {
+	_, ok := m[odysseyID]
+	if !ok {
+		m[odysseyID] = make(map[string]map[uint8]*big.Int)
+	}
+	_, ok = m[odysseyID][wallet]
+	if !ok {
+		m[odysseyID][wallet] = make(map[uint8]*big.Int)
+	}
+	if m[odysseyID][wallet][tokenType] == nil {
+		m[odysseyID][wallet][tokenType] = big.NewInt(0)
+	}
 }
 
 func (t *Table2) listener(blockNumber uint64, diffs []*BCDiff, stakes []*BCStake) {
@@ -269,6 +275,7 @@ func (t *Table2) SaveToDB(events []*UpdateEvent, stakeEvents []*StakeEvent, nftL
 			ObjectID:     stake.OdysseyID,
 			LastComment:  comment,
 			Amount:       (*entry.BigInt)(stake.Amount),
+			Kind:         stake.Kind,
 		})
 	}
 
@@ -357,17 +364,18 @@ func (t *Table2) saveToDB(wallets []Address, contracts []Address, balances []*en
 		}
 	}
 
-	sql = `INSERT INTO stake (wallet_id, blockchain_id, object_id, amount, last_comment, updated_at, created_at)
-			VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-			ON CONFLICT (blockchain_id, wallet_id, object_id)
+	sql = `INSERT INTO stake (wallet_id, blockchain_id, object_id, amount, last_comment, updated_at, created_at, kind)
+			VALUES ($1, $2, $3, $4, $5, NOW(), NOW(), $6)
+			ON CONFLICT (blockchain_id, wallet_id, object_id, kind)
 				DO UPDATE SET updated_at   = NOW(),
 				              last_comment = $5,
-							  amount       = $4`
+							  amount       = $4
+							  `
 
 	for _, s := range stakes {
 
 		_, err = tx.Exec(context.TODO(), sql,
-			s.WalletID, blockchainUMID, s.ObjectID, s.Amount, s.LastComment)
+			s.WalletID, blockchainUMID, s.ObjectID, s.Amount, s.LastComment, s.Kind)
 		if err != nil {
 			err = errors.WithMessage(err, "failed to insert stakes to DB")
 			return err
