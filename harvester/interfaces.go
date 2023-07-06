@@ -119,6 +119,7 @@ type StakeEvent struct {
 	TxHash    string
 	LogIndex  string
 	Wallet    string
+	Kind      uint8
 	OdysseyID umid.UMID
 	Amount    *big.Int
 }
