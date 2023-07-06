@@ -186,7 +186,7 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 
 		// Iterate contracts
 		switch vLog.Address.Hex() {
-		case a.contracts.momTokenAddress.Hex():
+		case a.contracts.momTokenAddress.Hex(), a.contracts.dadTokenAddress.Hex():
 			switch vLog.Topics[0].Hex() {
 			case logTransferSigHash.Hex():
 				//fmt.Printf("Log Name: Transfer\n")
