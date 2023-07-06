@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/momentum-xyz/ubercontroller/utils/modify"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/AgoraIO-Community/go-tokenbuilder/rtctokenbuilder"
@@ -581,4 +582,202 @@ func (n *Node) apiObjectsGetObjectSubOptions(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, out)
+}
+
+// @Summary Claim and customise object
+// @Schemes
+// @Description Claim and customise object
+// @Tags objects
+// @Accept json
+// @Produce json
+// @Param object_id path string true "Object UMID"
+// @Param body body node.apiClaimAndCustomise.Body true "body params"
+// @Success 200 {object} nil
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 403 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/objects/{object_id}/claim-and-customise [post]
+func (n *Node) apiClaimAndCustomise(c *gin.Context) {
+	type Body struct {
+		Title     string `json:"title" binding:"required"`
+		Text      string `json:"text" binding:"required"`
+		ImageHash string `json:"image_hash" binding:"required"`
+	}
+
+	var inBody Body
+	if err := c.ShouldBindJSON(&inBody); err != nil {
+		err = errors.WithMessage(err, "Node: apiClaimAndCustomise: failed to bind json")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
+	objectID, err := umid.Parse(c.Param("objectID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiClaimAndCustomise: failed to parse object umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
+		return
+	}
+
+	object, ok := n.GetObjectFromAllObjects(objectID)
+	if !ok {
+		err := errors.Errorf("Node: apiClaimAndCustomise: object not found: %s", objectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
+		return
+	}
+
+	if object.GetObjectType().GetID() != universe.CustomisableObjectTypeID {
+		err = errors.New("Node: apiClaimAndCustomise: object not customisable")
+		api.AbortRequest(c, http.StatusForbidden, "forbidden", err, n.log)
+		return
+	}
+
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiClaimAndCustomise: failed to get user umid")
+		api.AbortRequest(c, http.StatusInternalServerError, "get_user_id_failed", err, n.log)
+		return
+	}
+
+	userObjects, err := n.userObjects.GetUserObjectsByObjectID(object.GetID())
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiClaimAndCustomise: failed to GetUserObjectsByObjectID")
+		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+		return
+	}
+
+	if userObjects != nil {
+		for _, uo := range userObjects {
+			if uo.Value != nil && (*uo.Value)["role"] == "admin" {
+				err = errors.New("Node: apiClaimAndCustomise: object already claimed")
+				api.AbortRequest(c, http.StatusForbidden, "forbidden", err, n.log)
+				return
+			}
+		}
+	}
+
+	userObjectID := entry.NewUserObjectID(userID, object.GetID())
+	var modifyFunc modify.Fn[entry.UserObjectValue]
+	modifyFunc = func(payload *entry.UserObjectValue) (*entry.UserObjectValue, error) {
+		if payload == nil {
+			payload = entry.NewUserObjectValue()
+		}
+		(*payload)["role"] = "admin"
+
+		return payload, nil
+	}
+
+	_, err = n.userObjects.Upsert(userObjectID, modifyFunc, true)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiClaimAndCustomise: failed to upsert user_object")
+		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+		return
+	}
+
+	attributeID := entry.NewAttributeID(universe.GetSystemPluginID(), "user_customisable_data")
+	var attributeModifyFunc modify.Fn[entry.AttributePayload]
+	attributeModifyFunc = func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
+		if current == nil {
+			current = entry.NewAttributePayload(nil, nil)
+		}
+
+		if current.Value == nil {
+			current.Value = entry.NewAttributeValue()
+		}
+
+		value := current.Value
+		(*value)["title"] = inBody.Title
+		(*value)["text"] = inBody.Text
+		(*value)["image_hash"] = inBody.ImageHash
+
+		return current, nil
+	}
+
+	_, err = object.GetObjectAttributes().Upsert(attributeID, attributeModifyFunc, true)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiClaimAndCustomise: failed to upsert object attribute")
+		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+		return
+	}
+
+	c.JSON(http.StatusAccepted, true)
+}
+
+// @Summary Unclaim and clear object customisation
+// @Schemes
+// @Description Unclaim and clear object customisation
+// @Tags objects
+// @Accept json
+// @Produce json
+// @Param object_id path string true "Object UMID"
+// @Success 200 {object} nil
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 403 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/objects/{object_id}/unclaim-and-clear-customisation [post]
+func (n *Node) apiUnclaimAndClearCustomisation(c *gin.Context) {
+	objectID, err := umid.Parse(c.Param("objectID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiUnclaimAndClearCustomisation: failed to parse object umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
+		return
+	}
+
+	object, ok := n.GetObjectFromAllObjects(objectID)
+	if !ok {
+		err := errors.Errorf("Node: apiUnclaimAndClearCustomisation: object not found: %s", objectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
+		return
+	}
+
+	if object.GetObjectType().GetID() != universe.CustomisableObjectTypeID {
+		err = errors.New("Node: apiUnclaimAndClearCustomisation: object not customisable")
+		api.AbortRequest(c, http.StatusForbidden, "forbidden", err, n.log)
+		return
+	}
+
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiUnclaimAndClearCustomisation: failed to get user umid")
+		api.AbortRequest(c, http.StatusInternalServerError, "get_user_id_failed", err, n.log)
+		return
+	}
+
+	userObjectID := entry.NewUserObjectID(userID, objectID)
+	value, ok := n.userObjects.GetValue(userObjectID)
+	if !ok {
+		err = errors.New("Node: apiUnclaimAndClearCustomisation: object not claimed by this user")
+		api.AbortRequest(c, http.StatusForbidden, "forbidden", err, n.log)
+		return
+	}
+
+	if value == nil {
+		err = errors.New("Node: apiUnclaimAndClearCustomisation: object not claimed by this user")
+		api.AbortRequest(c, http.StatusForbidden, "forbidden", err, n.log)
+		return
+	}
+
+	if (*value)["role"] != "admin" {
+		err = errors.New("Node: apiUnclaimAndClearCustomisation: object not claimed by this user")
+		api.AbortRequest(c, http.StatusForbidden, "forbidden", err, n.log)
+		return
+	}
+
+	_, err = n.userObjects.Remove(userObjectID, true)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiUnclaimAndClearCustomisation: failed to remove user_object")
+		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+		return
+	}
+
+	attributeID := entry.NewAttributeID(universe.GetSystemPluginID(), "user_customisable_data")
+	_, err = n.GetObjectAttributes().Remove(attributeID, true)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiUnclaimAndClearCustomisation: failed to remove object attribute")
+		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+		return
+	}
+
+	c.JSON(http.StatusAccepted, true)
 }
