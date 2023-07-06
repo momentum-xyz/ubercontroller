@@ -70,6 +70,9 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		verified.DELETE("/skybox/:skyboxID", n.apiRemoveSkyboxByID)
 		verified.GET("/skybox/:skyboxID", n.apiGetSkyboxByID)
 
+		verified.GET("/leonardo/generate/:leonardoID", n.apiGetImageGeneration)
+		verified.POST("/leonardo/generate", n.apiPostImageGenerationID)
+
 		verifiedUsers := verified.Group("/users")
 		{
 			userMe := verifiedUsers.Group("/me")
