@@ -648,7 +648,7 @@ func (n *Node) apiClaimAndCustomise(c *gin.Context) {
 
 	if userObjects != nil {
 		for _, uo := range userObjects {
-			if uo.Value != nil && (*uo.Value)["role"] == "admin" {
+			if uo.Value != nil && (*uo.Value)["role"] == "admin" && uo.UserID != userID {
 				err = errors.New("Node: apiClaimAndCustomise: object already claimed")
 				api.AbortRequest(c, http.StatusForbidden, "forbidden", err, n.log)
 				return
