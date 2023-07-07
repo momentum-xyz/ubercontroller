@@ -268,6 +268,18 @@ func (n *Node) apiUsersGetStakedWorlds(c *gin.Context) {
 		}
 
 		for _, stake := range stakes {
+
+			alreadyInList := false
+			for _, stakedWorld := range stakedWorlds {
+				if stakedWorld.ID == stake.ObjectID {
+					alreadyInList = true
+					break
+				}
+			}
+			if alreadyInList {
+				continue
+			}
+
 			world, ok := n.GetObjectFromAllObjects(stake.ObjectID)
 			if !ok {
 				err := errors.Errorf("Node: apiUsersGetStakedWorlds: world not found: %s", stake.ObjectID)
