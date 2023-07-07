@@ -24,7 +24,8 @@ const (
        stake.blockchain_id,
        stake.amount,
        stake.last_comment,
-       stake.updated_at
+       stake.updated_at,
+       stake.kind
 		FROM stake
         JOIN object USING (object_id)
     	JOIN object_attribute USING (object_id)
@@ -135,8 +136,9 @@ func (db *DB) GetStakes(ctx context.Context, walletID []byte) ([]*dto.Stake, err
 		var amount entry.BigInt
 		var lastComment string
 		var updatedAt time.Time
+		var kind int
 
-		if err := rows.Scan(&objectID, &name, &walletID, &blockchainID, &amount, &lastComment, &updatedAt); err != nil {
+		if err := rows.Scan(&objectID, &name, &walletID, &blockchainID, &amount, &lastComment, &updatedAt, &kind); err != nil {
 			return nil, errors.WithMessage(err, "failed to scan rows from table")
 		}
 
@@ -149,6 +151,7 @@ func (db *DB) GetStakes(ctx context.Context, walletID []byte) ([]*dto.Stake, err
 			Reward:       "0",
 			LastComment:  lastComment,
 			UpdatedAt:    updatedAt,
+			Kind:         kind,
 		}
 
 		stakes = append(stakes, &item)

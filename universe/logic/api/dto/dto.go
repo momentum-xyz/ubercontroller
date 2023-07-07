@@ -438,6 +438,7 @@ type Stake struct {
 	LastComment  string    `json:"last_comment"`
 	AvatarHash   string    `json:"avatar_hash"`
 	UpdatedAt    time.Time `json:"updated_at"`
+	Kind         int       `json:"kind"`
 }
 
 type WalletInfo struct {
