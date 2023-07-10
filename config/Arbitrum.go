@@ -14,10 +14,10 @@ type Arbitrum struct {
 func (a *Arbitrum) Init() {
 	// Default values connect to a private testnet.
 	a.BlockchainID = "412346"
-	a.MOMTokenAddress = "0x567d4e8264dC890571D5392fDB9fbd0e3FCBEe56"
-	a.DADTokenAddress = "0x0244BbA6fcB25eFed05955C4A1B86A458986D2e0"
-	a.StakeAddress = "0xe9C6d7Cd04614Dde6Ca68B62E6fbf23AC2ECe2F8"
-	a.NFTAddress = "0x97E0B10D89a494Eb5cfFCc72853FB0750BD64AcD"
+	a.MOMTokenAddress = "0x0147a5cB13Ab1D75f09385e53118AD00D4B74778"
+	a.DADTokenAddress = "0x37EcF9B8A0fAceF220f2Bd3C7C30Cbf416433564"
+	a.StakeAddress = "0xBCb202a9B77d9A44B54e30f7adF30d9eBd4Cd145"
+	a.NFTAddress = "0x9f89a52a29A9964DE6B2450b8edA92Ad2d2ba146"
 	a.FaucetAddress = "0x9E760F1CddA0694B6156076C60657118CF874289"
 	a.RPCURL = "https://bcdev.antst.net:8547"
 	a.WSURL = "wss://bcdev.antst.net:8548"
