@@ -114,6 +114,17 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 		},
 		//
 		{
+			pluginID:      universe.GetSystemPluginID(),
+			attributeName: "auto_test",
+			description:   "Test attribute for bot sdk example",
+			options: &entry.AttributeOptions{
+				"posbus_auto": map[string]any{
+					"scope": []string{"world"},
+				},
+			},
+		},
+		//
+		{
 			pluginID:      umid.MustParse(high5PluginID),
 			attributeName: "count",
 			description:   "High5s given",
