@@ -689,6 +689,7 @@ func (n *Node) apiClaimAndCustomise(c *gin.Context) {
 		(*value)["title"] = inBody.Title
 		(*value)["text"] = inBody.Text
 		(*value)["image_hash"] = inBody.ImageHash
+		(*value)["claimed_by"] = userID
 
 		return current, nil
 	}
