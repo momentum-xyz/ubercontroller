@@ -6,14 +6,15 @@ import (
 	"time"
 
 	ethCommon "github.com/ethereum/go-ethereum/common"
+	"github.com/pkg/errors"
+	"go.uber.org/zap/zapcore"
+
 	"github.com/momentum-xyz/ubercontroller/harvester"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/tree"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
-	"github.com/pkg/errors"
-	"go.uber.org/zap/zapcore"
 )
 
 func (n *Node) Listener(bcName string, events []*harvester.UpdateEvent, stakeEvents []*harvester.StakeEvent, nftEvent []*harvester.NftEvent) error {
@@ -78,7 +79,7 @@ func AddStakeActivities(stakeEvents []*harvester.StakeEvent) error {
 		exists := false
 		for _, a := range activities {
 			if a.GetData().BCTxHash != nil && a.GetData().BCLogIndex != nil {
-				if *a.GetData().BCTxHash == s.TxHash && *a.GetData().BCLogIndex == s.LogIndex {
+				if a.GetData() != nil && *a.GetData().BCTxHash == s.TxHash && *a.GetData().BCLogIndex == s.LogIndex {
 					exists = true
 				}
 			}
