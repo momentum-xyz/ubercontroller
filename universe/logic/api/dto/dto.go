@@ -96,6 +96,7 @@ type WorldDetails struct {
 	WebsiteLink        *string       `json:"website_link"`
 	WorldStakers       []WorldStaker `json:"stakers"`
 	LastStakingComment *string       `json:"last_staking_comment"`
+	IsAdmin            *bool         `json:"is_admin"`
 }
 
 type WorldNFTMeta struct {
