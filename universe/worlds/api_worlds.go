@@ -106,6 +106,20 @@ func (w *Worlds) apiWorldsGetDetails(c *gin.Context) {
 		return
 	}
 
+	currentUserID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "Worlds: apiWorldsGet: user from context")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user", err, w.log)
+		return
+	}
+
+	isAdmin, err := w.db.GetUserObjectsDB().CheckIsIndirectAdminByID(w.ctx, entry.NewUserObjectID(currentUserID, worldID))
+	if err != nil {
+		err := errors.WithMessage(err, "Worlds: apiWorldsGet: failed to check is indirect admin")
+		api.AbortRequest(c, http.StatusInternalServerError, "check_failed", err, w.log)
+		return
+	}
+
 	var ownerName *string
 	profile := loadedUser.GetProfile()
 	if profile != nil {
@@ -192,6 +206,7 @@ func (w *Worlds) apiWorldsGetDetails(c *gin.Context) {
 		WebsiteLink:        utils.GetPTR(world.GetWebsiteLink()),
 		WorldStakers:       worldStakers,
 		LastStakingComment: &latestStakeComment,
+		IsAdmin:            &isAdmin,
 	}
 
 	c.JSON(http.StatusOK, worldDetails)
