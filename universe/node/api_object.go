@@ -690,6 +690,8 @@ func (n *Node) apiClaimAndCustomise(c *gin.Context) {
 		(*value)["text"] = inBody.Text
 		(*value)["image_hash"] = inBody.ImageHash
 		(*value)["claimed_by"] = userID
+		layout := "2006-01-02T15:04:05Z0700"
+		(*value)["created_at"] = time.Now().UTC().Format(layout)
 
 		return current, nil
 	}
