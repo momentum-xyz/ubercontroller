@@ -775,7 +775,7 @@ func (n *Node) apiUnclaimAndClearCustomisation(c *gin.Context) {
 	}
 
 	attributeID := entry.NewAttributeID(universe.GetSystemPluginID(), "user_customisable_data")
-	_, err = n.GetObjectAttributes().Remove(attributeID, true)
+	_, err = object.GetObjectAttributes().Remove(attributeID, true)
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiUnclaimAndClearCustomisation: failed to remove object attribute")
 		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
