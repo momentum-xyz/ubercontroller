@@ -153,8 +153,8 @@ func (n *Node) apiPostImageGenerationID(c *gin.Context) {
 	apiUrl := "https://cloud.leonardo.ai/api/rest/v1/generations"
 
 	jsonData := map[string]string{
-		"prompt": inBody.Prompt,
-		"model":  inBody.Model,
+		"prompt":  inBody.Prompt,
+		"modelId": inBody.Model,
 	}
 	reqBody := bytes.NewBuffer([]byte{})
 	if err := json.NewEncoder(reqBody).Encode(jsonData); err != nil {
