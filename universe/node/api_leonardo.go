@@ -119,6 +119,7 @@ func (n *Node) apiGetImageGeneration(c *gin.Context) {
 func (n *Node) apiPostImageGenerationID(c *gin.Context) {
 	type Body struct {
 		Prompt string `json:"prompt" binding:"required"`
+		Model  string `json:"model" binding:"required"`
 	}
 
 	var inBody Body
@@ -151,7 +152,10 @@ func (n *Node) apiPostImageGenerationID(c *gin.Context) {
 
 	apiUrl := "https://cloud.leonardo.ai/api/rest/v1/generations"
 
-	jsonData := map[string]string{"prompt": inBody.Prompt}
+	jsonData := map[string]string{
+		"prompt": inBody.Prompt,
+		"model":  inBody.Model,
+	}
 	reqBody := bytes.NewBuffer([]byte{})
 	if err := json.NewEncoder(reqBody).Encode(jsonData); err != nil {
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_encode", errors.WithMessage(err, "Node: apiPostGetImageGenerationID: failed to encode JSON"), n.log)
