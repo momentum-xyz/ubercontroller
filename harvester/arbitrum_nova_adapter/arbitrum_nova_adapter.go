@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math"
 	"math/big"
 	"strconv"
 	"strings"
@@ -156,12 +157,57 @@ func (a *ArbitrumNovaAdapter) DecodeTransactionInputData(contractABI *abi.ABI, d
 	return method.Name, inputsMap, nil
 }
 
+func (a *ArbitrumNovaAdapter) GetLogsRecursively(fromBlock, toBlock int64, contracts []common.Address, level int) ([]any, error) {
+
+	fmt.Println("GET: ", strconv.Itoa(level), fromBlock, toBlock)
+	if level > 3 {
+		return nil, errors.New("GetLogsWrapper maximum recursion level")
+	}
+
+	logs, err := a.GetLogs(fromBlock, toBlock, contracts)
+	if err != nil {
+		fmt.Println(err)
+		allLogs := make([]any, 0)
+		parts := int64(7)
+		if toBlock-fromBlock < parts {
+			return nil, errors.WithMessage(err, "can not split getLogs to parts")
+		}
+
+		step, _ := math.Modf(float64((toBlock - fromBlock) / parts))
+		for i := 1; i <= int(parts); i++ {
+
+			from := int64(fromBlock) + int64(i-1)*int64(step)
+			to := int64(fromBlock) + int64(i)*int64(step) - 1
+			if int64(i) == parts {
+				to = toBlock
+			}
+
+			l, err := a.GetLogsRecursively(from, to, contracts, level+1)
+			if err != nil {
+				return nil, errors.WithMessage(err, "recursive call error")
+			}
+			fmt.Println(i, from, to)
+			allLogs = append(allLogs, l...)
+		}
+
+		return allLogs, nil
+	}
+
+	fmt.Println("RETURN: ", fromBlock, toBlock, len(logs))
+	return logs, err
+
+}
+
 func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []common.Address) ([]any, error) {
+
+	if contracts == nil {
+		contracts = a.contracts.AllAddresses
+	}
 
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(fromBlock),
 		ToBlock:   big.NewInt(toBlock),
-		Addresses: a.contracts.AllAddresses,
+		Addresses: contracts,
 	}
 
 	bcLogs, err := a.FilterLogs(context.TODO(), query)
