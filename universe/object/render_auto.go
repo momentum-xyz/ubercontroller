@@ -104,10 +104,7 @@ func (o *Object) UpdateAutoTextureMap(
 
 		data = val
 	case entry.SlotTypeTexture:
-		valField := "auto_render_hash"
-		if option.ContentType == "image" {
-			valField = "render_hash"
-		}
+		valField := option.ValueField // set in GetOptionAutoOption
 		v, ok := (*value)[valField]
 		if !ok {
 			return nil

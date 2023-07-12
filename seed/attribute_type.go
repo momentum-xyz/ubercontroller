@@ -471,6 +471,8 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 				"render_auto": map[string]string{
 					"slot_type":    "texture",
 					"content_type": "image",
+					"slot_name":    "object_texture",
+					"value_field":  "image_hash",
 				},
 			},
 		},
