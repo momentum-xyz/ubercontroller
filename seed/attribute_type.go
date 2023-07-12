@@ -454,6 +454,28 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 		},
 		{
 			pluginID:      universe.GetSystemPluginID(),
+			attributeName: "object_effect",
+			description:   "Visual 3D effect for object",
+			options: &entry.AttributeOptions{
+				"render_auto": map[string]any{
+					"slot_type":    "string",
+					"content_type": "string",
+				},
+			},
+		},
+		{
+			pluginID:      universe.GetSystemPluginID(),
+			attributeName: "user_customisable_data",
+			description:   "Data for user customisable objects",
+			options: &entry.AttributeOptions{
+				"render_auto": map[string]string{
+					"slot_type":    "texture",
+					"content_type": "image",
+				},
+			},
+		},
+		{
+			pluginID:      universe.GetSystemPluginID(),
 			attributeName: "shaders",
 			description:   "3D shader FX",
 			options: &entry.AttributeOptions{
