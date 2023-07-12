@@ -44,6 +44,8 @@ type StakeLog struct {
  */
 //event Unstake(address user, bytes16 odyssey, uint256 amount_unstaked, Token token, uint256 total_staked);
 type UnstakeLog struct {
+	LogIndex       uint
+	TxHash         string
 	UserWallet     string
 	OdysseyID      umid.UMID
 	AmountUnstaked *big.Int

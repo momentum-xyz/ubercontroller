@@ -314,11 +314,14 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 					return nil, errors.WithMessage(err, "failed to parse umid from bytes")
 				}
 
+				transactionHash := vLog.TxHash.Hex()
 				amount := ev[0].(*big.Int)
 				tokenType := ev[1].(uint8)
 				totalAmount := ev[2].(*big.Int)
 
 				e := &harvester.UnstakeLog{
+					TxHash:         transactionHash,
+					LogIndex:       vLog.Index,
 					UserWallet:     fromWallet.Hex(),
 					OdysseyID:      odysseyID,
 					AmountUnstaked: amount,
