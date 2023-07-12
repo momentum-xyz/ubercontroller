@@ -66,10 +66,10 @@ func (n *Node) Listener(bcName string, events []*harvester.UpdateEvent, stakeEve
 		}
 	}
 
-	return AddStakeActivities(stakeEvents)
+	return n.AddStakeActivities(stakeEvents)
 }
 
-func AddStakeActivities(stakeEvents []*harvester.StakeEvent) error {
+func (n *Node) AddStakeActivities(stakeEvents []*harvester.StakeEvent) error {
 	node := universe.GetNode()
 	activities := node.GetActivities().GetActivities()
 
@@ -91,7 +91,7 @@ func AddStakeActivities(stakeEvents []*harvester.StakeEvent) error {
 	}
 
 	for _, s := range newStakeEvents {
-		err := AddStakeActivity(s)
+		err := n.AddStakeActivity(s)
 		if err != nil {
 			return errors.WithMessage(err, "failed to AddStakeActivity")
 		}
@@ -100,23 +100,23 @@ func AddStakeActivities(stakeEvents []*harvester.StakeEvent) error {
 	return nil
 }
 
-func AddStakeActivity(stakeEvent *harvester.StakeEvent) error {
+func (n *Node) AddStakeActivity(stakeEvent *harvester.StakeEvent) error {
 	node := universe.GetNode()
 	a, err := node.GetActivities().CreateActivity(umid.New())
 	if err != nil {
 		return errors.WithMessage(err, "failed to CreateActivity")
 	}
 
-	world, ok := node.GetWorlds().GetWorld(stakeEvent.OdysseyID)
-	if !ok {
-		return errors.New("world not found by id:" + stakeEvent.OdysseyID.String())
-	}
-
 	if err := a.SetObjectID(stakeEvent.OdysseyID, true); err != nil {
 		return errors.WithMessage(err, "failed to set object ID")
 	}
 
-	if err := a.SetUserID(world.GetOwnerID(), true); err != nil {
+	user, err := n.db.GetUsersDB().GetUserByWallet(context.Background(), stakeEvent.Wallet)
+	if err != nil {
+		return errors.WithMessage(err, "failed to get user by wallet")
+	}
+
+	if err := a.SetUserID(user.UserID, true); err != nil {
 		return errors.WithMessage(err, "failed to set user ID")
 	}
 
