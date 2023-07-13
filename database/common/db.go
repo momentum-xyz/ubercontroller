@@ -17,3 +17,8 @@ func NewDB(conn *pgxpool.Pool) *DB {
 		conn: conn,
 	}
 }
+
+// Yeah, bypass everything to get connection straigh to the DB.
+func (db *DB) GetConnection() *pgxpool.Pool {
+	return db.conn
+}

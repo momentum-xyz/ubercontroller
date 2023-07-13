@@ -197,6 +197,8 @@ func (n *Node) apiPostImageGenerationID(c *gin.Context) {
 		Data:    response,
 	}
 
+	n.trackAIUsage(c, "leonardo", userID)
+
 	c.JSON(http.StatusOK, out)
 }
 

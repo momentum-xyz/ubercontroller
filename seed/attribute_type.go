@@ -411,6 +411,12 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 		},
 		{
 			pluginID:      universe.GetSystemPluginID(),
+			attributeName: "tracker_ai_usage",
+			description:   "Track AI usages",
+			options:       nil,
+		},
+		{
+			pluginID:      universe.GetSystemPluginID(),
 			attributeName: "last_known_position",
 			description:   "Last known position for user in the world",
 			options:       nil,

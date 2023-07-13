@@ -98,6 +98,12 @@ func seedNodeAttributes(ctx context.Context, node universe.Node) error {
 			value:         &entry.AttributeValue{},
 			options:       nil,
 		},
+		{
+			pluginID:      universe.GetSystemPluginID(),
+			attributeName: "tracker_ai_usage",
+			value:         &entry.AttributeValue{},
+			options:       nil,
+		},
 	}
 
 	for _, item := range items {

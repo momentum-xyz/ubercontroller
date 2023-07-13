@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -39,6 +40,7 @@ type DB interface {
 }
 
 type CommonDB interface {
+	GetConnection() *pgxpool.Pool
 }
 
 type NodesDB interface {

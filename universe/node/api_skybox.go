@@ -318,6 +318,7 @@ func (n *Node) apiPostSkyboxGenerate(c *gin.Context) {
 		Success: true,
 		Data:    response,
 	}
+	n.trackAIUsage(c, "blockadelab", userID)
 
 	c.JSON(http.StatusOK, out)
 }
