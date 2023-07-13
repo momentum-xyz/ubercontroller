@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -135,7 +136,7 @@ func (w *Worlds) apiWorldsGetDetails(c *gin.Context) {
 		return
 	}
 
-	var worldStakers []dto.WorldStaker
+	stakeByUser := make(map[umid.UMID]*dto.WorldStaker)
 	var totalStake big.Int
 	if stakes != nil {
 		for _, stake := range stakes {
@@ -171,17 +172,36 @@ func (w *Worlds) apiWorldsGetDetails(c *gin.Context) {
 				stakeAmtStr := stakeAmt.String()
 				totalStake.Add(&totalStake, stakeAmt)
 
-				worldStaker := dto.WorldStaker{
-					UserID:     user.UserID,
-					Name:       stakerName,
-					Stake:      &stakeAmtStr,
-					AvatarHash: avatarHash,
+				if worldStaker, ok := stakeByUser[user.UserID]; ok {
+					oldStakeAmt := new(big.Int)
+					oldStakeAmt.SetString(*worldStaker.Stake, 10)
+					newStakeAmt := new(big.Int).Add(oldStakeAmt, stakeAmt)
+					newStakeAmtStr := newStakeAmt.String()
+					worldStaker.Stake = &newStakeAmtStr
+				} else {
+					stakeByUser[user.UserID] = &dto.WorldStaker{
+						UserID:     user.UserID,
+						Name:       stakerName,
+						Stake:      &stakeAmtStr,
+						AvatarHash: avatarHash,
+					}
 				}
-
-				worldStakers = append(worldStakers, worldStaker)
 			}
 		}
 	}
+
+	worldStakers := make([]dto.WorldStaker, 0, len(stakeByUser))
+	for _, staker := range stakeByUser {
+		worldStakers = append(worldStakers, *staker)
+	}
+
+	sort.SliceStable(worldStakers, func(i, j int) bool {
+		iStake := new(big.Int)
+		jStake := new(big.Int)
+		iStake.SetString(*worldStakers[i].Stake, 10)
+		jStake.SetString(*worldStakers[j].Stake, 10)
+		return iStake.Cmp(jStake) > 0
+	})
 
 	latestStakeComment := ""
 	var lastStakeTimestamp time.Time
