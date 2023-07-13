@@ -16,11 +16,11 @@ import (
 )
 
 const (
-	getActivitiesQuery            = `SELECT * FROM activity WHERE type != 'unstake';`
-	getActivityByIDQuery          = `SELECT * FROM activity WHERE activity_id = $1 AND type != 'unstake';`
-	getActivityIDsByParentIDQuery = `SELECT activity_id FROM activity WHERE parent_id = $1 AND type != 'unstake';`
-	getActivitiesByUserIDQuery    = `SELECT * FROM activity WHERE user_id = $1 AND type != 'unstake';`
-	getActivitiesByObjectIDQuery  = `SELECT * FROM activity WHERE object_id = $1 AND type != 'unstake';`
+	getActivitiesQuery            = `SELECT * FROM activity;`
+	getActivityByIDQuery          = `SELECT * FROM activity WHERE activity_id = $1;`
+	getActivityIDsByParentIDQuery = `SELECT activity_id FROM activity WHERE parent_id = $1;`
+	getActivitiesByUserIDQuery    = `SELECT * FROM activity WHERE user_id = $1;`
+	getActivitiesByObjectIDQuery  = `SELECT * FROM activity WHERE object_id = $1;`
 
 	upsertActivityQuery = `INSERT INTO activity
     						(activity_id, user_id, object_id, "type", "data",
