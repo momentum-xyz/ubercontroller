@@ -115,7 +115,7 @@ type NFTAttributes struct {
 type WorldStaker struct {
 	UserID     umid.UMID `json:"user_id"`
 	Name       *string   `json:"name"`
-	Stake      *string   `json:"stake,omitempty"`
+	Stake      *string   `json:"stake"`
 	AvatarHash *string   `json:"avatarHash"`
 }
 
