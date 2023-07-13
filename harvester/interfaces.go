@@ -44,6 +44,8 @@ type StakeLog struct {
  */
 //event Unstake(address user, bytes16 odyssey, uint256 amount_unstaked, Token token, uint256 total_staked);
 type UnstakeLog struct {
+	LogIndex       uint
+	TxHash         string
 	UserWallet     string
 	OdysseyID      umid.UMID
 	AmountUnstaked *big.Int
@@ -116,12 +118,14 @@ type UpdateEvent struct {
 }
 
 type StakeEvent struct {
-	TxHash    string
-	LogIndex  string
-	Wallet    string
-	Kind      uint8
-	OdysseyID umid.UMID
-	Amount    *big.Int
+	TxHash       string
+	LogIndex     string
+	Wallet       string
+	Kind         uint8
+	OdysseyID    umid.UMID
+	Amount       *big.Int
+	ActivityType string
+	//CreatedAt    time.Time
 }
 
 type NftEvent struct {
@@ -137,6 +141,7 @@ type Adapter interface {
 	GetLastBlockNumber() (uint64, error)
 	GetBalance(wallet string, contract string, blockNumber uint64) (*big.Int, error)
 	GetLogs(fromBlock, toBlock int64, addresses []common.Address) ([]any, error)
+	GetLogsRecursively(fromBlock, toBlock int64, addresses []common.Address, level int) ([]any, error)
 	RegisterNewBlockListener(f AdapterListener)
 	Run()
 	GetInfo() (umid umid.UMID, name string, rpcURL string)

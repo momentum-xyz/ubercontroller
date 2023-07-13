@@ -33,4 +33,5 @@ const (
 	ActivityTypeScreenshot   ActivityType = "screenshot"
 	ActivityTypeWorldCreated ActivityType = "world_created"
 	ActivityTypeStake        ActivityType = "stake"
+	ActivityTypeUnstake      ActivityType = "unstake"
 )
