@@ -146,12 +146,13 @@ func (t *Table2) ProcessLogs(blockNumber uint64, logs []any) {
 
 			t.stakesData[stake.OdysseyID][stake.UserWallet][stake.TokenType].Add(t.stakesData[stake.OdysseyID][stake.UserWallet][stake.TokenType], stake.AmountStaked)
 			stakeEvents = append(stakeEvents, &StakeEvent{
-				TxHash:    stake.TxHash,
-				LogIndex:  strconv.FormatUint(uint64(stake.LogIndex), 10),
-				Wallet:    stake.UserWallet,
-				Kind:      stake.TokenType,
-				OdysseyID: stake.OdysseyID,
-				Amount:    t.stakesData[stake.OdysseyID][stake.UserWallet][stake.TokenType],
+				TxHash:       stake.TxHash,
+				LogIndex:     strconv.FormatUint(uint64(stake.LogIndex), 10),
+				Wallet:       stake.UserWallet,
+				Kind:         stake.TokenType,
+				OdysseyID:    stake.OdysseyID,
+				Amount:       t.stakesData[stake.OdysseyID][stake.UserWallet][stake.TokenType],
+				ActivityType: "stake",
 			})
 
 			stakeLogs = append(stakeLogs, stake)
@@ -163,12 +164,13 @@ func (t *Table2) ProcessLogs(blockNumber uint64, logs []any) {
 
 			t.stakesData[stake.OdysseyID][stake.UserWallet][stake.TokenType].Sub(t.stakesData[stake.OdysseyID][stake.UserWallet][stake.TokenType], stake.AmountUnstaked)
 			stakeEvents = append(stakeEvents, &StakeEvent{
-				TxHash:    stake.TxHash,
-				LogIndex:  strconv.FormatUint(uint64(stake.LogIndex), 10),
-				Wallet:    stake.UserWallet,
-				Kind:      stake.TokenType,
-				OdysseyID: stake.OdysseyID,
-				Amount:    t.stakesData[stake.OdysseyID][stake.UserWallet][stake.TokenType],
+				TxHash:       stake.TxHash,
+				LogIndex:     strconv.FormatUint(uint64(stake.LogIndex), 10),
+				Wallet:       stake.UserWallet,
+				Kind:         stake.TokenType,
+				OdysseyID:    stake.OdysseyID,
+				Amount:       t.stakesData[stake.OdysseyID][stake.UserWallet][stake.TokenType],
+				ActivityType: "unstake",
 			})
 		case *RestakeLog:
 			stake := log.(*RestakeLog)

@@ -118,12 +118,14 @@ type UpdateEvent struct {
 }
 
 type StakeEvent struct {
-	TxHash    string
-	LogIndex  string
-	Wallet    string
-	Kind      uint8
-	OdysseyID umid.UMID
-	Amount    *big.Int
+	TxHash       string
+	LogIndex     string
+	Wallet       string
+	Kind         uint8
+	OdysseyID    umid.UMID
+	Amount       *big.Int
+	ActivityType string
+	//CreatedAt    time.Time
 }
 
 type NftEvent struct {

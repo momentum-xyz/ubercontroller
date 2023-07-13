@@ -125,6 +125,9 @@ func (n *Node) AddStakeActivity(stakeEvent *harvester.StakeEvent) error {
 	}
 
 	aType := entry.ActivityTypeStake
+	if stakeEvent.ActivityType == "unstake" {
+		aType = entry.ActivityTypeUnstake
+	}
 	if err := a.SetType(&aType, true); err != nil {
 		return errors.WithMessage(err, "failed to set activity type")
 	}
@@ -137,6 +140,9 @@ func (n *Node) AddStakeActivity(stakeEvent *harvester.StakeEvent) error {
 		current.BCTxHash = &stakeEvent.TxHash
 		current.BCLogIndex = &stakeEvent.LogIndex
 		symbol := "MOM"
+		if stakeEvent.Kind == 1 {
+			symbol = "DAD"
+		}
 		current.TokenSymbol = &symbol
 		amount := stakeEvent.Amount.String()
 		current.TokenAmount = &amount
