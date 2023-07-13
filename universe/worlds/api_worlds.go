@@ -192,7 +192,9 @@ func (w *Worlds) apiWorldsGetDetails(c *gin.Context) {
 
 	worldStakers := make([]dto.WorldStaker, 0, len(stakeByUser))
 	for _, staker := range stakeByUser {
-		worldStakers = append(worldStakers, *staker)
+		if staker != nil {
+			worldStakers = append(worldStakers, *staker)
+		}
 	}
 
 	sort.SliceStable(worldStakers, func(i, j int) bool {
