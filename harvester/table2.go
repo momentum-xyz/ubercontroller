@@ -86,7 +86,7 @@ func (t *Table2) fastForward() {
 	//	return
 	//}
 
-	logs, err := t.adapter.GetLogs(int64(t.blockNumber)+1, int64(lastBlockNumber), nil)
+	logs, err := t.adapter.GetLogsRecursively(int64(t.blockNumber)+1, int64(lastBlockNumber), nil, 0)
 	if err != nil {
 		fmt.Println(err)
 		return

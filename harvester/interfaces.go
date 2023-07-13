@@ -141,6 +141,7 @@ type Adapter interface {
 	GetLastBlockNumber() (uint64, error)
 	GetBalance(wallet string, contract string, blockNumber uint64) (*big.Int, error)
 	GetLogs(fromBlock, toBlock int64, addresses []common.Address) ([]any, error)
+	GetLogsRecursively(fromBlock, toBlock int64, addresses []common.Address, level int) ([]any, error)
 	RegisterNewBlockListener(f AdapterListener)
 	Run()
 	GetInfo() (umid umid.UMID, name string, rpcURL string)
