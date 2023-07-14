@@ -143,8 +143,8 @@ func (u *User) writePump() {
 
 func (u *User) SendDirectly(message *websocket.PreparedMessage) error {
 	// not concurrent, to be used in single particular location
-	//u.directLock.Lock()
-	//defer u.directLock.Unlock()
+	u.directLock.Lock()
+	defer u.directLock.Unlock()
 	if message == nil {
 		cute.SetTitleColor(cute.BrightRed)
 		cute.SetMessageColor(cute.Red)
