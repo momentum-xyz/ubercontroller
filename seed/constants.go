@@ -10,6 +10,7 @@ const (
 	googleDrivePluginID     = "c3f89640-e0f0-4536-ae0d-8fc8a75ec0cd"
 	OdysseyHackatonPluginID = "220578c8-5fec-42c8-ade1-14d970e714bd"
 	high5PluginID           = "3253d616-215f-47a9-ba9d-93185eb3e6b5"
+	sdkPluginID             = "3023d874-c186-45bf-a7a8-60e2f57b8877"
 
 	alphaProgramAsset3dID      = "e5609914-e673-7f48-a666-574ed2baff92"
 	skyboxArrivalAsset3dID     = "658611b8-a86a-4bf0-a956-12129b06dbfd"

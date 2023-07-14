@@ -109,6 +109,12 @@ func seedPlugins(ctx context.Context, node universe.Node) error {
 				"name": "High five",
 			},
 		},
+		{
+			ID: umid.MustParse(sdkPluginID),
+			Meta: &entry.PluginMeta{
+				"name": "SDK",
+			},
+		},
 	}
 
 	for _, p := range data {

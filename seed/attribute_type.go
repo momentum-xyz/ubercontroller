@@ -571,6 +571,22 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 				},
 			},
 		},
+		{
+			pluginID:      umid.MustParse(sdkPluginID),
+			attributeName: "bot",
+			description:   "Bot state storage",
+			options:       &entry.AttributeOptions{},
+		},
+		{
+			pluginID:      umid.MustParse(sdkPluginID),
+			attributeName: "bot_world",
+			description:   "Bot state broadcasted to the world",
+			options: &entry.AttributeOptions{
+				"posbus_auto": entry.PosBusAutoAttributeOption{
+					Scope: []entry.PosBusAutoScopeAttributeOption{entry.WorldPosBusAutoScopeAttributeOption},
+				},
+			},
+		},
 	}
 
 	for _, item := range items {
