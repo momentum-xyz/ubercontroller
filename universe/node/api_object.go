@@ -202,6 +202,33 @@ func (n *Node) apiRemoveObject(c *gin.Context) {
 		return
 	}
 
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiRemoveObject: failed to get user umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
+		return
+	}
+
+	isAdmin, err := n.db.GetUserObjectsDB().CheckIsIndirectAdminByID(c, entry.NewUserObjectID(userID, objectID))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiRemoveObject: failed to check object indirect admin")
+		api.AbortRequest(c, http.StatusBadRequest, "admin_check_failed", err, n.log)
+		return
+	}
+
+	if !isAdmin {
+		err := errors.New("Node: apiRemoveObject: operation is not permitted for user")
+		api.AbortRequest(c, http.StatusForbidden, "object_remove_not_permitted", err, n.log)
+		return
+	}
+
+	objectCategory := object.GetObjectType().GetCategoryName()
+	if objectCategory == "Worlds" {
+		err := errors.New("Node: apiRemoveObject: worlds are not removable")
+		api.AbortRequest(c, http.StatusForbidden, "forbidden", err, n.log)
+		return
+	}
+
 	removed, err := tree.RemoveObjectFromParent(object.GetParent(), object, true)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiRemoveObject: failed to remove object from parent")
