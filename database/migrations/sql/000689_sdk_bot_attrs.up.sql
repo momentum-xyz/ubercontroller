@@ -19,7 +19,7 @@ INSERT INTO attribute_type(
         '3023d874-c186-45bf-a7a8-60e2f57b8877'::uuid,
         'bot',
         'Bot state storage',
-        ''
+        '{}'
     ), (
         '3023d874-c186-45bf-a7a8-60e2f57b8877'::uuid,
         'bot_world',
