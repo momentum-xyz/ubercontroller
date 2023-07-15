@@ -2,6 +2,7 @@ package node
 
 import (
 	"context"
+	"math/big"
 	"net/http"
 	"strings"
 
@@ -268,6 +269,11 @@ func (n *Node) apiUsersGetStakedWorlds(c *gin.Context) {
 		}
 
 		for _, stake := range stakes {
+
+			a := (*big.Int)(stake.Amount)
+			if a.Int64() == 0 {
+				continue
+			}
 
 			alreadyInList := false
 			for _, stakedWorld := range stakedWorlds {
