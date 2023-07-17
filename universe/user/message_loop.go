@@ -178,6 +178,11 @@ func (u *User) LockObject(lock *posbus.LockObject) error {
 		return errors.Errorf("object not found: %s", objectId)
 	}
 
+	isAdmin, err := u.IsAdminOfObject(objectId)
+	if err != nil {
+		return errors.WithMessage(err, "failed to check if user is admin of object")
+	}
+
 	result := object.LockUIObject(u, 1)
 	if result {
 		return u.GetWorld().Send(

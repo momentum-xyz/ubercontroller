@@ -180,6 +180,18 @@ func (u *User) IsTemporaryUser() (bool, error) {
 	return true, nil
 }
 
+func (u *User) IsAdminOfObject(objectID umid.UMID) (bool, error) {
+	node := universe.GetNode()
+	userObjects := node.GetUserObjects()
+
+	isAdmin, err := userObjects.CheckIsIndirectAdmin(entry.NewUserObjectID(u.GetID(), objectID))
+	if err != nil {
+		return false, errors.WithMessage(err, "failed to check is indirect admin")
+	}
+
+	return isAdmin, nil
+}
+
 func (u *User) DeleteTemporaryUser(uid umid.UMID) error {
 	u.mu.Lock()
 	defer u.mu.Unlock()
