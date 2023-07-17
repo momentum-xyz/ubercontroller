@@ -83,14 +83,14 @@ func (n *Node) apiObjectsCreateObject(c *gin.Context) {
 		}
 	}
 
-	object, ok := n.GetObjectFromAllObjects(parentID)
+	parent, ok := n.GetObjectFromAllObjects(parentID)
 	if !ok {
 		err := errors.Errorf("Node: apiObjectsCreateObject: failed to get parent object")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_parent", err, n.log)
 		return
 	}
 
-	parentObjectTypeOptions := object.GetObjectType().GetOptions()
+	parentObjectTypeOptions := parent.GetEffectiveOptions()
 	if parentObjectTypeOptions == nil {
 		err := errors.Errorf("Node: apiObjectsCreateObject: parent object type does not have options")
 		api.AbortRequest(c, http.StatusInternalServerError, "no_options_in_object_type", err, n.log)

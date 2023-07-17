@@ -43,7 +43,7 @@ func seedObjectTypes(node universe.Node) error {
 				DefaultTiles:   []any{},
 				FrameTemplates: map[string]any{},
 				AllowedChildren: []string{
-					"a41ee21e-6c56-41b3-81a9-1c86578b6b3c",
+					"a41ee21e-6c56-41b3-81a9-1c86578b6b3c", // World
 				},
 			},
 		},
