@@ -126,7 +126,10 @@ func (n *Node) AddStakeActivity(stakeEvent *harvester.StakeEvent) error {
 
 	aType := entry.ActivityTypeStake
 	if stakeEvent.ActivityType == "unstake" {
-		aType = entry.ActivityTypeUnstake
+		//aType = entry.ActivityTypeUnstake
+		// Ignore unstake events for now
+		// wait for design on FE
+		return nil
 	}
 	if err := a.SetType(&aType, true); err != nil {
 		return errors.WithMessage(err, "failed to set activity type")
