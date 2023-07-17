@@ -115,7 +115,7 @@ func (n *Node) AddStakeActivity(stakeEvent *harvester.StakeEvent) error {
 		return nil
 	}
 	aType := entry.ActivityTypeStake
-	if stakeEvent.ActivityType == "unstake" {
+	if stakeEvent.ActivityType == "unstake" { // TODO: change type of StakeEvent.ActivityType
 		//aType = entry.ActivityTypeUnstake
 		// Ignore unstake events for now
 		// wait for design on FE
