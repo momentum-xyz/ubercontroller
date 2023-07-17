@@ -4,12 +4,14 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"math/big"
+
+	"github.com/pkg/errors"
+
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
-	"github.com/pkg/errors"
-	"math/big"
 )
 
 func (u *User) OnMessage(buf []byte) error {
@@ -86,6 +88,9 @@ func (u *User) UpdateObjectTransform(msg *posbus.ObjectTransform) error {
 	object, ok := universe.GetNode().GetObjectFromAllObjects(msg.ID)
 	if !ok {
 		return errors.Errorf("object not found: %s", msg.ID)
+	}
+	if !object.IsLockedByUser(u) {
+		return errors.Errorf("object is not locked by user: %s", u.GetID())
 	}
 	return object.SetTransform(utils.GetPTR(msg.Transform), true)
 }
