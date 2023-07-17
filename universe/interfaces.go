@@ -268,6 +268,7 @@ type User interface {
 	LockSendBuffer()
 
 	IsTemporaryUser() (bool, error)
+	IsAdminOfObject() (bool, error)
 	SetOfflineTimer() (bool, error)
 	DeleteTemporaryUser(uid umid.UMID) error
 
