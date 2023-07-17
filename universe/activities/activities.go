@@ -44,10 +44,6 @@ func (a *Activities) CreateActivity(activityID umid.UMID) (universe.Activity, er
 	if err := activity.Initialize(a.ctx); err != nil {
 		return nil, errors.WithMessagef(err, "failed to initialize activity: %s", activityID)
 	}
-	if err := a.AddActivity(activity, false); err != nil {
-		return nil, errors.WithMessagef(err, "failed to add activity: %s", activityID)
-	}
-
 	return activity, nil
 }
 
@@ -159,7 +155,6 @@ func (a *Activities) AddActivity(activity universe.Activity, updateDB bool) erro
 			return errors.WithMessage(err, "failed to update db")
 		}
 	}
-
 	a.activities.Data[activity.GetID()] = activity
 
 	return nil
@@ -247,6 +242,9 @@ func (a *Activities) Load() error {
 		}
 		if err := activity.LoadFromEntry(assetEntry); err != nil {
 			return errors.WithMessagef(err, "failed to load activity from entry: %s", assetEntry.ActivityID)
+		}
+		if err := a.AddActivity(activity, false); err != nil {
+			return errors.WithMessagef(err, "failed to add activity from entry: %s", assetEntry.ActivityID)
 		}
 	}
 

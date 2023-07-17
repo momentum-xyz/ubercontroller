@@ -57,7 +57,7 @@ func (n *Node) apiNewsfeedOverview(c *gin.Context) {
 	for _, activity := range activities {
 		user, err := n.LoadUser(activity.GetUserID())
 		if err != nil {
-			err := errors.WithMessage(err, "Node: apiNewsfeedOverview: failed to load user")
+			err := errors.WithMessagef(err, "Node: apiNewsfeedOverview: %s: failed to load user", activity.GetID())
 			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_load_user", err, n.log)
 			return
 		}
@@ -83,7 +83,7 @@ func (n *Node) apiNewsfeedOverview(c *gin.Context) {
 			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_object", err, n.log)
 			return
 		}
-		
+
 		var worldAvatarHash string
 		attributeID := entry.NewAttributeID(universe.GetSystemPluginID(), universe.ReservedAttributes.Object.WorldAvatar.Name)
 		objectAttributeValue, ok := object.GetObjectAttributes().GetValue(attributeID)
