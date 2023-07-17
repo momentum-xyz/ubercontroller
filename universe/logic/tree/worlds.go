@@ -1,9 +1,10 @@
 package tree
 
 import (
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"math/rand"
 	"time"
+
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/pkg/errors"
 
