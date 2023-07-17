@@ -182,6 +182,9 @@ func (u *User) LockObject(lock *posbus.LockObject) error {
 	if err != nil {
 		return errors.WithMessage(err, "failed to check if user is admin of object")
 	}
+	if !isAdmin {
+		return errors.Errorf("user is not admin of object: %s", objectId)
+	}
 
 	result := object.LockUIObject(u, 1)
 	if result {
