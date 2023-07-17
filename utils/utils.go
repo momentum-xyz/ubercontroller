@@ -194,3 +194,12 @@ func SEQtoUMID(s uint64) umid.UMID {
 	}
 	return id
 }
+
+func Contains[T comparable](s []T, e T) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}

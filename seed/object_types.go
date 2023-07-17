@@ -42,8 +42,8 @@ func seedObjectTypes(node universe.Node) error {
 				Visible:        utils.GetPTR(entry.UI2DObjectVisibleType),
 				DefaultTiles:   []any{},
 				FrameTemplates: map[string]any{},
-				AllowedChildren: []umid.UMID{
-					umid.MustParse("a41ee21e-6c56-41b3-81a9-1c86578b6b3c"),
+				AllowedChildren: []string{
+					"a41ee21e-6c56-41b3-81a9-1c86578b6b3c",
 				},
 			},
 		},
@@ -67,7 +67,7 @@ func seedObjectTypes(node universe.Node) error {
 					},
 				},
 				FrameTemplates:  map[string]any{},
-				AllowedChildren: []umid.UMID{},
+				AllowedChildren: []string{},
 			},
 		},
 		{
@@ -82,9 +82,9 @@ func seedObjectTypes(node universe.Node) error {
 				Visible:        utils.GetPTR(entry.AllObjectVisibleType),
 				DefaultTiles:   []any{},
 				FrameTemplates: map[string]any{},
-				AllowedChildren: []umid.UMID{
-					umid.MustParse("4ed3a5bb-53f8-4511-941b-079029111111"), // Custom claimable
-					umid.MustParse("4ed3a5bb-53f8-4511-941b-07902982c31c"), // Custom objects
+				AllowedChildren: []string{
+					"4ed3a5bb-53f8-4511-941b-079029111111", // Custom claimable
+					"4ed3a5bb-53f8-4511-941b-07902982c31c", // Custom objects
 				},
 			},
 		},
@@ -111,7 +111,7 @@ func seedObjectTypes(node universe.Node) error {
 				Visible:         utils.GetPTR(entry.InvisibleObjectVisibleType),
 				DefaultTiles:    []any{},
 				FrameTemplates:  map[string]any{},
-				AllowedChildren: []umid.UMID{},
+				AllowedChildren: []string{},
 			},
 		},
 		{
@@ -126,7 +126,7 @@ func seedObjectTypes(node universe.Node) error {
 				Visible:         utils.GetPTR(entry.AllObjectVisibleType),
 				DefaultTiles:    []any{},
 				FrameTemplates:  map[string]any{},
-				AllowedChildren: []umid.UMID{},
+				AllowedChildren: []string{},
 			},
 		},
 		{
@@ -141,7 +141,7 @@ func seedObjectTypes(node universe.Node) error {
 				Visible:         utils.GetPTR(entry.InvisibleObjectVisibleType),
 				DefaultTiles:    []any{},
 				FrameTemplates:  map[string]any{},
-				AllowedChildren: []umid.UMID{},
+				AllowedChildren: []string{},
 			},
 		},
 	}
