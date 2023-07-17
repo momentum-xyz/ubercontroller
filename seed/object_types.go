@@ -3,12 +3,13 @@ package seed
 import (
 	"fmt"
 
+	"github.com/pkg/errors"
+
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
-	"github.com/pkg/errors"
 )
 
 func seedObjectTypes(node universe.Node) error {
@@ -37,11 +38,13 @@ func seedObjectTypes(node universe.Node) error {
 						miroPluginID,
 					},
 				},
-				Private:           utils.GetPTR(false),
-				Visible:           utils.GetPTR(entry.UI2DObjectVisibleType),
-				DefaultTiles:      []any{},
-				FrameTemplates:    map[string]any{},
-				AllowedSubObjects: []umid.UMID{},
+				Private:        utils.GetPTR(false),
+				Visible:        utils.GetPTR(entry.UI2DObjectVisibleType),
+				DefaultTiles:   []any{},
+				FrameTemplates: map[string]any{},
+				AllowedChildren: []umid.UMID{
+					umid.MustParse("a41ee21e-6c56-41b3-81a9-1c86578b6b3c"),
+				},
 			},
 		},
 		{
@@ -63,8 +66,8 @@ func seedObjectTypes(node universe.Node) error {
 						},
 					},
 				},
-				FrameTemplates:    map[string]any{},
-				AllowedSubObjects: []umid.UMID{},
+				FrameTemplates:  map[string]any{},
+				AllowedChildren: []umid.UMID{},
 			},
 		},
 		{
@@ -75,11 +78,14 @@ func seedObjectTypes(node universe.Node) error {
 			categoryName:   "Worlds",
 			description:    utils.GetPTR("World Type"),
 			options: &entry.ObjectOptions{
-				Private:           utils.GetPTR(false),
-				Visible:           utils.GetPTR(entry.AllObjectVisibleType),
-				DefaultTiles:      []any{},
-				FrameTemplates:    map[string]any{},
-				AllowedSubObjects: []umid.UMID{},
+				Private:        utils.GetPTR(false),
+				Visible:        utils.GetPTR(entry.AllObjectVisibleType),
+				DefaultTiles:   []any{},
+				FrameTemplates: map[string]any{},
+				AllowedChildren: []umid.UMID{
+					umid.MustParse("4ed3a5bb-53f8-4511-941b-079029111111"), // Custom claimable
+					umid.MustParse("4ed3a5bb-53f8-4511-941b-07902982c31c"), // Custom objects
+				},
 			},
 		},
 		{
@@ -101,11 +107,11 @@ func seedObjectTypes(node universe.Node) error {
 			categoryName:   "Service Spaces",
 			description:    utils.GetPTR(""),
 			options: &entry.ObjectOptions{
-				Private:           utils.GetPTR(false),
-				Visible:           utils.GetPTR(entry.InvisibleObjectVisibleType),
-				DefaultTiles:      []any{},
-				FrameTemplates:    map[string]any{},
-				AllowedSubObjects: []umid.UMID{},
+				Private:         utils.GetPTR(false),
+				Visible:         utils.GetPTR(entry.InvisibleObjectVisibleType),
+				DefaultTiles:    []any{},
+				FrameTemplates:  map[string]any{},
+				AllowedChildren: []umid.UMID{},
 			},
 		},
 		{
@@ -116,11 +122,11 @@ func seedObjectTypes(node universe.Node) error {
 			categoryName:   "Generic Spaces",
 			description:    utils.GetPTR(""),
 			options: &entry.ObjectOptions{
-				Private:           utils.GetPTR(false),
-				Visible:           utils.GetPTR(entry.AllObjectVisibleType),
-				DefaultTiles:      []any{},
-				FrameTemplates:    map[string]any{},
-				AllowedSubObjects: []umid.UMID{},
+				Private:         utils.GetPTR(false),
+				Visible:         utils.GetPTR(entry.AllObjectVisibleType),
+				DefaultTiles:    []any{},
+				FrameTemplates:  map[string]any{},
+				AllowedChildren: []umid.UMID{},
 			},
 		},
 		{
@@ -131,11 +137,11 @@ func seedObjectTypes(node universe.Node) error {
 			categoryName:   "Morgues",
 			description:    utils.GetPTR("morgue"),
 			options: &entry.ObjectOptions{
-				Private:           utils.GetPTR(false),
-				Visible:           utils.GetPTR(entry.InvisibleObjectVisibleType),
-				DefaultTiles:      []any{},
-				FrameTemplates:    map[string]any{},
-				AllowedSubObjects: []umid.UMID{},
+				Private:         utils.GetPTR(false),
+				Visible:         utils.GetPTR(entry.InvisibleObjectVisibleType),
+				DefaultTiles:    []any{},
+				FrameTemplates:  map[string]any{},
+				AllowedChildren: []umid.UMID{},
 			},
 		},
 	}

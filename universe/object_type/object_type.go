@@ -38,11 +38,11 @@ func NewObjectType(id umid.UMID, db database.DB) *ObjectType {
 		id: id,
 		db: db,
 		options: &entry.ObjectOptions{
-			AllowedSubObjects: []umid.UMID{},
-			Minimap:           utils.GetPTR(true),
-			Visible:           utils.GetPTR(entry.AllObjectVisibleType),
-			Editable:          utils.GetPTR(true),
-			Private:           utils.GetPTR(false),
+			AllowedChildren: []umid.UMID{},
+			Minimap:         utils.GetPTR(true),
+			Visible:         utils.GetPTR(entry.AllObjectVisibleType),
+			Editable:        utils.GetPTR(true),
+			Private:         utils.GetPTR(false),
 		},
 	}
 }

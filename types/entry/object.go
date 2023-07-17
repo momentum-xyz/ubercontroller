@@ -30,19 +30,19 @@ type Object struct {
 }
 
 type ObjectOptions struct {
-	Asset2dOptions    any                                 `db:"asset_2d_options" json:"asset_2d_options,omitempty"`
-	Asset3dOptions    any                                 `db:"asset_3d_options" json:"asset_3d_options,omitempty"`
-	FrameTemplates    map[string]any                      `db:"frame_templates" json:"frame_templates,omitempty"`
-	ChildPlacements   map[umid.UMID]*ObjectChildPlacement `db:"child_placement" json:"child_placement,omitempty"`
-	AllowedSubObjects []umid.UMID                         `db:"allowed_subobjects" json:"allowed_subobjects,omitempty"`
-	DefaultTiles      []any                               `db:"default_tiles" json:"default_tiles,omitempty"`
-	InfoUIID          *umid.UMID                          `db:"infoui_id" json:"infoui_id,omitempty"`
-	Minimap           *bool                               `db:"minimap" json:"minimap,omitempty"`
-	Visible           *ObjectVisibleType                  `db:"visible" json:"visible,omitempty"`
-	Editable          *bool                               `db:"editable" json:"editable,omitempty"`
-	Private           *bool                               `db:"private" json:"private,omitempty"`
-	DashboardPlugins  []string                            `db:"dashboard_plugins" json:"dashboard_plugins,omitempty"`
-	Subs              map[string]any                      `db:"subs" json:"subs"`
+	Asset2dOptions   any                                 `db:"asset_2d_options" json:"asset_2d_options,omitempty"`
+	Asset3dOptions   any                                 `db:"asset_3d_options" json:"asset_3d_options,omitempty"`
+	FrameTemplates   map[string]any                      `db:"frame_templates" json:"frame_templates,omitempty"`
+	ChildPlacements  map[umid.UMID]*ObjectChildPlacement `db:"child_placement" json:"child_placement,omitempty"`
+	AllowedChildren  []umid.UMID                         `db:"allowed_children" json:"allowed_children,omitempty"`
+	DefaultTiles     []any                               `db:"default_tiles" json:"default_tiles,omitempty"`
+	InfoUIID         *umid.UMID                          `db:"infoui_id" json:"infoui_id,omitempty"`
+	Minimap          *bool                               `db:"minimap" json:"minimap,omitempty"`
+	Visible          *ObjectVisibleType                  `db:"visible" json:"visible,omitempty"`
+	Editable         *bool                               `db:"editable" json:"editable,omitempty"`
+	Private          *bool                               `db:"private" json:"private,omitempty"`
+	DashboardPlugins []string                            `db:"dashboard_plugins" json:"dashboard_plugins,omitempty"`
+	Subs             map[string]any                      `db:"subs" json:"subs"`
 }
 
 type ObjectChildPlacement struct {
