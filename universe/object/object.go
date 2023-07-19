@@ -732,3 +732,7 @@ func (o *Object) GetCreatedAt() time.Time {
 func (o *Object) GetUpdatedAt() time.Time {
 	return o.updatedAt
 }
+
+func (o *Object) IsLockedByUser(user universe.User) bool {
+	return o.lockedBy.Load() == user.GetID()
+}
