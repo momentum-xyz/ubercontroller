@@ -463,6 +463,11 @@ func seedAttributeType(ctx context.Context, node universe.Node) error {
 			attributeName: "object_effect",
 			description:   "Visual 3D effect for object",
 			options: &entry.AttributeOptions{
+				"cloneable": map[string]any{
+					"use_default": map[string]any{
+						"value": "transparent",
+					},
+				},
 				"render_auto": map[string]any{
 					"slot_type":    "string",
 					"content_type": "string",

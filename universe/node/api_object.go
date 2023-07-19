@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
@@ -358,6 +359,103 @@ func (n *Node) apiUpdateObject(c *gin.Context) {
 	}
 
 	// TODO: output full object data
+	type Out struct {
+		ObjectID string `json:"object_id"`
+	}
+	out := Out{
+		ObjectID: objectID.String(),
+	}
+
+	c.JSON(http.StatusOK, out)
+}
+
+// @Summary Clones an object by UMID
+// @Description Clones an object by UMID, 're-parenting' not supported, returns cloned object UMID.
+// @Tags objects
+// @Accept json
+// @Produce json
+// @Param object_id path string true "Object UMID"
+// @Param body body node.apiCloneObject.InBody true "body params"
+// @Success 200 {object} node.apiCloneObject.Out
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/objects/{object_id}/clone [post]
+func (n *Node) apiCloneObject(c *gin.Context) {
+	objectID, err := umid.Parse(c.Param("objectID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiCloneObject: failed to parse object umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
+		return
+	}
+
+	object, ok := n.GetObjectFromAllObjects(objectID)
+	if !ok {
+		err := errors.Errorf("Node: apiCloneObject: object not found: %s", objectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
+		return
+	}
+
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiCloneObject: failed to get user umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
+		return
+	}
+
+	parentID := object.GetParent().GetID()
+	transform, err := tree.CalcObjectSpawnPosition(parentID, userID)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiCloneObject: failed to calc object spawn position")
+		api.AbortRequest(c, http.StatusBadRequest, "calc_spawn_position_failed", err, n.log)
+		return
+	}
+
+	objectName := object.GetName()
+	objectOwnerID := object.GetOwnerID()
+	asset2dID := object.GetAsset2D().GetID()
+	asset3dID := object.GetAsset3D().GetID()
+
+	objectTemplate := tree.ObjectTemplate{
+		ObjectName:   &objectName,
+		ObjectTypeID: object.GetObjectType().GetID(),
+		ParentID:     parentID,
+		OwnerID:      &objectOwnerID,
+		Asset2dID:    &asset2dID,
+		Asset3dID:    &asset3dID,
+		Transform:    transform,
+		Options:      object.GetOptions(),
+	}
+
+	clonedObjectID, err := tree.AddObjectFromTemplate(&objectTemplate, true)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiCloneObject: failed to clone object")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_clone", err, n.log)
+		return
+	}
+
+	var cloneableValue map[string]any
+	objectAttributes := object.GetObjectAttributes().GetAll()
+	for attributeID := range objectAttributes {
+		effectiveOptions, _ := object.GetObjectAttributes().GetEffectiveOptions(attributeID)
+		if effectiveOptions != nil {
+			cloneable := utils.GetFromAnyMap(*effectiveOptions, "cloneable", map[string]any(nil))
+			if cloneable != nil {
+				defaultValue := utils.GetFromAnyMap(*effectiveOptions, "use_default", map[string]any(nil))
+				if defaultValue != nil {
+					cloneableValue = defaultValue
+				}
+			}
+		}
+	}
+
+	clonedObject, ok := n.GetObjectFromAllObjects(clonedObjectID)
+	if !ok {
+		err := errors.Errorf("Node: apiCloneObject: object not found: %s", clonedObjectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
+		return
+	}
+
 	type Out struct {
 		ObjectID string `json:"object_id"`
 	}

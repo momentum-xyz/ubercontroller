@@ -140,6 +140,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 			{
 				object.POST("/claim-and-customise", n.apiClaimAndCustomise)
 				object.POST("/unclaim-and-clear-customisation", n.apiUnclaimAndClearCustomisation)
+
 				objectAdmin := object.Group("", middleware.AuthorizeAdmin(n.log))
 				{
 					objectAdmin.POST("/attributes/publicize", n.apiSetObjectAttributesPublic)
@@ -149,6 +150,8 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 					objectAdmin.DELETE("", n.apiRemoveObject)
 					objectAdmin.PATCH("", n.apiUpdateObject)
+
+					objectAdmin.POST("/clone", n.apiCloneObject)
 				}
 
 				object.POST("/attributes", n.apiSetObjectAttributesValue)
