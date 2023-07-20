@@ -375,7 +375,6 @@ func (n *Node) apiUpdateObject(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object UMID"
-// @Param body body node.apiCloneObject.InBody true "body params"
 // @Success 200 {object} node.apiCloneObject.Out
 // @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
