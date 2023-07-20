@@ -411,18 +411,27 @@ func (n *Node) apiCloneObject(c *gin.Context) {
 		return
 	}
 
-	objectName := object.GetName()
-	objectOwnerID := object.GetOwnerID()
-	asset2dID := object.GetAsset2D().GetID()
-	asset3dID := object.GetAsset3D().GetID()
+	var asset2dID *umid.UMID
+	if object.GetAsset2D() != nil {
+		asset2dID = utils.GetPTR(object.GetAsset2D().GetID())
+	} else {
+		asset2dID = nil
+	}
+
+	var asset3dID *umid.UMID
+	if object.GetAsset3D() != nil {
+		asset3dID = utils.GetPTR(object.GetAsset3D().GetID())
+	} else {
+		asset3dID = nil
+	}
 
 	objectTemplate := tree.ObjectTemplate{
-		ObjectName:   &objectName,
+		ObjectName:   utils.GetPTR(object.GetName()),
 		ObjectTypeID: object.GetObjectType().GetID(),
 		ParentID:     parentID,
-		OwnerID:      &objectOwnerID,
-		Asset2dID:    &asset2dID,
-		Asset3dID:    &asset3dID,
+		OwnerID:      utils.GetPTR(object.GetOwnerID()),
+		Asset2dID:    asset2dID,
+		Asset3dID:    asset3dID,
 		Transform:    transform,
 		Options:      object.GetOptions(),
 	}
@@ -446,11 +455,12 @@ func (n *Node) apiCloneObject(c *gin.Context) {
 		if effectiveOptions != nil {
 			cloneable := utils.GetFromAnyMap(*effectiveOptions, "cloneable", map[string]any(nil))
 			if cloneable != nil {
-				defaultValue := utils.GetFromAnyMap(*effectiveOptions, "use_default", entry.AttributeValue(nil))
+				defaultValue := utils.GetFromAnyMap(cloneable, "use_default", map[string]any(nil))
 				if defaultValue != nil {
+					attributeValue := entry.AttributeValue(defaultValue)
 					cloneableObjectAttribute := CloneableObjectAttribute{
 						AttributeID: attributeID,
-						Value:       &defaultValue,
+						Value:       &attributeValue,
 					}
 
 					cloneableAttributes = append(cloneableAttributes, cloneableObjectAttribute)
