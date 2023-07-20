@@ -434,16 +434,26 @@ func (n *Node) apiCloneObject(c *gin.Context) {
 		return
 	}
 
-	var cloneableValue map[string]any
+	type CloneableObjectAttribute struct {
+		AttributeID entry.AttributeID
+		Value       *entry.AttributeValue
+	}
+
+	var cloneableAttributes []CloneableObjectAttribute
 	objectAttributes := object.GetObjectAttributes().GetAll()
 	for attributeID := range objectAttributes {
 		effectiveOptions, _ := object.GetObjectAttributes().GetEffectiveOptions(attributeID)
 		if effectiveOptions != nil {
 			cloneable := utils.GetFromAnyMap(*effectiveOptions, "cloneable", map[string]any(nil))
 			if cloneable != nil {
-				defaultValue := utils.GetFromAnyMap(*effectiveOptions, "use_default", map[string]any(nil))
+				defaultValue := utils.GetFromAnyMap(*effectiveOptions, "use_default", entry.AttributeValue(nil))
 				if defaultValue != nil {
-					cloneableValue = defaultValue
+					cloneableObjectAttribute := CloneableObjectAttribute{
+						AttributeID: attributeID,
+						Value:       &defaultValue,
+					}
+
+					cloneableAttributes = append(cloneableAttributes, cloneableObjectAttribute)
 				}
 			}
 		}
@@ -456,11 +466,35 @@ func (n *Node) apiCloneObject(c *gin.Context) {
 		return
 	}
 
+	for _, clAtr := range cloneableAttributes {
+		var attributeModifyFunc modify.Fn[entry.AttributePayload]
+		attributeModifyFunc = func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
+			if current == nil {
+				current = entry.NewAttributePayload(nil, nil)
+			}
+
+			if current.Value == nil {
+				current.Value = entry.NewAttributeValue()
+			}
+
+			current.Value = clAtr.Value
+
+			return current, nil
+		}
+
+		_, err = clonedObject.GetObjectAttributes().Upsert(clAtr.AttributeID, attributeModifyFunc, true)
+		if err != nil {
+			err = errors.WithMessage(err, "Node: apiCloneObject: failed to upsert object attribute")
+			api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+			return
+		}
+	}
+
 	type Out struct {
 		ObjectID string `json:"object_id"`
 	}
 	out := Out{
-		ObjectID: objectID.String(),
+		ObjectID: clonedObject.GetID().String(),
 	}
 
 	c.JSON(http.StatusOK, out)
