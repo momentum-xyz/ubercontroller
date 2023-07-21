@@ -208,7 +208,7 @@ func (u *User) UnlockObject(lock *posbus.UnlockObject) error {
 
 	if result {
 		return u.GetWorld().Send(
-			posbus.WSMessage(&posbus.LockObjectResponse{ID: objectId, Result: 1, LockOwner: u.GetID()}),
+			posbus.WSMessage(&posbus.LockObjectResponse{ID: objectId, Result: 1, LockOwner: umid.Nil}),
 			true,
 		)
 	}
