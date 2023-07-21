@@ -230,6 +230,7 @@ type Object interface {
 	SendAllAutoAttributes(sendFn func(msg *websocket.PreparedMessage) error, recursive bool)
 
 	LockUIObject(user User, state uint32) bool
+	GetLockUserID() umid.UMID
 	IsLockedByUser(user User) bool
 
 	GetCreatedAt() time.Time

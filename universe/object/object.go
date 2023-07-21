@@ -725,14 +725,18 @@ func (o *Object) LockUIObject(user universe.User, state uint32) bool {
 	}
 }
 
+func (o *Object) IsLockedByUser(user universe.User) bool {
+	return o.lockedBy.Load() == user.GetID()
+}
+
+func (o *Object) GetLockUserID() umid.UMID {
+	return o.lockedBy.Load().(umid.UMID)
+}
+
 func (o *Object) GetCreatedAt() time.Time {
 	return o.createdAt
 }
 
 func (o *Object) GetUpdatedAt() time.Time {
 	return o.updatedAt
-}
-
-func (o *Object) IsLockedByUser(user universe.User) bool {
-	return o.lockedBy.Load() == user.GetID()
 }

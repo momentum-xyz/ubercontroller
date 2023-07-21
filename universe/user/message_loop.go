@@ -189,11 +189,12 @@ func (u *User) LockObject(lock *posbus.LockObject) error {
 	result := object.LockUIObject(u, 1)
 	if result {
 		return u.GetWorld().Send(
-			posbus.WSMessage(&posbus.LockObjectResponse{ID: objectId, State: 1, LockOwner: u.GetID()}),
+			posbus.WSMessage(&posbus.LockObjectResponse{ID: objectId, Result: 1, LockOwner: u.GetID()}),
 			true,
 		)
 	}
-	return u.Send(posbus.WSMessage(&posbus.LockObjectResponse{ID: objectId, State: 0, LockOwner: u.GetID()}))
+	lockOwner := object.GetLockUserID()
+	return u.Send(posbus.WSMessage(&posbus.LockObjectResponse{ID: objectId, Result: 0, LockOwner: lockOwner}))
 }
 
 func (u *User) UnlockObject(lock *posbus.UnlockObject) error {
@@ -207,11 +208,12 @@ func (u *User) UnlockObject(lock *posbus.UnlockObject) error {
 
 	if result {
 		return u.GetWorld().Send(
-			posbus.WSMessage(&posbus.LockObjectResponse{ID: objectId, State: 1, LockOwner: u.GetID()}),
+			posbus.WSMessage(&posbus.LockObjectResponse{ID: objectId, Result: 1, LockOwner: u.GetID()}),
 			true,
 		)
 	}
-	return u.Send(posbus.WSMessage(&posbus.LockObjectResponse{ID: objectId, State: 1, LockOwner: u.GetID()}))
+	lockOwner := object.GetLockUserID()
+	return u.Send(posbus.WSMessage(&posbus.LockObjectResponse{ID: objectId, Result: 0, LockOwner: lockOwner}))
 }
 
 func (u *User) HandleHighFive(m *posbus.HighFive) error {
