@@ -41,7 +41,7 @@ func (o *Object) renderAutoOnObjectAttributeChanged(
 			o.objectAttributes.object.Mu.Lock()
 			defer o.objectAttributes.object.Mu.Unlock()
 
-			(*value)["auto_render_hash"] = hash.Hash
+			(*value)[entry.RenderAutoHashFieldName] = hash.Hash
 
 			if err := o.db.GetObjectAttributesDB().UpdateObjectAttributeValue(
 				o.ctx, entry.NewObjectAttributeID(attributeID, o.GetID()), value,
@@ -104,7 +104,14 @@ func (o *Object) UpdateAutoTextureMap(
 
 		data = val
 	case entry.SlotTypeTexture:
-		valField := option.ValueField // set in GetOptionAutoOption
+		var valField string
+		if option.ContentType == "text" || option.ContentType == "video" {
+			// These are 'prerendered', see ~slot.PrerenderAutoValue
+			// and the TODO comment above where it is set.
+			valField = entry.RenderAutoHashFieldName
+		} else {
+			valField = option.ValueField
+		}
 		v, ok := (*value)[valField]
 		if !ok {
 			return nil

@@ -12,7 +12,7 @@ type UnlockObject struct {
 
 type LockObjectResponse struct {
 	ID        umid.UMID `json:"id"`
-	State     uint32    `json:"result"`
+	Result    uint32    `json:"result"`
 	LockOwner umid.UMID `json:"lock_owner"`
 }
 

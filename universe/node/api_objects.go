@@ -3,8 +3,6 @@ package node
 import (
 	"net/http"
 
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
-
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
@@ -13,6 +11,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/tree"
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 // @Summary Create object
@@ -82,6 +81,26 @@ func (n *Node) apiObjectsCreateObject(c *gin.Context) {
 			api.AbortRequest(c, http.StatusBadRequest, "calc_spawn_position_failed", err, n.log)
 			return
 		}
+	}
+
+	parent, ok := n.GetObjectFromAllObjects(parentID)
+	if !ok {
+		err := errors.Errorf("Node: apiObjectsCreateObject: failed to get parent object")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_parent", err, n.log)
+		return
+	}
+
+	parentObjectTypeOptions := parent.GetEffectiveOptions()
+	if parentObjectTypeOptions == nil {
+		err := errors.Errorf("Node: apiObjectsCreateObject: parent object type does not have options")
+		api.AbortRequest(c, http.StatusInternalServerError, "no_options_in_object_type", err, n.log)
+		return
+	}
+
+	if !utils.Contains(parentObjectTypeOptions.AllowedChildren, inBody.ObjectTypeID) {
+		err := errors.Errorf("Node: apiObjectsCreateObject: object type is not allowed")
+		api.AbortRequest(c, http.StatusBadRequest, "object_type_not_permitted", err, n.log)
+		return
 	}
 
 	objectTypeID, err := umid.Parse(inBody.ObjectTypeID)

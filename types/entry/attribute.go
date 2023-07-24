@@ -66,6 +66,8 @@ type RenderAutoAttributeOption struct {
 	TextRenderTemplate string          `db:"text_render_template" json:"text_render_template"`
 }
 
+const RenderAutoHashFieldName = "auto_render_hash"
+
 type PermissionsRoleType string
 
 const (

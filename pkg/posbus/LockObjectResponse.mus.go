@@ -15,12 +15,12 @@ func (v LockObjectResponse) MarshalMUS(buf []byte) int {
 		i += si
 	}
 	{
-		for v.State >= 0x80 {
-			buf[i] = byte(v.State) | 0x80
-			v.State >>= 7
+		for v.Result >= 0x80 {
+			buf[i] = byte(v.Result) | 0x80
+			v.Result >>= 7
 			i++
 		}
-		buf[i] = byte(v.State)
+		buf[i] = byte(v.Result)
 		i++
 	}
 	{
@@ -57,12 +57,12 @@ func (v *LockObjectResponse) UnmarshalMUS(buf []byte) (int, error) {
 				return i, muserrs.ErrOverflow
 			}
 			if b < 0x80 {
-				v.State = v.State | uint32(b)<<shift
+				v.Result = v.Result | uint32(b)<<shift
 				done = true
 				i += l + 1
 				break
 			}
-			v.State = v.State | uint32(b&0x7F)<<shift
+			v.Result = v.Result | uint32(b&0x7F)<<shift
 			shift += 7
 		}
 		if !done {
@@ -70,7 +70,7 @@ func (v *LockObjectResponse) UnmarshalMUS(buf []byte) (int, error) {
 		}
 	}
 	if err != nil {
-		return i, muserrs.NewFieldError("State", err)
+		return i, muserrs.NewFieldError("Result", err)
 	}
 	{
 		var sv umid.UMID
@@ -95,8 +95,8 @@ func (v LockObjectResponse) SizeMUS() int {
 		size += ss
 	}
 	{
-		for v.State >= 0x80 {
-			v.State >>= 7
+		for v.Result >= 0x80 {
+			v.Result >>= 7
 			size++
 		}
 		size++

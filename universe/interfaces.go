@@ -230,6 +230,8 @@ type Object interface {
 	SendAllAutoAttributes(sendFn func(msg *websocket.PreparedMessage) error, recursive bool)
 
 	LockUIObject(user User, state uint32) bool
+	GetLockUserID() umid.UMID
+	IsLockedByUser(user User) bool
 
 	GetCreatedAt() time.Time
 	GetUpdatedAt() time.Time
@@ -267,6 +269,7 @@ type User interface {
 	LockSendBuffer()
 
 	IsTemporaryUser() (bool, error)
+	IsAdminOfObject(objectID umid.UMID) (bool, error)
 	SetOfflineTimer() (bool, error)
 	DeleteTemporaryUser(uid umid.UMID) error
 

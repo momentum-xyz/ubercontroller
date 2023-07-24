@@ -4,12 +4,14 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"math/big"
+
+	"github.com/pkg/errors"
+
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
-	"github.com/pkg/errors"
-	"math/big"
 )
 
 func (u *User) OnMessage(buf []byte) error {
@@ -86,6 +88,9 @@ func (u *User) UpdateObjectTransform(msg *posbus.ObjectTransform) error {
 	object, ok := universe.GetNode().GetObjectFromAllObjects(msg.ID)
 	if !ok {
 		return errors.Errorf("object not found: %s", msg.ID)
+	}
+	if !object.IsLockedByUser(u) {
+		return errors.Errorf("object is not locked by user: %s", u.GetID())
 	}
 	return object.SetTransform(utils.GetPTR(msg.Transform), true)
 }
@@ -173,14 +178,23 @@ func (u *User) LockObject(lock *posbus.LockObject) error {
 		return errors.Errorf("object not found: %s", objectId)
 	}
 
+	isAdmin, err := u.IsAdminOfObject(objectId)
+	if err != nil {
+		return errors.WithMessage(err, "failed to check if user is admin of object")
+	}
+	if !isAdmin {
+		return errors.Errorf("user is not admin of object: %s", objectId)
+	}
+
 	result := object.LockUIObject(u, 1)
 	if result {
 		return u.GetWorld().Send(
-			posbus.WSMessage(&posbus.LockObjectResponse{ID: objectId, State: 1, LockOwner: u.GetID()}),
+			posbus.WSMessage(&posbus.LockObjectResponse{ID: objectId, Result: 1, LockOwner: u.GetID()}),
 			true,
 		)
 	}
-	return u.Send(posbus.WSMessage(&posbus.LockObjectResponse{ID: objectId, State: 0, LockOwner: u.GetID()}))
+	lockOwner := object.GetLockUserID()
+	return u.Send(posbus.WSMessage(&posbus.LockObjectResponse{ID: objectId, Result: 0, LockOwner: lockOwner}))
 }
 
 func (u *User) UnlockObject(lock *posbus.UnlockObject) error {
@@ -194,11 +208,12 @@ func (u *User) UnlockObject(lock *posbus.UnlockObject) error {
 
 	if result {
 		return u.GetWorld().Send(
-			posbus.WSMessage(&posbus.LockObjectResponse{ID: objectId, State: 1, LockOwner: u.GetID()}),
+			posbus.WSMessage(&posbus.LockObjectResponse{ID: objectId, Result: 1, LockOwner: umid.Nil}),
 			true,
 		)
 	}
-	return u.Send(posbus.WSMessage(&posbus.LockObjectResponse{ID: objectId, State: 1, LockOwner: u.GetID()}))
+	lockOwner := object.GetLockUserID()
+	return u.Send(posbus.WSMessage(&posbus.LockObjectResponse{ID: objectId, Result: 0, LockOwner: lockOwner}))
 }
 
 func (u *User) HandleHighFive(m *posbus.HighFive) error {
