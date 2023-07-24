@@ -64,7 +64,7 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 	w.log.Infof("Setworld: %+v\n", user.GetID())
 	user.SetWorld(w)
 
-	initPos := cmath.TransformNoScale{Position: cmath.Vec3{X: 0, Y: 0, Z: 0}}
+	initPos := cmath.TransformNoScale{Position: cmath.Vec3{X: 50, Y: 50, Z: 150}}
 
 	val, ok := universe.GetNode().GetObjectUserAttributes().GetValue(
 		entry.ObjectUserAttributeID{
