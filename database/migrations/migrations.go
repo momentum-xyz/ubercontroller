@@ -5,6 +5,9 @@ import (
 	"database/sql"
 	"embed"
 	"fmt"
+	"io"
+	"io/fs"
+	"strings"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
@@ -20,6 +23,63 @@ import (
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/types"
 )
+
+type embedFS = embed.FS
+
+type EmbedFSWrapper struct {
+	embedFS
+}
+
+type CustomFile struct {
+	io.ReadCloser
+	stat fs.FileInfo
+}
+
+func (f CustomFile) Stat() (fs.FileInfo, error) {
+	return f.stat, nil
+}
+
+func (e EmbedFSWrapper) ReadFile(name string) ([]byte, error) {
+	fmt.Println(" EmbedFSWrapper ReadFile:" + name)
+	b, err := e.embedFS.ReadFile(name)
+	if err != nil {
+		return nil, err
+	}
+	s := strings.Replace(string(b), "{{BAD_BEGIN}}", "BEGIN", -1)
+	return ([]byte)(s), nil
+}
+
+func (e EmbedFSWrapper) Open(name string) (fs.File, error) {
+	fmt.Println(" EmbedFSWrapper Open:" + name)
+	f, err := e.embedFS.Open(name)
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := io.ReadAll(f)
+	if err != nil {
+		return nil, err
+	}
+	s := strings.Replace(string(b), "{{BAD_BEGIN}}", "BEGIN", -1)
+
+	r := io.NopCloser(strings.NewReader(s))
+
+	stat, err := f.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	customFile := CustomFile{
+		ReadCloser: r,
+		stat:       stat,
+	}
+
+	return customFile, nil
+}
+
+func NewEmbedFSWrapper(efs embed.FS) EmbedFSWrapper {
+	return EmbedFSWrapper{embedFS: efs}
+}
 
 //go:embed sql/*
 var migrationFS embed.FS
@@ -90,8 +150,9 @@ func MigrateDatabase(ctx interface {
 	}
 	defer db.Close()
 
+	wrappedMigrationFS := NewEmbedFSWrapper(migrationFS)
 	// get instance of migration data
-	data, err := iofs.New(migrationFS, "sql")
+	data, err := iofs.New(wrappedMigrationFS, "sql")
 	if err != nil {
 		return errors.WithMessage(err, "failed to get migration data")
 	}
