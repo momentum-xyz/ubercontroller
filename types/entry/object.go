@@ -33,6 +33,7 @@ type ObjectOptions struct {
 	Asset2dOptions   any                                 `db:"asset_2d_options" json:"asset_2d_options,omitempty"`
 	Asset3dOptions   any                                 `db:"asset_3d_options" json:"asset_3d_options,omitempty"`
 	FrameTemplates   map[string]any                      `db:"frame_templates" json:"frame_templates,omitempty"`
+	SpawnPoint       *cmath.TransformNoScale             `db:"spawn_point" json:"spawn_point,omitempty"`
 	ChildPlacements  map[umid.UMID]*ObjectChildPlacement `db:"child_placement" json:"child_placement,omitempty"`
 	AllowedChildren  []string                            `db:"allowed_children" json:"allowed_children,omitempty"`
 	DefaultTiles     []any                               `db:"default_tiles" json:"default_tiles,omitempty"`
