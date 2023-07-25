@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"regexp"
 	"strings"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -22,6 +23,7 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/types"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 type embedFS = embed.FS
@@ -31,8 +33,15 @@ type EmbedFSWrapper struct {
 }
 
 var constants = map[string]string{
-	"CORE_PLUGIN_ID": "f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0",
+	"CORE_PLUGIN_ID":             "f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0",
+	"NODE_SETTINGS_USER_ID_SALT": umid.New().String(),
+	"NODE_SETTINGS_ID":           umid.New().String(),
+	"JWT_KEY_SECRET":             umid.New().String(),
+	"JWT_KEY_SIGNATURE":          umid.New().String(),
+	"NODE_ID":                    umid.New().String(),
 }
+
+var constantRegexp = regexp.MustCompile(`\{\{[A-Z,_]*\}\}`)
 
 type CustomFile struct {
 	io.ReadCloser
@@ -65,10 +74,19 @@ func (e EmbedFSWrapper) Open(name string) (fs.File, error) {
 		return nil, err
 	}
 
-	var s string
+	s := string(b)
 
 	for key, value := range constants {
-		s = strings.Replace(string(b), key, value, -1)
+		s = strings.Replace(s, "{{"+key+"}}", value, -1)
+	}
+
+	unusedConstants := constantRegexp.FindStringSubmatch(s)
+	if len(unusedConstants) > 0 {
+		names := ""
+		for _, n := range unusedConstants {
+			names += n + ", "
+		}
+		return nil, errors.New("Some constants were not replaced:" + names)
 	}
 
 	r := io.NopCloser(strings.NewReader(s))

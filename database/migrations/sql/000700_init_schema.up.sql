@@ -9,30 +9,32 @@
 -- Name: object;
 --
 
-CREATE TABLE object (
-                               object_id uuid NOT NULL,
-                               object_type_id uuid NOT NULL,
-                               owner_id uuid NOT NULL,
-                               parent_id uuid NOT NULL,
-                               asset_2d_id uuid,
-                               asset_3d_id uuid,
-                               options jsonb,
-                               transform jsonb,
-                               updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-                               created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+CREATE TABLE object
+(
+    object_id      uuid                                                  NOT NULL,
+    object_type_id uuid                                                  NOT NULL,
+    owner_id       uuid                                                  NOT NULL,
+    parent_id      uuid                                                  NOT NULL,
+    asset_2d_id    uuid,
+    asset_3d_id    uuid,
+    options        jsonb,
+    transform      jsonb,
+    updated_at     timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    created_at     timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 --
 -- Name: activity;
 --
 
-CREATE TABLE activity (
-                                 activity_id uuid NOT NULL,
-                                 user_id uuid NOT NULL,
-                                 object_id uuid NOT NULL,
-                                 type character varying(255) NOT NULL,
-                                 data jsonb NOT NULL,
-                                 created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+CREATE TABLE activity
+(
+    activity_id uuid                                                  NOT NULL,
+    user_id     uuid                                                  NOT NULL,
+    object_id   uuid                                                  NOT NULL,
+    type        character varying(255)                                NOT NULL,
+    data        jsonb                                                 NOT NULL,
+    created_at  timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
@@ -40,12 +42,13 @@ CREATE TABLE activity (
 -- Name: asset_2d;
 --
 
-CREATE TABLE asset_2d (
-                                 asset_2d_id uuid NOT NULL,
-                                 meta jsonb DEFAULT '{}'::jsonb NOT NULL,
-                                 options jsonb DEFAULT '{}'::jsonb,
-                                 created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-                                 updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+CREATE TABLE asset_2d
+(
+    asset_2d_id uuid                                                  NOT NULL,
+    meta        jsonb                       DEFAULT '{}'::jsonb       NOT NULL,
+    options     jsonb                       DEFAULT '{}'::jsonb,
+    created_at  timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at  timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
@@ -53,12 +56,13 @@ CREATE TABLE asset_2d (
 -- Name: asset_3d;
 --
 
-CREATE TABLE asset_3d (
-                                 asset_3d_id uuid NOT NULL,
-                                 meta jsonb DEFAULT '{}'::jsonb NOT NULL,
-                                 options jsonb DEFAULT '{}'::jsonb,
-                                 created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-                                 updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+CREATE TABLE asset_3d
+(
+    asset_3d_id uuid                                                  NOT NULL,
+    meta        jsonb                       DEFAULT '{}'::jsonb       NOT NULL,
+    options     jsonb                       DEFAULT '{}'::jsonb,
+    created_at  timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at  timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
@@ -66,13 +70,14 @@ CREATE TABLE asset_3d (
 -- Name: asset_3d_user;
 --
 
-CREATE TABLE asset_3d_user (
-                                      asset_3d_id uuid NOT NULL,
-                                      user_id uuid NOT NULL,
-                                      meta jsonb NOT NULL,
-                                      is_private boolean DEFAULT true NOT NULL,
-                                      updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-                                      created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+CREATE TABLE asset_3d_user
+(
+    asset_3d_id uuid                                                  NOT NULL,
+    user_id     uuid                                                  NOT NULL,
+    meta        jsonb                                                 NOT NULL,
+    is_private  boolean                     DEFAULT true              NOT NULL,
+    updated_at  timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    created_at  timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
@@ -80,11 +85,12 @@ CREATE TABLE asset_3d_user (
 -- Name: attribute_type;
 --
 
-CREATE TABLE attribute_type (
-                                       plugin_id uuid NOT NULL,
-                                       attribute_name character varying(255) NOT NULL,
-                                       description text DEFAULT ''::text NOT NULL,
-                                       options jsonb
+CREATE TABLE attribute_type
+(
+    plugin_id      uuid                   NOT NULL,
+    attribute_name character varying(255) NOT NULL,
+    description    text DEFAULT ''::text  NOT NULL,
+    options        jsonb
 );
 
 
@@ -92,12 +98,13 @@ CREATE TABLE attribute_type (
 -- Name: balance;
 --
 
-CREATE TABLE balance (
-                                wallet_id bytea NOT NULL,
-                                contract_id bytea NOT NULL,
-                                blockchain_id uuid NOT NULL,
-                                balance numeric(78,0) NOT NULL,
-                                last_processed_block_number bigint NOT NULL
+CREATE TABLE balance
+(
+    wallet_id                   bytea          NOT NULL,
+    contract_id                 bytea          NOT NULL,
+    blockchain_id               uuid           NOT NULL,
+    balance                     numeric(78, 0) NOT NULL,
+    last_processed_block_number bigint         NOT NULL
 );
 
 
@@ -105,12 +112,13 @@ CREATE TABLE balance (
 -- Name: blockchain;
 --
 
-CREATE TABLE blockchain (
-                                   blockchain_id uuid NOT NULL,
-                                   last_processed_block_number bigint NOT NULL,
-                                   blockchain_name text NOT NULL,
-                                   rpc_url text NOT NULL,
-                                   updated_at timestamp without time zone NOT NULL
+CREATE TABLE blockchain
+(
+    blockchain_id               uuid                        NOT NULL,
+    last_processed_block_number bigint                      NOT NULL,
+    blockchain_name             text                        NOT NULL,
+    rpc_url                     text                        NOT NULL,
+    updated_at                  timestamp without time zone NOT NULL
 );
 
 
@@ -118,9 +126,10 @@ CREATE TABLE blockchain (
 -- Name: contract;
 --
 
-CREATE TABLE contract (
-                                 contract_id bytea NOT NULL,
-                                 name character varying(255)
+CREATE TABLE contract
+(
+    contract_id bytea NOT NULL,
+    name        character varying(255)
 );
 
 
@@ -128,13 +137,14 @@ CREATE TABLE contract (
 -- Name: nft;
 --
 
-CREATE TABLE nft (
-                            wallet_id bytea NOT NULL,
-                            blockchain_id uuid NOT NULL,
-                            object_id uuid NOT NULL,
-                            contract_id bytea NOT NULL,
-                            created_at timestamp without time zone,
-                            updated_at timestamp without time zone
+CREATE TABLE nft
+(
+    wallet_id     bytea NOT NULL,
+    blockchain_id uuid  NOT NULL,
+    object_id     uuid  NOT NULL,
+    contract_id   bytea NOT NULL,
+    created_at    timestamp without time zone,
+    updated_at    timestamp without time zone
 );
 
 
@@ -142,11 +152,12 @@ CREATE TABLE nft (
 -- Name: node_attribute;
 --
 
-CREATE TABLE node_attribute (
-                                       plugin_id uuid NOT NULL,
-                                       attribute_name character varying(255) NOT NULL,
-                                       value jsonb NOT NULL,
-                                       options jsonb
+CREATE TABLE node_attribute
+(
+    plugin_id      uuid                   NOT NULL,
+    attribute_name character varying(255) NOT NULL,
+    value          jsonb                  NOT NULL,
+    options        jsonb
 );
 
 
@@ -154,10 +165,11 @@ CREATE TABLE node_attribute (
 -- Name: object_activity;
 --
 
-CREATE TABLE object_activity (
-                                        object_id uuid NOT NULL,
-                                        activity_id uuid NOT NULL,
-                                        created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+CREATE TABLE object_activity
+(
+    object_id   uuid                                                  NOT NULL,
+    activity_id uuid                                                  NOT NULL,
+    created_at  timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
@@ -165,12 +177,13 @@ CREATE TABLE object_activity (
 -- Name: object_attribute;
 --
 
-CREATE TABLE object_attribute (
-                                         plugin_id uuid NOT NULL,
-                                         attribute_name character varying(255) NOT NULL,
-                                         object_id uuid NOT NULL,
-                                         value jsonb,
-                                         options jsonb
+CREATE TABLE object_attribute
+(
+    plugin_id      uuid                   NOT NULL,
+    attribute_name character varying(255) NOT NULL,
+    object_id      uuid                   NOT NULL,
+    value          jsonb,
+    options        jsonb
 );
 
 
@@ -178,16 +191,17 @@ CREATE TABLE object_attribute (
 -- Name: object_type;
 --
 
-CREATE TABLE object_type (
-                                    object_type_id uuid NOT NULL,
-                                    asset_2d_id uuid,
-                                    asset_3d_id uuid,
-                                    object_type_name character varying(255) NOT NULL,
-                                    category_name character varying(255) NOT NULL,
-                                    description text DEFAULT ''::text,
-                                    options jsonb NOT NULL,
-                                    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-                                    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+CREATE TABLE object_type
+(
+    object_type_id   uuid                                                  NOT NULL,
+    asset_2d_id      uuid,
+    asset_3d_id      uuid,
+    object_type_name character varying(255)                                NOT NULL,
+    category_name    character varying(255)                                NOT NULL,
+    description      text                        DEFAULT ''::text,
+    options          jsonb                                                 NOT NULL,
+    created_at       timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at       timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
@@ -195,13 +209,14 @@ CREATE TABLE object_type (
 -- Name: object_user_attribute;
 --
 
-CREATE TABLE object_user_attribute (
-                                              user_id uuid NOT NULL,
-                                              object_id uuid NOT NULL,
-                                              attribute_name character varying(255) NOT NULL,
-                                              plugin_id uuid NOT NULL,
-                                              value jsonb,
-                                              options jsonb
+CREATE TABLE object_user_attribute
+(
+    user_id        uuid                   NOT NULL,
+    object_id      uuid                   NOT NULL,
+    attribute_name character varying(255) NOT NULL,
+    plugin_id      uuid                   NOT NULL,
+    value          jsonb,
+    options        jsonb
 );
 
 
@@ -209,16 +224,17 @@ CREATE TABLE object_user_attribute (
 -- Name: pending_stake;
 --
 
-CREATE TABLE pending_stake (
-                                      transaction_id bytea NOT NULL,
-                                      object_id uuid NOT NULL,
-                                      wallet_id bytea NOT NULL,
-                                      blockchain_id uuid NOT NULL,
-                                      amount numeric(78,0) NOT NULL,
-                                      comment text NOT NULL,
-                                      kind integer NOT NULL,
-                                      updated_at timestamp without time zone NOT NULL,
-                                      created_at timestamp without time zone NOT NULL
+CREATE TABLE pending_stake
+(
+    transaction_id bytea                       NOT NULL,
+    object_id      uuid                        NOT NULL,
+    wallet_id      bytea                       NOT NULL,
+    blockchain_id  uuid                        NOT NULL,
+    amount         numeric(78, 0)              NOT NULL,
+    comment        text                        NOT NULL,
+    kind           integer                     NOT NULL,
+    updated_at     timestamp without time zone NOT NULL,
+    created_at     timestamp without time zone NOT NULL
 );
 
 
@@ -226,12 +242,13 @@ CREATE TABLE pending_stake (
 -- Name: plugin;
 --
 
-CREATE TABLE plugin (
-                               plugin_id uuid NOT NULL,
-                               meta jsonb DEFAULT '{}'::jsonb NOT NULL,
-                               options jsonb,
-                               created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-                               updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+CREATE TABLE plugin
+(
+    plugin_id  uuid                                                  NOT NULL,
+    meta       jsonb                       DEFAULT '{}'::jsonb       NOT NULL,
+    options    jsonb,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
@@ -239,15 +256,16 @@ CREATE TABLE plugin (
 -- Name: stake;
 --
 
-CREATE TABLE stake (
-                              wallet_id bytea NOT NULL,
-                              blockchain_id uuid NOT NULL,
-                              object_id uuid NOT NULL,
-                              amount numeric(78,0) NOT NULL,
-                              last_comment text NOT NULL,
-                              updated_at timestamp without time zone NOT NULL,
-                              created_at timestamp without time zone NOT NULL,
-                              kind integer NOT NULL
+CREATE TABLE stake
+(
+    wallet_id     bytea                       NOT NULL,
+    blockchain_id uuid                        NOT NULL,
+    object_id     uuid                        NOT NULL,
+    amount        numeric(78, 0)              NOT NULL,
+    last_comment  text                        NOT NULL,
+    updated_at    timestamp without time zone NOT NULL,
+    created_at    timestamp without time zone NOT NULL,
+    kind          integer                     NOT NULL
 );
 
 
@@ -255,13 +273,14 @@ CREATE TABLE stake (
 -- Name: user;
 --
 
-CREATE TABLE "user" (
-                               user_id uuid NOT NULL,
-                               user_type_id uuid NOT NULL,
-                               profile jsonb DEFAULT '{}'::jsonb NOT NULL,
-                               updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-                               created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-                               options jsonb
+CREATE TABLE "user"
+(
+    user_id      uuid                                                  NOT NULL,
+    user_type_id uuid                                                  NOT NULL,
+    profile      jsonb                       DEFAULT '{}'::jsonb       NOT NULL,
+    updated_at   timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    created_at   timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    options      jsonb
 );
 
 
@@ -269,10 +288,11 @@ CREATE TABLE "user" (
 -- Name: user_activity;
 --
 
-CREATE TABLE user_activity (
-                                      user_id uuid NOT NULL,
-                                      activity_id uuid NOT NULL,
-                                      created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+CREATE TABLE user_activity
+(
+    user_id     uuid                                                  NOT NULL,
+    activity_id uuid                                                  NOT NULL,
+    created_at  timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
@@ -280,12 +300,13 @@ CREATE TABLE user_activity (
 -- Name: user_attribute;
 --
 
-CREATE TABLE user_attribute (
-                                       user_id uuid NOT NULL,
-                                       plugin_id uuid NOT NULL,
-                                       attribute_name character varying(255) NOT NULL,
-                                       value jsonb NOT NULL,
-                                       options jsonb
+CREATE TABLE user_attribute
+(
+    user_id        uuid                   NOT NULL,
+    plugin_id      uuid                   NOT NULL,
+    attribute_name character varying(255) NOT NULL,
+    value          jsonb                  NOT NULL,
+    options        jsonb
 );
 
 
@@ -293,12 +314,13 @@ CREATE TABLE user_attribute (
 -- Name: user_membership;
 --
 
-CREATE TABLE user_membership (
-                                        member_of uuid NOT NULL,
-                                        user_id uuid NOT NULL,
-                                        value json,
-                                        created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-                                        update_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+CREATE TABLE user_membership
+(
+    member_of  uuid                                                  NOT NULL,
+    user_id    uuid                                                  NOT NULL,
+    value      json,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    update_at  timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
@@ -306,12 +328,13 @@ CREATE TABLE user_membership (
 -- Name: user_object;
 --
 
-CREATE TABLE user_object (
-                                    object_id uuid NOT NULL,
-                                    user_id uuid NOT NULL,
-                                    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-                                    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-                                    value jsonb
+CREATE TABLE user_object
+(
+    object_id  uuid                                                  NOT NULL,
+    user_id    uuid                                                  NOT NULL,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    value      jsonb
 );
 
 
@@ -319,11 +342,12 @@ CREATE TABLE user_object (
 -- Name: user_type;
 --
 
-CREATE TABLE user_type (
-                                  user_type_id uuid NOT NULL,
-                                  user_type_name character varying(255) NOT NULL,
-                                  description text NOT NULL,
-                                  options jsonb
+CREATE TABLE user_type
+(
+    user_type_id   uuid                   NOT NULL,
+    user_type_name character varying(255) NOT NULL,
+    description    text                   NOT NULL,
+    options        jsonb
 );
 
 
@@ -331,13 +355,14 @@ CREATE TABLE user_type (
 -- Name: user_user_attribute;
 --
 
-CREATE TABLE user_user_attribute (
-                                            plugin_id uuid NOT NULL,
-                                            attribute_name character varying(255) NOT NULL,
-                                            source_user_id uuid NOT NULL,
-                                            target_user_id uuid NOT NULL,
-                                            value jsonb NOT NULL,
-                                            options jsonb
+CREATE TABLE user_user_attribute
+(
+    plugin_id      uuid                   NOT NULL,
+    attribute_name character varying(255) NOT NULL,
+    source_user_id uuid                   NOT NULL,
+    target_user_id uuid                   NOT NULL,
+    value          jsonb                  NOT NULL,
+    options        jsonb
 );
 
 
@@ -345,9 +370,10 @@ CREATE TABLE user_user_attribute (
 -- Name: wallet;
 --
 
-CREATE TABLE wallet (
-                               wallet_id bytea NOT NULL,
-                               blockchain_id uuid NOT NULL
+CREATE TABLE wallet
+(
+    wallet_id     bytea NOT NULL,
+    blockchain_id uuid  NOT NULL
 );
 
 
@@ -809,7 +835,7 @@ CREATE INDEX ua_user_idx ON user_activity USING btree (user_id);
 --
 
 ALTER TABLE ONLY balance
-    ADD CONSTRAINT balance_blockchain_blockchain_id_fk FOREIGN KEY (blockchain_id) REFERENCES blockchain(blockchain_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT balance_blockchain_blockchain_id_fk FOREIGN KEY (blockchain_id) REFERENCES blockchain (blockchain_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -817,7 +843,7 @@ ALTER TABLE ONLY balance
 --
 
 ALTER TABLE ONLY balance
-    ADD CONSTRAINT balance_blockchain_id_wallet_id_fkey FOREIGN KEY (blockchain_id, wallet_id) REFERENCES wallet(blockchain_id, wallet_id);
+    ADD CONSTRAINT balance_blockchain_id_wallet_id_fkey FOREIGN KEY (blockchain_id, wallet_id) REFERENCES wallet (blockchain_id, wallet_id);
 
 
 --
@@ -825,7 +851,7 @@ ALTER TABLE ONLY balance
 --
 
 ALTER TABLE ONLY balance
-    ADD CONSTRAINT balance_contract_contract_id_fk FOREIGN KEY (contract_id) REFERENCES contract(contract_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT balance_contract_contract_id_fk FOREIGN KEY (contract_id) REFERENCES contract (contract_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -833,7 +859,7 @@ ALTER TABLE ONLY balance
 --
 
 ALTER TABLE ONLY attribute_type
-    ADD CONSTRAINT fk_1 FOREIGN KEY (plugin_id) REFERENCES plugin(plugin_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_1 FOREIGN KEY (plugin_id) REFERENCES plugin (plugin_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -841,7 +867,7 @@ ALTER TABLE ONLY attribute_type
 --
 
 ALTER TABLE ONLY object_user_attribute
-    ADD CONSTRAINT fk_10 FOREIGN KEY (plugin_id, attribute_name) REFERENCES attribute_type(plugin_id, attribute_name) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_10 FOREIGN KEY (plugin_id, attribute_name) REFERENCES attribute_type (plugin_id, attribute_name) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -849,7 +875,7 @@ ALTER TABLE ONLY object_user_attribute
 --
 
 ALTER TABLE ONLY object_user_attribute
-    ADD CONSTRAINT fk_11 FOREIGN KEY (object_id) REFERENCES object(object_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_11 FOREIGN KEY (object_id) REFERENCES object (object_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -857,7 +883,7 @@ ALTER TABLE ONLY object_user_attribute
 --
 
 ALTER TABLE ONLY user_attribute
-    ADD CONSTRAINT fk_12 FOREIGN KEY (user_id) REFERENCES "user"(user_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_12 FOREIGN KEY (user_id) REFERENCES "user" (user_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -865,7 +891,7 @@ ALTER TABLE ONLY user_attribute
 --
 
 ALTER TABLE ONLY user_attribute
-    ADD CONSTRAINT fk_13 FOREIGN KEY (plugin_id, attribute_name) REFERENCES attribute_type(plugin_id, attribute_name) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_13 FOREIGN KEY (plugin_id, attribute_name) REFERENCES attribute_type (plugin_id, attribute_name) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -873,7 +899,7 @@ ALTER TABLE ONLY user_attribute
 --
 
 ALTER TABLE ONLY "user"
-    ADD CONSTRAINT fk_14 FOREIGN KEY (user_type_id) REFERENCES user_type(user_type_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_14 FOREIGN KEY (user_type_id) REFERENCES user_type (user_type_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -881,7 +907,7 @@ ALTER TABLE ONLY "user"
 --
 
 ALTER TABLE ONLY user_membership
-    ADD CONSTRAINT fk_16 FOREIGN KEY (user_id) REFERENCES "user"(user_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_16 FOREIGN KEY (user_id) REFERENCES "user" (user_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -889,7 +915,7 @@ ALTER TABLE ONLY user_membership
 --
 
 ALTER TABLE ONLY user_user_attribute
-    ADD CONSTRAINT fk_19 FOREIGN KEY (plugin_id, attribute_name) REFERENCES attribute_type(plugin_id, attribute_name) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_19 FOREIGN KEY (plugin_id, attribute_name) REFERENCES attribute_type (plugin_id, attribute_name) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -897,7 +923,7 @@ ALTER TABLE ONLY user_user_attribute
 --
 
 ALTER TABLE ONLY node_attribute
-    ADD CONSTRAINT fk_2 FOREIGN KEY (plugin_id, attribute_name) REFERENCES attribute_type(plugin_id, attribute_name) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_2 FOREIGN KEY (plugin_id, attribute_name) REFERENCES attribute_type (plugin_id, attribute_name) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -905,7 +931,7 @@ ALTER TABLE ONLY node_attribute
 --
 
 ALTER TABLE ONLY user_user_attribute
-    ADD CONSTRAINT fk_20 FOREIGN KEY (source_user_id) REFERENCES "user"(user_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_20 FOREIGN KEY (source_user_id) REFERENCES "user" (user_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -913,7 +939,7 @@ ALTER TABLE ONLY user_user_attribute
 --
 
 ALTER TABLE ONLY user_user_attribute
-    ADD CONSTRAINT fk_21 FOREIGN KEY (target_user_id) REFERENCES "user"(user_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_21 FOREIGN KEY (target_user_id) REFERENCES "user" (user_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -921,7 +947,7 @@ ALTER TABLE ONLY user_user_attribute
 --
 
 ALTER TABLE ONLY user_membership
-    ADD CONSTRAINT fk_23 FOREIGN KEY (member_of) REFERENCES "user"(user_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_23 FOREIGN KEY (member_of) REFERENCES "user" (user_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -929,7 +955,7 @@ ALTER TABLE ONLY user_membership
 --
 
 ALTER TABLE ONLY user_object
-    ADD CONSTRAINT fk_23_1 FOREIGN KEY (user_id) REFERENCES "user"(user_id);
+    ADD CONSTRAINT fk_23_1 FOREIGN KEY (user_id) REFERENCES "user" (user_id);
 
 
 --
@@ -937,7 +963,7 @@ ALTER TABLE ONLY user_object
 --
 
 ALTER TABLE ONLY object_type
-    ADD CONSTRAINT fk_24 FOREIGN KEY (asset_3d_id) REFERENCES asset_3d(asset_3d_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_24 FOREIGN KEY (asset_3d_id) REFERENCES asset_3d (asset_3d_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -945,7 +971,7 @@ ALTER TABLE ONLY object_type
 --
 
 ALTER TABLE ONLY object_type
-    ADD CONSTRAINT fk_24_1 FOREIGN KEY (asset_2d_id) REFERENCES asset_2d(asset_2d_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_24_1 FOREIGN KEY (asset_2d_id) REFERENCES asset_2d (asset_2d_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -953,7 +979,7 @@ ALTER TABLE ONLY object_type
 --
 
 ALTER TABLE ONLY user_object
-    ADD CONSTRAINT fk_24_2 FOREIGN KEY (object_id) REFERENCES object(object_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_24_2 FOREIGN KEY (object_id) REFERENCES object (object_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -961,7 +987,7 @@ ALTER TABLE ONLY user_object
 --
 
 ALTER TABLE ONLY object
-    ADD CONSTRAINT fk_25 FOREIGN KEY (asset_2d_id) REFERENCES asset_2d(asset_2d_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_25 FOREIGN KEY (asset_2d_id) REFERENCES asset_2d (asset_2d_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -969,7 +995,7 @@ ALTER TABLE ONLY object
 --
 
 ALTER TABLE ONLY object
-    ADD CONSTRAINT fk_26 FOREIGN KEY (asset_3d_id) REFERENCES asset_3d(asset_3d_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_26 FOREIGN KEY (asset_3d_id) REFERENCES asset_3d (asset_3d_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -977,7 +1003,7 @@ ALTER TABLE ONLY object
 --
 
 ALTER TABLE ONLY object_attribute
-    ADD CONSTRAINT fk_3 FOREIGN KEY (plugin_id, attribute_name) REFERENCES attribute_type(plugin_id, attribute_name) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_3 FOREIGN KEY (plugin_id, attribute_name) REFERENCES attribute_type (plugin_id, attribute_name) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -985,7 +1011,7 @@ ALTER TABLE ONLY object_attribute
 --
 
 ALTER TABLE ONLY asset_3d_user
-    ADD CONSTRAINT fk_32 FOREIGN KEY (asset_3d_id) REFERENCES asset_3d(asset_3d_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_32 FOREIGN KEY (asset_3d_id) REFERENCES asset_3d (asset_3d_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -993,7 +1019,7 @@ ALTER TABLE ONLY asset_3d_user
 --
 
 ALTER TABLE ONLY asset_3d_user
-    ADD CONSTRAINT fk_33 FOREIGN KEY (user_id) REFERENCES "user"(user_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_33 FOREIGN KEY (user_id) REFERENCES "user" (user_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -1001,7 +1027,7 @@ ALTER TABLE ONLY asset_3d_user
 --
 
 ALTER TABLE ONLY object_attribute
-    ADD CONSTRAINT fk_4 FOREIGN KEY (object_id) REFERENCES object(object_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_4 FOREIGN KEY (object_id) REFERENCES object (object_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -1009,7 +1035,7 @@ ALTER TABLE ONLY object_attribute
 --
 
 ALTER TABLE ONLY object
-    ADD CONSTRAINT fk_6 FOREIGN KEY (object_type_id) REFERENCES object_type(object_type_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_6 FOREIGN KEY (object_type_id) REFERENCES object_type (object_type_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -1017,7 +1043,7 @@ ALTER TABLE ONLY object
 --
 
 ALTER TABLE ONLY object
-    ADD CONSTRAINT fk_7 FOREIGN KEY (parent_id) REFERENCES object(object_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_7 FOREIGN KEY (parent_id) REFERENCES object (object_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -1025,7 +1051,7 @@ ALTER TABLE ONLY object
 --
 
 ALTER TABLE ONLY object
-    ADD CONSTRAINT fk_8a FOREIGN KEY (owner_id) REFERENCES "user"(user_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_8a FOREIGN KEY (owner_id) REFERENCES "user" (user_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -1033,7 +1059,7 @@ ALTER TABLE ONLY object
 --
 
 ALTER TABLE ONLY activity
-    ADD CONSTRAINT fk_activity_object FOREIGN KEY (object_id) REFERENCES object(object_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_activity_object FOREIGN KEY (object_id) REFERENCES object (object_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -1041,7 +1067,7 @@ ALTER TABLE ONLY activity
 --
 
 ALTER TABLE ONLY activity
-    ADD CONSTRAINT fk_activity_user FOREIGN KEY (user_id) REFERENCES "user"(user_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_activity_user FOREIGN KEY (user_id) REFERENCES "user" (user_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -1049,7 +1075,7 @@ ALTER TABLE ONLY activity
 --
 
 ALTER TABLE ONLY object_activity
-    ADD CONSTRAINT fk_oa_activity FOREIGN KEY (activity_id) REFERENCES activity(activity_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_oa_activity FOREIGN KEY (activity_id) REFERENCES activity (activity_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -1057,7 +1083,7 @@ ALTER TABLE ONLY object_activity
 --
 
 ALTER TABLE ONLY object_activity
-    ADD CONSTRAINT fk_oa_object FOREIGN KEY (object_id) REFERENCES object(object_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_oa_object FOREIGN KEY (object_id) REFERENCES object (object_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -1065,7 +1091,7 @@ ALTER TABLE ONLY object_activity
 --
 
 ALTER TABLE ONLY object_user_attribute
-    ADD CONSTRAINT fk_oua_user FOREIGN KEY (user_id) REFERENCES "user"(user_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_oua_user FOREIGN KEY (user_id) REFERENCES "user" (user_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -1073,7 +1099,7 @@ ALTER TABLE ONLY object_user_attribute
 --
 
 ALTER TABLE ONLY user_activity
-    ADD CONSTRAINT fk_ua_activity FOREIGN KEY (activity_id) REFERENCES activity(activity_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_ua_activity FOREIGN KEY (activity_id) REFERENCES activity (activity_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -1081,7 +1107,7 @@ ALTER TABLE ONLY user_activity
 --
 
 ALTER TABLE ONLY user_activity
-    ADD CONSTRAINT fk_ua_user FOREIGN KEY (user_id) REFERENCES "user"(user_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_ua_user FOREIGN KEY (user_id) REFERENCES "user" (user_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -1089,7 +1115,7 @@ ALTER TABLE ONLY user_activity
 --
 
 ALTER TABLE ONLY nft
-    ADD CONSTRAINT nft_blockchain_blockchain_id_fk FOREIGN KEY (blockchain_id) REFERENCES blockchain(blockchain_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT nft_blockchain_blockchain_id_fk FOREIGN KEY (blockchain_id) REFERENCES blockchain (blockchain_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -1097,7 +1123,7 @@ ALTER TABLE ONLY nft
 --
 
 ALTER TABLE ONLY pending_stake
-    ADD CONSTRAINT pending_stake_object_fk FOREIGN KEY (object_id) REFERENCES object(object_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT pending_stake_object_fk FOREIGN KEY (object_id) REFERENCES object (object_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -1105,7 +1131,7 @@ ALTER TABLE ONLY pending_stake
 --
 
 ALTER TABLE ONLY pending_stake
-    ADD CONSTRAINT pending_stake_wallet_fk FOREIGN KEY (blockchain_id, wallet_id) REFERENCES wallet(blockchain_id, wallet_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT pending_stake_wallet_fk FOREIGN KEY (blockchain_id, wallet_id) REFERENCES wallet (blockchain_id, wallet_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -1113,7 +1139,7 @@ ALTER TABLE ONLY pending_stake
 --
 
 ALTER TABLE ONLY stake
-    ADD CONSTRAINT stake_wallet_fk FOREIGN KEY (blockchain_id, wallet_id) REFERENCES wallet(blockchain_id, wallet_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT stake_wallet_fk FOREIGN KEY (blockchain_id, wallet_id) REFERENCES wallet (blockchain_id, wallet_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -1121,7 +1147,7 @@ ALTER TABLE ONLY stake
 --
 
 ALTER TABLE ONLY wallet
-    ADD CONSTRAINT wallet_blockchain_blockchain_id_fk FOREIGN KEY (blockchain_id) REFERENCES blockchain(blockchain_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT wallet_blockchain_blockchain_id_fk FOREIGN KEY (blockchain_id) REFERENCES blockchain (blockchain_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --

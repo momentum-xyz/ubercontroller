@@ -21,37 +21,37 @@ func Node(ctx types.NodeContext, node universe.Node, db database.DB) error {
 	log.Debugln("Seeding node...")
 	group.Go(
 		func() error {
-			return seedPlugins(groupCtx, node)
+			return seedPlugins(groupCtx, node) //2
 		},
 	)
 
 	group.Go(
 		func() error {
-			return seedAttributeType(groupCtx, node)
+			return seedAttributeType(groupCtx, node) //3
 		},
 	)
 
 	group.Go(
 		func() error {
-			return seedNodeAttributes(groupCtx, node)
+			return seedNodeAttributes(groupCtx, node) //4
 		},
 	)
 
 	group.Go(
 		func() error {
-			return seedAssets2d(groupCtx, node)
+			return seedAssets2d(groupCtx, node) //5
 		},
 	)
 
 	group.Go(
 		func() error {
-			return seedAssets3d(groupCtx, node)
+			return seedAssets3d(groupCtx, node) //6
 		},
 	)
 
 	group.Go(
 		func() error {
-			return seedUserTypes(groupCtx, node, db)
+			return seedUserTypes(groupCtx, node, db) //7
 		},
 	)
 
@@ -66,12 +66,12 @@ func Node(ctx types.NodeContext, node universe.Node, db database.DB) error {
 	}
 
 	// Object Types must be seeded after assets
-	if err := seedObjectTypes(node); err != nil {
+	if err := seedObjectTypes(node); err != nil { //8
 		fmt.Println(err)
 		return errors.WithMessage(err, "failed to seed object types")
 	}
 
-	if err := seedUsers(ctx, node, db); err != nil {
+	if err := seedUsers(ctx, node, db); err != nil { //9
 		return errors.WithMessage(err, "failed to seed users")
 	}
 
