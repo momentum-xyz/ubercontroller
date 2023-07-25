@@ -375,11 +375,15 @@ type Assets2d interface {
 	APIRegister
 
 	CreateAsset2d(asset2dID umid.UMID) (Asset2d, error)
+
 	GetAsset2d(asset2dID umid.UMID) (Asset2d, bool)
 	GetAssets2d() map[umid.UMID]Asset2d
+
 	FilterAssets2d(predicateFn Assets2dFilterPredicateFn) map[umid.UMID]Asset2d
+
 	AddAsset2d(asset2d Asset2d, updateDB bool) error
 	AddAssets2d(assets2d []Asset2d, updateDB bool) error
+
 	RemoveAsset2d(asset2d Asset2d, updateDB bool) (bool, error)
 	RemoveAssets2d(assets2d []Asset2d, updateDB bool) (bool, error)
 }
@@ -500,11 +504,15 @@ type Plugins interface {
 	APIRegister
 
 	CreatePlugin(pluginID umid.UMID) (Plugin, error)
+
 	GetPlugin(pluginID umid.UMID) (Plugin, bool)
 	GetPlugins() map[umid.UMID]Plugin
+
 	FilterPlugins(predicateFn PluginsFilterPredicateFn) map[umid.UMID]Plugin
+
 	AddPlugin(plugin Plugin, updateDB bool) error
 	AddPlugins(plugins []Plugin, updateDB bool) error
+
 	RemovePlugin(plugin Plugin, updateDB bool) (bool, error)
 	RemovePlugins(plugins []Plugin, updateDB bool) (bool, error)
 }
@@ -527,11 +535,15 @@ type AttributeTypes interface {
 	APIRegister
 
 	CreateAttributeType(attributeTypeID entry.AttributeTypeID) (AttributeType, error)
+
 	GetAttributeType(attributeTypeID entry.AttributeTypeID) (AttributeType, bool)
 	GetAttributeTypes() map[entry.AttributeTypeID]AttributeType
+
 	FilterAttributeTypes(predicateFn AttributeTypesFilterPredicateFn) map[entry.AttributeTypeID]AttributeType
+
 	AddAttributeType(attributeType AttributeType, updateDB bool) error
 	AddAttributeTypes(attributeTypes []AttributeType, updateDB bool) error
+
 	RemoveAttributeType(attributeType AttributeType, updateDB bool) (bool, error)
 	RemoveAttributeTypes(attributeTypes []AttributeType, updateDB bool) (bool, error)
 }
@@ -556,11 +568,15 @@ type ObjectTypes interface {
 	APIRegister
 
 	CreateObjectType(objectTypeID umid.UMID) (ObjectType, error)
+
 	GetObjectType(objectTypeID umid.UMID) (ObjectType, bool)
 	GetObjectTypes() map[umid.UMID]ObjectType
+
 	FilterObjectTypes(predicateFn ObjectTypesFilterPredicateFn) map[umid.UMID]ObjectType
+
 	AddObjectType(objectType ObjectType, updateDB bool) error
 	AddObjectTypes(objectTypes []ObjectType, updateDB bool) error
+
 	RemoveObjectType(objectType ObjectType, updateDB bool) (bool, error)
 	RemoveObjectTypes(objectTypes []ObjectType, updateDB bool) (bool, error)
 }
@@ -595,11 +611,15 @@ type UserTypes interface {
 	APIRegister
 
 	CreateUserType(userTypeID umid.UMID) (UserType, error)
+
 	GetUserType(userTypeID umid.UMID) (UserType, bool)
 	GetUserTypes() map[umid.UMID]UserType
+
 	FilterUserTypes(predicateFn UserTypesFilterPredicateFn) map[umid.UMID]UserType
+
 	AddUserType(userType UserType, updateDB bool) error
 	AddUserTypes(userTypes []UserType, updateDB bool) error
+
 	RemoveUserType(userType UserType, updateDB bool) (bool, error)
 	RemoveUserTypes(userTypes []UserType, updateDB bool) (bool, error)
 }
