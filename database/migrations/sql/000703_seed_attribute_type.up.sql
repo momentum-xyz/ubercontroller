@@ -7,19 +7,19 @@ insert into attribute_type
 )
 values
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'magic_links',
         '',
         null
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'events',
         'Space events',
         null
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'active_skybox',
         'Holds skybox data such as texture',
         '{
@@ -31,19 +31,19 @@ values
         }'::jsonb
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'timeline_last_seen',
         'Last recorded activity of user viewing timeline',
         null
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'world_meta',
         'Holds world metadata and decorations',
         null
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'news_feed',
         'News feed storage',
         null
@@ -66,25 +66,25 @@ values
         }'::jsonb
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'world_settings',
         '',
         null
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'last_known_position',
         'Last known position for user in the world',
         null
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'skybox_list',
         'Holds initial list of skyboxes',
         null
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'VoiceChatAction',
         'Voice chat user actions',
         '{
@@ -104,13 +104,13 @@ values
         '{}'::jsonb
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'high_five',
         'high fives',
         null
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'description',
         'description',
         '{
@@ -118,7 +118,7 @@ values
         }'::jsonb
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'name',
         'Space name',
         '{
@@ -166,7 +166,7 @@ values
         }'::jsonb
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'blockadelabs',
         'Blockadelabs API key storage attribute',
         '{
@@ -177,7 +177,7 @@ values
         }'::jsonb
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'staking',
         'Odyssey staking information',
         null
@@ -248,7 +248,7 @@ values
         }'::jsonb
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'spatial_audio',
         'Spatial audio',
         '{
@@ -277,13 +277,13 @@ values
         }'::jsonb
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'emoji',
         '',
         null
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'soundtrack',
         'Playlist',
         '{
@@ -302,7 +302,7 @@ values
         null
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'object_effect',
         'Visual 3D effect for object',
         '{
@@ -313,13 +313,13 @@ values
         }'::jsonb
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'world_template',
         'Basic template settings for any new world',
         null
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'shaders',
         '3D shader FX',
         '{
@@ -358,13 +358,13 @@ values
         }'::jsonb
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'teleport',
         'Target World UMID to teleport',
         null
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'VoiceChatUser',
         'Voice chat users',
         '{
@@ -398,13 +398,13 @@ values
         null
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'emojis',
         '',
         null
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'user_customisable_data',
         'Data for user customisable objects',
         '{
@@ -430,7 +430,7 @@ values
         }'::jsonb
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'screenshare',
         'Odyssey screenshare state',
         '{
@@ -444,7 +444,7 @@ values
         }'::jsonb
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'leonardo',
         'Leonardo API key storage attribute',
         '{
@@ -455,7 +455,7 @@ values
         }'::jsonb
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'skybox_ai',
         'Generated skybox storage attribute',
         '{
@@ -497,7 +497,7 @@ values
         }'::jsonb
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'world_avatar',
         '',
         '{
@@ -508,7 +508,7 @@ values
         }'::jsonb
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'website_link',
         '',
         null
@@ -543,25 +543,25 @@ values
         }'::jsonb
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'node_settings',
         '',
         null
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'jwt_key',
         '',
         null
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'tracker_ai_usage',
         'Track AI usages',
         null
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'object_color',
         'Holds the object color',
         '{

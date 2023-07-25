@@ -7,7 +7,7 @@ insert into node_attribute
 )
 values
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'leonardo',
         '{}'::jsonb,
         null
@@ -19,13 +19,13 @@ values
         null
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'tracker_ai_usage',
         '{}'::jsonb,
         null
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'node_settings',
         '{
           "name": "dev2-node",
@@ -38,7 +38,7 @@ values
         null
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'jwt_key',
         '{
           "secret": "{{JWT_KEY_SECRET}}",
@@ -47,13 +47,13 @@ values
         null
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'blockadelabs',
         '{}'::jsonb,
         null
     ),
     (
-        'f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0',
+        '{{CORE_PLUGIN_ID}}',
         'world_template',
         '{
           "objects": [],
@@ -69,14 +69,14 @@ values
                 ]
               },
               "options": null,
-              "plugin_id": "f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0",
+              "plugin_id": "{{CORE_PLUGIN_ID}}",
               "attribute_name": "world_meta"
             },
             {
               "value": {
                 "render_hash": "26485e74acb29223ba7a9fa600d36c7f"
               },
-              "plugin_id": "f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0",
+              "plugin_id": "{{CORE_PLUGIN_ID}}",
               "attribute_name": "active_skybox"
             }
           ]

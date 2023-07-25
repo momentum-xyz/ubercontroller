@@ -33,12 +33,14 @@ type EmbedFSWrapper struct {
 }
 
 var constants = map[string]string{
-	"CORE_PLUGIN_ID":             "f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0",
+	"CORE_PLUGIN_ID": "f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0",
+	//"VIDEO_PLUGIN_ID":            "308fdacc-8c2d-40dc-bd5f-d1549e3e03ba",
 	"NODE_SETTINGS_USER_ID_SALT": umid.New().String(),
 	"NODE_SETTINGS_ID":           umid.New().String(),
 	"JWT_KEY_SECRET":             umid.New().String(),
 	"JWT_KEY_SIGNATURE":          umid.New().String(),
 	"NODE_ID":                    umid.New().String(),
+	"BASE_DOMAIN":                "",
 }
 
 var constantRegexp = regexp.MustCompile(`\{\{[A-Z,_]*\}\}`)
@@ -165,10 +167,7 @@ func createNewDatabase(ctx context.Context, log *zap.SugaredLogger, cfg *config.
 	return nil
 }
 
-func MigrateDatabase(ctx interface {
-	context.Context
-	types.LoggerContext
-}, cfg *config.Postgres) error {
+func MigrateDatabase(ctx types.NodeContext, cfg *config.Postgres) error {
 	log := ctx.Logger()
 
 	db, err := pgDBMigrationsConnect(ctx, log, cfg)
@@ -176,6 +175,10 @@ func MigrateDatabase(ctx interface {
 		return errors.WithMessage(err, "failed to create migrations connect")
 	}
 	defer db.Close()
+
+	config := ctx.Config()
+	baseUrl := config.Settings.FrontendURL
+	constants["BASE_DOMAIN"] = baseUrl
 
 	wrappedMigrationFS := NewEmbedFSWrapper(migrationFS)
 	// get instance of migration data

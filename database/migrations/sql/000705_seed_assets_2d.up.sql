@@ -9,7 +9,7 @@ values
         '7be0964f-df73-4880-91f5-22eef996aaaa',
         '{
           "name": "claimable",
-          "pluginId": "f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0"
+          "pluginId": "{{CORE_PLUGIN_ID}}"
         }'::jsonb,
         '{}'::jsonb
     ),
@@ -19,7 +19,7 @@ values
           "name": "miro",
           "pluginId": "24071066-e8c6-4692-95b5-ae2dc3ed075c",
           "scopeName": "plugin_miro",
-          "scriptUrl": "https://dev.odyssey.ninja/plugins/miro/remoteEntry.js"
+          "scriptUrl": "{{BASE_DOMAIN}}/plugins/miro/remoteEntry.js"
         }'::jsonb,
         '{
           "exact": true,
@@ -33,7 +33,7 @@ values
           "name": "google Drive",
           "pluginId": "c3f89640-e0f0-4536-ae0d-8fc8a75ec0cd",
           "scopeName": "plugin_google_drive",
-          "scriptUrl": "https://dev.odyssey.ninja/plugins/google-drive/remoteEntry.js"
+          "scriptUrl": "{{BASE_DOMAIN}}/plugins/google-drive/remoteEntry.js"
         }'::jsonb,
         '{
           "exact": true,
@@ -62,7 +62,21 @@ values
           "name": "video",
           "pluginId": "308fdacc-8c2d-40dc-bd5f-d1549e3e03ba",
           "scopeName": "plugin_video",
-          "scriptUrl": "https://dev.odyssey.ninja/plugins/video/remoteEntry.js"
+          "scriptUrl": "{{BASE_DOMAIN}}/plugins/video/remoteEntry.js"
         }'::jsonb,
         '{}'::jsonb
+    ),
+    (
+        '00000000-0000-0000-0000-000000000004',
+        '{
+          "name": ""
+        }'::jsonb,
+        '{}'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000008',
+        '{
+          "name": ""
+        }'::jsonb,
+        '{}'
     );

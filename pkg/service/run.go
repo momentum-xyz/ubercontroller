@@ -166,7 +166,7 @@ func createNode(ctx types.NodeContext, db database.DB, nodeEntry *entry.Node) (u
 	return node, nil
 }
 
-func CreateDBConnection(ctx types.LoggerContext, cfg *config.Postgres) (*pgxpool.Pool, error) {
+func CreateDBConnection(ctx types.NodeContext, cfg *config.Postgres) (*pgxpool.Pool, error) {
 	log := ctx.Logger()
 	config, err := cfg.GenConfig(log.Desugar())
 	if err != nil {
