@@ -6,9 +6,10 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
-	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
+
+	"github.com/momentum-xyz/ubercontroller/database"
 
 	"github.com/momentum-xyz/ubercontroller/universe"
 )
@@ -56,7 +57,7 @@ func Node(ctx types.NodeContext, node universe.Node, db database.DB) error {
 
 	group.Go(
 		func() error {
-			return seedMedia(groupCtx, node)
+			return SeedMedia(groupCtx, node)
 		},
 	)
 

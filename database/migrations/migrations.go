@@ -30,6 +30,10 @@ type EmbedFSWrapper struct {
 	embedFS
 }
 
+var constants = map[string]string{
+	"CORE_PLUGIN_ID": "f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0",
+}
+
 type CustomFile struct {
 	io.ReadCloser
 	stat fs.FileInfo
@@ -39,15 +43,15 @@ func (f CustomFile) Stat() (fs.FileInfo, error) {
 	return f.stat, nil
 }
 
-func (e EmbedFSWrapper) ReadFile(name string) ([]byte, error) {
-	fmt.Println(" EmbedFSWrapper ReadFile:" + name)
-	b, err := e.embedFS.ReadFile(name)
-	if err != nil {
-		return nil, err
-	}
-	s := strings.Replace(string(b), "{{BAD_BEGIN}}", "BEGIN", -1)
-	return ([]byte)(s), nil
-}
+//func (e EmbedFSWrapper) ReadFile(name string) ([]byte, error) {
+//	fmt.Println(" EmbedFSWrapper ReadFile:" + name)
+//	b, err := e.embedFS.ReadFile(name)
+//	if err != nil {
+//		return nil, err
+//	}
+//	s := strings.Replace(string(b), "{{BAD_BEGIN}}", "BEGIN", -1)
+//	return ([]byte)(s), nil
+//}
 
 func (e EmbedFSWrapper) Open(name string) (fs.File, error) {
 	fmt.Println(" EmbedFSWrapper Open:" + name)
@@ -60,7 +64,12 @@ func (e EmbedFSWrapper) Open(name string) (fs.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	s := strings.Replace(string(b), "{{BAD_BEGIN}}", "BEGIN", -1)
+
+	var s string
+
+	for key, value := range constants {
+		s = strings.Replace(string(b), key, value, -1)
+	}
 
 	r := io.NopCloser(strings.NewReader(s))
 

@@ -13,7 +13,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 )
 
-func seedMedia(ctx context.Context, node universe.Node) error {
+func SeedMedia(ctx context.Context, node universe.Node) error {
 	cfg := node.GetConfig()
 
 	basePath := cfg.Settings.SeedDataFiles
