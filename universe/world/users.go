@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/utils"
@@ -64,7 +65,13 @@ func (w *World) AddUser(user universe.User, updateDB bool) error {
 	w.log.Infof("Setworld: %+v\n", user.GetID())
 	user.SetWorld(w)
 
-	initPos := cmath.TransformNoScale{Position: cmath.Vec3{X: 0, Y: 0, Z: 0}}
+	var initPos cmath.TransformNoScale
+	options := w.GetOptions()
+	if options != nil && options.SpawnPoint != nil {
+		initPos = *options.SpawnPoint
+	} else {
+		initPos = cmath.TransformNoScale{Position: cmath.Vec3{X: 0, Y: 0, Z: 0}}
+	}
 
 	val, ok := universe.GetNode().GetObjectUserAttributes().GetValue(
 		entry.ObjectUserAttributeID{
