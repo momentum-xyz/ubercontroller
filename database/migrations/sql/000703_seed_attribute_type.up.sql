@@ -43,12 +43,6 @@ values
         null
     ),
     (
-        '{{CORE_PLUGIN_ID}}',
-        'news_feed',
-        'News feed storage',
-        null
-    ),
-    (
         '220578c8-5fec-42c8-ade1-14d970e714bd',
         'solution',
         'solution for object',
@@ -356,12 +350,6 @@ values
             "send_to": 1
           }
         }'::jsonb
-    ),
-    (
-        '{{CORE_PLUGIN_ID}}',
-        'teleport',
-        'Target World UMID to teleport',
-        null
     ),
     (
         '{{CORE_PLUGIN_ID}}',

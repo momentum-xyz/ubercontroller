@@ -33,14 +33,11 @@ type EmbedFSWrapper struct {
 }
 
 var constants = map[string]string{
-	"CORE_PLUGIN_ID": "f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0",
-	//"VIDEO_PLUGIN_ID":            "308fdacc-8c2d-40dc-bd5f-d1549e3e03ba",
-	"NODE_SETTINGS_USER_ID_SALT": umid.New().String(),
-	"NODE_SETTINGS_ID":           umid.New().String(),
-	"JWT_KEY_SECRET":             umid.New().String(),
-	"JWT_KEY_SIGNATURE":          umid.New().String(),
-	"NODE_ID":                    umid.New().String(),
-	"BASE_DOMAIN":                "",
+	"CORE_PLUGIN_ID":    "f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0",
+	"JWT_KEY_SECRET":    umid.New().String(),
+	"JWT_KEY_SIGNATURE": umid.New().String(),
+	"NODE_ID":           umid.New().String(),
+	"BASE_DOMAIN":       "",
 }
 
 var constantRegexp = regexp.MustCompile(`\{\{[A-Z,_]*\}\}`)

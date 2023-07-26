@@ -29,9 +29,6 @@ values
         'node_settings',
         '{
           "name": "dev2-node",
-          "umid": "{{NODE_SETTINGS_ID}}",
-          "user_id_salt": "{{NODE_SETTINGS_USER_ID_SALT}}",
-          "entrance_world": "d83670c7-a120-47a4-892d-f9ec75604f74",
           "guest_user_type": "76802331-37b3-44fa-9010-35008b0cbaec",
           "normal_user_type": "00000000-0000-0000-0000-000000000006"
         }'::jsonb,
