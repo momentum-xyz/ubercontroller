@@ -77,8 +77,7 @@ values
         '{
           "name": "Miro",
           "assets2d": [
-            "a31722a6-26b7-46bc-97f9-435c380c3ca9",
-            "2a879830-b79e-4c35-accc-05607c51d504"
+            "a31722a6-26b7-46bc-97f9-435c380c3ca9"
           ],
           "scopeName": "plugin_miro",
           "scriptUrl": "{{BASE_DOMAIN}}/plugins/miro/remoteEntry.js"
