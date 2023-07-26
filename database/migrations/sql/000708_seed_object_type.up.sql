@@ -24,8 +24,8 @@ values
         '75b56447-c4f1-4020-b8fc-d68704a11d65',
         null,
         null,
-        'Generic Space',
-        'Generic Spaces',
+        'Generic Object',
+        'Generic Objectss',
         '',
         '{
           "subs": null,
@@ -134,8 +134,8 @@ values
         '69d8ae40-df9b-4fc8-af95-32b736d2bbcd',
         null,
         null,
-        'Service Space',
-        'Service Spaces',
+        'Service Object',
+        'Service Objects',
         '',
         '{
           "subs": null,

@@ -15,7 +15,7 @@ values
     (
         '{{CORE_PLUGIN_ID}}',
         'events',
-        'Space events',
+        'Object events',
         null
     ),
     (
@@ -51,7 +51,7 @@ values
     (
         '220578c8-5fec-42c8-ade1-14d970e714bd',
         'solution',
-        'solution for space',
+        'solution for object',
         '{
           "render_type": "texture",
           "content_type": "text"
@@ -60,7 +60,7 @@ values
     (
         '220578c8-5fec-42c8-ade1-14d970e714bd',
         'poster',
-        'Poster for space',
+        'Poster for object',
         '{
           "render_type": "texture"
         }'::jsonb
@@ -120,7 +120,7 @@ values
     (
         '{{CORE_PLUGIN_ID}}',
         'name',
-        'Space name',
+        'Object name',
         '{
           "render_auto": {
             "slot_name": "name",
@@ -270,7 +270,7 @@ values
     (
         '220578c8-5fec-42c8-ade1-14d970e714bd',
         'video',
-        'Video for space',
+        'Video for object',
         '{
           "render_type": "texture",
           "content_type": "video"
@@ -380,7 +380,7 @@ values
     (
         '220578c8-5fec-42c8-ade1-14d970e714bd',
         'tile',
-        'tile for space',
+        'tile for object',
         '{
           "render_type": "texture"
         }'::jsonb
@@ -474,7 +474,7 @@ values
     (
         '220578c8-5fec-42c8-ade1-14d970e714bd',
         'problem',
-        'Problem for space',
+        'Problem for object',
         '{
           "render_type": "texture",
           "content_type": "text"
@@ -483,7 +483,7 @@ values
     (
         '220578c8-5fec-42c8-ade1-14d970e714bd',
         'third',
-        'Third screen for space',
+        'Third screen for object',
         '{
           "render_type": "texture"
         }'::jsonb
@@ -491,7 +491,7 @@ values
     (
         '220578c8-5fec-42c8-ade1-14d970e714bd',
         'meme',
-        'Meme for space',
+        'Meme for object',
         '{
           "render_type": "texture"
         }'::jsonb
