@@ -83,6 +83,86 @@ func (n *Node) apiGetObjectUserAttributesValue(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
+// @Summary Get object user attribute count
+// @Schemes
+// @Description Returns a object user attribute count
+// @Tags objects
+// @Accept json
+// @Produce json
+// @Param object_id path string true "Object UMID"
+// @Param user_id path string true "User UMID"
+// @Param query query node.apiGetObjectUserAttributeCount.InQuery true "query params"
+// @Success 200 {object} entry.AttributeValue
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/objects/{object_id}/{user_id}/attributes/count [get]
+func (n *Node) apiGetObjectUserAttributeCount(c *gin.Context) {
+	type InQuery struct {
+		attributes.QueryPluginAttribute
+		Since string `form:"since" binding:"required"`
+	}
+
+	inQuery := InQuery{}
+
+	if err := c.ShouldBindQuery(&inQuery); err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeCount: failed to bind query")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
+		return
+	}
+
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeCount: failed to get user from context")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user", err, n.log)
+		return
+	}
+
+	objectID, err := umid.Parse(c.Param("objectID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeCount: failed to parse object umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
+		return
+	}
+
+	targetUserID, err := umid.Parse(c.Param("userID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeCount: failed to parse user umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
+		return
+	}
+
+	attrType, attributeID, err := attributes.PluginAttributeFromQuery(c, n)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeCount: failed to get plugin attribute from query")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_attribute", err, n.log)
+		return
+	}
+
+	objectUserAttributeID := entry.NewObjectUserAttributeID(attributeID, objectID, targetUserID)
+
+	allowed, err := auth.CheckAttributePermissions(
+		c, *attrType.GetEntry(), n.GetObjectUserAttributes(), objectUserAttributeID, userID,
+		auth.ReadOperation)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeCount: permissions check")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_permissions_check", err, n.log)
+		return
+	} else if !allowed {
+		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeCount: operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+		return
+	}
+
+	out, ok := n.GetObjectUserAttributes().GetCountByObjectID(objectID)
+	if !ok {
+		err := errors.Errorf("Node: apiGetObjectUserAttributeCount: object attribute value not found: %s", attributeID)
+		api.AbortRequest(c, http.StatusNotFound, "attribute_not_found", err, n.log)
+		return
+	}
+
+	c.JSON(http.StatusOK, out)
+}
+
 // @Summary Set object user attribute
 // @Schemes
 // @Description Sets entire object user attribute

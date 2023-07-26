@@ -35,7 +35,8 @@ const (
 	getObjectUserAttributesByObjectIDAndUserIDQuery = `SELECT * FROM object_user_attribute WHERE object_id = $1 AND user_id = $2;`
 	getObjectUserAttributesByObjectAttributeIDQuery = `SELECT * FROM object_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND object_id = $3;`
 
-	getObjectUserAttributesCountQuery = `SELECT COUNT(*) FROM object_user_attribute;`
+	getObjectUserAttributesCountQuery           = `SELECT COUNT(*) FROM object_user_attribute;`
+	getObjectUserAttributesCountByObjectIDQuery = `SELECT COUNT(*) FROM object_user_attribute WHERE object_id = $1;`
 
 	upsertObjectUserAttributeQuery = `INSERT INTO object_user_attribute
 											(plugin_id, attribute_name, object_id, user_id, value, options)
@@ -202,6 +203,15 @@ func (db *DB) GetObjectUserAttributesByObjectAttributeID(
 func (db *DB) GetObjectUserAttributesCount(ctx context.Context) (int64, error) {
 	var count int64
 	if err := db.conn.QueryRow(ctx, getObjectUserAttributesCountQuery).
+		Scan(&count); err != nil {
+		return 0, errors.WithMessage(err, "failed to query db")
+	}
+	return count, nil
+}
+
+func (db *DB) GetObjectUserAttributesCountByObjectID(ctx context.Context, objectID umid.UMID) (int64, error) {
+	var count int64
+	if err := db.conn.QueryRow(ctx, getObjectUserAttributesCountByObjectIDQuery, objectID).
 		Scan(&count); err != nil {
 		return 0, errors.WithMessage(err, "failed to query db")
 	}

@@ -53,6 +53,14 @@ func (oua *objectUserAttributes) GetOptions(objectUserAttributeID entry.ObjectUs
 	return options, true
 }
 
+func (oua *objectUserAttributes) GetCountByObjectID(objectID umid.UMID) (*int64, bool) {
+	count, err := oua.node.db.GetObjectUserAttributesDB().GetObjectUserAttributesCountByObjectID(oua.node.ctx, objectID)
+	if err != nil {
+		return nil, false
+	}
+	return &count, true
+}
+
 func (oua *objectUserAttributes) GetEffectiveOptions(
 	objectUserAttributeID entry.ObjectUserAttributeID,
 ) (*entry.AttributeOptions, bool) {

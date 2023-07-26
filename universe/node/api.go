@@ -204,6 +204,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 				objectUser.DELETE("/attributes/sub", n.apiRemoveObjectUserAttributeSubValue)
 
 				objectUser.GET("/attributes", n.apiGetObjectUserAttributesValue)
+				objectUser.GET("/attributes/count", n.apiGetObjectUserAttributeCount)
 
 				objectUser.GET("/attributes/sub", n.apiGetObjectUserAttributeSubValue)
 			}
