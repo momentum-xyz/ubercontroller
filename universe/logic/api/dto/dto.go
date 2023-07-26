@@ -72,6 +72,10 @@ type Activity struct {
 	CreatedAt       time.Time           `json:"created_at"`
 }
 
+type AttributeCount struct {
+	Count *int64 `json:"count"`
+}
+
 type RecentWorld struct {
 	ID          umid.UMID `json:"id"`
 	OwnerID     umid.UMID `json:"owner_id"`

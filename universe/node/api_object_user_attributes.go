@@ -153,12 +153,14 @@ func (n *Node) apiGetObjectUserAttributeCount(c *gin.Context) {
 		return
 	}
 
-	out, ok := n.GetObjectUserAttributes().GetCountByObjectID(objectID)
+	count, ok := n.GetObjectUserAttributes().GetCountByObjectID(objectID)
 	if !ok {
 		err := errors.Errorf("Node: apiGetObjectUserAttributeCount: object attribute value not found: %s", attributeID)
 		api.AbortRequest(c, http.StatusNotFound, "attribute_not_found", err, n.log)
 		return
 	}
+
+	out := dto.AttributeCount{Count: count}
 
 	c.JSON(http.StatusOK, out)
 }
