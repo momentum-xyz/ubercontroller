@@ -1,0 +1,22 @@
+insert into object
+(
+    object_id,
+    object_type_id,
+    owner_id,
+    parent_id,
+    asset_2d_id,
+    asset_3d_id,
+    options,
+    transform
+)
+values
+    (
+        '{{NODE_ID}}',
+        '00000000-0000-0000-0000-000000000001',
+        '00000000-0000-0000-0000-000000000003',
+        '{{NODE_ID}}',
+        null,
+        null,
+        null,
+        null
+    );
