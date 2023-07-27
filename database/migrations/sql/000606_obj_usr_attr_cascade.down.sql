@@ -1,9 +1,0 @@
-BEGIN;
-
-ALTER TABLE object_user_attribute
-DROP CONSTRAINT FK_OUA_USER,
-ADD CONSTRAINT FK_9
-   FOREIGN KEY (user_id)
-   REFERENCES "user"(user_id);
-
-COMMIT;

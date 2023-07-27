@@ -84,19 +84,6 @@ func LoadNode(
 	return node, nil
 }
 
-// Seed the database of a node.
-func SeedNode(ctx types.NodeContext, cfg *config.Config, pool *pgxpool.Pool) error {
-	db, err := createDB(pool)
-	if err != nil {
-		return errors.WithMessage(err, "failed to create db")
-	}
-	_, node, err := getNode(ctx, db)
-	if err != nil {
-		return errors.WithMessage(err, "failed to create node")
-	}
-	return seed.Node(ctx, node, db)
-}
-
 func getNode(ctx types.NodeContext, db database.DB) (bool, universe.Node, error) {
 	nodeEntry, err := getNodeEntry(ctx, db)
 	if err != nil {
@@ -109,8 +96,8 @@ func getNode(ctx types.NodeContext, db database.DB) (bool, universe.Node, error)
 
 func loadNode(ctx types.NodeContext, node universe.Node, db database.DB, is_new bool) error {
 	if is_new {
-		if err := seed.Node(ctx, node, db); err != nil {
-			return errors.WithMessage(err, "failed to seed node")
+		if err := seed.SeedMedia(ctx, node); err != nil {
+			return errors.WithMessage(err, "failed to seed SeedMedia")
 		}
 	}
 	if err := node.Load(); err != nil {
@@ -179,7 +166,7 @@ func createNode(ctx types.NodeContext, db database.DB, nodeEntry *entry.Node) (u
 	return node, nil
 }
 
-func CreateDBConnection(ctx types.LoggerContext, cfg *config.Postgres) (*pgxpool.Pool, error) {
+func CreateDBConnection(ctx types.NodeContext, cfg *config.Postgres) (*pgxpool.Pool, error) {
 	log := ctx.Logger()
 	config, err := cfg.GenConfig(log.Desugar())
 	if err != nil {
