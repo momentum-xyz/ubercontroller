@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
@@ -363,6 +364,146 @@ func (n *Node) apiUpdateObject(c *gin.Context) {
 	}
 	out := Out{
 		ObjectID: objectID.String(),
+	}
+
+	c.JSON(http.StatusOK, out)
+}
+
+// @Summary Clones an object by UMID
+// @Description Clones an object by UMID, 're-parenting' not supported, returns cloned object UMID.
+// @Tags objects
+// @Accept json
+// @Produce json
+// @Param object_id path string true "Object UMID"
+// @Success 200 {object} node.apiCloneObject.Out
+// @Failure 500 {object} api.HTTPError
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/objects/{object_id}/clone [post]
+func (n *Node) apiCloneObject(c *gin.Context) {
+	objectID, err := umid.Parse(c.Param("objectID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiCloneObject: failed to parse object umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
+		return
+	}
+
+	object, ok := n.GetObjectFromAllObjects(objectID)
+	if !ok {
+		err := errors.Errorf("Node: apiCloneObject: object not found: %s", objectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
+		return
+	}
+
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiCloneObject: failed to get user umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user_id", err, n.log)
+		return
+	}
+
+	parentID := object.GetParent().GetID()
+	transform, err := tree.CalcObjectSpawnPosition(parentID, userID)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiCloneObject: failed to calc object spawn position")
+		api.AbortRequest(c, http.StatusBadRequest, "calc_spawn_position_failed", err, n.log)
+		return
+	}
+
+	var asset2dID *umid.UMID
+	if object.GetAsset2D() != nil {
+		asset2dID = utils.GetPTR(object.GetAsset2D().GetID())
+	} else {
+		asset2dID = nil
+	}
+
+	var asset3dID *umid.UMID
+	if object.GetAsset3D() != nil {
+		asset3dID = utils.GetPTR(object.GetAsset3D().GetID())
+	} else {
+		asset3dID = nil
+	}
+
+	objectTemplate := tree.ObjectTemplate{
+		ObjectName:   utils.GetPTR(object.GetName()),
+		ObjectTypeID: object.GetObjectType().GetID(),
+		ParentID:     parentID,
+		OwnerID:      utils.GetPTR(object.GetOwnerID()),
+		Asset2dID:    asset2dID,
+		Asset3dID:    asset3dID,
+		Transform:    transform,
+		Options:      object.GetOptions(),
+	}
+
+	clonedObjectID, err := tree.AddObjectFromTemplate(&objectTemplate, true)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiCloneObject: failed to clone object")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_clone", err, n.log)
+		return
+	}
+
+	type CloneableObjectAttribute struct {
+		AttributeID entry.AttributeID
+		Value       *entry.AttributeValue
+	}
+
+	var cloneableAttributes []CloneableObjectAttribute
+	objectAttributes := object.GetObjectAttributes().GetAll()
+	for attributeID := range objectAttributes {
+		effectiveOptions, _ := object.GetObjectAttributes().GetEffectiveOptions(attributeID)
+		if effectiveOptions != nil {
+			cloneable := utils.GetFromAnyMap(*effectiveOptions, "cloneable", map[string]any(nil))
+			if cloneable != nil {
+				defaultValue := utils.GetFromAnyMap(cloneable, "use_default", map[string]any(nil))
+				if defaultValue != nil {
+					attributeValue := entry.AttributeValue(defaultValue)
+					cloneableObjectAttribute := CloneableObjectAttribute{
+						AttributeID: attributeID,
+						Value:       &attributeValue,
+					}
+
+					cloneableAttributes = append(cloneableAttributes, cloneableObjectAttribute)
+				}
+			}
+		}
+	}
+
+	clonedObject, ok := n.GetObjectFromAllObjects(clonedObjectID)
+	if !ok {
+		err := errors.Errorf("Node: apiCloneObject: object not found: %s", clonedObjectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
+		return
+	}
+
+	for _, clAtr := range cloneableAttributes {
+		var attributeModifyFunc modify.Fn[entry.AttributePayload]
+		attributeModifyFunc = func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
+			if current == nil {
+				current = entry.NewAttributePayload(nil, nil)
+			}
+
+			if current.Value == nil {
+				current.Value = entry.NewAttributeValue()
+			}
+
+			current.Value = clAtr.Value
+
+			return current, nil
+		}
+
+		_, err = clonedObject.GetObjectAttributes().Upsert(clAtr.AttributeID, attributeModifyFunc, true)
+		if err != nil {
+			err = errors.WithMessage(err, "Node: apiCloneObject: failed to upsert object attribute")
+			api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+			return
+		}
+	}
+
+	type Out struct {
+		ObjectID string `json:"object_id"`
+	}
+	out := Out{
+		ObjectID: clonedObject.GetID().String(),
 	}
 
 	c.JSON(http.StatusOK, out)
