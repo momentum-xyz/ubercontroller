@@ -1,0 +1,1 @@
+SELECT 'Migrations counter was reset to 0, to keep go-migration working keep this file with last migrated schema number (690)'
