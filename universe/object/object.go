@@ -112,6 +112,19 @@ func (o *Object) GetDescription() string {
 	return utils.GetFromAnyMap(*value, universe.ReservedAttributes.Object.Description.Key, defaultDescription)
 }
 
+func (o *Object) GetChildIDs() []umid.UMID {
+	ids := make([]umid.UMID, 0, o.Children.Len())
+
+	o.Children.Mu.RLock()
+	defer o.Children.Mu.RUnlock()
+
+	for _, child := range o.Children.Data {
+		ids = append(ids, child.GetID())
+	}
+
+	return ids
+}
+
 func (o *Object) GetName() string {
 	name := o.GetID().String()
 	value, ok := o.GetObjectAttributes().GetValue(

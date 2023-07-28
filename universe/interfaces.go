@@ -177,6 +177,8 @@ type Object interface {
 
 	GetDescription() string
 
+	GetChildIDs() []umid.UMID
+
 	GetParent() Object
 	SetParent(parent Object, updateDB bool) error
 

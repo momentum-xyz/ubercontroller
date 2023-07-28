@@ -1004,37 +1004,23 @@ func (n *Node) apiGetObjectsTree(c *gin.Context) {
 		return
 	}
 
-	all := n.GetAllObjects()
-
 	result := Info{
 		ID:       object.GetID(),
 		MaxDepth: &inQuery.MaxDepth,
 	}
 
-	objectsChildren := make(map[umid.UMID][]umid.UMID)
-
-	for _, o := range all {
-		id := o.GetID()
-		if o.GetParent() == nil {
-			continue
-		}
-		parentID := o.GetParent().GetID()
-
-		if _, ok := objectsChildren[parentID]; !ok {
-			objectsChildren[parentID] = make([]umid.UMID, 0)
-		}
-		if id != parentID {
-			objectsChildren[parentID] = append(objectsChildren[parentID], id)
-		}
-	}
-
-	fillChildren(&result, objectsChildren, 1, inQuery.MaxDepth)
+	fillChildren(&result, 1, inQuery.MaxDepth)
 
 	c.JSON(http.StatusOK, result)
 }
 
-func fillChildren(info *Info, objectsChildren map[umid.UMID][]umid.UMID, level int, maxLevel int) {
-	children := objectsChildren[info.ID]
+func fillChildren(info *Info, level int, maxLevel int) {
+	object, ok := universe.GetNode().GetObjectFromAllObjects(info.ID)
+	_ = ok
+	if !ok {
+		return
+	}
+	children := object.GetChildIDs()
 	if info.Children == nil {
 		info.Children = make(map[umid.UMID]*Info)
 	}
@@ -1055,6 +1041,6 @@ func fillChildren(info *Info, objectsChildren map[umid.UMID][]umid.UMID, level i
 			Children: nil,
 		}
 		info.Children[cid] = i
-		fillChildren(i, objectsChildren, level+1, maxLevel)
+		fillChildren(i, level+1, maxLevel)
 	}
 }
