@@ -140,6 +140,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 			{
 				object.POST("/claim-and-customise", n.apiClaimAndCustomise)
 				object.POST("/unclaim-and-clear-customisation", n.apiUnclaimAndClearCustomisation)
+				object.GET("/tree", n.apiGetObjectsTree)
 
 				objectAdmin := object.Group("", middleware.AuthorizeAdmin(n.log))
 				{

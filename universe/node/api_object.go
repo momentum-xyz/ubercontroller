@@ -20,6 +20,17 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/logic/tree"
 )
 
+type Info struct {
+	ID                  umid.UMID           `json:"id"`
+	Name                string              `json:"name"`
+	ObjectTypeID        umid.UMID           `json:"object_type_id"`
+	ObjectTypeName      string              `json:"object_type_name"`
+	TotalDirectChildren int                 `json:"total_direct_children"`
+	Children            map[umid.UMID]*Info `json:"children"`
+
+	MaxDepth *int `json:"max_depth,omitempty"`
+}
+
 // @Summary Generate Agora token
 // @Schemes
 // @Description Returns an Agora token
@@ -951,4 +962,85 @@ func (n *Node) apiUnclaimAndClearCustomisation(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusAccepted, true)
+}
+
+// @Summary Get tree of objects with given object as root
+// @Schemes
+// @Description Get tree of objects with given object as root
+// @Tags objects
+// @Accept json
+// @Produce json
+// @Param query query node.apiGetObjectsTree.InQuery true "query params"
+// @Success 200 {object} node.Info
+// @Failure 400 {object} api.HTTPError
+// @Router /api/v4/objects/{object_id}/tree [get]
+func (n *Node) apiGetObjectsTree(c *gin.Context) {
+	type InQuery struct {
+		MaxDepth int `form:"max_depth"`
+	}
+	var inQuery InQuery
+
+	if err := c.ShouldBindQuery(&inQuery); err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectsTree: failed to bind query")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
+		return
+	}
+
+	if inQuery.MaxDepth == 0 {
+		inQuery.MaxDepth = 10
+	}
+
+	objectID, err := umid.Parse(c.Param("objectID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectsTree: failed to parse object umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
+		return
+	}
+
+	object, ok := n.GetObjectFromAllObjects(objectID)
+	if !ok {
+		err := errors.Errorf("Node: apiGetObjectsTree: object not found: %s", objectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
+		return
+	}
+
+	result := Info{
+		ID:       object.GetID(),
+		MaxDepth: &inQuery.MaxDepth,
+	}
+
+	fillChildren(&result, 1, inQuery.MaxDepth)
+
+	c.JSON(http.StatusOK, result)
+}
+
+func fillChildren(info *Info, level int, maxLevel int) {
+	object, ok := universe.GetNode().GetObjectFromAllObjects(info.ID)
+	_ = ok
+	if !ok {
+		return
+	}
+	children := object.GetChildIDs()
+	if info.Children == nil {
+		info.Children = make(map[umid.UMID]*Info)
+	}
+
+	o, _ := universe.GetNode().GetObjectFromAllObjects(info.ID)
+	info.Name = o.GetName()
+	info.ObjectTypeID = o.GetObjectType().GetID()
+	info.ObjectTypeName = o.GetObjectType().GetName()
+	info.TotalDirectChildren = len(children)
+
+	if level > maxLevel {
+		return
+	}
+
+	for _, cid := range children {
+		i := &Info{
+			ID:       cid,
+			Children: nil,
+		}
+		info.Children[cid] = i
+		fillChildren(i, level+1, maxLevel)
+	}
 }
