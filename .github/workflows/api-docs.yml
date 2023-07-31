@@ -67,7 +67,7 @@ jobs:
           path: build/docs/
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v1
+        uses: actions/deploy-pages@v2
       - id: update-docs-site
         name: Update docs website
         uses: peter-evans/repository-dispatch@v2
