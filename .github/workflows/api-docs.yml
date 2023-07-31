@@ -32,7 +32,7 @@ jobs:
           echo "GOMODCACHE=/opt/go-cache/mod" >> $GITHUB_ENV
           echo "GOCACHE=/opt/go-cache/build" >> $GITHUB_ENV
           echo "GOPATH=/opt/go" >> $GITHUB_ENV
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
           go-version-file: 'go.mod'
           cache: false  # no use on self-hosted runner
