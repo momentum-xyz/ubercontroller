@@ -19,6 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/harvester2"
@@ -26,31 +27,29 @@ import (
 )
 
 type ArbitrumNovaAdapter struct {
-	listener harvester2.AdapterListener
-	umid     umid.UMID
-	wsURL    string
-	httpURL  string
-	name     harvester2.BCType
-	//client           *ethclient.Client
+	listener  harvester2.AdapterListener
+	umid      umid.UMID
+	httpURL   string
+	name      harvester2.BCType
 	rpcClient *rpc.Client
 	lastBlock uint64
-	contracts *Contracts
 
 	// tmp solution, remove it after indexed params added to contract events
-	cache []types.Log
-	block int64
-	mu    sync.Mutex
+	cache  []types.Log
+	block  int64
+	mu     sync.Mutex
+	logger *zap.SugaredLogger
 }
 
-func NewArbitrumNovaAdapter(cfg *config.Config) *ArbitrumNovaAdapter {
+func NewArbitrumNovaAdapter(cfg *config.Arbitrum2, logger *zap.SugaredLogger) *ArbitrumNovaAdapter {
 	return &ArbitrumNovaAdapter{
-		umid:      umid.MustParse("ccccaaaa-1111-2222-3333-222222222222"),
-		wsURL:     cfg.Arbitrum.WSURL,
-		httpURL:   cfg.Arbitrum.RPCURL,
-		name:      "arbitrum_nova",
-		contracts: NewContracts(&cfg.Arbitrum),
-		cache:     make([]types.Log, 0),
-		block:     0,
+		umid:    umid.MustParse("ccccaaaa-1111-2222-3333-222222222222"),
+		httpURL: cfg.RPCURL,
+		name:    "arbitrum_nova",
+		cache:   make([]types.Log, 0),
+		block:   0,
+
+		logger: logger,
 	}
 }
 
@@ -167,167 +166,80 @@ func (a *ArbitrumNovaAdapter) DecodeTransactionInputData(contractABI *abi.ABI, d
 	return method.Name, inputsMap, nil
 }
 
-func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []common.Address) ([]any, error) {
-
-	query := ethereum.FilterQuery{
-		FromBlock: big.NewInt(fromBlock),
-		ToBlock:   big.NewInt(toBlock),
-		Addresses: contracts,
+func (a *ArbitrumNovaAdapter) getRawLogs(
+	topic0 *common.Hash,
+	topic1 *common.Address,
+	topic2 *common.Address,
+	addresses []common.Address,
+	fromBlock *big.Int,
+	toBlock *big.Int,
+) (replies []types.Log, err error) {
+	args := make(map[string]interface{})
+	var topix []any
+	topix = append(topix, topic0)
+	topix = append(topix, topic1)
+	topix = append(topix, topic2)
+	//topix = append(topix, addrToHash(source))
+	//topix = append(topix, addrToHash(dest))
+	args["topics"] = topix
+	args["address"] = addresses
+	args["fromBlock"] = hexutil.EncodeBig(fromBlock)
+	args["toBlock"] = hexutil.EncodeBig(toBlock)
+	if err != nil {
+		return
 	}
+	err = a.rpcClient.CallContext(context.TODO(), &replies, "eth_getLogs", args)
+	return
+}
 
-	bcLogs, err := a.FilterLogs(context.TODO(), query)
+func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []common.Address) ([]any, error) {
+	logTransferSig := []byte("Transfer(address,address,uint256)")
+	logTransferSigHash := crypto.Keccak256Hash(logTransferSig)
+	bcLogs, err := a.getRawLogs(&logTransferSigHash, nil, nil, contracts, big.NewInt(fromBlock), big.NewInt(toBlock))
+	fmt.Println(bcLogs)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to filter log")
 	}
 
 	logs := make([]any, 0)
 
-	logTransferSig := []byte("Transfer(address,address,uint256)")
-	logTransferSigHash := crypto.Keccak256Hash(logTransferSig)
-
-	logStakeSigHash := crypto.Keccak256Hash([]byte(a.contracts.StakeABI.Events["Stake"].Sig))
-	logUnstakeSigHash := a.contracts.StakeABI.Events["Unstake"].ID
-	logRestakeSigHash := a.contracts.StakeABI.Events["Restake"].ID
-
-	logTransferNftHash := a.contracts.NftABI.Events["Transfer"].ID
-
+	c := 0
 	for _, vLog := range bcLogs {
 		//fmt.Printf("Log Block Number: %d\n", vLog.BlockNumber)
 		//fmt.Printf("Log Index: %d\n", vLog.Index)
 
-		// Iterate contracts
-		switch vLog.Address.Hex() {
-		case a.contracts.momTokenAddress.Hex():
-			switch vLog.Topics[0].Hex() {
-			case logTransferSigHash.Hex():
-				//fmt.Printf("Log Name: Transfer\n")
+		c++
+		//fmt.Println(vLog.Data)
+		//fmt.Println(len(vLog.Data))
+		//fmt.Println(len(vLog.Topics))
+		fmt.Println(c, vLog.Topics[0].Hex())
 
-				//var transferEvent harvester.BCDiff
+		switch vLog.Topics[0].Hex() {
+		case logTransferSigHash.Hex():
+			//fmt.Printf("Log Name: Transfer\n")
 
-				var e harvester2.TransferERC20Log
+			//var transferEvent harvester.BCDiff
 
-				ev, err := a.contracts.TokenABI.Unpack("Transfer", vLog.Data)
+			var e harvester2.TransferERC20Log
+
+			e.Contract = vLog.Address
+			// Hex and Un Hex here used to remove padding zeros
+			e.From = common.HexToAddress(vLog.Topics[1].Hex())
+			e.To = common.HexToAddress(vLog.Topics[2].Hex())
+
+			data := common.TrimLeftZeroes(vLog.Data)
+			hex := common.Bytes2Hex(data)
+			hex = TrimLeftZeroes(hex)
+			if hex != "" {
+				erc20Amount, err := hexutil.DecodeBig("0x" + hex)
 				if err != nil {
-					return nil, errors.WithMessage(err, "failed to unpack event from ABI")
+					fmt.Println(err)
 				}
-
-				e.Contract = vLog.Address
-				// Hex and Un Hex here used to remove padding zeros
-				e.From = common.HexToAddress(vLog.Topics[1].Hex())
-				e.To = common.HexToAddress(vLog.Topics[2].Hex())
-				if len(ev) > 0 {
-					e.Value = ev[0].(*big.Int)
-				}
-
-				logs = append(logs, &e)
+				e.Value = erc20Amount
+				//fmt.Println(erc20Amount)
 			}
 
-		case a.contracts.stakeAddress.Hex():
-			switch vLog.Topics[0].Hex() {
-
-			case logStakeSigHash.Hex():
-				ev, err := a.contracts.StakeABI.Unpack("Stake", vLog.Data)
-				if err != nil {
-					return nil, errors.WithMessage(err, "failed to unpack event from ABI")
-				}
-
-				// Hack to remove extra zeroes
-				fromWallet := common.HexToAddress(vLog.Topics[1].Hex())
-
-				b := vLog.Topics[2].Bytes()[16:]
-				odysseyID, err := umid.FromBytes(b)
-				if err != nil {
-					return nil, errors.WithMessage(err, "failed to parse umid from bytes")
-				}
-
-				if odysseyID == umid.MustParse("ccccaaaa-1111-2222-3333-222222222222") ||
-					odysseyID == umid.MustParse("ccccaaaa-1111-2222-3333-222222222244") ||
-					odysseyID == umid.MustParse("ccccaaaa-1111-2222-3333-222222222241") {
-					// Skip test Odyssey IDs
-					continue
-				}
-
-				transactionHash := vLog.TxHash.Hex()
-				amount := ev[0].(*big.Int)
-				tokenType := ev[1].(uint8)
-				totalAmount := ev[2].(*big.Int)
-
-				e := &harvester2.StakeLog{
-					TxHash:       transactionHash,
-					UserWallet:   fromWallet,
-					OdysseyID:    odysseyID,
-					AmountStaked: amount,
-					TokenType:    tokenType,
-					TotalStaked:  totalAmount,
-					Contract:     vLog.Address,
-				}
-
-				logs = append(logs, e)
-
-			case logUnstakeSigHash.Hex():
-				ev, err := a.contracts.StakeABI.Unpack("Unstake", vLog.Data)
-				if err != nil {
-					return nil, errors.WithMessage(err, "failed to unpack event from ABI")
-				}
-
-				// Hack to remove extra zeroes
-				fromWallet := common.HexToAddress(vLog.Topics[1].Hex())
-
-				b := vLog.Topics[2].Bytes()[16:]
-				odysseyID, err := umid.FromBytes(b)
-				if err != nil {
-					return nil, errors.WithMessage(err, "failed to parse umid from bytes")
-				}
-
-				amount := ev[0].(*big.Int)
-				tokenType := ev[1].(uint8)
-				totalAmount := ev[2].(*big.Int)
-
-				e := &harvester2.UnstakeLog{
-					UserWallet:     fromWallet,
-					OdysseyID:      odysseyID,
-					AmountUnstaked: amount,
-					TokenType:      tokenType,
-					TotalStaked:    totalAmount,
-					Contract:       vLog.Address,
-				}
-
-				logs = append(logs, e)
-
-			case logRestakeSigHash.Hex():
-				fmt.Println("Restake")
-			}
-		case a.contracts.nftAddress.Hex():
-			fmt.Println("NFT")
-
-			switch vLog.Topics[0].Hex() {
-			case logTransferNftHash.Hex():
-				// TODO Not sure why vLog.Data is empty
-				//ev, err := a.contracts.NftABI.Unpack("Transfer", vLog.Data)
-				//if err != nil {
-				//	return nil, errors.WithMessage(err, "failed to unpack event from ABI")
-				//}
-
-				from := common.HexToAddress(vLog.Topics[1].Hex())
-				to := common.HexToAddress(vLog.Topics[2].Hex())
-				itemID := vLog.Topics[3].Big()
-
-				var id umid.UMID
-				itemID.FillBytes(id[:])
-
-				if err != nil {
-					return nil, errors.WithMessage(err, "failed to read umid from bytes")
-				}
-
-				e := &harvester2.TransferNFTLog{
-					From:     from,
-					To:       to,
-					TokenID:  id,
-					Contract: vLog.Address,
-				}
-
-				logs = append(logs, e)
-			}
+			logs = append(logs, &e)
 		}
 
 	}
@@ -335,8 +247,18 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 	return logs, nil
 }
 
+func TrimLeftZeroes(hex string) string {
+	idx := 0
+	for ; idx < len(hex); idx++ {
+		if hex[idx] != '0' {
+			break
+		}
+	}
+	return hex[idx:]
+}
+
 func (a *ArbitrumNovaAdapter) GetInfo() (umid umid.UMID, name harvester2.BCType, rpcURL string) {
-	return a.umid, a.name, a.wsURL
+	return a.umid, a.name, a.httpURL
 }
 
 func (a *ArbitrumNovaAdapter) FilterLogs(ctx context.Context, q ethereum.FilterQuery) ([]types.Log, error) {

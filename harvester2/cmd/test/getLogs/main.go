@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rpc"
+
 	"github.com/momentum-xyz/ubercontroller/config"
 )
 
@@ -30,8 +31,8 @@ func main() {
 	_ = w78
 
 	contracts := []common.Address{
-		//mom,
-		nft,
+		mom,
+		//nft,
 	}
 
 	//response, err := getLogs(transferTopic, mom, big.NewInt(0), big.NewInt(1000), nil, &w04)

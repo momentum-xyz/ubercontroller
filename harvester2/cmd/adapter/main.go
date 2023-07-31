@@ -6,6 +6,9 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/harvester2"
 	"github.com/momentum-xyz/ubercontroller/harvester2/arbitrum_nova_adapter2"
@@ -16,7 +19,24 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	a := arbitrum_nova_adapter2.NewArbitrumNovaAdapter(cfg)
+
+	zapCfg := zap.Config{
+		Level:            zap.NewAtomicLevelAt(zapcore.DebugLevel),
+		Encoding:         "console",
+		EncoderConfig:    zap.NewDevelopmentEncoderConfig(),
+		OutputPaths:      []string{"stdout"},
+		ErrorOutputPaths: []string{"stdout"},
+		// NOTE: set this false to enable stack trace
+		DisableStacktrace: true,
+	}
+
+	logger, err := zapCfg.Build()
+	if err != nil {
+		panic(err)
+	}
+	sugaredLogger := logger.Sugar()
+
+	a := arbitrum_nova_adapter2.NewArbitrumNovaAdapter(&cfg.Arbitrum2, sugaredLogger)
 
 	a.Run()
 
@@ -36,8 +56,8 @@ func main() {
 
 	contracts := []common.Address{
 		//common.HexToAddress("0x7F85fB7f42A0c0D40431cc0f7DFDf88be6495e67"),
-		//common.HexToAddress("0x567d4e8264dC890571D5392fDB9fbd0e3FCBEe56"), //mom
-		common.HexToAddress("0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1"), //mom
+		common.HexToAddress("0xbc48cb82903f537614E0309CaF6fe8cEeBa3d174"), //nft
+		common.HexToAddress("0x457fd0Ee3Ce35113ee414994f37eE38518d6E7Ee"), //mom
 	}
 	_ = contracts
 	//diffs, err := a.GetLogs(0, 12, contracts)
@@ -55,7 +75,7 @@ func main() {
 		switch log.(type) {
 		case *harvester2.TransferERC20Log:
 			l := log.(*harvester2.TransferERC20Log)
-			fmt.Printf("%s %s %s \n", l.From, l.To, l.Value)
+			fmt.Printf("% s %s %s %s \n", l.Contract, l.From, l.To, l.Value)
 			//fmt.Println(log.(*harvester.TransferERC20Log).Value)
 		}
 	}

@@ -1,11 +1,13 @@
 package arbitrum_nova_adapter2
 
 import (
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/pkg/errors"
+
 	"github.com/momentum-xyz/ubercontroller/harvester2"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
-	"github.com/pkg/errors"
-	"math/big"
 )
 
 func updateResultForStakeCase(result map[umid.UMID]*[3]*big.Int, odysseyID umid.UMID, amountStaked *big.Int, tokenType uint8) {
