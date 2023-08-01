@@ -3,6 +3,7 @@ package object_user_attributes
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
@@ -35,8 +36,9 @@ const (
 	getObjectUserAttributesByObjectIDAndUserIDQuery = `SELECT * FROM object_user_attribute WHERE object_id = $1 AND user_id = $2;`
 	getObjectUserAttributesByObjectAttributeIDQuery = `SELECT * FROM object_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND object_id = $3;`
 
-	getObjectUserAttributesCountQuery           = `SELECT COUNT(*) FROM object_user_attribute;`
-	getObjectUserAttributesCountByObjectIDQuery = `SELECT COUNT(*) FROM object_user_attribute WHERE object_id = $1;`
+	getObjectUserAttributesCountQuery                       = `SELECT COUNT(*) FROM object_user_attribute;`
+	getObjectUserAttributesCountByObjectIDQuery             = `SELECT COUNT(*) FROM object_user_attribute WHERE object_id = $1;`
+	getObjectUserAttributesCountByObjectIDAndUpdatedAtQuery = `SELECT COUNT(*) FROM object_user_attribute WHERE object_id = $1 AND updated_at >= $2;`
 
 	upsertObjectUserAttributeQuery = `INSERT INTO object_user_attribute
 											(plugin_id, attribute_name, object_id, user_id, value, options)
@@ -209,12 +211,20 @@ func (db *DB) GetObjectUserAttributesCount(ctx context.Context) (int64, error) {
 	return count, nil
 }
 
-func (db *DB) GetObjectUserAttributesCountByObjectID(ctx context.Context, objectID umid.UMID) (int64, error) {
+func (db *DB) GetObjectUserAttributesCountByObjectID(ctx context.Context, objectID umid.UMID, sinceTime *time.Time) (int64, error) {
 	var count int64
-	if err := db.conn.QueryRow(ctx, getObjectUserAttributesCountByObjectIDQuery, objectID).
-		Scan(&count); err != nil {
-		return 0, errors.WithMessage(err, "failed to query db")
+	if sinceTime != nil {
+		if err := db.conn.QueryRow(ctx, getObjectUserAttributesCountByObjectIDAndUpdatedAtQuery, objectID, *sinceTime).
+			Scan(&count); err != nil {
+			return 0, errors.WithMessage(err, "failed to query db")
+		}
+	} else {
+		if err := db.conn.QueryRow(ctx, getObjectUserAttributesCountByObjectIDQuery, objectID).
+			Scan(&count); err != nil {
+			return 0, errors.WithMessage(err, "failed to query db")
+		}
 	}
+
 	return count, nil
 }
 

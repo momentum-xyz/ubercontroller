@@ -369,7 +369,7 @@ type UserUserAttributes interface {
 type ObjectUserAttributes interface {
 	Attributes[entry.ObjectUserAttributeID]
 
-	GetCountByObjectID(objectID umid.UMID) (*int64, bool)
+	GetCountByObjectID(objectID umid.UMID, sinceTime *time.Time) (*int64, bool)
 }
 
 type Assets2d interface {

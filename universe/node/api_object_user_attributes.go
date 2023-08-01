@@ -3,6 +3,7 @@ package node
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -99,7 +100,7 @@ func (n *Node) apiGetObjectUserAttributesValue(c *gin.Context) {
 func (n *Node) apiGetObjectUserAttributeCount(c *gin.Context) {
 	type InQuery struct {
 		attributes.QueryPluginAttribute
-		Since string `form:"since" binding:"required"`
+		Since string `form:"since"`
 	}
 
 	inQuery := InQuery{}
@@ -108,6 +109,18 @@ func (n *Node) apiGetObjectUserAttributeCount(c *gin.Context) {
 		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeCount: failed to bind query")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
 		return
+	}
+
+	var sinceTime *time.Time
+	if inQuery.Since != "" {
+		since, err := time.Parse(time.RFC3339, inQuery.Since)
+		if err != nil {
+			err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeCount: failed to parse 'since'")
+			api.AbortRequest(c, http.StatusBadRequest, "invalid_since_time", err, n.log)
+			return
+		}
+
+		sinceTime = &since
 	}
 
 	userID, err := api.GetUserIDFromContext(c)
@@ -153,7 +166,7 @@ func (n *Node) apiGetObjectUserAttributeCount(c *gin.Context) {
 		return
 	}
 
-	count, ok := n.GetObjectUserAttributes().GetCountByObjectID(objectID)
+	count, ok := n.GetObjectUserAttributes().GetCountByObjectID(objectID, sinceTime)
 	if !ok {
 		err := errors.Errorf("Node: apiGetObjectUserAttributeCount: object attribute value not found: %s", attributeID)
 		api.AbortRequest(c, http.StatusNotFound, "attribute_not_found", err, n.log)
