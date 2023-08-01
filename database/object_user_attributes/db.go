@@ -37,8 +37,8 @@ const (
 	getObjectUserAttributesByObjectAttributeIDQuery = `SELECT * FROM object_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND object_id = $3;`
 
 	getObjectUserAttributesCountQuery                       = `SELECT COUNT(*) FROM object_user_attribute;`
-	getObjectUserAttributesCountByObjectIDQuery             = `SELECT COUNT(*) FROM object_user_attribute WHERE object_id = $1;`
-	getObjectUserAttributesCountByObjectIDAndUpdatedAtQuery = `SELECT COUNT(*) FROM object_user_attribute WHERE object_id = $1 AND updated_at >= $2;`
+	getObjectUserAttributesCountByObjectIDQuery             = `SELECT COUNT(*) FROM object_user_attribute WHERE object_id = $1 AND attribute_name = $2;`
+	getObjectUserAttributesCountByObjectIDAndUpdatedAtQuery = `SELECT COUNT(*) FROM object_user_attribute WHERE object_id = $1 AND attribute_name = $2 AND updated_at >= $3;`
 
 	upsertObjectUserAttributeQuery = `INSERT INTO object_user_attribute
 											(plugin_id, attribute_name, object_id, user_id, value, options)
@@ -211,15 +211,15 @@ func (db *DB) GetObjectUserAttributesCount(ctx context.Context) (int64, error) {
 	return count, nil
 }
 
-func (db *DB) GetObjectUserAttributesCountByObjectID(ctx context.Context, objectID umid.UMID, sinceTime *time.Time) (int64, error) {
+func (db *DB) GetObjectUserAttributesCountByObjectID(ctx context.Context, objectID umid.UMID, attributeName string, sinceTime *time.Time) (int64, error) {
 	var count int64
 	if sinceTime != nil {
-		if err := db.conn.QueryRow(ctx, getObjectUserAttributesCountByObjectIDAndUpdatedAtQuery, objectID, *sinceTime).
+		if err := db.conn.QueryRow(ctx, getObjectUserAttributesCountByObjectIDAndUpdatedAtQuery, objectID, attributeName, *sinceTime).
 			Scan(&count); err != nil {
 			return 0, errors.WithMessage(err, "failed to query db")
 		}
 	} else {
-		if err := db.conn.QueryRow(ctx, getObjectUserAttributesCountByObjectIDQuery, objectID).
+		if err := db.conn.QueryRow(ctx, getObjectUserAttributesCountByObjectIDQuery, objectID, attributeName).
 			Scan(&count); err != nil {
 			return 0, errors.WithMessage(err, "failed to query db")
 		}

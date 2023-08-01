@@ -54,8 +54,8 @@ func (oua *objectUserAttributes) GetOptions(objectUserAttributeID entry.ObjectUs
 	return options, true
 }
 
-func (oua *objectUserAttributes) GetCountByObjectID(objectID umid.UMID, sinceTime *time.Time) (*int64, bool) {
-	count, err := oua.node.db.GetObjectUserAttributesDB().GetObjectUserAttributesCountByObjectID(oua.node.ctx, objectID, sinceTime)
+func (oua *objectUserAttributes) GetCountByObjectID(objectID umid.UMID, attributeName string, sinceTime *time.Time) (*int64, bool) {
+	count, err := oua.node.db.GetObjectUserAttributesDB().GetObjectUserAttributesCountByObjectID(oua.node.ctx, objectID, attributeName, sinceTime)
 	if err != nil {
 		return nil, false
 	}
