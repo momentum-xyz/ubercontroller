@@ -36,3 +36,26 @@ func PluginAttributeFromQuery(c *gin.Context, n universe.Node) (universe.Attribu
 	attrID = entry.NewAttributeID(pluginID, inQuery.AttributeName)
 	return attrType, attrID, nil
 }
+
+// Get plugin attribute definition from API URL params.
+func PluginAttributeFromURL(c *gin.Context, n universe.Node) (universe.AttributeType, entry.AttributeID, error) {
+	var attrID entry.AttributeID
+	pluginID, err := umid.Parse(c.Param("pluginID"))
+	if err != nil {
+		err := fmt.Errorf("invalid plugin ID: %w", err)
+		return nil, attrID, err
+	}
+	attrName := c.Param("attrName")
+	if attrName == "" {
+		err := fmt.Errorf("invalid attribute name: \"%s\"", attrName)
+		return nil, attrID, err
+	}
+	attrType, ok := n.GetAttributeTypes().GetAttributeType(
+		entry.AttributeTypeID{PluginID: pluginID, Name: attrName})
+	if !ok {
+		err := fmt.Errorf("attribute type not found with %s %s", pluginID, attrName)
+		return nil, attrID, err
+	}
+	attrID = entry.NewAttributeID(pluginID, attrName)
+	return attrType, attrID, nil
+}

@@ -175,6 +175,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 				object.GET("/all-users/attributes", n.apiGetObjectAllUsersAttributeValuesList)
 				object.GET("/all-users/count", n.apiGetObjectUserAttributeCount)
+				object.GET("/all-users/attributes/:pluginID/:attrName/entries", n.apiObjectUserAttributeValueEntries)
 
 				timeline := object.Group("/timeline")
 				{
@@ -206,6 +207,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 				objectUser.DELETE("/attributes/sub", n.apiRemoveObjectUserAttributeSubValue)
 
 				objectUser.GET("/attributes", n.apiGetObjectUserAttributesValue)
+
 				objectUser.GET("/attributes/sub", n.apiGetObjectUserAttributeSubValue)
 			}
 		}
