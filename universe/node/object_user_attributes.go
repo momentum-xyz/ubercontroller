@@ -3,6 +3,7 @@ package node
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
@@ -51,6 +52,14 @@ func (oua *objectUserAttributes) GetOptions(objectUserAttributeID entry.ObjectUs
 		return nil, false
 	}
 	return options, true
+}
+
+func (oua *objectUserAttributes) GetCountByObjectID(objectID umid.UMID, attributeName string, sinceTime *time.Time) (*uint64, bool) {
+	count, err := oua.node.db.GetObjectUserAttributesDB().GetObjectUserAttributesCountByObjectID(oua.node.ctx, objectID, attributeName, sinceTime)
+	if err != nil {
+		return nil, false
+	}
+	return &count, true
 }
 
 func (oua *objectUserAttributes) GetEffectiveOptions(

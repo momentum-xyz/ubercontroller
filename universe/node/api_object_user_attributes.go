@@ -3,6 +3,7 @@ package node
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -640,6 +641,92 @@ func (n *Node) apiGetObjectAllUsersAttributeValuesList(c *gin.Context) {
 		}
 		out[sua[i].UserID] = sua[i].AttributePayload.Value
 	}
+
+	c.JSON(http.StatusOK, out)
+}
+
+// @Summary Get object user attribute count
+// @Schemes
+// @Description Returns a object user attribute count
+// @Tags objects
+// @Accept json
+// @Produce json
+// @Param object_id path string true "Object UMID"
+// @Param query query node.apiGetObjectUserAttributeCount.InQuery true "query params"
+// @Success 200 {object} entry.AttributeValue
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/objects/{object_id}/all-users/count [get]
+func (n *Node) apiGetObjectUserAttributeCount(c *gin.Context) {
+	type InQuery struct {
+		attributes.QueryPluginAttribute
+		Since string `form:"since"`
+	}
+
+	inQuery := InQuery{}
+
+	if err := c.ShouldBindQuery(&inQuery); err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeCount: failed to bind query")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
+		return
+	}
+
+	var sinceTime *time.Time
+	if inQuery.Since != "" {
+		since, err := time.Parse(time.RFC3339, inQuery.Since)
+		if err != nil {
+			err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeCount: failed to parse 'since'")
+			api.AbortRequest(c, http.StatusBadRequest, "invalid_since_time", err, n.log)
+			return
+		}
+
+		sinceTime = &since
+	}
+
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeCount: failed to get user from context")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user", err, n.log)
+		return
+	}
+
+	objectID, err := umid.Parse(c.Param("objectID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeCount: failed to parse object umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
+		return
+	}
+
+	attrType, attributeID, err := attributes.PluginAttributeFromQuery(c, n)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeCount: failed to get plugin attribute from query")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_attribute", err, n.log)
+		return
+	}
+
+	objectUserAttributeID := entry.NewObjectUserAttributeID(attributeID, objectID, umid.Nil)
+
+	allowed, err := auth.CheckAttributePermissions(
+		c, *attrType.GetEntry(), n.GetObjectUserAttributes(), objectUserAttributeID, userID,
+		auth.ReadOperation)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeCount: permissions check")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_permissions_check", err, n.log)
+		return
+	} else if !allowed {
+		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeCount: operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+		return
+	}
+
+	count, ok := n.GetObjectUserAttributes().GetCountByObjectID(objectID, inQuery.AttributeName, sinceTime)
+	if !ok {
+		err := errors.Errorf("Node: apiGetObjectUserAttributeCount: object attribute value not found: %s", attributeID)
+		api.AbortRequest(c, http.StatusNotFound, "attribute_not_found", err, n.log)
+		return
+	}
+
+	out := dto.AttributeCount{Count: count}
 
 	c.JSON(http.StatusOK, out)
 }

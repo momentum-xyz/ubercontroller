@@ -370,6 +370,8 @@ type UserUserAttributes interface {
 // ObjectUserAttributes ignores "updateDB" flag
 type ObjectUserAttributes interface {
 	Attributes[entry.ObjectUserAttributeID]
+
+	GetCountByObjectID(objectID umid.UMID, attributeName string, sinceTime *time.Time) (*uint64, bool)
 }
 
 type Assets2d interface {

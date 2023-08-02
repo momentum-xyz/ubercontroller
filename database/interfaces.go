@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
+
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -333,6 +334,7 @@ type ObjectUserAttributesDB interface {
 	) ([]*entry.ObjectUserAttribute, error)
 
 	GetObjectUserAttributesCount(ctx context.Context) (int64, error)
+	GetObjectUserAttributesCountByObjectID(ctx context.Context, objectID umid.UMID, attributeName string, sinceTime *time.Time) (uint64, error)
 
 	UpsertObjectUserAttribute(
 		ctx context.Context, objectUserAttributeID entry.ObjectUserAttributeID,
