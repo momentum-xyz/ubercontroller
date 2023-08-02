@@ -468,19 +468,39 @@ func (n *Node) apiCloneObject(c *gin.Context) {
 				defaultValue := utils.GetFromAnyMap(cloneable, "use_default", map[string]any(nil))
 				if defaultValue != nil {
 					attributeValue := entry.AttributeValue(defaultValue)
-					cloneableObjectAttribute := CloneableObjectAttribute{
+					cloneableDefaultAttribute := CloneableObjectAttribute{
 						AttributeID: attributeID,
 						Value:       &attributeValue,
 					}
 
-					cloneableAttributes = append(cloneableAttributes, cloneableObjectAttribute)
+					cloneableAttributes = append(cloneableAttributes, cloneableDefaultAttribute)
 				} else {
-					cloneableObjectAttribute := CloneableObjectAttribute{
-						AttributeID: attributeID,
-						Value:       &attributeValue,
+					objectColorAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), "object_color")
+					objectColorValue, ok := object.GetObjectAttributes().GetValue(objectColorAttributeID)
+					if !ok {
+						err := errors.Errorf("Node: apiCloneObject: object color attr not found: %s", objectID)
+						api.AbortRequest(c, http.StatusNotFound, "object_color_not_found", err, n.log)
+						return
+					}
+					cloneableObjectColorAttribute := CloneableObjectAttribute{
+						AttributeID: objectColorAttributeID,
+						Value:       objectColorValue,
 					}
 
-					cloneableAttributes = append(cloneableAttributes, cloneableObjectAttribute)
+					objectStateAttributeID := entry.NewAttributeID(universe.GetImagePluginID(), "state")
+					objectStateValue, ok := object.GetObjectAttributes().GetValue(objectStateAttributeID)
+					if !ok {
+						err := errors.Errorf("Node: apiCloneObject: object state attr not found: %s", objectID)
+						api.AbortRequest(c, http.StatusNotFound, "object_state_not_found", err, n.log)
+						return
+					}
+					cloneableObjectStateAttribute := CloneableObjectAttribute{
+						AttributeID: objectStateAttributeID,
+						Value:       objectStateValue,
+					}
+
+					cloneableAttributes = append(cloneableAttributes, cloneableObjectColorAttribute)
+					cloneableAttributes = append(cloneableAttributes, cloneableObjectStateAttribute)
 				}
 			}
 		}
