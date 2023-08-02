@@ -475,32 +475,18 @@ func (n *Node) apiCloneObject(c *gin.Context) {
 
 					cloneableAttributes = append(cloneableAttributes, cloneableDefaultAttribute)
 				} else {
-					objectColorAttributeID := entry.NewAttributeID(universe.GetSystemPluginID(), "object_color")
-					objectColorValue, ok := object.GetObjectAttributes().GetValue(objectColorAttributeID)
+					attributeValue, ok := object.GetObjectAttributes().GetValue(attributeID)
 					if !ok {
-						err := errors.Errorf("Node: apiCloneObject: object color attr not found: %s", objectID)
-						api.AbortRequest(c, http.StatusNotFound, "object_color_not_found", err, n.log)
+						err := errors.Errorf("Node: apiCloneObject: attr value not found: %s", objectID)
+						api.AbortRequest(c, http.StatusNotFound, "attr_value_not_found", err, n.log)
 						return
 					}
-					cloneableObjectColorAttribute := CloneableObjectAttribute{
-						AttributeID: objectColorAttributeID,
-						Value:       objectColorValue,
+					cloneableObjectAttribute := CloneableObjectAttribute{
+						AttributeID: attributeID,
+						Value:       attributeValue,
 					}
 
-					objectStateAttributeID := entry.NewAttributeID(universe.GetImagePluginID(), "state")
-					objectStateValue, ok := object.GetObjectAttributes().GetValue(objectStateAttributeID)
-					if !ok {
-						err := errors.Errorf("Node: apiCloneObject: object state attr not found: %s", objectID)
-						api.AbortRequest(c, http.StatusNotFound, "object_state_not_found", err, n.log)
-						return
-					}
-					cloneableObjectStateAttribute := CloneableObjectAttribute{
-						AttributeID: objectStateAttributeID,
-						Value:       objectStateValue,
-					}
-
-					cloneableAttributes = append(cloneableAttributes, cloneableObjectColorAttribute)
-					cloneableAttributes = append(cloneableAttributes, cloneableObjectStateAttribute)
+					cloneableAttributes = append(cloneableAttributes, cloneableObjectAttribute)
 				}
 			}
 		}
