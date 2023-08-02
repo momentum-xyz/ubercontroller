@@ -375,6 +375,20 @@ type ObjectUserAttributesDB interface {
 	RemoveObjectUserAttributesByPluginIDAndObjectIDAndUserID(
 		ctx context.Context, pluginID umid.UMID, objectID umid.UMID, userID umid.UMID,
 	) error
+
+	ValueEntries(
+		ctx context.Context,
+		attrID entry.ObjectAttributeID,
+		fields []string,
+		order string,
+		descending bool,
+		limit uint,
+		offset uint,
+	) ([]map[string]interface{}, error)
+	ValueEntriesCount(
+		ctx context.Context,
+		objectAttributeID entry.ObjectAttributeID,
+	) (uint, error)
 }
 
 type UserAttributesDB interface {
