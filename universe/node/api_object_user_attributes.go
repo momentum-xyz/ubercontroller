@@ -647,13 +647,13 @@ func (n *Node) apiGetObjectAllUsersAttributeValuesList(c *gin.Context) {
 
 // @Summary Get object user attribute count
 // @Schemes
-// @Description Returns a object user attribute count
+// @Description Returns the number of (non null) object user attributes.
 // @Tags objects
 // @Accept json
 // @Produce json
 // @Param object_id path string true "Object UMID"
 // @Param query query node.apiGetObjectUserAttributeCount.InQuery true "query params"
-// @Success 200 {object} entry.AttributeValue
+// @Success 200 {object} dto.AttributeCount
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/all-users/count [get]
