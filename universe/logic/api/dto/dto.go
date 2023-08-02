@@ -73,7 +73,7 @@ type Activity struct {
 }
 
 type AttributeCount struct {
-	Count *int64 `json:"count"`
+	Count *uint64 `json:"count"`
 }
 
 type RecentWorld struct {

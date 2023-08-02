@@ -211,8 +211,8 @@ func (db *DB) GetObjectUserAttributesCount(ctx context.Context) (int64, error) {
 	return count, nil
 }
 
-func (db *DB) GetObjectUserAttributesCountByObjectID(ctx context.Context, objectID umid.UMID, attributeName string, sinceTime *time.Time) (int64, error) {
-	var count int64
+func (db *DB) GetObjectUserAttributesCountByObjectID(ctx context.Context, objectID umid.UMID, attributeName string, sinceTime *time.Time) (uint64, error) {
+	var count uint64
 	if sinceTime != nil {
 		if err := db.conn.QueryRow(ctx, getObjectUserAttributesCountByObjectIDAndUpdatedAtQuery, objectID, attributeName, *sinceTime).
 			Scan(&count); err != nil {
