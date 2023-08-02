@@ -468,9 +468,22 @@ func (n *Node) apiCloneObject(c *gin.Context) {
 				defaultValue := utils.GetFromAnyMap(cloneable, "use_default", map[string]any(nil))
 				if defaultValue != nil {
 					attributeValue := entry.AttributeValue(defaultValue)
-					cloneableObjectAttribute := CloneableObjectAttribute{
+					cloneableDefaultAttribute := CloneableObjectAttribute{
 						AttributeID: attributeID,
 						Value:       &attributeValue,
+					}
+
+					cloneableAttributes = append(cloneableAttributes, cloneableDefaultAttribute)
+				} else {
+					attributeValue, ok := object.GetObjectAttributes().GetValue(attributeID)
+					if !ok {
+						err := errors.Errorf("Node: apiCloneObject: attr value not found: %s", objectID)
+						api.AbortRequest(c, http.StatusNotFound, "attr_value_not_found", err, n.log)
+						return
+					}
+					cloneableObjectAttribute := CloneableObjectAttribute{
+						AttributeID: attributeID,
+						Value:       attributeValue,
 					}
 
 					cloneableAttributes = append(cloneableAttributes, cloneableObjectAttribute)
