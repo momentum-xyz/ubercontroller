@@ -36,9 +36,9 @@ const (
 	getObjectUserAttributesByObjectIDAndUserIDQuery = `SELECT * FROM object_user_attribute WHERE object_id = $1 AND user_id = $2;`
 	getObjectUserAttributesByObjectAttributeIDQuery = `SELECT * FROM object_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND object_id = $3;`
 
-	getObjectUserAttributesCountQuery                       = `SELECT COUNT(*) FROM object_user_attribute;`
-	getObjectUserAttributesCountByObjectIDQuery             = `SELECT COUNT(*) FROM object_user_attribute WHERE object_id = $1 AND attribute_name = $2;`
-	getObjectUserAttributesCountByObjectIDAndUpdatedAtQuery = `SELECT COUNT(*) FROM object_user_attribute WHERE object_id = $1 AND attribute_name = $2 AND updated_at >= $3;`
+	getObjectUserAttributesCountQuery                       = `SELECT COUNT(*) FROM object_user_attribute WHERE value IS NOT NULL;`
+	getObjectUserAttributesCountByObjectIDQuery             = `SELECT COUNT(*) FROM object_user_attribute WHERE value IS NOT NULL AND object_id = $1 AND attribute_name = $2;`
+	getObjectUserAttributesCountByObjectIDAndUpdatedAtQuery = `SELECT COUNT(*) FROM object_user_attribute WHERE value IS NOT NULL AND object_id = $1 AND attribute_name = $2 AND updated_at >= $3;`
 
 	upsertObjectUserAttributeQuery = `INSERT INTO object_user_attribute
 											(plugin_id, attribute_name, object_id, user_id, value, options)
