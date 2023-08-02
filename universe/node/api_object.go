@@ -474,6 +474,13 @@ func (n *Node) apiCloneObject(c *gin.Context) {
 					}
 
 					cloneableAttributes = append(cloneableAttributes, cloneableObjectAttribute)
+				} else {
+					cloneableObjectAttribute := CloneableObjectAttribute{
+						AttributeID: attributeID,
+						Value:       &attributeValue,
+					}
+
+					cloneableAttributes = append(cloneableAttributes, cloneableObjectAttribute)
 				}
 			}
 		}
