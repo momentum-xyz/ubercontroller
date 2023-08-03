@@ -783,7 +783,7 @@ func (n *Node) apiObjectUserAttributeValueEntries(c *gin.Context) {
 	}
 
 	type InQuery struct {
-		Fields  []string `form:"field"`
+		Fields  []string `form:"fields[]"`
 		OrderBy string   `form:"order"`
 		Limit   uint     `form:"limit,default=10"`
 		Offset  uint     `form:"offset"`
