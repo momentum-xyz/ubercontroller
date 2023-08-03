@@ -1,9 +1,10 @@
 package plugins
 
 import (
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"net/http"
 	"strings"
+
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -173,7 +174,7 @@ func (p *Plugins) apiSearchPlugins(c *gin.Context) {
 // @Router /api/v4/plugins/meta [get]
 func (p *Plugins) apiGetPluginsMeta(c *gin.Context) {
 	type InQuery struct {
-		IDs []string `form:"ids[]" binding:"required"`
+		IDs []string `form:"ids[]" json:"ids[]" binding:"required"`
 	}
 	var inQuery InQuery
 

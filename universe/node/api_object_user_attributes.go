@@ -20,11 +20,9 @@ import (
 )
 
 // @Summary Get object user attribute
-// @Schemes
 // @Description Returns object user attribute
-// @Tags objects
-// @Accept json
-// @Produce json
+// @Tags attributes,objects
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param user_id path string true "User UMID"
 // @Param query query attributes.QueryPluginAttribute true "query params"
@@ -87,11 +85,9 @@ func (n *Node) apiGetObjectUserAttributesValue(c *gin.Context) {
 }
 
 // @Summary Set object user attribute
-// @Schemes
 // @Description Sets entire object user attribute
-// @Tags objects
-// @Accept json
-// @Produce json
+// @Tags attributes,objects
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param user_id path string true "User UMID"
 // @Param body body node.apiSetObjectUserAttributesValue.InBody true "body params"
@@ -193,11 +189,9 @@ func (n *Node) apiSetObjectUserAttributesValue(c *gin.Context) {
 }
 
 // @Summary Get object user sub attribute
-// @Schemes
 // @Description Returns object user sub attributes
-// @Tags objects
-// @Accept json
-// @Produce json
+// @Tags attributes,objects
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param user_id path string true "User UMID"
 // @Param query query node.apiGetObjectUserAttributeSubValue.InQuery true "query params"
@@ -208,7 +202,7 @@ func (n *Node) apiSetObjectUserAttributesValue(c *gin.Context) {
 func (n *Node) apiGetObjectUserAttributeSubValue(c *gin.Context) {
 	type InQuery struct {
 		attributes.QueryPluginAttribute
-		SubAttributeKey string `form:"sub_attribute_key" binding:"required"`
+		SubAttributeKey string `form:"sub_attribute_key" json:"sub_attribute_key" binding:"required"`
 	}
 
 	inQuery := InQuery{}
@@ -290,11 +284,9 @@ func (n *Node) apiGetObjectUserAttributeSubValue(c *gin.Context) {
 }
 
 // @Summary Set object sub attribute
-// @Schemes
 // @Description Sets a object sub attribute
-// @Tags objects
-// @Accept json
-// @Produce json
+// @Tags attributes,objects
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param user_id path string true "User UMID"
 // @Param body body node.apiSetObjectUserAttributeSubValue.Body true "body params"
@@ -401,11 +393,9 @@ func (n *Node) apiSetObjectUserAttributeSubValue(c *gin.Context) {
 }
 
 // @Summary Delete object user sub attribute
-// @Schemes
 // @Description Deletes a object user sub attribute
-// @Tags objects
-// @Accept json
-// @Produce json
+// @Tags attributes,objects
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param user_id path string true "User UMID"
 // @Param body body node.apiRemoveObjectUserAttributeSubValue.Body true "body params"
@@ -497,11 +487,9 @@ func (n *Node) apiRemoveObjectUserAttributeSubValue(c *gin.Context) {
 }
 
 // @Summary Delete object user attribute
-// @Schemes
 // @Description Deletes a object attribute
 // @Tags objects
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param user_id path string true "User UMID"
 // @Param body body node.apiRemoveObjectUserAttributeValue.Body true "body params"
@@ -581,11 +569,9 @@ func (n *Node) apiRemoveObjectUserAttributeValue(c *gin.Context) {
 }
 
 // @Summary Get list of attributes for all users limited by object, plugin and attribute_name
-// @Schemes
 // @Description Returns map with key as userID and value as Attribute Value
-// @Tags objects
-// @Accept json
-// @Produce json
+// @Tags attributes,objects
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param query query attributes.QueryPluginAttribute true "query params"
 // @Success 200 {object} map[umid.UMID]entry.AttributeValue
@@ -648,11 +634,9 @@ func (n *Node) apiGetObjectAllUsersAttributeValuesList(c *gin.Context) {
 }
 
 // @Summary Get object user attribute count
-// @Schemes
 // @Description Returns the number of (non null) object user attributes.
-// @Tags objects
-// @Accept json
-// @Produce json
+// @Tags attributes,objects
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param query query node.apiGetObjectUserAttributeCount.InQuery true "query params"
 // @Success 200 {object} dto.AttributeCount
@@ -739,9 +723,8 @@ func (n *Node) apiGetObjectUserAttributeCount(c *gin.Context) {
 // @Description The fields params allows selecting some fields to directly return in the list.
 // @Description The limit and offset params allow pagination.
 // @Description Limit defaults to 10, maximun allowed is 100.
-// @Tags objects
-// @Accept json
-// @Produce json
+// @Tags attributes,objects
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param plugin_id path string true "Plugin MID"
 // @Param attribute_name path string true "Name of the plugin attribute"
@@ -783,10 +766,10 @@ func (n *Node) apiObjectUserAttributeValueEntries(c *gin.Context) {
 	}
 
 	type InQuery struct {
-		Fields  []string `form:"fields[]"`
-		OrderBy string   `form:"order"`
-		Limit   uint     `form:"limit,default=10"`
-		Offset  uint     `form:"offset"`
+		Fields  []string `form:"fields[]" json:"fields[]"`
+		OrderBy string   `form:"order" json:"order"`
+		Limit   uint     `form:"limit,default=10" json:"limit"`
+		Offset  uint     `form:"offset" json:"offset"`
 	}
 	var q InQuery
 	if err := c.ShouldBindQuery(&q); err != nil {

@@ -16,11 +16,9 @@ import (
 )
 
 // @Summary Get timeline for object
-// @Schemes
 // @Description Returns a timeline for an object, collection of activities == timeline
 // @Tags timeline
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param object_id path string true "World or object UMID"
 // @Param query query node.apiTimelineForObject.InQuery true "query params"
 // @Success 200 {object} node.apiTimelineForObject.Out
@@ -28,8 +26,8 @@ import (
 // @Router /api/v4/objects/{object_id}/timeline [get]
 func (n *Node) apiTimelineForObject(c *gin.Context) {
 	type InQuery struct {
-		StartIndex string `form:"startIndex" binding:"required"`
-		PageSize   string `form:"pageSize" binding:"required"`
+		StartIndex string `form:"startIndex" json:"startIndex" binding:"required"`
+		PageSize   string `form:"pageSize" json:"pageSize" binding:"required"`
 	}
 	var inQuery InQuery
 
@@ -125,11 +123,9 @@ func (n *Node) apiTimelineForObject(c *gin.Context) {
 }
 
 // @Summary Get timeline for object by activity id
-// @Schemes
 // @Description Returns a timeline for an object, collection of activities == timeline
 // @Tags timeline
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param object_id path string true "World or object UMID"
 // @Param activity_id path string true "Activity UMID"
 // @Param query query node.apiTimelineForObject.InQuery true "query params"
@@ -203,11 +199,9 @@ func (n *Node) apiTimelineForObjectById(c *gin.Context) {
 }
 
 // @Summary Adds a post to a timeline
-// @Schemes
 // @Description Creates a new post for a timeline
 // @Tags timeline
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param object_id path string true "World or object UMID"
 // @Param body body node.apiTimelineAddForObject.InBody true "body params"
 // @Success 200 {object} node.apiTimelineForObject.Out
@@ -349,11 +343,9 @@ func (n *Node) apiTimelineAddForObject(c *gin.Context) {
 }
 
 // @Summary Edits an activity to a timeline
-// @Schemes
 // @Description Edits an existing activity for a timeline
 // @Tags timeline
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param object_id path string true "World or object UMID"
 // @Param activity_id path string true "Activity UMID"
 // @Param body body node.apiTimelineEditForObject.InBody true "body params"
@@ -440,11 +432,9 @@ func (n *Node) apiTimelineEditForObject(c *gin.Context) {
 }
 
 // @Summary Remove an item from a timeline
-// @Schemes
 // @Description Removes an item from the timeline of an object
 // @Tags timeline
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param object_id path string true "World or object UMID"
 // @Param activity_id path string true "Activity UMID"
 // @Success 200 {object} node.apiTimelineForObject.Out

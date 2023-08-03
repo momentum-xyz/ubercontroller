@@ -15,14 +15,11 @@ import (
 )
 
 // @Summary Create object
-// @Schemes
 // @Description Creates a object base on body
 // @Tags objects
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param body body node.apiObjectsCreateObject.InBody true "body params"
 // @Success 201 {object} node.apiObjectsCreateObject.Out
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects [post]

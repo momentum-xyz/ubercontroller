@@ -37,15 +37,12 @@ type GenerationResponse struct {
 }
 
 // @Summary Get images by generation id
-// @Schemes
 // @Description Returns an array of images by generation id
 // @Tags leonardo
-// @Accept json
-// @Produce json
-// @Param leonardoID path string true "LeonardoID string"
+// @Security Bearer
+// @Param leonardo_id path string true "LeonardoID string"
 // @Success 200 {object} node.apiGetImageGeneration.Out
 // @Failure 400 {object} api.HTTPError
-// @Failure 500 {object} api.HTTPError
 // @Router /api/v4/leonardo/generate/{leonardo_id} [get]
 func (n *Node) apiGetImageGeneration(c *gin.Context) {
 	leonardoID := c.Param("leonardoID")
@@ -106,15 +103,12 @@ func (n *Node) apiGetImageGeneration(c *gin.Context) {
 }
 
 // @Summary Create a Generation of Images
-// @Schemes
 // @Description Returns a generation id with which the images can be fetched
 // @Tags leonardo
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param body body node.apiPostImageGenerationID.Body true "body params"
 // @Success 200 {object} node.apiPostImageGenerationID.Out
 // @Failure 400 {object} api.HTTPError
-// @Failure 500 {object} api.HTTPError
 // @Router /api/v4/leonardo/generate [post]
 func (n *Node) apiPostImageGenerationID(c *gin.Context) {
 	type Body struct {

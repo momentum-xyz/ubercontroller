@@ -76,11 +76,9 @@ func (s *SkyboxStatus) ToMap() map[string]any {
 }
 
 // @Summary Get lists the known blockadelabs art styles
-// @Schemes
 // @Description Return blockadelabs art styles
 // @Tags skybox
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Success 200 {object} []node.StyleItem
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
@@ -141,15 +139,12 @@ func (n *Node) apiGetSkyboxStyles(c *gin.Context) {
 }
 
 // @Summary Start skybox generation
-// @Schemes
 // @Description Start skybox generation
 // @Tags skybox
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param body body node.apiPostSkyboxGenerate.Body true "body params"
 // @Success 200 {object} node.apiPostSkyboxGenerate.Out
 // @Failure 400 {object} api.HTTPError
-// @Failure 500 {object} api.HTTPError
 // @Router /api/v4/skybox/generate [post]
 func (n *Node) apiPostSkyboxGenerate(c *gin.Context) {
 
@@ -379,15 +374,12 @@ func (n *Node) apiPostSkyboxWebHook(c *gin.Context) {
 }
 
 // @Summary Delete skybox by ID
-// @Schemes
 // @Description Delete skybox by ID
 // @Tags skybox
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param body body node.apiRemoveSkyboxByID.Body true "body params"
 // @Param skyboxID path string true "SkyboxID int"
 // @Success 200 {object} int
-// @Failure 500 {object} api.HTTPError
 // @Router /api/v4/skybox/{skyboxID} [delete]
 func (n *Node) apiRemoveSkyboxByID(c *gin.Context) {
 
@@ -562,10 +554,9 @@ func (n *Node) getApiBlockadelabsKeyAndSecret() (*string, *string, error) {
 }
 
 // @Summary Get skybox image by ID
-// @Schemes
 // @Description Return Get skybox image by ID
 // @Tags skybox
-// @Accept json
+// @Security Bearer
 // @Produce image/jpeg,json
 // @Param skyboxID path string true "SkyboxID int"
 // @Success 200 {object} nil

@@ -14,11 +14,10 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
-// @Schemes
+// @Summary Set user user attribute
 // @Description Sets a user user attribute based on UserID and TargetID
-// @Tags users
-// @Accept json
-// @Produce json
+// @Tags attributes,users
+// @Security Bearer
 // @Param user_id path string true "User UMID"
 // @Param target_id path string true "Target user UMID"
 // @Param body body node.apiSetUserUserSubAttributeValue.InBody true "body params"

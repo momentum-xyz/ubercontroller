@@ -16,11 +16,9 @@ import (
 )
 
 // @Summary Get members belonging to an object
-// @Schemes
 // @Description Returns members belonging to the object
-// @Tags members
-// @Accept json
-// @Produce json
+// @Tags members,objects
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Success 200 {object} dto.Member
 // @Failure 400 {object} api.HTTPError
@@ -85,15 +83,12 @@ func (n *Node) apiMembersGetForObject(c *gin.Context) {
 }
 
 // @Summary Add member to object
-// @Schemes
 // @Description Add member to object
-// @Tags members
-// @Accept json
-// @Produce json
+// @Tags members,objects
+// @Security Bearer
 // @Param body body node.apiPostMemberForObject.Body true "body params"
 // @Success 200 {object} nil
 // @Failure 400 {object} api.HTTPError
-// @Failure 500 {object} api.HTTPError
 // /api/v4/objects/{object_id}/members [post]
 func (n *Node) apiPostMemberForObject(c *gin.Context) {
 
@@ -171,16 +166,13 @@ func (n *Node) apiPostMemberForObject(c *gin.Context) {
 }
 
 // @Summary Delete member from object
-// @Schemes
 // @Description Delete member from object
-// @Tags members
-// @Accept json
-// @Produce json
+// @Tags members,objects
+// @Security Bearer
 // @Param objectID path string true "ObjectID UMID"
 // @Param userID path string true "UserID UMID"
 // @Success 200 {object} int
 // @Failure 400 {object} api.HTTPError
-// @Failure 500 {object} api.HTTPError
 // @Router /api/v4/objects/{objectID}/members/{userID} [delete]
 func (n *Node) apiDeleteMemberFromObject(c *gin.Context) {
 

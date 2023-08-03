@@ -19,14 +19,12 @@ import (
 )
 
 // @Summary Get object attribute
-// @Schemes
 // @Description Returns object attribute
-// @Tags objects
-// @Produce json
+// @Tags attributes,objects
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param attribute_id query attributes.QueryPluginAttribute true "query params"
 // @Success 200 {object} entry.AttributeValue
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/attributes [get]
@@ -82,15 +80,12 @@ func (n *Node) apiGetObjectAttributesValue(c *gin.Context) {
 }
 
 // @Summary Get object and all subobject attributes
-// @Schemes
 // @Description Returns object and all subobject attributes
-// @Tags objects
-// @Accept json
-// @Produce json
+// @Tags attributes,objects
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param query query attributes.QueryPluginAttribute true "query params"
 // @Success 200 {object} dto.ObjectAttributeValues
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/attributes-with-children [get]
@@ -153,16 +148,13 @@ func (n *Node) apiGetObjectWithChildrenAttributeValues(c *gin.Context) {
 }
 
 // @Summary Makes object attribute available to public
-// @Schemes
 // @Description Changes object permissions to be {"write":"user", "read":"any"}
-// @Tags objects
-// @Accept json
-// @Produce json
+// @Tags attributes,objects
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param body body attributes.QueryPluginAttribute true "body params"
 // @Success 202 {object} dto.ObjectSubOptions
 // @Failure 500 {object} api.HTTPError
-// @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/attributes/publicize [post]
 func (n *Node) apiSetObjectAttributesPublic(c *gin.Context) {
@@ -248,15 +240,12 @@ func (n *Node) apiSetObjectAttributesPublic(c *gin.Context) {
 }
 
 // @Summary Set object attribute
-// @Schemes
 // @Description Sets entire object attribute
-// @Tags objects
-// @Accept json
-// @Produce json
+// @Tags attributes,objects
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param body body node.apiSetObjectAttributesValue.InBody true "body params"
 // @Success 202 {object} entry.AttributeValue
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/attributes [post]
@@ -351,15 +340,12 @@ func (n *Node) apiSetObjectAttributesValue(c *gin.Context) {
 }
 
 // @Summary Get object sub attributes
-// @Schemes
 // @Description Returns object sub attributes
-// @Tags objects
-// @Accept json
-// @Produce json
+// @Tags attributes,objects
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param query query node.apiGetObjectAttributeSubValue.InQuery true "query params"
 // @Success 200 {object} dto.ObjectSubAttributes
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/attributes/sub [get]
@@ -445,15 +431,12 @@ func (n *Node) apiGetObjectAttributeSubValue(c *gin.Context) {
 }
 
 // @Summary Set object sub attribute
-// @Schemes
 // @Description Sets a object sub attribute
-// @Tags objects
-// @Accept json
-// @Produce json
+// @Tags attributes,objects
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param body body node.apiSetObjectAttributeSubValue.Body true "body params"
 // @Success 202 {object} dto.ObjectSubAttributes
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/attributes/sub [post]
@@ -554,15 +537,12 @@ func (n *Node) apiSetObjectAttributeSubValue(c *gin.Context) {
 }
 
 // @Summary Delete object sub attribute
-// @Schemes
 // @Description Deletes a object sub attribute
-// @Tags objects
-// @Accept json
-// @Produce json
+// @Tags attributes,objects
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param body body node.apiRemoveObjectAttributeSubValue.Body true "body params"
 // @Success 200 {object} nil
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/attributes/sub [delete]
@@ -646,15 +626,12 @@ func (n *Node) apiRemoveObjectAttributeSubValue(c *gin.Context) {
 }
 
 // @Summary Delete object attribute
-// @Schemes
 // @Description Deletes a object attribute
-// @Tags objects
-// @Accept json
-// @Produce json
+// @Tags attributes,objects
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param body body attributes.QueryPluginAttribute true "body params"
 // @Success 200 {object} nil
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/attributes [delete]

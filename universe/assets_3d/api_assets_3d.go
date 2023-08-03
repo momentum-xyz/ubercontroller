@@ -286,7 +286,7 @@ func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 // @Router /api/v4/assets-3d/options [get]
 func (a *Assets3d) apiGetAssets3dOptions(c *gin.Context) {
 	type InQuery struct {
-		Assets3dIDs []string `form:"assets3d_ids[]" binding:"required"`
+		Assets3dIDs []string `form:"assets3d_ids[]" json:"assets3d_ids[]" binding:"required"`
 	}
 	var inQuery InQuery
 
