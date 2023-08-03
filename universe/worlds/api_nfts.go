@@ -16,10 +16,8 @@ import (
 )
 
 // @Summary Get NFT metadata.
-// @Schemes
 // @Description Returns ERC721 metadata.
 // @Tags nfts
-// @Produce json
 // @Param nftID path string true "NFT token ID"
 // @Success 200 {object} dto.WorldNFTMeta
 // @Failure 400 {object} api.HTTPError

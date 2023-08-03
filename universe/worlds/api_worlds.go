@@ -22,11 +22,9 @@ import (
 )
 
 // @Summary Get world online users
-// @Schemes
 // @Description Returns a list of online users for specified world
 // @Tags worlds
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param object_id path string true "World UMID"
 // @Success 200 {array} dto.User
 // @Failure 400 {object} api.HTTPError
@@ -73,11 +71,9 @@ func (w *Worlds) apiGetOnlineUsers(c *gin.Context) {
 }
 
 // @Summary Get world details
-// @Schemes
 // @Description Returns a world by ID and its details
 // @Tags worlds
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param object_id path string true "World UMID"
 // @Success 200 {array} dto.WorldDetails
 // @Failure 400 {object} api.HTTPError
@@ -235,12 +231,9 @@ func (w *Worlds) apiWorldsGetDetails(c *gin.Context) {
 }
 
 // @Summary Get latest worlds
-// @Schemes
 // @Description Returns a list of six latest created worlds
 // @Tags worlds
-// @Accept json
-// @Produce json
-// @Failure 500 {object} api.HTTPError
+// @Security Bearer
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/worlds [get]
@@ -339,11 +332,9 @@ func (w *Worlds) apiWorldsGet(c *gin.Context) {
 }
 
 // @Summary Returns objects and one level of children
-// @Schemes
 // @Description Returns object information and one level of children based on world_id (used in explore widget)
 // @Tags worlds
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param world_id path string true "World UMID"
 // @Param query query worlds.apiWorldsGetObjectsWithChildren.Query true "query params"
 // @Success 200 {object} dto.ExploreOption
@@ -474,13 +465,10 @@ func (w *Worlds) apiWorldsResolveNameDescription(object universe.Object) (
 }
 
 // @Summary Search available worlds
-// @Schemes
 // @Description Returns world information based on a search query and categorizes the results
 // @Tags worlds
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Success 200 {object} dto.SearchOptions
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/worlds/explore/search [get]
@@ -544,11 +532,9 @@ func (w *Worlds) apiWorldsFilterWorlds(searchQuery string) (dto.SearchOptions, e
 }
 
 // @Summary Teleports user from token to another world
-// @Schemes
 // @Description Teleports user from token to another world
 // @Tags worlds
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param object_id path string true "World UMID"
 // @Success 200 {object} nil
 // @Failure 400 {object} api.HTTPError
@@ -598,11 +584,9 @@ func (w *Worlds) apiWorldsTeleportUser(c *gin.Context) {
 }
 
 // @Summary Updates world data
-// @Schemes
 // @Description Returns updates world with new data
 // @Tags worlds
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param object_id path string true "World UMID"
 // @Success 200 {array} dto.User
 // @Failure 400 {object} api.HTTPError
