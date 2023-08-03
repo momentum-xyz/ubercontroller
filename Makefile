@@ -28,6 +28,10 @@ test:
 build-docs:
 	go run github.com/swaggo/swag/cmd/swag@v1.8.8 init -g api.go -d universe/node,./,universe/streamchat -o build/docs/
 
+docs-html: build-docs
+	npx -- swagger2openapi@latest build/docs/swagger.json > build/docs/openapi.json
+	npx -- @redocly/cli build-docs build/docs/openapi.json --title "Momentum controller API - development version" -o ./build/docs/api.html
+
 docker-build: DOCKER_BUILDKIT=1
 docker-build:
 	docker build --build-arg BUILD_VERSION=${BUILD_VERSION} -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
