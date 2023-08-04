@@ -35,8 +35,8 @@ func main() {
 	}
 	sugaredLogger := logger.Sugar()
 
-	//env := "anton_private_net"
-	env := "main_net"
+	env := "anton_private_net"
+	//env := "main_net"
 
 	var mom, dad, w1 common.Address
 
@@ -62,26 +62,22 @@ func main() {
 
 	p := harvester3.NewPipes(a, sugaredLogger)
 	p.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	//matrix := harvester3.NewTokenMatrix(a, sugaredLogger)
-	//err = matrix.Run()
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//_ = matrix
-	//
-	//err = matrix.AddContract(mom)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//err = matrix.AddWallet(w1)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//err = matrix.AddContract(dad)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
+	err = p.AddContract(mom)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = p.AddWallet(w1)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = p.AddContract(dad)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	time.Sleep(time.Second * 30)
+	time.Sleep(time.Second * 3000)
 }

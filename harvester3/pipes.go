@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/sasha-s/go-deadlock"
 	"go.uber.org/zap"
 )
 
@@ -17,6 +18,11 @@ type Pipes struct {
 	resBalance chan ResBalance
 	reqLogs    chan ReqLogs
 	resLogs    chan ResLogs
+
+	mu        deadlock.RWMutex
+	data      map[common.Address]map[common.Address]*TokenCell
+	wallets   map[common.Address]bool
+	contracts []common.Address
 }
 
 type ReqBalance struct {
@@ -47,6 +53,8 @@ func NewPipes(adapter Adapter, logger *zap.SugaredLogger) *Pipes {
 		adapter: adapter,
 		logger:  logger,
 		block:   0,
+		data:    map[common.Address]map[common.Address]*TokenCell{},
+		wallets: make(map[common.Address]bool),
 
 		reqBalance: make(chan ReqBalance),
 		resBalance: make(chan ResBalance),
@@ -90,6 +98,7 @@ func (p *Pipes) balanceWorker() {
 
 func (p *Pipes) logsWorker() {
 	for req := range p.reqLogs {
+		fmt.Println("logsWorker", req.fromBlock, req.toBlock)
 		adapterLogs, err := p.adapter.GetTokenLogs(req.fromBlock, req.toBlock, req.contracts)
 		if err != nil {
 			p.logger.Error(err)
@@ -128,9 +137,9 @@ func (p *Pipes) mainWorker() {
 	for {
 		select {
 		case res := <-p.resBalance:
-			fmt.Println("resBalance", res)
+			fmt.Printf("resBalance %v %v %v %v \n", res.contract, res.wallet, res.block, res.value.String())
 		case res := <-p.resLogs:
-			//fmt.Println("resLogs", res)
+			fmt.Println("resLogs", res)
 
 			for c := range res.logs {
 				for w := range res.logs[c] {
@@ -145,12 +154,65 @@ func (p *Pipes) mainWorker() {
 }
 
 func (p *Pipes) newBlockTicker(blockNumber uint64) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
 	if blockNumber > p.block {
+
+		fromBlock := p.block + 1
+		p.block = blockNumber
+
 		p.reqLogs <- ReqLogs{
 			contracts: nil,
-			fromBlock: p.block + 1,
+			fromBlock: fromBlock,
 			toBlock:   blockNumber,
 		}
 	}
+}
 
+func (p *Pipes) AddContract(contract common.Address) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if _, ok := p.data[contract]; ok {
+		// contract already subscribed
+		return nil
+	}
+
+	p.contracts = append(p.contracts, contract)
+
+	p.data[contract] = make(map[common.Address]*TokenCell)
+	for w, _ := range p.wallets {
+		p.data[contract][w] = NewTokenCell(contract, w)
+		p.reqBalance <- ReqBalance{
+			contract: contract,
+			wallet:   w,
+			block:    p.block,
+		}
+	}
+
+	return nil
+}
+
+func (p *Pipes) AddWallet(wallet common.Address) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if _, ok := p.wallets[wallet]; ok {
+		// Wallet already subscribed
+		return nil
+	}
+
+	p.wallets[wallet] = true
+
+	for c, _ := range p.data {
+		p.data[c][wallet] = NewTokenCell(c, wallet)
+
+		p.reqBalance <- ReqBalance{
+			contract: c,
+			wallet:   wallet,
+			block:    p.block,
+		}
+	}
+
+	return nil
 }
