@@ -72,7 +72,7 @@ func (n *Node) apiObjectsCreateObject(c *gin.Context) {
 
 	transform := inBody.Transform
 	if transform == nil {
-		transform, err = tree.CalcObjectSpawnPosition(parentID, userID)
+		transform, err = tree.CalcObjectSpawnPosition(parentID, userID, nil)
 		if err != nil {
 			err := errors.WithMessage(err, "Node: apiObjectsCreateObject: failed to calc object spawn position")
 			api.AbortRequest(c, http.StatusBadRequest, "calc_spawn_position_failed", err, n.log)
