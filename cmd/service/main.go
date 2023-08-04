@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"math/rand"
 	"os"
@@ -14,6 +15,7 @@ import (
 	"github.com/zakaria-chahboun/cute"
 
 	"github.com/momentum-xyz/ubercontroller/config"
+	"github.com/momentum-xyz/ubercontroller/database/migrations"
 	"github.com/momentum-xyz/ubercontroller/logger"
 	"github.com/momentum-xyz/ubercontroller/pkg/service"
 	"github.com/momentum-xyz/ubercontroller/types"
@@ -23,12 +25,26 @@ import (
 var version = "devel"
 
 func main() {
+	printVersion := flag.Bool("version", false, "Print version")
+	migrateOnly := flag.Bool("migrate", false, "Only migrate the database.")
+	migrateSteps := flag.Int("steps", 0, `Migration steps, negative: down, positive: up. Default 0: all the way up.`)
 	flag.Parse()
+	if *printVersion {
+		fmt.Printf("Controller version: %s\n", version)
+		return
+	}
+
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	if err := run(ctx); err != nil {
-		log.Fatal(errors.WithMessage(err, "failed to run service"))
+	if *migrateOnly {
+		if err := runMigration(ctx, *migrateSteps); err != nil {
+			log.Fatal(errors.WithMessage(err, "failed to run migration"))
+		}
+	} else {
+		if err := run(ctx); err != nil {
+			log.Fatal(errors.WithMessage(err, "failed to run service"))
+		}
 	}
 }
 
@@ -80,5 +96,21 @@ func run(ctx context.Context) error {
 	cute.SetMessageColor(cute.BrightBlue)
 	cute.Println("Node stopped", "That's all folks!")
 
+	return nil
+}
+
+func runMigration(ctx context.Context, steps int) error {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return errors.WithMessage(err, "failed to get config")
+	}
+	log := logger.L()
+	nodeCtx, err := types.NewNodeContext(ctx, log, cfg)
+	if err != nil {
+		return errors.WithMessage(err, "failed to create context")
+	}
+	if err := migrations.MigrateDatabase(nodeCtx, &cfg.Postgres, steps); err != nil {
+		return errors.WithMessage(err, "failed to migrate database")
+	}
 	return nil
 }

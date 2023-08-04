@@ -164,7 +164,10 @@ func createNewDatabase(ctx context.Context, log *zap.SugaredLogger, cfg *config.
 	return nil
 }
 
-func MigrateDatabase(ctx types.NodeContext, cfg *config.Postgres) error {
+// MigrateDatabase executes the golang-migrations SQL files.
+// steps allow selective migrations:
+// 0: migrate all the way up, positive: migrate that many steps up, negative: migrate steps down
+func MigrateDatabase(ctx types.NodeContext, cfg *config.Postgres, steps int) error {
 	log := ctx.Logger()
 
 	db, err := pgDBMigrationsConnect(ctx, log, cfg)
@@ -208,11 +211,13 @@ func MigrateDatabase(ctx types.NodeContext, cfg *config.Postgres) error {
 			return errors.WithMessage(err, "failed to obtain current migration version")
 		}
 		log.Info("Migration: empty (newly created) database detected, will seed!")
-	} else if version < iver {
+	} else if steps >= 0 && version < iver {
 		if isDirty {
 			return errors.New("database is dirty")
 		}
 		log.Infof("Migration: current DB schema verion=%d, available schema version=%d, will migrate", iver, version)
+	} else if steps < 0 {
+		log.Infof("Migration: current DB schema verion=%d, available schema version=%d, will migrate %d steps DOWN", iver, version, steps)
 	} else {
 		log.Infoln("Migration: migration is not required")
 		return nil
@@ -223,8 +228,14 @@ func MigrateDatabase(ctx types.NodeContext, cfg *config.Postgres) error {
 	}
 
 	// run your migrations and handle the errors above of course
-	if err := m.Up(); err != nil {
-		return errors.WithMessage(err, "failed to migrate database")
+	if steps == 0 {
+		if err := m.Up(); err != nil {
+			return errors.WithMessage(err, "failed to migrate database")
+		}
+	} else {
+		if err := m.Steps(steps); err != nil {
+			return errors.WithMessage(err, "failed to step migrate database")
+		}
 	}
 	version, _, _ = m.Version()
 	log.Infof("Migration: success, current schema version: %d", version)
