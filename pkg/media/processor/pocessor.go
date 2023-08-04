@@ -6,14 +6,18 @@ import (
 	"go.uber.org/zap"
 	"image"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/getsentry/sentry-go"
 	lru "github.com/hashicorp/golang-lru"
+
+	"github.com/momentum-xyz/ubercontroller/config"
 )
 
 type Processor struct {
 	log *zap.SugaredLogger
+	cfg *config.Config
 
 	Fontpath  string
 	Imagepath string
@@ -40,6 +44,38 @@ type Processor struct {
 type MetaDef struct {
 	H, W int
 	mime string
+}
+
+func Initialize(cfg *config.Config) *Processor {
+	x := new(Processor)
+	x.Imagepath = strings.TrimSuffix(cfg.Media.Imagepath, "/") + "/"
+	x.Videopath = strings.TrimSuffix(cfg.Media.Videopath, "/") + "/"
+	x.Audiopath = strings.TrimSuffix(cfg.Media.Audiopath, "/") + "/"
+	x.Assetpath = strings.TrimSuffix(cfg.Media.Assetpath, "/") + "/"
+	x.Fontpath = strings.TrimSuffix(cfg.Media.Fontpath, "/") + "/"
+	x.framesinprogress = make(map[string]bool)
+	x.RenderQueue = make(chan *FrameRenderRequest, 512)
+	x.RenderDone = make(chan *FrameRenderRequest, 512)
+	os.MkdirAll(x.Imagepath, os.ModePerm)
+	os.MkdirAll(x.Videopath, os.ModePerm)
+	os.MkdirAll(x.Audiopath, os.ModePerm)
+	os.MkdirAll(x.Assetpath, os.ModePerm)
+
+	os.MkdirAll(x.Imagepath+"F", os.ModePerm)
+	x.ImPathF = x.Imagepath + "F/"
+
+	x.ImageMapF, _ = lru.New(defaultCacheSize)
+	x.ImageMapS = make(map[string]*lru.Cache)
+	x.ImPathS = make(map[string]string)
+	for rs := range Tsizes {
+		os.MkdirAll(x.Imagepath+rs, os.ModePerm)
+		x.ImPathS[rs] = x.Imagepath + rs + "/"
+		x.ImageMapS[rs], _ = lru.New(defaultCacheSize)
+	}
+
+	os.MkdirAll(strings.TrimSuffix(x.ImPathF, "/"), 0775)
+	go x.run()
+	return x
 }
 
 func (p *Processor) HandleError(err error) bool {
