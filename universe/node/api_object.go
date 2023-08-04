@@ -403,7 +403,7 @@ func (n *Node) apiCloneObject(c *gin.Context) {
 	}
 
 	parentID := object.GetParent().GetID()
-	transform, err := tree.CalcObjectSpawnPosition(parentID, userID)
+	transform, err := tree.CalcObjectSpawnPosition(parentID, userID, object.GetTransform())
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiCloneObject: failed to calc object spawn position")
 		api.AbortRequest(c, http.StatusBadRequest, "calc_spawn_position_failed", err, n.log)

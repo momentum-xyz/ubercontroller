@@ -8,7 +8,9 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 )
 
-func CalcObjectSpawnPosition(parentID, userID umid.UMID) (*cmath.Transform, error) {
+// CalcOjbectSpawnPosition calculate the initial transform for a new object.
+// src is an optional Transform to use for default values.
+func CalcObjectSpawnPosition(parentID, userID umid.UMID, src *cmath.Transform) (*cmath.Transform, error) {
 	parent, ok := universe.GetNode().GetObjectFromAllObjects(parentID)
 	if !ok {
 		return nil, errors.Errorf("object parent not found: %s", parentID)
@@ -21,12 +23,18 @@ func CalcObjectSpawnPosition(parentID, userID umid.UMID) (*cmath.Transform, erro
 		if world != nil {
 			user, ok := world.GetUser(userID, true)
 			if ok {
-				//distance := float32(10)
+				// TODO: allow caller (API endpoint) to optionally specifiy a position, rotation and scale.
+				pos := user.GetPosition()
+				rot := cmath.Vec3{}
+				scl := cmath.Vec3{X: 1, Y: 1, Z: 1}
+				if src != nil {
+					rot = src.Rotation
+					scl = src.Scale
+				}
 				position = &cmath.Transform{
-					// TODO: recalc based on euler angles, not lookat: Position: cmath.Add(user.GetTransform(), cmath.MultiplyN(user.GetRotation(), distance)),
-					Position: user.GetPosition(),
-					Rotation: cmath.Vec3{},
-					Scale:    cmath.Vec3{X: 1, Y: 1, Z: 1},
+					Position: pos,
+					Rotation: rot,
+					Scale:    scl,
 				}
 			}
 		}
