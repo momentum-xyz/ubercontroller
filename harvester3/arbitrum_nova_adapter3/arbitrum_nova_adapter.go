@@ -96,7 +96,7 @@ func (a *ArbitrumNovaAdapter) RegisterNewBlockListener(f harvester3.AdapterListe
 	a.listener = f
 }
 
-func (a *ArbitrumNovaAdapter) GetTokenBalance(contract *common.Address, wallet *common.Address, blockNumber uint64) (*big.Int, int64, error) {
+func (a *ArbitrumNovaAdapter) GetTokenBalance(contract *common.Address, wallet *common.Address, blockNumber uint64) (*big.Int, uint64, error) {
 	type request struct {
 		To   string `json:"to"`
 		Data string `json:"data"`
@@ -126,7 +126,7 @@ func (a *ArbitrumNovaAdapter) GetTokenBalance(contract *common.Address, wallet *
 		log.Fatal(err)
 	}
 
-	return balance, int64(blockNumber), nil
+	return balance, blockNumber, nil
 }
 
 func (a *ArbitrumNovaAdapter) GetTransactionMessage(tx *types.Transaction) *core.Message {
@@ -187,10 +187,10 @@ func (a *ArbitrumNovaAdapter) getRawLogs(
 	return
 }
 
-func (a *ArbitrumNovaAdapter) GetTokenLogs(fromBlock, toBlock int64, contracts []common.Address) ([]any, error) {
+func (a *ArbitrumNovaAdapter) GetTokenLogs(fromBlock, toBlock uint64, contracts []common.Address) ([]any, error) {
 	logTransferSig := []byte("Transfer(address,address,uint256)")
 	logTransferSigHash := crypto.Keccak256Hash(logTransferSig)
-	bcLogs, err := a.getRawLogs(&logTransferSigHash, nil, nil, contracts, big.NewInt(fromBlock), big.NewInt(toBlock))
+	bcLogs, err := a.getRawLogs(&logTransferSigHash, nil, nil, contracts, big.NewInt(int64(fromBlock)), big.NewInt(int64(toBlock)))
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to filter log")
 	}
@@ -208,7 +208,7 @@ func (a *ArbitrumNovaAdapter) GetTokenLogs(fromBlock, toBlock int64, contracts [
 
 		var e harvester3.TransferERC20Log
 
-		e.Block = int64(vLog.BlockNumber)
+		e.Block = vLog.BlockNumber
 		e.Contract = vLog.Address
 		// Hex and Un Hex here used to remove padding zeros
 		e.From = common.HexToAddress(vLog.Topics[1].Hex())

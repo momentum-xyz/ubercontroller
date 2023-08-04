@@ -10,11 +10,11 @@ type TokenCell struct {
 	contract common.Address
 	wallet   common.Address
 
-	block int64
+	block uint64
 	value *big.Int
 
 	isInit    bool
-	initBlock int64
+	initBlock uint64
 	initValue *big.Int
 }
 

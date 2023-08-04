@@ -13,20 +13,20 @@ import (
 type TokenMatrix struct {
 	mu          deadlock.RWMutex
 	data        map[common.Address]map[common.Address]*TokenCell
-	delta       map[common.Address]map[common.Address]map[int64]*big.Int
+	delta       map[common.Address]map[common.Address]map[uint64]*big.Int
 	wallets     map[common.Address]bool
 	contracts   []common.Address
 	adapter     Adapter
 	jobs        chan *TokenCell
-	blockNumber int64
-	startBlock  int64
+	blockNumber uint64
+	startBlock  uint64
 	logger      *zap.SugaredLogger
 }
 
 func NewTokenMatrix(adapter Adapter, logger *zap.SugaredLogger) *TokenMatrix {
 	return &TokenMatrix{
 		data:    map[common.Address]map[common.Address]*TokenCell{},
-		delta:   make(map[common.Address]map[common.Address]map[int64]*big.Int),
+		delta:   make(map[common.Address]map[common.Address]map[uint64]*big.Int),
 		wallets: make(map[common.Address]bool),
 		jobs:    make(chan *TokenCell),
 		adapter: adapter,
@@ -44,7 +44,7 @@ func (m *TokenMatrix) Run() error {
 	if err != nil {
 		fmt.Println(err)
 	}
-	m.startBlock = int64(block)
+	m.startBlock = uint64(block)
 
 	m.adapter.RegisterNewBlockListener(m.newBlockTicker)
 
@@ -62,7 +62,7 @@ func (m *TokenMatrix) newBlockTicker(blockNumber uint64) {
 	}
 	fromBlock += 1
 
-	toBlock := int64(blockNumber)
+	toBlock := uint64(blockNumber)
 
 	logs, err := m.adapter.GetTokenLogs(fromBlock, toBlock, m.contracts)
 	if err != nil {
@@ -71,7 +71,7 @@ func (m *TokenMatrix) newBlockTicker(blockNumber uint64) {
 
 	m.processLogs(logs)
 
-	m.blockNumber = int64(blockNumber)
+	m.blockNumber = uint64(blockNumber)
 }
 
 func (m *TokenMatrix) processLogs(logs []any) {
@@ -105,7 +105,7 @@ func (m *TokenMatrix) processLogs(logs []any) {
 	}
 }
 
-func (m *TokenMatrix) updateCellOrDelta(contract common.Address, wallet common.Address, block int64, value *big.Int) {
+func (m *TokenMatrix) updateCellOrDelta(contract common.Address, wallet common.Address, block uint64, value *big.Int) {
 	v := m.data[contract][wallet]
 	if v.isInit {
 		// If cell initialised apply delta immediately
@@ -115,12 +115,12 @@ func (m *TokenMatrix) updateCellOrDelta(contract common.Address, wallet common.A
 		}
 	} else {
 		if _, ok := m.delta[contract]; !ok {
-			m.delta[contract] = make(map[common.Address]map[int64]*big.Int)
+			m.delta[contract] = make(map[common.Address]map[uint64]*big.Int)
 		}
 		if _, ok := m.delta[contract][wallet]; !ok {
-			m.delta[contract] = make(map[common.Address]map[int64]*big.Int)
+			m.delta[contract] = make(map[common.Address]map[uint64]*big.Int)
 		}
-		m.delta[contract][wallet] = make(map[int64]*big.Int)
+		m.delta[contract][wallet] = make(map[uint64]*big.Int)
 		m.delta[contract][wallet][block] = value
 	}
 }
