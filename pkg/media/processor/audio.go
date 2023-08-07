@@ -21,25 +21,28 @@ var AllowedAudioTypes = map[types.Type]bool{
 	matchers.TypeFlac: true,
 }
 
-func (p *Processor) ProcessTrack(body io.ReadCloser) (error, string) {
+func (p *Processor) ProcessTrack(body io.ReadCloser) (string, error) {
 	hasher := md5.New()
 	bodyReader := io.TeeReader(body, hasher)
 	buf := make([]byte, 265)
 
 	n, err := bodyReader.Read(buf)
 	if p.HandleError(err) {
-		return err, ""
+		return "", err
 	}
 
 	t, err := filetype.Get(buf[:n])
+	if err != nil {
+		return "", err
+	}
 
 	if _, ok := AllowedAudioTypes[t]; !ok {
-		return errors.New("audio type not accepted"), ""
+		return "", errors.New("audio type not accepted")
 	}
 
 	file, err := os.CreateTemp(p.Audiopath, "tmp")
 	if err != nil {
-		return err, ""
+		return "", err
 	}
 
 	defer func() {
@@ -51,15 +54,15 @@ func (p *Processor) ProcessTrack(body io.ReadCloser) (error, string) {
 
 	file.Write(buf[:n])
 	_, err = io.Copy(file, bodyReader)
-
 	if err != nil {
-		return err, ""
+		return "", err
 	}
+
 	file.Close()
 
 	bhash := hasher.Sum(nil)
 	hash := hex.EncodeToString(bhash[:])
 	os.Rename(file.Name(), p.Audiopath+hash)
 
-	return err, hash
+	return hash, err
 }

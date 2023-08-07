@@ -3,6 +3,8 @@ package processor
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"encoding/json"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"image"
 	"os"
@@ -41,6 +43,38 @@ type Processor struct {
 	RenderDone  chan *FrameRenderRequest
 
 	ImagesRescaleInProgress sync.Map
+}
+
+type FrameDesc struct {
+	Background []uint32     `json:"background"`
+	BGimage    string       `json:"bgimage"`
+	Color      []uint32     `json:"color"`
+	Thickness  int          `json:"thickness"`
+	Width      int          `json:"width"`
+	Height     int          `json:"height"`
+	X          int          `json:"x"`
+	Y          int          `json:"y"`
+	Text       *TextDesc    `json:"text"`
+	Sub        []*FrameDesc `json:"sub"`
+}
+
+type TextDesc struct {
+	String    string   `json:"string"`
+	Fontname  string   `json:"fontfile"`
+	Fontsize  float64  `json:"fontsize"`
+	Fontcolor []uint32 `json:"fontcolor"`
+	Wrap      bool     `json:"wrap"`
+	PadX      int      `json:"padX"`
+	PadY      int      `json:"padY"`
+	AlignH    string   `json:"alignH"`
+	AlignV    string   `json:"alignV"`
+	DPI       float64  `json:"dpi"`
+}
+
+type FrameRenderRequest struct {
+	ID    *string
+	Frame *FrameDesc
+	Wg    sync.WaitGroup
 }
 
 type MetaDef struct {
@@ -140,7 +174,38 @@ func (p *Processor) GetMD5HashByte(text []byte) string {
 	return hex.EncodeToString(hash[:])
 }
 
-func (p *Processor) present(ID *string) (*MetaDef, *string) {
+func (p *Processor) ProcessFrame(body []byte) (string, error) {
+	var payload FrameDesc
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return "", errors.WithMessagef(err, "error during unmarshal: %v")
+	}
+
+	hash := p.GetMD5HashByte(body)
+	//if IDi != "" && IDi != ID {
+	//	return "", errors.WithMessage(err, "hash mismatch")
+	//}
+
+	// what does this check do?
+
+	p.log.Debug(hash)
+	str, err := json.MarshalIndent(payload, "", "    ")
+	if err != nil {
+		sentry.CaptureException(err)
+	}
+
+	p.log.Debug(string(str))
+	res, _ := p.Present(&hash)
+	if res == nil {
+		req := &FrameRenderRequest{ID: &hash, Frame: &payload}
+		req.Wg.Add(1)
+		p.RenderQueue <- req
+		req.Wg.Wait()
+	}
+
+	return hash, nil
+}
+
+func (p *Processor) Present(ID *string) (*MetaDef, *string) {
 	fpath := p.ImPathF + *ID
 
 	res, ok := p.ImageMapF.Get(*ID)

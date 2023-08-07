@@ -40,15 +40,78 @@ func (m *Media) Initialize(ctx types.NodeContext) error {
 }
 
 func (m *Media) AddImage(file multipart.File) (string, error) {
-	fmt.Println("Endpoint Hit: addImage")
+	fmt.Println("Endpoint Hit: AddImage")
 
 	body, err := io.ReadAll(file)
 	if err != nil {
-		return "", errors.WithMessagef(err, "error during reading body: %v")
+		return "", errors.WithMessagef(err, "error reading file: %v")
 	}
 	hash, err := m.processor.ProcessImage(body)
 	if err != nil {
-		return "", errors.WithMessagef(err, "error during writing image: %v")
+		return "", errors.WithMessagef(err, "error writing image: %v")
 	}
+	return hash, err
+}
+
+func (m *Media) AddFrame(file multipart.File) (string, error) {
+	m.log.Debug("Endpoint Hit: AddFrame")
+
+	body, err := io.ReadAll(file)
+	if err != nil {
+		return "", errors.WithMessagef(err, "error reading file: %v")
+	}
+	hash, err := m.processor.ProcessFrame(body)
+	if err != nil {
+		return "", errors.WithMessagef(err, "error processing frame: %v")
+	}
+
+	return hash, err
+}
+
+func (m *Media) AddTube(file multipart.File) (string, error) {
+	m.log.Info("Endpoint Hit: AddTube")
+	body, err := io.ReadAll(file)
+	if err != nil {
+		return "", errors.WithMessagef(err, "error reading file: %v")
+	}
+
+	hash, err := m.processor.ProcessTube(body)
+	if err != nil {
+		return "", errors.WithMessagef(err, "error writing image: %v")
+	}
+
+	return hash, err
+}
+
+func (m *Media) AddVideo(file multipart.File) (string, error) {
+	m.log.Info("Endpoint Hit: AddVideo")
+
+	hash, err := m.processor.ProcessVideo(file)
+	if err != nil {
+		return "", errors.WithMessagef(err, "error writing video: %v")
+	}
+
+	return hash, err
+}
+
+func (m *Media) AddTrack(file multipart.File) (string, error) {
+	m.log.Info("Endpoint Hit: AddTrack")
+
+	hash, err := m.processor.ProcessTrack(file)
+	if err != nil {
+		return "", errors.WithMessagef(err, "error writing audio: %v")
+	}
+
+	return hash, err
+}
+
+func (m *Media) AddAsset(file multipart.File) (string, error) {
+	m.log.Info("Endpoint Hit: AddAsset")
+
+	hash, err := m.processor.ProcessAsset(file)
+	if err != nil {
+		return "", errors.WithMessagef(err, "error writing asset: %v")
+	}
+
 	return hash, err
 }

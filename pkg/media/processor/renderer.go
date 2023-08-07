@@ -17,38 +17,6 @@ import (
 	"github.com/oakmound/oak/v3/render/mod"
 )
 
-type FrameDesc struct {
-	Background []uint32     `json:"background"`
-	BGimage    string       `json:"bgimage"`
-	Color      []uint32     `json:"color"`
-	Thickness  int          `json:"thickness"`
-	Width      int          `json:"width"`
-	Height     int          `json:"height"`
-	X          int          `json:"x"`
-	Y          int          `json:"y"`
-	Text       *TextDesc    `json:"text"`
-	Sub        []*FrameDesc `json:"sub"`
-}
-
-type TextDesc struct {
-	String    string   `json:"string"`
-	Fontname  string   `json:"fontfile"`
-	Fontsize  float64  `json:"fontsize"`
-	Fontcolor []uint32 `json:"fontcolor"`
-	Wrap      bool     `json:"wrap"`
-	PadX      int      `json:"padX"`
-	PadY      int      `json:"padY"`
-	AlignH    string   `json:"alignH"`
-	AlignV    string   `json:"alignV"`
-	DPI       float64  `json:"dpi"`
-}
-
-type FrameRenderRequest struct {
-	ID    *string
-	Frame *FrameDesc
-	wg    sync.WaitGroup
-}
-
 const (
 	defaultTextDPI    = 100
 	oakDefaultTextDPI = 72
@@ -120,7 +88,7 @@ func (p *Processor) RenderFrame(req *FrameRenderRequest) {
 
 	p.RenderDone <- req
 	p.log.Debug("Render Done")
-	req.wg.Done()
+	req.Wg.Done()
 }
 
 func (p *Processor) renderSubFrame(frame *FrameDesc, xul int, yul int, img *render.CompositeM) {
