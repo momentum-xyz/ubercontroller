@@ -3,6 +3,7 @@ package processor
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"github.com/momentum-xyz/ubercontroller/types"
 	"go.uber.org/zap"
 	"image"
 	"os"
@@ -16,6 +17,7 @@ import (
 )
 
 type Processor struct {
+	ctx types.NodeContext
 	log *zap.SugaredLogger
 	cfg *config.Config
 
@@ -46,36 +48,74 @@ type MetaDef struct {
 	mime string
 }
 
-func Initialize(cfg *config.Config) *Processor {
-	x := new(Processor)
-	x.Imagepath = strings.TrimSuffix(cfg.Media.Imagepath, "/") + "/"
-	x.Videopath = strings.TrimSuffix(cfg.Media.Videopath, "/") + "/"
-	x.Audiopath = strings.TrimSuffix(cfg.Media.Audiopath, "/") + "/"
-	x.Assetpath = strings.TrimSuffix(cfg.Media.Assetpath, "/") + "/"
-	x.Fontpath = strings.TrimSuffix(cfg.Media.Fontpath, "/") + "/"
-	x.framesinprogress = make(map[string]bool)
-	x.RenderQueue = make(chan *FrameRenderRequest, 512)
-	x.RenderDone = make(chan *FrameRenderRequest, 512)
-	os.MkdirAll(x.Imagepath, os.ModePerm)
-	os.MkdirAll(x.Videopath, os.ModePerm)
-	os.MkdirAll(x.Audiopath, os.ModePerm)
-	os.MkdirAll(x.Assetpath, os.ModePerm)
+const defaultCacheSize = 1024
 
-	os.MkdirAll(x.Imagepath+"F", os.ModePerm)
-	x.ImPathF = x.Imagepath + "F/"
+func NewProcessor() *Processor {
+	processor := &Processor{}
 
-	x.ImageMapF, _ = lru.New(defaultCacheSize)
-	x.ImageMapS = make(map[string]*lru.Cache)
-	x.ImPathS = make(map[string]string)
+	return processor
+}
+
+func (p *Processor) Initialize(ctx types.NodeContext) *Processor {
+	p.ctx = ctx
+	p.log = ctx.Logger()
+	p.cfg = ctx.Config()
+	p.Imagepath = strings.TrimSuffix(p.cfg.Media.Imagepath, "/") + "/"
+	p.Videopath = strings.TrimSuffix(p.cfg.Media.Videopath, "/") + "/"
+	p.Audiopath = strings.TrimSuffix(p.cfg.Media.Audiopath, "/") + "/"
+	p.Assetpath = strings.TrimSuffix(p.cfg.Media.Assetpath, "/") + "/"
+	p.Fontpath = strings.TrimSuffix(p.cfg.Media.Fontpath, "/") + "/"
+	p.framesinprogress = make(map[string]bool)
+	p.RenderQueue = make(chan *FrameRenderRequest, 512)
+	p.RenderDone = make(chan *FrameRenderRequest, 512)
+	os.MkdirAll(p.Imagepath, os.ModePerm)
+	os.MkdirAll(p.Videopath, os.ModePerm)
+	os.MkdirAll(p.Audiopath, os.ModePerm)
+	os.MkdirAll(p.Assetpath, os.ModePerm)
+
+	os.MkdirAll(p.Imagepath+"F", os.ModePerm)
+	p.ImPathF = p.Imagepath + "F/"
+
+	p.ImageMapF, _ = lru.New(defaultCacheSize)
+	p.ImageMapS = make(map[string]*lru.Cache)
+	p.ImPathS = make(map[string]string)
 	for rs := range Tsizes {
-		os.MkdirAll(x.Imagepath+rs, os.ModePerm)
-		x.ImPathS[rs] = x.Imagepath + rs + "/"
-		x.ImageMapS[rs], _ = lru.New(defaultCacheSize)
+		os.MkdirAll(p.Imagepath+rs, os.ModePerm)
+		p.ImPathS[rs] = p.Imagepath + rs + "/"
+		p.ImageMapS[rs], _ = lru.New(defaultCacheSize)
 	}
 
-	os.MkdirAll(strings.TrimSuffix(x.ImPathF, "/"), 0775)
-	go x.run()
-	return x
+	os.MkdirAll(strings.TrimSuffix(p.ImPathF, "/"), 0775)
+	go p.run()
+	return p
+}
+
+func (p *Processor) run() {
+	p.log.Info("Processor Runner...")
+	for {
+		select {
+		case req := <-p.RenderQueue:
+			if !p.framesinprogress[*req.ID] {
+				p.framesinprogress[*req.ID] = true
+				go p.RenderFrame(req)
+			}
+			n := len(p.RenderQueue)
+			for i := 0; i < n; i++ {
+				req := <-p.RenderQueue
+				if !p.framesinprogress[*req.ID] {
+					p.framesinprogress[*req.ID] = true
+					go p.RenderFrame(req)
+				}
+			}
+		case req := <-p.RenderDone:
+			delete(p.framesinprogress, *req.ID)
+			n := len(p.RenderDone)
+			for i := 0; i < n; i++ {
+				req := <-p.RenderDone
+				delete(p.framesinprogress, *req.ID)
+			}
+		}
+	}
 }
 
 func (p *Processor) HandleError(err error) bool {

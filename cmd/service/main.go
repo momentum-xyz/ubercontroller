@@ -15,6 +15,7 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/logger"
+	"github.com/momentum-xyz/ubercontroller/pkg/media"
 	"github.com/momentum-xyz/ubercontroller/pkg/service"
 	"github.com/momentum-xyz/ubercontroller/types"
 )
@@ -54,6 +55,11 @@ func run(ctx context.Context) error {
 		return errors.WithMessage(err, "failed to create db connection")
 	}
 	defer pool.Close()
+
+	m := media.NewMedia()
+	if err := m.Initialize(nodeCtx); err != nil {
+		return errors.WithMessage(err, "failed to initialize media manager")
+	}
 
 	node, err := service.LoadNode(nodeCtx, cfg, pool)
 	if err != nil {
