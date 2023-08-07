@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"log"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
@@ -35,6 +37,16 @@ func main() {
 	}
 	sugaredLogger := logger.Sugar()
 
+	pgConfig, err := cfg.Postgres.GenConfig(logger)
+	if err != nil {
+		log.Fatalf("failed to get db config: %s", err)
+	}
+	pool, err := pgxpool.ConnectConfig(context.Background(), pgConfig)
+	if err != nil {
+		log.Fatalf("failed to create db pool: %s", err)
+	}
+	defer pool.Close()
+
 	//env := "anton_private_net"
 	env := "main_net"
 
@@ -57,7 +69,7 @@ func main() {
 	a := arbitrum_nova_adapter3.NewArbitrumNovaAdapter(&cfg.Arbitrum2, sugaredLogger)
 	a.Run()
 
-	matrix := harvester3.NewTokens(a, sugaredLogger)
+	matrix := harvester3.NewTokens(pool, a, sugaredLogger)
 	err = matrix.Run()
 	if err != nil {
 		log.Fatal(err)

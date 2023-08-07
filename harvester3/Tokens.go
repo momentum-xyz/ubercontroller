@@ -7,22 +7,22 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/sasha-s/go-deadlock"
 	"go.uber.org/zap"
 )
 
 type Tokens struct {
-	updates   chan any
-	updatesDB chan any
-	adapter   Adapter
-	logger    *zap.SugaredLogger
-	block     uint64
-	mu        deadlock.RWMutex
-	data      map[common.Address]map[common.Address]*big.Int
-	wallets   map[common.Address]bool
-
+	updates        chan any
+	updatesDB      chan any
+	adapter        Adapter
+	logger         *zap.SugaredLogger
+	block          uint64
+	mu             deadlock.RWMutex
+	data           map[common.Address]map[common.Address]*big.Int
 	contracts      []common.Address
 	SubscribeQueue *SubscribeQueue
+	DB             *DB
 }
 
 type QueueInit struct {
@@ -37,20 +37,33 @@ type NewBlock struct {
 	block uint64
 }
 
-func NewTokens(adapter Adapter, logger *zap.SugaredLogger) *Tokens {
+type InsertOrUpdateToDB struct {
+	contract common.Address
+	wallet   common.Address
+	value    *big.Int
+}
+
+type FlushToDB struct {
+	block uint64
+}
+
+func NewTokens(db *pgxpool.Pool, adapter Adapter, logger *zap.SugaredLogger) *Tokens {
 
 	updates := make(chan any)
+	updatesDB := make(chan any)
+	blockchainID, blockchainName, _ := adapter.GetInfo()
 
 	return &Tokens{
 		updates:        updates,
+		updatesDB:      updatesDB,
 		adapter:        adapter,
 		logger:         logger,
 		block:          0,
 		mu:             deadlock.RWMutex{},
 		data:           map[common.Address]map[common.Address]*big.Int{},
-		wallets:        make(map[common.Address]bool),
 		contracts:      nil,
 		SubscribeQueue: NewSubscribeQueue(updates),
+		DB:             NewDB(updatesDB, db, blockchainID, blockchainName),
 	}
 }
 
@@ -66,6 +79,7 @@ func (t *Tokens) Run() error {
 		t.block--
 	}
 
+	t.DB.Run()
 	t.adapter.RegisterNewBlockListener(t.newBlockTicker)
 
 	go t.worker()
@@ -120,6 +134,9 @@ func (t *Tokens) worker() {
 				}
 				wg.Wait()
 				initJobs = make([]QueueInit, 0)
+				t.updatesDB <- FlushToDB{
+					block: t.block,
+				}
 			case NewBlock:
 				fmt.Println("NewBlock", u.block)
 				if u.block <= t.block {
@@ -139,7 +156,12 @@ func (t *Tokens) worker() {
 
 					t.updateCell(log.Contract, log.From, log.Value.Neg(log.Value))
 					t.updateCell(log.Contract, log.To, log.Value)
+				}
 
+				// Only place where we update block!
+				t.block = u.block
+				t.updatesDB <- FlushToDB{
+					block: t.block,
 				}
 			}
 		}
@@ -156,9 +178,13 @@ func (t *Tokens) setCell(contract common.Address, wallet common.Address, value *
 	}
 	t.data[contract][wallet] = value
 
-	fmt.Println("setCell ", contract.Hex(), wallet.Hex(), t.block, t.data[contract][wallet].String())
+	t.updatesDB <- InsertOrUpdateToDB{
+		contract: contract,
+		wallet:   wallet,
+		value:    value,
+	}
 
-	//t.updatesDB <- true //TODO
+	fmt.Println("setCell ", contract.Hex(), wallet.Hex(), t.block, t.data[contract][wallet].String())
 }
 
 func (t *Tokens) updateCell(contract common.Address, wallet common.Address, value *big.Int) {
@@ -176,9 +202,13 @@ func (t *Tokens) updateCell(contract common.Address, wallet common.Address, valu
 	// Update only existing cells
 	t.data[contract][wallet].Add(t.data[contract][wallet], value)
 
-	fmt.Println("updateCell ", contract.Hex(), wallet.Hex(), t.block, t.data[contract][wallet].String())
+	t.updatesDB <- InsertOrUpdateToDB{
+		contract: contract,
+		wallet:   wallet,
+		value:    t.data[contract][wallet],
+	}
 
-	//t.updatesDB <- true //TODO
+	fmt.Println("updateCell ", contract.Hex(), wallet.Hex(), t.block, t.data[contract][wallet].String())
 }
 
 func (t *Tokens) AddContract(contract common.Address) error {
