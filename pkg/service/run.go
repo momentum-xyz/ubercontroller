@@ -13,6 +13,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/database/db"
 	"github.com/momentum-xyz/ubercontroller/database/migrations"
 	"github.com/momentum-xyz/ubercontroller/database/stakes"
+	"github.com/momentum-xyz/ubercontroller/pkg/media"
 	"github.com/momentum-xyz/ubercontroller/seed"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -111,6 +112,7 @@ func createNode(ctx types.NodeContext, db database.DB, nodeEntry *entry.Node) (u
 	assets2d := assets_2d.NewAssets2d(db)
 	assets3d := assets_3d.NewAssets3d(db)
 	activities := activities.NewActivities(db)
+	media := media.NewMedia()
 	plugins := plugins.NewPlugins(db)
 	objectTypes := object_types.NewObjectTypes(db)
 	userTypes := user_types.NewUserTypes(db)
@@ -128,6 +130,7 @@ func createNode(ctx types.NodeContext, db database.DB, nodeEntry *entry.Node) (u
 		assets2d,
 		assets3d,
 		activities,
+		media,
 		plugins,
 		objectTypes,
 		userTypes,
@@ -146,6 +149,9 @@ func createNode(ctx types.NodeContext, db database.DB, nodeEntry *entry.Node) (u
 	}
 	if err := activities.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize activities")
+	}
+	if err := media.Initialize(ctx); err != nil {
+		return nil, errors.WithMessage(err, "failed to initialize media")
 	}
 	if err := plugins.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize plugins")

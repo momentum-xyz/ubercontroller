@@ -84,10 +84,10 @@ func (p *Processor) SaveWriteToFile(fname string, data []byte) error {
 	return nil
 }
 
-func (p *Processor) ProcessImage(src []byte) (error, string) {
+func (p *Processor) ProcessImage(src []byte) (string, error) {
 	img, format, err := image.Decode(bytes.NewReader(src))
 	if err != nil {
-		return err, ""
+		return "", err
 	}
 	p.log.Info("Incoming image:", format)
 
@@ -98,19 +98,18 @@ func (p *Processor) ProcessImage(src []byte) (error, string) {
 	} else {
 		err, ID = p.WriteToF(img)
 	}
-
 	if err != nil {
-		return err, ""
+		return "", err
 	}
 
 	for _, v := range Tprecalcs {
 		if err = p.WriteToScaled(ID, img, v); err != nil {
-			return err, ""
+			return "", err
 		}
 	}
 
 	p.log.Info("Hash:", ID)
-	return err, ID
+	return ID, err
 
 }
 

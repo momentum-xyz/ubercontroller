@@ -3,7 +3,6 @@ package processor
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"github.com/momentum-xyz/ubercontroller/types"
 	"go.uber.org/zap"
 	"image"
 	"os"
@@ -14,6 +13,7 @@ import (
 	lru "github.com/hashicorp/golang-lru"
 
 	"github.com/momentum-xyz/ubercontroller/config"
+	"github.com/momentum-xyz/ubercontroller/types"
 )
 
 type Processor struct {

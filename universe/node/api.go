@@ -88,6 +88,22 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		vx.POST("/media/upload/video", n.apiMediaUploadVideo)
 		vx.POST("/media/upload/audio", n.apiMediaUploadAudio)
 
+		//media.GET("/render/get/{file:[a-zA-Z0-9]+}",)
+		//media.GET("/render/texture/{rsize:s[0-9]}/{file:[a-zA-Z0-9]+}", )
+		//media.GET("/render/track/{file:[a-zA-Z0-9]+}", )
+		//media.GET("/render/video/{file:[a-zA-Z0-9]+}", )
+		//media.GET("/render/asset/{file:[a-zA-Z0-9]+}", )
+		//
+		//media.POST("/render/addimage", )
+		//media.POST("/render/addframe", )
+		//media.POST("/render/addtube", )
+		//
+		//media.POST("/addvideo", )
+		//media.POST("/addtrack", )
+		//media.POST("/addasset", )
+		//
+		//media.DELETE("/deltrack/{file:[a-zA-Z0-9]+}", )
+
 		verified.GET("/skybox/styles", n.apiGetSkyboxStyles)
 		verified.POST("/skybox/generate", n.apiPostSkyboxGenerate)
 		verified.DELETE("/skybox/:skyboxID", n.apiRemoveSkyboxByID)

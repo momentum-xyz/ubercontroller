@@ -3,6 +3,7 @@ package node
 import (
 	"context"
 	"fmt"
+	"github.com/momentum-xyz/ubercontroller/pkg/media"
 	"net/http"
 	"os"
 	"time"
@@ -48,6 +49,7 @@ type Node struct {
 	assets2d       universe.Assets2d
 	assets3d       universe.Assets3d
 	activities     universe.Activities
+	media          *media.Media
 	objectTypes    universe.ObjectTypes
 	userTypes      universe.UserTypes
 	attributeTypes universe.AttributeTypes
@@ -77,6 +79,7 @@ func NewNode(
 	assets2D universe.Assets2d,
 	assets3D universe.Assets3d,
 	activities universe.Activities,
+	media *media.Media,
 	plugins universe.Plugins,
 	objectTypes universe.ObjectTypes,
 	userTypes universe.UserTypes,
@@ -89,6 +92,7 @@ func NewNode(
 		assets2d:        assets2D,
 		assets3d:        assets3D,
 		activities:      activities,
+		media:           media,
 		plugins:         plugins,
 		objectTypes:     objectTypes,
 		userTypes:       userTypes,

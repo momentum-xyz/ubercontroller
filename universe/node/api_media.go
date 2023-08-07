@@ -37,31 +37,15 @@ func (n *Node) apiMediaUploadImage(c *gin.Context) {
 
 	defer openedFile.Close()
 
-	req, err := http.NewRequest("POST", n.CFG.Common.RenderInternalURL+"/render/addimage", openedFile)
+	hash, err := n.media.AddImage(openedFile)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiMediaUploadImage: failed to create post request")
-		api.AbortRequest(c, http.StatusBadRequest, "failed_to_create_request", err, n.log)
+		err := errors.WithMessage(err, "Node: apiMediaUploadImage: failed to add image")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_add_image", err, n.log)
 		return
 	}
 
-	req.Header.Set("Content-Type", imageFile.Header.Get("Content-Type"))
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		err := errors.WithMessage(err, "Node: apiMediaUploadImage: failed to post data to media-manager")
-		api.AbortRequest(c, http.StatusBadRequest, "failed_to_post_request", err, n.log)
-		return
-	}
-
-	defer resp.Body.Close()
-
-	response := dto.HashResponse{}
-
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		err := errors.WithMessage(err, "Node: apiMediaUploadImage: failed to decode json into response")
-		api.AbortRequest(c, http.StatusBadRequest, "failed_to_decode", err, n.log)
-		return
+	response := dto.HashResponse{
+		Hash: hash,
 	}
 
 	c.JSON(http.StatusOK, response)
