@@ -15,19 +15,17 @@ import (
 )
 
 // @Summary Get the current newsfeed
-// @Schemes
 // @Description Returns a newsfeed, with activities from all timelines
 // @Tags newsfeed
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param query query node.apiNewsfeedOverview.InQuery true "query params"
 // @Success 200 {object} node.apiNewsfeedOverview.Out
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/newsfeed [get]
 func (n *Node) apiNewsfeedOverview(c *gin.Context) {
 	type InQuery struct {
-		StartIndex string `form:"startIndex" binding:"required"`
-		PageSize   string `form:"pageSize" binding:"required"`
+		StartIndex string `form:"startIndex" json:"startIndex" binding:"required"`
+		PageSize   string `form:"pageSize" json:"pageSize" binding:"required"`
 	}
 	var inQuery InQuery
 

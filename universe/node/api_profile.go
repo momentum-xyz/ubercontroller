@@ -28,11 +28,9 @@ type UpdateProfileStoreItem struct {
 }
 
 // @Summary Check update user profile job by Job UMID
-// @Schemes
 // @Description Returns Update Profile Job UMID status
-// @Tags profile
-// @Accept json
-// @Produce json
+// @Tags users,profile
+// @Security Bearer
 // @Param job_id path string true "Job UMID"
 // @Success 200 {object} node.apiProfileUpdateCheckJob.Out
 // @Failure 400 {object} api.HTTPError
@@ -79,14 +77,11 @@ func (n *Node) apiProfileUpdateCheckJob(c *gin.Context) {
 }
 
 // @Summary Edit user profile
-// @Schemes
 // @Description Edits a user profile
-// @Tags profile
-// @Accept json
-// @Produce json
+// @Tags users,profile
+// @Security Bearer
 // @Param body body node.apiProfileUpdate.Body true "body params"
 // @Success 200 {object} node.apiProfileUpdate.Out
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Router /api/v4/profile [patch]
 func (n *Node) apiProfileUpdate(c *gin.Context) {

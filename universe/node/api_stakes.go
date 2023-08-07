@@ -17,11 +17,9 @@ import (
 )
 
 // @Summary Get current user's stakes list
-// @Schemes
 // @Description Return stakes list
-// @Tags users
-// @Accept json
-// @Produce json
+// @Tags stakes,users
+// @Security Bearer
 // @Success 200 {object} []dto.Stake
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
@@ -92,11 +90,9 @@ func (n *Node) apiGetMyStakes(c *gin.Context) {
 }
 
 // @Summary Get current user's wallets list
-// @Schemes
 // @Description Return wallets list
-// @Tags users
-// @Accept json
-// @Produce json
+// @Tags stakes,users
+// @Security Bearer
 // @Success 200 {object} []dto.WalletInfo
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
@@ -135,15 +131,12 @@ func (n *Node) apiGetMyWallets(c *gin.Context) {
 }
 
 // @Summary Add pending stake transaction
-// @Schemes
 // @Description Add pending transaction
-// @Tags users
-// @Accept json
-// @Produce json
+// @Tags stakes,users
+// @Security Bearer
 // @Param body body node.apiAddPendingStakeTransaction.Body true "body params"
 // @Success 200 {object} node.apiAddPendingStakeTransaction.Out
 // @Failure 400 {object} api.HTTPError
-// @Failure 500 {object} api.HTTPError
 // @Router /api/v4/users/me/stakes [post]
 func (n *Node) apiAddPendingStakeTransaction(c *gin.Context) {
 	type Body struct {

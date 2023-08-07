@@ -20,7 +20,12 @@ RUN make build
 # Runtime image
 FROM alpine:3.16 as runtime
 
+LABEL org.opencontainers.image.source=https://github.com/momentum-xyz/ubercontroller
+LABEL org.opencontainers.image.description="Controller of Odyssey Momentum"
+LABEL org.opencontainers.image.licenses=AGPL-3.0-only
+
 COPY --link ./seed/data /srv/seed/data
+
 COPY --from=build /project/bin/ubercontroller /srv/ubercontroller
 
 WORKDIR /srv

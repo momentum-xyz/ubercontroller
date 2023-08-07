@@ -12,12 +12,11 @@ import (
 )
 
 // @Summary Uploads an image to the media manager
-// @Schemes
 // @Description Sends an image file to the media manager and returns a hash
 // @Tags media
+// @Security Bearer
 // @Accept multipart/form-data
 // @Param file formData file true "image file"
-// @Produce json
 // @Success 200 {object} dto.HashResponse
 // @Failure 400 {object} api.HTTPError
 // @Router /api/v4/media/upload/image [post]
@@ -69,12 +68,11 @@ func (n *Node) apiMediaUploadImage(c *gin.Context) {
 }
 
 // @Summary Uploads a video to the media manager
-// @Schemes
 // @Description Sends a video file to the media manager and returns a hash
 // @Tags media
+// @Security Bearer
 // @Accept multipart/form-data
 // @Param file formData file true "image file"
-// @Produce json
 // @Success 200 {object} dto.HashResponse
 // @Failure 400 {object} api.HTTPError
 // @Router /api/v4/media/upload/video [post]
@@ -126,12 +124,11 @@ func (n *Node) apiMediaUploadVideo(c *gin.Context) {
 }
 
 // @Summary Uploads an audio file to the media manager
-// @Schemes
 // @Description Sends an audio file to the media manager and returns its hash
 // @Tags media
+// @Security Bearer
 // @Accept multipart/form-data
 // @Param file formData file true "image file"
-// @Produce json
 // @Success 200 {object} dto.HashResponse
 // @Failure 400 {object} api.HTTPError
 // @Router /api/v4/media/upload/audio [post]

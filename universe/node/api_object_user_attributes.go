@@ -3,9 +3,12 @@ package node
 import (
 	"fmt"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+	"golang.org/x/exp/slices"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe/attributes"
@@ -17,11 +20,9 @@ import (
 )
 
 // @Summary Get object user attribute
-// @Schemes
 // @Description Returns object user attribute
-// @Tags objects
-// @Accept json
-// @Produce json
+// @Tags attributes,objects
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param user_id path string true "User UMID"
 // @Param query query attributes.QueryPluginAttribute true "query params"
@@ -84,11 +85,9 @@ func (n *Node) apiGetObjectUserAttributesValue(c *gin.Context) {
 }
 
 // @Summary Set object user attribute
-// @Schemes
 // @Description Sets entire object user attribute
-// @Tags objects
-// @Accept json
-// @Produce json
+// @Tags attributes,objects
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param user_id path string true "User UMID"
 // @Param body body node.apiSetObjectUserAttributesValue.InBody true "body params"
@@ -190,11 +189,9 @@ func (n *Node) apiSetObjectUserAttributesValue(c *gin.Context) {
 }
 
 // @Summary Get object user sub attribute
-// @Schemes
 // @Description Returns object user sub attributes
-// @Tags objects
-// @Accept json
-// @Produce json
+// @Tags attributes,objects
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param user_id path string true "User UMID"
 // @Param query query node.apiGetObjectUserAttributeSubValue.InQuery true "query params"
@@ -205,7 +202,7 @@ func (n *Node) apiSetObjectUserAttributesValue(c *gin.Context) {
 func (n *Node) apiGetObjectUserAttributeSubValue(c *gin.Context) {
 	type InQuery struct {
 		attributes.QueryPluginAttribute
-		SubAttributeKey string `form:"sub_attribute_key" binding:"required"`
+		SubAttributeKey string `form:"sub_attribute_key" json:"sub_attribute_key" binding:"required"`
 	}
 
 	inQuery := InQuery{}
@@ -287,11 +284,9 @@ func (n *Node) apiGetObjectUserAttributeSubValue(c *gin.Context) {
 }
 
 // @Summary Set object sub attribute
-// @Schemes
 // @Description Sets a object sub attribute
-// @Tags objects
-// @Accept json
-// @Produce json
+// @Tags attributes,objects
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param user_id path string true "User UMID"
 // @Param body body node.apiSetObjectUserAttributeSubValue.Body true "body params"
@@ -398,11 +393,9 @@ func (n *Node) apiSetObjectUserAttributeSubValue(c *gin.Context) {
 }
 
 // @Summary Delete object user sub attribute
-// @Schemes
 // @Description Deletes a object user sub attribute
-// @Tags objects
-// @Accept json
-// @Produce json
+// @Tags attributes,objects
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param user_id path string true "User UMID"
 // @Param body body node.apiRemoveObjectUserAttributeSubValue.Body true "body params"
@@ -494,11 +487,9 @@ func (n *Node) apiRemoveObjectUserAttributeSubValue(c *gin.Context) {
 }
 
 // @Summary Delete object user attribute
-// @Schemes
 // @Description Deletes a object attribute
 // @Tags objects
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param user_id path string true "User UMID"
 // @Param body body node.apiRemoveObjectUserAttributeValue.Body true "body params"
@@ -578,11 +569,9 @@ func (n *Node) apiRemoveObjectUserAttributeValue(c *gin.Context) {
 }
 
 // @Summary Get list of attributes for all users limited by object, plugin and attribute_name
-// @Schemes
 // @Description Returns map with key as userID and value as Attribute Value
-// @Tags objects
-// @Accept json
-// @Produce json
+// @Tags attributes,objects
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param query query attributes.QueryPluginAttribute true "query params"
 // @Success 200 {object} map[umid.UMID]entry.AttributeValue
@@ -642,4 +631,201 @@ func (n *Node) apiGetObjectAllUsersAttributeValuesList(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, out)
+}
+
+// @Summary Get object user attribute count
+// @Description Returns the number of (non null) object user attributes.
+// @Tags attributes,objects
+// @Security Bearer
+// @Param object_id path string true "Object UMID"
+// @Param query query node.apiGetObjectUserAttributeCount.InQuery true "query params"
+// @Success 200 {object} dto.AttributeCount
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/objects/{object_id}/all-users/count [get]
+func (n *Node) apiGetObjectUserAttributeCount(c *gin.Context) {
+	type InQuery struct {
+		attributes.QueryPluginAttribute
+		Since string `form:"since"`
+	}
+
+	inQuery := InQuery{}
+
+	if err := c.ShouldBindQuery(&inQuery); err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeCount: failed to bind query")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
+		return
+	}
+
+	var sinceTime *time.Time
+	if inQuery.Since != "" {
+		since, err := time.Parse(time.RFC3339, inQuery.Since)
+		if err != nil {
+			err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeCount: failed to parse 'since'")
+			api.AbortRequest(c, http.StatusBadRequest, "invalid_since_time", err, n.log)
+			return
+		}
+
+		sinceTime = &since
+	}
+
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeCount: failed to get user from context")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user", err, n.log)
+		return
+	}
+
+	objectID, err := umid.Parse(c.Param("objectID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeCount: failed to parse object umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
+		return
+	}
+
+	attrType, attributeID, err := attributes.PluginAttributeFromQuery(c, n)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeCount: failed to get plugin attribute from query")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_attribute", err, n.log)
+		return
+	}
+
+	objectUserAttributeID := entry.NewObjectUserAttributeID(attributeID, objectID, umid.Nil)
+
+	allowed, err := auth.CheckAttributePermissions(
+		c, *attrType.GetEntry(), n.GetObjectUserAttributes(), objectUserAttributeID, userID,
+		auth.ReadOperation)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeCount: permissions check")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_permissions_check", err, n.log)
+		return
+	} else if !allowed {
+		err := errors.WithMessage(err, "Node: apiGetObjectUserAttributeCount: operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+		return
+	}
+
+	count, ok := n.GetObjectUserAttributes().GetCountByObjectID(objectID, inQuery.AttributeName, sinceTime)
+	if !ok {
+		err := errors.Errorf("Node: apiGetObjectUserAttributeCount: object attribute value not found: %s", attributeID)
+		api.AbortRequest(c, http.StatusNotFound, "attribute_not_found", err, n.log)
+		return
+	}
+
+	out := dto.AttributeCount{Count: count}
+
+	c.JSON(http.StatusOK, out)
+}
+
+// @Summary Get combined list of json entries from all user's values.
+// @Description Allow showing a combined (sorted) list from all users.
+// @Description The attribute value is assumed to be a JSON (map-like) object, with some ID as key and the value nested JSON object.
+// @Description The fields params allows selecting some fields to directly return in the list.
+// @Description The limit and offset params allow pagination.
+// @Description Limit defaults to 10, maximun allowed is 100.
+// @Tags attributes,objects
+// @Security Bearer
+// @Param object_id path string true "Object UMID"
+// @Param plugin_id path string true "Plugin MID"
+// @Param attribute_name path string true "Name of the plugin attribute"
+// @Param query query node.apiObjectUserAttributeValueEntries.InQuery false "query params"
+// @Success 202 {object} node.apiObjectUserAttributeValueEntries.JsonResult
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/objects/{object_id}/all-users/attributes/{plugin_id}/{attribute_name}/entries [get]
+func (n *Node) apiObjectUserAttributeValueEntries(c *gin.Context) {
+	objectID, err := umid.Parse(c.Param("objectID"))
+	if err != nil {
+		err := fmt.Errorf("invalid object ID: %w", err)
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_param", err, n.log)
+		return
+	}
+	attrType, attrID, err := attributes.PluginAttributeFromURL(c, n)
+	if err != nil {
+		err := fmt.Errorf("plugin attribute: %w", err)
+		api.AbortRequest(c, http.StatusNotFound, "invalid_param", err, n.log)
+		return
+	}
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := fmt.Errorf("user from context: %w", err)
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_user", err, n.log)
+		return
+	}
+	allowed, err := auth.CheckReadAllPermissions[entry.ObjectUserAttributeID](
+		c, *attrType.GetEntry(), n.GetObjectUserAttributes(), userID)
+	if err != nil {
+		err := fmt.Errorf("check read permissions: %w", err)
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_permissions_check", err, n.log)
+		return
+	}
+	if !allowed {
+		err := fmt.Errorf("operation not permitted")
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", err, n.log)
+		return
+	}
+
+	type InQuery struct {
+		Fields  []string `form:"fields[]" json:"fields[]"`
+		OrderBy string   `form:"order" json:"order"`
+		Limit   uint     `form:"limit,default=10" json:"limit"`
+		Offset  uint     `form:"offset" json:"offset"`
+	}
+	var q InQuery
+	if err := c.ShouldBindQuery(&q); err != nil {
+		err := fmt.Errorf("bind query: %w", err)
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_query", err, n.log)
+	}
+	var limit uint
+	if q.Limit > 100 { // TODO: go 1.21 max function
+		limit = 100
+	} else {
+		limit = q.Limit
+	}
+	objAttrID := entry.NewObjectAttributeID(attrID, objectID)
+	oua := n.db.GetObjectUserAttributesDB()
+	count, err := oua.ValueEntriesCount(c, objAttrID)
+	if err != nil {
+		err := fmt.Errorf("count query: %w", err)
+		api.AbortRequest(c, http.StatusInternalServerError, "invalid_params", err, n.log)
+		return
+	}
+	type JsonResult struct {
+		Count  uint                     `json:"count"`
+		Limit  uint                     `json:"limit"`
+		Offset uint                     `json:"offset"`
+		Items  []map[string]interface{} `json:"items"`
+	}
+	if count == 0 {
+		c.JSON(http.StatusOK, JsonResult{Limit: limit})
+		return
+	}
+	order := q.OrderBy
+	desc := false
+	if q.OrderBy != "" {
+		if strings.HasPrefix(order, "-") {
+			desc = true
+			order = strings.TrimPrefix(order, "-")
+		}
+		if !slices.Contains(q.Fields, order) { // TODO: handle this, instead of error
+			err := errors.New("order field should be included in fields")
+			api.AbortRequest(c, http.StatusBadRequest, "invalid_params", err, n.log)
+			return
+		}
+	}
+	itemList, err := oua.ValueEntries(
+		c, objAttrID, q.Fields, order, desc, limit, q.Offset)
+	if err != nil {
+		err := fmt.Errorf("query: %w", err)
+		api.AbortRequest(c, http.StatusInternalServerError, "invalid query", err, n.log)
+		return
+	}
+
+	result := JsonResult{
+		Count:  count,
+		Limit:  limit,
+		Offset: q.Offset,
+		Items:  itemList,
+	}
+	c.JSON(http.StatusOK, result)
 }

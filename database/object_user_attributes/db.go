@@ -2,7 +2,10 @@ package object_user_attributes
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"sync"
+	"time"
 
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
@@ -35,7 +38,9 @@ const (
 	getObjectUserAttributesByObjectIDAndUserIDQuery = `SELECT * FROM object_user_attribute WHERE object_id = $1 AND user_id = $2;`
 	getObjectUserAttributesByObjectAttributeIDQuery = `SELECT * FROM object_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND object_id = $3;`
 
-	getObjectUserAttributesCountQuery = `SELECT COUNT(*) FROM object_user_attribute;`
+	getObjectUserAttributesCountQuery                       = `SELECT COUNT(*) FROM object_user_attribute WHERE value IS NOT NULL;`
+	getObjectUserAttributesCountByObjectIDQuery             = `SELECT COUNT(*) FROM object_user_attribute WHERE value IS NOT NULL AND object_id = $1 AND attribute_name = $2;`
+	getObjectUserAttributesCountByObjectIDAndUpdatedAtQuery = `SELECT COUNT(*) FROM object_user_attribute WHERE value IS NOT NULL AND object_id = $1 AND attribute_name = $2 AND updated_at >= $3;`
 
 	upsertObjectUserAttributeQuery = `INSERT INTO object_user_attribute
 											(plugin_id, attribute_name, object_id, user_id, value, options)
@@ -205,6 +210,23 @@ func (db *DB) GetObjectUserAttributesCount(ctx context.Context) (int64, error) {
 		Scan(&count); err != nil {
 		return 0, errors.WithMessage(err, "failed to query db")
 	}
+	return count, nil
+}
+
+func (db *DB) GetObjectUserAttributesCountByObjectID(ctx context.Context, objectID umid.UMID, attributeName string, sinceTime *time.Time) (uint64, error) {
+	var count uint64
+	if sinceTime != nil {
+		if err := db.conn.QueryRow(ctx, getObjectUserAttributesCountByObjectIDAndUpdatedAtQuery, objectID, attributeName, *sinceTime).
+			Scan(&count); err != nil {
+			return 0, errors.WithMessage(err, "failed to query db")
+		}
+	} else {
+		if err := db.conn.QueryRow(ctx, getObjectUserAttributesCountByObjectIDQuery, objectID, attributeName).
+			Scan(&count); err != nil {
+			return 0, errors.WithMessage(err, "failed to query db")
+		}
+	}
+
 	return count, nil
 }
 
@@ -552,4 +574,104 @@ func (db *DB) UpdateObjectUserAttributeOptions(
 	}
 
 	return options, nil
+}
+
+// ValueEntries returns a combined, sorted, list of nested items inside a attribute.
+// fields is the list of field name returned for each nested items, should be simple values (are seen as strings).
+//
+// The JSON value is expectd to be an object with key->item format.
+// The key being some unique identifier and the item some nested JSON.
+//
+//	{
+//	  "id-1": {"title": "bar", "some": {"thing": 1}},
+//	  "id-2": {"title": "qux", "some": {"other": "thing"}}
+//	}
+//
+// The result:
+//
+// [{"_key": "id-1", "_user": "{...}", "title": "bar"},{"_key": "id-2", "_user": "{...}", title": "qux"}]
+func (db *DB) ValueEntries(
+	ctx context.Context,
+	attrID entry.ObjectAttributeID,
+	fields []string,
+	order string,
+	descending bool,
+	limit uint,
+	offset uint,
+) ([]map[string]interface{}, error) {
+	// TODO: pick a sql query builder library? if we are gonna do this more often,
+	// string concat starts to suck.
+	sql := `SELECT entry.key as "_key",
+	        jsonb_build_object(
+			  'user_id', u.user_id,
+	          'profile', u.profile
+            ) as "_user"`
+	if len(fields) > 0 {
+		sql += ", item.*"
+	}
+	sql += `
+	FROM object_user_attribute as attr
+		 INNER JOIN "user" AS u USING (user_id),
+         jsonb_each(attr.value) as entry`
+	if len(fields) > 0 {
+		sqlRecordTypes := []string{}
+		for _, field := range fields {
+			ident := pgx.Identifier([]string{field}).Sanitize()
+			sqlRecordTypes = append(sqlRecordTypes, ident+" text") // TODO: configurables 'types' instead of text
+		}
+		itemType := fmt.Sprintf("item(%s)", strings.Join(sqlRecordTypes, ","))
+		sql += `,
+		jsonb_to_record(entry.value) AS ` + itemType
+	}
+	sql += `
+    WHERE
+      attr.plugin_id = $1 
+	  AND attr.attribute_name = $2
+	  AND attr.object_id = $3
+	`
+	if order != "" {
+		// TODO: handle the case when no fields gives (value->'foo' should be used)
+		// But that requires dynamic query params and we don't have named params support.
+		orderBy := pgx.Identifier([]string{"item", order}).Sanitize()
+		sql += "ORDER BY " + orderBy
+		if descending {
+			sql += "DESC\n"
+		} else {
+			sql += "\n"
+		}
+	}
+	if limit > 0 {
+		sql += fmt.Sprintf("LIMIT %d ", limit)
+	}
+	if offset > 0 {
+		sql += fmt.Sprintf("OFFSET %d", offset)
+	}
+	sql += ";"
+	var itemList []map[string]interface{}
+	qArgs := []interface{}{attrID.PluginID, attrID.Name, attrID.ObjectID}
+	if err := pgxscan.Select(ctx, db.conn, &itemList, sql, qArgs...); err != nil {
+		return nil, err
+	}
+	return itemList, nil
+
+}
+
+// ValueEntriesCount return the number of nested entries in the JSON value.
+// This assumes an JSON object in the value field.
+// Each entry (key) in this object is counted.
+func (db *DB) ValueEntriesCount(
+	ctx context.Context,
+	objectAttributeID entry.ObjectAttributeID,
+) (uint, error) {
+	var count uint
+	sql := `SELECT count(*) FROM (
+		SELECT jsonb_object_keys(value) FROM object_user_attribute
+			WHERE plugin_id = $1 AND attribute_name = $2 AND object_id = $3
+	) oua;`
+	if err := db.conn.QueryRow(ctx, sql,
+		objectAttributeID.PluginID, objectAttributeID.Name, objectAttributeID.ObjectID,
+	).Scan(&count); err != nil {
+		return 0, errors.WithMessage(err, "failed to query db")
+	}
+	return count, nil
 }

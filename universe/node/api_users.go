@@ -22,11 +22,9 @@ import (
 )
 
 // @Summary Get user based on token
-// @Schemes
 // @Description Returns user information based on token
 // @Tags users
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Success 200 {object} dto.User
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
@@ -59,11 +57,9 @@ func (n *Node) apiUsersGetMe(c *gin.Context) {
 }
 
 // @Summary Get user profile based on UserID
-// @Schemes
 // @Description Returns user profile based on UserID
 // @Tags users
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param user_id path string true "User UMID"
 // @Success 200 {object} dto.User
 // @Failure 400 {object} api.HTTPError
@@ -100,8 +96,7 @@ func (n *Node) apiUsersGetByID(c *gin.Context) {
 // @Schemes
 // @Description Returns a list of six newest users
 // @Tags users
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Success 200 {array} dto.RecentUser
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
@@ -179,8 +174,7 @@ func (n *Node) apiUsersGet(c *gin.Context) {
 // @Schemes
 // @Description Returns a list of owned Worlds for a user
 // @Tags users
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param user_id path string true "User UMID"
 // @Success 200 {array} dto.OwnedWorld
 // @Failure 400 {object} api.HTTPError
@@ -230,11 +224,9 @@ func (n *Node) apiUsersGetOwnedWorlds(c *gin.Context) {
 }
 
 // @Summary Get the worlds the user has staked in
-// @Schemes
 // @Description Returns a list of staked Worlds for a user
 // @Tags users
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param user_id path string true "User UMID"
 // @Success 200 {array} dto.StakedWorld
 // @Failure 400 {object} api.HTTPError
@@ -309,11 +301,9 @@ func (n *Node) apiUsersGetStakedWorlds(c *gin.Context) {
 }
 
 // @Summary Returns a sorted list of top stakers
-// @Schemes
 // @Description Returns user information based amount and amount of times a user has staked
 // @Tags users
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/users/top-stakers [get]
@@ -371,11 +361,9 @@ func (n *Node) apiUsersTopStakers(c *gin.Context) {
 }
 
 // @Summary Search available users
-// @Schemes
 // @Description Returns user information based on a search query
 // @Tags users
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Success 200 {object} dto.UserSearchResult
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError

@@ -1,5 +1,7 @@
 package entry
 
+import "time"
+
 type Node struct {
 	*Object
 }
@@ -11,6 +13,8 @@ type NodeAttributeID struct {
 type NodeAttribute struct {
 	NodeAttributeID
 	*AttributePayload
+	CreatedAt time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
 }
 
 func NewNodeAttribute(nodeAttributeID NodeAttributeID, payload *AttributePayload) *NodeAttribute {

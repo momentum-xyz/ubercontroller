@@ -17,7 +17,7 @@ jobs:
     runs-on: self-hosted  # ubuntu-latest
     steps:
       - id: build
-        uses: momentum-xyz/docker-build-action@ea21d97ce38d0b131c54f45cc2deb9e7ac84828c  # v6.0.3
+        uses: momentum-xyz/docker-build-action@4a172ff54dac4e9beae2a1ca8584f22d26c3c3aa # v6.3.6
         with:
           registry-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
           registry-user: ${{ secrets.REGISTRY_USERNAME }}
@@ -33,7 +33,7 @@ jobs:
     concurrency: dev-deploy-${{ github.ref }}
     steps:
       - id: deploy-dev
-        uses: momentum-xyz/deploy-action@2234fcebf5b59abe7f7f812d275abb547886ab14  # v1.1.0
+        uses: momentum-xyz/deploy-action@d339ad4b15e98dfed06f84b49a654b43ca9a3d8a  # v1.2.0
         with:
           version: ${{ env.VERSION }}
           k8s-credentials: ${{ secrets[secrets.REF_K8S_DEV2] }}
@@ -44,7 +44,7 @@ jobs:
     concurrency: dev-v2-deploy-${{ github.ref }}
     steps:
       - id: deploy-dev-v2
-        uses: momentum-xyz/deploy-action@2234fcebf5b59abe7f7f812d275abb547886ab14  # v1.1.0
+        uses: momentum-xyz/deploy-action@d339ad4b15e98dfed06f84b49a654b43ca9a3d8a  # v1.2.0
         with:
           version: ${{ needs.build.outputs.version }}
           k8s-credentials: ${{ secrets[vars.REF_K8S_DEV_V2] }}

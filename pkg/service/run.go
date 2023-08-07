@@ -61,6 +61,7 @@ func LoadNode(
 	if err := universe.InitializeIDs(
 		umid.MustParse("f0f0f0f0-0f0f-4ff0-af0f-f0f0f0f0f0f0"),
 		umid.MustParse("86DC3AE7-9F3D-42CB-85A3-A71ABC3C3CB8"),
+		umid.MustParse("ff40fbf0-8c22-437d-b27a-0258f99130fe"),
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize universe")
 	}
@@ -173,7 +174,7 @@ func CreateDBConnection(ctx types.NodeContext, cfg *config.Postgres) (*pgxpool.P
 		return nil, errors.WithMessage(err, "failed to gen postgres config")
 	}
 
-	if err := migrations.MigrateDatabase(ctx, cfg); err != nil {
+	if err := migrations.MigrateDatabase(ctx, cfg, 0); err != nil {
 		return nil, errors.WithMessage(err, "failed to migrate database")
 	}
 

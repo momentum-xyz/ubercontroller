@@ -1,9 +1,10 @@
 package plugins
 
 import (
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"net/http"
 	"strings"
+
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -15,11 +16,9 @@ import (
 )
 
 // @Summary Get plugins
-// @Schemes
 // @Description Returns a list of plugins filtered by parameters
 // @Tags plugins
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param query query plugins.apiGetPlugins.Query false "query params"
 // @Success 200 {object} dto.Plugins
 // @Failure 400 {object} api.HTTPError
@@ -89,11 +88,9 @@ func (p *Plugins) apiGetPlugins(c *gin.Context) {
 }
 
 // @Summary Search for plugins
-// @Schemes
 // @Description Returns a list of plugins filtered by parameters
 // @Tags plugins
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param query query plugins.apiSearchPlugins.InQuery false "query params"
 // @Success 200 {object} dto.Plugins
 // @Failure 400 {object} api.HTTPError
@@ -161,11 +158,9 @@ func (p *Plugins) apiSearchPlugins(c *gin.Context) {
 }
 
 // @Summary Get plugins meta
-// @Schemes
 // @Description Returns a list of plugins meta filtered by parameters
 // @Tags plugins
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param query query plugins.apiGetPluginsMeta.InQuery true "query params"
 // @Success 200 {object} dto.PluginsMeta
 // @Failure 400 {object} api.HTTPError
@@ -173,7 +168,7 @@ func (p *Plugins) apiSearchPlugins(c *gin.Context) {
 // @Router /api/v4/plugins/meta [get]
 func (p *Plugins) apiGetPluginsMeta(c *gin.Context) {
 	type InQuery struct {
-		IDs []string `form:"ids[]" binding:"required"`
+		IDs []string `form:"ids[]" json:"ids[]" binding:"required"`
 	}
 	var inQuery InQuery
 
@@ -207,11 +202,9 @@ func (p *Plugins) apiGetPluginsMeta(c *gin.Context) {
 }
 
 // @Summary Get plugins options
-// @Schemes
 // @Description Returns a list of plugins options filtered by parameters
 // @Tags plugins
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param query query plugins.apiGetPluginsOptions.InQuery true "query params"
 // @Success 200 {object} dto.PluginsOptions
 // @Failure 400 {object} api.HTTPError

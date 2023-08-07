@@ -18,11 +18,9 @@ import (
 )
 
 // @Summary Get user attribute for own user based on token
-// @Schemes
 // @Description Returns user attribute
-// @Tags users
-// @Accept json
-// @Produce json
+// @Tags attributes,users
+// @Security Bearer
 // @Param query query attributes.QueryPluginAttribute true "query params"
 // @Success 200 {object} entry.AttributeValue
 // @Failure 400 {object} api.HTTPError
@@ -58,11 +56,9 @@ func (n *Node) apiGetMeUserAttributeValue(c *gin.Context) {
 }
 
 // @Summary Get user attribute
-// @Schemes
 // @Description Returns user attribute
-// @Tags users
-// @Accept json
-// @Produce json
+// @Tags attributes,users
+// @Security Bearer
 // @Param user_id path string true "User UMID"
 // @Param query query attributes.QueryPluginAttribute true "query params"
 // @Success 200 {object} entry.AttributeValue
@@ -117,11 +113,9 @@ func (n *Node) apiGetUserAttributeValue(c *gin.Context) {
 }
 
 // @Summary Set user attribute
-// @Schemes
 // @Description Sets entire user attribute
-// @Tags users
-// @Accept json
-// @Produce json
+// @Tags attributes,users
+// @Security Bearer
 // @Param user_id path string true "User UMID"
 // @Param body body node.apiSetUserAttributeValue.InBody true "body params"
 // @Success 202 {object} entry.AttributeValue
@@ -216,11 +210,9 @@ func (n *Node) apiSetUserAttributeValue(c *gin.Context) {
 }
 
 // @Summary Get user sub attributes
-// @Schemes
 // @Description Returns user sub attributes
-// @Tags users
-// @Accept json
-// @Produce json
+// @Tags attributes,users
+// @Security Bearer
 // @Param user_id path string true "User UMID"
 // @Param query query node.apiGetUserAttributeSubValue.InQuery true "query params"
 // @Success 200 {object} dto.UserSubAttributes
@@ -230,7 +222,7 @@ func (n *Node) apiSetUserAttributeValue(c *gin.Context) {
 func (n *Node) apiGetUserAttributeSubValue(c *gin.Context) {
 	type InQuery struct {
 		attributes.QueryPluginAttribute
-		SubAttributeKey string `form:"sub_attribute_key" binding:"required"`
+		SubAttributeKey string `form:"sub_attribute_key" json:"sub_attribute_key" binding:"required"`
 	}
 
 	inQuery := InQuery{}
@@ -304,11 +296,9 @@ func (n *Node) apiGetUserAttributeSubValue(c *gin.Context) {
 }
 
 // @Summary Set user sub attribute
-// @Schemes
 // @Description Sets a user sub attribute
-// @Tags users
-// @Accept json
-// @Produce json
+// @Tags attributes,users
+// @Security Bearer
 // @Param user_id path string true "User UMID"
 // @Param body body node.apiSetUserAttributeSubValue.Body true "body params"
 // @Success 202 {object} dto.UserSubAttributes
@@ -408,15 +398,12 @@ func (n *Node) apiSetUserAttributeSubValue(c *gin.Context) {
 }
 
 // @Summary Delete user sub attribute
-// @Schemes
 // @Description Deletes a user sub attribute
 // @Tags users
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param user_id path string true "User UMID"
 // @Param body body node.apiRemoveUserAttributeSubValue.Body true "body params"
 // @Success 200 ""
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/users/{user_id}/attributes/sub [delete]
@@ -496,11 +483,9 @@ func (n *Node) apiRemoveUserAttributeSubValue(c *gin.Context) {
 }
 
 // @Summary Delete user attribute
-// @Schemes
 // @Description Deletes a user attribute
 // @Tags users
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param user_id path string true "User UMID"
 // @Param body body node.apiRemoveUserAttributeValue.Body true "body params"
 // @Success 200 ""

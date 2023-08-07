@@ -32,16 +32,13 @@ type Info struct {
 }
 
 // @Summary Generate Agora token
-// @Schemes
 // @Description Returns an Agora token
 // @Tags objects
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param body body node.apiGenAgoraToken.Body false "body params"
 // @Success 200 {object} node.apiGenAgoraToken.Out
 // @Failure 400 {object} api.HTTPError
-// @Failure 500 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/agora/token [post]
 func (n *Node) apiGenAgoraToken(c *gin.Context) {
 	type Body struct {
@@ -112,11 +109,9 @@ func (n *Node) apiGenAgoraToken(c *gin.Context) {
 }
 
 // @Summary Get object by UMID
-// @Schemes
 // @Description Returns a object info based on UMID and query
 // @Tags objects
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param query query node.apiGetObject.InQuery false "query params"
 // @Success 202 {object} dto.Object
@@ -191,11 +186,9 @@ func (n *Node) apiGetObject(c *gin.Context) {
 // @Schemes
 // @Description Deletes a object by UMID
 // @Tags objects
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Success 200 {object} nil
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id} [delete]
@@ -260,12 +253,10 @@ func (n *Node) apiRemoveObject(c *gin.Context) {
 // @Summary Update a object by UMID
 // @Description Updates a object by UMID, 're-parenting' not supported, returns updated object UMID.
 // @Tags objects
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param body body node.apiUpdateObject.InBody true "body params"
 // @Success 200 {object} node.apiUpdateObject.Out
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id} [patch]
@@ -383,11 +374,9 @@ func (n *Node) apiUpdateObject(c *gin.Context) {
 // @Summary Clones an object by UMID
 // @Description Clones an object by UMID, 're-parenting' not supported, returns cloned object UMID.
 // @Tags objects
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Success 200 {object} node.apiCloneObject.Out
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/clone [post]
@@ -414,7 +403,7 @@ func (n *Node) apiCloneObject(c *gin.Context) {
 	}
 
 	parentID := object.GetParent().GetID()
-	transform, err := tree.CalcObjectSpawnPosition(parentID, userID)
+	transform, err := tree.CalcObjectSpawnPosition(parentID, userID, object.GetTransform())
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiCloneObject: failed to calc object spawn position")
 		api.AbortRequest(c, http.StatusBadRequest, "calc_spawn_position_failed", err, n.log)
@@ -468,9 +457,22 @@ func (n *Node) apiCloneObject(c *gin.Context) {
 				defaultValue := utils.GetFromAnyMap(cloneable, "use_default", map[string]any(nil))
 				if defaultValue != nil {
 					attributeValue := entry.AttributeValue(defaultValue)
-					cloneableObjectAttribute := CloneableObjectAttribute{
+					cloneableDefaultAttribute := CloneableObjectAttribute{
 						AttributeID: attributeID,
 						Value:       &attributeValue,
+					}
+
+					cloneableAttributes = append(cloneableAttributes, cloneableDefaultAttribute)
+				} else {
+					attributeValue, ok := object.GetObjectAttributes().GetValue(attributeID)
+					if !ok {
+						err := errors.Errorf("Node: apiCloneObject: attr value not found: %s", objectID)
+						api.AbortRequest(c, http.StatusNotFound, "attr_value_not_found", err, n.log)
+						return
+					}
+					cloneableObjectAttribute := CloneableObjectAttribute{
+						AttributeID: attributeID,
+						Value:       attributeValue,
 					}
 
 					cloneableAttributes = append(cloneableAttributes, cloneableObjectAttribute)
@@ -521,15 +523,12 @@ func (n *Node) apiCloneObject(c *gin.Context) {
 }
 
 // @Summary Set object sub option by object UMID
-// @Schemes
 // @Description Sets a object sub option by object UMID, returns appended object option
 // @Tags objects
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param body body node.apiObjectsSetObjectSubOption.Body true "body params"
 // @Success 202 {object} dto.ObjectSubOptions
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/options/sub [post]
@@ -587,15 +586,12 @@ func (n *Node) apiObjectsSetObjectSubOption(c *gin.Context) {
 }
 
 // @Summary Delete object sub option by object UMID
-// @Schemes
 // @Description Deletes a object sub option by object UMID
 // @Tags objects
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param body body node.apiObjectsRemoveObjectSubOption.Body true "body params"
 // @Success 200 {object} nil
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/options/sub [delete]
@@ -645,15 +641,12 @@ func (n *Node) apiObjectsRemoveObjectSubOption(c *gin.Context) {
 }
 
 // @Summary Get object options by object UMID
-// @Schemes
 // @Description Returns a object options based on object UMID and query
 // @Tags objects
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param query query node.apiObjectsGetObjectOptions.InQuery false "query params"
 // @Success 200 {object} dto.ObjectOptions
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/options [get]
@@ -696,22 +689,19 @@ func (n *Node) apiObjectsGetObjectOptions(c *gin.Context) {
 }
 
 // @Summary Get object sub options
-// @Schemes
 // @Description Returns a object sub options based on query
 // @Tags objects
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param query query node.apiObjectsGetObjectSubOptions.InQuery true "query params"
 // @Success 200 {object} dto.ObjectSubOptions
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/options/sub [get]
 func (n *Node) apiObjectsGetObjectSubOptions(c *gin.Context) {
 	type InQuery struct {
-		Effective    bool   `form:"effective"`
-		SubOptionKey string `form:"sub_option_key" binding:"required"`
+		Effective    bool   `form:"effective" json:"effective"`
+		SubOptionKey string `form:"sub_option_key" json:"sub_option_key" binding:"required"`
 	}
 	inQuery := InQuery{
 		Effective: true,
@@ -764,15 +754,12 @@ func (n *Node) apiObjectsGetObjectSubOptions(c *gin.Context) {
 }
 
 // @Summary Claim and customise object
-// @Schemes
 // @Description Claim and customise object
 // @Tags objects
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param body body node.apiClaimAndCustomise.Body true "body params"
 // @Success 200 {object} nil
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 403 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
@@ -886,14 +873,11 @@ func (n *Node) apiClaimAndCustomise(c *gin.Context) {
 }
 
 // @Summary Unclaim and clear object customisation
-// @Schemes
 // @Description Unclaim and clear object customisation
 // @Tags objects
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Success 200 {object} nil
-// @Failure 500 {object} api.HTTPError
 // @Failure 400 {object} api.HTTPError
 // @Failure 403 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
@@ -965,18 +949,16 @@ func (n *Node) apiUnclaimAndClearCustomisation(c *gin.Context) {
 }
 
 // @Summary Get tree of objects with given object as root
-// @Schemes
 // @Description Get tree of objects with given object as root
 // @Tags objects
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param query query node.apiGetObjectsTree.InQuery true "query params"
 // @Success 200 {object} node.Info
 // @Failure 400 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/tree [get]
 func (n *Node) apiGetObjectsTree(c *gin.Context) {
 	type InQuery struct {
-		MaxDepth int `form:"max_depth"`
+		MaxDepth int `form:"max_depth" json:"max_depth"`
 	}
 	var inQuery InQuery
 

@@ -15,6 +15,29 @@ import (
 // @description  Momentum REST API
 
 // @BasePath /
+// @accept json
+// @produce json
+// @schemes https
+
+// @securityDefinitions.apikey Bearer
+// @in header
+// @name Authorization
+// @description Authorization header with "Bearer" followed by a space and JWT token.
+
+// @tag.name auth
+// @tag.name users
+// @tag.name profile
+// @tag.name worlds
+// @tag.name objects
+// @tag.name members
+// @tag.name media
+// @tag.name assets2d
+// @tag.name assets3d
+// @tag.name newsfeed
+// @tag.name timeline
+// @tag.name plugins
+// @tag.name config
+// @tag.name app
 
 func (n *Node) RegisterAPI(r *gin.Engine) {
 	n.log.Infof("Registering api for node: %s...", n.GetID())
@@ -174,6 +197,8 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 				object.GET("/attributes/sub", n.apiGetObjectAttributeSubValue)
 
 				object.GET("/all-users/attributes", n.apiGetObjectAllUsersAttributeValuesList)
+				object.GET("/all-users/count", n.apiGetObjectUserAttributeCount)
+				object.GET("/all-users/attributes/:pluginID/:attrName/entries", n.apiObjectUserAttributeValueEntries)
 
 				timeline := object.Group("/timeline")
 				{

@@ -65,11 +65,15 @@ type ObjectUserAttributeID struct {
 type ObjectAttribute struct {
 	ObjectAttributeID
 	*AttributePayload
+	CreatedAt time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
 }
 
 type ObjectUserAttribute struct {
 	ObjectUserAttributeID
 	*AttributePayload
+	CreatedAt time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
 }
 
 func NewObjectAttribute(objectAttributeID ObjectAttributeID, payload *AttributePayload) *ObjectAttribute {

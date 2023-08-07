@@ -16,19 +16,15 @@ import (
 )
 
 // @Summary Generate auth challenge
-// @Schemes
 // @Description Returns a new generated challenge based on params
 // @Tags auth
-// @Accept json
-// @Produce json
 // @Param query query node.apiGenChallenge.InQuery true "query params"
 // @Success 200 {object} node.apiGenChallenge.Out
 // @Failure 400 {object} api.HTTPError
-// @Failure 500 {object} api.HTTPError
 // @Router /api/v4/auth/challenge [get]
 func (n *Node) apiGenChallenge(c *gin.Context) {
 	type InQuery struct {
-		Wallet string `form:"wallet" binding:"required"`
+		Wallet string `form:"wallet" json:"wallet" binding:"required"`
 	}
 	var inQuery InQuery
 
@@ -83,15 +79,11 @@ func (n *Node) apiGenChallenge(c *gin.Context) {
 }
 
 // @Summary Verifies a signed challenge
-// @Schemes
 // @Description Returns OK when a signature has been validated
 // @Tags auth
-// @Accept json
-// @Produce json
 // @Param body body node.apiAttachAccount.InBody true "body params"
 // @Success 200 {object} nil
 // @Failure 400 {object} api.HTTPError
-// @Failure 500 {object} api.HTTPError
 // @Router /api/v4/auth/attach-account [post]
 func (n *Node) apiAttachAccount(ctx *gin.Context) {
 	type InBody struct {
@@ -213,17 +205,13 @@ func (n *Node) apiAttachAccount(ctx *gin.Context) {
 }
 
 // @Summary Generate auth token
-// @Schemes
 // @Description Returns a new generated token based on params
 // @Tags auth
-// @Accept json
-// @Produce json
 // @Param body body node.apiGenToken.InBody true "body params"
 // @Success 200 {object} node.apiGenToken.Out
 // @Failure 400 {object} api.HTTPError
 // @Failure 403 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
-// @Failure 500 {object} api.HTTPError
 // @Router /api/v4/auth/token [post]
 func (n *Node) apiGenToken(c *gin.Context) {
 	type InBody struct {
@@ -327,14 +315,10 @@ func (n *Node) apiGenToken(c *gin.Context) {
 }
 
 // @Summary Generate jwt guest token
-// @Schemes
 // @Description Returns a new generated token for guest users
 // @Tags auth
-// @Accept json
-// @Produce json
 // @Success 200 {object} dto.User
 // @Failure 400 {object} api.HTTPError
-// @Failure 500 {object} api.HTTPError
 // @Router /api/v4/auth/guest-token [post]
 func (n *Node) apiGuestToken(c *gin.Context) {
 	visitorName, err := api.GenerateGuestName(c, n.db)
@@ -376,15 +360,12 @@ func (n *Node) apiGuestToken(c *gin.Context) {
 }
 
 // @Summary Remove wallet
-// @Schemes
 // @Description Remove wallet
 // @Tags auth
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param body body node.apiDeleteWallet.InBody true "body params"
 // @Success 200 {object} nil
 // @Failure 400 {object} api.HTTPError
-// @Failure 500 {object} api.HTTPError
 // @Router /api/v4/users/me/remove-wallet [delete]
 func (n *Node) apiDeleteWallet(c *gin.Context) {
 	type InBody struct {
