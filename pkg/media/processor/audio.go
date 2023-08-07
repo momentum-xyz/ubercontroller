@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"io"
-	"io/ioutil"
 	"os"
 
 	"github.com/h2non/filetype"
@@ -38,7 +37,7 @@ func (p *Processor) ProcessTrack(body io.ReadCloser) (error, string) {
 		return errors.New("audio type not accepted"), ""
 	}
 
-	file, err := ioutil.TempFile(p.Audiopath, "tmp")
+	file, err := os.CreateTemp(p.Audiopath, "tmp")
 	if err != nil {
 		return err, ""
 	}

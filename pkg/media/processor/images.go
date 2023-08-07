@@ -8,7 +8,6 @@ import (
 	_ "image/jpeg"
 	"image/png"
 	_ "image/png"
-	"io/ioutil"
 	"math"
 	"os"
 
@@ -73,7 +72,7 @@ func (p *Processor) SaveWriteToPNG(fname string, img image.Image) error {
 
 func (p *Processor) SaveWriteToFile(fname string, data []byte) error {
 	tfilename := fname + ".tmp"
-	err := ioutil.WriteFile(tfilename, data, 0666)
+	err := os.WriteFile(tfilename, data, 0666)
 	if err != nil {
 		os.Remove(tfilename)
 		return err
