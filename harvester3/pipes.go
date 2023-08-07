@@ -69,6 +69,7 @@ func (p *Pipes) Run() {
 		p.logger.Error(err)
 	}
 
+	fmt.Println("RUN. Last Block:", block)
 	p.block = block
 	if p.block > 0 {
 		p.block--
@@ -156,6 +157,9 @@ func (p *Pipes) mainWorker() {
 func (p *Pipes) newBlockTicker(blockNumber uint64) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
+	defer func() {
+		fmt.Println("END")
+	}()
 
 	if blockNumber > p.block {
 
