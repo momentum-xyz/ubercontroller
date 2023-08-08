@@ -161,10 +161,10 @@ func (a *ArbitrumNovaAdapter) DecodeTransactionInputData(contractABI *abi.ABI, d
 	return method.Name, inputsMap, nil
 }
 
-func (a *ArbitrumNovaAdapter) getRawLogs(
+func (a *ArbitrumNovaAdapter) GetRawLogs(
 	topic0 *common.Hash,
-	topic1 *common.Address,
-	topic2 *common.Address,
+	topic1 *common.Hash,
+	topic2 *common.Hash,
 	addresses []common.Address,
 	fromBlock *big.Int,
 	toBlock *big.Int,
@@ -190,7 +190,7 @@ func (a *ArbitrumNovaAdapter) getRawLogs(
 func (a *ArbitrumNovaAdapter) GetTokenLogs(fromBlock, toBlock uint64, contracts []common.Address) ([]any, error) {
 	logTransferSig := []byte("Transfer(address,address,uint256)")
 	logTransferSigHash := crypto.Keccak256Hash(logTransferSig)
-	bcLogs, err := a.getRawLogs(&logTransferSigHash, nil, nil, contracts, big.NewInt(int64(fromBlock)), big.NewInt(int64(toBlock)))
+	bcLogs, err := a.GetRawLogs(&logTransferSigHash, nil, nil, contracts, big.NewInt(int64(fromBlock)), big.NewInt(int64(toBlock)))
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to filter log")
 	}
@@ -254,4 +254,83 @@ func hex2int(hexStr string) uint64 {
 	// base 16 for hexadecimal
 	result, _ := strconv.ParseUint(cleaned, 16, 64)
 	return uint64(result)
+}
+
+func (a *ArbitrumNovaAdapter) GetNFTBalance(nftContract *common.Address, wallet *common.Address, block uint64) ([]umid.UMID, error) {
+	transferString := "Transfer(address,address,uint256)"
+	transferTopic := common.BytesToHash(crypto.Keccak256([]byte(transferString)))
+
+	if nftContract == nil {
+		return nil, errors.New("Failed to GetNFTBalance: NFT contract can not be nil")
+	}
+
+	contracts := []common.Address{
+		//mom,
+		*nftContract,
+	}
+
+	logs := make([]types.Log, 0)
+
+	logsFrom, err := a.GetRawLogs(&transferTopic, addrToHash(wallet), nil, contracts, big.NewInt(0), big.NewInt(int64(block)))
+	//logsFrom, err := a.GetRawLogs(nil, nil, nil, contracts, big.NewInt(0), big.NewInt(int64(block)))
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to get logs for nft contract")
+	}
+
+	logsTo, err := a.GetRawLogs(&transferTopic, nil, addrToHash(wallet), contracts, big.NewInt(0), big.NewInt(int64(block)))
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to get logs for nft contract")
+	}
+
+	fmt.Print(logsFrom)
+	fmt.Print(logsTo)
+	fmt.Println(logs)
+
+	m := make(map[umid.UMID]int8)
+
+	for _, l := range logsFrom {
+		itemID := l.Topics[3].Big()
+
+		var id umid.UMID
+		itemID.FillBytes(id[:])
+		_, ok := m[id]
+		if !ok {
+			m[id] = 0
+		}
+
+		m[id] -= 1
+	}
+
+	for _, l := range logsTo {
+		itemID := l.Topics[3].Big()
+
+		var id umid.UMID
+		itemID.FillBytes(id[:])
+		_, ok := m[id]
+		if !ok {
+			m[id] = 0
+		}
+
+		m[id] += 1
+	}
+
+	ids := make([]umid.UMID, 0)
+	for id, i := range m {
+		if i != 0 && i != 1 {
+			fmt.Println("Failed to parse NFT transfers, Something wrong in blockchain history")
+		}
+		if i == 1 {
+			ids = append(ids, id)
+		}
+	}
+
+	return ids, nil
+}
+
+func addrToHash(addr *common.Address) *common.Hash {
+	if addr == nil {
+		return nil
+	}
+	res := common.HexToHash(addr.Hex())
+	return &res
 }
