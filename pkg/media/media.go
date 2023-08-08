@@ -2,14 +2,16 @@ package media
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/momentum-xyz/ubercontroller/config"
-	"github.com/momentum-xyz/ubercontroller/pkg/media/processor"
-	"github.com/momentum-xyz/ubercontroller/types"
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"io"
 	"mime/multipart"
+
+	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
+
+	"github.com/momentum-xyz/ubercontroller/config"
+	"github.com/momentum-xyz/ubercontroller/pkg/media/processor"
+	"github.com/momentum-xyz/ubercontroller/types"
 )
 
 type Media struct {

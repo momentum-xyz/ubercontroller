@@ -27,12 +27,14 @@ func (p *Processor) ProcessVideo(body io.ReadCloser) (string, error) {
 
 	buf := make([]byte, 265)
 	n, err := body.Read(buf)
-
 	if err != nil {
 		return "", errors.Wrap(err, "Error reading from body")
 	}
 
 	t, err := filetype.Get(buf[:n])
+	if err != nil {
+		return "", errors.Wrap(err, "Error getting filetype")
+	}
 
 	if _, ok := AllowedVideoTypes[t]; !ok {
 		return "", errors.New("Video type not supported")
