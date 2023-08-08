@@ -3,7 +3,9 @@ package harvester3
 import (
 	"context"
 	"fmt"
+	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -112,4 +114,41 @@ func (db *DB) flush(queue []InsertOrUpdateToDB, block uint64) error {
 	}
 
 	return nil
+}
+
+func (db *DB) loadTokensFromDB() ([]TokenCell, error) {
+	sql := `select harvester_tokens.contract_id,
+				   harvester_tokens.wallet_id,
+				   harvester_tokens.balance,
+				   harvester_blockchain.last_processed_block_for_tokens
+			from harvester_tokens
+					 join harvester_blockchain using (blockchain_id)
+			where blockchain_id = $1`
+
+	rows, err := db.db.Query(context.Background(), sql, db.blockchainID)
+	if err != nil {
+		return nil, err
+	}
+
+	cells := make([]TokenCell, 0)
+
+	for rows.Next() {
+		var contractID common.Address
+		var walletID common.Address
+		var balance entry.BigInt
+		var block uint64
+
+		if err := rows.Scan(&contractID, &walletID, &balance, &block); err != nil {
+			return nil, errors.WithMessage(err, "failed to scan rows from table")
+		}
+
+		cells = append(cells, TokenCell{
+			Contract: contractID,
+			Wallet:   walletID,
+			Value:    (*big.Int)(&balance),
+			Block:    block,
+		})
+	}
+
+	return cells, nil
 }

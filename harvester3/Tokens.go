@@ -78,14 +78,37 @@ func NewTokens(db *pgxpool.Pool, adapter Adapter, logger *zap.SugaredLogger, out
 
 func (t *Tokens) Run() error {
 
-	block, err := t.adapter.GetLastBlockNumber()
+	cells, err := t.DB.loadTokensFromDB()
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
 
-	t.block = block
-	if t.block > 0 {
-		t.block--
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	for _, cell := range cells {
+		contract := cell.Contract
+		_, ok := t.data[contract]
+		if !ok {
+			t.data[contract] = make(map[common.Address]*big.Int)
+			t.contracts = append(t.contracts, contract)
+		}
+		t.data[contract][cell.Wallet] = cell.Value
+		t.SubscribeQueue.MarkAsLoadedFromDB(contract, cell.Wallet)
+	}
+
+	if len(cells) > 0 {
+		t.block = cells[0].Block
+	} else {
+		block, err := t.adapter.GetLastBlockNumber()
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		t.block = block
+		if t.block > 0 {
+			t.block--
+		}
 	}
 
 	t.DB.Run()

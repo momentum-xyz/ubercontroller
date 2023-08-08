@@ -18,7 +18,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	//cfg.Arbitrum3.RPCURL = "https://nova.arbitrum.io/rpc"
+	cfg.Arbitrum3.RPCURL = "https://nova.arbitrum.io/rpc"
 
 	zapCfg := zap.Config{
 		Level:            zap.NewAtomicLevelAt(zapcore.DebugLevel),
@@ -36,7 +36,7 @@ func main() {
 	}
 	sugaredLogger := logger.Sugar()
 
-	a := arbitrum_nova_adapter3.NewArbitrumNovaAdapter(&cfg.Arbitrum2, sugaredLogger)
+	a := arbitrum_nova_adapter3.NewArbitrumNovaAdapter(&cfg.Arbitrum3, sugaredLogger)
 
 	a.Run()
 

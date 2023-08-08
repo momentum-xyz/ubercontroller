@@ -1,6 +1,8 @@
 package harvester3
 
 import (
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/sasha-s/go-deadlock"
@@ -18,6 +20,13 @@ type Harvester struct {
 	input   chan UpdateCell
 	//outputs map[common.Address]map[common.Address][]chan any
 	outputs []chan any
+}
+
+type TokenCell struct {
+	Contract common.Address
+	Wallet   common.Address
+	Value    *big.Int
+	Block    uint64
 }
 
 func NewHarvester(cfg *config.Arbitrum3, pool *pgxpool.Pool, adapter Adapter, logger *zap.SugaredLogger) *Harvester {
