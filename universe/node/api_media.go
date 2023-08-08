@@ -158,6 +158,32 @@ func (n *Node) apiMediaUploadVideo(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// @Summary Gets a video from the media manager
+// @Description Serves a video file from the media manager
+// @Tags media
+// @Security Bearer
+// @Accept json
+// @Produce json
+// @Param file path string true "video file"
+// @Success 200 {file} byte "video file"
+// @Failure 400 {object} api.HTTPError
+// @Failure 500 {object} api.HTTPError
+// @Router /api/v4/media/render/track/{file:[a-zA-Z0-9]+} [get]
+func (n *Node) apiMediaGetAudio(c *gin.Context) {
+	filename := c.Param("file")
+	fileType, filepath, err := n.media.GetAudio(filename)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiMediaGetVideo: failed to get audio")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_audio", err, n.log)
+		return
+	}
+
+	c.Header("Content-Type", fileType.MIME.Value)
+
+	c.File(filepath)
+	n.log.Infof("Endpoint Hit: Audio served: %s", filename)
+}
+
 // @Summary Uploads an audio file to the media manager
 // @Description Sends an audio file to the media manager and returns its hash
 // @Tags media
@@ -184,7 +210,7 @@ func (n *Node) apiMediaUploadAudio(c *gin.Context) {
 
 	defer openedFile.Close()
 
-	hash, err := n.media.AddTrack(openedFile)
+	hash, err := n.media.AddAudio(openedFile)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiMediaUploadAudio: failed to add image")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_add_image", err, n.log)

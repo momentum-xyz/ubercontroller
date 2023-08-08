@@ -2,18 +2,21 @@ package media
 
 import (
 	"fmt"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
-	"github.com/h2non/filetype"
-	"github.com/momentum-xyz/ubercontroller/config"
-	"github.com/momentum-xyz/ubercontroller/pkg/media/processor"
-	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"os"
+
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
+	"github.com/h2non/filetype"
+	fileTypes "github.com/h2non/filetype/types"
+
+	"github.com/momentum-xyz/ubercontroller/config"
+	"github.com/momentum-xyz/ubercontroller/pkg/media/processor"
+	"github.com/momentum-xyz/ubercontroller/types"
 )
 
 type Media struct {
@@ -168,42 +171,32 @@ func (m *Media) AddVideo(file multipart.File) (string, error) {
 	return hash, err
 }
 
-func (m *Media) GetTrack(w http.ResponseWriter, r *http.Request) {
-	filename := chi.URLParam(r, "file")
+func (m *Media) GetAudio(filename string) (*fileTypes.Type, string, error) {
+	m.log.Debug("Endpoint Hit: Audio Get:", filename)
 
-	L().Debug("Endpoint Hit: Track Get:", filename)
-
-	// res, filepath := x.present(&(filename))
-	filepath := x.Audiopath + filename
-
+	filepath := m.processor.Audiopath + filename
 	buf := make([]byte, 264)
-	f, err := os.Open(filepath)
-	if check_error(err) {
-		w.WriteHeader(http.StatusBadRequest)
-		sentry.CaptureException(err)
-		L().Error(err)
-		return
+	file, err := os.Open(filepath)
+	if err != nil {
+		return nil, "", errors.WithMessage(err, "error opening audio")
 	}
-	defer f.Close()
+	defer file.Close()
 
-	n, err := f.Read(buf)
-	if check_error(err) {
-		w.WriteHeader(http.StatusBadRequest)
-		sentry.CaptureException(err)
-		L().Error(err)
-		return
+	n, err := file.Read(buf)
+	if err != nil {
+		return nil, "", errors.WithMessage(err, "error reading buffer")
 	}
 
-	ftype, err := filetype.Get(buf[:n])
+	fileType, err := filetype.Get(buf[:n])
+	if err != nil {
+		return nil, "", errors.WithMessage(err, "error getting audio type")
+	}
 
-	w.Header().Set("Content-Type", ftype.MIME.Value)
-
-	http.ServeFile(w, r, filepath)
-	L().Infof("Endpoint Hit: Track served: %s", filename)
+	return &fileType, filepath, nil
 }
 
-func (m *Media) AddTrack(file multipart.File) (string, error) {
-	m.log.Info("Endpoint Hit: AddTrack")
+func (m *Media) AddAudio(file multipart.File) (string, error) {
+	m.log.Info("Endpoint Hit: AddAudio")
 
 	hash, err := m.processor.ProcessTrack(file)
 	if err != nil {
@@ -213,8 +206,8 @@ func (m *Media) AddTrack(file multipart.File) (string, error) {
 	return hash, err
 }
 
-func (m *Media) GetAsset(w http.ResponseWriter, r *http.Request) {
-	filename := chi.URLParam(r, "file")
+func (m *Media) GetAsset(c *gin.Context) {
+	filename := c.Param("file")
 
 	L().Debug("Endpoint Hit: Asset Get:", filename)
 
@@ -224,7 +217,7 @@ func (m *Media) GetAsset(w http.ResponseWriter, r *http.Request) {
 	buf := make([]byte, 264)
 	f, err := os.Open(filepath)
 	if check_error(err) {
-		w.WriteHeader(http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		sentry.CaptureException(err)
 		L().Error(err)
 		return
@@ -233,7 +226,7 @@ func (m *Media) GetAsset(w http.ResponseWriter, r *http.Request) {
 
 	n, err := f.Read(buf)
 	if check_error(err) {
-		w.WriteHeader(http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		sentry.CaptureException(err)
 		L().Error(err)
 		return
@@ -241,10 +234,10 @@ func (m *Media) GetAsset(w http.ResponseWriter, r *http.Request) {
 
 	ftype, err := filetype.Get(buf[:n])
 
-	w.Header().Set("Content-Type", ftype.MIME.Value)
+	c.Header("Content-Type", ftype.MIME.Value)
 
-	http.ServeFile(w, r, filepath)
-	L().Infof("Endpoint Hit: Track served: %s", filename)
+	c.File(filepath)
+	L().Infof("Endpoint Hit: Asset served: %s", filename)
 }
 
 func (m *Media) AddAsset(file multipart.File) (string, error) {

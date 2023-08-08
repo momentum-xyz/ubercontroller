@@ -95,7 +95,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 			media.GET("/render/video/{file:[a-zA-Z0-9]+}", n.apiMediaGetVideo)
 			media.POST("/upload/video", n.apiMediaUploadVideo)
 
-			media.GET("/render/track/{file:[a-zA-Z0-9]+}", n.apiMediaGetTrack)
+			media.GET("/render/track/{file:[a-zA-Z0-9]+}", n.apiMediaGetAudio)
 			media.POST("/upload/audio", n.apiMediaUploadAudio)
 		}
 
