@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 	"strconv"
 	"time"
 
@@ -27,14 +28,26 @@ func makeTimestamp() int64 {
 // @Param file path string true "image file"
 // @Success 200 {object} dto.HashResponse
 // @Failure 400 {object} api.HTTPError
-// @Router /api/v4/media/render/get/{file:[a-zA-Z0-9]+} [get]
+// @Router /api/v4/media/render/get/{file} [get]
 func (n *Node) apiMediaGetImage(c *gin.Context) {
 	tm1 := makeTimestamp()
 
 	filename := c.Param("file")
+	match, err := regexp.MatchString(`^[a-zA-Z0-9]+$`, filename)
+	if !match {
+		err := errors.New("Node: apiMediaGetImage: invalid filename format")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_format", err, n.log)
+		return
+	}
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiMediaGetImage: failed to match regexp string")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_validate", err, n.log)
+		return
+	}
+
 	meta, filepath, err := n.media.GetImage(filename)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiMediaGetFile: failed to get image")
+		err := errors.WithMessage(err, "Node: apiMediaGetImage: failed to get image")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_image", err, n.log)
 		return
 	}
@@ -97,9 +110,21 @@ func (n *Node) apiMediaUploadImage(c *gin.Context) {
 // @Success 200 {file} byte "video file"
 // @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/media/render/video/{file:[a-zA-Z0-9]+} [get]
+// @Router /api/v4/media/render/video/{file} [get]
 func (n *Node) apiMediaGetVideo(c *gin.Context) {
 	filename := c.Param("file")
+	match, err := regexp.MatchString(`^[a-zA-Z0-9]+$`, filename)
+	if !match {
+		err := errors.New("Node: apiMediaGetVideo: invalid filename format")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_format", err, n.log)
+		return
+	}
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiMediaGetVideo: failed to match regexp string")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_validate", err, n.log)
+		return
+	}
+
 	file, fileInfo, contentType, err := n.media.GetVideo(filename)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiMediaGetVideo: failed to get video")
@@ -168,12 +193,24 @@ func (n *Node) apiMediaUploadVideo(c *gin.Context) {
 // @Success 200 {file} byte "video file"
 // @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
-// @Router /api/v4/media/render/track/{file:[a-zA-Z0-9]+} [get]
+// @Router /api/v4/media/render/track/{file} [get]
 func (n *Node) apiMediaGetAudio(c *gin.Context) {
 	filename := c.Param("file")
+	match, err := regexp.MatchString(`^[a-zA-Z0-9]+$`, filename)
+	if !match {
+		err := errors.New("Node: apiMediaGetAudio: invalid filename format")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_format", err, n.log)
+		return
+	}
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiMediaGetAudio: failed to match regexp string")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_validate", err, n.log)
+		return
+	}
+
 	fileType, filepath, err := n.media.GetAudio(filename)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiMediaGetVideo: failed to get audio")
+		err := errors.WithMessage(err, "Node: apiMediaGetAudio: failed to get audio")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_audio", err, n.log)
 		return
 	}
@@ -228,17 +265,41 @@ func (n *Node) apiMediaUploadAudio(c *gin.Context) {
 // @Description Serves a generic texture from the (internal) media-manager
 // @Tags media
 // @Security Bearer
-// @Accept json
-// @Produce json
-// @Param rsize path string true "Rendering size s followed by a digit [0-9]"
+// @Accept application/octet-stream
+// @Produce application/octet-stream
+// @Param rsize path string true "Rendering size parameter. Should be in the format 's' followed by a single digit."
 // @Param file path string true "Texture file identifier"
-// @Success 200 {object} dto.HashResponse
 // @Failure 400 {object} api.HTTPError
-// @Router /api/v4/media/render/texture/{rsize:s[0-9]}/{file:[a-zA-Z0-9]+} [get]
+// @Failure 500 {object} api.HTTPError
+// @Router /api/v4/media/render/texture/{rsize}/{file} [get]
 func (n *Node) apiMediaGetTexture(c *gin.Context) {
 	tm1 := makeTimestamp()
+
 	rsize := c.Param("rsize")
 	filename := c.Param("file")
+	match, err := regexp.MatchString(`^s[0-9]$`, rsize)
+	if !match {
+		err := errors.New("Node: apiMediaGetTexture: invalid rsize format")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_format", err, n.log)
+		return
+	}
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiMediaGetTexture: failed to match regexp string")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_validate", err, n.log)
+		return
+	}
+
+	match, err = regexp.MatchString(`^[a-zA-Z0-9]+$`, filename)
+	if !match {
+		err := errors.New("Node: apiMediaGetTexture: invalid filename format")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_format", err, n.log)
+		return
+	}
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiMediaGetTexture: failed to match regexp string")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_validate", err, n.log)
+		return
+	}
 
 	meta, filepath, err := n.media.GetTexture(rsize, filename)
 	if err != nil {

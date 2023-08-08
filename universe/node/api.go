@@ -86,16 +86,16 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 		media := vx.Group("/media")
 		{
-			media.GET("/render/get/{file:[a-zA-Z0-9]+}", n.apiMediaGetImage)
-			media.GET("/render/texture/{rsize:s[0-9]}/{file:[a-zA-Z0-9]+}", n.apiMediaGetTexture)
-			media.GET("/render/asset/{file:[a-zA-Z0-9]+}", n.apiMediaGetAsset)
+			media.GET("/render/get/:file", n.apiMediaGetImage)
+			media.GET("/render/texture/:rsize/:file", n.apiMediaGetTexture)
+			media.GET("/render/asset/:file", n.apiMediaGetAsset)
 
 			media.POST("/upload/image", n.apiMediaUploadImage)
 
-			media.GET("/render/video/{file:[a-zA-Z0-9]+}", n.apiMediaGetVideo)
+			media.GET("/render/video/:file", n.apiMediaGetVideo)
 			media.POST("/upload/video", n.apiMediaUploadVideo)
 
-			media.GET("/render/track/{file:[a-zA-Z0-9]+}", n.apiMediaGetAudio)
+			media.GET("/render/track/:file", n.apiMediaGetAudio)
 			media.POST("/upload/audio", n.apiMediaUploadAudio)
 		}
 

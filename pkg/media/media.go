@@ -92,8 +92,8 @@ func (m *Media) GetTexture(rsize string, filename string) (*processor.MetaDef, *
 	m.log.Debug("Endpoint Hit: Texture Get:", filename, rsize)
 
 	meta, filepath := m.processor.PresentTexture(&(filename), rsize)
-	if meta == nil {
-		return nil, nil, errors.New("no meta for file")
+	if meta == nil || filepath == nil {
+		return nil, nil, errors.New("no meta or filepath for file")
 	}
 
 	return meta, filepath, nil
