@@ -19,7 +19,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	//cfg.Arbitrum2.RPCURL = "https://nova.arbitrum.io/rpc"
+	//cfg.Arbitrum3.RPCURL = "https://nova.arbitrum.io/rpc"
 
 	zapCfg := zap.Config{
 		Level:            zap.NewAtomicLevelAt(zapcore.DebugLevel),

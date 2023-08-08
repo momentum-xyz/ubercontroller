@@ -21,7 +21,7 @@ type Config struct {
 	UIClient   UIClient   `yaml:"ui_client"`
 	Streamchat Streamchat `yaml:"streamchat"`
 	Arbitrum   Arbitrum   `yaml:"arbitrum"`
-	Arbitrum2  Arbitrum2  `yaml:"arbitrum2"`
+	Arbitrum2  Arbitrum3  `yaml:"arbitrum3"`
 }
 
 const configFileName = "config.yaml"

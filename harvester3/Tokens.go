@@ -15,6 +15,7 @@ import (
 type Tokens struct {
 	updates        chan any
 	updatesDB      chan any
+	output         chan UpdateCell
 	adapter        Adapter
 	logger         *zap.SugaredLogger
 	block          uint64
@@ -23,6 +24,13 @@ type Tokens struct {
 	contracts      []common.Address
 	SubscribeQueue *SubscribeQueue
 	DB             *DB
+}
+
+type UpdateCell struct {
+	Contract common.Address
+	Wallet   common.Address
+	Value    *big.Int
+	Block    uint64
 }
 
 type QueueInit struct {
@@ -47,7 +55,7 @@ type FlushToDB struct {
 	block uint64
 }
 
-func NewTokens(db *pgxpool.Pool, adapter Adapter, logger *zap.SugaredLogger) *Tokens {
+func NewTokens(db *pgxpool.Pool, adapter Adapter, logger *zap.SugaredLogger, output chan UpdateCell) *Tokens {
 
 	updates := make(chan any)
 	updatesDB := make(chan any)
@@ -56,6 +64,7 @@ func NewTokens(db *pgxpool.Pool, adapter Adapter, logger *zap.SugaredLogger) *To
 	return &Tokens{
 		updates:        updates,
 		updatesDB:      updatesDB,
+		output:         output,
 		adapter:        adapter,
 		logger:         logger,
 		block:          0,
@@ -184,6 +193,13 @@ func (t *Tokens) setCell(contract common.Address, wallet common.Address, value *
 		value:    value,
 	}
 
+	t.output <- UpdateCell{
+		Contract: contract,
+		Wallet:   wallet,
+		Value:    t.data[contract][wallet],
+		Block:    t.block,
+	}
+
 	fmt.Println("setCell ", contract.Hex(), wallet.Hex(), t.block, t.data[contract][wallet].String())
 }
 
@@ -206,6 +222,13 @@ func (t *Tokens) updateCell(contract common.Address, wallet common.Address, valu
 		contract: contract,
 		wallet:   wallet,
 		value:    t.data[contract][wallet],
+	}
+
+	t.output <- UpdateCell{
+		Contract: contract,
+		Wallet:   wallet,
+		Value:    t.data[contract][wallet],
+		Block:    t.block,
 	}
 
 	fmt.Println("updateCell ", contract.Hex(), wallet.Hex(), t.block, t.data[contract][wallet].String())

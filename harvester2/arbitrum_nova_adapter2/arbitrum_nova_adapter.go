@@ -41,7 +41,7 @@ type ArbitrumNovaAdapter struct {
 	logger *zap.SugaredLogger
 }
 
-func NewArbitrumNovaAdapter(cfg *config.Arbitrum2, logger *zap.SugaredLogger) *ArbitrumNovaAdapter {
+func NewArbitrumNovaAdapter(cfg *config.Arbitrum3, logger *zap.SugaredLogger) *ArbitrumNovaAdapter {
 	return &ArbitrumNovaAdapter{
 		umid:    umid.MustParse("ccccaaaa-1111-2222-3333-222222222222"),
 		httpURL: cfg.RPCURL,

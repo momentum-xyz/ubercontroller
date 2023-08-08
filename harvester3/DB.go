@@ -43,7 +43,7 @@ func (db *DB) worker() {
 				fmt.Println("InsertOrUpdateToDB")
 				queue = append(queue, u)
 			case FlushToDB:
-				fmt.Println("FlushToDB")
+				//fmt.Println("FlushToDB")
 				if len(queue) == 0 {
 					continue
 				}

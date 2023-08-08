@@ -52,6 +52,7 @@ func main() {
 	env := "main_net"
 
 	var mom, dad, w1 common.Address
+	_ = dad
 
 	if env == "main_net" {
 		cfg.Arbitrum2.RPCURL = "https://nova.arbitrum.io/rpc"
@@ -70,35 +71,24 @@ func main() {
 	a := arbitrum_nova_adapter3.NewArbitrumNovaAdapter(&cfg.Arbitrum2, sugaredLogger)
 	a.Run()
 
-	output := make(chan harvester3.UpdateCell)
-	go worker(output)
-
-	matrix := harvester3.NewTokens(pool, a, sugaredLogger, output)
+	matrix := harvester3.NewHarvester(&cfg.Arbitrum2, pool, a, sugaredLogger)
 	err = matrix.Run()
 	if err != nil {
 		log.Fatal(err)
 	}
 	_ = matrix
 
-	err = matrix.AddContract(mom)
+	c, err := matrix.SubscribeForToken(mom, w1)
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = matrix.AddWallet(w1)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = matrix.AddContract(dad)
-	if err != nil {
-		log.Fatal(err)
-	}
+	go worker(c)
 
 	time.Sleep(time.Second * 30)
 }
 
-func worker(c <-chan harvester3.UpdateCell) {
+func worker(output chan any) {
 	for {
-		u := <-c
-		fmt.Println("worker", u.Contract, u.Wallet, u.Block, u.Value)
+		fmt.Println(<-output)
 	}
 }
