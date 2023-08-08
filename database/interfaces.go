@@ -380,6 +380,7 @@ type ObjectUserAttributesDB interface {
 		ctx context.Context,
 		attrID entry.ObjectAttributeID,
 		fields []string,
+		filters map[string]string,
 		order string,
 		descending bool,
 		limit uint,
@@ -388,6 +389,7 @@ type ObjectUserAttributesDB interface {
 	ValueEntriesCount(
 		ctx context.Context,
 		objectAttributeID entry.ObjectAttributeID,
+		filters map[string]string,
 	) (uint, error)
 }
 
