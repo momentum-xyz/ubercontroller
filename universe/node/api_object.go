@@ -952,6 +952,7 @@ func (n *Node) apiUnclaimAndClearCustomisation(c *gin.Context) {
 // @Description Get tree of objects with given object as root
 // @Tags objects
 // @Security Bearer
+// @Param object_id path string true "Object UMID"
 // @Param query query node.apiGetObjectsTree.InQuery true "query params"
 // @Success 200 {object} node.Info
 // @Failure 400 {object} api.HTTPError
