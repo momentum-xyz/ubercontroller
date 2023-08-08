@@ -8,8 +8,10 @@ import (
 	"go.uber.org/zap"
 	"image"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/getsentry/sentry-go"
 	lru "github.com/hashicorp/golang-lru"
@@ -79,7 +81,7 @@ type FrameRenderRequest struct {
 
 type MetaDef struct {
 	H, W int
-	mime string
+	Mime string
 }
 
 const defaultCacheSize = 1024
@@ -122,6 +124,14 @@ func (p *Processor) Initialize(ctx types.NodeContext) *Processor {
 	os.MkdirAll(strings.TrimSuffix(p.ImPathF, "/"), 0775)
 	go p.run()
 	return p
+}
+
+func (p *Processor) checkError(err error) bool {
+	if err != nil {
+		p.log.Error(err)
+		return true
+	}
+	return false
 }
 
 func (p *Processor) run() {
@@ -225,15 +235,82 @@ func (p *Processor) Present(ID *string) (*MetaDef, *string) {
 	meta := new(MetaDef)
 	if err1 != nil {
 		p.log.Debugf("%s: %v\n", *ID, err1)
-		meta.mime = "image/png"
+		meta.Mime = "image/png"
 	} else {
 		meta.H = im.Height
 		meta.W = im.Width
-		meta.mime = "image/" + format
+		meta.Mime = "image/" + format
 		p.log.Debugf("%s %d %d\n", *ID, im.Width, im.Height)
 	}
-	p.log.Debug("Mime:", meta.mime)
+	p.log.Debug("Mime:", meta.Mime)
 	p.ImageMapF.Add(*ID, meta)
 
+	return meta, &fpath
+}
+
+func (p *Processor) PresentTexture(ID *string, rsize string) (*MetaDef, *string) {
+	fpath := p.ImPathS[rsize] + *ID
+	meta0, ok := p.ImageMapS[rsize].Get(*ID)
+	if ok {
+		p.log.Debug(*ID + " is already in the map")
+		return meta0.(*MetaDef), &fpath
+	}
+
+	defer func() {
+		p.ImagesRescaleInProgress.Delete(fpath)
+	}()
+
+	if _, ok := p.ImagesRescaleInProgress.Load(fpath); ok {
+		maxRetries := 20
+		retryInterval := time.Millisecond * 300
+		for i := 1; i <= maxRetries; i++ {
+			time.Sleep(retryInterval)
+			meta0, ok := p.ImageMapS[rsize].Get(*ID)
+			if ok {
+				p.log.Debug(*ID + " found in map on retry round N: " + strconv.Itoa(i))
+				return meta0.(*MetaDef), &fpath
+			}
+		}
+		p.log.Error(*ID + " timeout reached while waiting image to rescale:" + strconv.Itoa(int(retryInterval.Milliseconds())*maxRetries) + " ms")
+		return nil, nil
+	}
+
+	p.log.Debug(fpath)
+	reader, err := os.Open(fpath)
+	if err != nil {
+		p.ImagesRescaleInProgress.Store(fpath, true)
+		converted := false
+		p.log.Debug(*ID + " : converting from full")
+		if meta, filepath := p.Present(ID); meta != nil {
+			if reader, err = os.Open(*filepath); !p.checkError(err) {
+				if img, _, errl := image.Decode(reader); !p.checkError(errl) {
+					if err = p.WriteToScaled(*ID, img, rsize); !p.checkError(err) {
+						if reader, err = os.Open(fpath); err == nil {
+							converted = true
+						}
+					}
+				}
+			}
+		}
+
+		if !converted {
+			return nil, nil
+		}
+	}
+
+	defer reader.Close()
+	im, format, err1 := image.DecodeConfig(reader)
+	meta := new(MetaDef)
+	if err1 != nil {
+		p.log.Debugf("%s: %v\n", *ID, err1)
+		meta.Mime = "image/png"
+	} else {
+		meta.H = im.Height
+		meta.W = im.Width
+		meta.Mime = "image/" + format
+		p.log.Debugf("%s %d %d\n", *ID, im.Width, im.Height)
+	}
+	p.log.Debug("Mime:", meta.Mime)
+	p.ImageMapS[rsize].Add(*ID, meta)
 	return meta, &fpath
 }

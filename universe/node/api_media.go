@@ -2,6 +2,8 @@ package node
 
 import (
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -9,6 +11,40 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 )
+
+func makeTimestamp() int64 {
+	return time.Now().UnixNano() / int64(time.Millisecond)
+}
+
+// @Summary Gets an image from the (internal) media-manager
+// @Description Serves a generic image from the (internal) media-manager
+// @Tags media
+// @Security Bearer
+// @Accept json
+// @Produce json
+// @Param file path string true "image file"
+// @Success 200 {object} dto.HashResponse
+// @Failure 400 {object} api.HTTPError
+// @Router /api/v4/media/render/get/{file:[a-zA-Z0-9]+} [get]
+func (n *Node) apiMediaGetFile(c *gin.Context) {
+	tm1 := makeTimestamp()
+
+	filename := c.Param("file")
+
+	meta, filepath, err := n.media.GetImage(filename)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiMediaGetFile: failed to get image")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_image", err, n.log)
+		return
+	}
+
+	c.Header("Content-Type", meta.Mime)
+	c.Header("x-height", strconv.Itoa(meta.H))
+	c.Header("x-width", strconv.Itoa(meta.W))
+	c.File(*filepath)
+
+	n.log.Infof("Endpoint Hit: Image served: %s %d", filename, makeTimestamp()-tm1)
+}
 
 // @Summary Uploads an image to the media manager
 // @Description Sends an image file to the media manager and returns a hash
@@ -128,4 +164,34 @@ func (n *Node) apiMediaUploadAudio(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+// @Summary Gets a texture from the (internal) media-manager
+// @Description Serves a generic texture from the (internal) media-manager
+// @Tags media
+// @Security Bearer
+// @Accept json
+// @Produce json
+// @Param rsize path string true "Rendering size s followed by a digit [0-9]"
+// @Param file path string true "Texture file identifier"
+// @Success 200 {object} dto.HashResponse
+// @Failure 400 {object} api.HTTPError
+// @Router /api/v4/media/render/texture/{rsize:s[0-9]}/{file:[a-zA-Z0-9]+} [get]
+func (n *Node) apiMediaGetTexture(c *gin.Context) {
+	tm1 := makeTimestamp()
+	rsize := c.Param("rsize")
+	filename := c.Param("file")
+
+	meta, filepath, err := n.media.GetTexture(rsize, filename)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiMediaGetTexture: failed to get texture")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_texture", err, n.log)
+		return
+	}
+
+	c.Header("Content-Type", meta.Mime)
+	c.Header("x-height", strconv.Itoa(meta.H))
+	c.Header("x-width", strconv.Itoa(meta.W))
+	c.File(*filepath)
+	n.log.Infof("Endpoint Hit: Texture served: %s %d", filename, makeTimestamp()-tm1)
 }

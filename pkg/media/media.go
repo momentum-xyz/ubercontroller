@@ -2,16 +2,18 @@ package media
 
 import (
 	"fmt"
-	"go.uber.org/zap"
-	"io"
-	"mime/multipart"
-
+	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
-
+	"github.com/h2non/filetype"
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/pkg/media/processor"
 	"github.com/momentum-xyz/ubercontroller/types"
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
+	"io"
+	"mime/multipart"
+	"net/http"
+	"os"
 )
 
 type Media struct {
@@ -21,6 +23,19 @@ type Media struct {
 	router *gin.Engine
 
 	processor *processor.Processor
+}
+
+var Tsizes = map[string]int{
+	"s0": 1024,
+	"s1": 4096,
+	"s2": 9216,
+	"s3": 25600,
+	"s4": 65536,
+	"s5": 193600,
+	"s6": 577600,
+	"s7": 1721344,
+	"s8": 5062500,
+	"s9": 14745600,
 }
 
 func NewMedia() *Media {
@@ -41,6 +56,17 @@ func (m *Media) Initialize(ctx types.NodeContext) error {
 	return nil
 }
 
+func (m *Media) GetImage(filename string) (*processor.MetaDef, *string, error) {
+	m.log.Debug("Endpoint Hit: Image Get:", filename)
+
+	meta, filepath := m.processor.Present(&(filename))
+	if meta == nil {
+		return nil, nil, errors.New("no meta for file")
+	}
+
+	return meta, filepath, nil
+}
+
 func (m *Media) AddImage(file multipart.File) (string, error) {
 	fmt.Println("Endpoint Hit: AddImage")
 
@@ -53,6 +79,21 @@ func (m *Media) AddImage(file multipart.File) (string, error) {
 		return "", errors.WithMessagef(err, "error writing image: %v")
 	}
 	return hash, err
+}
+
+func (m *Media) GetTexture(rsize string, filename string) (*processor.MetaDef, *string, error) {
+	if _, ok := Tsizes[rsize]; !ok {
+		return nil, nil, errors.New("tsize not found for texture")
+	}
+
+	m.log.Debug("Endpoint Hit: Texture Get:", filename, rsize)
+
+	meta, filepath := m.processor.PresentTexture(&(filename), rsize)
+	if meta == nil {
+		return nil, nil, errors.New("no meta for file")
+	}
+
+	return meta, filepath, nil
 }
 
 func (m *Media) AddFrame(file multipart.File) (string, error) {
@@ -85,6 +126,61 @@ func (m *Media) AddTube(file multipart.File) (string, error) {
 	return hash, err
 }
 
+func (m *Media) GetVideo(w http.ResponseWriter, r *http.Request) {
+	filename := chi.URLParam(r, "file")
+	L().Debug("Endpoint Hit: Video Get:", filename)
+
+	filepath := x.Videopath + filename
+
+	f, err := os.Open(filepath)
+	if check_error(err) {
+		w.WriteHeader(http.StatusBadRequest)
+		sentry.CaptureException(err)
+		L().Error(err)
+		return
+	}
+	defer f.Close()
+
+	fi, err := f.Stat()
+	if check_error(err) {
+		w.WriteHeader(http.StatusBadRequest)
+		sentry.CaptureException(err)
+		L().Error(err)
+		return
+	}
+
+	buf := make([]byte, 512)
+
+	_, err = f.Read(buf)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		sentry.CaptureException(err)
+		L().Error(err)
+		return
+	}
+
+	_, err = f.Seek(0, 0)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		sentry.CaptureException(err)
+		L().Error(err)
+		return
+	}
+
+	contentType := http.DetectContentType(buf)
+
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Content-Length", fmt.Sprintf("%d", fi.Size()))
+
+	if _, err := io.Copy(w, f); check_error(err) {
+		w.WriteHeader(http.StatusInternalServerError)
+		sentry.CaptureException(err)
+		L().Error(err)
+		return
+	}
+	L().Infof("Endpoint Hit: Video served: %s", filename)
+}
+
 func (m *Media) AddVideo(file multipart.File) (string, error) {
 	m.log.Info("Endpoint Hit: AddVideo")
 
@@ -96,6 +192,40 @@ func (m *Media) AddVideo(file multipart.File) (string, error) {
 	return hash, err
 }
 
+func (m *Media) GetTrack(w http.ResponseWriter, r *http.Request) {
+	filename := chi.URLParam(r, "file")
+
+	L().Debug("Endpoint Hit: Track Get:", filename)
+
+	// res, filepath := x.present(&(filename))
+	filepath := x.Audiopath + filename
+
+	buf := make([]byte, 264)
+	f, err := os.Open(filepath)
+	if check_error(err) {
+		w.WriteHeader(http.StatusBadRequest)
+		sentry.CaptureException(err)
+		L().Error(err)
+		return
+	}
+	defer f.Close()
+
+	n, err := f.Read(buf)
+	if check_error(err) {
+		w.WriteHeader(http.StatusBadRequest)
+		sentry.CaptureException(err)
+		L().Error(err)
+		return
+	}
+
+	ftype, err := filetype.Get(buf[:n])
+
+	w.Header().Set("Content-Type", ftype.MIME.Value)
+
+	http.ServeFile(w, r, filepath)
+	L().Infof("Endpoint Hit: Track served: %s", filename)
+}
+
 func (m *Media) AddTrack(file multipart.File) (string, error) {
 	m.log.Info("Endpoint Hit: AddTrack")
 
@@ -105,6 +235,40 @@ func (m *Media) AddTrack(file multipart.File) (string, error) {
 	}
 
 	return hash, err
+}
+
+func (m *Media) GetAsset(w http.ResponseWriter, r *http.Request) {
+	filename := chi.URLParam(r, "file")
+
+	L().Debug("Endpoint Hit: Asset Get:", filename)
+
+	// res, filepath := x.present(&(filename))
+	filepath := x.Assetpath + filename
+
+	buf := make([]byte, 264)
+	f, err := os.Open(filepath)
+	if check_error(err) {
+		w.WriteHeader(http.StatusBadRequest)
+		sentry.CaptureException(err)
+		L().Error(err)
+		return
+	}
+	defer f.Close()
+
+	n, err := f.Read(buf)
+	if check_error(err) {
+		w.WriteHeader(http.StatusBadRequest)
+		sentry.CaptureException(err)
+		L().Error(err)
+		return
+	}
+
+	ftype, err := filetype.Get(buf[:n])
+
+	w.Header().Set("Content-Type", ftype.MIME.Value)
+
+	http.ServeFile(w, r, filepath)
+	L().Infof("Endpoint Hit: Track served: %s", filename)
 }
 
 func (m *Media) AddAsset(file multipart.File) (string, error) {

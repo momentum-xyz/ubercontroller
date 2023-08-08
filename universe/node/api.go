@@ -84,15 +84,21 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 		verified := vx.Group("", middleware.VerifyUser(n.log))
 
-		vx.POST("/media/upload/image", n.apiMediaUploadImage)
-		vx.POST("/media/upload/video", n.apiMediaUploadVideo)
-		vx.POST("/media/upload/audio", n.apiMediaUploadAudio)
+		media := vx.Group("/media")
+		{
+			media.GET("/render/get/{file:[a-zA-Z0-9]+}", n.apiMediaGetFile)
+			media.GET("/render/texture/{rsize:s[0-9]}/{file:[a-zA-Z0-9]+}", n.apiMediaGetTexture)
+			media.GET("/render/asset/{file:[a-zA-Z0-9]+}", n.apiMediaGetAsset)
 
-		//media.GET("/render/get/{file:[a-zA-Z0-9]+}",)
-		//media.GET("/render/texture/{rsize:s[0-9]}/{file:[a-zA-Z0-9]+}", )
-		//media.GET("/render/track/{file:[a-zA-Z0-9]+}", )
-		//media.GET("/render/video/{file:[a-zA-Z0-9]+}", )
-		//media.GET("/render/asset/{file:[a-zA-Z0-9]+}", )
+			media.POST("/upload/image", n.apiMediaUploadImage)
+
+			media.GET("/render/video/{file:[a-zA-Z0-9]+}", n.apiMediaGetVideo)
+			media.POST("/upload/video", n.apiMediaUploadVideo)
+
+			media.GET("/render/track/{file:[a-zA-Z0-9]+}", n.apiMediaGetTrack)
+			media.POST("/upload/audio", n.apiMediaUploadAudio)
+		}
+
 		//
 		//media.POST("/render/addimage", )
 		//media.POST("/render/addframe", )
