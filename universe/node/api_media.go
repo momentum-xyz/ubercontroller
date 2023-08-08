@@ -1,6 +1,8 @@
 package node
 
 import (
+	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"time"
@@ -26,11 +28,10 @@ func makeTimestamp() int64 {
 // @Success 200 {object} dto.HashResponse
 // @Failure 400 {object} api.HTTPError
 // @Router /api/v4/media/render/get/{file:[a-zA-Z0-9]+} [get]
-func (n *Node) apiMediaGetFile(c *gin.Context) {
+func (n *Node) apiMediaGetImage(c *gin.Context) {
 	tm1 := makeTimestamp()
 
 	filename := c.Param("file")
-
 	meta, filepath, err := n.media.GetImage(filename)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiMediaGetFile: failed to get image")
@@ -84,6 +85,37 @@ func (n *Node) apiMediaUploadImage(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+// @Summary Gets a video from the media manager
+// @Description Serves a video file from the media manager
+// @Tags media
+// @Security Bearer
+// @Accept json
+// @Produce json
+// @Param file path string true "video file"
+// @Success 200 {file} byte "video file"
+// @Failure 400 {object} api.HTTPError
+// @Failure 500 {object} api.HTTPError
+// @Router /api/v4/media/render/video/{file:[a-zA-Z0-9]+} [get]
+func (n *Node) apiMediaGetVideo(c *gin.Context) {
+	filename := c.Param("file")
+	file, fileInfo, contentType, err := n.media.GetVideo(filename)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiMediaGetVideo: failed to get video")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_video", err, n.log)
+		return
+	}
+
+	c.Header("Content-Type", contentType)
+	c.Header("Content-Length", fmt.Sprintf("%d", fileInfo.Size()))
+
+	if _, err := io.Copy(c.Writer, file); err != nil {
+		err := errors.WithMessage(err, "Node: apiMediaGetVideo: failed to copy video")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_copy", err, n.log)
+		return
+	}
+	n.log.Infof("Endpoint Hit: Video served: %s", filename)
 }
 
 // @Summary Uploads a video to the media manager

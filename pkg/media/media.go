@@ -126,59 +126,35 @@ func (m *Media) AddTube(file multipart.File) (string, error) {
 	return hash, err
 }
 
-func (m *Media) GetVideo(w http.ResponseWriter, r *http.Request) {
-	filename := chi.URLParam(r, "file")
-	L().Debug("Endpoint Hit: Video Get:", filename)
+func (m *Media) GetVideo(filename string) (*os.File, os.FileInfo, string, error) {
+	m.log.Debug("Endpoint Hit: Video Get:", filename)
 
-	filepath := x.Videopath + filename
-
-	f, err := os.Open(filepath)
-	if check_error(err) {
-		w.WriteHeader(http.StatusBadRequest)
-		sentry.CaptureException(err)
-		L().Error(err)
-		return
+	filepath := m.processor.Videopath + filename
+	file, err := os.Open(filepath)
+	if err != nil {
+		return nil, nil, "", errors.WithMessage(err, "error opening file")
 	}
-	defer f.Close()
+	defer file.Close()
 
-	fi, err := f.Stat()
-	if check_error(err) {
-		w.WriteHeader(http.StatusBadRequest)
-		sentry.CaptureException(err)
-		L().Error(err)
-		return
+	fileInfo, err := file.Stat()
+	if err != nil {
+		return nil, nil, "", errors.WithMessage(err, "error getting file info")
 	}
 
 	buf := make([]byte, 512)
 
-	_, err = f.Read(buf)
+	_, err = file.Read(buf)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		sentry.CaptureException(err)
-		L().Error(err)
-		return
+		return nil, nil, "", errors.WithMessage(err, "error reading file buffer")
 	}
 
-	_, err = f.Seek(0, 0)
+	_, err = file.Seek(0, 0)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		sentry.CaptureException(err)
-		L().Error(err)
-		return
+		return nil, nil, "", errors.WithMessage(err, "error seeking file")
 	}
 
 	contentType := http.DetectContentType(buf)
-
-	w.Header().Set("Content-Type", contentType)
-	w.Header().Set("Content-Length", fmt.Sprintf("%d", fi.Size()))
-
-	if _, err := io.Copy(w, f); check_error(err) {
-		w.WriteHeader(http.StatusInternalServerError)
-		sentry.CaptureException(err)
-		L().Error(err)
-		return
-	}
-	L().Infof("Endpoint Hit: Video served: %s", filename)
+	return file, fileInfo, contentType, nil
 }
 
 func (m *Media) AddVideo(file multipart.File) (string, error) {
