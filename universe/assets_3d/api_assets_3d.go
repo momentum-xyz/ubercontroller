@@ -110,7 +110,7 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 // @Security Bearer
 // @Accept multipart/form-data
 // @Produce json
-// @Param asset formData *multipart/form-data true "The 3D asset file to be uploaded"
+// @Param asset formData file true "The 3D asset file to be uploaded"
 // @Param name formData string false "Name of the asset"
 // @Param preview_hash formData string false "Preview hash for the asset"
 // @Param is_private formData boolean false "Specify if the asset is private"
