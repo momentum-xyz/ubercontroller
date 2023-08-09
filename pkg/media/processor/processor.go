@@ -188,7 +188,7 @@ func (p *Processor) GetMD5HashByte(text []byte) string {
 func (p *Processor) ProcessFrame(body []byte) (string, error) {
 	var payload FrameDesc
 	if err := json.Unmarshal(body, &payload); err != nil {
-		return "", errors.WithMessagef(err, "error during unmarshal: %v")
+		return "", errors.WithMessage(err, "error during unmarshal")
 	}
 
 	hash := p.GetMD5HashByte(body)
