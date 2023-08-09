@@ -187,6 +187,40 @@ func (a *ArbitrumNovaAdapter) GetRawLogs(
 	return
 }
 
+func (a *ArbitrumNovaAdapter) GetNFTLogs(fromBlock, toBlock uint64, contracts []common.Address) ([]any, error) {
+	logTransferSig := []byte("Transfer(address,address,uint256)")
+	logTransferSigHash := crypto.Keccak256Hash(logTransferSig)
+	bcLogs, err := a.GetRawLogs(&logTransferSigHash, nil, nil, contracts, big.NewInt(int64(fromBlock)), big.NewInt(int64(toBlock)))
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to filter log")
+	}
+
+	logs := make([]any, 0)
+
+	for _, vLog := range bcLogs {
+
+		if len(vLog.Topics) != 4 {
+			a.logger.Error("Transfer NFT log must have 4 topic items")
+			continue
+		}
+		//fmt.Printf("Log Block Number: %d\n", vLog.BlockNumber)
+		//fmt.Printf("Log Index: %d\n", vLog.Index)
+
+		var e harvester3.TransferNFTLog
+
+		e.Block = vLog.BlockNumber
+		e.Contract = vLog.Address
+		// Hex and Un Hex here used to remove padding zeros
+		e.From = common.HexToAddress(vLog.Topics[1].Hex())
+		e.To = common.HexToAddress(vLog.Topics[2].Hex())
+		e.TokenID = vLog.Topics[3]
+
+		logs = append(logs, &e)
+	}
+
+	return logs, nil
+}
+
 func (a *ArbitrumNovaAdapter) GetTokenLogs(fromBlock, toBlock uint64, contracts []common.Address) ([]any, error) {
 	logTransferSig := []byte("Transfer(address,address,uint256)")
 	logTransferSigHash := crypto.Keccak256Hash(logTransferSig)
@@ -253,10 +287,10 @@ func hex2int(hexStr string) uint64 {
 
 	// base 16 for hexadecimal
 	result, _ := strconv.ParseUint(cleaned, 16, 64)
-	return uint64(result)
+	return result
 }
 
-func (a *ArbitrumNovaAdapter) GetNFTBalance(nftContract *common.Address, wallet *common.Address, block uint64) ([]umid.UMID, error) {
+func (a *ArbitrumNovaAdapter) GetNFTBalance(nftContract *common.Address, wallet *common.Address, block uint64) ([]common.Hash, error) {
 	transferString := "Transfer(address,address,uint256)"
 	transferTopic := common.BytesToHash(crypto.Keccak256([]byte(transferString)))
 
@@ -265,14 +299,10 @@ func (a *ArbitrumNovaAdapter) GetNFTBalance(nftContract *common.Address, wallet 
 	}
 
 	contracts := []common.Address{
-		//mom,
 		*nftContract,
 	}
 
-	logs := make([]types.Log, 0)
-
 	logsFrom, err := a.GetRawLogs(&transferTopic, addrToHash(wallet), nil, contracts, big.NewInt(0), big.NewInt(int64(block)))
-	//logsFrom, err := a.GetRawLogs(nil, nil, nil, contracts, big.NewInt(0), big.NewInt(int64(block)))
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to get logs for nft contract")
 	}
@@ -282,17 +312,11 @@ func (a *ArbitrumNovaAdapter) GetNFTBalance(nftContract *common.Address, wallet 
 		return nil, errors.WithMessage(err, "failed to get logs for nft contract")
 	}
 
-	fmt.Print(logsFrom)
-	fmt.Print(logsTo)
-	fmt.Println(logs)
-
-	m := make(map[umid.UMID]int8)
+	m := make(map[common.Hash]int8)
 
 	for _, l := range logsFrom {
-		itemID := l.Topics[3].Big()
+		id := l.Topics[3]
 
-		var id umid.UMID
-		itemID.FillBytes(id[:])
 		_, ok := m[id]
 		if !ok {
 			m[id] = 0
@@ -302,10 +326,8 @@ func (a *ArbitrumNovaAdapter) GetNFTBalance(nftContract *common.Address, wallet 
 	}
 
 	for _, l := range logsTo {
-		itemID := l.Topics[3].Big()
+		id := l.Topics[3]
 
-		var id umid.UMID
-		itemID.FillBytes(id[:])
 		_, ok := m[id]
 		if !ok {
 			m[id] = 0
@@ -314,7 +336,7 @@ func (a *ArbitrumNovaAdapter) GetNFTBalance(nftContract *common.Address, wallet 
 		m[id] += 1
 	}
 
-	ids := make([]umid.UMID, 0)
+	ids := make([]common.Hash, 0)
 	for id, i := range m {
 		if i != 0 && i != 1 {
 			fmt.Println("Failed to parse NFT transfers, Something wrong in blockchain history")

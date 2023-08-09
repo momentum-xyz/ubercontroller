@@ -1,14 +1,18 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
 	"github.com/momentum-xyz/ubercontroller/config"
+	"github.com/momentum-xyz/ubercontroller/harvester3"
 	"github.com/momentum-xyz/ubercontroller/harvester3/arbitrum_nova_adapter3"
 )
 
@@ -33,6 +37,16 @@ func main() {
 		panic(err)
 	}
 	sugaredLogger := logger.Sugar()
+
+	pgConfig, err := cfg.Postgres.GenConfig(logger)
+	if err != nil {
+		log.Fatalf("failed to get db config: %s", err)
+	}
+	pool, err := pgxpool.ConnectConfig(context.Background(), pgConfig)
+	if err != nil {
+		log.Fatalf("failed to create db pool: %s", err)
+	}
+	defer pool.Close()
 
 	//env := "anton_private_net"
 	env := "main_net"
@@ -69,29 +83,35 @@ func main() {
 	a := arbitrum_nova_adapter3.NewArbitrumNovaAdapter(&cfg.Arbitrum3, sugaredLogger)
 	a.Run()
 
-	n, err := a.GetLastBlockNumber()
+	output := make(chan harvester3.UpdateNFTEvent)
+	go worker(output)
+
+	matrix := harvester3.NewNFTs(pool, a, sugaredLogger, output)
+	err = matrix.Run()
 	if err != nil {
 		log.Fatal(err)
 	}
+	_ = matrix
 
-	fmt.Printf("Last Block: %+v \n", n)
-
-	//logTransferSig := []byte("Transfer(address,address,uint256)")
-	//logTransferSigHash := crypto.Keccak256Hash(logTransferSig)
-	//logs, err := a.GetRawLogs(&logTransferSigHash, nil, nil, []common.Address{mom}, big.NewInt(0), big.NewInt(int64(n)))
+	err = matrix.AddContract(nftOMNIA)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = matrix.AddWallet(wOMNIAHOLDER)
+	if err != nil {
+		log.Fatal(err)
+	}
+	//err = matrix.AddContract(dad)
 	//if err != nil {
 	//	log.Fatal(err)
 	//}
-	//fmt.Print(logs)
 
-	//items, err := a.GetNFTBalance(&nft, &w1, n)
-	items, err := a.GetNFTBalance(&nftOMNIA, &wOMNIAHOLDER, n)
-	if err != nil {
-		log.Fatal(err)
-	}
+	time.Sleep(time.Second * 30)
+}
 
-	//fmt.Print(items)
-	for k, v := range items {
-		fmt.Println(k, v.Big().String())
+func worker(c <-chan harvester3.UpdateNFTEvent) {
+	for {
+		u := <-c
+		fmt.Println("worker", u.Contract, u.Wallet, u.IDs)
 	}
 }
