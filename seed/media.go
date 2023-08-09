@@ -69,10 +69,10 @@ func uploadSeedFile(ctx context.Context, node universe.Node, client *http.Client
 		log.Warnf("Unhandled seed file type %s", ext)
 		return "", nil
 	}
-	return uploadFile(ctx, client, f, uploadURL, mimeType)
+	return uploadFile(client, f, uploadURL, mimeType)
 }
 
-func uploadFile(ctx context.Context, client *http.Client, f *os.File, renderURL string, mimeType string) (string, error) {
+func uploadFile(client *http.Client, f *os.File, renderURL string, mimeType string) (string, error) {
 	req, err := http.NewRequest("POST", renderURL, f)
 	if err != nil {
 		return "", fmt.Errorf("media manager request: %w", err)

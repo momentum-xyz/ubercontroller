@@ -110,7 +110,7 @@ func loadNode(ctx types.NodeContext, node universe.Node, db database.DB, is_new 
 func createNode(ctx types.NodeContext, db database.DB, nodeEntry *entry.Node) (universe.Node, error) {
 	media := media.NewMedia()
 
-	worlds := worlds.NewWorlds(db)
+	worlds := worlds.NewWorlds(db, media)
 	assets2d := assets_2d.NewAssets2d(db)
 	assets3d := assets_3d.NewAssets3d(db, media)
 	activities := activities.NewActivities(db)

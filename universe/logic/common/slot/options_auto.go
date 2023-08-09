@@ -1,29 +1,17 @@
 package slot
 
 import (
-	"bytes"
 	"encoding/json"
-	"net/http"
 	"strconv"
 	"strings"
 
-	"github.com/momentum-xyz/ubercontroller/types"
+	"github.com/pkg/errors"
+
+	"github.com/momentum-xyz/ubercontroller/pkg/media"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils"
-
-	"github.com/pkg/errors"
 )
-
-//type AttributeValueChangedMessage struct {
-//	Type universe.AttributeChangeType     `json:"type"`
-//	Data AttributeValueChangedMessageData `json:"data"`
-//}
-//
-//type AttributeValueChangedMessageData struct {
-//	AttributeName string `json:"attribute_name"`
-//	Value         any    `json:"value"`
-//}
 
 const (
 	RenderKindNone uint = iota
@@ -44,13 +32,10 @@ func GetOptionAutoOption(
 		return nil, nil
 	}
 
-	//fmt.Printf("FFF0: %+v \n", autoOptionsValue)
-
 	var autoOption *entry.RenderAutoAttributeOption
 	if err := utils.MapDecode(autoOptionsValue, &autoOption); err != nil {
 		return nil, errors.WithMessage(err, "failed to decode auto option")
 	}
-	//fmt.Printf("FFF: %+v %+v \n", autoOption, autoOptionsValue)
 
 	if autoOption.SlotType == entry.SlotTypeInvalid || autoOption.ContentType == entry.SlotContentTypeInvalid {
 		return nil, nil
@@ -69,7 +54,7 @@ func GetOptionAutoOption(
 }
 
 func PrerenderAutoValue(
-	ctx types.ConfigContext, option *entry.RenderAutoAttributeOption, value *entry.AttributeValue,
+	media *media.Media, option *entry.RenderAutoAttributeOption, value *entry.AttributeValue,
 ) (*dto.HashResponse, error) {
 	if option == nil || option.SlotType != "texture" || value == nil {
 		return nil, nil
@@ -106,8 +91,7 @@ func PrerenderAutoValue(
 		return nil, nil
 	}
 
-	var hash *dto.HashResponse
-	var err error
+	var resp *dto.HashResponse
 
 	switch renderKind {
 	case RenderKindVideo:
@@ -117,12 +101,16 @@ func PrerenderAutoValue(
 			},
 		)
 		if err != nil {
-			return nil, errors.WithMessage(err, "Failed to marshal preRenderHash")
+			return nil, errors.WithMessage(err, "failed to marshal preRenderHash")
 		}
 
-		hash, err = renderVideo(ctx, payload)
+		hash, err := media.AddTube(payload)
 		if err != nil {
-			return nil, err
+			return nil, errors.WithMessage(err, "failed to add tube")
+		}
+
+		resp = &dto.HashResponse{
+			Hash: hash,
 		}
 	case RenderKindText:
 		if option.TextRenderTemplate == "" {
@@ -131,66 +119,14 @@ func PrerenderAutoValue(
 
 		payload := []byte(strings.Replace(option.TextRenderTemplate, "%TEXT%", valueString, -1))
 
-		hash, err = renderFrame(ctx, payload)
+		hash, err := media.AddFrame(payload)
 		if err != nil {
-			return nil, err
+			return nil, errors.WithMessage(err, "failed to add frame")
+		}
+
+		resp = &dto.HashResponse{
+			Hash: hash,
 		}
 	}
-	return hash, nil
-}
-
-func renderFrame(ctx types.ConfigContext, textJob []byte) (*dto.HashResponse, error) {
-	// need config for the media-manager render URLs
-	cfg := ctx.Config()
-
-	req, err := http.NewRequest("POST", cfg.Common.RenderInternalURL+"/render/addframe", bytes.NewBuffer(textJob))
-	if err != nil {
-		return nil, errors.WithMessage(err, "Common: renderFrame: failed to create post request")
-	}
-
-	req.Header.Set("Content-Type", "image/png")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, errors.WithMessage(err, "Common: renderFrame: failed to post data to media-manager")
-	}
-
-	defer resp.Body.Close()
-
-	response := &dto.HashResponse{}
-
-	errs := json.NewDecoder(resp.Body).Decode(response)
-	if errs != nil {
-		return nil, errors.WithMessage(err, "Common: renderFrame: failed to decode json into response")
-	}
-
-	return response, nil
-}
-
-func renderVideo(ctx types.ConfigContext, url []byte) (*dto.HashResponse, error) {
-	// need config for the media-manager render URLs
-	cfg := ctx.Config()
-
-	req, err := http.NewRequest("POST", cfg.Common.RenderInternalURL+"/render/addtube", bytes.NewBuffer(url))
-	if err != nil {
-		return nil, errors.WithMessage(err, "Common: renderFrame: failed to create post request")
-	}
-
-	req.Header.Set("Content-Type", "image/png")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, errors.WithMessage(err, "Common: renderFrame: failed to post data to media-manager")
-	}
-	defer resp.Body.Close()
-
-	response := &dto.HashResponse{}
-
-	if err := json.NewDecoder(resp.Body).Decode(response); err != nil {
-		return nil, errors.WithMessage(err, "Common: renderFrame: failed to decode json into response")
-	}
-
-	return response, nil
+	return resp, nil
 }

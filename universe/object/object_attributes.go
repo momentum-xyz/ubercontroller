@@ -324,7 +324,7 @@ func (o *Object) onObjectAttributeChanged(
 	}
 
 	go func() {
-		if err := o.posBusAutoOnObjecteAttributeChanged(changeType, attributeID, value, effectiveOptions); err != nil {
+		if err := o.posBusAutoOnObjectAttributeChanged(changeType, attributeID, value, effectiveOptions); err != nil {
 			o.log.Error(
 				errors.WithMessagef(
 					err, "Object: onObjectAttributeChanged: failed to handle posbus auto: %s: %+v",
@@ -335,7 +335,7 @@ func (o *Object) onObjectAttributeChanged(
 	}()
 
 	go func() {
-		if err := o.renderAutoOnObjectAttributeChanged(changeType, attributeID, value, effectiveOptions); err != nil {
+		if err := o.renderAutoOnObjectAttributeChanged(attributeID, value, effectiveOptions); err != nil {
 			o.log.Error(
 				errors.WithMessagef(
 					err, "Object: onObjectAttributeChanged: failed to handle slot auto: %s: %+v",

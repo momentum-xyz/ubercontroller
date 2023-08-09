@@ -2,7 +2,6 @@ package media
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"io"
 	"mime/multipart"
@@ -13,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/h2non/filetype"
 	fileTypes "github.com/h2non/filetype/types"
+	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/pkg/media/processor"
@@ -99,14 +99,9 @@ func (m *Media) GetTexture(rsize string, filename string) (*processor.MetaDef, *
 	return meta, filepath, nil
 }
 
-func (m *Media) AddFrame(file multipart.File) (string, error) {
+func (m *Media) AddFrame(file []byte) (string, error) {
 	m.log.Debug("Endpoint Hit: AddFrame")
-
-	body, err := io.ReadAll(file)
-	if err != nil {
-		return "", errors.WithMessage(err, "error reading file")
-	}
-	hash, err := m.processor.ProcessFrame(body)
+	hash, err := m.processor.ProcessFrame(file)
 	if err != nil {
 		return "", errors.WithMessage(err, "error processing frame")
 	}
@@ -114,14 +109,9 @@ func (m *Media) AddFrame(file multipart.File) (string, error) {
 	return hash, err
 }
 
-func (m *Media) AddTube(file multipart.File) (string, error) {
+func (m *Media) AddTube(file []byte) (string, error) {
 	m.log.Info("Endpoint Hit: AddTube")
-	body, err := io.ReadAll(file)
-	if err != nil {
-		return "", errors.WithMessage(err, "error reading file")
-	}
-
-	hash, err := m.processor.ProcessTube(body)
+	hash, err := m.processor.ProcessTube(file)
 	if err != nil {
 		return "", errors.WithMessage(err, "error writing image")
 	}

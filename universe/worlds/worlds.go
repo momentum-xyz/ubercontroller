@@ -1,12 +1,14 @@
 package worlds
 
 import (
+	"go.uber.org/zap"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
+	"github.com/momentum-xyz/ubercontroller/pkg/media"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -17,16 +19,19 @@ import (
 var _ universe.Worlds = (*Worlds)(nil)
 
 type Worlds struct {
-	ctx    types.NodeContext
-	log    *zap.SugaredLogger
-	cfg    *config.Config
-	db     database.DB
+	ctx   types.NodeContext
+	log   *zap.SugaredLogger
+	cfg   *config.Config
+	db    database.DB
+	media *media.Media
+
 	worlds *generic.SyncMap[umid.UMID, universe.World]
 }
 
-func NewWorlds(db database.DB) *Worlds {
+func NewWorlds(db database.DB, media *media.Media) *Worlds {
 	return &Worlds{
 		db:     db,
+		media:  media,
 		worlds: generic.NewSyncMap[umid.UMID, universe.World](0),
 	}
 }
@@ -40,7 +45,7 @@ func (w *Worlds) Initialize(ctx types.NodeContext) error {
 }
 
 func (w *Worlds) CreateWorld(worldID umid.UMID) (universe.World, error) {
-	world := world.NewWorld(worldID, w.db)
+	world := world.NewWorld(worldID, w.db, w.media)
 
 	if err := world.Initialize(w.ctx); err != nil {
 		return nil, errors.WithMessagef(err, "failed to initialize world: %s", worldID)

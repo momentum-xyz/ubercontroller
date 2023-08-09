@@ -106,17 +106,19 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 	c.JSON(http.StatusOK, assets)
 }
 
-// @Summary Uploads a 3d asset
-// @Schemes
-// @Description Uploads a 3d asset to the media manager
+// @Summary Upload a 3D asset to the media manager
+// @Description This endpoint allows for the uploading of 3D assets.
 // @Tags assets3d
 // @Accept multipart/form-data
 // @Produce json
-// @Success 202 {object} dto.Asset3d
-// @Failure 400	{object} api.HTTPError
-// @Failure 500 {object} api.HTTPError
+// @Param asset formData *multipart.FileHeader true "The 3D asset file to be uploaded"
+// @Param name formData string false "Name of the asset"
+// @Param preview_hash formData string false "Preview hash for the asset"
+// @Param is_private formData boolean false "Specify if the asset is private"
+// @Success 202 {object} dto.Asset3d "Successfully uploaded the 3D asset"
+// @Failure 400 {object} api.HTTPError "Bad request, often due to missing or incorrect parameters"
+// @Failure 500 {object} api.HTTPError "Internal server error"
 // @Router /api/v4/assets-3d/upload [post]
-// TODO: swag doc for multipart, it does not get *multipart.FileHeader
 func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 	type InBody struct {
 		File        *multipart.FileHeader `form:"asset"`
