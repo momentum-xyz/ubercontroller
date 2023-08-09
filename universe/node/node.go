@@ -151,6 +151,10 @@ func (n *Node) GetConfig() *config.Config {
 	return n.cfg
 }
 
+func (n *Node) GetMedia() *media.Media {
+	return n.media
+}
+
 func (n *Node) GetLogger() *zap.SugaredLogger {
 	return n.log
 }

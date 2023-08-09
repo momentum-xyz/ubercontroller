@@ -79,7 +79,7 @@ func LoadNode(
 		return nil, errors.WithMessage(err, "failed to create node")
 	}
 
-	if err := loadNode(ctx, node, db, is_new); err != nil {
+	if err := loadNode(node, is_new); err != nil {
 		return nil, errors.WithMessagef(err, "failed to load node: %s", node.GetID())
 	}
 	return node, nil
@@ -95,9 +95,9 @@ func getNode(ctx types.NodeContext, db database.DB) (bool, universe.Node, error)
 	return is_new, node, err
 }
 
-func loadNode(ctx types.NodeContext, node universe.Node, db database.DB, is_new bool) error {
+func loadNode(node universe.Node, is_new bool) error {
 	if is_new {
-		if err := seed.SeedMedia(ctx, node); err != nil {
+		if err := seed.SeedMedia(node); err != nil {
 			return errors.WithMessage(err, "failed to seed SeedMedia")
 		}
 	}

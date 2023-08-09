@@ -10,13 +10,13 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/momentum-xyz/ubercontroller/config"
+	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
+	"github.com/momentum-xyz/ubercontroller/pkg/media"
 	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/momentum-xyz/ubercontroller/types"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
-
-	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 type IDer interface {
@@ -91,6 +91,7 @@ type Node interface {
 	ObjectsCacher
 
 	GetConfig() *config.Config
+	GetMedia() *media.Media
 	GetLogger() *zap.SugaredLogger
 
 	ToObject() Object
