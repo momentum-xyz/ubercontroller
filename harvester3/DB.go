@@ -184,8 +184,47 @@ func (db *DB) flush(queue []InsertOrUpdateToDB, block uint64) error {
 	return nil
 }
 
-func (db *DB) loadNFTsFromDB() ([]TokenCell, error) {
-	return nil, nil
+func (db *DB) loadNFTsFromDB() ([]NFTCell, error) {
+	sql := `select harvester_nfts.contract_id,
+				   harvester_nfts.wallet_id,
+				   harvester_nfts.item_id,
+				   harvester_blockchain.last_processed_block_for_nfts
+			from harvester_nfts
+					 join harvester_blockchain using (blockchain_id)
+			where blockchain_id = $1;`
+
+	rows, err := db.db.Query(context.Background(), sql, db.blockchainID)
+	if err != nil {
+		return nil, err
+	}
+
+	cells := make([]NFTCell, 0)
+
+	for rows.Next() {
+		var contractID common.Address
+		var walletID common.Address
+		var id entry.BigInt
+		var block uint64
+
+		var idHash common.Hash
+
+		if err := rows.Scan(&contractID, &walletID, &id, &block); err != nil {
+			return nil, errors.WithMessage(err, "failed to scan rows from table")
+		}
+
+		b := (big.Int)(id)
+
+		idHash.SetBytes(b.Bytes())
+
+		cells = append(cells, NFTCell{
+			Contract: contractID,
+			Wallet:   walletID,
+			ItemID:   idHash,
+			Block:    block,
+		})
+	}
+
+	return cells, nil
 }
 
 func (db *DB) loadTokensFromDB() ([]TokenCell, error) {

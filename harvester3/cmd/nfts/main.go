@@ -83,7 +83,7 @@ func main() {
 	a := arbitrum_nova_adapter3.NewArbitrumNovaAdapter(&cfg.Arbitrum3, sugaredLogger)
 	a.Run()
 
-	output := make(chan harvester3.UpdateNFTEvent)
+	output := make(chan harvester3.UpdateCell)
 	go worker(output)
 
 	matrix := harvester3.NewNFTs(pool, a, sugaredLogger, output)
@@ -109,7 +109,7 @@ func main() {
 	time.Sleep(time.Second * 30)
 }
 
-func worker(c <-chan harvester3.UpdateNFTEvent) {
+func worker(c <-chan harvester3.UpdateCell) {
 	for {
 		u := <-c
 		fmt.Println("worker", u.Contract, u.Wallet, u.IDs)

@@ -14,7 +14,7 @@ import (
 type NFTs struct {
 	updates        chan any
 	updatesDB      chan any
-	output         chan UpdateNFTEvent
+	output         chan UpdateCell
 	adapter        Adapter
 	logger         *zap.SugaredLogger
 	block          uint64
@@ -47,7 +47,7 @@ type UpdateNFTEvent struct {
 	IDs      []common.Hash
 }
 
-func NewNFTs(db *pgxpool.Pool, adapter Adapter, logger *zap.SugaredLogger, output chan UpdateNFTEvent) *NFTs {
+func NewNFTs(db *pgxpool.Pool, adapter Adapter, logger *zap.SugaredLogger, output chan UpdateCell) *NFTs {
 
 	updates := make(chan any)
 	updatesDB := make(chan any)
@@ -85,7 +85,12 @@ func (n *NFTs) Run() error {
 			n.data[contract] = make(map[common.Address]map[common.Hash]bool)
 			n.contracts = append(n.contracts, contract)
 		}
-		//n.data[contract][cell.Wallet] = cell.Value
+		_, ok = n.data[contract][cell.Wallet]
+		if !ok {
+			n.data[contract][cell.Wallet] = make(map[common.Hash]bool)
+		}
+		n.data[contract][cell.Wallet][cell.ItemID] = true
+
 		n.SubscribeQueue.MarkAsLoadedFromDB(contract, cell.Wallet)
 	}
 
@@ -216,7 +221,7 @@ func (n *NFTs) setCell(contract common.Address, wallet common.Address, ids []com
 		}
 	}
 
-	n.output <- UpdateNFTEvent{
+	n.output <- UpdateCell{
 		Contract: contract,
 		Wallet:   wallet,
 		IDs:      ids,
@@ -259,7 +264,7 @@ func (n *NFTs) updateCell(contract common.Address, wallet common.Address, id com
 		ids = append(ids, tokenID)
 	}
 
-	n.output <- UpdateNFTEvent{
+	n.output <- UpdateCell{
 		Contract: contract,
 		Wallet:   wallet,
 		IDs:      ids,

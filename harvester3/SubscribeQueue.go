@@ -1,6 +1,8 @@
 package harvester3
 
 import (
+	"fmt"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/sasha-s/go-deadlock"
 )
@@ -80,6 +82,7 @@ func (q *SubscribeQueue) MarkAsLoadedFromDB(contract, wallet common.Address) {
 }
 
 func (q *SubscribeQueue) isLoadedFromDB(contract, wallet common.Address) bool {
+	fmt.Println("isLoadedFromDB", contract.Hex(), wallet.Hex())
 	_, ok := q.loadedFromDB[contract]
 	if ok {
 		_, ok := q.loadedFromDB[contract][wallet]

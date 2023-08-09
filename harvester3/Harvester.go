@@ -13,6 +13,7 @@ import (
 
 type Harvester struct {
 	tokens  *Tokens
+	nfts    *NFTs
 	adapter Adapter
 	mu      deadlock.RWMutex
 	logger  *zap.SugaredLogger
@@ -29,6 +30,13 @@ type TokenCell struct {
 	Block    uint64
 }
 
+type NFTCell struct {
+	Contract common.Address
+	Wallet   common.Address
+	ItemID   common.Hash
+	Block    uint64
+}
+
 func NewHarvester(cfg *config.Arbitrum3, pool *pgxpool.Pool, adapter Adapter, logger *zap.SugaredLogger) *Harvester {
 	input := make(chan UpdateCell)
 	//a := arbitrum_nova_adapter3.NewArbitrumNovaAdapter(cfg, logger)
@@ -36,6 +44,7 @@ func NewHarvester(cfg *config.Arbitrum3, pool *pgxpool.Pool, adapter Adapter, lo
 
 	return &Harvester{
 		tokens:  NewTokens(pool, adapter, logger, input),
+		nfts:    NewNFTs(pool, adapter, logger, input),
 		adapter: adapter,
 		logger:  logger,
 		pool:    pool,
@@ -93,5 +102,4 @@ func (h *Harvester) SubscribeForToken(tokenContract common.Address, wallet commo
 	h.outputs = append(h.outputs, c)
 
 	return c, nil
-
 }

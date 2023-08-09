@@ -30,6 +30,7 @@ type UpdateCell struct {
 	Contract common.Address
 	Wallet   common.Address
 	Value    *big.Int
+	IDs      []common.Hash
 	Block    uint64
 }
 
