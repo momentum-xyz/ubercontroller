@@ -576,7 +576,7 @@ func (db *DB) UpdateObjectUserAttributeOptions(
 	return options, nil
 }
 
-// ValueEntries returns a combined, sorted, list of nested items inside a attribute.
+// ValueEntries returns a combined, filtered, sorted, list of nested items inside a attribute.
 // fields is the list of field name returned for each nested items, should be simple values (are seen as strings).
 //
 // The JSON value is expectd to be an object with key->item format.
@@ -594,6 +594,7 @@ func (db *DB) ValueEntries(
 	ctx context.Context,
 	attrID entry.ObjectAttributeID,
 	fields []string,
+	filters map[string]string,
 	order string,
 	descending bool,
 	limit uint,
@@ -623,12 +624,15 @@ func (db *DB) ValueEntries(
 		sql += `,
 		jsonb_to_record(entry.value) AS ` + itemType
 	}
-	sql += `
+	sqlArgs := []interface{}{attrID.PluginID, attrID.Name, attrID.ObjectID}
+	fWheres, sqlArgs := valueEntriesSQLFilter(filters, sqlArgs)
+	sql += fmt.Sprintf(`
     WHERE
       attr.plugin_id = $1 
 	  AND attr.attribute_name = $2
 	  AND attr.object_id = $3
-	`
+	  %s
+	`, strings.Join(fWheres, " AND "))
 	if order != "" {
 		// TODO: handle the case when no fields gives (value->'foo' should be used)
 		// But that requires dynamic query params and we don't have named params support.
@@ -648,8 +652,7 @@ func (db *DB) ValueEntries(
 	}
 	sql += ";"
 	var itemList []map[string]interface{}
-	qArgs := []interface{}{attrID.PluginID, attrID.Name, attrID.ObjectID}
-	if err := pgxscan.Select(ctx, db.conn, &itemList, sql, qArgs...); err != nil {
+	if err := pgxscan.Select(ctx, db.conn, &itemList, sql, sqlArgs...); err != nil {
 		return nil, err
 	}
 	return itemList, nil
@@ -662,16 +665,33 @@ func (db *DB) ValueEntries(
 func (db *DB) ValueEntriesCount(
 	ctx context.Context,
 	objectAttributeID entry.ObjectAttributeID,
+	filters map[string]string,
 ) (uint, error) {
-	var count uint
-	sql := `SELECT count(*) FROM (
-		SELECT jsonb_object_keys(value) FROM object_user_attribute
-			WHERE plugin_id = $1 AND attribute_name = $2 AND object_id = $3
-	) oua;`
-	if err := db.conn.QueryRow(ctx, sql,
+	sqlArgs := []interface{}{
 		objectAttributeID.PluginID, objectAttributeID.Name, objectAttributeID.ObjectID,
-	).Scan(&count); err != nil {
+	}
+	fWheres, sqlArgs := valueEntriesSQLFilter(filters, sqlArgs)
+	var count uint
+	sql := fmt.Sprintf(`
+		SELECT count(*) 
+		FROM object_user_attribute as attr, jsonb_each(attr.value) as entry
+			WHERE plugin_id = $1 AND attribute_name = $2 AND object_id = $3
+			      %s
+	;`, strings.Join(fWheres, " AND "))
+
+	if err := db.conn.QueryRow(ctx, sql, sqlArgs...).Scan(&count); err != nil {
 		return 0, errors.WithMessage(err, "failed to query db")
 	}
 	return count, nil
+}
+
+func valueEntriesSQLFilter(filters map[string]string, sqlArgs []interface{}) ([]string, []interface{}) {
+	iParams := len(sqlArgs) + 1
+	fWheres := make([]string, len(filters))
+	for k, v := range filters {
+		fWheres = append(fWheres, fmt.Sprintf("entry.value->>$%d = $%d", iParams, iParams+1))
+		sqlArgs = append(sqlArgs, k, v)
+		iParams += 2
+	}
+	return fWheres, sqlArgs
 }

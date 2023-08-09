@@ -2,8 +2,9 @@ package streamchat
 
 import (
 	"fmt"
-	idt "github.com/momentum-xyz/ubercontroller/utils/umid"
 	"net/http"
+
+	idt "github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/gin-gonic/gin"
 	"github.com/momentum-xyz/ubercontroller/universe"
@@ -16,8 +17,7 @@ import (
 // @Description The user is required to be connected to the world/object.
 // @Description This also automatically joins the user as a member to the channel, so the join endpoint does not have to be called.
 // @Tags chat
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param objectID path string true "World or object UMID"
 // @Success 200 {object} streamchat.apiChannelToken.Response
 // @Failure 400 {object} api.HTTPError
@@ -65,8 +65,7 @@ func (s *StreamChat) apiChannelToken(c *gin.Context) {
 // @Summary Join a chat channel.
 // @Description Join the chat channel (as a member) for the given world or object UMID.
 // @Tags chat
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param objectID path string true "World or object UMID"
 // @Success 204 ""
 // @Failure 400 {object} api.HTTPError
@@ -96,8 +95,7 @@ func (s *StreamChat) apiChannelJoin(c *gin.Context) {
 // @Summary Leave a chat channel.
 // @Description Leave the chat channel (as a member) for the given world or object UMID.
 // @Tags chat
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param objectID path string true "World or object UMID"
 // @Success 204 ""
 // @Failure 400 {object} api.HTTPError

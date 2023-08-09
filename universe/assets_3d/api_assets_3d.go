@@ -20,11 +20,9 @@ import (
 )
 
 // @Summary Get 3d assets
-// @Schemes
 // @Description Returns a filtered list of 3d assets
 // @Tags assets3d
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param query query assets_3d.apiGetAssets3d.InQuery true "query params"
 // @Success 200 {array} dto.Asset3d
 // @Failure 400 {object} api.HTTPError
@@ -109,6 +107,7 @@ func (a *Assets3d) apiGetAssets3d(c *gin.Context) {
 // @Summary Upload a 3D asset to the media manager
 // @Description This endpoint allows for the uploading of 3D assets.
 // @Tags assets3d
+// @Security Bearer
 // @Accept multipart/form-data
 // @Produce json
 // @Param asset formData *multipart.FileHeader true "The 3D asset file to be uploaded"
@@ -256,11 +255,9 @@ func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 }
 
 // @Summary Get 3d assets options
-// @Schemes
 // @Description Returns list of 3d assets options
 // @Tags assets3d
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param query query assets_3d.apiGetAssets3dOptions.InQuery true "query params"
 // @Success 200 {object} dto.Assets3dOptions
 // @Failure 400 {object} api.HTTPError
@@ -301,14 +298,12 @@ func (a *Assets3d) apiGetAssets3dOptions(c *gin.Context) {
 }
 
 // @Summary Delete a 3d asset by its umid
-// @Schemes
 // @Description Deletes 3d asset by its umid
 // @Tags assets3d
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param asset3dID path string true "Asset3D UMID"
 // @Success 200 {object} nil
-// @Failure 500 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
 // @Router /api/v4/assets-3d/{asset3dID} [delete]
 func (a *Assets3d) apiRemoveAsset3dByID(c *gin.Context) {
 	uid, err := umid.Parse(c.Param("asset3dID"))
@@ -346,17 +341,14 @@ func (a *Assets3d) apiRemoveAsset3dByID(c *gin.Context) {
 }
 
 // @Summary Update 3d asset meta by its umid
-// @Schemes
 // @Description Update 3d asset meta by its umid
 // @Tags assets3d
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param asset3d_id path string true "Asset 3D UMID"
 // @Param body body assets_3d.apiUpdateAsset3dByID.InBody true "body params"
 // @Success 200 {object} dto.Asset3d
 // @Failure 400 {object} api.HTTPError
-// @Failure 500 {object} api.HTTPError
 // @Router /api/v4/assets-3d/{object_id}/{asset3d_id} [patch]
 func (a *Assets3d) apiUpdateAsset3dByID(c *gin.Context) {
 	type InBody struct {

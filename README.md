@@ -48,12 +48,12 @@ migrate create -ext sql -dir database/migrations/sql/ -seq <SHORT_NAME_FOR_MIGRA
 Two empty .sql files will be created in `database/migrations/sql`.
 Implemented them and to test it:
 ```
-migrate -source file://database/migrations/sql/ -database postgres://momentum:momentum@localhost:4321/momentum?sslmode=disable up
+go run ./cmd/service/ -migrate
 ```
 
 And to revert the change:
 ```
-migrate -source file://database/migrations/sql/ -database postgres://momentum:momentum@localhost:4321/momentum?sslmode=disable down 1
+go run ./cmd/service/ -migrate -steps -1
 ```
 
 If something goes wrong, it will leave the database in a 'dirty' state.

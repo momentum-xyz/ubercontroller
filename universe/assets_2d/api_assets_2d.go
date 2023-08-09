@@ -11,11 +11,9 @@ import (
 )
 
 // @Summary Get 2d asset
-// @Schemes
 // @Description Returns a 2d asset
 // @Tags assets2d
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param asset2dID path string true "Asset2d UMID"
 // @Success 200 {array} dto.Asset2d
 // @Failure 400 {object} api.HTTPError

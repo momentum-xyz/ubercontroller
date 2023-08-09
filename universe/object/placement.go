@@ -164,6 +164,9 @@ func (o *Object) UpdateChildrenPosition(recursive bool) error {
 				o.log.Errorf("Object: UpdatePosition: failed to get object: %s", k)
 				continue
 			}
+			// TODO: rotation, should optionally come from new option field in parent or be calculated in the algo.
+			// TODO: scale, should optionally come from some new option field in the parent
+			pos.Scale = cmath.Vec3{X: 1, Y: 1, Z: 1}
 			if err := child.SetActualTransform(pos, theta); err != nil {
 				o.log.Errorf("Object: UpdatePosition: failed to update transform: %s", k)
 			}

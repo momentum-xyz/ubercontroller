@@ -81,7 +81,6 @@ func (n *Node) apiGenChallenge(c *gin.Context) {
 // @Summary Verifies a signed challenge
 // @Description Returns OK when a signature has been validated
 // @Tags auth
-// @Security Bearer
 // @Param body body node.apiAttachAccount.InBody true "body params"
 // @Success 200 {object} nil
 // @Failure 400 {object} api.HTTPError

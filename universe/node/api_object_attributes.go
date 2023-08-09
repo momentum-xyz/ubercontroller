@@ -352,7 +352,7 @@ func (n *Node) apiSetObjectAttributesValue(c *gin.Context) {
 func (n *Node) apiGetObjectAttributeSubValue(c *gin.Context) {
 	type InQuery struct {
 		attributes.QueryPluginAttribute
-		SubAttributeKey string `form:"sub_attribute_key" binding:"required"`
+		SubAttributeKey string `form:"sub_attribute_key" form:"sub_attribute_key" binding:"required"`
 	}
 
 	inQuery := InQuery{}

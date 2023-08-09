@@ -1,0 +1,64 @@
+name: Delete obsolete container images
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "42 5 * * 1-5"
+
+jobs:
+  clean-ghcr:
+    name: Delete old unused container images
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summary header
+        run: |
+          echo '### :hocho: Prune container images ' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+      - id: prune-untagged
+        name: Prune untagged containers
+        uses: snok/container-retention-policy@2ebfab771446f9cde79044dab61eec867ac1d62b  # v2.1.1
+        with:
+          image-names: ubercontroller
+          cut-off: A week ago UTC
+          account-type: org
+          org-name: momentum-xyz
+          untagged-only: true
+          token: ${{ secrets.GHRC_CLEANING_PAT }}
+      - name: Summary untagged
+        run: |
+          echo "Untagged: ${{ steps.prune-untagged.outputs.deleted || '0' }}" >> $GITHUB_STEP_SUMMARY
+
+      - id: prune-dev
+        name: Prune development containers
+        uses: snok/container-retention-policy@2ebfab771446f9cde79044dab61eec867ac1d62b  # v2.1.1
+        with:
+          image-names: ubercontroller
+          cut-off: One month ago UTC
+          account-type: org
+          org-name: momentum-xyz
+          keep-at-least: 5
+          # git describe style, e.g. v0.2.0-23-gbba49d9
+          filter-tags: v*.*.*-*
+          skip-tags: develop,master,latest
+          token: ${{ secrets.GHRC_CLEANING_PAT }}
+      - name: Summary develop
+        run: |
+          echo "Develop: ${{ steps.prune-dev.outputs.deleted || '0' }}" >> $GITHUB_STEP_SUMMARY
+
+      # Legacy tagging format, used full git commit hash
+      - id: prune-legacy
+        name: Prune legacy containers
+        uses: snok/container-retention-policy@2ebfab771446f9cde79044dab61eec867ac1d62b  # v2.1.1
+        with:
+          image-names: ubercontroller
+          cut-off: One month ago UTC
+          account-type: org
+          org-name: momentum-xyz
+          keep-at-least: 5
+          skip-tags: develop,master,latest,v*
+          token: ${{ secrets.GHRC_CLEANING_PAT }}
+      - name: Summary legacy
+        run: |
+          echo "Legacy: ${{ steps.prune-legacy.outputs.deleted || '0' }}" >> $GITHUB_STEP_SUMMARY
+

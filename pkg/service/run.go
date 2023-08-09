@@ -180,7 +180,7 @@ func CreateDBConnection(ctx types.NodeContext, cfg *config.Postgres) (*pgxpool.P
 		return nil, errors.WithMessage(err, "failed to gen postgres config")
 	}
 
-	if err := migrations.MigrateDatabase(ctx, cfg); err != nil {
+	if err := migrations.MigrateDatabase(ctx, cfg, 0); err != nil {
 		return nil, errors.WithMessage(err, "failed to migrate database")
 	}
 

@@ -13,11 +13,9 @@ import (
 )
 
 // @Summary Starts a fly to me session
-// @Schemes
 // @Description Initiates a forced fly to me session
 // @Tags worlds
-// @Accept json
-// @Produce json
+// @Security Bearer
 // @Param object_id path string true "World UMID"
 // @Success 200 {object} nil
 // @Failure 400 {object} api.HTTPError
