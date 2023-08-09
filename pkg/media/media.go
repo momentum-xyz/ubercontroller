@@ -8,8 +8,8 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"path"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/h2non/filetype"
 	fileTypes "github.com/h2non/filetype/types"
@@ -62,7 +62,7 @@ func (m *Media) Initialize(ctx types.NodeContext) error {
 func (m *Media) GetImage(filename string) (*processor.MetaDef, *string, error) {
 	m.log.Debug("Endpoint Hit: Image Get:", filename)
 
-	meta, filepath := m.processor.Present(&(filename))
+	meta, filepath := m.processor.Present(filename)
 	if meta == nil {
 		return nil, nil, errors.New("no meta for file")
 	}
@@ -132,7 +132,7 @@ func (m *Media) AddTube(file multipart.File) (string, error) {
 func (m *Media) GetVideo(filename string) (*os.File, os.FileInfo, string, error) {
 	m.log.Debug("Endpoint Hit: Video Get:", filename)
 
-	filepath := m.processor.Videopath + filename
+	filepath := path.Join(m.processor.Videopath, path.Base(filename))
 	file, err := os.Open(filepath)
 	if err != nil {
 		return nil, nil, "", errors.WithMessage(err, "error opening file")
@@ -174,7 +174,7 @@ func (m *Media) AddVideo(file multipart.File) (string, error) {
 func (m *Media) GetAudio(filename string) (*fileTypes.Type, string, error) {
 	m.log.Debug("Endpoint Hit: Audio Get:", filename)
 
-	filepath := m.processor.Audiopath + filename
+	filepath := path.Join(m.processor.Audiopath, path.Base(filename))
 	buf := make([]byte, 264)
 	file, err := os.Open(filepath)
 	if err != nil {
@@ -206,38 +206,28 @@ func (m *Media) AddAudio(file multipart.File) (string, error) {
 	return hash, err
 }
 
-func (m *Media) GetAsset(c *gin.Context) {
-	filename := c.Param("file")
+func (m *Media) GetAsset(filename string) (*fileTypes.Type, string, error) {
+	m.log.Debug("Endpoint Hit: Asset Get:", filename)
 
-	L().Debug("Endpoint Hit: Asset Get:", filename)
-
-	// res, filepath := x.present(&(filename))
-	filepath := x.Assetpath + filename
-
+	filepath := path.Join(m.processor.Assetpath, path.Base(filename))
 	buf := make([]byte, 264)
-	f, err := os.Open(filepath)
-	if check_error(err) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		sentry.CaptureException(err)
-		L().Error(err)
-		return
+	file, err := os.Open(filepath)
+	if err != nil {
+		return nil, "", errors.WithMessage(err, "error opening file")
 	}
-	defer f.Close()
+	defer file.Close()
 
-	n, err := f.Read(buf)
-	if check_error(err) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		sentry.CaptureException(err)
-		L().Error(err)
-		return
+	n, err := file.Read(buf)
+	if err != nil {
+		return nil, "", errors.WithMessage(err, "error reading file buffer")
 	}
 
-	ftype, err := filetype.Get(buf[:n])
+	fileType, err := filetype.Get(buf[:n])
+	if err != nil {
+		return nil, "", errors.WithMessage(err, "error getting filetype")
+	}
 
-	c.Header("Content-Type", ftype.MIME.Value)
-
-	c.File(filepath)
-	L().Infof("Endpoint Hit: Asset served: %s", filename)
+	return &fileType, filepath, nil
 }
 
 func (m *Media) AddAsset(file multipart.File) (string, error) {

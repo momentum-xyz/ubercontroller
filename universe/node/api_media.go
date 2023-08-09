@@ -314,3 +314,40 @@ func (n *Node) apiMediaGetTexture(c *gin.Context) {
 	c.File(*filepath)
 	n.log.Infof("Endpoint Hit: Texture served: %s %d", filename, makeTimestamp()-tm1)
 }
+
+// @Summary Gets an image from the (internal) media-manager
+// @Description Serves a generic image from the (internal) media-manager
+// @Tags media
+// @Security Bearer
+// @Accept json
+// @Produce json
+// @Param file path string true "image file"
+// @Success 200 {object} dto.HashResponse
+// @Failure 400 {object} api.HTTPError
+// @Router /api/v4/media/render/asset/{file} [get]
+func (n *Node) apiMediaGetAsset(c *gin.Context) {
+	filename := c.Param("file")
+	match, err := regexp.MatchString(`^[a-zA-Z0-9]+$`, filename)
+	if !match {
+		err := errors.New("Node: apiMediaGetAsset: invalid filename format")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_format", err, n.log)
+		return
+	}
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiMediaGetAsset: failed to match regexp string")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_validate", err, n.log)
+		return
+	}
+
+	fileType, filepath, err := n.media.GetAsset(filename)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiMediaGetAsset: failed to get asset")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_asset", err, n.log)
+		return
+	}
+
+	c.Header("Content-Type", fileType.MIME.Value)
+
+	c.File(filepath)
+	n.log.Infof("Endpoint Hit: Asset served: %s", filename)
+}

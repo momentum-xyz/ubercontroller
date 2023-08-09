@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 	"image"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 	"sync"
@@ -204,7 +205,7 @@ func (p *Processor) ProcessFrame(body []byte) (string, error) {
 	}
 
 	p.log.Debug(string(str))
-	res, _ := p.Present(&hash)
+	res, _ := p.Present(hash)
 	if res == nil {
 		req := &FrameRenderRequest{ID: &hash, Frame: &payload}
 		req.Wg.Add(1)
@@ -215,17 +216,16 @@ func (p *Processor) ProcessFrame(body []byte) (string, error) {
 	return hash, nil
 }
 
-func (p *Processor) Present(ID *string) (*MetaDef, *string) {
-	fpath := p.ImPathF + *ID
-
-	res, ok := p.ImageMapF.Get(*ID)
+func (p *Processor) Present(imageID string) (*MetaDef, *string) {
+	filePath := path.Join(p.ImPathF, imageID)
+	res, ok := p.ImageMapF.Get(imageID)
 	if ok {
-		p.log.Debug(*ID + " is already in the map")
-		return res.(*MetaDef), &fpath
+		p.log.Debug(imageID + " is already in the map")
+		return res.(*MetaDef), &filePath
 	}
 
-	reader, err := os.Open(fpath)
-	p.log.Debug(fpath)
+	reader, err := os.Open(filePath)
+	p.log.Debug(filePath)
 	if err != nil {
 		return nil, nil
 	}
@@ -234,18 +234,18 @@ func (p *Processor) Present(ID *string) (*MetaDef, *string) {
 	im, format, err1 := image.DecodeConfig(reader)
 	meta := new(MetaDef)
 	if err1 != nil {
-		p.log.Debugf("%s: %v\n", *ID, err1)
+		p.log.Debugf("%s: %v\n", imageID, err1)
 		meta.Mime = "image/png"
 	} else {
 		meta.H = im.Height
 		meta.W = im.Width
 		meta.Mime = "image/" + format
-		p.log.Debugf("%s %d %d\n", *ID, im.Width, im.Height)
+		p.log.Debugf("%s %d %d\n", imageID, im.Width, im.Height)
 	}
 	p.log.Debug("Mime:", meta.Mime)
-	p.ImageMapF.Add(*ID, meta)
+	p.ImageMapF.Add(imageID, meta)
 
-	return meta, &fpath
+	return meta, &filePath
 }
 
 func (p *Processor) PresentTexture(ID *string, rsize string) (*MetaDef, *string) {
@@ -281,7 +281,7 @@ func (p *Processor) PresentTexture(ID *string, rsize string) (*MetaDef, *string)
 		p.ImagesRescaleInProgress.Store(fpath, true)
 		converted := false
 		p.log.Debug(*ID + " : converting from full")
-		if meta, filepath := p.Present(ID); meta != nil {
+		if meta, filepath := p.Present(*ID); meta != nil {
 			if reader, err = os.Open(*filepath); !p.checkError(err) {
 				if img, _, errl := image.Decode(reader); !p.checkError(errl) {
 					if err = p.WriteToScaled(*ID, img, rsize); !p.checkError(err) {
