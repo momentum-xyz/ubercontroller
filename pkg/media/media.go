@@ -200,7 +200,7 @@ func (m *Media) AddAudio(file multipart.File) (string, error) {
 
 	hash, err := m.processor.ProcessTrack(file)
 	if err != nil {
-		return "", errors.WithMessagef(err, "error writing audio: %v")
+		return "", errors.WithMessage(err, "error writing audio")
 	}
 
 	return hash, err
