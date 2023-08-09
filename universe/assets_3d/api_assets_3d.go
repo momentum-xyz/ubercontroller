@@ -1,7 +1,6 @@
 package assets_3d
 
 import (
-	"encoding/json"
 	"mime/multipart"
 	"net/http"
 	"path/filepath"
@@ -157,34 +156,14 @@ func (a *Assets3d) apiUploadAsset3d(c *gin.Context) {
 
 	defer openedFile.Close()
 
-	req, err := http.NewRequest("POST", a.cfg.Common.RenderInternalURL+"/addasset", openedFile)
+	hash, err := a.media.AddAsset(openedFile)
 	if err != nil {
-		err := errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to create post request")
-		api.AbortRequest(c, http.StatusBadRequest, "failed_to_create_request", err, a.log)
+		err := errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to add asset")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_add_asset", err, a.log)
 		return
 	}
 
-	req.Header.Set("Content-Type", assetFile.Header.Get("Content-Type"))
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		err := errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to post data to media-manager")
-		api.AbortRequest(c, http.StatusBadRequest, "failed_to_post_request", err, a.log)
-		return
-	}
-
-	defer resp.Body.Close()
-
-	response := dto.HashResponse{}
-
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		err := errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to decode json into response")
-		api.AbortRequest(c, http.StatusBadRequest, "failed_to_decode", err, a.log)
-		return
-	}
-
-	assetID, err := umid.Parse(response.Hash)
+	assetID, err := umid.Parse(hash)
 	if err != nil {
 		err := errors.WithMessage(err, "Assets3d: apiUploadAsset3d: failed to parse hash to uuid")
 		api.AbortRequest(c, http.StatusBadRequest, "failed_to_parse_hash", err, a.log)

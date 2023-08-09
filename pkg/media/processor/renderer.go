@@ -24,13 +24,6 @@ const (
 
 var libgdmutex sync.Mutex
 
-// 	libgdmutex.Lock()
-// 	ret := img.StringFT(fg, fontname, ptsize, angle, x, y, str)
-// 	libgdmutex.Unlock()
-// 	return ret
-
-// }
-
 func needrender(ID *string) bool {
 	return true
 }
@@ -73,9 +66,6 @@ func (p *Processor) RenderFrame(req *FrameRenderRequest) {
 		p.HandleError(png.Encode(f, res.GetRGBA()))
 	}
 
-	// if fileExists(fname) {
-	// 	os.Remove(fname)
-	// }
 	os.Rename(tfilename, fname)
 
 	if reader, err := os.Open(fname); !p.HandleError(err) {
