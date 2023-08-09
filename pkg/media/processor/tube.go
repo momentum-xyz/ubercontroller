@@ -84,7 +84,7 @@ func (p *Processor) ProcessTube(src []byte) (string, error) {
 	}
 
 	hash := p.GetMD5HashByte(url)
-	meta, _ := p.Present(&hash)
+	meta, _ := p.Present(hash)
 	if meta == nil {
 		resp, err := p.getThumbnail(string(url))
 		if err != nil {
