@@ -75,11 +75,11 @@ func (m *Media) AddImage(file multipart.File) (string, error) {
 
 	body, err := io.ReadAll(file)
 	if err != nil {
-		return "", errors.WithMessagef(err, "error reading file: %v")
+		return "", errors.WithMessage(err, "error reading file")
 	}
 	hash, err := m.processor.ProcessImage(body)
 	if err != nil {
-		return "", errors.WithMessagef(err, "error writing image: %v")
+		return "", errors.WithMessage(err, "error writing image")
 	}
 	return hash, err
 }
@@ -104,11 +104,11 @@ func (m *Media) AddFrame(file multipart.File) (string, error) {
 
 	body, err := io.ReadAll(file)
 	if err != nil {
-		return "", errors.WithMessagef(err, "error reading file: %v")
+		return "", errors.WithMessage(err, "error reading file")
 	}
 	hash, err := m.processor.ProcessFrame(body)
 	if err != nil {
-		return "", errors.WithMessagef(err, "error processing frame: %v")
+		return "", errors.WithMessage(err, "error processing frame")
 	}
 
 	return hash, err
@@ -118,12 +118,12 @@ func (m *Media) AddTube(file multipart.File) (string, error) {
 	m.log.Info("Endpoint Hit: AddTube")
 	body, err := io.ReadAll(file)
 	if err != nil {
-		return "", errors.WithMessagef(err, "error reading file: %v")
+		return "", errors.WithMessage(err, "error reading file")
 	}
 
 	hash, err := m.processor.ProcessTube(body)
 	if err != nil {
-		return "", errors.WithMessagef(err, "error writing image: %v")
+		return "", errors.WithMessage(err, "error writing image")
 	}
 
 	return hash, err
@@ -165,7 +165,7 @@ func (m *Media) AddVideo(file multipart.File) (string, error) {
 
 	hash, err := m.processor.ProcessVideo(file)
 	if err != nil {
-		return "", errors.WithMessagef(err, "error writing video: %v")
+		return "", errors.WithMessage(err, "error writing video")
 	}
 
 	return hash, err
@@ -235,7 +235,7 @@ func (m *Media) AddAsset(file multipart.File) (string, error) {
 
 	hash, err := m.processor.ProcessAsset(file)
 	if err != nil {
-		return "", errors.WithMessagef(err, "error writing asset: %v")
+		return "", errors.WithMessage(err, "error writing asset")
 	}
 
 	return hash, err
