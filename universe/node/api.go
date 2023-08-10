@@ -97,18 +97,8 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 			media.GET("/render/track/:file", n.apiMediaGetAudio)
 			media.POST("/upload/audio", n.apiMediaUploadAudio)
+			media.DELETE("/deltrack/:file", n.apiMediaDeleteAudio)
 		}
-
-		//
-		//media.POST("/render/addimage", )
-		//media.POST("/render/addframe", )
-		//media.POST("/render/addtube", )
-		//
-		//media.POST("/addvideo", )
-		//media.POST("/addtrack", )
-		//media.POST("/addasset", )
-		//
-		//media.DELETE("/deltrack/{file:[a-zA-Z0-9]+}", )
 
 		verified.GET("/skybox/styles", n.apiGetSkyboxStyles)
 		verified.POST("/skybox/generate", n.apiPostSkyboxGenerate)

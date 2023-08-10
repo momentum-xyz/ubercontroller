@@ -250,8 +250,8 @@ func (n *Node) apiMediaUploadAudio(c *gin.Context) {
 
 	hash, err := n.media.AddAudio(openedFile)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiMediaUploadAudio: failed to add image")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_add_image", err, n.log)
+		err := errors.WithMessage(err, "Node: apiMediaUploadAudio: failed to add audio")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_add_audio", err, n.log)
 		return
 	}
 
@@ -260,6 +260,39 @@ func (n *Node) apiMediaUploadAudio(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+// @Summary Deletes an audio file from the media manager
+// @Description Deletes an audio file based on the provided filename from the media manager
+// @Tags media
+// @Security Bearer
+// @Produce json
+// @Param file path string true "audio filename"
+// @Success 200 {string} "OK"
+// @Failure 400 {object} api.HTTPError
+// @Failure 500 {object} api.HTTPError
+// @Router /api/v4/media/deltrack/{file} [delete]
+func (n *Node) apiMediaDeleteAudio(c *gin.Context) {
+	filename := c.Param("file")
+	match, err := regexp.MatchString(`^[a-zA-Z0-9]+$`, filename)
+	if !match {
+		err := errors.New("Node: apiMediaDeleteAudio: invalid filename format")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_format", err, n.log)
+		return
+	}
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiMediaDeleteAudio: failed to match regexp string")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_validate", err, n.log)
+		return
+	}
+
+	if err := n.media.DeleteAudio(filename); err != nil {
+		err = errors.WithMessage(err, "Node: apiMediaDeleteAudio: failed to delete audio")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_delete", err, n.log)
+		return
+	}
+
+	c.Status(http.StatusOK)
 }
 
 // @Summary Gets a texture from the (internal) media-manager

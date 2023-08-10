@@ -42,47 +42,10 @@ type Processor struct {
 
 	framesinprogress map[string]bool
 
-	RenderQueue chan *FrameRenderRequest
-	RenderDone  chan *FrameRenderRequest
+	RenderQueue chan *types.FrameRenderRequest
+	RenderDone  chan *types.FrameRenderRequest
 
 	ImagesRescaleInProgress sync.Map
-}
-
-type FrameDesc struct {
-	Background []uint32     `json:"background"`
-	BGimage    string       `json:"bgimage"`
-	Color      []uint32     `json:"color"`
-	Thickness  int          `json:"thickness"`
-	Width      int          `json:"width"`
-	Height     int          `json:"height"`
-	X          int          `json:"x"`
-	Y          int          `json:"y"`
-	Text       *TextDesc    `json:"text"`
-	Sub        []*FrameDesc `json:"sub"`
-}
-
-type TextDesc struct {
-	String    string   `json:"string"`
-	Fontname  string   `json:"fontfile"`
-	Fontsize  float64  `json:"fontsize"`
-	Fontcolor []uint32 `json:"fontcolor"`
-	Wrap      bool     `json:"wrap"`
-	PadX      int      `json:"padX"`
-	PadY      int      `json:"padY"`
-	AlignH    string   `json:"alignH"`
-	AlignV    string   `json:"alignV"`
-	DPI       float64  `json:"dpi"`
-}
-
-type FrameRenderRequest struct {
-	ID    *string
-	Frame *FrameDesc
-	Wg    sync.WaitGroup
-}
-
-type MetaDef struct {
-	H, W int
-	Mime string
 }
 
 const defaultCacheSize = 1024
@@ -103,8 +66,8 @@ func (p *Processor) Initialize(ctx types.NodeContext) *Processor {
 	p.Assetpath = strings.TrimSuffix(p.cfg.Media.Assetpath, "/") + "/"
 	p.Fontpath = strings.TrimSuffix(p.cfg.Media.Fontpath, "/") + "/"
 	p.framesinprogress = make(map[string]bool)
-	p.RenderQueue = make(chan *FrameRenderRequest, 512)
-	p.RenderDone = make(chan *FrameRenderRequest, 512)
+	p.RenderQueue = make(chan *types.FrameRenderRequest, 512)
+	p.RenderDone = make(chan *types.FrameRenderRequest, 512)
 	os.MkdirAll(p.Imagepath, os.ModePerm)
 	os.MkdirAll(p.Videopath, os.ModePerm)
 	os.MkdirAll(p.Audiopath, os.ModePerm)
@@ -116,7 +79,7 @@ func (p *Processor) Initialize(ctx types.NodeContext) *Processor {
 	p.ImageMapF, _ = lru.New(defaultCacheSize)
 	p.ImageMapS = make(map[string]*lru.Cache)
 	p.ImPathS = make(map[string]string)
-	for rs := range Tsizes {
+	for rs := range types.Tsizes {
 		os.MkdirAll(p.Imagepath+rs, os.ModePerm)
 		p.ImPathS[rs] = p.Imagepath + rs + "/"
 		p.ImageMapS[rs], _ = lru.New(defaultCacheSize)
@@ -186,7 +149,7 @@ func (p *Processor) GetMD5HashByte(text []byte) string {
 }
 
 func (p *Processor) ProcessFrame(body []byte) (string, error) {
-	var payload FrameDesc
+	var payload types.FrameDesc
 	if err := json.Unmarshal(body, &payload); err != nil {
 		return "", errors.WithMessage(err, "error during unmarshal")
 	}
@@ -207,7 +170,7 @@ func (p *Processor) ProcessFrame(body []byte) (string, error) {
 	p.log.Debug(string(str))
 	res, _ := p.Present(hash)
 	if res == nil {
-		req := &FrameRenderRequest{ID: &hash, Frame: &payload}
+		req := &types.FrameRenderRequest{ID: &hash, Frame: &payload}
 		req.Wg.Add(1)
 		p.RenderQueue <- req
 		req.Wg.Wait()
@@ -216,12 +179,12 @@ func (p *Processor) ProcessFrame(body []byte) (string, error) {
 	return hash, nil
 }
 
-func (p *Processor) Present(imageID string) (*MetaDef, *string) {
+func (p *Processor) Present(imageID string) (*types.MetaDef, *string) {
 	filePath := path.Join(p.ImPathF, imageID)
 	res, ok := p.ImageMapF.Get(imageID)
 	if ok {
 		p.log.Debug(imageID + " is already in the map")
-		return res.(*MetaDef), &filePath
+		return res.(*types.MetaDef), &filePath
 	}
 
 	reader, err := os.Open(filePath)
@@ -232,7 +195,7 @@ func (p *Processor) Present(imageID string) (*MetaDef, *string) {
 
 	defer reader.Close()
 	im, format, err1 := image.DecodeConfig(reader)
-	meta := new(MetaDef)
+	meta := new(types.MetaDef)
 	if err1 != nil {
 		p.log.Debugf("%s: %v\n", imageID, err1)
 		meta.Mime = "image/png"
@@ -248,12 +211,12 @@ func (p *Processor) Present(imageID string) (*MetaDef, *string) {
 	return meta, &filePath
 }
 
-func (p *Processor) PresentTexture(ID *string, rsize string) (*MetaDef, *string) {
+func (p *Processor) PresentTexture(ID *string, rsize string) (*types.MetaDef, *string) {
 	fpath := p.ImPathS[rsize] + *ID
 	meta0, ok := p.ImageMapS[rsize].Get(*ID)
 	if ok {
 		p.log.Debug(*ID + " is already in the map")
-		return meta0.(*MetaDef), &fpath
+		return meta0.(*types.MetaDef), &fpath
 	}
 
 	defer func() {
@@ -268,7 +231,7 @@ func (p *Processor) PresentTexture(ID *string, rsize string) (*MetaDef, *string)
 			meta0, ok := p.ImageMapS[rsize].Get(*ID)
 			if ok {
 				p.log.Debug(*ID + " found in map on retry round N: " + strconv.Itoa(i))
-				return meta0.(*MetaDef), &fpath
+				return meta0.(*types.MetaDef), &fpath
 			}
 		}
 		p.log.Error(*ID + " timeout reached while waiting image to rescale:" + strconv.Itoa(int(retryInterval.Milliseconds())*maxRetries) + " ms")
@@ -300,7 +263,7 @@ func (p *Processor) PresentTexture(ID *string, rsize string) (*MetaDef, *string)
 
 	defer reader.Close()
 	im, format, err1 := image.DecodeConfig(reader)
-	meta := new(MetaDef)
+	meta := new(types.MetaDef)
 	if err1 != nil {
 		p.log.Debugf("%s: %v\n", *ID, err1)
 		meta.Mime = "image/png"

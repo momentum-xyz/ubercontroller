@@ -3,6 +3,7 @@ package processor
 import (
 	"bytes"
 	"errors"
+	"github.com/momentum-xyz/ubercontroller/types"
 	"image"
 	_ "image/gif"
 	_ "image/jpeg"
@@ -14,21 +15,6 @@ import (
 	"github.com/nfnt/resize"
 	_ "golang.org/x/image/webp"
 )
-
-var Tsizes = map[string]int{
-	"s0": 1024,
-	"s1": 4096,
-	"s2": 9216,
-	"s3": 25600,
-	"s4": 65536,
-	"s5": 193600,
-	"s6": 577600,
-	"s7": 1721344,
-	"s8": 5062500,
-	"s9": 14745600,
-}
-
-var Tprecalcs = [...]string{"s2", "s3", "s4", "s5", "s6"}
 
 func (p *Processor) WriteToF(img image.Image) (error, string) {
 	var w bytes.Buffer
@@ -42,7 +28,7 @@ func (p *Processor) WriteToF(img image.Image) (error, string) {
 }
 
 func (p *Processor) WriteToScaled(base string, img image.Image, rsize string) error {
-	if size, ok := Tsizes[rsize]; ok {
+	if size, ok := types.Tsizes[rsize]; ok {
 		return p.SaveWriteToPNG(p.ImPathS[rsize]+base, DownSampleTo(img, size))
 	}
 	return errors.New("Not such size defined in the size map")
@@ -101,7 +87,7 @@ func (p *Processor) ProcessImage(src []byte) (string, error) {
 		return "", err
 	}
 
-	for _, v := range Tprecalcs {
+	for _, v := range types.Tprecalcs {
 		if err = p.WriteToScaled(ID, img, v); err != nil {
 			return "", err
 		}

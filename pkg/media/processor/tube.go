@@ -13,6 +13,8 @@ import (
 	_ "embed"
 
 	"github.com/nfnt/resize"
+
+	"github.com/momentum-xyz/ubercontroller/types"
 )
 
 type TubeDesc struct {
@@ -105,7 +107,7 @@ func (p *Processor) ProcessTube(src []byte) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			for _, v := range Tprecalcs {
+			for _, v := range types.Tprecalcs {
 				if err := p.WriteToScaled(hash, imout, v); err != nil {
 					return "", err
 				}

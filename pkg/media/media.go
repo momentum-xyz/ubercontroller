@@ -28,19 +28,6 @@ type Media struct {
 	processor *processor.Processor
 }
 
-var Tsizes = map[string]int{
-	"s0": 1024,
-	"s1": 4096,
-	"s2": 9216,
-	"s3": 25600,
-	"s4": 65536,
-	"s5": 193600,
-	"s6": 577600,
-	"s7": 1721344,
-	"s8": 5062500,
-	"s9": 14745600,
-}
-
 func NewMedia() *Media {
 	media := &Media{}
 
@@ -59,8 +46,8 @@ func (m *Media) Initialize(ctx types.NodeContext) error {
 	return nil
 }
 
-func (m *Media) GetImage(filename string) (*processor.MetaDef, *string, error) {
-	m.log.Debug("Endpoint Hit: Image Get:", filename)
+func (m *Media) GetImage(filename string) (*types.MetaDef, *string, error) {
+	m.log.Debug("Endpoint Hit: Image Get: ", filename)
 
 	meta, filepath := m.processor.Present(filename)
 	if meta == nil {
@@ -84,8 +71,8 @@ func (m *Media) AddImage(file multipart.File) (string, error) {
 	return hash, err
 }
 
-func (m *Media) GetTexture(rsize string, filename string) (*processor.MetaDef, *string, error) {
-	if _, ok := Tsizes[rsize]; !ok {
+func (m *Media) GetTexture(rsize string, filename string) (*types.MetaDef, *string, error) {
+	if _, ok := types.Tsizes[rsize]; !ok {
 		return nil, nil, errors.New("tsize not found for texture")
 	}
 
@@ -120,7 +107,7 @@ func (m *Media) AddTube(file []byte) (string, error) {
 }
 
 func (m *Media) GetVideo(filename string) (*os.File, os.FileInfo, string, error) {
-	m.log.Debug("Endpoint Hit: Video Get:", filename)
+	m.log.Debug("Endpoint Hit: Video Get: ", filename)
 
 	filepath := path.Join(m.processor.Videopath, path.Base(filename))
 	file, err := os.Open(filepath)
@@ -161,7 +148,7 @@ func (m *Media) AddVideo(file multipart.File) (string, error) {
 }
 
 func (m *Media) GetAudio(filename string) (*fileTypes.Type, string, error) {
-	m.log.Debug("Endpoint Hit: Audio Get:", filename)
+	m.log.Debug("Endpoint Hit: Audio Get: ", filename)
 
 	filepath := path.Join(m.processor.Audiopath, path.Base(filename))
 	buf := make([]byte, 264)
@@ -195,8 +182,22 @@ func (m *Media) AddAudio(file multipart.File) (string, error) {
 	return hash, err
 }
 
+func (m *Media) DeleteAudio(filename string) error {
+	m.log.Info("Endpoint Hit: Track Delete: ", filename)
+
+	filepath := path.Join(m.processor.Audiopath, path.Base(filename))
+	err := os.Remove(filepath)
+	if err != nil {
+		return errors.WithMessage(err, "error deleting audio")
+	}
+
+	m.log.Info("Track deleted: ", filename)
+
+	return nil
+}
+
 func (m *Media) GetAsset(filename string) (*fileTypes.Type, string, error) {
-	m.log.Debug("Endpoint Hit: Asset Get:", filename)
+	m.log.Debug("Endpoint Hit: Asset Get: ", filename)
 
 	filepath := path.Join(m.processor.Assetpath, path.Base(filename))
 	buf := make([]byte, 264)

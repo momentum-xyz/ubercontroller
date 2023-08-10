@@ -15,6 +15,8 @@ import (
 	"github.com/oakmound/oak/v3/alg/floatgeom"
 	"github.com/oakmound/oak/v3/render"
 	"github.com/oakmound/oak/v3/render/mod"
+
+	"github.com/momentum-xyz/ubercontroller/types"
 )
 
 const (
@@ -46,7 +48,7 @@ func (p *Processor) getColor(components []uint32) color.Color {
 	return color.RGBA{R: uint8(components[0]), G: uint8(components[1]), B: uint8(components[2]), A: 255}
 }
 
-func (p *Processor) RenderFrame(req *FrameRenderRequest) {
+func (p *Processor) RenderFrame(req *types.FrameRenderRequest) {
 	if req.Frame == nil {
 		return
 	}
@@ -70,7 +72,7 @@ func (p *Processor) RenderFrame(req *FrameRenderRequest) {
 
 	if reader, err := os.Open(fname); !p.HandleError(err) {
 		if img, _, err := image.Decode(reader); !p.HandleError(err) {
-			for _, v := range Tprecalcs {
+			for _, v := range types.Tprecalcs {
 				p.WriteToScaled(*req.ID, img, v)
 			}
 		}
@@ -81,7 +83,7 @@ func (p *Processor) RenderFrame(req *FrameRenderRequest) {
 	req.Wg.Done()
 }
 
-func (p *Processor) renderSubFrame(frame *FrameDesc, xul int, yul int, img *render.CompositeM) {
+func (p *Processor) renderSubFrame(frame *types.FrameDesc, xul int, yul int, img *render.CompositeM) {
 	if frame == nil {
 		return
 	}
@@ -139,7 +141,7 @@ func (p *Processor) renderSubFrame(frame *FrameDesc, xul int, yul int, img *rend
 	}
 }
 
-func (p *Processor) drawText(frame *FrameDesc, xbase, ybase int, img *render.CompositeM) {
+func (p *Processor) drawText(frame *types.FrameDesc, xbase, ybase int, img *render.CompositeM) {
 	if frame.Text == nil || frame.Text.String == "" {
 		return
 	}
