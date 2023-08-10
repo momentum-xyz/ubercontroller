@@ -266,9 +266,8 @@ func (n *Node) apiMediaUploadAudio(c *gin.Context) {
 // @Description Deletes an audio file based on the provided filename from the media manager
 // @Tags media
 // @Security Bearer
-// @Produce json
 // @Param file path string true "audio filename"
-// @Success 200 {string} "OK"
+// @Success 200
 // @Failure 400 {object} api.HTTPError
 // @Failure 500 {object} api.HTTPError
 // @Router /api/v4/media/deltrack/{file} [delete]
