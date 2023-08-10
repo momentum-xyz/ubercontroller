@@ -226,8 +226,6 @@ func (n *NFTs) setCell(contract common.Address, wallet common.Address, ids []com
 		Wallet:   wallet,
 		IDs:      ids,
 	}
-
-	//fmt.Println("setCell ", contract.Hex(), wallet.Hex(), n.block, n.data[contract][wallet].String())
 }
 
 func (n *NFTs) updateCell(contract common.Address, wallet common.Address, id common.Hash, updateType string) {
@@ -269,25 +267,6 @@ func (n *NFTs) updateCell(contract common.Address, wallet common.Address, id com
 		Wallet:   wallet,
 		IDs:      ids,
 	}
-
-	//
-	//// Update only existing cells
-	//n.data[contract][wallet].Add(n.data[contract][wallet], value)
-	//
-	//n.updatesDB <- InsertOrUpdateToDB{
-	//	contract: contract,
-	//	wallet:   wallet,
-	//	value:    n.data[contract][wallet],
-	//}
-	//
-	//n.output <- UpdateCell{
-	//	Contract: contract,
-	//	Wallet:   wallet,
-	//	Value:    n.data[contract][wallet],
-	//	Block:    n.block,
-	//}
-	//
-	//fmt.Println("updateCell ", contract.Hex(), wallet.Hex(), n.block, n.data[contract][wallet].String())
 }
 
 func (n *NFTs) AddContract(contract common.Address) error {

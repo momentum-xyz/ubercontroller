@@ -36,17 +36,16 @@ func (db *DB) Run() {
 
 func (db *DB) worker() {
 	fmt.Println("DB Worker")
-	queue := make([]InsertOrUpdateToDB, 0)
+	queue := make([]UpsertTokenToDB, 0)
 	nftQueue := make([]any, 0)
 	for {
 		select {
 		case update := <-db.updates:
 			switch u := update.(type) {
-			case InsertOrUpdateToDB:
-				fmt.Println("InsertOrUpdateToDB")
+			case UpsertTokenToDB:
+				fmt.Println("UpsertTokenToDB")
 				queue = append(queue, u)
 			case FlushToDB:
-				//fmt.Println("FlushToDB")
 				if len(queue) == 0 {
 					continue
 				}
@@ -55,7 +54,7 @@ func (db *DB) worker() {
 					fmt.Println(err)
 				}
 
-				queue = make([]InsertOrUpdateToDB, 0)
+				queue = make([]UpsertTokenToDB, 0)
 			case UpsertNFTToDB:
 				nftQueue = append(nftQueue, u)
 			case FlushNFTToDB:
@@ -82,13 +81,11 @@ func (db *DB) flushNFT(queue []any, block uint64) error {
 			fmt.Println("!!! Rollback")
 			e := tx.Rollback(context.TODO())
 			if e != nil {
-				fmt.Println("???")
 				fmt.Println(e)
 			}
 		} else {
 			e := tx.Commit(context.TODO())
 			if e != nil {
-				fmt.Println("???!!!")
 				fmt.Println(e)
 			}
 		}
@@ -129,7 +126,7 @@ func (db *DB) flushNFT(queue []any, block uint64) error {
 	return nil
 }
 
-func (db *DB) flush(queue []InsertOrUpdateToDB, block uint64) error {
+func (db *DB) flush(queue []UpsertTokenToDB, block uint64) error {
 
 	tx, err := db.db.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
@@ -140,13 +137,11 @@ func (db *DB) flush(queue []InsertOrUpdateToDB, block uint64) error {
 			fmt.Println("!!! Rollback")
 			e := tx.Rollback(context.TODO())
 			if e != nil {
-				fmt.Println("???")
 				fmt.Println(e)
 			}
 		} else {
 			e := tx.Commit(context.TODO())
 			if e != nil {
-				fmt.Println("???!!!")
 				fmt.Println(e)
 			}
 		}

@@ -6,11 +6,10 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/harvester3/arbitrum_nova_adapter3"
+	helper "github.com/momentum-xyz/ubercontroller/harvester3/cmd"
 )
 
 func main() {
@@ -20,20 +19,7 @@ func main() {
 	}
 	cfg.Arbitrum3.RPCURL = "https://nova.arbitrum.io/rpc"
 
-	zapCfg := zap.Config{
-		Level:            zap.NewAtomicLevelAt(zapcore.DebugLevel),
-		Encoding:         "console",
-		EncoderConfig:    zap.NewDevelopmentEncoderConfig(),
-		OutputPaths:      []string{"stdout"},
-		ErrorOutputPaths: []string{"stdout"},
-		// NOTE: set this false to enable stack trace
-		DisableStacktrace: true,
-	}
-
-	logger, err := zapCfg.Build()
-	if err != nil {
-		panic(err)
-	}
+	logger := helper.GetZapLogger()
 	sugaredLogger := logger.Sugar()
 
 	a := arbitrum_nova_adapter3.NewArbitrumNovaAdapter(&cfg.Arbitrum3, sugaredLogger)
@@ -77,6 +63,3 @@ func main() {
 
 	time.Sleep(time.Second * 300)
 }
-
-// 0x70a08231000000000000000000000000683642c22fede752415d4793832ab75efdf6223c
-// 0x70a08231000000000000000000000000457fd0Ee3Ce35113ee414994f37eE38518d6E7Ee

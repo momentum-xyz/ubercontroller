@@ -19,7 +19,6 @@ type Harvester struct {
 	logger  *zap.SugaredLogger
 	pool    *pgxpool.Pool
 	input   chan UpdateCell
-	//outputs map[common.Address]map[common.Address][]chan any
 	outputs []chan any
 }
 
@@ -39,8 +38,6 @@ type NFTCell struct {
 
 func NewHarvester(cfg *config.Arbitrum3, pool *pgxpool.Pool, adapter Adapter, logger *zap.SugaredLogger) *Harvester {
 	input := make(chan UpdateCell)
-	//a := arbitrum_nova_adapter3.NewArbitrumNovaAdapter(cfg, logger)
-	//a.Run()
 
 	return &Harvester{
 		tokens:  NewTokens(pool, adapter, logger, input),
@@ -54,7 +51,6 @@ func NewHarvester(cfg *config.Arbitrum3, pool *pgxpool.Pool, adapter Adapter, lo
 }
 
 func (h *Harvester) Run() error {
-	//h.adapter.Run()
 	err := h.tokens.Run()
 	if err != nil {
 		return err

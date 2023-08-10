@@ -46,7 +46,7 @@ type NewBlock struct {
 	block uint64
 }
 
-type InsertOrUpdateToDB struct {
+type UpsertTokenToDB struct {
 	contract common.Address
 	wallet   common.Address
 	value    *big.Int
@@ -211,7 +211,7 @@ func (t *Tokens) setCell(contract common.Address, wallet common.Address, value *
 	}
 	t.data[contract][wallet] = value
 
-	t.updatesDB <- InsertOrUpdateToDB{
+	t.updatesDB <- UpsertTokenToDB{
 		contract: contract,
 		wallet:   wallet,
 		value:    value,
@@ -242,7 +242,7 @@ func (t *Tokens) updateCell(contract common.Address, wallet common.Address, valu
 	// Update only existing cells
 	t.data[contract][wallet].Add(t.data[contract][wallet], value)
 
-	t.updatesDB <- InsertOrUpdateToDB{
+	t.updatesDB <- UpsertTokenToDB{
 		contract: contract,
 		wallet:   wallet,
 		value:    t.data[contract][wallet],

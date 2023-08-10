@@ -6,12 +6,11 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/harvester3"
 	"github.com/momentum-xyz/ubercontroller/harvester3/arbitrum_nova_adapter3"
+	helper "github.com/momentum-xyz/ubercontroller/harvester3/cmd"
 )
 
 func main() {
@@ -19,26 +18,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	//cfg.Arbitrum3.RPCURL = "https://nova.arbitrum.io/rpc"
 
-	zapCfg := zap.Config{
-		Level:            zap.NewAtomicLevelAt(zapcore.DebugLevel),
-		Encoding:         "console",
-		EncoderConfig:    zap.NewDevelopmentEncoderConfig(),
-		OutputPaths:      []string{"stdout"},
-		ErrorOutputPaths: []string{"stdout"},
-		// NOTE: set this false to enable stack trace
-		DisableStacktrace: true,
-	}
-
-	logger, err := zapCfg.Build()
-	if err != nil {
-		panic(err)
-	}
+	logger := helper.GetZapLogger()
 	sugaredLogger := logger.Sugar()
 
-	a := arbitrum_nova_adapter3.NewArbitrumNovaAdapter(&cfg.Arbitrum2, sugaredLogger)
-
+	a := arbitrum_nova_adapter3.NewArbitrumNovaAdapter(&cfg.Arbitrum3, sugaredLogger)
 	a.Run()
 
 	n, err := a.GetLastBlockNumber()
@@ -98,6 +82,9 @@ func main() {
 	//wAnton := common.HexToAddress("0x83FfD8c86e7cC10544403220d857c66bF6CdF8B8")
 
 	b, _, err := a.GetTokenBalance(&w68, &mom, n)
+	if err != nil {
+		fmt.Println(err)
+	}
 	fmt.Println(n)
 	fmt.Println(b.String())
 

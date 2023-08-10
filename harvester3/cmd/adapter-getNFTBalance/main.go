@@ -5,11 +5,10 @@ import (
 	"log"
 
 	"github.com/ethereum/go-ethereum/common"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/harvester3/arbitrum_nova_adapter3"
+	helper "github.com/momentum-xyz/ubercontroller/harvester3/cmd"
 )
 
 func main() {
@@ -18,20 +17,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	zapCfg := zap.Config{
-		Level:            zap.NewAtomicLevelAt(zapcore.DebugLevel),
-		Encoding:         "console",
-		EncoderConfig:    zap.NewDevelopmentEncoderConfig(),
-		OutputPaths:      []string{"stdout"},
-		ErrorOutputPaths: []string{"stdout"},
-		// NOTE: set this false to enable stack trace
-		DisableStacktrace: true,
-	}
-
-	logger, err := zapCfg.Build()
-	if err != nil {
-		panic(err)
-	}
+	logger := helper.GetZapLogger()
 	sugaredLogger := logger.Sugar()
 
 	//env := "anton_private_net"
