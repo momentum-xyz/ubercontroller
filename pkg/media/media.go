@@ -89,7 +89,7 @@ func (m *Media) GetTexture(rsize string, filename string) (*processor.MetaDef, *
 		return nil, nil, errors.New("tsize not found for texture")
 	}
 
-	m.log.Debug("Endpoint Hit: Texture Get:", filename, rsize)
+	m.log.Debug("Endpoint Hit: Texture Get: ", filename, rsize)
 
 	meta, filepath := m.processor.PresentTexture(&(filename), rsize)
 	if meta == nil || filepath == nil {
