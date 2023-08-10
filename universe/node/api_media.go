@@ -131,6 +131,7 @@ func (n *Node) apiMediaGetVideo(c *gin.Context) {
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_video", err, n.log)
 		return
 	}
+	defer file.Close()
 
 	c.Header("Content-Type", contentType)
 	c.Header("Content-Length", fmt.Sprintf("%d", fileInfo.Size()))

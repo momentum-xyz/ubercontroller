@@ -127,7 +127,6 @@ func (m *Media) GetVideo(filename string) (*os.File, os.FileInfo, string, error)
 	if err != nil {
 		return nil, nil, "", errors.WithMessage(err, "error opening file")
 	}
-	defer file.Close()
 
 	fileInfo, err := file.Stat()
 	if err != nil {
