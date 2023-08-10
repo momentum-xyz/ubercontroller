@@ -7,17 +7,13 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/harvester3"
 	"github.com/momentum-xyz/ubercontroller/harvester3/arbitrum_nova_adapter3"
 	helper "github.com/momentum-xyz/ubercontroller/harvester3/cmd"
 )
 
 func main() {
-	cfg, err := config.GetConfig()
-	if err != nil {
-		log.Fatal(err)
-	}
+	cfg := helper.MustGetConfig()
 
 	logger := helper.GetZapLogger()
 	sugaredLogger := logger.Sugar()
@@ -78,8 +74,6 @@ func main() {
 
 	wAdd := common.HexToAddress("0xAdd2e75c298F34E4d66fBbD4e056DA31502Da5B0")
 	_ = wAdd
-
-	//wAnton := common.HexToAddress("0x83FfD8c86e7cC10544403220d857c66bF6CdF8B8")
 
 	b, _, err := a.GetTokenBalance(&w68, &mom, n)
 	if err != nil {

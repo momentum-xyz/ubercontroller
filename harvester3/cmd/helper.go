@@ -1,8 +1,12 @@
 package helper
 
 import (
+	"log"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/momentum-xyz/ubercontroller/config"
 )
 
 func GetZapLogger() *zap.Logger {
@@ -22,4 +26,13 @@ func GetZapLogger() *zap.Logger {
 	}
 
 	return logger
+}
+
+func MustGetConfig() *config.Config {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return cfg
 }

@@ -65,8 +65,7 @@ func (a *ArbitrumNovaAdapter) Run() {
 		a.logger.Error(err)
 	}
 
-	fmt.Println("Connected to Arbitrum Block Chain: " + a.httpURL)
-	///////
+	a.logger.Info("Connected to Arbitrum Block Chain: " + a.httpURL)
 
 	ticker := time.NewTicker(1000 * time.Millisecond)
 	done := make(chan bool)
@@ -106,7 +105,7 @@ func (a *ArbitrumNovaAdapter) GetTokenBalance(contract *common.Address, wallet *
 	c := contract.Hex()
 
 	// "0x70a08231" - crypto.Keccak256Hash([]byte("balanceOf(address)")).String()[0:10]
-	data := "0x70a08231" + fmt.Sprintf("%064s", w[2:]) // %064s means that the string is padded with 0 to 64 bytes
+	data := "0x70a08231" + fmt.Sprintf("%064s", w[2:]) // %064s means that the string is padded with 0 to 32 bytes
 	req := request{c, data}
 
 	var resp string
@@ -174,8 +173,7 @@ func (a *ArbitrumNovaAdapter) GetRawLogs(
 	topix = append(topix, topic0)
 	topix = append(topix, topic1)
 	topix = append(topix, topic2)
-	//topix = append(topix, addrToHash(source))
-	//topix = append(topix, addrToHash(dest))
+
 	args["topics"] = topix
 	args["address"] = addresses
 	args["fromBlock"] = hexutil.EncodeBig(fromBlock)
@@ -257,7 +255,7 @@ func (a *ArbitrumNovaAdapter) GetTokenLogs(fromBlock, toBlock uint64, contracts 
 		}
 		erc20Amount, err := hexutil.DecodeBig("0x" + hex)
 		if err != nil {
-			fmt.Println(err)
+			a.logger.Error(err)
 		}
 		e.Value = erc20Amount
 
@@ -339,7 +337,7 @@ func (a *ArbitrumNovaAdapter) GetNFTBalance(nftContract *common.Address, wallet 
 	ids := make([]common.Hash, 0)
 	for id, i := range m {
 		if i != 0 && i != 1 {
-			fmt.Println("Failed to parse NFT transfers, Something wrong in blockchain history")
+			a.logger.Error("Failed to parse NFT transfers, Something wrong in blockchain history")
 		}
 		if i == 1 {
 			ids = append(ids, id)

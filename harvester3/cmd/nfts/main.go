@@ -9,17 +9,13 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v4/pgxpool"
 
-	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/harvester3"
 	"github.com/momentum-xyz/ubercontroller/harvester3/arbitrum_nova_adapter3"
 	helper "github.com/momentum-xyz/ubercontroller/harvester3/cmd"
 )
 
 func main() {
-	cfg, err := config.GetConfig()
-	if err != nil {
-		log.Fatal(err)
-	}
+	cfg := helper.MustGetConfig()
 
 	logger := helper.GetZapLogger()
 	sugaredLogger := logger.Sugar()
