@@ -10,7 +10,7 @@ type Media struct {
 }
 
 func (x *Media) Init() {
-	x.Fontpath = "./storage/fonts"
+	x.Fontpath = "./fonts"
 	x.Imagepath = "./storage/images"
 	x.Videopath = "./storage/videos"
 	x.Audiopath = "./storage/tracks"
