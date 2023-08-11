@@ -25,6 +25,7 @@ LABEL org.opencontainers.image.description="Controller of Odyssey Momentum"
 LABEL org.opencontainers.image.licenses=AGPL-3.0-only
 
 COPY --link ./seed/data /srv/seed/data
+COPY --link ./fonts /srv/fonts
 
 COPY --from=build /project/bin/ubercontroller /srv/ubercontroller
 
