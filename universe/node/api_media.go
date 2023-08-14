@@ -41,14 +41,14 @@ func (n *Node) apiMediaGetImage(c *gin.Context) {
 	}
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiMediaGetImage: failed to match regexp string")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_validate", err, n.log)
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_validate", err, n.log)
 		return
 	}
 
 	meta, filepath, err := n.media.GetImage(filename)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiMediaGetImage: failed to get image")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_image", err, n.log)
+		api.AbortRequest(c, http.StatusNotFound, "failed_to_get_image", err, n.log)
 		return
 	}
 
@@ -121,14 +121,14 @@ func (n *Node) apiMediaGetVideo(c *gin.Context) {
 	}
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiMediaGetVideo: failed to match regexp string")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_validate", err, n.log)
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_validate", err, n.log)
 		return
 	}
 
 	file, fileInfo, contentType, err := n.media.GetVideo(filename)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiMediaGetVideo: failed to get video")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_video", err, n.log)
+		api.AbortRequest(c, http.StatusNotFound, "failed_to_get_video", err, n.log)
 		return
 	}
 	defer file.Close()
@@ -205,14 +205,14 @@ func (n *Node) apiMediaGetAudio(c *gin.Context) {
 	}
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiMediaGetAudio: failed to match regexp string")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_validate", err, n.log)
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_validate", err, n.log)
 		return
 	}
 
 	fileType, filepath, err := n.media.GetAudio(filename)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiMediaGetAudio: failed to get audio")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_audio", err, n.log)
+		api.AbortRequest(c, http.StatusNotFound, "failed_to_get_audio", err, n.log)
 		return
 	}
 
@@ -330,14 +330,14 @@ func (n *Node) apiMediaGetTexture(c *gin.Context) {
 	}
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiMediaGetTexture: failed to match regexp string")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_validate", err, n.log)
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_validate", err, n.log)
 		return
 	}
 
 	meta, filepath, err := n.media.GetTexture(rsize, filename)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiMediaGetTexture: failed to get texture")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_texture", err, n.log)
+		api.AbortRequest(c, http.StatusNotFound, "failed_to_get_texture", err, n.log)
 		return
 	}
 
@@ -368,14 +368,14 @@ func (n *Node) apiMediaGetAsset(c *gin.Context) {
 	}
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiMediaGetAsset: failed to match regexp string")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_validate", err, n.log)
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_validate", err, n.log)
 		return
 	}
 
 	fileType, filepath, err := n.media.GetAsset(filename)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiMediaGetAsset: failed to get asset")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_asset", err, n.log)
+		api.AbortRequest(c, http.StatusNotFound, "failed_to_get_asset", err, n.log)
 		return
 	}
 
