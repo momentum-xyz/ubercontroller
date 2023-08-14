@@ -771,6 +771,7 @@ func (n *Node) apiObjectUserAttributeValueEntries(c *gin.Context) {
 		OrderBy string   `form:"order" json:"order"`
 		Limit   uint     `form:"limit,default=10" json:"limit"`
 		Offset  uint     `form:"offset" json:"offset"`
+		Search  string   `form:"q" json:"q"`
 	}
 	var q InQuery
 	if err := c.ShouldBindQuery(&q); err != nil {
@@ -792,7 +793,7 @@ func (n *Node) apiObjectUserAttributeValueEntries(c *gin.Context) {
 	}
 	objAttrID := entry.NewObjectAttributeID(attrID, objectID)
 	oua := n.db.GetObjectUserAttributesDB()
-	count, err := oua.ValueEntriesCount(c, objAttrID, filters)
+	count, err := oua.ValueEntriesCount(c, objAttrID, q.Fields, filters, q.Search)
 	if err != nil {
 		err := fmt.Errorf("count query: %w", err)
 		api.AbortRequest(c, http.StatusInternalServerError, "invalid_params", err, n.log)
@@ -822,7 +823,7 @@ func (n *Node) apiObjectUserAttributeValueEntries(c *gin.Context) {
 		}
 	}
 	itemList, err := oua.ValueEntries(
-		c, objAttrID, q.Fields, filters, order, desc, limit, q.Offset)
+		c, objAttrID, q.Fields, filters, q.Search, order, desc, limit, q.Offset)
 	if err != nil {
 		err := fmt.Errorf("query: %w", err)
 		api.AbortRequest(c, http.StatusInternalServerError, "invalid query", err, n.log)
