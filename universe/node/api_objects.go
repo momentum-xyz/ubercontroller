@@ -94,6 +94,13 @@ func (n *Node) apiObjectsCreateObject(c *gin.Context) {
 		return
 	}
 
+	parentObjects := uint(len(parent.GetObjects(false)))
+	if parentObjectTypeOptions.ChildLimit != nil && parentObjects > *parentObjectTypeOptions.ChildLimit {
+		err := errors.Errorf("Node: apiObjectsCreateObject: child limit reached for parent object")
+		api.AbortRequest(c, http.StatusBadRequest, "child limit reached", err, n.log)
+		return
+	}
+
 	if !utils.Contains(parentObjectTypeOptions.AllowedChildren, inBody.ObjectTypeID) {
 		err := errors.Errorf("Node: apiObjectsCreateObject: object type is not allowed")
 		api.AbortRequest(c, http.StatusBadRequest, "object_type_not_permitted", err, n.log)
