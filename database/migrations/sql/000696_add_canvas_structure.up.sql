@@ -34,7 +34,7 @@ DO $$
                        'canvas',
                        'Canvas',
                        'Canvas object type',
-                       '{"child_limit": 42, "child_placement": {
+                       '{"allowed_children": ["3eca3dd5-a2e1-4347-926a-19eab6da54b2"], "child_limit": 42, "child_placement": {
                          "00000000-0000-0000-0000-000000000000": {
                            "algo": "helix",
                            "options": {
@@ -47,4 +47,41 @@ DO $$
                    );
             RAISE NOTICE 'Inserted new object_type with ID: 590028c4-2f9d-4c7e-abc3-791774fbe4c5';
         END IF;
-END $$;
+
+        IF NOT EXISTS (SELECT 1 FROM object_type WHERE object_type_id = '3eca3dd5-a2e1-4347-926a-19eab6da54b2') THEN
+            INSERT INTO object_type (object_type_id, asset_2d_id, asset_3d_id, object_type_name, category_name, description, options)
+            VALUES (
+                       '3eca3dd5-a2e1-4347-926a-19eab6da54b2',
+                       'd768aa3e-ca03-4f5e-b366-780a5361cc02',
+                       'ad49552f-67c8-47f4-bcad-fc6f6deac1fc',
+                       'canvas_child',
+                       'Canvas child',
+                       'Canvas child type',
+                       '{"child_limit": 42, "child_placement": {
+                         "00000000-0000-0000-0000-000000000000": {
+                           "algo": "helix",
+                           "options": {
+                             "angle": 7.2,
+                             "helixVshift": 15,
+                             "spiralScale": 50
+                           }
+                         }
+                       }}'::jsonb
+                   );
+            RAISE NOTICE 'Inserted new object_type with ID: 3eca3dd5-a2e1-4347-926a-19eab6da54b2';
+        END IF;
+
+        WITH updated_options AS (
+            UPDATE object_type
+                SET options = jsonb_set(options, '{allowed_children}', options->'allowed_children'||'["590028c4-2f9d-4c7e-abc3-791774fbe4c5"]'::jsonb)
+                WHERE object_type_id = 'a41ee21e-6c56-41b3-81a9-1c86578b6b3c'
+                    AND jsonb_exists(options, 'allowed_children')
+                RETURNING object_type_id
+        )
+
+        UPDATE object_type
+        SET options = options || '{"allowed_children": ["590028c4-2f9d-4c7e-abc3-791774fbe4c5"]}'::jsonb
+        WHERE object_type_id = 'a41ee21e-6c56-41b3-81a9-1c86578b6b3c'
+          AND NOT object_type_id IN (SELECT object_type_id FROM updated_options);
+
+    END $$;

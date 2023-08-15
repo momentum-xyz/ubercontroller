@@ -4,14 +4,14 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
-
 	"github.com/pkg/errors"
 
+	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 type WorldTemplate struct {
@@ -79,6 +79,43 @@ func addWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (umid.UMI
 				objectLabelToID[*worldTemplate.Objects[i].Label] = objectID
 			}
 		}
+	}
+
+	asset2dID, err := umid.Parse("d768aa3e-ca03-4f5e-b366-780a5361cc02")
+	if err != nil {
+		return umid.Nil, errors.WithMessagef(err, "failed to parse umid: %s", asset2dID)
+	}
+	asset3dID, err := umid.Parse("2dc7df8e-a34a-829c-e3ca-b73bfe99faf0")
+	if err != nil {
+		return umid.Nil, errors.WithMessagef(err, "failed to parse umid: %s", asset3dID)
+	}
+	objectTypeID, err := umid.Parse("590028c4-2f9d-4c7e-abc3-791774fbe4c5")
+	if err != nil {
+		return umid.Nil, errors.WithMessagef(err, "failed to parse umid: %s", objectTypeID)
+	}
+
+	// adding canvas
+	canvasObject := ObjectTemplate{
+		ObjectID:     utils.GetPTR(umid.New()),
+		ObjectName:   utils.GetPTR("Canvas"),
+		ObjectTypeID: objectTypeID,
+		ParentID:     world.GetID(),
+		OwnerID:      utils.GetPTR(world.GetOwnerID()),
+		Asset2dID:    utils.GetPTR(asset2dID),
+		Asset3dID:    utils.GetPTR(asset3dID),
+		Options: &entry.ObjectOptions{
+			SpawnPoint: &cmath.TransformNoScale{
+				Position: cmath.Vec3{Z: 50},
+				Rotation: cmath.Vec3{},
+			},
+		},
+	}
+
+	_, err = AddObjectFromTemplate(&canvasObject, updateDB)
+	if err != nil {
+		return umid.Nil, errors.WithMessagef(
+			err, "failed to add object from template: %+v", canvasObject.ObjectID,
+		)
 	}
 
 	// enabling
