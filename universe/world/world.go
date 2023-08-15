@@ -2,19 +2,18 @@ package world
 
 import (
 	"context"
+	"go.uber.org/zap"
 	"sync/atomic"
 	"time"
-
-	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/gorilla/websocket"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
 
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/mplugin"
+	"github.com/momentum-xyz/ubercontroller/pkg/media"
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
@@ -22,6 +21,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe/calendar"
 	"github.com/momentum-xyz/ubercontroller/universe/object"
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 var _ universe.World = (*World)(nil)
@@ -36,6 +36,7 @@ type World struct {
 	ctx              context.Context
 	log              *zap.SugaredLogger
 	db               database.DB
+	media            *media.Media
 	cancel           context.CancelFunc
 	pluginController *mplugin.PluginController
 	//corePluginInstance  mplugin.PluginInstance
@@ -89,12 +90,13 @@ func (w *World) GetWebsiteLink() string {
 	return utils.GetFromAnyMap(*value, universe.ReservedAttributes.Object.WebsiteLink.Key, defaultLink)
 }
 
-func NewWorld(id umid.UMID, db database.DB) *World {
+func NewWorld(id umid.UMID, db database.DB, media *media.Media) *World {
 	world := &World{
 		db:         db,
 		allObjects: generic.NewSyncMap[umid.UMID, universe.Object](0),
+		media:      media,
 	}
-	world.Object = object.NewObject(id, db, world)
+	world.Object = object.NewObject(id, db, world, media)
 	world.settings.Store(&universe.WorldSettings{})
 	world.pluginController = mplugin.NewPluginController(id)
 	//world.corePluginInstance, _ = world.pluginController.AddPlugin(world.GetID(), world.corePluginInitFunc)

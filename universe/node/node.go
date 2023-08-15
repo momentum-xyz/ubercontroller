@@ -3,6 +3,9 @@ package node
 import (
 	"context"
 	"fmt"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"golang.org/x/sync/errgroup"
 	"net/http"
 	"os"
 	"time"
@@ -12,15 +15,13 @@ import (
 	influx_api "github.com/influxdata/influxdb-client-go/v2/api"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/harvester"
 	"github.com/momentum-xyz/ubercontroller/harvester/arbitrum_nova_adapter"
 	"github.com/momentum-xyz/ubercontroller/mplugin"
+	"github.com/momentum-xyz/ubercontroller/pkg/media"
 	"github.com/momentum-xyz/ubercontroller/seed"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
@@ -48,6 +49,7 @@ type Node struct {
 	assets2d       universe.Assets2d
 	assets3d       universe.Assets3d
 	activities     universe.Activities
+	media          *media.Media
 	objectTypes    universe.ObjectTypes
 	userTypes      universe.UserTypes
 	attributeTypes universe.AttributeTypes
@@ -77,18 +79,20 @@ func NewNode(
 	assets2D universe.Assets2d,
 	assets3D universe.Assets3d,
 	activities universe.Activities,
+	media *media.Media,
 	plugins universe.Plugins,
 	objectTypes universe.ObjectTypes,
 	userTypes universe.UserTypes,
 	attributeTypes universe.AttributeTypes,
 ) *Node {
 	node := &Node{
-		Object:          object.NewObject(id, db, nil),
+		Object:          object.NewObject(id, db, nil, media),
 		db:              db,
 		worlds:          worlds,
 		assets2d:        assets2D,
 		assets3d:        assets3D,
 		activities:      activities,
+		media:           media,
 		plugins:         plugins,
 		objectTypes:     objectTypes,
 		userTypes:       userTypes,
@@ -145,6 +149,10 @@ func (n *Node) Initialize(ctx types.NodeContext) error {
 
 func (n *Node) GetConfig() *config.Config {
 	return n.cfg
+}
+
+func (n *Node) GetMedia() *media.Media {
+	return n.media
 }
 
 func (n *Node) GetLogger() *zap.SugaredLogger {

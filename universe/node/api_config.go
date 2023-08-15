@@ -17,16 +17,14 @@ import (
 func (n *Node) apiGetUIClientConfig(c *gin.Context) {
 	type Response struct {
 		config.UIClient
-		NodeID             string `json:"NODE_ID"`
-		RenderServiceURL   string `json:"RENDER_SERVICE_URL"`
-		BackendEndpointURL string `json:"BACKEND_ENDPOINT_URL"`
+		NodeID           string `json:"NODE_ID"`
+		RenderServiceURL string `json:"RENDER_SERVICE_URL"`
 	}
 
 	out := Response{
-		UIClient:           n.cfg.UIClient,
-		NodeID:             n.GetID().String(),
-		RenderServiceURL:   n.cfg.Settings.FrontendURL + "/api/v3/render",
-		BackendEndpointURL: n.cfg.Settings.FrontendURL + "/api/v3/backend",
+		UIClient:         n.cfg.UIClient,
+		NodeID:           n.GetID().String(),
+		RenderServiceURL: n.cfg.Settings.FrontendURL + "/api/v4/media/render",
 	}
 
 	c.JSON(http.StatusOK, out)

@@ -84,9 +84,21 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 		verified := vx.Group("", middleware.VerifyUser(n.log))
 
-		vx.POST("/media/upload/image", n.apiMediaUploadImage)
-		vx.POST("/media/upload/video", n.apiMediaUploadVideo)
-		vx.POST("/media/upload/audio", n.apiMediaUploadAudio)
+		media := vx.Group("/media")
+		{
+			media.GET("/render/get/:file", n.apiMediaGetImage)
+			media.GET("/render/texture/:rsize/:file", n.apiMediaGetTexture)
+			media.GET("/render/asset/:file", n.apiMediaGetAsset)
+
+			media.POST("/upload/image", n.apiMediaUploadImage)
+
+			media.GET("/render/video/:file", n.apiMediaGetVideo)
+			media.POST("/upload/video", n.apiMediaUploadVideo)
+
+			media.GET("/render/track/:file", n.apiMediaGetAudio)
+			media.POST("/upload/audio", n.apiMediaUploadAudio)
+			media.DELETE("/deltrack/:file", n.apiMediaDeleteAudio)
+		}
 
 		verified.GET("/skybox/styles", n.apiGetSkyboxStyles)
 		verified.POST("/skybox/generate", n.apiPostSkyboxGenerate)

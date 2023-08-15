@@ -2,16 +2,15 @@ package object
 
 import (
 	"github.com/gorilla/websocket"
-	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
-	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/pkg/errors"
 
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/common/slot"
+	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
 func (o *Object) renderAutoOnObjectAttributeChanged(
-	changeType posbus.AttributeChangeType,
 	attributeID entry.AttributeID,
 	value *entry.AttributeValue,
 	effectiveOptions *entry.AttributeOptions,
@@ -27,7 +26,7 @@ func (o *Object) renderAutoOnObjectAttributeChanged(
 
 	o.log.Infof("render-auto stage3 for %+v %+v", o.GetID(), attributeID)
 
-	hash, err := slot.PrerenderAutoValue(o.ctx, autoOption, value)
+	hash, err := slot.PrerenderAutoValue(o.media, autoOption, value)
 	if err != nil {
 		return errors.WithMessagef(err, "prerendering error: %+v", attributeID)
 	}

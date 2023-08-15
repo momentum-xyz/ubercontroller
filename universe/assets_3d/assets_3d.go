@@ -1,37 +1,41 @@
 package assets_3d
 
 import (
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
-
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
+	"github.com/momentum-xyz/ubercontroller/pkg/media"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/asset_3d"
 	"github.com/momentum-xyz/ubercontroller/universe/user_asset_3d"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 var _ universe.Assets3d = (*Assets3d)(nil)
 
 type Assets3d struct {
-	ctx        types.LoggerContext
-	log        *zap.SugaredLogger
-	cfg        *config.Config
-	db         database.DB
+	ctx types.LoggerContext
+	log *zap.SugaredLogger
+	cfg *config.Config
+	db  database.DB
+
+	media *media.Media
+
 	assets     *generic.SyncMap[umid.UMID, universe.Asset3d]
 	userAssets *generic.SyncMap[universe.AssetUserIDPair, universe.UserAsset3d]
 }
 
-func NewAssets3d(db database.DB) *Assets3d {
+func NewAssets3d(db database.DB, media *media.Media) *Assets3d {
 	return &Assets3d{
 		db:         db,
 		assets:     generic.NewSyncMap[umid.UMID, universe.Asset3d](0),
 		userAssets: generic.NewSyncMap[universe.AssetUserIDPair, universe.UserAsset3d](0),
+		media:      media,
 	}
 }
 

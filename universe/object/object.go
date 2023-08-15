@@ -1,22 +1,21 @@
 package object
 
 import (
+	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 	"sync/atomic"
 	"time"
-
-	"github.com/momentum-xyz/ubercontroller/config"
-	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
-	"github.com/momentum-xyz/ubercontroller/seed"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 	"github.com/sasha-s/go-deadlock"
-	"go.uber.org/zap"
-	"golang.org/x/sync/errgroup"
 
+	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/pkg/cmath"
+	"github.com/momentum-xyz/ubercontroller/pkg/media"
+	"github.com/momentum-xyz/ubercontroller/pkg/posbus"
+	"github.com/momentum-xyz/ubercontroller/seed"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/types/generic"
@@ -25,6 +24,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/merge"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 var _ universe.Object = (*Object)(nil)
@@ -51,6 +51,8 @@ type Object struct {
 	activities       *entry.Activity
 	objectAttributes *objectAttributes // WARNING: the Object is sharing the same mutex ("Mu") with it
 
+	media *media.Media
+
 	spawnMsg      atomic.Pointer[websocket.PreparedMessage]
 	attributesMsg *generic.SyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]]
 
@@ -71,7 +73,7 @@ type Object struct {
 	theta float64
 }
 
-func NewObject(id umid.UMID, db database.DB, world universe.World) *Object {
+func NewObject(id umid.UMID, db database.DB, world universe.World, media *media.Media) *Object {
 	now := time.Now()
 	object := &Object{
 		id:            id,
@@ -81,6 +83,7 @@ func NewObject(id umid.UMID, db database.DB, world universe.World) *Object {
 		attributesMsg: generic.NewSyncMap[string, *generic.SyncMap[string, *websocket.PreparedMessage]](0),
 		renderDataMap: generic.NewSyncMap[entry.SlotType, *posbus.StringAnyMap](0),
 		world:         world,
+		media:         media,
 		createdAt:     now,
 		updatedAt:     now,
 	}

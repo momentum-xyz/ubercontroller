@@ -13,7 +13,7 @@ const (
 )
 
 func (o *Object) CreateObject(objectID umid.UMID) (universe.Object, error) {
-	object := NewObject(objectID, o.db, o.GetWorld())
+	object := NewObject(objectID, o.db, o.GetWorld(), o.media)
 
 	if err := object.Initialize(o.ctx); err != nil {
 		return nil, errors.WithMessagef(err, "failed to initialize object: %s", objectID)
