@@ -84,4 +84,31 @@ DO $$
         WHERE object_type_id = 'a41ee21e-6c56-41b3-81a9-1c86578b6b3c'
           AND NOT object_type_id IN (SELECT object_type_id FROM updated_options);
 
+        IF NOT EXISTS (SELECT 1 FROM attribute_type WHERE attribute_name = 'canvas') THEN
+            INSERT INTO attribute_type (plugin_id, attribute_name, description, options)
+            VALUES (
+                       'c782385b-f518-4078-9988-24f356a37c72',
+                       'canvas',
+                       'Canvas creator configuration',
+                       '{"permissions": {"read": "admin", "write": "admin"}}'::jsonb
+                   );
+            RAISE NOTICE 'Inserted new attribute_type with name: canvas';
+        END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM attribute_type WHERE attribute_name = 'canvas_contribution') THEN
+            INSERT INTO attribute_type (plugin_id, attribute_name, description, options)
+            VALUES (
+                       'c782385b-f518-4078-9988-24f356a37c72',
+                       'canvas_contribution',
+                       'Canvas user contributions',
+                       '{"permissions": {"read": "any", "write": "admin"}, "render_auto": {
+                         "slot_name": "object_texture",
+                         "slot_type": "texture",
+                         "value_field": "image_hash",
+                         "content_type": "image"
+                       }}'::jsonb
+                   );
+            RAISE NOTICE 'Inserted new attribute_type with name: canvas_contribution';
+        END IF;
+
     END $$;
