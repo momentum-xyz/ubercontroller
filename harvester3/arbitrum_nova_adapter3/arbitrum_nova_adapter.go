@@ -2,6 +2,7 @@ package arbitrum_nova_adapter3
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"math/big"
@@ -16,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -31,6 +33,7 @@ type ArbitrumNovaAdapter struct {
 	httpURL   string
 	name      string
 	rpcClient *rpc.Client
+	client    *ethclient.Client
 	lastBlock uint64
 
 	block  int64
@@ -61,6 +64,11 @@ func (a *ArbitrumNovaAdapter) GetLastBlockNumber() (uint64, error) {
 func (a *ArbitrumNovaAdapter) Run() {
 	var err error
 	a.rpcClient, err = rpc.DialHTTP(a.httpURL)
+	if err != nil {
+		a.logger.Error(err)
+	}
+
+	a.client, err = ethclient.Dial(a.httpURL)
 	if err != nil {
 		a.logger.Error(err)
 	}
@@ -114,18 +122,23 @@ func (a *ArbitrumNovaAdapter) GetTokenBalance(contract *common.Address, wallet *
 		return nil, 0, errors.WithMessage(err, "failed to make RPC call to arbitrum:")
 	}
 
+	balance := stringToBigInt(resp)
+
+	return balance, blockNumber, nil
+}
+
+func stringToBigInt(str string) *big.Int {
 	// remove leading zero of resp
-	t := strings.TrimLeft(resp[2:], "0")
+	t := strings.TrimLeft(str[2:], "0")
 	if t == "" {
 		t = "0"
 	}
 	s := "0x" + t
-	balance, err := hexutil.DecodeBig(s)
+	b, err := hexutil.DecodeBig(s)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	return balance, blockNumber, nil
+	return b
 }
 
 func (a *ArbitrumNovaAdapter) GetTransactionMessage(tx *types.Transaction) *core.Message {
@@ -183,6 +196,138 @@ func (a *ArbitrumNovaAdapter) GetRawLogs(
 	}
 	err = a.rpcClient.CallContext(context.TODO(), &replies, "eth_getLogs", args)
 	return
+}
+
+func (a *ArbitrumNovaAdapter) GetEtherBalance(wallet *common.Address, block uint64) (*big.Int, error) {
+	resp := ""
+	err := a.rpcClient.Call(&resp, "eth_getBalance", wallet.Hex(), hexutil.EncodeUint64(block))
+	if err != nil {
+		return nil, err
+	}
+
+	balance := stringToBigInt(resp)
+	return balance, err
+}
+
+func (a *ArbitrumNovaAdapter) GetEtherLogs(fromBlock, toBlock uint64, wallets map[common.Address]bool) ([]harvester3.ChangeEtherLog, error) {
+	logs := make([]harvester3.ChangeEtherLog, 0)
+	res := make(map[string]any)
+
+	type respTx struct {
+		Hash  string  `json:"hash"`
+		From  string  `json:"from"`
+		To    *string `json:"to"`
+		Value string  `json:"value"`
+		Gas   string  `json:"gas"`
+	}
+
+	type respBlock struct {
+		Transactions map[string][]respTx `json:"transactions"`
+	}
+
+	//res := respBlock{}
+
+	mu := sync.Mutex{}
+
+	for b := fromBlock; b <= toBlock; b++ {
+		blockNumber := hexutil.EncodeUint64(b)
+		err := a.rpcClient.Call(&res, "eth_getBlockByNumber", blockNumber, true)
+		if err != nil {
+			return nil, err
+		}
+		txs, ok := res["transactions"]
+		if !ok {
+			continue
+		}
+		txsMap, ok := txs.([]any)
+		for _, txMap := range txsMap {
+			jsonData, _ := json.Marshal(txMap)
+			tx := respTx{}
+			err = json.Unmarshal(jsonData, &tx)
+			if err != nil {
+				return nil, err
+			}
+
+			to := common.Address{}
+			if tx.To != nil {
+				to = common.HexToAddress(*tx.To)
+			}
+			from := common.HexToAddress(tx.From)
+
+			_, hasFrom := wallets[from]
+			_, hasTo := wallets[to]
+
+			if !hasFrom && !hasTo {
+				continue
+			}
+
+			if tx.Gas != "0x0" && hasFrom {
+				go func() {
+					fmt.Println("go eth_getTransactionReceipt")
+					receipt, err := a.eth_getTransactionReceipt(tx.Hash)
+					if err != nil {
+						a.logger.Error(err)
+						return
+					}
+					if receipt.Status != "0x1" {
+						return
+					}
+
+					gasUsed := big.NewInt(int64(hex2int(receipt.CumulativeGasUsed)))
+					gasPrice := big.NewInt(int64(hex2int(receipt.EffectiveGasPrice)))
+					delta := gasUsed.Mul(gasUsed, gasPrice)
+					delta = delta.Neg(delta)
+
+					mu.Lock()
+					logs = append(logs, harvester3.ChangeEtherLog{
+						Block:  b,
+						Wallet: common.HexToAddress(receipt.From),
+						Delta:  delta,
+					})
+					mu.Unlock()
+				}()
+			}
+
+			if tx.Value == "0x0" {
+				// Tx fee already counted in previous section
+				continue
+			}
+
+			if hasTo {
+				logs = append(logs, harvester3.ChangeEtherLog{
+					Block:  b,
+					Wallet: to,
+					Delta:  big.NewInt(int64(hex2int(tx.Value))),
+				})
+			}
+			if hasFrom {
+				delta := big.NewInt(int64(hex2int(tx.Value)))
+				logs = append(logs, harvester3.ChangeEtherLog{
+					Block:  b,
+					Wallet: common.HexToAddress(tx.From),
+					Delta:  delta.Neg(delta),
+				})
+			}
+		}
+	}
+
+	return logs, nil
+}
+
+type TransactionReceipt struct {
+	From              string `json:"from"`
+	Status            string `json:"status"`
+	CumulativeGasUsed string `json:"cumulativeGasUsed"`
+	EffectiveGasPrice string `json:"effectiveGasPrice"`
+}
+
+func (a *ArbitrumNovaAdapter) eth_getTransactionReceipt(hash string) (*TransactionReceipt, error) {
+	res := TransactionReceipt{}
+	err := a.rpcClient.Call(&res, "eth_getTransactionReceipt", hash)
+	if err != nil {
+		return nil, err
+	}
+	return &res, nil
 }
 
 func (a *ArbitrumNovaAdapter) GetNFTLogs(fromBlock, toBlock uint64, contracts []common.Address) ([]any, error) {

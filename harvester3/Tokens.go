@@ -103,7 +103,7 @@ func (t *Tokens) Run() error {
 	} else {
 		block, err := t.adapter.GetLastBlockNumber()
 		if err != nil {
-			fmt.Println(err)
+			t.logger.Error(err)
 		}
 
 		t.block = block
