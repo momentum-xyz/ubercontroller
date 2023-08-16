@@ -4,7 +4,6 @@ package service
 
 import (
 	"context"
-
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -14,6 +13,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/database/db"
 	"github.com/momentum-xyz/ubercontroller/database/migrations"
 	"github.com/momentum-xyz/ubercontroller/database/stakes"
+	"github.com/momentum-xyz/ubercontroller/pkg/media"
 	"github.com/momentum-xyz/ubercontroller/seed"
 	"github.com/momentum-xyz/ubercontroller/types"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
@@ -79,7 +79,7 @@ func LoadNode(
 		return nil, errors.WithMessage(err, "failed to create node")
 	}
 
-	if err := loadNode(ctx, node, db, is_new); err != nil {
+	if err := loadNode(node, is_new); err != nil {
 		return nil, errors.WithMessagef(err, "failed to load node: %s", node.GetID())
 	}
 	return node, nil
@@ -95,9 +95,9 @@ func getNode(ctx types.NodeContext, db database.DB) (bool, universe.Node, error)
 	return is_new, node, err
 }
 
-func loadNode(ctx types.NodeContext, node universe.Node, db database.DB, is_new bool) error {
+func loadNode(node universe.Node, is_new bool) error {
 	if is_new {
-		if err := seed.SeedMedia(ctx, node); err != nil {
+		if err := seed.SeedMedia(node); err != nil {
 			return errors.WithMessage(err, "failed to seed SeedMedia")
 		}
 	}
@@ -108,9 +108,11 @@ func loadNode(ctx types.NodeContext, node universe.Node, db database.DB, is_new 
 }
 
 func createNode(ctx types.NodeContext, db database.DB, nodeEntry *entry.Node) (universe.Node, error) {
-	worlds := worlds.NewWorlds(db)
+	media := media.NewMedia()
+
+	worlds := worlds.NewWorlds(db, media)
 	assets2d := assets_2d.NewAssets2d(db)
-	assets3d := assets_3d.NewAssets3d(db)
+	assets3d := assets_3d.NewAssets3d(db, media)
 	activities := activities.NewActivities(db)
 	plugins := plugins.NewPlugins(db)
 	objectTypes := object_types.NewObjectTypes(db)
@@ -129,6 +131,7 @@ func createNode(ctx types.NodeContext, db database.DB, nodeEntry *entry.Node) (u
 		assets2d,
 		assets3d,
 		activities,
+		media,
 		plugins,
 		objectTypes,
 		userTypes,
@@ -147,6 +150,9 @@ func createNode(ctx types.NodeContext, db database.DB, nodeEntry *entry.Node) (u
 	}
 	if err := activities.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize activities")
+	}
+	if err := media.Initialize(ctx); err != nil {
+		return nil, errors.WithMessage(err, "failed to initialize media")
 	}
 	if err := plugins.Initialize(ctx); err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize plugins")

@@ -18,6 +18,7 @@ type Config struct {
 	Settings   Local      `yaml:"settings"`
 	Postgres   Postgres   `yaml:"postgres"`
 	Influx     Influx     `yaml:"influx"`
+	Media      Media      `yaml:"media"`
 	UIClient   UIClient   `yaml:"ui_client"`
 	Streamchat Streamchat `yaml:"streamchat"`
 	Arbitrum   Arbitrum   `yaml:"arbitrum"`
@@ -31,6 +32,7 @@ func (x *Config) Init() {
 	x.Postgres.Init()
 	x.Settings.Init()
 	x.Influx.Init()
+	x.Media.Init()
 	x.Streamchat.Init()
 	x.Arbitrum.Init()
 	x.Arbitrum3.Init()

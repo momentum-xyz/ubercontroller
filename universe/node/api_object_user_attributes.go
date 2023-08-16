@@ -721,6 +721,7 @@ func (n *Node) apiGetObjectUserAttributeCount(c *gin.Context) {
 // @Description Allow showing a combined (sorted) list from all users.
 // @Description The attribute value is assumed to be a JSON (map-like) object, with some ID as key and the value nested JSON object.
 // @Description The fields params allows selecting some fields to directly return in the list.
+// @Description A field name given in the fields param can also be used as a query param to filter on value.
 // @Description The limit and offset params allow pagination.
 // @Description Limit defaults to 10, maximun allowed is 100.
 // @Tags attributes,objects
@@ -770,6 +771,7 @@ func (n *Node) apiObjectUserAttributeValueEntries(c *gin.Context) {
 		OrderBy string   `form:"order" json:"order"`
 		Limit   uint     `form:"limit,default=10" json:"limit"`
 		Offset  uint     `form:"offset" json:"offset"`
+		Search  string   `form:"q" json:"q"`
 	}
 	var q InQuery
 	if err := c.ShouldBindQuery(&q); err != nil {
@@ -782,9 +784,16 @@ func (n *Node) apiObjectUserAttributeValueEntries(c *gin.Context) {
 	} else {
 		limit = q.Limit
 	}
+	filters := map[string]string{}
+	for _, f := range q.Fields {
+		val, ok := c.GetQuery(f)
+		if ok {
+			filters[f] = val
+		}
+	}
 	objAttrID := entry.NewObjectAttributeID(attrID, objectID)
 	oua := n.db.GetObjectUserAttributesDB()
-	count, err := oua.ValueEntriesCount(c, objAttrID)
+	count, err := oua.ValueEntriesCount(c, objAttrID, q.Fields, filters, q.Search)
 	if err != nil {
 		err := fmt.Errorf("count query: %w", err)
 		api.AbortRequest(c, http.StatusInternalServerError, "invalid_params", err, n.log)
@@ -814,7 +823,7 @@ func (n *Node) apiObjectUserAttributeValueEntries(c *gin.Context) {
 		}
 	}
 	itemList, err := oua.ValueEntries(
-		c, objAttrID, q.Fields, order, desc, limit, q.Offset)
+		c, objAttrID, q.Fields, filters, q.Search, order, desc, limit, q.Offset)
 	if err != nil {
 		err := fmt.Errorf("query: %w", err)
 		api.AbortRequest(c, http.StatusInternalServerError, "invalid query", err, n.log)

@@ -32,11 +32,11 @@ jobs:
           echo "GOMODCACHE=/opt/go-cache/mod" >> $GITHUB_ENV
           echo "GOCACHE=/opt/go-cache/build" >> $GITHUB_ENV
           echo "GOPATH=/opt/go" >> $GITHUB_ENV
-      - uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753  # v4.0.1
+      - uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe  # v4.1.0
         with:
           go-version-file: 'go.mod'
           cache: false  # no use on self-hosted runner
-      - uses: actions/setup-node@e33196f7422957bea03ed53f6fbb155025ffc7b8  # v3.7.0
+      - uses: actions/setup-node@bea5baf987ba7aa777a8a0b4ace377a21c45c381  # v3.8.0
         with:
           node-version: '18'
       - id: build-docs
@@ -67,7 +67,7 @@ jobs:
           path: build/docs/
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@12ab2b16cf43a7a061fe99da74b6f8f11fb77f5b  # v2.0.3
+        uses: actions/deploy-pages@9dbe3824824f8a1377b8e298bafde1a50ede43e5  # v2.0.4
       - id: update-docs-site
         name: Update docs website
         uses: peter-evans/repository-dispatch@26b39ed245ab8f31526069329e112ab2fb224588  # v2.1.1

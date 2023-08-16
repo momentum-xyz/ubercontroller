@@ -1,28 +1,22 @@
 package seed
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
 	"io/fs"
-	"net/http"
 	"os"
 	"path/filepath"
 
 	"github.com/momentum-xyz/ubercontroller/universe"
-	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 )
 
-func SeedMedia(ctx context.Context, node universe.Node) error {
+func SeedMedia(node universe.Node) error {
 	cfg := node.GetConfig()
-
 	basePath := cfg.Settings.SeedDataFiles
-	client := &http.Client{}
 
-	return seedPath(ctx, node, client, basePath)
+	return seedPath(node, basePath)
 }
 
-func seedPath(ctx context.Context, node universe.Node, client *http.Client, basePath string) error {
+func seedPath(node universe.Node, basePath string) error {
 	log := node.GetLogger()
 	return filepath.WalkDir(basePath, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
@@ -36,7 +30,7 @@ func seedPath(ctx context.Context, node universe.Node, client *http.Client, base
 
 			defer file.Close()
 
-			fHash, err := uploadSeedFile(ctx, node, client, file)
+			fHash, err := uploadSeedFile(node, file)
 			if err != nil {
 				return fmt.Errorf("upload seed data file: %w", err)
 			}
@@ -50,46 +44,29 @@ func seedPath(ctx context.Context, node universe.Node, client *http.Client, base
 	})
 }
 
-func uploadSeedFile(ctx context.Context, node universe.Node, client *http.Client, f *os.File) (string, error) {
-	cfg := node.GetConfig()
+func uploadSeedFile(node universe.Node, file *os.File) (string, error) {
 	log := node.GetLogger()
+	media := node.GetMedia()
+	ext := filepath.Ext(file.Name())
 
-	ext := filepath.Ext(f.Name())
+	var hash string
+	var err error
 
-	var uploadURL string
-	var mimeType string
 	switch ext {
 	case ".png":
-		uploadURL = cfg.Common.RenderInternalURL + "/render/addimage"
-		mimeType = "image/png"
+		hash, err = media.AddImage(file)
+		if err != nil {
+			return "", fmt.Errorf("error seeding image: %w", err)
+		}
 	case ".glb":
-		uploadURL = cfg.Common.RenderInternalURL + "/addasset"
-		mimeType = "model/gltf-binary"
+		hash, err = media.AddAsset(file)
+		if err != nil {
+			return "", fmt.Errorf("error seeding asset: %w", err)
+		}
 	default:
 		log.Warnf("Unhandled seed file type %s", ext)
 		return "", nil
 	}
-	return uploadFile(ctx, client, f, uploadURL, mimeType)
-}
 
-func uploadFile(ctx context.Context, client *http.Client, f *os.File, renderURL string, mimeType string) (string, error) {
-	req, err := http.NewRequest("POST", renderURL, f)
-	if err != nil {
-		return "", fmt.Errorf("media manager request: %w", err)
-	}
-
-	req.Header.Set("Content-Type", mimeType)
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("failed to post seed data to media-manager: %w", err)
-	}
-
-	defer resp.Body.Close()
-	response := dto.HashResponse{}
-
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return "", fmt.Errorf("decode json into response: %w", err)
-	}
-
-	return response.Hash, nil
+	return hash, nil
 }

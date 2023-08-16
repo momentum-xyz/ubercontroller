@@ -4,14 +4,13 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
-
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 type WorldTemplate struct {
@@ -61,23 +60,23 @@ func addWorldFromTemplate(worldTemplate *WorldTemplate, updateDB bool) (umid.UMI
 		return umid.Nil, errors.WithMessage(err, "failed to run world")
 	}
 
-	// adding children
 	objectLabelToID := make(map[string]umid.UMID)
 	if len(worldTemplate.RandomObjects) > 0 {
 		randomObject := worldTemplate.RandomObjects[rand.Intn(len(worldTemplate.RandomObjects))]
 		worldTemplate.Objects = append(worldTemplate.Objects, randomObject)
-		for i := range worldTemplate.Objects {
-			worldTemplate.Objects[i].ParentID = *worldID
-			objectID, err := AddObjectFromTemplate(worldTemplate.Objects[i], updateDB)
-			if err != nil {
-				return umid.Nil, errors.WithMessagef(
-					err, "failed to add object from template: %+v", worldTemplate.Objects[i],
-				)
-			}
+	}
 
-			if worldTemplate.Objects[i].Label != nil {
-				objectLabelToID[*worldTemplate.Objects[i].Label] = objectID
-			}
+	for i := range worldTemplate.Objects {
+		worldTemplate.Objects[i].ParentID = *worldID
+		objectID, err := AddObjectFromTemplate(worldTemplate.Objects[i], updateDB)
+		if err != nil {
+			return umid.Nil, errors.WithMessagef(
+				err, "failed to add object from template: %+v", worldTemplate.Objects[i],
+			)
+		}
+
+		if worldTemplate.Objects[i].Label != nil {
+			objectLabelToID[*worldTemplate.Objects[i].Label] = objectID
 		}
 	}
 
