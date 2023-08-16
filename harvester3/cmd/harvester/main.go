@@ -30,8 +30,8 @@ func main() {
 	}
 	defer pool.Close()
 
-	env := "anton_private_net"
-	//env := "main_net"
+	//env := "anton_private_net"
+	env := "main_net"
 
 	var mom, dad, w1, w2 common.Address
 	_ = dad
@@ -55,29 +55,35 @@ func main() {
 	a := arbitrum_nova_adapter3.NewArbitrumNovaAdapter(&cfg.Arbitrum3, sugaredLogger)
 	a.Run()
 
-	matrix := harvester3.NewHarvester(&cfg.Arbitrum3, pool, a, sugaredLogger)
-	err = matrix.Run()
-	if err != nil {
-		log.Fatal(err)
-	}
-	_ = matrix
+	harvesterOutput := make(chan harvester3.UpdateCell)
+	go worker(harvesterOutput)
 
-	c, err := matrix.SubscribeForToken(mom, w1)
+	harvester := harvester3.NewHarvester(harvesterOutput, pool, a, sugaredLogger)
+	err = harvester.Run()
 	if err != nil {
 		log.Fatal(err)
 	}
-	go worker(c)
+	_ = harvester
 
-	c2, err := matrix.SubscribeForToken(mom, w2)
+	err = harvester.AddTokenContract(mom)
 	if err != nil {
 		log.Fatal(err)
 	}
-	go worker(c2)
+
+	err = harvester.AddWallet(w1)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = harvester.AddWallet(w2)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	time.Sleep(time.Second * 300)
 }
 
-func worker(output chan any) {
+func worker(output chan harvester3.UpdateCell) {
 	for {
 		fmt.Println(<-output)
 	}

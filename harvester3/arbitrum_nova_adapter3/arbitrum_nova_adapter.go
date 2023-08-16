@@ -27,7 +27,7 @@ import (
 )
 
 type ArbitrumNovaAdapter struct {
-	listener  func(blockNumber uint64)
+	listeners []func(blockNumber uint64)
 	umid      umid.UMID
 	httpURL   string
 	name      string
@@ -39,9 +39,10 @@ type ArbitrumNovaAdapter struct {
 
 func NewArbitrumNovaAdapter(cfg *config.Arbitrum3, logger *zap.SugaredLogger) *ArbitrumNovaAdapter {
 	return &ArbitrumNovaAdapter{
-		umid:    umid.MustParse("ccccaaaa-1111-2222-3333-222222222222"),
-		httpURL: cfg.RPCURL,
-		name:    "arbitrum_nova",
+		umid:      umid.MustParse("ccccaaaa-1111-2222-3333-222222222222"),
+		httpURL:   cfg.RPCURL,
+		name:      "arbitrum_nova",
+		listeners: make([]func(blockNumber uint64), 0),
 
 		logger: logger,
 	}
@@ -80,8 +81,8 @@ func (a *ArbitrumNovaAdapter) Run() {
 				}
 				if a.lastBlock < n {
 					a.lastBlock = n
-					if a.listener != nil {
-						a.listener(n)
+					for _, listener := range a.listeners {
+						listener(n)
 					}
 				}
 			}
@@ -90,7 +91,7 @@ func (a *ArbitrumNovaAdapter) Run() {
 }
 
 func (a *ArbitrumNovaAdapter) RegisterNewBlockListener(f harvester3.AdapterListener) {
-	a.listener = f
+	a.listeners = append(a.listeners, f)
 }
 
 func (a *ArbitrumNovaAdapter) GetTokenBalance(contract *common.Address, wallet *common.Address, blockNumber uint64) (*big.Int, uint64, error) {

@@ -73,7 +73,7 @@ func NewTokens(db *pgxpool.Pool, adapter Adapter, logger *zap.SugaredLogger, out
 		data:           map[common.Address]map[common.Address]*big.Int{},
 		contracts:      nil,
 		SubscribeQueue: NewSubscribeQueue(updates),
-		DB:             NewDB(updatesDB, db, blockchainID, blockchainName),
+		DB:             NewDB(updatesDB, db, logger, blockchainID, blockchainName),
 	}
 }
 

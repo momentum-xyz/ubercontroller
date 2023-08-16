@@ -9,24 +9,27 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 type DB struct {
-	updates        chan any
+	updates        <-chan any
 	db             *pgxpool.Pool
+	logger         *zap.SugaredLogger
 	blockchainID   umid.UMID
 	blockchainName string
 }
 
-func NewDB(updates chan any, db *pgxpool.Pool, blockchainID umid.UMID, blockchainName string) *DB {
+func NewDB(updates <-chan any, db *pgxpool.Pool, logger *zap.SugaredLogger, blockchainID umid.UMID, blockchainName string) *DB {
 	return &DB{
 		updates:        updates,
 		db:             db,
 		blockchainID:   blockchainID,
 		blockchainName: blockchainName,
+		logger:         logger,
 	}
 }
 
@@ -35,7 +38,7 @@ func (db *DB) Run() {
 }
 
 func (db *DB) worker() {
-	fmt.Println("DB Worker")
+	db.logger.Debug("DB Worker")
 	queue := make([]UpsertTokenToDB, 0)
 	nftQueue := make([]UpsertNFTToDB, 0)
 	ethersQueue := make([]UpsertEtherToDB, 0)
@@ -44,7 +47,7 @@ func (db *DB) worker() {
 		case update := <-db.updates:
 			switch u := update.(type) {
 			case UpsertTokenToDB:
-				fmt.Println("UpsertTokenToDB")
+				db.logger.Debug("UpsertTokenToDB")
 				queue = append(queue, u)
 			case UpsertNFTToDB:
 				nftQueue = append(nftQueue, u)
@@ -90,15 +93,15 @@ func (db *DB) flushEthers(queue []UpsertEtherToDB, block uint64) error {
 	}
 	defer func() {
 		if err != nil {
-			fmt.Println("!!! Rollback")
+			db.logger.Error("!!! Rollback")
 			e := tx.Rollback(context.TODO())
 			if e != nil {
-				fmt.Println(e)
+				db.logger.Error(e)
 			}
 		} else {
 			e := tx.Commit(context.TODO())
 			if e != nil {
-				fmt.Println(e)
+				db.logger.Error(e)
 			}
 		}
 	}()
@@ -144,15 +147,15 @@ func (db *DB) flushNFT(queue []UpsertNFTToDB, block uint64) error {
 	}
 	defer func() {
 		if err != nil {
-			fmt.Println("!!! Rollback")
+			db.logger.Error("!!! Rollback")
 			e := tx.Rollback(context.TODO())
 			if e != nil {
-				fmt.Println(e)
+				db.logger.Error(e)
 			}
 		} else {
 			e := tx.Commit(context.TODO())
 			if e != nil {
-				fmt.Println(e)
+				db.logger.Error(e)
 			}
 		}
 	}()
@@ -198,15 +201,15 @@ func (db *DB) flush(queue []UpsertTokenToDB, block uint64) error {
 	}
 	defer func() {
 		if err != nil {
-			fmt.Println("!!! Rollback")
+			db.logger.Error("!!! Rollback")
 			e := tx.Rollback(context.TODO())
 			if e != nil {
-				fmt.Println(e)
+				db.logger.Error(e)
 			}
 		} else {
 			e := tx.Commit(context.TODO())
 			if e != nil {
-				fmt.Println(e)
+				db.logger.Error(e)
 			}
 		}
 	}()

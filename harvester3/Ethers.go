@@ -46,7 +46,7 @@ func NewEthers(db *pgxpool.Pool, adapter Adapter, logger *zap.SugaredLogger, out
 		contracts:       nil,
 		wallets:         make(map[common.Address]bool),
 		SubscribeQueue:  NewSubscribeQueue(updates),
-		DB:              NewDB(updatesDB, db, blockchainID, blockchainName),
+		DB:              NewDB(updatesDB, db, logger, blockchainID, blockchainName),
 		DefaultContract: common.HexToAddress("0x0000000000000000000000000000000000000001"),
 	}
 }

@@ -7,13 +7,12 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/sasha-s/go-deadlock"
 	"go.uber.org/zap"
-
-	"github.com/momentum-xyz/ubercontroller/config"
 )
 
 type Harvester struct {
 	tokens  *Tokens
 	nfts    *NFTs
+	ethers  *Ethers
 	adapter Adapter
 	mu      deadlock.RWMutex
 	logger  *zap.SugaredLogger
@@ -36,12 +35,11 @@ type NFTCell struct {
 	Block    uint64
 }
 
-func NewHarvester(cfg *config.Arbitrum3, pool *pgxpool.Pool, adapter Adapter, logger *zap.SugaredLogger) *Harvester {
-	input := make(chan UpdateCell)
-
+func NewHarvester(input chan UpdateCell, pool *pgxpool.Pool, adapter Adapter, logger *zap.SugaredLogger) *Harvester {
 	return &Harvester{
 		tokens:  NewTokens(pool, adapter, logger, input),
 		nfts:    NewNFTs(pool, adapter, logger, input),
+		ethers:  NewEthers(pool, adapter, logger, input),
 		adapter: adapter,
 		logger:  logger,
 		pool:    pool,
@@ -55,47 +53,35 @@ func (h *Harvester) Run() error {
 	if err != nil {
 		return err
 	}
-
-	go h.worker()
+	err = h.nfts.Run()
+	if err != nil {
+		return err
+	}
+	err = h.ethers.Run()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func (h *Harvester) AddTokenContract(contract common.Address) error {
-	return h.tokens.AddContract(contract)
+func (h *Harvester) AddTokenContract(tokenContract common.Address) error {
+	return h.tokens.AddContract(tokenContract)
+}
+
+func (h *Harvester) AddNFTContract(contract common.Address) error {
+	return h.nfts.AddContract(contract)
 }
 
 func (h *Harvester) AddWallet(wallet common.Address) error {
-	return h.tokens.AddWallet(wallet)
-}
-
-func (h *Harvester) worker() {
-	for {
-		in := <-h.input
-		h.mu.RLock()
-		for _, c := range h.outputs {
-			c <- in
-		}
-		h.mu.RUnlock()
-	}
-}
-
-func (h *Harvester) SubscribeForToken(tokenContract common.Address, wallet common.Address) (chan any, error) {
-	err := h.AddTokenContract(tokenContract)
+	err := h.tokens.AddWallet(wallet)
 	if err != nil {
-		return nil, err
+		return err
 	}
-
-	err = h.AddWallet(wallet)
+	err = h.nfts.AddWallet(wallet)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	h.mu.Lock()
-	defer h.mu.Unlock()
-
-	c := make(chan any)
-	h.outputs = append(h.outputs, c)
-
-	return c, nil
+	return h.ethers.AddWallet(wallet)
 }

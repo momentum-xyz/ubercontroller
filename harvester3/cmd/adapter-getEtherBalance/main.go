@@ -16,8 +16,8 @@ func main() {
 	logger := helper.GetZapLogger()
 	sugaredLogger := logger.Sugar()
 
-	env := "anton_private_net"
-	//env := "main_net"
+	//env := "anton_private_net"
+	env := "main_net"
 
 	var mom, dad, nft, nftOMNIA, w1, wKovi, wOMNIAHOLDER common.Address
 	_ = mom

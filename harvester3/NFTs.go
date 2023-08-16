@@ -74,7 +74,7 @@ func NewNFTs(db *pgxpool.Pool, adapter Adapter, logger *zap.SugaredLogger, outpu
 		data:           make(map[common.Address]map[common.Address]map[common.Hash]bool),
 		contracts:      nil,
 		SubscribeQueue: NewSubscribeQueue(updates),
-		DB:             NewDB(updatesDB, db, blockchainID, blockchainName),
+		DB:             NewDB(updatesDB, db, logger, blockchainID, blockchainName),
 	}
 }
 
@@ -180,6 +180,9 @@ func (n *NFTs) worker() {
 				fmt.Println("NewBlock", u.block)
 				if u.block <= n.block {
 					break
+				}
+				if n.contracts == nil {
+					continue
 				}
 				adapterLogs, err := n.adapter.GetNFTLogs(n.block+1, u.block, n.contracts)
 				if err != nil {
