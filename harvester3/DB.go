@@ -2,7 +2,6 @@ package harvester3
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -60,7 +59,7 @@ func (db *DB) worker() {
 				}
 				err := db.flush(queue, u.block)
 				if err != nil {
-					fmt.Println(err)
+					db.logger.Error(err)
 				}
 				queue = make([]UpsertTokenToDB, 0)
 
@@ -70,7 +69,7 @@ func (db *DB) worker() {
 				}
 				err := db.flushNFT(nftQueue, u.block)
 				if err != nil {
-					fmt.Println(err)
+					db.logger.Error(err)
 				}
 			case FlushEthersToDB:
 				if len(ethersQueue) == 0 {
@@ -78,11 +77,10 @@ func (db *DB) worker() {
 				}
 				err := db.flushEthers(ethersQueue, u.block)
 				if err != nil {
-					fmt.Println(err)
+					db.logger.Error(err)
 				}
 			}
 		}
-
 	}
 }
 

@@ -1,7 +1,6 @@
 package harvester3
 
 import (
-	"fmt"
 	"math/big"
 	"sync"
 	"time"
@@ -150,13 +149,13 @@ func (t *Tokens) worker() {
 		case update := <-t.updates:
 			switch u := update.(type) {
 			case QueueInit:
-				fmt.Println("QueueInit", u.contract.Hex(), u.wallet.Hex())
+				//fmt.Println("QueueInit", u.contract.Hex(), u.wallet.Hex())
 				initJobs = append(initJobs, u)
 			case DoInit:
 				for _, j := range initJobs {
 					wg.Add(1)
 					go func(c common.Address, w common.Address) {
-						fmt.Println("Init", c, w)
+						//fmt.Println("Init", c, w)
 						balance, _, err := t.adapter.GetTokenBalance(&c, &w, t.block)
 						if err != nil {
 							t.logger.Error(err)
@@ -171,7 +170,7 @@ func (t *Tokens) worker() {
 					block: t.block,
 				}
 			case NewBlock:
-				fmt.Println("NewBlock", u.block)
+				//fmt.Println("NewBlock", u.block)
 				if u.block <= t.block {
 					break
 				}
@@ -224,7 +223,7 @@ func (t *Tokens) setCell(contract common.Address, wallet common.Address, value *
 		Block:    t.block,
 	}
 
-	fmt.Println("setCell ", contract.Hex(), wallet.Hex(), t.block, t.data[contract][wallet].String())
+	//fmt.Println("setCell ", contract.Hex(), wallet.Hex(), t.block, t.data[contract][wallet].String())
 }
 
 func (t *Tokens) updateCell(contract common.Address, wallet common.Address, value *big.Int) {
@@ -255,7 +254,7 @@ func (t *Tokens) updateCell(contract common.Address, wallet common.Address, valu
 		Block:    t.block,
 	}
 
-	fmt.Println("updateCell ", contract.Hex(), wallet.Hex(), t.block, t.data[contract][wallet].String())
+	//fmt.Println("updateCell ", contract.Hex(), wallet.Hex(), t.block, t.data[contract][wallet].String())
 }
 
 func (t *Tokens) AddContract(contract common.Address) error {

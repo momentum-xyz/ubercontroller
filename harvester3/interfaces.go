@@ -10,8 +10,6 @@ import (
 
 type AdapterListener func(blockNumber uint64)
 
-type BCType string
-
 type TransferERC20Log struct {
 	Block    uint64
 	From     common.Address
@@ -39,7 +37,6 @@ type Adapter interface {
 	GetTokenBalance(contract *common.Address, wallet *common.Address, blockNumber uint64) (*big.Int, uint64, error)
 	GetNFTBalance(nftContract *common.Address, wallet *common.Address, block uint64) ([]common.Hash, error)
 	GetEtherBalance(wallet *common.Address, block uint64) (*big.Int, error)
-	//GetStakeBalance(block int64, wallet *common.Address, nftContract *common.Address) (map[umid.UMID]*[3]*big.Int, error)
 	GetTokenLogs(fromBlock, toBlock uint64, addresses []common.Address) ([]any, error)
 	GetNFTLogs(fromBlock, toBlock uint64, contracts []common.Address) ([]any, error)
 	GetEtherLogs(fromBlock, toBlock uint64, wallets map[common.Address]bool) ([]ChangeEtherLog, error)

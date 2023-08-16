@@ -35,18 +35,19 @@ func NewEthers(db *pgxpool.Pool, adapter Adapter, logger *zap.SugaredLogger, out
 	blockchainID, blockchainName, _ := adapter.GetInfo()
 
 	return &Ethers{
-		updates:         updates,
-		updatesDB:       updatesDB,
-		output:          output,
-		adapter:         adapter,
-		logger:          logger,
-		block:           0,
-		mu:              deadlock.RWMutex{},
-		data:            map[common.Address]map[common.Address]*big.Int{},
-		contracts:       nil,
-		wallets:         make(map[common.Address]bool),
-		SubscribeQueue:  NewSubscribeQueue(updates),
-		DB:              NewDB(updatesDB, db, logger, blockchainID, blockchainName),
+		updates:        updates,
+		updatesDB:      updatesDB,
+		output:         output,
+		adapter:        adapter,
+		logger:         logger,
+		block:          0,
+		mu:             deadlock.RWMutex{},
+		data:           map[common.Address]map[common.Address]*big.Int{},
+		contracts:      nil,
+		wallets:        make(map[common.Address]bool),
+		SubscribeQueue: NewSubscribeQueue(updates),
+		DB:             NewDB(updatesDB, db, logger, blockchainID, blockchainName),
+		// Reserve this contract address for native token - ETH
 		DefaultContract: common.HexToAddress("0x0000000000000000000000000000000000000001"),
 	}
 }
