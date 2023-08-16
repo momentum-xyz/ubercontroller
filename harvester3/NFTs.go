@@ -2,6 +2,7 @@ package harvester3
 
 import (
 	"fmt"
+	"math/big"
 	"sync"
 	"time"
 
@@ -31,7 +32,16 @@ type UpsertNFTToDB struct {
 	id       common.Hash
 }
 
+type UpsertEtherToDB struct {
+	wallet common.Address
+	value  *big.Int
+}
+
 type FlushNFTToDB struct {
+	block uint64
+}
+
+type FlushEthersToDB struct {
 	block uint64
 }
 
@@ -163,7 +173,7 @@ func (n *NFTs) worker() {
 				}
 				wg.Wait()
 				initJobs = make([]QueueInit, 0)
-				n.updatesDB <- FlushToDB{
+				n.updatesDB <- FlushNFTToDB{
 					block: n.block,
 				}
 			case NewBlock:

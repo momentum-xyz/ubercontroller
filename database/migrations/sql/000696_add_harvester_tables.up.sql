@@ -35,3 +35,15 @@ create table harvester_nfts
     updated_at    timestamp   not null,
     PRIMARY KEY (blockchain_id, contract_id, wallet_id, item_id)
 );
+
+create table harvester_ethers
+(
+    wallet_id     bytea       not null,
+    blockchain_id uuid        not null
+        constraint harvester_ethers_blockchain_blockchain_id_fk
+            references harvester_blockchain
+            on update cascade on delete cascade,
+    balance       numeric(78) not null,
+    updated_at    timestamp   not null,
+    PRIMARY KEY (blockchain_id, wallet_id)
+);

@@ -68,19 +68,18 @@ func main() {
 	output := make(chan harvester3.UpdateCell)
 	go worker(output)
 
-	matrix := harvester3.NewEthers(pool, a, sugaredLogger, output)
+	matrix := harvester3.NewNFTs(pool, a, sugaredLogger, output)
 	err = matrix.Run()
 	if err != nil {
 		log.Fatal(err)
 	}
 	_ = matrix
 
-	err = matrix.AddWallet(wOMNIAHOLDER)
+	err = matrix.AddContract(nftOMNIA)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	err = matrix.AddWallet(w1)
+	err = matrix.AddWallet(wOMNIAHOLDER)
 	if err != nil {
 		log.Fatal(err)
 	}
