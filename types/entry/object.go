@@ -36,6 +36,7 @@ type ObjectOptions struct {
 	SpawnPoint       *cmath.TransformNoScale             `db:"spawn_point" json:"spawn_point,omitempty"`
 	ChildPlacements  map[umid.UMID]*ObjectChildPlacement `db:"child_placement" json:"child_placement,omitempty"`
 	AllowedChildren  []string                            `db:"allowed_children" json:"allowed_children,omitempty"`
+	ChildLimit       *uint                               `db:"child_limit" json:"child_limit,omitempty"`
 	DefaultTiles     []any                               `db:"default_tiles" json:"default_tiles,omitempty"`
 	InfoUIID         *umid.UMID                          `db:"infoui_id" json:"infoui_id,omitempty"`
 	Minimap          *bool                               `db:"minimap" json:"minimap,omitempty"`
