@@ -17,7 +17,6 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -33,11 +32,8 @@ type ArbitrumNovaAdapter struct {
 	httpURL   string
 	name      string
 	rpcClient *rpc.Client
-	client    *ethclient.Client
 	lastBlock uint64
 
-	block  int64
-	mu     sync.Mutex
 	logger *zap.SugaredLogger
 }
 
@@ -46,7 +42,6 @@ func NewArbitrumNovaAdapter(cfg *config.Arbitrum3, logger *zap.SugaredLogger) *A
 		umid:    umid.MustParse("ccccaaaa-1111-2222-3333-222222222222"),
 		httpURL: cfg.RPCURL,
 		name:    "arbitrum_nova",
-		block:   0,
 
 		logger: logger,
 	}
@@ -64,11 +59,6 @@ func (a *ArbitrumNovaAdapter) GetLastBlockNumber() (uint64, error) {
 func (a *ArbitrumNovaAdapter) Run() {
 	var err error
 	a.rpcClient, err = rpc.DialHTTP(a.httpURL)
-	if err != nil {
-		a.logger.Error(err)
-	}
-
-	a.client, err = ethclient.Dial(a.httpURL)
 	if err != nil {
 		a.logger.Error(err)
 	}
@@ -221,12 +211,6 @@ func (a *ArbitrumNovaAdapter) GetEtherLogs(fromBlock, toBlock uint64, wallets ma
 		Gas   string  `json:"gas"`
 	}
 
-	type respBlock struct {
-		Transactions map[string][]respTx `json:"transactions"`
-	}
-
-	//res := respBlock{}
-
 	mu := sync.Mutex{}
 
 	for b := fromBlock; b <= toBlock; b++ {
@@ -241,6 +225,7 @@ func (a *ArbitrumNovaAdapter) GetEtherLogs(fromBlock, toBlock uint64, wallets ma
 		}
 		txsMap, ok := txs.([]any)
 		for _, txMap := range txsMap {
+			// TODO run in parallel
 			jsonData, _ := json.Marshal(txMap)
 			tx := respTx{}
 			err = json.Unmarshal(jsonData, &tx)
@@ -263,7 +248,6 @@ func (a *ArbitrumNovaAdapter) GetEtherLogs(fromBlock, toBlock uint64, wallets ma
 
 			if tx.Gas != "0x0" && hasFrom {
 				go func() {
-					fmt.Println("go eth_getTransactionReceipt")
 					receipt, err := a.eth_getTransactionReceipt(tx.Hash)
 					if err != nil {
 						a.logger.Error(err)
