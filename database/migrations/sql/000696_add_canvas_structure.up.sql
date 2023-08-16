@@ -57,16 +57,7 @@ DO $$
                        'canvas_child',
                        'Canvas child',
                        'Canvas child type',
-                       '{"child_limit": 42, "child_placement": {
-                         "00000000-0000-0000-0000-000000000000": {
-                           "algo": "helix",
-                           "options": {
-                             "angle": 7.2,
-                             "helixVshift": 15,
-                             "spiralScale": 50
-                           }
-                         }
-                       }}'::jsonb
+                       '{}'::jsonb
                    );
             RAISE NOTICE 'Inserted new object_type with ID: 3eca3dd5-a2e1-4347-926a-19eab6da54b2';
         END IF;
@@ -83,6 +74,29 @@ DO $$
         SET options = options || '{"allowed_children": ["590028c4-2f9d-4c7e-abc3-791774fbe4c5"]}'::jsonb
         WHERE object_type_id = 'a41ee21e-6c56-41b3-81a9-1c86578b6b3c'
           AND NOT object_type_id IN (SELECT object_type_id FROM updated_options);
+
+        WITH object_to_add AS (
+            SELECT
+                '{"object_id": "b3dbfce9-c635-4506-a823-09954a28dcd1",
+                  "object_name": "Canvas",
+                  "object_type_id": "590028c4-2f9d-4c7e-abc3-791774fbe4c5",
+                  "asset_2d_id": "d768aa3e-ca03-4f5e-b366-780a5361cc02",
+                  "asset_3d_id": "2dc7df8e-a34a-829c-e3ca-b73bfe99faf0",
+                  "options": {
+                    "spawn_point": {
+                      "position": {"x": 0, "y": 0, "z": 50},
+                      "rotation": {"x": 0, "y": 0, "z": 0}
+                    }
+                  }}'::jsonb AS obj
+        )
+        UPDATE public.node_attribute
+        SET value = jsonb_set(value, '{objects}', value->'objects' || (SELECT obj FROM object_to_add))
+        WHERE attribute_name = 'world_template'
+          AND NOT EXISTS (
+            SELECT 1
+            FROM jsonb_array_elements(value->'objects') AS objects
+            WHERE objects->>'object_id' = 'b3dbfce9-c635-4506-a823-09954a28dcd1'
+        );
 
         IF NOT EXISTS (SELECT 1 FROM attribute_type WHERE attribute_name = 'canvas') THEN
             INSERT INTO attribute_type (plugin_id, attribute_name, description, options)
