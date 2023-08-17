@@ -952,7 +952,7 @@ func (n *Node) apiUnclaimAndClearCustomisation(c *gin.Context) {
 // @Tags objects
 // @Security Bearer
 // @Param object_id path string true "Object UMID"
-// @Param body body node.apiClaimAndCustomise.Body true "body params"
+// @Param body body node.apiSpawnByUser.Body true "body params"
 // @Success 201 {object} bool "Successfully created"
 // @Failure 400 {object} api.HTTPError
 // @Failure 403 {object} api.HTTPError
