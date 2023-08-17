@@ -11,6 +11,7 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
+	attrCommon "github.com/momentum-xyz/ubercontroller/universe/attributes"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/tree"
@@ -959,11 +960,16 @@ func (n *Node) apiUnclaimAndClearCustomisation(c *gin.Context) {
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/spawn-by-user [post]
 func (n *Node) apiSpawnByUser(c *gin.Context) {
+	type Attribute struct {
+		attrCommon.QueryPluginAttribute
+		Value map[string]any `json:"value"`
+	}
+
 	type Body struct {
-		ObjectName    string         `json:"object_name" binding:"required"`
-		ObjectTypeID  string         `json:"object_type_id" binding:"required"`
-		AttributeName string         `json:"attribute_name"`
-		Attributes    map[string]any `json:"attributes"`
+		ObjectName    string                 `json:"object_name" binding:"required"`
+		ObjectTypeID  string                 `json:"object_type_id" binding:"required"`
+		AttributeName string                 `json:"attribute_name"`
+		Attributes    map[string][]Attribute `json:"attributes"`
 	}
 	var inBody Body
 
@@ -1028,18 +1034,25 @@ func (n *Node) apiSpawnByUser(c *gin.Context) {
 		return
 	}
 
-	for _, outerValue := range inBody.Attributes {
-		if innerMap, ok := outerValue.(map[string]map[string]any); ok {
-			for attributeType, attributeValue := range innerMap {
-				switch attributeType {
+	if inBody.Attributes != nil && len(inBody.Attributes) > 0 {
+		for attributeKey, attributes := range inBody.Attributes {
+			for _, attr := range attributes {
+				pluginID, err := umid.Parse(attr.PluginID)
+				if err != nil {
+					err := errors.WithMessage(err, "Node: apiSpawnByUser: failed to parse plugin umid")
+					api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
+					return
+				}
+
+				switch attributeKey {
 				case "object_user":
-					attributeID := entry.NewAttributeID(universe.GetCanvasPluginID(), inBody.AttributeName)
+					attributeID := entry.NewAttributeID(pluginID, attr.AttributeName)
 					objectUserAttributeID := entry.NewObjectUserAttributeID(attributeID, newObjectID, userID)
 
 					modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
 						newValue := func() *entry.AttributeValue {
 							value := entry.NewAttributeValue()
-							*value = attributeValue
+							*value = attr.Value
 							return value
 						}
 
@@ -1052,7 +1065,7 @@ func (n *Node) apiSpawnByUser(c *gin.Context) {
 							return current, nil
 						}
 
-						*current.Value = attributeValue
+						*current.Value = attr.Value
 
 						return current, nil
 					}
@@ -1064,11 +1077,9 @@ func (n *Node) apiSpawnByUser(c *gin.Context) {
 						return
 					}
 				default:
-					fmt.Printf("Unknown type: %s", attributeType)
+					fmt.Printf("Unknown type: %s", attributeKey)
 				}
 			}
-		} else {
-			fmt.Print("Not a valid JSON attr object")
 		}
 	}
 
