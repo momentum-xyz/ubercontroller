@@ -169,7 +169,7 @@ func (t *Tokens) worker() {
 					block: t.block,
 				}
 			case NewBlock:
-				//fmt.Println("NewBlock", u.block)
+				t.logger.Debug("NewBlock ", u.block)
 				if u.block <= t.block {
 					break
 				}

@@ -176,7 +176,7 @@ func (n *NFTs) worker() {
 					block: n.block,
 				}
 			case NewBlock:
-				n.logger.Debug("NewBlock", u.block)
+				n.logger.Debug("NewBlock ", u.block)
 				if u.block <= n.block {
 					break
 				}

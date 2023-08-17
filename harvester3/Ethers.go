@@ -129,13 +129,13 @@ func (e *Ethers) worker() {
 		case update := <-e.updates:
 			switch u := update.(type) {
 			case QueueInit:
-				//fmt.Println("QueueInit", u.contract.Hex(), u.wallet.Hex())
+				e.logger.Debugln("QueueInit", u.contract.Hex(), u.wallet.Hex())
 				initJobs = append(initJobs, u)
 			case DoInit:
 				for _, j := range initJobs {
 					wg.Add(1)
 					go func(c common.Address, w common.Address) {
-						//fmt.Println("Init", c, w)
+						e.logger.Debugln("QueueInit", "Init", c.Hex(), w.Hex())
 						balance, err := e.adapter.GetEtherBalance(&w, e.block)
 						if err != nil {
 							e.logger.Error(err)
@@ -150,7 +150,7 @@ func (e *Ethers) worker() {
 					block: e.block,
 				}
 			case NewBlock:
-				//fmt.Println("NewBlock", u.block)
+				e.logger.Debug("NewBlock ", u.block, e.block)
 				if u.block <= e.block {
 					break
 				}
