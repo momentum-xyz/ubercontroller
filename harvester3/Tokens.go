@@ -13,8 +13,8 @@ import (
 
 type Tokens struct {
 	updates        chan any
-	updatesDB      chan any
-	output         chan UpdateCell
+	updatesDB      chan<- any
+	output         chan<- UpdateCell
 	adapter        Adapter
 	logger         *zap.SugaredLogger
 	block          uint64
@@ -55,7 +55,7 @@ type FlushToDB struct {
 	block uint64
 }
 
-func NewTokens(db *pgxpool.Pool, adapter Adapter, logger *zap.SugaredLogger, output chan UpdateCell) *Tokens {
+func NewTokens(db *pgxpool.Pool, adapter Adapter, logger *zap.SugaredLogger, output chan<- UpdateCell) *Tokens {
 
 	updates := make(chan any)
 	updatesDB := make(chan any)
@@ -116,7 +116,6 @@ func (t *Tokens) Run() error {
 
 	go t.worker()
 	t.runInitTicker()
-
 	return nil
 }
 

@@ -1,7 +1,6 @@
 package harvester3
 
 import (
-	"fmt"
 	"math/big"
 	"sync"
 	"time"
@@ -14,8 +13,8 @@ import (
 
 type NFTs struct {
 	updates        chan any
-	updatesDB      chan any
-	output         chan UpdateCell
+	updatesDB      chan<- any
+	output         chan<- UpdateCell
 	adapter        Adapter
 	logger         *zap.SugaredLogger
 	block          uint64
@@ -57,7 +56,7 @@ type UpdateNFTEvent struct {
 	IDs      []common.Hash
 }
 
-func NewNFTs(db *pgxpool.Pool, adapter Adapter, logger *zap.SugaredLogger, output chan UpdateCell) *NFTs {
+func NewNFTs(db *pgxpool.Pool, adapter Adapter, logger *zap.SugaredLogger, output chan<- UpdateCell) *NFTs {
 
 	updates := make(chan any)
 	updatesDB := make(chan any)
@@ -109,7 +108,7 @@ func (n *NFTs) Run() error {
 	} else {
 		block, err := n.adapter.GetLastBlockNumber()
 		if err != nil {
-			fmt.Println(err)
+			n.logger.Error(err)
 		}
 
 		n.block = block
@@ -156,13 +155,13 @@ func (n *NFTs) worker() {
 		case update := <-n.updates:
 			switch u := update.(type) {
 			case QueueInit:
-				fmt.Println("QueueInit", u.contract.Hex(), u.wallet.Hex())
+				n.logger.Debug("QueueInit", u.contract.Hex(), u.wallet.Hex())
 				initJobs = append(initJobs, u)
 			case DoInit:
 				for _, j := range initJobs {
 					wg.Add(1)
 					go func(c common.Address, w common.Address) {
-						fmt.Println("Init", c, w)
+						n.logger.Debug("Init", c, w)
 						ids, err := n.adapter.GetNFTBalance(&c, &w, n.block)
 						if err != nil {
 							n.logger.Error(err)
@@ -177,7 +176,7 @@ func (n *NFTs) worker() {
 					block: n.block,
 				}
 			case NewBlock:
-				fmt.Println("NewBlock", u.block)
+				n.logger.Debug("NewBlock", u.block)
 				if u.block <= n.block {
 					break
 				}

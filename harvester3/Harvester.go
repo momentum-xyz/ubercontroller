@@ -10,15 +10,15 @@ import (
 )
 
 type Harvester struct {
-	tokens  *Tokens
-	nfts    *NFTs
-	ethers  *Ethers
-	adapter Adapter
-	mu      deadlock.RWMutex
-	logger  *zap.SugaredLogger
-	pool    *pgxpool.Pool
-	input   chan UpdateCell
-	outputs []chan any
+	tokens      *Tokens
+	nfts        *NFTs
+	ethers      *Ethers
+	adapter     Adapter
+	mu          deadlock.RWMutex
+	logger      *zap.SugaredLogger
+	pool        *pgxpool.Pool
+	updateCells chan UpdateCell
+	outputs     []chan any
 }
 
 type TokenCell struct {
@@ -35,16 +35,16 @@ type NFTCell struct {
 	Block    uint64
 }
 
-func NewHarvester(input chan UpdateCell, pool *pgxpool.Pool, adapter Adapter, logger *zap.SugaredLogger) *Harvester {
+func NewHarvester(updateCells chan UpdateCell, pool *pgxpool.Pool, adapter Adapter, logger *zap.SugaredLogger) *Harvester {
 	return &Harvester{
-		tokens:  NewTokens(pool, adapter, logger, input),
-		nfts:    NewNFTs(pool, adapter, logger, input),
-		ethers:  NewEthers(pool, adapter, logger, input),
-		adapter: adapter,
-		logger:  logger,
-		pool:    pool,
-		input:   input,
-		mu:      deadlock.RWMutex{},
+		tokens:      NewTokens(pool, adapter, logger, updateCells),
+		nfts:        NewNFTs(pool, adapter, logger, updateCells),
+		ethers:      NewEthers(pool, adapter, logger, updateCells),
+		adapter:     adapter,
+		logger:      logger,
+		pool:        pool,
+		updateCells: updateCells,
+		mu:          deadlock.RWMutex{},
 	}
 }
 

@@ -30,8 +30,8 @@ func main() {
 	}
 	defer pool.Close()
 
-	env := "anton_private_net"
-	//env := "main_net"
+	//env := "anton_private_net"
+	env := "main_net"
 
 	var mom, dad, w1 common.Address
 

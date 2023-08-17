@@ -1,7 +1,6 @@
 package harvester3
 
 import (
-	"fmt"
 	"math/big"
 	"sync"
 	"time"
@@ -14,8 +13,8 @@ import (
 
 type Ethers struct {
 	updates         chan any
-	updatesDB       chan any
-	output          chan UpdateCell
+	updatesDB       chan<- any
+	output          chan<- UpdateCell
 	adapter         Adapter
 	logger          *zap.SugaredLogger
 	block           uint64
@@ -28,7 +27,7 @@ type Ethers struct {
 	DefaultContract common.Address
 }
 
-func NewEthers(db *pgxpool.Pool, adapter Adapter, logger *zap.SugaredLogger, output chan UpdateCell) *Ethers {
+func NewEthers(db *pgxpool.Pool, adapter Adapter, logger *zap.SugaredLogger, output chan<- UpdateCell) *Ethers {
 
 	updates := make(chan any)
 	updatesDB := make(chan any)
@@ -130,13 +129,13 @@ func (e *Ethers) worker() {
 		case update := <-e.updates:
 			switch u := update.(type) {
 			case QueueInit:
-				fmt.Println("QueueInit", u.contract.Hex(), u.wallet.Hex())
+				//fmt.Println("QueueInit", u.contract.Hex(), u.wallet.Hex())
 				initJobs = append(initJobs, u)
 			case DoInit:
 				for _, j := range initJobs {
 					wg.Add(1)
 					go func(c common.Address, w common.Address) {
-						fmt.Println("Init", c, w)
+						//fmt.Println("Init", c, w)
 						balance, err := e.adapter.GetEtherBalance(&w, e.block)
 						if err != nil {
 							e.logger.Error(err)
@@ -151,7 +150,7 @@ func (e *Ethers) worker() {
 					block: e.block,
 				}
 			case NewBlock:
-				fmt.Println("NewBlock", u.block)
+				//fmt.Println("NewBlock", u.block)
 				if u.block <= e.block {
 					break
 				}
@@ -197,7 +196,7 @@ func (e *Ethers) setCell(contract common.Address, wallet common.Address, value *
 		Block:    e.block,
 	}
 
-	fmt.Println("setCell ", contract.Hex(), wallet.Hex(), e.block, e.data[contract][wallet].String())
+	//fmt.Println("setCell ", contract.Hex(), wallet.Hex(), e.block, e.data[contract][wallet].String())
 }
 
 func (e *Ethers) updateCell(contract common.Address, wallet common.Address, value *big.Int) {
@@ -227,7 +226,7 @@ func (e *Ethers) updateCell(contract common.Address, wallet common.Address, valu
 		Block:    e.block,
 	}
 
-	fmt.Println("updateCell ", contract.Hex(), wallet.Hex(), e.block, e.data[contract][wallet].String())
+	//fmt.Println("updateCell ", contract.Hex(), wallet.Hex(), e.block, e.data[contract][wallet].String())
 }
 
 //func (e *Ethers) AddContract(contract common.Address) error {

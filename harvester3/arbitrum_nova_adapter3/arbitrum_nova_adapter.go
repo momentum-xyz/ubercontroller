@@ -254,11 +254,11 @@ func (a *ArbitrumNovaAdapter) GetEtherLogs(fromBlock, toBlock uint64, wallets ma
 						a.logger.Error(err)
 						return
 					}
-					if receipt.Status != "0x1" {
-						return
-					}
+					//if receipt.Status != "0x1" {
+					//	return
+					//}
 
-					gasUsed := big.NewInt(int64(hex2int(receipt.CumulativeGasUsed)))
+					gasUsed := big.NewInt(int64(hex2int(receipt.GasUsed)))
 					gasPrice := big.NewInt(int64(hex2int(receipt.EffectiveGasPrice)))
 					delta := gasUsed.Mul(gasUsed, gasPrice)
 					delta = delta.Neg(delta)
@@ -302,7 +302,7 @@ func (a *ArbitrumNovaAdapter) GetEtherLogs(fromBlock, toBlock uint64, wallets ma
 type TransactionReceipt struct {
 	From              string `json:"from"`
 	Status            string `json:"status"`
-	CumulativeGasUsed string `json:"cumulativeGasUsed"`
+	GasUsed           string `json:"gasUsed"`
 	EffectiveGasPrice string `json:"effectiveGasPrice"`
 }
 
