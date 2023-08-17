@@ -960,10 +960,10 @@ func (n *Node) apiUnclaimAndClearCustomisation(c *gin.Context) {
 // @Router /api/v4/objects/{object_id}/spawn-by-user [post]
 func (n *Node) apiSpawnByUser(c *gin.Context) {
 	type InBody struct {
-		ObjectName    string                    `json:"object_name" binding:"required"`
-		ObjectTypeID  string                    `json:"object_type_id" binding:"required"`
-		AttributeName string                    `json:"attribute_name"`
-		Attributes    map[string]map[string]any `json:"attributes"`
+		ObjectName    string         `json:"object_name" binding:"required"`
+		ObjectTypeID  string         `json:"object_type_id" binding:"required"`
+		AttributeName string         `json:"attribute_name"`
+		Attributes    map[string]any `json:"attributes"`
 	}
 	var inBody InBody
 
