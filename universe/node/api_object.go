@@ -948,22 +948,22 @@ func (n *Node) apiUnclaimAndClearCustomisation(c *gin.Context) {
 }
 
 // @Summary Spawn an object by user
-// @Description Claim and customise object
+// @Description Spawns an object created by a user
 // @Tags objects
 // @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param body body node.apiClaimAndCustomise.Body true "body params"
-// @Success 200 {object} nil
+// @Success 201 {object} bool "Successfully created"
 // @Failure 400 {object} api.HTTPError
 // @Failure 403 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/spawn-by-user [post]
 func (n *Node) apiSpawnByUser(c *gin.Context) {
 	type InBody struct {
-		ObjectName    string         `json:"object_name" binding:"required"`
-		ObjectTypeID  string         `json:"object_type_id" binding:"required"`
-		AttributeName string         `json:"attribute_name"`
-		Attributes    map[string]any `json:"attributes"`
+		ObjectName    string                    `json:"object_name" binding:"required"`
+		ObjectTypeID  string                    `json:"object_type_id" binding:"required"`
+		AttributeName string                    `json:"attribute_name"`
+		Attributes    map[string]map[string]any `json:"attributes"`
 	}
 	var inBody InBody
 
