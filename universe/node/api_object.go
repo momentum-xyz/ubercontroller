@@ -26,6 +26,7 @@ type Info struct {
 	ObjectTypeID        umid.UMID           `json:"object_type_id"`
 	ObjectTypeName      string              `json:"object_type_name"`
 	TotalDirectChildren int                 `json:"total_direct_children"`
+	CreatedAt           time.Time           `json:"created_at"`
 	Children            map[umid.UMID]*Info `json:"children"`
 
 	MaxDepth *int `json:"max_depth,omitempty"`
@@ -959,7 +960,8 @@ func (n *Node) apiUnclaimAndClearCustomisation(c *gin.Context) {
 // @Router /api/v4/objects/{object_id}/tree [get]
 func (n *Node) apiGetObjectsTree(c *gin.Context) {
 	type InQuery struct {
-		MaxDepth int `form:"max_depth" json:"max_depth"`
+		MaxDepth   int     `form:"max_depth" json:"max_depth"`
+		ObjectType *string `form:"object_type" json:"object_type"`
 	}
 	var inQuery InQuery
 
@@ -971,6 +973,16 @@ func (n *Node) apiGetObjectsTree(c *gin.Context) {
 
 	if inQuery.MaxDepth == 0 {
 		inQuery.MaxDepth = 10
+	}
+
+	var objectTypeID *umid.UMID
+	if inQuery.ObjectType != nil {
+		id, err := umid.Parse(*inQuery.ObjectType)
+		if err != nil {
+			err = errors.WithMessage(err, "Node: apiGetObjectsTree: failed to parse object type umid")
+			api.AbortRequest(c, http.StatusBadRequest, "invalid_request_query", err, n.log)
+		}
+		objectTypeID = &id
 	}
 
 	objectID, err := umid.Parse(c.Param("objectID"))
@@ -993,8 +1005,22 @@ func (n *Node) apiGetObjectsTree(c *gin.Context) {
 	}
 
 	fillChildren(&result, 1, inQuery.MaxDepth)
+	if objectTypeID != nil {
+		filterChildren(&result, *objectTypeID)
+	}
 
 	c.JSON(http.StatusOK, result)
+}
+
+func filterChildren(info *Info, objectTypeID umid.UMID) {
+	for id, i := range info.Children {
+		if i.ObjectTypeID != objectTypeID {
+			delete(info.Children, id)
+		} else {
+			filterChildren(i, objectTypeID)
+		}
+	}
+	info.TotalDirectChildren = len(info.Children)
 }
 
 func fillChildren(info *Info, level int, maxLevel int) {
@@ -1013,6 +1039,7 @@ func fillChildren(info *Info, level int, maxLevel int) {
 	info.ObjectTypeID = o.GetObjectType().GetID()
 	info.ObjectTypeName = o.GetObjectType().GetName()
 	info.TotalDirectChildren = len(children)
+	info.CreatedAt = o.GetCreatedAt()
 
 	if level > maxLevel {
 		return
