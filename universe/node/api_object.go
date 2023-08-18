@@ -1016,7 +1016,6 @@ func filterChildren(info *Info, objectTypeID umid.UMID) {
 	for id, i := range info.Children {
 		if i.ObjectTypeID != objectTypeID {
 			delete(info.Children, id)
-			fmt.Println(id)
 		} else {
 			filterChildren(i, objectTypeID)
 		}
