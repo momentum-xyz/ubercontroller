@@ -523,6 +523,61 @@ func (n *Node) apiCloneObject(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
+// @Summary Set object option by object UMID (use body key options)
+// @Description Sets a object option by object UMID, returns appended object option.
+// @Tags objects
+// @Security Bearer
+// @Param object_id path string true "Object UMID"
+// @Success 202 {object} dto.ObjectOptions
+// @Failure 400 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/objects/{object_id}/options [post]
+func (n *Node) apiObjectsSetObjectOption(c *gin.Context) {
+	type Body struct {
+		ObjectOptions entry.ObjectOptions `json:"options" binding:"required"`
+	}
+
+	var inBody Body
+	if err := c.ShouldBindJSON(&inBody); err != nil {
+		err = errors.WithMessage(err, "Node: apiObjectsSetObjectOption: failed to bind json")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
+	objectID, err := umid.Parse(c.Param("objectID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiObjectsSetObjectOption: failed to parse object umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
+		return
+	}
+
+	object, ok := n.GetObjectFromAllObjects(objectID)
+	if !ok {
+		err := errors.Errorf("Node: apiObjectsSetObjectOption: object not found: %s", objectID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
+		return
+	}
+
+	modifyFn := func(current *entry.ObjectOptions) (*entry.ObjectOptions, error) {
+		if current == nil {
+			current = &entry.ObjectOptions{}
+		}
+
+		current = &inBody.ObjectOptions
+
+		return current, nil
+	}
+
+	objectOptions, err := object.SetOptions(modifyFn, true)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiObjectsSetObjectOption: failed to set options")
+		api.AbortRequest(c, http.StatusInternalServerError, "set_options_failed", err, n.log)
+		return
+	}
+
+	c.JSON(http.StatusAccepted, objectOptions)
+}
+
 // @Summary Set object sub option by object UMID
 // @Description Sets a object sub option by object UMID, returns appended object option
 // @Tags objects
