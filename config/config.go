@@ -23,6 +23,7 @@ type Config struct {
 	Streamchat Streamchat `yaml:"streamchat"`
 	Arbitrum   Arbitrum   `yaml:"arbitrum"`
 	Arbitrum3  Arbitrum3  `yaml:"arbitrum3"`
+	OpenAI     OpenAI     `yaml:"open_ai"`
 }
 
 const configFileName = "config.yaml"
@@ -37,6 +38,7 @@ func (x *Config) Init() {
 	x.Arbitrum.Init()
 	x.Arbitrum3.Init()
 	x.UIClient.Init(x.Arbitrum)
+	x.OpenAI.Init()
 }
 
 func defConfig() *Config {
