@@ -5,19 +5,19 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/momentum-xyz/ubercontroller/utils"
-	"github.com/momentum-xyz/ubercontroller/utils/modify"
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
-
 	"github.com/AgoraIO-Community/go-tokenbuilder/rtctokenbuilder"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
+	attrCommon "github.com/momentum-xyz/ubercontroller/universe/attributes"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/tree"
+	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/modify"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 type Info struct {
@@ -947,6 +947,145 @@ func (n *Node) apiUnclaimAndClearCustomisation(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusAccepted, true)
+}
+
+// @Summary Spawn an object by user
+// @Description Spawns an object created by a user
+// @Tags objects
+// @Security Bearer
+// @Param object_id path string true "Object UMID"
+// @Success 201 {object} bool "Successfully created"
+// @Failure 400 {object} api.HTTPError
+// @Failure 403 {object} api.HTTPError
+// @Failure 404 {object} api.HTTPError
+// @Router /api/v4/objects/{object_id}/spawn-by-user [post]
+func (n *Node) apiSpawnByUser(c *gin.Context) {
+	type Attribute struct {
+		attrCommon.QueryPluginAttribute
+		Value map[string]any `json:"value"`
+	}
+
+	type Body struct {
+		ObjectName    string                 `json:"object_name" binding:"required"`
+		ObjectTypeID  string                 `json:"object_type_id" binding:"required"`
+		AttributeName string                 `json:"attribute_name"`
+		Attributes    map[string][]Attribute `json:"attributes"`
+	}
+	var inBody Body
+
+	if err := c.ShouldBindJSON(&inBody); err != nil {
+		err = errors.WithMessage(err, "Node: apiSpawnByUser: failed to bind json")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
+	objectTypeID, err := umid.Parse(inBody.ObjectTypeID)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSpawnByUser: failed to parse object type umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_type_id", err, n.log)
+		return
+	}
+
+	parentID, err := umid.Parse(c.Param("objectID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSpawnByUser: failed to parse object umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_parent_id", err, n.log)
+		return
+	}
+
+	parent, ok := n.GetObjectFromAllObjects(parentID)
+	if !ok {
+		err := errors.Errorf("Node: apiSpawnByUser: parent not found: %s", parentID)
+		api.AbortRequest(c, http.StatusNotFound, "parent_not_found", err, n.log)
+		return
+	}
+
+	parentEffectiveOptions := parent.GetEffectiveOptions()
+	if !utils.Contains(parentEffectiveOptions.AllowedChildren, inBody.ObjectTypeID) {
+		err := errors.Errorf("Node: apiSpawnByUser: object type is not allowed")
+		api.AbortRequest(c, http.StatusBadRequest, "object_type_not_permitted", err, n.log)
+		return
+	}
+	parentObjects := uint(len(parent.GetObjects(false)))
+	if parentEffectiveOptions.ChildLimit != nil && parentObjects > *parentEffectiveOptions.ChildLimit {
+		err := errors.Errorf("Node: apiSpawnByUser: child limit reached for parent object")
+		api.AbortRequest(c, http.StatusBadRequest, "child_limit_reached", err, n.log)
+		return
+	}
+
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiSpawnByUser: failed to get user umid")
+		api.AbortRequest(c, http.StatusInternalServerError, "get_user_id_failed", err, n.log)
+		return
+	}
+
+	objectTemplate := tree.ObjectTemplate{
+		ObjectName:   &inBody.ObjectName,
+		ObjectTypeID: objectTypeID,
+		ParentID:     parentID,
+		OwnerID:      &userID,
+	}
+
+	newObjectID, err := tree.AddObjectFromTemplate(&objectTemplate, true)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiSpawnByUser: failed to add object from template")
+		api.AbortRequest(c, http.StatusInternalServerError, "add_object_failed", err, n.log)
+		return
+	}
+
+	if inBody.Attributes != nil && len(inBody.Attributes) > 0 {
+		for attributeKey, attributes := range inBody.Attributes {
+			for _, attr := range attributes {
+				pluginID, err := umid.Parse(attr.PluginID)
+				if err != nil {
+					err := errors.WithMessage(err, "Node: apiSpawnByUser: failed to parse plugin umid")
+					api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
+					return
+				}
+
+				switch attributeKey {
+				case "object_user":
+					attributeID := entry.NewAttributeID(pluginID, attr.AttributeName)
+					objectUserAttributeID := entry.NewObjectUserAttributeID(attributeID, newObjectID, userID)
+
+					modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
+						newValue := func() *entry.AttributeValue {
+							value := entry.NewAttributeValue()
+							*value = attr.Value
+							return value
+						}
+
+						if current == nil {
+							return entry.NewAttributePayload(newValue(), nil), nil
+						}
+
+						if current.Value == nil {
+							current.Value = newValue()
+							return current, nil
+						}
+
+						*current.Value = attr.Value
+
+						return current, nil
+					}
+
+					_, err := n.GetObjectUserAttributes().Upsert(objectUserAttributeID, modifyFn, true)
+					if err != nil {
+						err = errors.WithMessage(err, "Node: apiSpawnByUser: failed to upsert object user attribute")
+						api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert", err, n.log)
+						return
+					}
+				default:
+					err := errors.Errorf("Node: apiSpawnByUser: unknown type: %s", parentID)
+					api.AbortRequest(c, http.StatusBadRequest, "unknown_type", err, n.log)
+					return
+				}
+			}
+		}
+	}
+
+	c.JSON(http.StatusCreated, true)
 }
 
 // @Summary Get tree of objects with given object as root
