@@ -63,7 +63,7 @@ func (o *OpenAI) CreateChatCompletion(text string) (string, error) {
 	)
 
 	if err != nil {
-		return "", errors.WithMessagef(err, "ChatCompletion error: %v\n")
+		return "", errors.WithMessage(err, "ChatCompletion error:")
 	}
 
 	return resp.Choices[0].Message.Content, nil
