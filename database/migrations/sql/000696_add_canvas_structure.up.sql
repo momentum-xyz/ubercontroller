@@ -25,6 +25,26 @@ DO $$
         ON CONFLICT (asset_2d_id) DO NOTHING;
         RAISE NOTICE 'Inserted or skipped existing asset_2d record with ID: 8a0f9e8e-b32e-476a-8afe-e0c57260ff20';
 
+        INSERT INTO asset_3d (asset_3d_id, meta)
+        VALUES
+            (
+                '2dc7df8e-a34a-829c-e3ca-b73bfe99faf0',
+                '{"type": 1, "category": "explorer"}'::jsonb
+            )
+        ON CONFLICT (asset_3d_id) DO NOTHING;
+        RAISE NOTICE 'Inserted or skipped existing asset_3d record with ID: 2dc7df8e-a34a-829c-e3ca-b73bfe99faf0';
+
+        INSERT INTO asset_3d_user (asset_3d_id, user_id, meta, is_private)
+        VALUES
+            (
+                '2dc7df8e-a34a-829c-e3ca-b73bfe99faf0',
+                '00000000-0000-0000-0000-000000000003',
+                '{"name": "orb"}'::jsonb,
+                false
+            )
+        ON CONFLICT (asset_3d_id, user_id) DO NOTHING;
+        RAISE NOTICE 'Inserted or skipped existing asset_3d_user record with ID: 2dc7df8e-a34a-829c-e3ca-b73bfe99faf0';
+
         IF NOT EXISTS (SELECT 1 FROM object_type WHERE object_type_id = '590028c4-2f9d-4c7e-abc3-791774fbe4c5') THEN
             INSERT INTO object_type (object_type_id, asset_2d_id, asset_3d_id, object_type_name, category_name, description, options)
             VALUES (
