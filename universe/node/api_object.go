@@ -953,7 +953,6 @@ func (n *Node) apiUnclaimAndClearCustomisation(c *gin.Context) {
 // @Tags objects
 // @Security Bearer
 // @Param object_id path string true "Object UMID"
-// @Param body body node.apiSpawnByUser.Body true "body params"
 // @Success 201 {object} bool "Successfully created"
 // @Failure 400 {object} api.HTTPError
 // @Failure 403 {object} api.HTTPError
@@ -1077,7 +1076,9 @@ func (n *Node) apiSpawnByUser(c *gin.Context) {
 						return
 					}
 				default:
-					fmt.Printf("Unknown type: %s", attributeKey)
+					err := errors.Errorf("Node: apiSpawnByUser: unknown type: %s", parentID)
+					api.AbortRequest(c, http.StatusBadRequest, "unknown_type", err, n.log)
+					return
 				}
 			}
 		}
