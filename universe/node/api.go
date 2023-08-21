@@ -181,6 +181,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 				{
 					objectAdmin.POST("/attributes/publicize", n.apiSetObjectAttributesPublic)
 
+					objectAdmin.POST("/options", n.apiObjectsSetObjectOption)
 					objectAdmin.POST("/options/sub", n.apiObjectsSetObjectSubOption)
 					objectAdmin.DELETE("/options/sub", n.apiObjectsRemoveObjectSubOption)
 

@@ -44,7 +44,7 @@ type ObjectOptions struct {
 	Editable         *bool                               `db:"editable" json:"editable,omitempty"`
 	Private          *bool                               `db:"private" json:"private,omitempty"`
 	DashboardPlugins []string                            `db:"dashboard_plugins" json:"dashboard_plugins,omitempty"`
-	Subs             map[string]any                      `db:"subs" json:"subs"`
+	Subs             map[string]any                      `db:"subs" json:"subs,omitempty"`
 }
 
 type ObjectChildPlacement struct {
