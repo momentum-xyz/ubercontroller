@@ -17,6 +17,18 @@ type QueryPluginAttribute struct {
 	AttributeName string `form:"attribute_name" json:"attribute_name" binding:"required"`
 }
 
+// Struct to use for API attribute objects.
+type AttributeValue struct {
+	QueryPluginAttribute
+	Value map[string]any `json:"value"`
+}
+
+// Type for API input/output of multiple attribute types.
+// For now, we only support 1 type.
+type AttributeMap struct { //map[AttributeType][]AttributeValue
+	UserObject []AttributeValue `json:"object_user"`
+}
+
 // Get attribute definition for API query.
 func PluginAttributeFromQuery(c *gin.Context, n universe.Node) (universe.AttributeType, entry.AttributeID, error) {
 	var attrID entry.AttributeID
