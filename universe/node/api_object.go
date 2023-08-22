@@ -1010,7 +1010,7 @@ func (n *Node) apiUnclaimAndClearCustomisation(c *gin.Context) {
 // @Security Bearer
 // @Param object_id path string true "Object UMID"
 // @Param body body node.apiSpawnByUser.Body true "body params"
-// @Success 201 {object} bool "Successfully created"
+// @Success 201 {object} node.apiSpawnByUser.Out
 // @Failure 400 {object} api.HTTPError
 // @Failure 403 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
@@ -1106,7 +1106,13 @@ func (n *Node) apiSpawnByUser(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusCreated, true)
+	type Out struct {
+		ObjectID string `json:"object_id"`
+	}
+	out := Out{
+		ObjectID: newObjectID.String(),
+	}
+	c.JSON(http.StatusCreated, out)
 }
 
 // @Summary Get tree of objects with given object as root
