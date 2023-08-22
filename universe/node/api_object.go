@@ -1009,22 +1009,17 @@ func (n *Node) apiUnclaimAndClearCustomisation(c *gin.Context) {
 // @Tags objects
 // @Security Bearer
 // @Param object_id path string true "Object UMID"
+// @Param body body node.apiSpawnByUser.Body true "body params"
 // @Success 201 {object} bool "Successfully created"
 // @Failure 400 {object} api.HTTPError
 // @Failure 403 {object} api.HTTPError
 // @Failure 404 {object} api.HTTPError
 // @Router /api/v4/objects/{object_id}/spawn-by-user [post]
 func (n *Node) apiSpawnByUser(c *gin.Context) {
-	type Attribute struct {
-		attrCommon.QueryPluginAttribute
-		Value map[string]any `json:"value"`
-	}
-
 	type Body struct {
-		ObjectName    string                 `json:"object_name" binding:"required"`
-		ObjectTypeID  string                 `json:"object_type_id" binding:"required"`
-		AttributeName string                 `json:"attribute_name"`
-		Attributes    map[string][]Attribute `json:"attributes"`
+		ObjectName   string                   `json:"object_name" binding:"required"`
+		ObjectTypeID string                   `json:"object_type_id" binding:"required"`
+		Attributes   *attrCommon.AttributeMap `json:"attributes,omitempty"` // Mapping of attribute type (e.g. "object_user") to array of attributes to set
 	}
 	var inBody Body
 
@@ -1089,53 +1084,24 @@ func (n *Node) apiSpawnByUser(c *gin.Context) {
 		return
 	}
 
-	if inBody.Attributes != nil && len(inBody.Attributes) > 0 {
-		for attributeKey, attributes := range inBody.Attributes {
-			for _, attr := range attributes {
-				pluginID, err := umid.Parse(attr.PluginID)
-				if err != nil {
-					err := errors.WithMessage(err, "Node: apiSpawnByUser: failed to parse plugin umid")
-					api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
-					return
-				}
+	if inBody.Attributes != nil {
+		for _, attr := range inBody.Attributes.UserObject {
+			pluginID, err := umid.Parse(attr.PluginID)
+			if err != nil {
+				err := errors.WithMessage(err, "Node: apiSpawnByUser: failed to parse plugin umid")
+				api.AbortRequest(c, http.StatusBadRequest, "invalid_plugin_id", err, n.log)
+				return
+			}
+			attributeID := entry.NewAttributeID(pluginID, attr.AttributeName)
+			objectUserAttributeID := entry.NewObjectUserAttributeID(attributeID, newObjectID, userID)
 
-				switch attributeKey {
-				case "object_user":
-					attributeID := entry.NewAttributeID(pluginID, attr.AttributeName)
-					objectUserAttributeID := entry.NewObjectUserAttributeID(attributeID, newObjectID, userID)
+			modifyFn := attrCommon.ModifyFn(attr.Value)
 
-					modifyFn := func(current *entry.AttributePayload) (*entry.AttributePayload, error) {
-						newValue := func() *entry.AttributeValue {
-							value := entry.NewAttributeValue()
-							*value = attr.Value
-							return value
-						}
+			_, err = n.GetObjectUserAttributes().Upsert(objectUserAttributeID, modifyFn, true)
+			if err != nil {
+				err = errors.WithMessage(err, "Node: apiSpawnByUser: failed to upsert object user attribute")
+				api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert", err, n.log)
 
-						if current == nil {
-							return entry.NewAttributePayload(newValue(), nil), nil
-						}
-
-						if current.Value == nil {
-							current.Value = newValue()
-							return current, nil
-						}
-
-						*current.Value = attr.Value
-
-						return current, nil
-					}
-
-					_, err := n.GetObjectUserAttributes().Upsert(objectUserAttributeID, modifyFn, true)
-					if err != nil {
-						err = errors.WithMessage(err, "Node: apiSpawnByUser: failed to upsert object user attribute")
-						api.AbortRequest(c, http.StatusInternalServerError, "failed_to_upsert", err, n.log)
-						return
-					}
-				default:
-					err := errors.Errorf("Node: apiSpawnByUser: unknown type: %s", parentID)
-					api.AbortRequest(c, http.StatusBadRequest, "unknown_type", err, n.log)
-					return
-				}
 			}
 		}
 	}
