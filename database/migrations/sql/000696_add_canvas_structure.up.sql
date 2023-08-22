@@ -73,7 +73,7 @@ DO $$
             VALUES (
                        '3eca3dd5-a2e1-4347-926a-19eab6da54b2',
                        'd768aa3e-ca03-4f5e-b366-780a5361cc02',
-                       'ad49552f-67c8-47f4-bcad-fc6f6deac1fc',
+                       '5b5bd872-0328-e38c-1b54-bf2bfa70fc85',
                        'canvas_child',
                        'Canvas child',
                        'Canvas child type',
