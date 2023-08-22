@@ -6,30 +6,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
+	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe/attributes"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
-
-type LeonardoResponse struct {
-	SdGenerationJob struct {
-		GenerationId string `json:"generationId"`
-	} `json:"sdGenerationJob"`
-}
-
-type GeneratedImage struct {
-	URL  string `json:"url"`
-	NSFW bool   `json:"nsfw"`
-	ID   string `json:"id"`
-}
-
-type GenerationResponse struct {
-	GenerationsByPK struct {
-		GeneratedImages []GeneratedImage `json:"generated_images"`
-		Prompt          string           `json:"prompt"`
-		Status          string           `json:"status"`
-		ID              string           `json:"id"`
-		CreatedAt       string           `json:"createdAt"`
-	} `json:"generations_by_pk"`
-}
 
 // @Summary Gets user contributions by object id
 // @Description Returns an object with a nested items array of contributions
@@ -46,17 +28,46 @@ func (n *Node) apiCanvasGetUserContributions(c *gin.Context) {
 		Offset  uint   `form:"offset" json:"offset"`
 		Search  string `form:"q" json:"q"`
 	}
-	var q InQuery
-	if err := c.ShouldBindQuery(&q); err != nil {
+	var inQuery InQuery
+	if err := c.ShouldBindQuery(&inQuery); err != nil {
 		err := errors.WithMessage(err, "Node: apiCanvasGetUserContributions: failed to bind query")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_query", err, n.log)
 	}
+	var limit uint
+	if inQuery.Limit > 100 { // TODO: go 1.21 max function
+		limit = 100
+	} else {
+		limit = inQuery.Limit
+	}
 
-	userID, err := api.GetUserIDFromContext(c)
+	_, attrID, err := attributes.PluginAttributeFromURL(c, n)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiCanvasGetUserContributions: failed to get user umid from context")
-		api.AbortRequest(c, http.StatusInternalServerError, "get_user_id_failed", err, n.log)
+		err := errors.WithMessage(err, "Node: apiCanvasGetUserContributions: plugin attribute")
+		api.AbortRequest(c, http.StatusNotFound, "invalid_param", err, n.log)
 		return
+	}
+
+	objectID, err := umid.Parse(c.Param("objectID"))
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiCanvasGetUserContributions: failed to parse object umid")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
+		return
+	}
+
+	objAttrID := entry.NewObjectAttributeID(attrID, objectID)
+	ouaDB := n.db.GetObjectUserAttributesDB()
+	objectUserAttributes, err := ouaDB.GetObjectUserAttributesByObjectAttributeID(c, objAttrID)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiCanvasGetUserContributions: failed to get count")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_count", err, n.log)
+		return
+	}
+
+	out := dto.UserCanvasContributions{
+		Count:  0,
+		Limit:  0,
+		Offset: 0,
+		Items:  nil,
 	}
 
 	c.JSON(http.StatusOK, out)
