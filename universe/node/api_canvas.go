@@ -55,18 +55,18 @@ func (n *Node) apiCanvasGetUserContributions(c *gin.Context) {
 
 	childrenIDs := parent.GetChildIDs()
 
-	attrNames := []string{universe.ReservedAttributes.Object.CanvasContribution.Name, universe.ReservedAttributes.Object.Vote.Name, universe.ReservedAttributes.Object.Comment.Name}
+	attrNames := []string{universe.ReservedAttributes.Object.CanvasContribution.Name}
 	ouaDB := n.db.GetObjectUserAttributesDB()
-	objectUserAttributes, err := ouaDB.GetObjectUserAttributesByObjectIDsAttributeIDs(c, attrNames, childrenIDs, limit)
+	canvasContributionObjectUserAttributes, err := ouaDB.GetObjectUserAttributesByObjectIDsAttributeIDs(c, attrNames, childrenIDs, limit)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiCanvasGetUserContributions: failed to get count")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_count", err, n.log)
+		err := errors.WithMessage(err, "Node: apiCanvasGetUserContributions: failed to get canvasContributionObjectUserAttributes")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_attributes", err, n.log)
 		return
 	}
 
-	userCanvasContributions := make([]dto.UserCanvasContributionItem, 0, len(objectUserAttributes))
+	userCanvasContributions := make([]dto.UserCanvasContributionItem, 0, len(canvasContributionObjectUserAttributes))
 
-	for _, oua := range objectUserAttributes {
+	for _, oua := range canvasContributionObjectUserAttributes {
 		user, err := n.LoadUser(oua.UserID)
 		if err != nil {
 			err := errors.WithMessage(err, "Node: apiCanvasGetUserContributions: failed to get load user by id")
@@ -81,6 +81,20 @@ func (n *Node) apiCanvasGetUserContributions(c *gin.Context) {
 			name = *profile.Name
 		}
 
+		voteObjectUserAttributesCount, err := ouaDB.GetObjectUserAttributesCountByObjectIDNullable(c, oua.ObjectID, universe.ReservedAttributes.Object.Vote.Name)
+		if err != nil {
+			err := errors.WithMessage(err, "Node: apiCanvasGetUserContributions: failed to get vote count")
+			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_count", err, n.log)
+			return
+		}
+
+		commentObjectUserAttributesCount, err := ouaDB.GetObjectUserAttributesCountByObjectIDNullable(c, oua.ObjectID, universe.ReservedAttributes.Object.Comment.Name)
+		if err != nil {
+			err := errors.WithMessage(err, "Node: apiCanvasGetUserContributions: failed to get comment count")
+			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_count", err, n.log)
+			return
+		}
+
 		userCanvasContribution := dto.UserCanvasContributionItem{
 			ObjectID: oua.ObjectID,
 			User: dto.User{
@@ -92,9 +106,10 @@ func (n *Node) apiCanvasGetUserContributions(c *gin.Context) {
 					ProfileLink: profile.ProfileLink,
 				},
 			},
+			Type:      oua.AttributeID,
 			Value:     oua.Value,
-			Votes:     0,
-			Comments:  0,
+			Votes:     voteObjectUserAttributesCount,
+			Comments:  commentObjectUserAttributesCount,
 			CreatedAt: oua.CreatedAt,
 			UpdatedAt: oua.UpdatedAt,
 		}

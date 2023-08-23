@@ -44,6 +44,7 @@ const (
 
 	getObjectUserAttributesCountQuery                       = `SELECT COUNT(*) FROM object_user_attribute WHERE value IS NOT NULL;`
 	getObjectUserAttributesCountByObjectIDQuery             = `SELECT COUNT(*) FROM object_user_attribute WHERE value IS NOT NULL AND object_id = $1 AND attribute_name = $2;`
+	getObjectUserAttributesCountByObjectIDNullableQuery     = `SELECT COUNT(*) FROM object_user_attribute WHERE object_id = $1 AND attribute_name = $2;`
 	getObjectUserAttributesCountByObjectIDAndUpdatedAtQuery = `SELECT COUNT(*) FROM object_user_attribute WHERE value IS NOT NULL AND object_id = $1 AND attribute_name = $2 AND updated_at >= $3;`
 
 	upsertObjectUserAttributeQuery = `INSERT INTO object_user_attribute
@@ -248,6 +249,16 @@ func (db *DB) GetObjectUserAttributesCountByObjectID(ctx context.Context, object
 			Scan(&count); err != nil {
 			return 0, errors.WithMessage(err, "failed to query db")
 		}
+	}
+
+	return count, nil
+}
+
+func (db *DB) GetObjectUserAttributesCountByObjectIDNullable(ctx context.Context, objectID umid.UMID, attributeName string) (uint64, error) {
+	var count uint64
+	if err := db.conn.QueryRow(ctx, getObjectUserAttributesCountByObjectIDNullableQuery, objectID, attributeName).
+		Scan(&count); err != nil {
+		return 0, errors.WithMessage(err, "failed to query db")
 	}
 
 	return count, nil

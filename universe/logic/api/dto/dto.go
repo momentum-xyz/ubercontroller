@@ -63,9 +63,10 @@ type UserCanvasContributions struct {
 type UserCanvasContributionItem struct {
 	ObjectID  umid.UMID             `json:"object_id"`
 	User      User                  `json:"user"`
+	Type      entry.AttributeID     `json:"type"`
 	Value     *entry.AttributeValue `json:"value"`
-	Votes     uint                  `json:"votes"`
-	Comments  uint                  `json:"comments"`
+	Votes     uint64                `json:"votes"`
+	Comments  uint64                `json:"comments"`
 	CreatedAt time.Time             `json:"created_at"`
 	UpdatedAt time.Time             `json:"updated_at"`
 }

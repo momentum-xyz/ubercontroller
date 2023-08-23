@@ -338,6 +338,7 @@ type ObjectUserAttributesDB interface {
 
 	GetObjectUserAttributesCount(ctx context.Context) (int64, error)
 	GetObjectUserAttributesCountByObjectID(ctx context.Context, objectID umid.UMID, attributeName string, sinceTime *time.Time) (uint64, error)
+	GetObjectUserAttributesCountByObjectIDNullable(ctx context.Context, objectID umid.UMID, attributeName string) (uint64, error)
 
 	UpsertObjectUserAttribute(
 		ctx context.Context, objectUserAttributeID entry.ObjectUserAttributeID,
