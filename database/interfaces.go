@@ -332,6 +332,9 @@ type ObjectUserAttributesDB interface {
 	GetObjectUserAttributesByObjectAttributeID(
 		ctx context.Context, objectAttributeID entry.ObjectAttributeID,
 	) ([]*entry.ObjectUserAttribute, error)
+	GetObjectUserAttributesByObjectIDsAttributeIDs(
+		ctx context.Context, objectAttributeNames []string, objectIDs []umid.UMID, limit uint,
+	) ([]*entry.ObjectUserAttribute, error)
 
 	GetObjectUserAttributesCount(ctx context.Context) (int64, error)
 	GetObjectUserAttributesCountByObjectID(ctx context.Context, objectID umid.UMID, attributeName string, sinceTime *time.Time) (uint64, error)

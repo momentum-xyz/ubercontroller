@@ -61,13 +61,13 @@ type UserCanvasContributions struct {
 }
 
 type UserCanvasContributionItem struct {
-	ObjectID  umid.UMID      `json:"object_id"`
-	User      User           `json:"user"`
-	Value     map[string]any `json:"value"`
-	Votes     uint           `json:"votes"`
-	Comments  uint           `json:"comments"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
+	ObjectID  umid.UMID             `json:"object_id"`
+	User      User                  `json:"user"`
+	Value     *entry.AttributeValue `json:"value"`
+	Votes     uint                  `json:"votes"`
+	Comments  uint                  `json:"comments"`
+	CreatedAt time.Time             `json:"created_at"`
+	UpdatedAt time.Time             `json:"updated_at"`
 }
 
 type ExploreOption struct {

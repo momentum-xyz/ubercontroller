@@ -3,6 +3,7 @@ package object_user_attributes
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -35,10 +36,11 @@ const (
   			oua.object_id = $3 AND oua.user_id = $4
   		WHERE a_type.plugin_id = $1 AND a_type.attribute_name = $2
 		;`
-	getObjectUserAttributesByObjectIDQuery          = `SELECT * FROM object_user_attribute WHERE object_id = $1;`
-	getObjectUserAttributesByUserIDQuery            = `SELECT * FROM object_user_attribute WHERE user_id = $1;`
-	getObjectUserAttributesByObjectIDAndUserIDQuery = `SELECT * FROM object_user_attribute WHERE object_id = $1 AND user_id = $2;`
-	getObjectUserAttributesByObjectAttributeIDQuery = `SELECT * FROM object_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND object_id = $3;`
+	getObjectUserAttributesByObjectIDQuery              = `SELECT * FROM object_user_attribute WHERE object_id = $1;`
+	getObjectUserAttributesByUserIDQuery                = `SELECT * FROM object_user_attribute WHERE user_id = $1;`
+	getObjectUserAttributesByObjectIDAndUserIDQuery     = `SELECT * FROM object_user_attribute WHERE object_id = $1 AND user_id = $2;`
+	getObjectUserAttributesByObjectAttributeIDQuery     = `SELECT * FROM object_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND object_id = $3;`
+	getObjectUserAttributesByObjectIDsAttributeIDsQuery = `SELECT * FROM object_user_attribute WHERE attribute_name = ANY($1) AND object_id = ANY($2)`
 
 	getObjectUserAttributesCountQuery                       = `SELECT COUNT(*) FROM object_user_attribute WHERE value IS NOT NULL;`
 	getObjectUserAttributesCountByObjectIDQuery             = `SELECT COUNT(*) FROM object_user_attribute WHERE value IS NOT NULL AND object_id = $1 AND attribute_name = $2;`
@@ -203,6 +205,25 @@ func (db *DB) GetObjectUserAttributesByObjectAttributeID(
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}
+	return attributes, nil
+}
+
+func (db *DB) GetObjectUserAttributesByObjectIDsAttributeIDs(
+	ctx context.Context,
+	objectAttributeNames []string,
+	objectIDs []umid.UMID,
+	limit uint,
+) ([]*entry.ObjectUserAttribute, error) {
+	limitQuery := " LIMIT " + strconv.Itoa(int(limit)) + ";"
+	var attributes []*entry.ObjectUserAttribute
+
+	if err := pgxscan.Select(
+		ctx, db.conn, &attributes, getObjectUserAttributesByObjectIDsAttributeIDsQuery+limitQuery,
+		objectAttributeNames, objectIDs,
+	); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+
 	return attributes, nil
 }
 

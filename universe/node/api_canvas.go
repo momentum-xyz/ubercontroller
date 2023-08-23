@@ -6,8 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/ubercontroller/types/entry"
-	"github.com/momentum-xyz/ubercontroller/universe/attributes"
+	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
@@ -40,34 +39,74 @@ func (n *Node) apiCanvasGetUserContributions(c *gin.Context) {
 		limit = inQuery.Limit
 	}
 
-	_, attrID, err := attributes.PluginAttributeFromURL(c, n)
-	if err != nil {
-		err := errors.WithMessage(err, "Node: apiCanvasGetUserContributions: plugin attribute")
-		api.AbortRequest(c, http.StatusNotFound, "invalid_param", err, n.log)
-		return
-	}
-
-	objectID, err := umid.Parse(c.Param("objectID"))
+	parentID, err := umid.Parse(c.Param("objectID"))
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiCanvasGetUserContributions: failed to parse object umid")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_object_id", err, n.log)
 		return
 	}
 
-	objAttrID := entry.NewObjectAttributeID(attrID, objectID)
+	parent, ok := n.GetObjectFromAllObjects(parentID)
+	if !ok {
+		err := errors.Errorf("Node: apiCanvasGetUserContributions: parent object not found: %s", parentID)
+		api.AbortRequest(c, http.StatusNotFound, "object_not_found", err, n.log)
+		return
+	}
+
+	childrenIDs := parent.GetChildIDs()
+
+	attrNames := []string{universe.ReservedAttributes.Object.CanvasContribution.Name, universe.ReservedAttributes.Object.Vote.Name, universe.ReservedAttributes.Object.Comment.Name}
 	ouaDB := n.db.GetObjectUserAttributesDB()
-	objectUserAttributes, err := ouaDB.GetObjectUserAttributesByObjectAttributeID(c, objAttrID)
+	objectUserAttributes, err := ouaDB.GetObjectUserAttributesByObjectIDsAttributeIDs(c, attrNames, childrenIDs, limit)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiCanvasGetUserContributions: failed to get count")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_count", err, n.log)
 		return
 	}
 
+	userCanvasContributions := make([]dto.UserCanvasContributionItem, 0, len(objectUserAttributes))
+
+	for _, oua := range objectUserAttributes {
+		user, err := n.LoadUser(oua.UserID)
+		if err != nil {
+			err := errors.WithMessage(err, "Node: apiCanvasGetUserContributions: failed to get load user by id")
+			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_load_user", err, n.log)
+			return
+		}
+
+		profile := user.GetProfile()
+
+		var name string
+		if profile != nil && profile.Name != nil {
+			name = *profile.Name
+		}
+
+		userCanvasContribution := dto.UserCanvasContributionItem{
+			ObjectID: oua.ObjectID,
+			User: dto.User{
+				ID:   umid.UMID{},
+				Name: name,
+				Profile: dto.Profile{
+					Bio:         profile.Bio,
+					AvatarHash:  profile.AvatarHash,
+					ProfileLink: profile.ProfileLink,
+				},
+			},
+			Value:     oua.Value,
+			Votes:     0,
+			Comments:  0,
+			CreatedAt: oua.CreatedAt,
+			UpdatedAt: oua.UpdatedAt,
+		}
+
+		userCanvasContributions = append(userCanvasContributions, userCanvasContribution)
+	}
+
 	out := dto.UserCanvasContributions{
-		Count:  0,
-		Limit:  0,
+		Count:  uint(len(userCanvasContributions)),
+		Limit:  limit,
 		Offset: 0,
-		Items:  nil,
+		Items:  userCanvasContributions,
 	}
 
 	c.JSON(http.StatusOK, out)
