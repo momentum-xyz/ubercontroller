@@ -119,7 +119,6 @@ func (n *Node) apiCanvasGetUserContributions(c *gin.Context) {
 				},
 			},
 			Type:      oua.AttributeID,
-			Value:     oua.Value,
 			Votes:     voteObjectUserAttributesCount,
 			Comments:  commentObjectUserAttributesCount,
 			CreatedAt: oua.CreatedAt,
