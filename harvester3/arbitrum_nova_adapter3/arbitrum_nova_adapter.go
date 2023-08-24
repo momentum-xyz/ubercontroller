@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"math/big"
 	"strconv"
 	"strings"
@@ -20,6 +21,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/harvester3"
@@ -201,6 +203,45 @@ func (a *ArbitrumNovaAdapter) GetEtherBalance(wallet *common.Address, block uint
 }
 
 func (a *ArbitrumNovaAdapter) GetEtherLogs(fromBlock, toBlock uint64, wallets map[common.Address]bool) ([]harvester3.ChangeEtherLog, error) {
+	workers := uint64(20)
+	chunkSize := math.Ceil(float64((toBlock - fromBlock + 1) / workers))
+	if chunkSize == 0 {
+		chunkSize = 1
+	}
+
+	blockNumbers := make([]uint64, 0)
+	for b := fromBlock; b <= toBlock; b++ {
+		blockNumbers = append(blockNumbers, b)
+	}
+
+	chunks := chunkSlice(blockNumbers, uint64(chunkSize))
+
+	var g errgroup.Group
+	mu := sync.Mutex{}
+	logs := make([]harvester3.ChangeEtherLog, 0)
+
+	for _, chunk := range chunks {
+		func(chunk []uint64) {
+			g.Go(func() error {
+				from := chunk[0]
+				to := chunk[len(chunk)-1]
+				l, err := a.getEtherLogs(from, to, wallets)
+				mu.Lock()
+				logs = append(logs, l...)
+				mu.Unlock()
+				return err
+			})
+		}(chunk)
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+
+	return logs, nil
+}
+
+func (a *ArbitrumNovaAdapter) getEtherLogs(fromBlock, toBlock uint64, wallets map[common.Address]bool) ([]harvester3.ChangeEtherLog, error) {
 	logs := make([]harvester3.ChangeEtherLog, 0)
 	res := make(map[string]any)
 
@@ -216,6 +257,7 @@ func (a *ArbitrumNovaAdapter) GetEtherLogs(fromBlock, toBlock uint64, wallets ma
 
 	for b := fromBlock; b <= toBlock; b++ {
 		blockNumber := hexutil.EncodeUint64(b)
+		a.logger.Debugln("eth_getBlockByNumber", fromBlock, toBlock)
 		err := a.rpcClient.Call(&res, "eth_getBlockByNumber", blockNumber, true)
 		if err != nil {
 			return nil, err
@@ -226,7 +268,6 @@ func (a *ArbitrumNovaAdapter) GetEtherLogs(fromBlock, toBlock uint64, wallets ma
 		}
 		txsMap, ok := txs.([]any)
 		for _, txMap := range txsMap {
-			// TODO run in parallel
 			jsonData, _ := json.Marshal(txMap)
 			tx := respTx{}
 			err = json.Unmarshal(jsonData, &tx)
@@ -248,7 +289,7 @@ func (a *ArbitrumNovaAdapter) GetEtherLogs(fromBlock, toBlock uint64, wallets ma
 			}
 
 			if tx.Gas != "0x0" && hasFrom {
-				go func() {
+				func() {
 					receipt, err := a.eth_getTransactionReceipt(tx.Hash)
 					if err != nil {
 						a.logger.Error(err)
@@ -483,4 +524,21 @@ func addrToHash(addr *common.Address) *common.Hash {
 	}
 	res := common.HexToHash(addr.Hex())
 	return &res
+}
+
+func chunkSlice(slice []uint64, chunkSize uint64) [][]uint64 {
+	var chunks [][]uint64
+	for i := uint64(0); i < uint64(len(slice)); i += chunkSize {
+		end := i + chunkSize
+
+		// necessary check to avoid slicing beyond
+		// slice capacity
+		if end > uint64(len(slice)) {
+			end = uint64(len(slice))
+		}
+
+		chunks = append(chunks, slice[i:end])
+	}
+
+	return chunks
 }
