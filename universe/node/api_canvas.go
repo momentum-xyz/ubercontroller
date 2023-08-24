@@ -24,19 +24,31 @@ func (n *Node) apiCanvasGetUserContributions(c *gin.Context) {
 	type InQuery struct {
 		OrderBy string `form:"order" json:"order"`
 		Limit   uint   `form:"limit,default=10" json:"limit"`
-		Offset  uint   `form:"offset" json:"offset"`
+		Offset  uint   `form:"offset,default=0" json:"offset"`
 		Search  string `form:"q" json:"q"`
 	}
+
 	var inQuery InQuery
 	if err := c.ShouldBindQuery(&inQuery); err != nil {
 		err := errors.WithMessage(err, "Node: apiCanvasGetUserContributions: failed to bind query")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_query", err, n.log)
 	}
+
 	var limit uint
 	if inQuery.Limit > 100 { // TODO: go 1.21 max function
 		limit = 100
 	} else {
 		limit = inQuery.Limit
+	}
+
+	var orderType universe.OrderType
+	switch inQuery.OrderBy {
+	case "created_at":
+		orderType = universe.CreatedAt
+	case "vote":
+		orderType = universe.Vote
+	default:
+		orderType = universe.CreatedAt
 	}
 
 	parentID, err := umid.Parse(c.Param("objectID"))
@@ -57,7 +69,7 @@ func (n *Node) apiCanvasGetUserContributions(c *gin.Context) {
 
 	attrNames := []string{universe.ReservedAttributes.Object.CanvasContribution.Name}
 	ouaDB := n.db.GetObjectUserAttributesDB()
-	canvasContributionObjectUserAttributes, err := ouaDB.GetObjectUserAttributesByObjectIDsAttributeIDs(c, attrNames, childrenIDs, limit)
+	canvasContributionObjectUserAttributes, err := ouaDB.GetObjectUserAttributesByObjectIDsAttributeIDs(c, attrNames, childrenIDs, orderType, limit, inQuery.Offset)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiCanvasGetUserContributions: failed to get canvasContributionObjectUserAttributes")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_attributes", err, n.log)

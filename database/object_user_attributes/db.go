@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 
@@ -19,7 +18,9 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 const (
@@ -213,13 +214,17 @@ func (db *DB) GetObjectUserAttributesByObjectIDsAttributeIDs(
 	ctx context.Context,
 	objectAttributeNames []string,
 	objectIDs []umid.UMID,
+	orderType universe.OrderType,
 	limit uint,
+	offset uint,
 ) ([]*entry.ObjectUserAttribute, error) {
-	limitQuery := " LIMIT " + strconv.Itoa(int(limit)) + ";"
+	orderQuery := " ORDER BY " + string(orderType) + " DESC"
+	limitQuery := " LIMIT " + strconv.Itoa(int(limit))
+	offsetQuery := " OFFSET " + strconv.Itoa(int(offset)) + ";"
 	var attributes []*entry.ObjectUserAttribute
 
 	if err := pgxscan.Select(
-		ctx, db.conn, &attributes, getObjectUserAttributesByObjectIDsAttributeIDsQuery+limitQuery,
+		ctx, db.conn, &attributes, getObjectUserAttributesByObjectIDsAttributeIDsQuery+orderQuery+limitQuery+offsetQuery,
 		objectAttributeNames, objectIDs,
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")

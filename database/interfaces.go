@@ -333,7 +333,7 @@ type ObjectUserAttributesDB interface {
 		ctx context.Context, objectAttributeID entry.ObjectAttributeID,
 	) ([]*entry.ObjectUserAttribute, error)
 	GetObjectUserAttributesByObjectIDsAttributeIDs(
-		ctx context.Context, objectAttributeNames []string, objectIDs []umid.UMID, limit uint,
+		ctx context.Context, objectAttributeNames []string, objectIDs []umid.UMID, orderType universe.OrderType, limit uint, offset uint,
 	) ([]*entry.ObjectUserAttribute, error)
 
 	GetObjectUserAttributesCount(ctx context.Context) (int64, error)

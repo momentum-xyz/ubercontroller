@@ -36,6 +36,13 @@ const (
 	DESC SortType = "DESC"
 )
 
+type OrderType string
+
+const (
+	CreatedAt OrderType = "created_at"
+	Vote      OrderType = "vote"
+)
+
 type ReservedAttribute struct {
 	Name string
 	Key  string
