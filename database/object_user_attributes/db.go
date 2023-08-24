@@ -214,18 +214,35 @@ func (db *DB) GetObjectUserAttributesByObjectIDsAttributeIDs(
 	ctx context.Context,
 	objectAttributeNames []string,
 	objectIDs []umid.UMID,
+	query string,
 	orderType universe.OrderType,
 	limit uint,
 	offset uint,
 ) ([]*entry.ObjectUserAttribute, error) {
+	var searchString string
+	if query != "" {
+		searchString = fmt.Sprintf("%%%s%%", query)
+	}
+
+	sqlQuery := getObjectUserAttributesByObjectIDsAttributeIDsQuery
+	sqlParams := []interface{}{objectAttributeNames, objectIDs}
+	paramIdx := 3
+
+	if searchString != "" {
+		sqlQuery += fmt.Sprintf(" AND value->>'title' LIKE $%d", paramIdx)
+		sqlParams = append(sqlParams, searchString)
+		paramIdx++
+	}
+
 	orderQuery := " ORDER BY " + string(orderType) + " DESC"
 	limitQuery := " LIMIT " + strconv.Itoa(int(limit))
 	offsetQuery := " OFFSET " + strconv.Itoa(int(offset)) + ";"
-	var attributes []*entry.ObjectUserAttribute
+	sqlQuery += orderQuery + limitQuery + offsetQuery
 
+	var attributes []*entry.ObjectUserAttribute
 	if err := pgxscan.Select(
-		ctx, db.conn, &attributes, getObjectUserAttributesByObjectIDsAttributeIDsQuery+orderQuery+limitQuery+offsetQuery,
-		objectAttributeNames, objectIDs,
+		ctx, db.conn, &attributes, sqlQuery,
+		sqlParams...,
 	); err != nil {
 		return nil, errors.WithMessage(err, "failed to query db")
 	}

@@ -69,7 +69,7 @@ func (n *Node) apiCanvasGetUserContributions(c *gin.Context) {
 
 	attrNames := []string{universe.ReservedAttributes.Object.CanvasContribution.Name}
 	ouaDB := n.db.GetObjectUserAttributesDB()
-	canvasContributionObjectUserAttributes, err := ouaDB.GetObjectUserAttributesByObjectIDsAttributeIDs(c, attrNames, childrenIDs, orderType, limit, inQuery.Offset)
+	canvasContributionObjectUserAttributes, err := ouaDB.GetObjectUserAttributesByObjectIDsAttributeIDs(c, attrNames, childrenIDs, inQuery.Search, orderType, limit, inQuery.Offset)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiCanvasGetUserContributions: failed to get canvasContributionObjectUserAttributes")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_attributes", err, n.log)
