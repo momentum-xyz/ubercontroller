@@ -18,7 +18,7 @@ import (
 // @Tags canvas
 // @Security Bearer
 // @Param object_id path string true "ObjectID string"
-// @Success 200 {object} node.apiCanvasGetUserContributions.Out
+// @Success 200 {object} dto.UserCanvasContributions
 // @Failure 400 {object} api.HTTPError
 // @Router /api/v4/canvas/{object_id}/user-contributions [get]
 func (n *Node) apiCanvasGetUserContributions(c *gin.Context) {
