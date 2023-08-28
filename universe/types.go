@@ -36,6 +36,13 @@ const (
 	DESC SortType = "DESC"
 )
 
+type OrderType string
+
+const (
+	CreatedAt OrderType = "created_at"
+	Vote      OrderType = "vote"
+)
+
 type ReservedAttribute struct {
 	Name string
 	Key  string
@@ -56,13 +63,16 @@ var (
 			TeleportDestination ReservedAttribute
 		}
 		Object struct {
-			Name           ReservedAttribute
-			Description    ReservedAttribute
-			WorldAvatar    ReservedAttribute
-			WebsiteLink    ReservedAttribute
-			NewsFeedItems  ReservedAttribute
-			PortalDockFace ReservedAttribute
-			Events         ReservedAttribute
+			Name               ReservedAttribute
+			Description        ReservedAttribute
+			WorldAvatar        ReservedAttribute
+			CanvasContribution ReservedAttribute
+			Vote               ReservedAttribute
+			Comment            ReservedAttribute
+			WebsiteLink        ReservedAttribute
+			NewsFeedItems      ReservedAttribute
+			PortalDockFace     ReservedAttribute
+			Events             ReservedAttribute
 		}
 		Kusama struct {
 			User struct {
@@ -119,13 +129,16 @@ var (
 			},
 		},
 		Object: struct {
-			Name           ReservedAttribute
-			Description    ReservedAttribute
-			WorldAvatar    ReservedAttribute
-			WebsiteLink    ReservedAttribute
-			NewsFeedItems  ReservedAttribute
-			PortalDockFace ReservedAttribute
-			Events         ReservedAttribute
+			Name               ReservedAttribute
+			Description        ReservedAttribute
+			WorldAvatar        ReservedAttribute
+			CanvasContribution ReservedAttribute
+			Vote               ReservedAttribute
+			Comment            ReservedAttribute
+			WebsiteLink        ReservedAttribute
+			NewsFeedItems      ReservedAttribute
+			PortalDockFace     ReservedAttribute
+			Events             ReservedAttribute
 		}{
 			Name: ReservedAttribute{
 				Name: "name",
@@ -138,6 +151,18 @@ var (
 			WorldAvatar: ReservedAttribute{
 				Name: "world_avatar",
 				Key:  "render_hash",
+			},
+			CanvasContribution: ReservedAttribute{
+				Name: "canvas_contribution",
+				Key:  "canvas_contribution",
+			},
+			Vote: ReservedAttribute{
+				Name: "vote",
+				Key:  "vote",
+			},
+			Comment: ReservedAttribute{
+				Name: "comment",
+				Key:  "comment",
 			},
 			WebsiteLink: ReservedAttribute{
 				Name: "website_link",

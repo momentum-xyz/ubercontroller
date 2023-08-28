@@ -3,11 +3,11 @@ package object_user_attributes
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/momentum-xyz/ubercontroller/utils/umid"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 
@@ -18,7 +18,9 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/database"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils/modify"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 const (
@@ -35,13 +37,15 @@ const (
   			oua.object_id = $3 AND oua.user_id = $4
   		WHERE a_type.plugin_id = $1 AND a_type.attribute_name = $2
 		;`
-	getObjectUserAttributesByObjectIDQuery          = `SELECT * FROM object_user_attribute WHERE object_id = $1;`
-	getObjectUserAttributesByUserIDQuery            = `SELECT * FROM object_user_attribute WHERE user_id = $1;`
-	getObjectUserAttributesByObjectIDAndUserIDQuery = `SELECT * FROM object_user_attribute WHERE object_id = $1 AND user_id = $2;`
-	getObjectUserAttributesByObjectAttributeIDQuery = `SELECT * FROM object_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND object_id = $3;`
+	getObjectUserAttributesByObjectIDQuery              = `SELECT * FROM object_user_attribute WHERE object_id = $1;`
+	getObjectUserAttributesByUserIDQuery                = `SELECT * FROM object_user_attribute WHERE user_id = $1;`
+	getObjectUserAttributesByObjectIDAndUserIDQuery     = `SELECT * FROM object_user_attribute WHERE object_id = $1 AND user_id = $2;`
+	getObjectUserAttributesByObjectAttributeIDQuery     = `SELECT * FROM object_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND object_id = $3;`
+	getObjectUserAttributesByObjectIDsAttributeIDsQuery = `SELECT * FROM object_user_attribute WHERE plugin_id = ANY($1) AND attribute_name = ANY($2) AND object_id = ANY($3)`
 
 	getObjectUserAttributesCountQuery                       = `SELECT COUNT(*) FROM object_user_attribute WHERE value IS NOT NULL;`
 	getObjectUserAttributesCountByObjectIDQuery             = `SELECT COUNT(*) FROM object_user_attribute WHERE value IS NOT NULL AND object_id = $1 AND attribute_name = $2;`
+	getObjectUserAttributesCountByObjectIDNullableQuery     = `SELECT COUNT(*) FROM object_user_attribute WHERE object_id = $1 AND attribute_name = $2;`
 	getObjectUserAttributesCountByObjectIDAndUpdatedAtQuery = `SELECT COUNT(*) FROM object_user_attribute WHERE value IS NOT NULL AND object_id = $1 AND attribute_name = $2 AND updated_at >= $3;`
 
 	upsertObjectUserAttributeQuery = `INSERT INTO object_user_attribute
@@ -206,6 +210,55 @@ func (db *DB) GetObjectUserAttributesByObjectAttributeID(
 	return attributes, nil
 }
 
+func (db *DB) GetObjectUserAttributesByObjectIDsAttributeIDs(
+	ctx context.Context,
+	attributeIDs []entry.AttributeID,
+	objectIDs []umid.UMID,
+	query string,
+	orderType universe.OrderType,
+	limit uint,
+	offset uint,
+) ([]*entry.ObjectUserAttribute, error) {
+	var pluginIDs []umid.UMID
+	var attributeNames []string
+
+	for _, attrID := range attributeIDs {
+		pluginIDs = append(pluginIDs, attrID.PluginID)
+		attributeNames = append(attributeNames, attrID.Name)
+	}
+
+	var searchString string
+	if query != "" {
+		searchString = sqlLikeParam(query)
+	}
+
+	sqlQuery := getObjectUserAttributesByObjectIDsAttributeIDsQuery
+	sqlParams := []interface{}{pluginIDs, attributeNames, objectIDs}
+	paramIdx := 4
+
+	if searchString != "" {
+		sqlQuery += fmt.Sprintf(" AND value->>'title' ILIKE $%d ESCAPE '\\'", paramIdx)
+		sqlParams = append(sqlParams, searchString)
+		paramIdx++
+	}
+
+	orderQuery := " ORDER BY " + string(orderType) + " DESC"
+	limitQuery := " LIMIT " + strconv.Itoa(int(limit))
+	offsetQuery := " OFFSET " + strconv.Itoa(int(offset)) + ";"
+	sqlQuery += orderQuery + limitQuery + offsetQuery
+
+	var attributes []*entry.ObjectUserAttribute
+
+	if err := pgxscan.Select(
+		ctx, db.conn, &attributes, sqlQuery,
+		sqlParams...,
+	); err != nil {
+		return nil, errors.WithMessage(err, "failed to query db")
+	}
+
+	return attributes, nil
+}
+
 func (db *DB) GetObjectUserAttributesCount(ctx context.Context) (int64, error) {
 	var count int64
 	if err := db.conn.QueryRow(ctx, getObjectUserAttributesCountQuery).
@@ -227,6 +280,16 @@ func (db *DB) GetObjectUserAttributesCountByObjectID(ctx context.Context, object
 			Scan(&count); err != nil {
 			return 0, errors.WithMessage(err, "failed to query db")
 		}
+	}
+
+	return count, nil
+}
+
+func (db *DB) GetObjectUserAttributesCountByObjectIDNullable(ctx context.Context, objectID umid.UMID, attributeName string) (uint64, error) {
+	var count uint64
+	if err := db.conn.QueryRow(ctx, getObjectUserAttributesCountByObjectIDNullableQuery, objectID, attributeName).
+		Scan(&count); err != nil {
+		return 0, errors.WithMessage(err, "failed to query db")
 	}
 
 	return count, nil

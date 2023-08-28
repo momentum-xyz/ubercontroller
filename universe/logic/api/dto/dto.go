@@ -53,6 +53,23 @@ type Assets3dMeta map[umid.UMID]Asset3dMeta
 
 type Asset3dMeta *entry.Asset3dMeta
 
+type UserCanvasContributions struct {
+	Count  uint                         `json:"count"`
+	Limit  uint                         `json:"limit"`
+	Offset uint                         `json:"offset"`
+	Items  []UserCanvasContributionItem `json:"items"`
+}
+
+type UserCanvasContributionItem struct {
+	ObjectID  umid.UMID         `json:"object_id"`
+	User      User              `json:"user"`
+	Type      entry.AttributeID `json:"type"`
+	Votes     uint64            `json:"votes"`
+	Comments  uint64            `json:"comments"`
+	CreatedAt time.Time         `json:"created_at"`
+	UpdatedAt time.Time         `json:"updated_at"`
+}
+
 type ExploreOption struct {
 	ID          umid.UMID `json:"id"`
 	Name        *string   `json:"name"`

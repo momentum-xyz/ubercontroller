@@ -162,6 +162,11 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 			verifiedProfile.GET("/check-job/:jobID", n.apiProfileUpdateCheckJob)
 		}
 
+		verifiedCanvas := verified.Group("/canvas")
+		{
+			verifiedCanvas.GET("/:objectID/user-contributions", n.apiCanvasGetUserContributions)
+		}
+
 		verifiedObjects := verified.Group("/objects")
 		{
 			verifiedObjects.POST("", n.apiObjectsCreateObject)
