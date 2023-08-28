@@ -41,7 +41,7 @@ const (
 	getObjectUserAttributesByUserIDQuery                = `SELECT * FROM object_user_attribute WHERE user_id = $1;`
 	getObjectUserAttributesByObjectIDAndUserIDQuery     = `SELECT * FROM object_user_attribute WHERE object_id = $1 AND user_id = $2;`
 	getObjectUserAttributesByObjectAttributeIDQuery     = `SELECT * FROM object_user_attribute WHERE plugin_id = $1 AND attribute_name = $2 AND object_id = $3;`
-	getObjectUserAttributesByObjectIDsAttributeIDsQuery = `SELECT * FROM object_user_attribute WHERE attribute_name = ANY($1) AND object_id = ANY($2)`
+	getObjectUserAttributesByObjectIDsAttributeIDsQuery = `SELECT * FROM object_user_attribute WHERE plugin_id = ANY($1) AND attribute_name = ANY($2) AND object_id = ANY($3)`
 
 	getObjectUserAttributesCountQuery                       = `SELECT COUNT(*) FROM object_user_attribute WHERE value IS NOT NULL;`
 	getObjectUserAttributesCountByObjectIDQuery             = `SELECT COUNT(*) FROM object_user_attribute WHERE value IS NOT NULL AND object_id = $1 AND attribute_name = $2;`
@@ -212,24 +212,32 @@ func (db *DB) GetObjectUserAttributesByObjectAttributeID(
 
 func (db *DB) GetObjectUserAttributesByObjectIDsAttributeIDs(
 	ctx context.Context,
-	objectAttributeNames []string,
+	attributeIDs []entry.AttributeID,
 	objectIDs []umid.UMID,
 	query string,
 	orderType universe.OrderType,
 	limit uint,
 	offset uint,
 ) ([]*entry.ObjectUserAttribute, error) {
+	var pluginIDs []umid.UMID
+	var attributeNames []string
+
+	for _, attrID := range attributeIDs {
+		pluginIDs = append(pluginIDs, attrID.PluginID)
+		attributeNames = append(attributeNames, attrID.Name)
+	}
+
 	var searchString string
 	if query != "" {
-		searchString = fmt.Sprintf("%%%s%%", query)
+		searchString = sqlLikeParam(query)
 	}
 
 	sqlQuery := getObjectUserAttributesByObjectIDsAttributeIDsQuery
-	sqlParams := []interface{}{objectAttributeNames, objectIDs}
-	paramIdx := 3
+	sqlParams := []interface{}{pluginIDs, attributeNames, objectIDs}
+	paramIdx := 4
 
 	if searchString != "" {
-		sqlQuery += fmt.Sprintf(" AND value->>'title' LIKE $%d", paramIdx)
+		sqlQuery += fmt.Sprintf(" AND value->>'title' ILIKE $%d ESCAPE '\\'", paramIdx)
 		sqlParams = append(sqlParams, searchString)
 		paramIdx++
 	}
@@ -240,6 +248,7 @@ func (db *DB) GetObjectUserAttributesByObjectIDsAttributeIDs(
 	sqlQuery += orderQuery + limitQuery + offsetQuery
 
 	var attributes []*entry.ObjectUserAttribute
+
 	if err := pgxscan.Select(
 		ctx, db.conn, &attributes, sqlQuery,
 		sqlParams...,

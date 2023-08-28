@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
+	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
@@ -67,9 +68,10 @@ func (n *Node) apiCanvasGetUserContributions(c *gin.Context) {
 
 	childrenIDs := parent.GetChildIDs()
 
-	attrNames := []string{universe.ReservedAttributes.Object.CanvasContribution.Name}
+	attributeID := entry.NewAttributeID(universe.GetCanvasPluginID(), universe.ReservedAttributes.Object.CanvasContribution.Name)
+	attributeIDs := []entry.AttributeID{attributeID}
 	ouaDB := n.db.GetObjectUserAttributesDB()
-	canvasContributionObjectUserAttributes, err := ouaDB.GetObjectUserAttributesByObjectIDsAttributeIDs(c, attrNames, childrenIDs, inQuery.Search, orderType, limit, inQuery.Offset)
+	canvasContributionObjectUserAttributes, err := ouaDB.GetObjectUserAttributesByObjectIDsAttributeIDs(c, attributeIDs, childrenIDs, inQuery.Search, orderType, limit, inQuery.Offset)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiCanvasGetUserContributions: failed to get canvasContributionObjectUserAttributes")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_attributes", err, n.log)
