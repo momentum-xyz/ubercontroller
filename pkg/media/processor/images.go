@@ -3,7 +3,6 @@ package processor
 import (
 	"bytes"
 	"errors"
-	"github.com/momentum-xyz/ubercontroller/types"
 	"image"
 	_ "image/gif"
 	_ "image/jpeg"
@@ -11,6 +10,8 @@ import (
 	_ "image/png"
 	"math"
 	"os"
+
+	"github.com/momentum-xyz/ubercontroller/types"
 
 	"github.com/nfnt/resize"
 	_ "golang.org/x/image/webp"
@@ -29,7 +30,12 @@ func (p *Processor) WriteToF(img image.Image) (error, string) {
 
 func (p *Processor) WriteToScaled(base string, img image.Image, rsize string) error {
 	if size, ok := types.Tsizes[rsize]; ok {
-		return p.SaveWriteToPNG(p.ImPathS[rsize]+base, DownSampleTo(img, size))
+		fpath := p.ImPathS[rsize] + base
+		if p.FileExists(fpath) {
+			p.log.Debugf("Scaled file %s already exist, skip", fpath)
+			return nil
+		}
+		return p.SaveWriteToPNG(fpath, DownSampleTo(img, size))
 	}
 	return errors.New("Not such size defined in the size map")
 

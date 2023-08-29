@@ -4,6 +4,7 @@ package service
 
 import (
 	"context"
+
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -75,32 +76,29 @@ func LoadNode(
 		return nil, errors.WithMessage(err, "failed to create db")
 	}
 
-	is_new, node, err := getNode(ctx, db)
+	node, err := getNode(ctx, db)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to create node")
 	}
 
-	if err := loadNode(node, is_new); err != nil {
+	if err := loadNode(node); err != nil {
 		return nil, errors.WithMessagef(err, "failed to load node: %s", node.GetID())
 	}
 	return node, nil
 }
 
-func getNode(ctx types.NodeContext, db database.DB) (bool, universe.Node, error) {
+func getNode(ctx types.NodeContext, db database.DB) (universe.Node, error) {
 	nodeEntry, err := getNodeEntry(ctx, db)
 	if err != nil {
-		return false, nil, errors.WithMessage(err, "failed to get node entry")
+		return nil, errors.WithMessage(err, "failed to get node entry")
 	}
-	is_new := nodeEntry == nil
 	node, err := createNode(ctx, db, nodeEntry)
-	return is_new, node, err
+	return node, err
 }
 
-func loadNode(node universe.Node, is_new bool) error {
-	if is_new {
-		if err := seed.SeedMedia(node); err != nil {
-			return errors.WithMessage(err, "failed to seed SeedMedia")
-		}
+func loadNode(node universe.Node) error {
+	if err := seed.SeedMedia(node); err != nil {
+		return errors.WithMessage(err, "failed to seed SeedMedia")
 	}
 	if err := node.Load(); err != nil {
 		return errors.WithMessage(err, "failed to load node")
