@@ -95,6 +95,8 @@ DO $$
         WHERE object_type_id = 'a41ee21e-6c56-41b3-81a9-1c86578b6b3c'
           AND NOT object_type_id IN (SELECT object_type_id FROM updated_options);
 
+        /*
+        -- Adds a canvas object to new worlds by default.
         WITH object_to_add AS (
             SELECT
                 '{"object_id": "b3dbfce9-c635-4506-a823-09954a28dcd1",
@@ -117,6 +119,7 @@ DO $$
             FROM jsonb_array_elements(value->'objects') AS objects
             WHERE objects->>'object_id' = 'b3dbfce9-c635-4506-a823-09954a28dcd1'
         );
+        */
 
         IF NOT EXISTS (SELECT 1 FROM attribute_type WHERE attribute_name = 'canvas') THEN
             INSERT INTO attribute_type (plugin_id, attribute_name, description, options)
