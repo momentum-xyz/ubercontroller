@@ -167,6 +167,11 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 			verifiedCanvas.GET("/:objectID/user-contributions", n.apiCanvasGetUserContributions)
 		}
 
+		verifiedNode := verified.Group("/node")
+		{
+			verifiedNode.POST("/get-challenge", n.apiNodeGetChallenge)
+		}
+
 		verifiedObjects := verified.Group("/objects")
 		{
 			verifiedObjects.POST("", n.apiObjectsCreateObject)
