@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"go.uber.org/zap"
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/harvester"
@@ -14,6 +15,7 @@ import (
 )
 
 func main() {
+	logger, _ := zap.NewProduction()
 	cfg, err := config.GetConfig()
 	//cfg.Arbitrum.MOMTokenAddress = "0x6ab6d61428fde76768d7b45d8bfeec19c6ef91a8" ////https://nova.arbiscan.io/token/0x6ab6d61428fde76768d7b45d8bfeec19c6ef91a8
 	cfg.Arbitrum.MOMTokenAddress = "0x3c2e532a334149d6a2e43523f2427e2fa187c5f0"
@@ -22,7 +24,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	a := arbitrum_nova_adapter.NewArbitrumNovaAdapter(cfg)
+	a := arbitrum_nova_adapter.NewArbitrumNovaAdapter(cfg, logger.Sugar())
 
 	a.Run()
 	n, err := a.GetLastBlockNumber()

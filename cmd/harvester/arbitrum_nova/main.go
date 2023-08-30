@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"go.uber.org/zap"
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/harvester"
@@ -13,11 +14,12 @@ import (
 )
 
 func main() {
+	logger, _ := zap.NewProduction()
 	cfg, err := config.GetConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
-	a := arbitrum_nova_adapter.NewArbitrumNovaAdapter(cfg)
+	a := arbitrum_nova_adapter.NewArbitrumNovaAdapter(cfg, logger.Sugar())
 
 	a.Run()
 

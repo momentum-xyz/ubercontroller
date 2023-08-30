@@ -19,6 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/harvester"
@@ -26,6 +27,7 @@ import (
 )
 
 type ArbitrumNovaAdapter struct {
+	logger   *zap.SugaredLogger
 	listener harvester.AdapterListener
 	umid     umid.UMID
 	wsURL    string
@@ -37,8 +39,9 @@ type ArbitrumNovaAdapter struct {
 	contracts *Contracts
 }
 
-func NewArbitrumNovaAdapter(cfg *config.Config) *ArbitrumNovaAdapter {
+func NewArbitrumNovaAdapter(cfg *config.Config, logger *zap.SugaredLogger) *ArbitrumNovaAdapter {
 	return &ArbitrumNovaAdapter{
+		logger:    logger,
 		umid:      umid.MustParse("ccccaaaa-1111-2222-3333-222222222222"),
 		wsURL:     cfg.Arbitrum.WSURL,
 		httpURL:   cfg.Arbitrum.RPCURL,
@@ -63,7 +66,7 @@ func (a *ArbitrumNovaAdapter) Run() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Connected to Arbitrum Block Chain: " + a.httpURL)
+	a.logger.Debugf("Connected to Arbitrum Block Chain: %s", a.httpURL)
 	///////
 
 	ticker := time.NewTicker(1000 * time.Millisecond)
@@ -78,7 +81,7 @@ func (a *ArbitrumNovaAdapter) Run() {
 				//fmt.Println("Tick at", t)
 				n, err := a.GetLastBlockNumber()
 				if err != nil {
-					fmt.Println(err)
+					a.logger.Error(err)
 				}
 				if a.lastBlock < n {
 					a.lastBlock = n
@@ -159,14 +162,14 @@ func (a *ArbitrumNovaAdapter) DecodeTransactionInputData(contractABI *abi.ABI, d
 
 func (a *ArbitrumNovaAdapter) GetLogsRecursively(fromBlock, toBlock int64, contracts []common.Address, level int) ([]any, error) {
 
-	fmt.Println("GET: ", strconv.Itoa(level), fromBlock, toBlock)
+	a.logger.Debugln("GET: ", strconv.Itoa(level), fromBlock, toBlock)
 	if level > 3 {
 		return nil, errors.New("GetLogsWrapper maximum recursion level")
 	}
 
 	logs, err := a.GetLogs(fromBlock, toBlock, contracts)
 	if err != nil {
-		fmt.Println(err)
+		a.logger.Error(err)
 		allLogs := make([]any, 0)
 		parts := int64(7)
 		if toBlock-fromBlock < parts {
@@ -186,14 +189,14 @@ func (a *ArbitrumNovaAdapter) GetLogsRecursively(fromBlock, toBlock int64, contr
 			if err != nil {
 				return nil, errors.WithMessage(err, "recursive call error")
 			}
-			fmt.Println(i, from, to)
+			a.logger.Debugln(i, from, to)
 			allLogs = append(allLogs, l...)
 		}
 
 		return allLogs, nil
 	}
 
-	fmt.Println("RETURN: ", fromBlock, toBlock, len(logs))
+	a.logger.Debugln("RETURN: ", fromBlock, toBlock, len(logs))
 	return logs, err
 
 }
@@ -332,10 +335,10 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 				logs = append(logs, e)
 
 			case logRestakeSigHash.Hex():
-				fmt.Println("Restake")
+				a.logger.Debugln("Restake")
 			}
 		case a.contracts.nftAddress.Hex():
-			fmt.Println("NFT")
+			a.logger.Debugln("NFT")
 
 			switch vLog.Topics[0].Hex() {
 			case logTransferNftHash.Hex():

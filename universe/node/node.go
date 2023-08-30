@@ -3,12 +3,13 @@ package node
 import (
 	"context"
 	"fmt"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-	"golang.org/x/sync/errgroup"
 	"net/http"
 	"os"
 	"time"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -292,11 +293,11 @@ func (n *Node) Run() error {
 	Simplified version of harvester
 	*/
 	if n.cfg.Arbitrum.MOMTokenAddress != "" {
-		adapter := arbitrum_nova_adapter.NewArbitrumNovaAdapter(n.cfg)
+		logger := n.GetLogger()
+		adapter := arbitrum_nova_adapter.NewArbitrumNovaAdapter(n.cfg, logger)
 		adapter.Run()
 
-		logger, _ := zap.NewProduction()
-		pgConfig, err := n.cfg.Postgres.GenConfig(logger)
+		pgConfig, err := n.cfg.Postgres.GenConfig(logger.Desugar())
 		pool, err := pgxpool.ConnectConfig(context.Background(), pgConfig)
 		if err != nil {
 			n.log.Fatal("failed to create db pool")

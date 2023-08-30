@@ -32,7 +32,7 @@ func main() {
 	}
 	defer pool.Close()
 
-	a := arbitrum_nova_adapter.NewArbitrumNovaAdapter(cfg)
+	a := arbitrum_nova_adapter.NewArbitrumNovaAdapter(cfg, logger.Sugar())
 	a.Run()
 
 	t := harvester.NewTable2(pool, a, listener)
