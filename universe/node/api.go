@@ -205,7 +205,9 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 				object.POST("/attributes/sub", n.apiSetObjectAttributeSubValue)
 				object.DELETE("/attributes/sub", n.apiRemoveObjectAttributeSubValue)
 
-				object.POST("/agora/token", n.apiGenAgoraToken)
+				if n.CFG.UIClient.AgoraAppID != "" {
+					object.POST("/agora/token", n.apiGenAgoraToken)
+				}
 
 				object.GET("", n.apiGetObject)
 

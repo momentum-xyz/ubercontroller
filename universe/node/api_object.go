@@ -47,6 +47,14 @@ func (n *Node) apiGenAgoraToken(c *gin.Context) {
 	}
 	var inBody Body
 
+	agoraAppID := n.CFG.UIClient.AgoraAppID
+	agoraCert := n.CFG.Common.AgoraAppCertificate
+	if agoraCert == "" {
+		err := errors.New("Node: apiGenAgoraToken: no Agora app certificate configured.")
+		api.AbortRequest(c, http.StatusInternalServerError, "invalid_config", err, n.log)
+		return
+	}
+
 	if err := c.ShouldBindJSON(&inBody); err != nil {
 		err = errors.WithMessage(err, "Node: apiGenAgoraToken: failed to bind json")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
@@ -84,8 +92,7 @@ func (n *Node) apiGenAgoraToken(c *gin.Context) {
 		channel = objectID.String()
 	}
 	token, err := rtctokenbuilder.BuildTokenWithUserAccount(
-		n.CFG.UIClient.AgoraAppID,
-		n.CFG.Common.AgoraAppCertificate,
+		agoraAppID, agoraCert,
 		channel,
 		userID.String(),
 		rtctokenbuilder.RolePublisher,
