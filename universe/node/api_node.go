@@ -7,7 +7,9 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/types/entry"
+	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
+	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
@@ -20,6 +22,10 @@ import (
 // @Failure 400 {object} api.HTTPError
 // /api/v4/node/get-challenge [post]
 func (n *Node) apiNodeGetChallenge(c *gin.Context) {
+	if n.cfg.Common.HostingAllowAll {
+		c.JSON(http.StatusOK, nil)
+	}
+
 	type Body struct {
 		OdysseyID *umid.UMID `json:"odyssey_id" binding:"required"`
 	}
@@ -31,16 +37,22 @@ func (n *Node) apiNodeGetChallenge(c *gin.Context) {
 		return
 	}
 
-	if n.cfg.Common.HostingAllowAll {
+	attributeID := entry.NewAttributeID(universe.GetSystemPluginID(), "hosting_allow_list")
+	nodeAttributeValue, ok := n.GetNodeAttributes().GetValue(attributeID)
+	if !ok {
 
 	}
 
-	id := entry.NewUserObjectID(userID, objectID)
-
-	_, err = n.userObjects.Upsert(id, modifyFunc, true)
+	userID, err := api.GetUserIDFromContext(c)
 	if err != nil {
-		err = errors.WithMessage(err, "Node: apiPostMemberForObject: failed to upsert user_object")
-		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+		err := errors.WithMessage(err, "Node: apiNodeGetChallenge: failed to get user umid from context")
+		api.AbortRequest(c, http.StatusInternalServerError, "get_user_id_failed", err, n.log)
+		return
+	}
+
+	if !utils.Contains(nodeAttributeValue, userID) {
+		err := errors.WithMessage(err, "Node: apiNodeGetChallenge: failed to get user umid from context")
+		api.AbortRequest(c, http.StatusBadRequest, "get_user_id_failed", err, n.log)
 		return
 	}
 
