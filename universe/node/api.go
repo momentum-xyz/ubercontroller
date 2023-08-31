@@ -58,15 +58,6 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 			webhook.POST("/skybox-blockadelabs", n.apiPostSkyboxWebHook)
 		}
 
-		drive := vx.Group("/drive")
-		{
-			drive.GET("/wallet-meta", n.apiGetWalletMeta)
-
-			drive.POST("/mint-odyssey", n.apiDriveMintOdyssey)
-			drive.GET("/mint-odyssey/check-job/:jobID", n.apiDriveMintOdysseyCheckJob)
-			drive.GET("/resolve-node", n.apiResolveNode)
-		}
-
 		config := vx.Group("/config")
 		{
 			config.GET("/ui-client", n.apiGetUIClientConfig)
@@ -159,7 +150,6 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		verifiedProfile := verified.Group("/profile")
 		{
 			verifiedProfile.PATCH("", n.apiProfileUpdate)
-			verifiedProfile.GET("/check-job/:jobID", n.apiProfileUpdateCheckJob)
 		}
 
 		verifiedCanvas := verified.Group("/canvas")
