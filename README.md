@@ -1,5 +1,5 @@
-# uberubercontroller
-New ubercontroller
+# Ubercontroller
+New controller for Odyssey Momentum platform.
 
 
 ## Development
@@ -7,7 +7,7 @@ New ubercontroller
 ### Prerequisites
 
 - [Go environment](https://go.dev/doc/install)
-- Connection information for a pre-seeded Postgres database
+- Connection information for a running Postgres database
 
 ### TL;DR (quick start)
 
@@ -17,10 +17,24 @@ For local development:
  - configure the database connection in config.yaml
  - make run
 
-## Swagger Documentation
-1. Install [swag](https://github.com/swaggo/swag) cli tool
-2. Run `swag init -g universe/node/api.go` to generate documentation
-3. Open in browser http://localhost:4000/swagger/index.html
+### Configuration
+
+Configuration can be done through environment variables or a YAML file. A (minimal) configuration file example is included at `config.example.yaml`. Copy this file to `config.yaml` and it will be used by default. The minimal required configuration are the PostgreSQL database connection fields. All others have default values setup for a development environment.
+
+The configuration is implemented with Go struct tags.
+For the available configuration options see config/config.go
+
+
+## API documentation
+
+Documentation for the JSON API is automatically generated.
+For the develop branch this is done for every change and [deployed](https://momentum-xyz.github.io/ubercontroller/api).
+
+To generate it locally NodeJS is required (`npx` should be available).
+
+Run `make docs-html`.
+Then open `build/docs/api.html` in a web browser.
+
 
 ## Database migrations
 
