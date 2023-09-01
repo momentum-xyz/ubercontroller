@@ -18,6 +18,9 @@ build: gen
 	go build -ldflags "${LDFLAGS} -X main.version=${BUILD_VERSION}" -buildvcs=false -trimpath -o ./bin/ubercontroller ./cmd/service
 	cd plugins && make
 
+clean:
+	rm -rf ./build ./bin
+
 run: build
 	./bin/ubercontroller
 
@@ -26,7 +29,7 @@ test:
 	go test -v -race -coverprofile=build/coverage.txt $$(go list ./... | grep -v  -E "ubercontroller/(build|cmd|docs)")
 
 build-docs:
-	go run github.com/swaggo/swag/cmd/swag@v1.8.8 init -g api.go -d universe/node,./,universe/streamchat -o build/docs/
+	go run github.com/swaggo/swag/cmd/swag init -g api.go -d universe/node,./,universe/streamchat -o build/docs/
 
 docs-html: build-docs
 	npx -- swagger2openapi@latest build/docs/swagger.json > build/docs/openapi.json
