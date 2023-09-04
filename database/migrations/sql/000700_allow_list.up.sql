@@ -7,4 +7,15 @@ VALUES (
            '[]'::jsonb
        );
 
+INSERT INTO object_type (object_type_id, asset_2d_id, asset_3d_id, object_type_name, category_name, description, options)
+VALUES (
+           'e31139ad-ff77-4124-825e-8c83f02b82f4',
+           null,
+           null,
+           'Remote World',
+           'Worlds',
+           'Type for remotely hosted worlds',
+           '{}'::jsonb
+       );
+
 COMMIT;
