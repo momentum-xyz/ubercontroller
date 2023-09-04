@@ -17,6 +17,7 @@ COPY . ./
 ENV LDFLAGS="-extldflags '-fuse-ld=bfd'" BUILD_VERSION=${BUILD_VERSION}
 RUN make build
 
+
 # Runtime image
 FROM alpine:3.16 as runtime
 
@@ -30,4 +31,5 @@ COPY --link ./fonts /srv/fonts
 COPY --from=build /project/bin/ubercontroller /srv/ubercontroller
 
 WORKDIR /srv
+EXPOSE 4000
 CMD ["/srv/ubercontroller"]
