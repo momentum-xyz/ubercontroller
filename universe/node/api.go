@@ -3,8 +3,11 @@ package node
 import (
 	"fmt"
 	"net/http"
+	"path/filepath"
+	"regexp"
 
 	"github.com/gin-gonic/gin"
+	servefiles "github.com/rickb777/servefiles/v3"
 
 	"github.com/momentum-xyz/ubercontroller"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/middleware"
@@ -247,6 +250,22 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 				objectUser.GET("/attributes/sub", n.apiGetObjectUserAttributeSubValue)
 			}
 		}
+	}
+	feSrvPath := n.cfg.Settings.FrontendServeDir
+	if feSrvPath != "" {
+		p := regexp.MustCompile("^/(api|static)")
+		staticHandler := servefiles.NewAssetHandler(feSrvPath).
+			WithNotFound(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// 'SPA' fallback
+				if !p.Match([]byte(r.RequestURI)) {
+					http.ServeFile(w, r, filepath.Join(feSrvPath, "index.html"))
+				} else {
+					http.NotFound(w, r)
+				}
+			}))
+		r.NoRoute(func(c *gin.Context) {
+			staticHandler.ServeHTTP(c.Writer, c.Request)
+		})
 	}
 }
 
