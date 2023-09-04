@@ -6,16 +6,21 @@ ARG BUILD_VERSION
 RUN apk add --update --no-cache gcc make binutils-gold musl-dev
 
 WORKDIR /project
+ENV GOPATH /go
+ENV GOCACHE /go-cache
 
 # Seperate step to allow docker layer caching
 COPY go.* ./
-RUN go mod download
+RUN --mount=type=cache,target=/go/pkg/mod/cache \
+    go mod download
 
 COPY . ./
 
 # extra ldflag to make sure it works with alpine/musl
 ENV LDFLAGS="-extldflags '-fuse-ld=bfd'" BUILD_VERSION=${BUILD_VERSION}
-RUN make build
+RUN --mount=type=cache,target=/go/pkg/mod/cache \
+    --mount=type=cache,target=/go-build \
+    make build
 
 
 # Runtime image
