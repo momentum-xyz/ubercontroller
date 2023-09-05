@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1.4
 ARG repo=ghcr.io/momentum-xyz/
 ARG version_ui=develop
+ARG LDFLAGS="-s -w"
 ARG BUILD_VERSION
 
 ###############
@@ -23,7 +24,8 @@ RUN --mount=type=cache,target=/go/pkg/mod/cache \
 COPY . ./
 
 # extra ldflag to make sure it works with alpine/musl
-ENV LDFLAGS="-s -w -extldflags '-fuse-ld=bfd'" BUILD_VERSION=${BUILD_VERSION}
+ARG LDFLAGS
+ENV LDFLAGS="$LDFLAGS -extldflags '-fuse-ld=bfd'" BUILD_VERSION=${BUILD_VERSION}
 RUN --mount=type=cache,target=/go/pkg/mod/cache \
     --mount=type=cache,target=/go-build \
     make build
