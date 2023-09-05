@@ -8,7 +8,8 @@ all: build
 
 vendor: go.mod
 	go mod vendor
-gen: vendor
+
+gen:
 	go generate ./...
 
 gen-clean:
