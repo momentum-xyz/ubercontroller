@@ -17,7 +17,7 @@ RUN --mount=type=cache,target=/go/pkg/mod/cache \
 COPY . ./
 
 # extra ldflag to make sure it works with alpine/musl
-ENV LDFLAGS="-extldflags '-fuse-ld=bfd'" BUILD_VERSION=${BUILD_VERSION}
+ENV LDFLAGS="-s -w -extldflags '-fuse-ld=bfd'" BUILD_VERSION=${BUILD_VERSION}
 RUN --mount=type=cache,target=/go/pkg/mod/cache \
     --mount=type=cache,target=/go-build \
     make build

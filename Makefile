@@ -16,7 +16,7 @@ gen-clean:
 	find . -type f \( -name "*.mus.go" -o -name "*.autogen.go" \) | xargs rm
 
 build: gen
-	go build -ldflags "${LDFLAGS} -X main.version=${BUILD_VERSION}" -buildvcs=false -trimpath -o ./bin/ubercontroller ./cmd/service
+	go build -ldflags "${LDFLAGS} -X main.version=${BUILD_VERSION}" -buildvcs=false -trimpath -tags nomsgpack -o ./bin/ubercontroller ./cmd/service
 	cd plugins && make
 
 clean:
