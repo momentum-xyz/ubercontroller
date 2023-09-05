@@ -253,6 +253,9 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 	}
 	feSrvPath := n.cfg.Settings.FrontendServeDir
 	if feSrvPath != "" {
+		r.GET("/", func(c *gin.Context) {
+			http.ServeFile(c.Writer, c.Request, filepath.Join(feSrvPath, "index.html"))
+		})
 		p := regexp.MustCompile("^/(api|static)")
 		staticHandler := servefiles.NewAssetHandler(feSrvPath).
 			WithNotFound(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
