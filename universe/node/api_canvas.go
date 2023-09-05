@@ -125,6 +125,7 @@ func (n *Node) apiCanvasGetUserContributions(c *gin.Context) {
 			Comments:  commentObjectUserAttributesCount,
 			CreatedAt: oua.CreatedAt,
 			UpdatedAt: oua.UpdatedAt,
+			Value:     *oua.Value,
 		}
 
 		userCanvasContributions = append(userCanvasContributions, userCanvasContribution)
