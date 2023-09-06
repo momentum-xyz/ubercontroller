@@ -93,7 +93,7 @@ func (n *Node) apiNodeGetChallenge(c *gin.Context) {
 
 	nodeID := n.GetID().String()
 
-	message := []byte(inBody.OdysseyID + ":" + nodeID)
+	message := []byte(nodeID + ":" + inBody.OdysseyID)
 	messageHash := crypto.Keccak256Hash(message)
 
 	signature, err := crypto.Sign(messageHash.Bytes(), privateKey)
@@ -103,5 +103,9 @@ func (n *Node) apiNodeGetChallenge(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, hexutil.Encode(signature))
+	type ChallengeResponse struct {
+		Challenge string `json:"challenge"`
+	}
+
+	c.JSON(http.StatusOK, ChallengeResponse{Challenge: hexutil.Encode(signature)})
 }

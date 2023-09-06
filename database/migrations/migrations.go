@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"database/sql"
 	"embed"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
@@ -64,6 +65,11 @@ func (f CustomFile) Stat() (fs.FileInfo, error) {
 //	return ([]byte)(s), nil
 //}
 
+type NodeKeyPair struct {
+	PublicKey  string `json:"public_key"`
+	PrivateKey string `json:"private_key"`
+}
+
 func (e EmbedFSWrapper) Open(name string) (fs.File, error) {
 	fmt.Println(" EmbedFSWrapper Open:" + name)
 	f, err := e.embedFS.Open(name)
@@ -92,7 +98,17 @@ func (e EmbedFSWrapper) Open(name string) (fs.File, error) {
 	publicKeyBytes := crypto.FromECDSAPub(publicKeyECDSA)
 	privateKeyBytes := crypto.FromECDSA(privateKey)
 
-	constants["NODE_KEY"] = hexutil.Encode(publicKeyBytes)[4:] + ":" + hexutil.Encode(privateKeyBytes)[2:]
+	keyPair := NodeKeyPair{
+		PublicKey:  hexutil.Encode(publicKeyBytes)[4:],
+		PrivateKey: hexutil.Encode(privateKeyBytes)[2:],
+	}
+
+	keyPairJson, err := json.Marshal(keyPair)
+	if err != nil {
+		return nil, err
+	}
+
+	constants["NODE_KEY"] = string(keyPairJson)
 
 	for key, value := range constants {
 		s = strings.Replace(s, "{{"+key+"}}", value, -1)
