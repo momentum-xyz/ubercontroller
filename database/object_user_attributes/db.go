@@ -286,6 +286,7 @@ func (db *DB) GetObjectUserAttributesCountByObjectID(ctx context.Context, object
 }
 
 func (db *DB) GetObjectUserAttributesCountByObjectIDNullable(ctx context.Context, objectID umid.UMID, attributeName string) (uint64, error) {
+	// TODO: use ObjectUserAttributeID as argument for this function (so pluginID is used together with attributeName)
 	var count uint64
 	if err := db.conn.QueryRow(ctx, getObjectUserAttributesCountByObjectIDNullableQuery, objectID, attributeName).
 		Scan(&count); err != nil {
