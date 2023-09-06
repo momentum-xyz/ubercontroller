@@ -2,6 +2,7 @@ package migrations
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"database/sql"
 	"embed"
 	"fmt"
@@ -10,6 +11,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -74,6 +77,22 @@ func (e EmbedFSWrapper) Open(name string) (fs.File, error) {
 	}
 
 	s := string(b)
+
+	privateKey, err := crypto.GenerateKey()
+	if err != nil {
+		return nil, err
+	}
+
+	publicKey := privateKey.Public()
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		return nil, errors.New("Unable to parse public key")
+	}
+
+	publicKeyBytes := crypto.FromECDSAPub(publicKeyECDSA)
+	privateKeyBytes := crypto.FromECDSA(privateKey)
+
+	constants["NODE_KEY"] = hexutil.Encode(publicKeyBytes)[4:] + ":" + hexutil.Encode(privateKeyBytes)[2:]
 
 	for key, value := range constants {
 		s = strings.Replace(s, "{{"+key+"}}", value, -1)
