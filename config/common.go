@@ -2,7 +2,6 @@ package config
 
 type Common struct {
 	AgoraAppCertificate string `yaml:"agora_app_certificate" envconfig:"AGORA_APP_CERTIFICATE"`
-	MnemonicPhrase      string `yaml:"mnemonic_phrase" envconfig:"MNEMONIC_PHRASE"`
 	AllowCORS           bool   `yaml:"allow_cors" envconfig:"ALLOW_CORS"`
 	HostingAllowAll     bool   `yaml:"hosting_allow_all" envconfig:"HOSTING_ALLOW_ALL"`
 

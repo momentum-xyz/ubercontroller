@@ -3,6 +3,7 @@ package config
 type UIFeatureFlags struct {
 	NewsFeed bool `json:"newsfeed" envconfig:"FEATURE_NEWSFEED"`
 	BuyNft   bool `yaml:"buy_nft" json:"buy_nft" envconfig:"FEATURE_BUY_NFT"`
+	Canvas   bool `json:"canvas" envconfig:"FEATURE_CANVAS"`
 }
 
 type UIClient struct {

@@ -68,6 +68,7 @@ type UserCanvasContributionItem struct {
 	Comments  uint64            `json:"comments"`
 	CreatedAt time.Time         `json:"created_at"`
 	UpdatedAt time.Time         `json:"updated_at"`
+	Value     map[string]any    `json:"value"`
 }
 
 type ExploreOption struct {

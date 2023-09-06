@@ -72,7 +72,7 @@ DO $$
             INSERT INTO object_type (object_type_id, asset_2d_id, asset_3d_id, object_type_name, category_name, description, options)
             VALUES (
                        '3eca3dd5-a2e1-4347-926a-19eab6da54b2',
-                       'd768aa3e-ca03-4f5e-b366-780a5361cc02',
+                       '8a0f9e8e-b32e-476a-8afe-e0c57260ff20',
                        '5b5bd872-0328-e38c-1b54-bf2bfa70fc85',
                        'canvas_child',
                        'Canvas child',

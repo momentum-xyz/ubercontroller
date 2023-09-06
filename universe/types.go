@@ -68,7 +68,7 @@ var (
 			WorldAvatar        ReservedAttribute
 			CanvasContribution ReservedAttribute
 			Vote               ReservedAttribute
-			Comment            ReservedAttribute
+			Comments           ReservedAttribute
 			WebsiteLink        ReservedAttribute
 			NewsFeedItems      ReservedAttribute
 			PortalDockFace     ReservedAttribute
@@ -134,7 +134,7 @@ var (
 			WorldAvatar        ReservedAttribute
 			CanvasContribution ReservedAttribute
 			Vote               ReservedAttribute
-			Comment            ReservedAttribute
+			Comments           ReservedAttribute
 			WebsiteLink        ReservedAttribute
 			NewsFeedItems      ReservedAttribute
 			PortalDockFace     ReservedAttribute
@@ -160,9 +160,9 @@ var (
 				Name: "vote",
 				Key:  "vote",
 			},
-			Comment: ReservedAttribute{
-				Name: "comment",
-				Key:  "comment",
+			Comments: ReservedAttribute{
+				Name: "comments",
+				Key:  "comments",
 			},
 			WebsiteLink: ReservedAttribute{
 				Name: "website_link",
