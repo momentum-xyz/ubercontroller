@@ -20,7 +20,7 @@ import (
 // @Tags node
 // @Security Bearer
 // @Param body body node.apiNodeGetChallenge.Body true "body params"
-// @Success 200 {object} nil
+// @Success 200 {object} node.apiNodeGetChallenge.ChallengeResponse
 // @Failure 400 {object} api.HTTPError
 // /api/v4/node/get-challenge [post]
 func (n *Node) apiNodeGetChallenge(c *gin.Context) {
@@ -93,7 +93,7 @@ func (n *Node) apiNodeGetChallenge(c *gin.Context) {
 
 	nodeID := n.GetID().String()
 
-	message := []byte(inBody.OdysseyID + ":" + nodeID)
+	message := []byte(nodeID + ":" + inBody.OdysseyID)
 	messageHash := crypto.Keccak256Hash(message)
 
 	signature, err := crypto.Sign(messageHash.Bytes(), privateKey)
@@ -103,5 +103,9 @@ func (n *Node) apiNodeGetChallenge(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, hexutil.Encode(signature))
+	type ChallengeResponse struct {
+		Challenge string `json:"challenge"`
+	}
+
+	c.JSON(http.StatusOK, ChallengeResponse{Challenge: hexutil.Encode(signature)})
 }
