@@ -20,7 +20,7 @@ import (
 // @Tags node
 // @Security Bearer
 // @Param body body node.apiNodeGetChallenge.Body true "body params"
-// @Success 200 {object} nil
+// @Success 200 {object} node.apiNodeGetChallenge.ChallengeResponse
 // @Failure 400 {object} api.HTTPError
 // /api/v4/node/get-challenge [post]
 func (n *Node) apiNodeGetChallenge(c *gin.Context) {
