@@ -2,7 +2,6 @@ package node
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -54,8 +53,13 @@ func (n *Node) apiNodeGetChallenge(c *gin.Context) {
 		return
 	}
 
+	var nodeKeyPair universe.NodeKeyPair
 	allowedUserIDs := utils.GetFromAnyMap(*hostingAllowValue, "users", []string{})
-	nodeKey := utils.GetFromAny(*nodeKeyValue, "")
+	if err := utils.MapDecode(*nodeKeyValue, nodeKeyPair); err != nil {
+		err = errors.WithMessage(err, "Node: apiNodeGetChallenge: failed to decode node key pair")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_decode", err, n.log)
+		return
+	}
 
 	userID, err := api.GetUserIDFromContext(c)
 	if err != nil {
@@ -70,14 +74,7 @@ func (n *Node) apiNodeGetChallenge(c *gin.Context) {
 		return
 	}
 
-	parts := strings.Split(nodeKey, ":")
-	if len(parts) != 2 {
-		err := errors.New("Node: apiNodeGetChallenge: key pair not found or invalid")
-		api.AbortRequest(c, http.StatusBadRequest, "pair_not_found", err, n.log)
-		return
-	}
-
-	privateKeyBytes, err := hexutil.Decode("0x" + parts[1])
+	privateKeyBytes, err := hexutil.Decode("0x" + nodeKeyPair.PrivateKey)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiNodeGetChallenge: failed to decode private key")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_decode", err, n.log)

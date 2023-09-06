@@ -27,6 +27,7 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/types"
+	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
@@ -53,21 +54,6 @@ type CustomFile struct {
 
 func (f CustomFile) Stat() (fs.FileInfo, error) {
 	return f.stat, nil
-}
-
-//func (e EmbedFSWrapper) ReadFile(name string) ([]byte, error) {
-//	fmt.Println(" EmbedFSWrapper ReadFile:" + name)
-//	b, err := e.embedFS.ReadFile(name)
-//	if err != nil {
-//		return nil, err
-//	}
-//	s := strings.Replace(string(b), "{{BAD_BEGIN}}", "BEGIN", -1)
-//	return ([]byte)(s), nil
-//}
-
-type NodeKeyPair struct {
-	PublicKey  string `json:"public_key"`
-	PrivateKey string `json:"private_key"`
 }
 
 func (e EmbedFSWrapper) Open(name string) (fs.File, error) {
@@ -98,7 +84,7 @@ func (e EmbedFSWrapper) Open(name string) (fs.File, error) {
 	publicKeyBytes := crypto.FromECDSAPub(publicKeyECDSA)
 	privateKeyBytes := crypto.FromECDSA(privateKey)
 
-	keyPair := NodeKeyPair{
+	keyPair := universe.NodeKeyPair{
 		PublicKey:  hexutil.Encode(publicKeyBytes)[4:],
 		PrivateKey: hexutil.Encode(privateKeyBytes)[2:],
 	}
