@@ -40,22 +40,22 @@ func (n *Node) apiNodeGetChallenge(c *gin.Context) {
 	}
 
 	hostingAllowID := entry.NewAttributeID(universe.GetSystemPluginID(), "hosting_allow_list")
-	privateKeyID := entry.NewAttributeID(universe.GetSystemPluginID(), "private_key")
+	nodeKeyID := entry.NewAttributeID(universe.GetSystemPluginID(), "node_key")
 	hostingAllowValue, ok := n.GetNodeAttributes().GetValue(hostingAllowID)
 	if !ok || hostingAllowValue == nil {
 		err := errors.New("Node: apiNodeGetChallenge: node attribute not found")
 		api.AbortRequest(c, http.StatusNotFound, "attribute_not_found", err, n.log)
 		return
 	}
-	privateKeyValue, ok := n.GetNodeAttributes().GetValue(privateKeyID)
-	if !ok || privateKeyValue == nil {
+	nodeKeyValue, ok := n.GetNodeAttributes().GetValue(nodeKeyID)
+	if !ok || nodeKeyValue == nil {
 		err := errors.New("Node: apiNodeGetChallenge: node attribute not found")
 		api.AbortRequest(c, http.StatusNotFound, "attribute_not_found", err, n.log)
 		return
 	}
 
 	allowedUserIDs := utils.GetFromAnyMap(*hostingAllowValue, "users", []string{})
-	nodeKey := utils.GetFromAnyMap(*privateKeyValue, "node_key", "")
+	nodeKey := utils.GetFromAny(*nodeKeyValue, "")
 
 	userID, err := api.GetUserIDFromContext(c)
 	if err != nil {
