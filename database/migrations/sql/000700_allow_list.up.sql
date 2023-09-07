@@ -51,7 +51,7 @@ INSERT INTO node_attribute (plugin_id, attribute_name, value)
 VALUES (
            '{{CORE_PLUGIN_ID}}',
            'node_key',
-           '{"public_key": "", "private_key": ""}'::jsonb
+           '{{NODE_KEY}}'::jsonb
        );
 
 INSERT INTO object_type (object_type_id, asset_2d_id, asset_3d_id, object_type_name, category_name, description, options)

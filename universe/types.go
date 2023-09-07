@@ -31,6 +31,11 @@ type AssetUserIDPair struct {
 
 type SortType string
 
+type NodeKeyPair struct {
+	PublicKey  string `json:"public_key"`
+	PrivateKey string `json:"private_key"`
+}
+
 const (
 	ASC  SortType = "ASC"
 	DESC SortType = "DESC"
@@ -46,11 +51,6 @@ const (
 type ReservedAttribute struct {
 	Name string
 	Key  string
-}
-
-type NodeKeyPair struct {
-	PublicKey  string `json:"public_key"`
-	PrivateKey string `json:"private_key"`
 }
 
 var (

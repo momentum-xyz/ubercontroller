@@ -76,11 +76,7 @@ func (n *Node) apiNodeGetChallenge(c *gin.Context) {
 		return
 	}
 
-	if n.cfg.Common.HostingAllowAll {
-		c.JSON(http.StatusOK, ChallengeResponse{Challenge: hexutil.Encode(signature)})
-	}
-
-	if !utils.Contains(allowedUserIDs, userID.String()) {
+	if !n.cfg.Common.HostingAllowAll || !utils.Contains(allowedUserIDs, userID.String()) {
 		err := errors.New("Node: apiNodeGetChallenge: allow list does not contain user id")
 		api.AbortRequest(c, http.StatusBadRequest, "user_not_allowed", err, n.log)
 		return
@@ -90,7 +86,7 @@ func (n *Node) apiNodeGetChallenge(c *gin.Context) {
 }
 
 func GetSignature(nodeKeyPair universe.NodeKeyPair, nodeID string, odysseyID string) ([]byte, error) {
-	privateKeyBytes, err := hexutil.Decode("0x" + nodeKeyPair.PrivateKey)
+	privateKeyBytes, err := hexutil.Decode(nodeKeyPair.PrivateKey)
 	if err != nil {
 		return nil, err
 	}

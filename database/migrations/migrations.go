@@ -85,8 +85,8 @@ func (e EmbedFSWrapper) Open(name string) (fs.File, error) {
 	privateKeyBytes := crypto.FromECDSA(privateKey)
 
 	keyPair := universe.NodeKeyPair{
-		PublicKey:  hexutil.Encode(publicKeyBytes)[4:],
-		PrivateKey: hexutil.Encode(privateKeyBytes)[2:],
+		PublicKey:  hexutil.Encode(publicKeyBytes),
+		PrivateKey: hexutil.Encode(privateKeyBytes),
 	}
 
 	keyPairJson, err := json.Marshal(keyPair)
