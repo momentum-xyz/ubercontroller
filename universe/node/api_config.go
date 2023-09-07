@@ -11,6 +11,12 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils"
 )
 
+type AIProvidersFlags struct {
+	Leonardo     bool `json:"leonardo"`
+	Blockadelabs bool `json:"blockadelabs"`
+	Chatgpt      bool `json:"chatgpt"`
+}
+
 // @Summary Config for UI client
 // @Schemes
 // @Description Returns config for UI client
@@ -18,12 +24,6 @@ import (
 // @Success 200 {object} node.apiGetUIClientConfig.Response
 // @Router /api/v4/config/ui-client [get]
 func (n *Node) apiGetUIClientConfig(c *gin.Context) {
-	type AIProvidersFlags struct {
-		Leonardo     bool `json:"leonardo"`
-		Blockadelabs bool `json:"blockadelabs"`
-		Chatgpt      bool `json:"chatgpt"`
-	}
-
 	type Response struct {
 		config.UIClient
 		NodeID           string           `json:"NODE_ID"`
