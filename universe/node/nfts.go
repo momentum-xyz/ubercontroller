@@ -108,7 +108,7 @@ func (n *Node) AddStakeActivity(stakeEvent *harvester.StakeEvent) error {
 		// An event for an unknown object, in other words: the 'world' hasn't been created yet.
 		// Can easily happen during local development, when when DB and blockchain are out-of-sync.
 		// In prod could happen if people bypass our UI/frontend, and directly stake on BC.
-		n.log.Errorf("Stake activity %s for unknown object %s", stakeEvent.TxHash, stakeEvent.OdysseyID)
+		n.log.Warnf("Stake activity %s for unknown object %s", stakeEvent.TxHash, stakeEvent.OdysseyID)
 		// Can't really easily recover from this, getting stake activity before 'create' activity would be weird.
 		// Creating empty/unclaimed worlds is what we try to avoid by lazily creating worlds.
 		// For now, ingoring
