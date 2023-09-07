@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-deployment
+  labels:
+    app: momentum-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: momentum-controller
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: momentum-controller
+    spec:
+      automountServiceAccountToken: false
+      volumes:
+        - name: media
+          persistentVolumeClaim:
+            claimName: momentum-media
+      containers:
+        - name: controller
+          image: ghcr.io/momentum-xyz/ubercontroller:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 4000
+              name: web
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: controller-config
+                optional: false
+            - secretRef:
+                name: momentum-db
+                optional: false
+          volumeMounts:
+            - mountPath: /opt/media
+              mountPropagation: None
+              name: media
+              subPath: render
+      enableServiceLinks: false
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30

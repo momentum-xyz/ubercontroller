@@ -13,7 +13,7 @@ It is a single, statically compiled binary. Each backend controller can serve on
 There should only be a single one running, it does not scale horizontally (it manages world state in-memory). To scale add more CPUs and memory or 'migrate' worlds to another (separately running) controller.
 
 The frontend web application is a compiled HTML + javascript application (SPA, Single Page Application) and can be statically hosted anywhere as long as the backend controller is configured to allow its domain through [CORS](https://enable-cors.org/).
-It could be deployed on a CDN for perfomance/scalability. Optionally the controller can also host the web application files itself if there is no other static file hosting option available.
+It could be deployed on a CDN for performance/scalability. Optionally the controller can also host the web application files itself if there is no other static file hosting option available.
 
 
 ## Hosting
@@ -71,6 +71,20 @@ Remove/cleanup the docker compose environment:
 ```
 docker compose down -v --rmi local
 ```
+
+
+## Kubernetes
+
+The `deploy/k8s` contains a [Kustomize](https://kubectl.docs.kubernetes.io/) configuration to deploy the platform to a cluster.
+
+```console
+kubectl kustomize deploy/k8s/overlays/dev/ | kubectl apply -f -
+```
+
+The example is for a development environment that uses a standalone postgresql database.
+The `FRONTEND_URL` should match how you expose the cluster ingress.
+
+For production environment it is advised to use a [postgres operator](https://operatorhub.io/?keyword=postgres) to manage your database and configure SSL certificates for https access.
 
 
 ## Running from source

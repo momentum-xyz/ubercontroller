@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ui-deployment
+  labels:
+    app: momentum-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: momentum-ui
+  template:
+    metadata:
+      labels:
+        app: momentum-ui
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      containers:
+        - name: ui-client
+          image: ghcr.io/momentum-xyz/ui-client:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+              name: http
+              protocol: TCP
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - sh
+                  - -c
+                  - sleep 5 && /usr/sbin/nginx -s quit

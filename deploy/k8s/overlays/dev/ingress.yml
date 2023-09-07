@@ -1,0 +1,39 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: momentum
+  annotations:
+    ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /version
+            pathType: Prefix
+            backend:
+              service:
+                name: momentum-controller
+                port:
+                  number: 4000
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: momentum-controller
+                port:
+                  number: 4000
+          - path: /posbus
+            pathType: Prefix
+            backend:
+              service:
+                name: momentum-controller
+                port:
+                  number: 4000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: momentum-ui
+                port:
+                  name: http
+

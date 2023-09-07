@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - media.pvc.yml
+  - controller.deployment.yml
+  - controller.service.yml
+  - ui.deployment.yml
+  - ui.service.yml
+
+configMapGenerator:
+  - name: controller-config
+    envs:
+      - controller.env
+
+secretGenerator:
+  - name: momentum-db
+    envs:
+      - db-auth.env

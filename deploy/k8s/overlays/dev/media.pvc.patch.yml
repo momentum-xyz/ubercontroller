@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: momentum-media
+spec:
+  storageClassName: local-path  # https://github.com/rancher/local-path-provisioner
+  resources:
+    requests:
+      storage: 1Gi
+
