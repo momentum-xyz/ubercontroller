@@ -23,10 +23,6 @@ import (
 // @Failure 400 {object} api.HTTPError
 // /api/v4/node/get-challenge [post]
 func (n *Node) apiNodeGetChallenge(c *gin.Context) {
-	if n.cfg.Common.HostingAllowAll {
-		c.JSON(http.StatusOK, nil)
-	}
-
 	type Body struct {
 		OdysseyID string `json:"odyssey_id" binding:"required"`
 	}
@@ -36,6 +32,10 @@ func (n *Node) apiNodeGetChallenge(c *gin.Context) {
 		err = errors.WithMessage(err, "Node: apiNodeGetChallenge: failed to bind json")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
 		return
+	}
+
+	type ChallengeResponse struct {
+		Challenge string `json:"challenge"`
 	}
 
 	hostingAllowID := entry.NewAttributeID(universe.GetSystemPluginID(), "hosting_allow_list")
@@ -68,41 +68,45 @@ func (n *Node) apiNodeGetChallenge(c *gin.Context) {
 		return
 	}
 
+	nodeID := n.GetID().String()
+	signature, err := GetSignature(nodeKeyPair, nodeID, inBody.OdysseyID)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiNodeGetChallenge: failed to get signature")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_signature", err, n.log)
+		return
+	}
+
+	if n.cfg.Common.HostingAllowAll {
+		c.JSON(http.StatusOK, ChallengeResponse{Challenge: hexutil.Encode(signature)})
+	}
+
 	if !utils.Contains(allowedUserIDs, userID.String()) {
 		err := errors.New("Node: apiNodeGetChallenge: allow list does not contain user id")
 		api.AbortRequest(c, http.StatusBadRequest, "user_not_allowed", err, n.log)
 		return
 	}
 
+	c.JSON(http.StatusOK, ChallengeResponse{Challenge: hexutil.Encode(signature)})
+}
+
+func GetSignature(nodeKeyPair universe.NodeKeyPair, nodeID string, odysseyID string) ([]byte, error) {
 	privateKeyBytes, err := hexutil.Decode("0x" + nodeKeyPair.PrivateKey)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiNodeGetChallenge: failed to decode private key")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_decode", err, n.log)
-		return
+		return nil, err
 	}
 
 	privateKey, err := crypto.ToECDSA(privateKeyBytes)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiNodeGetChallenge: failed to parse private key")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_parse", err, n.log)
-		return
+		return nil, err
 	}
 
-	nodeID := n.GetID().String()
-
-	message := []byte(nodeID + ":" + inBody.OdysseyID)
+	message := []byte(nodeID + ":" + odysseyID)
 	messageHash := crypto.Keccak256Hash(message)
 
 	signature, err := crypto.Sign(messageHash.Bytes(), privateKey)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiNodeGetChallenge: failed to get user umid from context")
-		api.AbortRequest(c, http.StatusInternalServerError, "get_user_id_failed", err, n.log)
-		return
+		return nil, err
 	}
 
-	type ChallengeResponse struct {
-		Challenge string `json:"challenge"`
-	}
-
-	c.JSON(http.StatusOK, ChallengeResponse{Challenge: hexutil.Encode(signature)})
+	return signature, nil
 }
