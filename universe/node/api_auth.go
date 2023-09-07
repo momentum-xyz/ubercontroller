@@ -199,7 +199,6 @@ func (n *Node) apiAttachAccount(ctx *gin.Context) {
 		api.AbortRequest(ctx, http.StatusInternalServerError, "failed_to_upsert", err, n.log)
 		return
 	}
-	n.checkNFTWorld(ctx, userID, inBody.Wallet)
 
 	ctx.JSON(http.StatusAccepted, payload.Value)
 }

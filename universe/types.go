@@ -48,6 +48,11 @@ type ReservedAttribute struct {
 	Key  string
 }
 
+type NodeKeyPair struct {
+	PublicKey  string `json:"public_key"`
+	PrivateKey string `json:"private_key"`
+}
+
 var (
 	ReservedAttributes = struct {
 		Node struct {
