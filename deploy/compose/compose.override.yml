@@ -1,0 +1,26 @@
+# Docker compose override file for local development.
+services:
+  db:
+    environment:
+      POSTGRES_PASSWORD: momentum
+      POSTGRES_USER: momentum
+      POSTGRES_DB: momentum
+      PGUSER: momentum
+    ports:
+      - "54321:5432"
+    volumes:
+      - ./postgresql/postgresql.conf:/etc/postgresql/postgresql.conf
+
+  controller:
+    ports:
+      - "8081:4000"
+    env_file:
+      - ./controller.dev.env
+    environment:
+      DB_USERNAME: "momentum"
+      DB_PASSWORD: "momentum"
+      DB_DATABASE: "momentum"
+      DB_MAX_CONNS: "4"
+      CONTROLLER_LOGLEVEL: "0"
+      FRONTEND_URL: http://localhost:8080
+

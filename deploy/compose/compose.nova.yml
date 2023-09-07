@@ -1,0 +1,25 @@
+# Docker compose override file for Goerli testnet blockchain.
+name: odyssey-nova
+services:
+  db:
+    environment:
+      POSTGRES_PASSWORD: momentum
+      POSTGRES_USER: momentum
+      POSTGRES_DB: momentum
+      PGUSER: momentum
+    ports:
+      - "54321:5432"
+
+  controller:
+    ports:
+      - "8082:4000"
+    env_file:
+      - ./arbitrum-nova.env
+    environment:
+      DB_USERNAME: "momentum"
+      DB_PASSWORD: "momentum"
+      DB_DATABASE: "momentum"
+      DB_MAX_CONNS: "8"
+      CONTROLLER_LOGLEVEL: "0"
+      FRONTEND_URL: http://localhost:8082
+
