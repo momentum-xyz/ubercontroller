@@ -3,8 +3,11 @@ package node
 import (
 	"fmt"
 	"net/http"
+	"path/filepath"
+	"regexp"
 
 	"github.com/gin-gonic/gin"
+	servefiles "github.com/rickb777/servefiles/v3"
 
 	"github.com/momentum-xyz/ubercontroller"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api/middleware"
@@ -56,15 +59,6 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		webhook := vx.Group("/webhook")
 		{
 			webhook.POST("/skybox-blockadelabs", n.apiPostSkyboxWebHook)
-		}
-
-		drive := vx.Group("/drive")
-		{
-			drive.GET("/wallet-meta", n.apiGetWalletMeta)
-
-			drive.POST("/mint-odyssey", n.apiDriveMintOdyssey)
-			drive.GET("/mint-odyssey/check-job/:jobID", n.apiDriveMintOdysseyCheckJob)
-			drive.GET("/resolve-node", n.apiResolveNode)
 		}
 
 		config := vx.Group("/config")
@@ -159,12 +153,16 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		verifiedProfile := verified.Group("/profile")
 		{
 			verifiedProfile.PATCH("", n.apiProfileUpdate)
-			verifiedProfile.GET("/check-job/:jobID", n.apiProfileUpdateCheckJob)
 		}
 
 		verifiedCanvas := verified.Group("/canvas")
 		{
 			verifiedCanvas.GET("/:objectID/user-contributions", n.apiCanvasGetUserContributions)
+		}
+
+		verifiedNode := verified.Group("/node")
+		{
+			verifiedNode.POST("/get-challenge", n.apiNodeGetChallenge)
 		}
 
 		verifiedObjects := verified.Group("/objects")
@@ -257,6 +255,25 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 				objectUser.GET("/attributes/sub", n.apiGetObjectUserAttributeSubValue)
 			}
 		}
+	}
+	feSrvPath := n.cfg.Settings.FrontendServeDir
+	if feSrvPath != "" {
+		r.GET("/", func(c *gin.Context) {
+			http.ServeFile(c.Writer, c.Request, filepath.Join(feSrvPath, "index.html"))
+		})
+		p := regexp.MustCompile("^/(api|static)")
+		staticHandler := servefiles.NewAssetHandler(feSrvPath).
+			WithNotFound(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// 'SPA' fallback
+				if !p.Match([]byte(r.RequestURI)) {
+					http.ServeFile(w, r, filepath.Join(feSrvPath, "index.html"))
+				} else {
+					http.NotFound(w, r)
+				}
+			}))
+		r.NoRoute(func(c *gin.Context) {
+			staticHandler.ServeHTTP(c.Writer, c.Request)
+		})
 	}
 }
 

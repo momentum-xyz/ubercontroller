@@ -102,7 +102,7 @@ func (n *Node) apiCanvasGetUserContributions(c *gin.Context) {
 			return
 		}
 
-		commentObjectUserAttributesCount, err := ouaDB.GetObjectUserAttributesCountByObjectIDNullable(c, oua.ObjectID, universe.ReservedAttributes.Object.Comment.Name)
+		commentObjectUserAttributesCount, err := ouaDB.GetObjectUserAttributesCountByObjectIDNullable(c, oua.ObjectID, universe.ReservedAttributes.Object.Comments.Name)
 		if err != nil {
 			err := errors.WithMessage(err, "Node: apiCanvasGetUserContributions: failed to get comment count")
 			api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_count", err, n.log)
@@ -125,6 +125,7 @@ func (n *Node) apiCanvasGetUserContributions(c *gin.Context) {
 			Comments:  commentObjectUserAttributesCount,
 			CreatedAt: oua.CreatedAt,
 			UpdatedAt: oua.UpdatedAt,
+			Value:     *oua.Value,
 		}
 
 		userCanvasContributions = append(userCanvasContributions, userCanvasContribution)

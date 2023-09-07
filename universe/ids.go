@@ -12,6 +12,7 @@ var ids = struct {
 }{}
 
 var CustomisableObjectTypeID = umid.MustParse("4ed3a5bb-53f8-4511-941b-079029111111")
+var RemoteWorldObjectTypeID = umid.MustParse("e31139ad-ff77-4124-825e-8c83f02b82f4")
 
 func InitializeIDs(systemPluginID, kusamaPluginID, canvasPluginID, imagePluginID umid.UMID) error {
 	ids.systemPluginID = systemPluginID

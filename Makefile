@@ -8,15 +8,19 @@ all: build
 
 vendor: go.mod
 	go mod vendor
-gen: vendor
+
+gen:
 	go generate ./...
 
 gen-clean:
 	find . -type f \( -name "*.mus.go" -o -name "*.autogen.go" \) | xargs rm
 
 build: gen
-	go build -ldflags "${LDFLAGS} -X main.version=${BUILD_VERSION}" -buildvcs=false -trimpath -o ./bin/ubercontroller ./cmd/service
+	go build -ldflags "${LDFLAGS} -X main.version=${BUILD_VERSION}" -buildvcs=false -trimpath -tags nomsgpack -o ./bin/ubercontroller ./cmd/service
 	cd plugins && make
+
+clean:
+	rm -rf ./build ./bin
 
 run: build
 	./bin/ubercontroller
@@ -26,7 +30,7 @@ test:
 	go test -v -race -coverprofile=build/coverage.txt $$(go list ./... | grep -v  -E "ubercontroller/(build|cmd|docs)")
 
 build-docs:
-	go run github.com/swaggo/swag/cmd/swag@v1.8.8 init -g api.go -d universe/node,./,universe/streamchat -o build/docs/
+	go run github.com/swaggo/swag/cmd/swag init -g api.go -d universe/node,./,universe/streamchat -o build/docs/
 
 docs-html: build-docs
 	npx -- swagger2openapi@latest build/docs/swagger.json > build/docs/openapi.json
@@ -35,6 +39,10 @@ docs-html: build-docs
 docker-build: DOCKER_BUILDKIT=1
 docker-build:
 	docker build --build-arg BUILD_VERSION=${BUILD_VERSION} -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
+
+docker-build-ui: DOCKER_BUILDKIT=1
+docker-build-ui:  # docker image with UI included
+	docker build --build-arg BUILD_VERSION=${BUILD_VERSION} --target monolith -t ${DOCKER_IMAGE}:${DOCKER_TAG}-ui .
 
 docker-push-acr:
 	docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${ACR_REPO}/${DOCKER_IMAGE}:${DOCKER_TAG}
@@ -45,4 +53,4 @@ docker-push-acr:
 docker: docker-build
 	docker run --rm ${DOCKER_IMAGE}:${DOCKER_TAG}
 
-.PHONY: build run test docker docker-build
+.PHONY: build gen run test docker docker-build build-docs docker-build-ui

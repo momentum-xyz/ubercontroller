@@ -1,4 +1,4 @@
-//go:generate go run -mod vendor gen/gen.go
+//go:generate go run gen/gen.go
 package posbus
 
 import (

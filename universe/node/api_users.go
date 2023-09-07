@@ -21,6 +21,13 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
+type WalletMeta struct {
+	Wallet   string
+	UserID   umid.UMID
+	Username string
+	Avatar   string
+}
+
 // @Summary Get user based on token
 // @Description Returns user information based on token
 // @Tags users
