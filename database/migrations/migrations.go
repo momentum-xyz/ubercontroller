@@ -2,14 +2,18 @@ package migrations
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"database/sql"
 	"embed"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
 	"regexp"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -23,6 +27,7 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/types"
+	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
@@ -51,16 +56,6 @@ func (f CustomFile) Stat() (fs.FileInfo, error) {
 	return f.stat, nil
 }
 
-//func (e EmbedFSWrapper) ReadFile(name string) ([]byte, error) {
-//	fmt.Println(" EmbedFSWrapper ReadFile:" + name)
-//	b, err := e.embedFS.ReadFile(name)
-//	if err != nil {
-//		return nil, err
-//	}
-//	s := strings.Replace(string(b), "{{BAD_BEGIN}}", "BEGIN", -1)
-//	return ([]byte)(s), nil
-//}
-
 func (e EmbedFSWrapper) Open(name string) (fs.File, error) {
 	fmt.Println(" EmbedFSWrapper Open:" + name)
 	f, err := e.embedFS.Open(name)
@@ -74,6 +69,32 @@ func (e EmbedFSWrapper) Open(name string) (fs.File, error) {
 	}
 
 	s := string(b)
+
+	privateKey, err := crypto.GenerateKey()
+	if err != nil {
+		return nil, err
+	}
+
+	publicKey := privateKey.Public()
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		return nil, errors.New("Unable to parse public key")
+	}
+
+	publicKeyBytes := crypto.FromECDSAPub(publicKeyECDSA)
+	privateKeyBytes := crypto.FromECDSA(privateKey)
+
+	keyPair := universe.NodeKeyPair{
+		PublicKey:  hexutil.Encode(publicKeyBytes),
+		PrivateKey: hexutil.Encode(privateKeyBytes),
+	}
+
+	keyPairJson, err := json.Marshal(keyPair)
+	if err != nil {
+		return nil, err
+	}
+
+	constants["NODE_KEY"] = string(keyPairJson)
 
 	for key, value := range constants {
 		s = strings.Replace(s, "{{"+key+"}}", value, -1)

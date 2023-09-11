@@ -53,6 +53,11 @@ func (n *Node) Listener(bcName string, events []*harvester.UpdateEvent, stakeEve
 
 				objectName := "Odyssey#" + strconv.FormatUint(seqID, 10)
 
+				isLocal := n.IsLocalWorld(world)
+				if !isLocal {
+					worldTemplate.ObjectTypeID = universe.RemoteWorldObjectTypeID
+				}
+
 				worldTemplate.ObjectID = &event.OdysseyID
 				worldTemplate.ObjectName = &objectName
 				worldTemplate.OwnerID = &user.UserID
@@ -67,6 +72,10 @@ func (n *Node) Listener(bcName string, events []*harvester.UpdateEvent, stakeEve
 	}
 
 	return n.AddStakeActivities(stakeEvents)
+}
+
+func (n *Node) IsLocalWorld(world universe.Object) bool {
+	return n.GetID() == world.GetParent().GetID()
 }
 
 func (n *Node) AddStakeActivities(stakeEvents []*harvester.StakeEvent) error {
