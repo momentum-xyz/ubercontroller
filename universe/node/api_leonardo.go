@@ -12,6 +12,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
 	"github.com/momentum-xyz/ubercontroller/utils"
+	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 type LeonardoResponse struct {
@@ -55,7 +56,7 @@ func (n *Node) apiGetImageGeneration(c *gin.Context) {
 	}
 	_ = userID
 
-	apiKey, err := n.getApiLeonardoKeyAndSecret()
+	apiKey, err := n.getApiLeonardoKeyAndSecret(nil, userID)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiGetImageGeneration: failed to getApiKeyAndSecret")
 		api.AbortRequest(c, http.StatusNotFound, "node_attribute_not_found", err, n.log)
@@ -114,6 +115,7 @@ func (n *Node) apiPostImageGenerationID(c *gin.Context) {
 	type Body struct {
 		Prompt string `json:"prompt" binding:"required"`
 		Model  string `json:"model" binding:"required"`
+		//WorldID umid.UMID `json:"world_id" binding:"required"`
 	}
 
 	var inBody Body
@@ -137,7 +139,7 @@ func (n *Node) apiPostImageGenerationID(c *gin.Context) {
 	}
 	_ = userID
 
-	apiKey, err := n.getApiLeonardoKeyAndSecret()
+	apiKey, err := n.getApiLeonardoKeyAndSecret(nil, userID)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiPostImageGenerationID: failed to getApiKeyAndSecret")
 		api.AbortRequest(c, http.StatusNotFound, "node_attribute_not_found", err, n.log)
@@ -196,19 +198,38 @@ func (n *Node) apiPostImageGenerationID(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-func (n *Node) getApiLeonardoKeyAndSecret() (*string, error) {
+func (n *Node) getApiLeonardoKeyAndSecret(objectID *umid.UMID, userID umid.UMID) (*string, error) {
+	var objectAttr, nodeAttr, userAttr *entry.AttributeValue
+	var apiKey string
+
 	attrID := entry.NewAttributeID(universe.GetSystemPluginID(), "leonardo")
-	attr, ok := n.nodeAttributes.GetValue(attrID)
-	if !ok {
+
+	if objectID != nil {
+		object, ok := n.GetObjectFromAllObjects(*objectID)
+		if ok {
+			objectAttr, _ = object.GetObjectAttributes().GetValue(attrID)
+		}
+	}
+	nodeAttr, _ = n.nodeAttributes.GetValue(attrID)
+	userAttributeID := entry.NewUserAttributeID(attrID, userID)
+	userAttr, _ = n.GetUserAttributes().GetValue(userAttributeID)
+
+	list := []*entry.AttributeValue{objectAttr, nodeAttr, userAttr}
+
+	for _, attr := range list {
+		if attr == nil {
+			continue
+		}
+		if value := utils.GetFromAnyMap(*attr, "api_key", ""); value != "" && apiKey == "" {
+			apiKey = value
+		}
+	}
+
+	if objectAttr == nil && nodeAttr == nil && userAttr == nil {
 		err := errors.New("'leonardo' node attribute not found")
 		return nil, err
 	}
 
-	if attr == nil {
-		err := errors.New("'leonardo' node attribute is nil")
-		return nil, err
-	}
-	apiKey := utils.GetFromAnyMap(*attr, "api_key", "")
-
 	return &apiKey, nil
+
 }
