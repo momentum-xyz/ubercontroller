@@ -56,6 +56,8 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 	vx := r.Group(fmt.Sprintf("/api/v%d", ubercontroller.APIMajorVersion))
 	{
+		vx.GET("/plugin", n.apiGetPluginsList)
+
 		webhook := vx.Group("/webhook")
 		{
 			webhook.POST("/skybox-blockadelabs", n.apiPostSkyboxWebHook)
