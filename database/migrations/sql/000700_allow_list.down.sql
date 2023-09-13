@@ -4,10 +4,14 @@ DELETE FROM object_type WHERE object_type_id = 'e31139ad-ff77-4124-825e-8c83f02b
 
 DELETE FROM node_attribute WHERE plugin_id = '{{CORE_PLUGIN_ID}}' AND attribute_name = 'hosting_allow_list';
 
-DELETE FROM node_attribute WHERE plugin_id = '{{CORE_PLUGIN_ID}}' AND attribute_name = 'node_key';
+DELETE FROM node_attribute WHERE plugin_id = '{{CORE_PLUGIN_ID}}' AND attribute_name = 'node_private_key';
+
+DELETE FROM node_attribute WHERE plugin_id = '{{CORE_PLUGIN_ID}}' AND attribute_name = 'node_public_key';
 
 DELETE FROM attribute_type WHERE plugin_id = '{{CORE_PLUGIN_ID}}' AND attribute_name = 'hosting_allow_list';
 
-DELETE FROM attribute_type WHERE plugin_id = '{{CORE_PLUGIN_ID}}' AND attribute_name = 'node_key';
+DELETE FROM attribute_type WHERE plugin_id = '{{CORE_PLUGIN_ID}}' AND attribute_name = 'node_private_key';
+
+DELETE FROM attribute_type WHERE plugin_id = '{{CORE_PLUGIN_ID}}' AND attribute_name = 'node_public_key';
 
 COMMIT;
