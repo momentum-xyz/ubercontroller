@@ -39,28 +39,22 @@ func (n *Node) apiNodeGetChallenge(c *gin.Context) {
 	}
 
 	hostingAllowID := entry.NewAttributeID(universe.GetSystemPluginID(), "hosting_allow_list")
-	nodeKeyID := entry.NewAttributeID(universe.GetSystemPluginID(), "node_key")
+	nodePrivateKeyID := entry.NewAttributeID(universe.GetSystemPluginID(), "node_private_key")
 	hostingAllowValue, ok := n.GetNodeAttributes().GetValue(hostingAllowID)
 	if !ok || hostingAllowValue == nil {
 		err := errors.New("Node: apiNodeGetChallenge: node attribute not found")
 		api.AbortRequest(c, http.StatusNotFound, "attribute_not_found", err, n.log)
 		return
 	}
-	nodeKeyValue, ok := n.GetNodeAttributes().GetValue(nodeKeyID)
-	if !ok || nodeKeyValue == nil {
+	nodePrivateKeyValue, ok := n.GetNodeAttributes().GetValue(nodePrivateKeyID)
+	if !ok || nodePrivateKeyValue == nil {
 		err := errors.New("Node: apiNodeGetChallenge: node attribute not found")
 		api.AbortRequest(c, http.StatusNotFound, "attribute_not_found", err, n.log)
 		return
 	}
 
-	var nodeKeyPair universe.NodeKeyPair
 	allowedUserIDs := utils.GetFromAnyMap(*hostingAllowValue, "users", []string{})
-	if err := utils.MapDecode(*nodeKeyValue, nodeKeyPair); err != nil {
-		err = errors.WithMessage(err, "Node: apiNodeGetChallenge: failed to decode node key pair")
-		api.AbortRequest(c, http.StatusBadRequest, "failed_to_decode", err, n.log)
-		return
-	}
-
+	privateKey := utils.GetFromAny(nodePrivateKeyValue, "")
 	userID, err := api.GetUserIDFromContext(c)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiNodeGetChallenge: failed to get user umid from context")
@@ -69,7 +63,7 @@ func (n *Node) apiNodeGetChallenge(c *gin.Context) {
 	}
 
 	nodeID := n.GetID().String()
-	signature, err := GetSignature(nodeKeyPair, nodeID, inBody.OdysseyID)
+	signature, err := GetSignature(privateKey, nodeID, inBody.OdysseyID)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiNodeGetChallenge: failed to get signature")
 		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_get_signature", err, n.log)
@@ -85,13 +79,13 @@ func (n *Node) apiNodeGetChallenge(c *gin.Context) {
 	c.JSON(http.StatusOK, ChallengeResponse{Challenge: hexutil.Encode(signature)})
 }
 
-func GetSignature(nodeKeyPair universe.NodeKeyPair, nodeID string, odysseyID string) ([]byte, error) {
-	privateKeyBytes, err := hexutil.Decode(nodeKeyPair.PrivateKey)
+func GetSignature(privateKey string, nodeID string, odysseyID string) ([]byte, error) {
+	privateKeyBytes, err := hexutil.Decode(privateKey)
 	if err != nil {
 		return nil, err
 	}
 
-	privateKey, err := crypto.ToECDSA(privateKeyBytes)
+	privateECDSAKey, err := crypto.ToECDSA(privateKeyBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +93,7 @@ func GetSignature(nodeKeyPair universe.NodeKeyPair, nodeID string, odysseyID str
 	message := []byte(nodeID + ":" + odysseyID)
 	messageHash := crypto.Keccak256Hash(message)
 
-	signature, err := crypto.Sign(messageHash.Bytes(), privateKey)
+	signature, err := crypto.Sign(messageHash.Bytes(), privateECDSAKey)
 	if err != nil {
 		return nil, err
 	}
