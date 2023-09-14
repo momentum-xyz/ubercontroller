@@ -35,7 +35,7 @@ func main() {
 	a := arbitrum_nova_adapter.NewArbitrumNovaAdapter(cfg, logger.Sugar())
 	a.Run()
 
-	t := harvester.NewTable2(pool, a, listener)
+	t := harvester.NewTable(pool, a, listener)
 	t.Run()
 
 	time.Sleep(time.Hour)

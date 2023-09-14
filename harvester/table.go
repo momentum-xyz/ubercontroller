@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"log"
 	"math/big"
-	"strings"
+	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v4"
@@ -17,21 +18,30 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
+/**
+Table features:
+	- Always load data from Arbitrum from block 0 on every UC start
+*/
+
+type Address []byte
+
 type Table struct {
 	mu                deadlock.RWMutex
 	blockNumber       uint64
 	data              map[string]map[string]*big.Int
-	stakesData        map[umid.UMID]map[string]*big.Int
+	stakesData        map[umid.UMID]map[string]map[uint8]*big.Int
+	nftData           map[umid.UMID]string
 	db                *pgxpool.Pool
 	adapter           Adapter
-	harvesterListener func(bcName string, p []*UpdateEvent, s []*StakeEvent)
+	harvesterListener func(bcName string, p []*UpdateEvent, s []*StakeEvent, n []*NftEvent) error
 }
 
-func NewTable(db *pgxpool.Pool, adapter Adapter, listener func(bcName string, p []*UpdateEvent, s []*StakeEvent)) *Table {
+func NewTable(db *pgxpool.Pool, adapter Adapter, listener func(bcName string, p []*UpdateEvent, s []*StakeEvent, n []*NftEvent) error) *Table {
 	return &Table{
 		blockNumber:       0,
 		data:              make(map[string]map[string]*big.Int),
-		stakesData:        make(map[umid.UMID]map[string]*big.Int),
+		stakesData:        make(map[umid.UMID]map[string]map[uint8]*big.Int),
+		nftData:           make(map[umid.UMID]string),
 		adapter:           adapter,
 		harvesterListener: listener,
 		db:                db,
@@ -39,11 +49,6 @@ func NewTable(db *pgxpool.Pool, adapter Adapter, listener func(bcName string, p 
 }
 
 func (t *Table) Run() {
-	err := t.LoadFromDB()
-	if err != nil {
-		fmt.Println(err)
-	}
-
 	t.fastForward()
 
 	t.adapter.RegisterNewBlockListener(t.listener)
@@ -84,72 +89,150 @@ func (t *Table) fastForward() {
 	//	return
 	//}
 
-	logs, err := t.adapter.GetLogs(int64(t.blockNumber)+1, int64(lastBlockNumber), contracts)
+	logs, err := t.adapter.GetLogsRecursively(int64(t.blockNumber)+1, int64(lastBlockNumber), nil, 0)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	t.ProcessDiffs(lastBlockNumber, logs)
+	t.ProcessLogs(lastBlockNumber, logs)
 }
 
-func (t *Table) ProcessDiffs(blockNumber uint64, logs []any) {
-	//fmt.Printf("Block: %d \n", blockNumber)
-	//events := make([]*UpdateEvent, 0)
-	//stakeEvents := make([]*StakeEvent, 0)
-	//
-	//for _, diff := range diffs {
-	//	_, ok := t.data[diff.Token]
-	//	if !ok {
-	//		// No such contract
-	//		continue
-	//	}
-	//	b, ok := t.data[diff.Token][diff.From]
-	//	if ok && b != nil { // if
-	//		// From wallet found
-	//		b.Sub(b, diff.Amount)
-	//		events = append(events, &UpdateEvent{
-	//			Wallet:   diff.From,
-	//			Contract: diff.Token,
-	//			Amount:   b, // TODO ask should we clone here by value
-	//		})
-	//	}
-	//	b, ok = t.data[diff.Token][diff.To]
-	//	if ok && b != nil {
-	//		// To wallet found
-	//		b.Add(b, diff.Amount)
-	//		events = append(events, &UpdateEvent{
-	//			Wallet:   diff.To,
-	//			Contract: diff.Token,
-	//			Amount:   b,
-	//		})
-	//	}
-	//}
-	//
-	//for _, stake := range stakes {
-	//	_, ok := t.stakesData[stake.OdysseyID]
-	//	if !ok {
-	//		t.stakesData[stake.OdysseyID] = make(map[string]*big.Int)
-	//	}
-	//
-	//	t.stakesData[stake.OdysseyID][stake.From] = stake.TotalAmount
-	//	stakeEvents = append(stakeEvents, &StakeEvent{
-	//		Wallet:    stake.From,
-	//		OdysseyID: stake.OdysseyID,
-	//		Amount:    stake.TotalAmount,
-	//	})
-	//}
-	//
-	//t.blockNumber = blockNumber
-	//
-	//_, name, _ := t.adapter.GetInfo()
-	//t.harvesterListener(name, events, stakeEvents)
-	//
-	//err := t.SaveToDB(events, stakeEvents)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
+func (t *Table) ProcessLogs(blockNumber uint64, logs []any) {
+	fmt.Printf("Block: %d \n", blockNumber)
+	events := make([]*UpdateEvent, 0)
+	stakeEvents := make([]*StakeEvent, 0)
+	nftEvents := make([]*NftEvent, 0)
+
+	nftLogs := make([]*TransferNFTLog, 0)
+	stakeLogs := make([]*StakeLog, 0)
+
+	for _, log := range logs {
+		switch log.(type) {
+		case *TransferERC20Log:
+			diff := log.(*TransferERC20Log)
+
+			_, ok := t.data[diff.Contract]
+			if !ok {
+				// Table store everything came from adapter
+				t.data[diff.Contract] = make(map[string]*big.Int)
+			}
+
+			b, ok := t.data[diff.Contract][diff.From]
+			if !ok {
+				t.data[diff.Contract][diff.From] = big.NewInt(0)
+			}
+			b = t.data[diff.Contract][diff.From]
+			b.Sub(b, diff.Value)
+			events = append(events, &UpdateEvent{
+				Wallet:   diff.From,
+				Contract: diff.Contract,
+				Amount:   b,
+			})
+
+			b, ok = t.data[diff.Contract][diff.To]
+			if !ok {
+				t.data[diff.Contract][diff.To] = big.NewInt(0)
+			}
+			b = t.data[diff.Contract][diff.To]
+			b.Add(b, diff.Value)
+			events = append(events, &UpdateEvent{
+				Wallet:   diff.To,
+				Contract: diff.Contract,
+				Amount:   b,
+			})
+
+		case *StakeLog:
+			stake := log.(*StakeLog)
+
+			createIfEmpty(t.stakesData, stake.OdysseyID, stake.UserWallet, stake.TokenType)
+
+			t.stakesData[stake.OdysseyID][stake.UserWallet][stake.TokenType].Add(t.stakesData[stake.OdysseyID][stake.UserWallet][stake.TokenType], stake.AmountStaked)
+			stakeEvents = append(stakeEvents, &StakeEvent{
+				TxHash:       stake.TxHash,
+				LogIndex:     strconv.FormatUint(uint64(stake.LogIndex), 10),
+				Wallet:       stake.UserWallet,
+				Kind:         stake.TokenType,
+				OdysseyID:    stake.OdysseyID,
+				Amount:       t.stakesData[stake.OdysseyID][stake.UserWallet][stake.TokenType],
+				ActivityType: "stake",
+			})
+
+			stakeLogs = append(stakeLogs, stake)
+
+		case *UnstakeLog:
+			stake := log.(*UnstakeLog)
+
+			createIfEmpty(t.stakesData, stake.OdysseyID, stake.UserWallet, stake.TokenType)
+
+			t.stakesData[stake.OdysseyID][stake.UserWallet][stake.TokenType].Sub(t.stakesData[stake.OdysseyID][stake.UserWallet][stake.TokenType], stake.AmountUnstaked)
+			stakeEvents = append(stakeEvents, &StakeEvent{
+				TxHash:       stake.TxHash,
+				LogIndex:     strconv.FormatUint(uint64(stake.LogIndex), 10),
+				Wallet:       stake.UserWallet,
+				Kind:         stake.TokenType,
+				OdysseyID:    stake.OdysseyID,
+				Amount:       t.stakesData[stake.OdysseyID][stake.UserWallet][stake.TokenType],
+				ActivityType: "unstake",
+			})
+		case *RestakeLog:
+			stake := log.(*RestakeLog)
+
+			createIfEmpty(t.stakesData, stake.FromOdysseyID, stake.UserWallet, stake.TokenType)
+
+			stakeEvents = append(stakeEvents, &StakeEvent{
+				Wallet:    stake.UserWallet,
+				OdysseyID: stake.FromOdysseyID,
+				Amount:    t.stakesData[stake.FromOdysseyID][stake.UserWallet][stake.TokenType],
+			})
+
+			createIfEmpty(t.stakesData, stake.ToOdysseyID, stake.UserWallet, stake.TokenType)
+
+			t.stakesData[stake.ToOdysseyID][stake.UserWallet][stake.TokenType].Add(t.stakesData[stake.ToOdysseyID][stake.UserWallet][stake.TokenType], stake.Amount)
+			stakeEvents = append(stakeEvents, &StakeEvent{
+				Wallet:    stake.UserWallet,
+				OdysseyID: stake.ToOdysseyID,
+				Amount:    t.stakesData[stake.ToOdysseyID][stake.UserWallet][stake.TokenType],
+			})
+		case *TransferNFTLog:
+			e := log.(*TransferNFTLog)
+			t.nftData[e.TokenID] = e.To
+			nftEvents = append(nftEvents, &NftEvent{
+				From:      e.From,
+				To:        e.To,
+				OdysseyID: e.TokenID,
+			})
+			nftLogs = append(nftLogs, e)
+		}
+
+	}
+
+	t.blockNumber = blockNumber
+
+	_, name, _ := t.adapter.GetInfo()
+	if err := t.harvesterListener(name, events, stakeEvents, nftEvents); err != nil {
+		log.Printf("Error in harvester listener: %v\n", err)
+	}
+
+	err := t.SaveToDB(events, stakeEvents, nftLogs)
+	if err != nil {
+		log.Fatal(err)
+	}
 	//t.Display()
+}
+
+func createIfEmpty(m map[umid.UMID]map[string]map[uint8]*big.Int, odysseyID umid.UMID, wallet string, tokenType uint8) {
+	_, ok := m[odysseyID]
+	if !ok {
+		m[odysseyID] = make(map[string]map[uint8]*big.Int)
+	}
+	_, ok = m[odysseyID][wallet]
+	if !ok {
+		m[odysseyID][wallet] = make(map[uint8]*big.Int)
+	}
+	if m[odysseyID][wallet][tokenType] == nil {
+		m[odysseyID][wallet][tokenType] = big.NewInt(0)
+	}
 }
 
 func (t *Table) listener(blockNumber uint64, diffs []*BCDiff, stakes []*BCStake) {
@@ -159,12 +242,12 @@ func (t *Table) listener(blockNumber uint64, diffs []*BCDiff, stakes []*BCStake)
 	//t.mu.Unlock()
 }
 
-func (t *Table) SaveToDB(events []*UpdateEvent, stakeEvents []*StakeEvent) (err error) {
+func (t *Table) SaveToDB(events []*UpdateEvent, stakeEvents []*StakeEvent, nftLogs []*TransferNFTLog) (err error) {
 	wallets := make([]Address, 0)
 	contracts := make([]Address, 0)
 	// Save balance by value to quickly unlock mutex, otherwise have to unlock util DB transaction finished
 	balances := make([]*entry.Balance, 0)
-	stakeEntries := make([]*entry.Stake, 0)
+	stakes := make([]*entry.Stake, 0)
 
 	blockchainUMID, _, _ := t.adapter.GetInfo()
 
@@ -185,23 +268,31 @@ func (t *Table) SaveToDB(events []*UpdateEvent, stakeEvents []*StakeEvent) (err 
 
 	for _, stake := range stakeEvents {
 		wallets = append(wallets, HexToAddress(stake.Wallet))
-		stakeEntries = append(stakeEntries, &entry.Stake{
+
+		var comment string
+		if stake.TxHash != "" {
+			comment, err = t.GetLastCommentByTxHash(stake.TxHash)
+			if err != nil {
+				return errors.WithMessagef(err, "failed to GetLastCommentByTxHash: %s", stake.TxHash)
+			}
+		}
+
+		stakes = append(stakes, &entry.Stake{
 			WalletID:     HexToAddress(stake.Wallet),
 			BlockchainID: blockchainUMID,
 			ObjectID:     stake.OdysseyID,
-			LastComment:  "",
+			LastComment:  comment,
 			Amount:       (*entry.BigInt)(stake.Amount),
+			Kind:         stake.Kind,
 		})
 	}
 
 	wallets = unique(wallets)
 
-	fmt.Println(stakeEntries)
-
-	return t.saveToDB(wallets, contracts, balances, stakeEntries)
+	return t.saveToDB(wallets, contracts, balances, stakes, nftLogs)
 }
 
-func (t *Table) saveToDB(wallets []Address, contracts []Address, balances []*entry.Balance, stakeEntries []*entry.Stake) error {
+func (t *Table) saveToDB(wallets []Address, contracts []Address, balances []*entry.Balance, stakes []*entry.Stake, nftLogs []*TransferNFTLog) error {
 	blockchainUMID, name, rpcURL := t.adapter.GetInfo()
 
 	tx, err := t.db.BeginTx(context.Background(), pgx.TxOptions{})
@@ -217,7 +308,6 @@ func (t *Table) saveToDB(wallets []Address, contracts []Address, balances []*ent
 				fmt.Println(e)
 			}
 		} else {
-			//fmt.Println("!!! Commit")
 			e := tx.Commit(context.TODO())
 			if e != nil {
 				fmt.Println("???!!!")
@@ -282,17 +372,40 @@ func (t *Table) saveToDB(wallets []Address, contracts []Address, balances []*ent
 		}
 	}
 
-	sql = `INSERT INTO stake (wallet_id, blockchain_id, object_id, amount, last_comment, updated_at, created_at)
-			VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-			ON CONFLICT (blockchain_id, wallet_id, object_id)
-				DO UPDATE SET updated_at = NOW(),
-							  amount     = $4`
+	sql = `INSERT INTO stake (wallet_id, blockchain_id, object_id, amount, last_comment, updated_at, created_at, kind)
+			VALUES ($1, $2, $3, $4, $5, NOW(), NOW(), $6)
+			ON CONFLICT (blockchain_id, wallet_id, object_id, kind)
+				DO UPDATE SET updated_at   = NOW(),
+				              last_comment = $5,
+							  amount       = $4
+							  `
 
-	for _, s := range stakeEntries {
+	for _, s := range stakes {
+
 		_, err = tx.Exec(context.TODO(), sql,
-			s.WalletID, blockchainUMID, s.ObjectID, s.Amount, "")
+			s.WalletID, blockchainUMID, s.ObjectID, s.Amount, s.LastComment, s.Kind)
 		if err != nil {
 			err = errors.WithMessage(err, "failed to insert stakes to DB")
+			return err
+		}
+	}
+
+	sql = `INSERT INTO nft (wallet_id, blockchain_id, object_id, contract_id, created_at, updated_at)	
+			VALUES ($1, $2, $3, $4, NOW(), NOW())
+			ON CONFLICT (wallet_id, contract_id, blockchain_id, object_id) DO UPDATE SET updated_at=NOW()`
+
+	deleteSQL := `DELETE FROM nft WHERE object_id = $1`
+
+	for _, nft := range nftLogs {
+		_, err = tx.Exec(context.TODO(), deleteSQL, nft.TokenID)
+		if err != nil {
+			err = errors.WithMessage(err, "failed to delete NFT from DB")
+			return err
+		}
+
+		_, err = tx.Exec(context.TODO(), sql, HexToAddress(nft.To), blockchainUMID, nft.TokenID, HexToAddress(nft.Contract))
+		if err != nil {
+			err = errors.WithMessage(err, "failed to insert NFT to DB")
 			return err
 		}
 	}
@@ -300,122 +413,21 @@ func (t *Table) saveToDB(wallets []Address, contracts []Address, balances []*ent
 	return nil
 }
 
-func (t *Table) LoadFromDB() error {
-	blockchainUMID, _, _ := t.adapter.GetInfo()
+func (t *Table) GetLastCommentByTxHash(txHash string) (string, error) {
+	sqlQuery := `SELECT comment FROM pending_stake WHERE transaction_id = $1`
 
-	tx, err := t.db.BeginTx(context.TODO(), pgx.TxOptions{})
+	row := t.db.QueryRow(context.TODO(), sqlQuery, HexToAddress(txHash))
+	var comment string
+	err := row.Scan(&comment)
+	if err == pgx.ErrNoRows {
+		return "", nil
+	}
+
 	if err != nil {
-		return errors.WithMessage(err, "failed to begin transaction")
-	}
-	defer func() {
-		if err != nil {
-			tx.Rollback(context.TODO())
-		} else {
-			tx.Commit(context.TODO())
-		}
-	}()
-
-	sql := `SELECT last_processed_block_number FROM blockchain WHERE blockchain_id=$1`
-
-	row := tx.QueryRow(context.TODO(), sql, blockchainUMID)
-	b := &entry.Blockchain{}
-
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	if err := row.Scan(&b.LastProcessedBlockNumber); err != nil {
-		if err != pgx.ErrNoRows {
-			return errors.WithMessage(err, "failed to scan row from blockchain table")
-		}
+		return "", errors.WithMessage(err, "failed to scan 'comment' column from row")
 	}
 
-	sql = `SELECT wallet_id, contract_id, balance.balance
-			FROM balance
-			WHERE blockchain_id = $1`
-
-	rows, err := tx.Query(context.TODO(), sql, blockchainUMID)
-	if err != nil {
-		return err
-	}
-
-	for rows.Next() {
-		var wallet common.Address
-		var contract common.Address
-		var balance entry.BigInt
-
-		if err := rows.Scan(&wallet, &contract, &balance); err != nil {
-			return errors.WithMessage(err, "failed to scan rows from balance table")
-		}
-
-		walletStr := strings.ToLower(wallet.Hex())
-		contractStr := strings.ToLower(contract.Hex())
-
-		_, ok := t.data[contractStr]
-		if !ok {
-			t.data[contractStr] = make(map[string]*big.Int)
-		}
-		t.data[contractStr][walletStr] = (*big.Int)(&balance)
-
-		//fmt.Println(wallet.Hex(), contract.Hex(), (*big.Int)(&balance).String())
-	}
-
-	// If DB transaction fail block will not be updated
-	t.blockNumber = b.LastProcessedBlockNumber
-	return nil
-}
-
-func (t *Table) AddWalletContract(wallet string, contract string) {
-	wallet = strings.ToLower(wallet)
-	contract = strings.ToLower(contract)
-
-	t.mu.Lock()
-	_, ok := t.data[contract]
-	if !ok {
-		t.data[contract] = make(map[string]*big.Int)
-	}
-	_, ok = t.data[contract][wallet]
-	if !ok {
-		t.data[contract][wallet] = nil
-		// Such wallet has not existed so need to get initial balance
-		go t.syncBalance(wallet, contract)
-	}
-	t.mu.Unlock()
-}
-
-func (t *Table) syncBalance(wallet string, contract string) {
-	wallet = strings.ToLower(wallet)
-	contract = strings.ToLower(contract)
-
-	t.mu.RLock()
-	blockNumber, err := t.adapter.GetLastBlockNumber()
-	t.mu.RUnlock()
-	if err != nil {
-		err = errors.WithMessage(err, "failed to get last block number")
-		fmt.Println(err)
-	}
-	balance, err := t.adapter.GetBalance(wallet, contract, blockNumber)
-	if err != nil {
-		err = errors.WithMessagef(err, "failed to get balance: %s, %s, %d", wallet, contract, blockNumber)
-		fmt.Println(err)
-	}
-	t.mu.Lock()
-	if t.blockNumber == 0 || t.blockNumber == blockNumber {
-		t.data[contract][wallet] = balance
-		events := make([]*UpdateEvent, 0)
-		events = append(events, &UpdateEvent{
-			Wallet:   wallet,
-			Contract: contract,
-			Amount:   balance,
-		})
-		err := t.SaveToDB(events, nil)
-		if err != nil {
-			fmt.Println(err)
-		}
-		t.mu.Unlock()
-	} else {
-		t.mu.Unlock()
-		t.syncBalance(wallet, contract)
-	}
+	return comment, err
 }
 
 func (t *Table) Display() {

@@ -149,20 +149,4 @@ type Adapter interface {
 
 type BCType string
 
-const Ethereum string = "ethereum"
-const Polkadot string = "polkadot"
-const ArbitrumNova string = "arbitrum_nova"
-
 type Event string
-
-const NewBlock Event = "new_block"
-const BalanceChange Event = "balance_change"
-
-type IHarvester interface {
-	RegisterAdapter(bcAdapter Adapter) error
-	OnBalanceChange()
-	Subscribe(bcType string, eventName Event, callback Callback)
-	Unsubscribe(bcType string, eventName Event, callback Callback)
-	SubscribeForWallet(bcType string, wallet, callback Callback)
-	SubscribeForWalletAndContract(bcType string, wallet string, contract string, callback Callback) error
-}

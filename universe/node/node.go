@@ -304,7 +304,7 @@ func (n *Node) Run() error {
 		}
 		defer pool.Close()
 
-		t := harvester.NewTable2(pool, adapter, n.Listener)
+		t := harvester.NewTable(pool, adapter, n.Listener)
 		t.Run()
 	}
 
