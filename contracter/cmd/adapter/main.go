@@ -7,15 +7,15 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/momentum-xyz/ubercontroller/harvester"
-	"github.com/momentum-xyz/ubercontroller/harvester/ethereum_adapter"
+	"github.com/momentum-xyz/ubercontroller/contracter"
+	"github.com/momentum-xyz/ubercontroller/contracter/ethereum_adapter"
 )
 
 func main() {
 	a := ethereum_adapter.NewEthereumAdapter()
 	a.Run()
-	var l harvester.AdapterListener
-	l = func(blockNumber uint64, diffs []*harvester.BCDiff) {
+	var l contracter.AdapterListener
+	l = func(blockNumber uint64, diffs []*contracter.BCDiff, stakes []*contracter.BCStake) {
 		fmt.Printf("Listener: %+v \n", blockNumber)
 		for k, v := range diffs {
 			fmt.Printf("%+v %+v %+v %+v\n", k, v.To, v.Token, v.Amount)

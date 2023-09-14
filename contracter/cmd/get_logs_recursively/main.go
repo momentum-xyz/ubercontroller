@@ -10,8 +10,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/momentum-xyz/ubercontroller/config"
-	"github.com/momentum-xyz/ubercontroller/harvester"
-	"github.com/momentum-xyz/ubercontroller/harvester/arbitrum_nova_adapter"
+	"github.com/momentum-xyz/ubercontroller/contracter"
+	"github.com/momentum-xyz/ubercontroller/contracter/arbitrum_nova_adapter"
 )
 
 func main() {
@@ -47,24 +47,24 @@ func main() {
 
 	for _, log := range logs {
 		switch log.(type) {
-		case *harvester.TransferERC20Log:
-			l := log.(*harvester.TransferERC20Log)
+		case *contracter.TransferERC20Log:
+			l := log.(*contracter.TransferERC20Log)
 			fmt.Printf("%s %s %s \n", l.From, l.To, l.Value)
-			//fmt.Println(log.(*harvester.TransferERC20Log).Value)
+			//fmt.Println(log.(*contracter.TransferERC20Log).Value)
 		}
 	}
 	log.Println("LOGS:" + strconv.Itoa(len(logs)))
 
 	for _, log := range logs {
 		switch log.(type) {
-		case *harvester.StakeLog:
-			l := log.(*harvester.StakeLog)
+		case *contracter.StakeLog:
+			l := log.(*contracter.StakeLog)
 			fmt.Printf("  stake: %s %s %s %d %s %s \n", l.TxHash, l.UserWallet, l.OdysseyID, l.TokenType, l.AmountStaked, l.TotalStaked)
-			//fmt.Println(log.(*harvester.TransferERC20Log).Value)
-		case *harvester.UnstakeLog:
-			l := log.(*harvester.UnstakeLog)
+			//fmt.Println(log.(*contracter.TransferERC20Log).Value)
+		case *contracter.UnstakeLog:
+			l := log.(*contracter.UnstakeLog)
 			fmt.Printf("unstake: %s %s %s %s \n", l.UserWallet, l.OdysseyID, l.AmountUnstaked, l.TotalStaked)
-			//fmt.Println(log.(*harvester.TransferERC20Log).Value)
+			//fmt.Println(log.(*contracter.TransferERC20Log).Value)
 		}
 	}
 
