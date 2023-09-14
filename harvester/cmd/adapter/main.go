@@ -7,9 +7,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/momentum-xyz/ubercontroller/harvester3"
-	"github.com/momentum-xyz/ubercontroller/harvester3/arbitrum_nova_adapter3"
-	helper "github.com/momentum-xyz/ubercontroller/harvester3/cmd"
+	"github.com/momentum-xyz/ubercontroller/harvester"
+	"github.com/momentum-xyz/ubercontroller/harvester/arbitrum_nova_adapter"
+	helper "github.com/momentum-xyz/ubercontroller/harvester/cmd"
 )
 
 func main() {
@@ -18,7 +18,7 @@ func main() {
 	logger := helper.GetZapLogger()
 	sugaredLogger := logger.Sugar()
 
-	a := arbitrum_nova_adapter3.NewArbitrumNovaAdapter(&cfg.Arbitrum3, sugaredLogger)
+	a := arbitrum_nova_adapter.NewArbitrumNovaAdapter(&cfg.Arbitrum3, sugaredLogger)
 	a.Run()
 
 	n, err := a.GetLastBlockNumber()
@@ -28,7 +28,7 @@ func main() {
 
 	fmt.Printf("Last Block: %+v \n", n)
 
-	var l harvester3.AdapterListener
+	var l harvester.AdapterListener
 	l = func(blockNumber uint64) {
 
 	}
@@ -46,8 +46,8 @@ func main() {
 
 	for _, log := range logs {
 		switch log.(type) {
-		case *harvester3.TransferERC20Log:
-			l := log.(*harvester3.TransferERC20Log)
+		case *harvester.TransferERC20Log:
+			l := log.(*harvester.TransferERC20Log)
 			fmt.Printf("% s %s %s %s \n", l.Contract, l.From, l.To, l.Value)
 			//fmt.Println(log.(*harvester.TransferERC20Log).Value)
 		}

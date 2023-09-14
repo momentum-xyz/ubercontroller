@@ -7,8 +7,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/momentum-xyz/ubercontroller/harvester3/arbitrum_nova_adapter3"
-	helper "github.com/momentum-xyz/ubercontroller/harvester3/cmd"
+	"github.com/momentum-xyz/ubercontroller/harvester/arbitrum_nova_adapter"
+	helper "github.com/momentum-xyz/ubercontroller/harvester/cmd"
 )
 
 func main() {
@@ -18,7 +18,7 @@ func main() {
 	logger := helper.GetZapLogger()
 	sugaredLogger := logger.Sugar()
 
-	a := arbitrum_nova_adapter3.NewArbitrumNovaAdapter(&cfg.Arbitrum3, sugaredLogger)
+	a := arbitrum_nova_adapter.NewArbitrumNovaAdapter(&cfg.Arbitrum3, sugaredLogger)
 
 	a.Run()
 

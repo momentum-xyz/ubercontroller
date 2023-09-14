@@ -1,4 +1,4 @@
-package harvester3
+package harvester
 
 import (
 	"math/big"

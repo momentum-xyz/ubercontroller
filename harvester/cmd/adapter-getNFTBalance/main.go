@@ -6,8 +6,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/momentum-xyz/ubercontroller/harvester3/arbitrum_nova_adapter3"
-	helper "github.com/momentum-xyz/ubercontroller/harvester3/cmd"
+	"github.com/momentum-xyz/ubercontroller/harvester/arbitrum_nova_adapter"
+	helper "github.com/momentum-xyz/ubercontroller/harvester/cmd"
 )
 
 func main() {
@@ -48,7 +48,7 @@ func main() {
 		wKovi = common.HexToAddress("0xc6220f7F21e15B8886eD38A98496E125b564c414")
 	}
 
-	a := arbitrum_nova_adapter3.NewArbitrumNovaAdapter(&cfg.Arbitrum3, sugaredLogger)
+	a := arbitrum_nova_adapter.NewArbitrumNovaAdapter(&cfg.Arbitrum3, sugaredLogger)
 	a.Run()
 
 	n, err := a.GetLastBlockNumber()
@@ -58,11 +58,22 @@ func main() {
 
 	fmt.Printf("Last Block: %+v \n", n)
 
-	balance, err := a.GetEtherBalance(&w1, n)
+	//logTransferSig := []byte("Transfer(address,address,uint256)")
+	//logTransferSigHash := crypto.Keccak256Hash(logTransferSig)
+	//logs, err := a.GetRawLogs(&logTransferSigHash, nil, nil, []common.Address{mom}, big.NewInt(0), big.NewInt(int64(n)))
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//fmt.Print(logs)
+
+	//items, err := a.GetNFTBalance(&nft, &w1, n)
+	items, err := a.GetNFTBalance(&nftOMNIA, &wOMNIAHOLDER, n)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Print(balance.String())
-
+	//fmt.Print(items)
+	for k, v := range items {
+		fmt.Println(k, v.Big().String())
+	}
 }

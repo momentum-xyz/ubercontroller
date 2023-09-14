@@ -1,4 +1,4 @@
-package arbitrum_nova_adapter3
+package arbitrum_nova_adapter
 
 import (
 	"context"
@@ -24,7 +24,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/momentum-xyz/ubercontroller/config"
-	"github.com/momentum-xyz/ubercontroller/harvester3"
+	"github.com/momentum-xyz/ubercontroller/harvester"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
@@ -92,7 +92,7 @@ func (a *ArbitrumNovaAdapter) Run() {
 	}()
 }
 
-func (a *ArbitrumNovaAdapter) RegisterNewBlockListener(f harvester3.AdapterListener) {
+func (a *ArbitrumNovaAdapter) RegisterNewBlockListener(f harvester.AdapterListener) {
 	a.listeners = append(a.listeners, f)
 }
 
@@ -202,7 +202,7 @@ func (a *ArbitrumNovaAdapter) GetEtherBalance(wallet *common.Address, block uint
 	return balance, err
 }
 
-func (a *ArbitrumNovaAdapter) GetEtherLogs(fromBlock, toBlock uint64, wallets map[common.Address]bool) ([]harvester3.ChangeEtherLog, error) {
+func (a *ArbitrumNovaAdapter) GetEtherLogs(fromBlock, toBlock uint64, wallets map[common.Address]bool) ([]harvester.ChangeEtherLog, error) {
 	workers := uint64(20)
 	chunkSize := math.Ceil(float64((toBlock - fromBlock + 1) / workers))
 	if chunkSize == 0 {
@@ -218,7 +218,7 @@ func (a *ArbitrumNovaAdapter) GetEtherLogs(fromBlock, toBlock uint64, wallets ma
 
 	var g errgroup.Group
 	mu := sync.Mutex{}
-	logs := make([]harvester3.ChangeEtherLog, 0)
+	logs := make([]harvester.ChangeEtherLog, 0)
 
 	for _, chunk := range chunks {
 		func(chunk []uint64) {
@@ -241,8 +241,8 @@ func (a *ArbitrumNovaAdapter) GetEtherLogs(fromBlock, toBlock uint64, wallets ma
 	return logs, nil
 }
 
-func (a *ArbitrumNovaAdapter) getEtherLogs(fromBlock, toBlock uint64, wallets map[common.Address]bool) ([]harvester3.ChangeEtherLog, error) {
-	logs := make([]harvester3.ChangeEtherLog, 0)
+func (a *ArbitrumNovaAdapter) getEtherLogs(fromBlock, toBlock uint64, wallets map[common.Address]bool) ([]harvester.ChangeEtherLog, error) {
+	logs := make([]harvester.ChangeEtherLog, 0)
 	res := make(map[string]any)
 
 	type respTx struct {
@@ -305,7 +305,7 @@ func (a *ArbitrumNovaAdapter) getEtherLogs(fromBlock, toBlock uint64, wallets ma
 					delta = delta.Neg(delta)
 
 					mu.Lock()
-					logs = append(logs, harvester3.ChangeEtherLog{
+					logs = append(logs, harvester.ChangeEtherLog{
 						Block:  b,
 						Wallet: common.HexToAddress(receipt.From),
 						Delta:  delta,
@@ -320,7 +320,7 @@ func (a *ArbitrumNovaAdapter) getEtherLogs(fromBlock, toBlock uint64, wallets ma
 			}
 
 			if hasTo {
-				logs = append(logs, harvester3.ChangeEtherLog{
+				logs = append(logs, harvester.ChangeEtherLog{
 					Block:  b,
 					Wallet: to,
 					Delta:  big.NewInt(int64(hex2int(tx.Value))),
@@ -328,7 +328,7 @@ func (a *ArbitrumNovaAdapter) getEtherLogs(fromBlock, toBlock uint64, wallets ma
 			}
 			if hasFrom {
 				delta := big.NewInt(int64(hex2int(tx.Value)))
-				logs = append(logs, harvester3.ChangeEtherLog{
+				logs = append(logs, harvester.ChangeEtherLog{
 					Block:  b,
 					Wallet: common.HexToAddress(tx.From),
 					Delta:  delta.Neg(delta),
@@ -375,7 +375,7 @@ func (a *ArbitrumNovaAdapter) GetNFTLogs(fromBlock, toBlock uint64, contracts []
 		//fmt.Printf("Log Block Number: %d\n", vLog.BlockNumber)
 		//fmt.Printf("Log Index: %d\n", vLog.Index)
 
-		var e harvester3.TransferNFTLog
+		var e harvester.TransferNFTLog
 
 		e.Block = vLog.BlockNumber
 		e.Contract = vLog.Address
@@ -409,7 +409,7 @@ func (a *ArbitrumNovaAdapter) GetTokenLogs(fromBlock, toBlock uint64, contracts 
 		//fmt.Printf("Log Block Number: %d\n", vLog.BlockNumber)
 		//fmt.Printf("Log Index: %d\n", vLog.Index)
 
-		var e harvester3.TransferERC20Log
+		var e harvester.TransferERC20Log
 
 		e.Block = vLog.BlockNumber
 		e.Contract = vLog.Address
