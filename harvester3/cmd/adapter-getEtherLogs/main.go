@@ -17,8 +17,8 @@ func main() {
 	logger := helper.GetZapLogger()
 	sugaredLogger := logger.Sugar()
 
-	env := "anton_private_net"
-	//env := "main_net"
+	//env := "anton_private_net"
+	env := "main_net"
 
 	var mom, dad, nft, nftOMNIA, w1, wKovi, wOMNIAHOLDER common.Address
 	_ = mom
@@ -36,7 +36,8 @@ func main() {
 		nft = common.HexToAddress("0x1F59C1db986897807d7c3eF295C3480a22FBa834")
 		nftOMNIA = common.HexToAddress("0x402a928dd8342f5604a9a416d00997105c76bfa2")
 		wOMNIAHOLDER = common.HexToAddress("0x9daaa0ff2be321b03b78165f5ad21a44e3c14bd6")
-		w1 = common.HexToAddress("0xAdd2e75c298F34E4d66fBbD4e056DA31502Da5B0")
+		//w1 = common.HexToAddress("0xAdd2e75c298F34E4d66fBbD4e056DA31502Da5B0")
+		w1 = common.HexToAddress("0x42ae6199bb589cfe2df3a93cf93cf5fc1caab2e2")
 		wKovi = common.HexToAddress("0xc6220f7F21e15B8886eD38A98496E125b564c414")
 	}
 
@@ -66,7 +67,8 @@ func main() {
 
 	start := time.Now()
 
-	items, err := a.GetEtherLogs(1600, 1647, wallets)
+	//items, err := a.GetEtherLogs(n-20, n, wallets)
+	items, err := a.GetEtherLogs(19100246-10, 19100246, wallets)
 	if err != nil {
 		log.Fatal(err)
 	}
