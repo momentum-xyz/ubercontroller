@@ -651,7 +651,7 @@ func (o *Object) UpdateSpawnMessage() error {
 	}
 
 	mData := make([]posbus.ObjectDefinition, 1)
-	mData[0] = posbus.ObjectDefinition{ID: o.GetID(), ParentID: parentID, AssetType: asset3dID, AssetFormat: assetFormat, Name: o.GetName(), IsEditable: *utils.GetFromAny(
+	mData[0] = posbus.ObjectDefinition{ID: o.GetID(), ParentID: parentID, ObjectTypeID: objectType.GetID(), AssetType: asset3dID, AssetFormat: assetFormat, Name: o.GetName(), IsEditable: *utils.GetFromAny(
 		effectiveOptions.Editable, utils.GetPTR(true),
 	),
 		ShowOnMiniMap: *utils.GetFromAny(effectiveOptions.Minimap, &visible), Transform: *o.GetActualTransform()}
