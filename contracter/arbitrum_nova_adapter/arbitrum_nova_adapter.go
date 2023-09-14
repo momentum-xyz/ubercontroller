@@ -22,13 +22,13 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/momentum-xyz/ubercontroller/config"
-	"github.com/momentum-xyz/ubercontroller/harvester"
+	"github.com/momentum-xyz/ubercontroller/contracter"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 type ArbitrumNovaAdapter struct {
 	logger   *zap.SugaredLogger
-	listener harvester.AdapterListener
+	listener contracter.AdapterListener
 	umid     umid.UMID
 	wsURL    string
 	httpURL  string
@@ -94,7 +94,7 @@ func (a *ArbitrumNovaAdapter) Run() {
 	}()
 }
 
-func (a *ArbitrumNovaAdapter) RegisterNewBlockListener(f harvester.AdapterListener) {
+func (a *ArbitrumNovaAdapter) RegisterNewBlockListener(f contracter.AdapterListener) {
 	a.listener = f
 }
 
@@ -240,9 +240,9 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 			case logTransferSigHash.Hex():
 				//fmt.Printf("Log Name: Transfer\n")
 
-				//var transferEvent harvester.BCDiff
+				//var transferEvent contracter.BCDiff
 
-				var e harvester.TransferERC20Log
+				var e contracter.TransferERC20Log
 
 				ev, err := a.contracts.TokenABI.Unpack("Transfer", vLog.Data)
 				if err != nil {
@@ -289,7 +289,7 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 				tokenType := ev[1].(uint8)
 				totalAmount := ev[2].(*big.Int)
 
-				e := &harvester.StakeLog{
+				e := &contracter.StakeLog{
 					TxHash:       transactionHash,
 					LogIndex:     vLog.Index,
 					UserWallet:   fromWallet.Hex(),
@@ -322,7 +322,7 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 				tokenType := ev[1].(uint8)
 				totalAmount := ev[2].(*big.Int)
 
-				e := &harvester.UnstakeLog{
+				e := &contracter.UnstakeLog{
 					TxHash:         transactionHash,
 					LogIndex:       vLog.Index,
 					UserWallet:     fromWallet.Hex(),
@@ -359,7 +359,7 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 					return nil, errors.WithMessage(err, "failed to read umid from bytes")
 				}
 
-				e := &harvester.TransferNFTLog{
+				e := &contracter.TransferNFTLog{
 					From:     from,
 					To:       to,
 					TokenID:  id,

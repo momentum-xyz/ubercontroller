@@ -1,4 +1,4 @@
-package harvester
+package contracter
 
 import (
 	"context"

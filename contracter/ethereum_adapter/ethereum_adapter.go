@@ -19,12 +19,12 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/pkg/errors"
 
-	"github.com/momentum-xyz/ubercontroller/harvester"
+	"github.com/momentum-xyz/ubercontroller/contracter"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
 type EthereumAdapter struct {
-	listener         harvester.AdapterListener
+	listener         contracter.AdapterListener
 	umid             umid.UMID
 	rpcURL           string
 	httpURL          string
@@ -52,7 +52,7 @@ func (a *EthereumAdapter) GetInfo() (umid umid.UMID, name string, rpcURL string)
 	return a.umid, a.name, a.rpcURL
 }
 
-func (a *EthereumAdapter) RegisterNewBlockListener(f harvester.AdapterListener) {
+func (a *EthereumAdapter) RegisterNewBlockListener(f contracter.AdapterListener) {
 	a.listener = f
 }
 
@@ -61,7 +61,7 @@ func (a *EthereumAdapter) GetLastBlockNumber() (uint64, error) {
 	return number, err
 }
 
-func (a *EthereumAdapter) GetLogs(fromBlock, toBlock int64, addresses []common.Address) ([]*harvester.BCDiff, []*harvester.BCStake, error) {
+func (a *EthereumAdapter) GetLogs(fromBlock, toBlock int64, addresses []common.Address) ([]*contracter.BCDiff, []*contracter.BCStake, error) {
 
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(fromBlock),
@@ -81,8 +81,8 @@ func (a *EthereumAdapter) GetLogs(fromBlock, toBlock int64, addresses []common.A
 	//fmt.Println(logStakeSigHash)
 	//fmt.Println(a.stakeContractABI.Events["Stake"].ID.Hex())
 
-	diffs := make([]*harvester.BCDiff, 0)
-	stakes := make([]*harvester.BCStake, 0)
+	diffs := make([]*contracter.BCDiff, 0)
+	stakes := make([]*contracter.BCStake, 0)
 
 	//fmt.Println(a.contractABI.Events)
 
@@ -94,7 +94,7 @@ func (a *EthereumAdapter) GetLogs(fromBlock, toBlock int64, addresses []common.A
 		case logTransferSigHash.Hex():
 			//fmt.Printf("Log Name: Transfer\n")
 
-			var transferEvent harvester.BCDiff
+			var transferEvent contracter.BCDiff
 
 			ev, err := a.contractABI.Unpack("Transfer", vLog.Data)
 			if err != nil {
@@ -138,7 +138,7 @@ func (a *EthereumAdapter) GetLogs(fromBlock, toBlock int64, addresses []common.A
 
 			tokenType := ev[3].(uint8)
 
-			stake := &harvester.BCStake{
+			stake := &contracter.BCStake{
 				From:      fromWallet.Hex(),
 				OdysseyID: odysseyID,
 				TokenType: tokenType,
@@ -231,7 +231,7 @@ func (a *EthereumAdapter) Run() {
 				//fmt.Println(vLog.TxHash)
 				//fmt.Println(vLog.Hash())
 
-				block := &harvester.BCBlock{
+				block := &contracter.BCBlock{
 					Hash: vLog.Hash().String(),
 				}
 
@@ -247,14 +247,14 @@ func (a *EthereumAdapter) Run() {
 	}()
 }
 
-func (a *EthereumAdapter) onNewBlock(b *harvester.BCBlock) {
+func (a *EthereumAdapter) onNewBlock(b *contracter.BCBlock) {
 	block, err := a.client.BlockByNumber(context.TODO(), big.NewInt(int64(b.Number)))
 	if err != nil {
 		err = errors.WithMessage(err, "failed to get block by number")
 		fmt.Println(err)
 	}
 
-	diffs := make([]*harvester.BCDiff, 0)
+	diffs := make([]*contracter.BCDiff, 0)
 	for _, tx := range block.Transactions() {
 		//fmt.Println(tx.Hash().Hex())
 
@@ -273,7 +273,7 @@ func (a *EthereumAdapter) onNewBlock(b *harvester.BCBlock) {
 		}
 
 		if methodName == "transfer" {
-			diff := &harvester.BCDiff{}
+			diff := &contracter.BCDiff{}
 			diff.From = strings.ToLower(a.GetTransactionMessage(tx).From.Hex())
 
 			diff.To = strings.ToLower(methodInput["_to"].(common.Address).Hex())
@@ -283,7 +283,7 @@ func (a *EthereumAdapter) onNewBlock(b *harvester.BCBlock) {
 		}
 
 		if methodName == "transferFrom" {
-			diff := &harvester.BCDiff{}
+			diff := &contracter.BCDiff{}
 			diff.From = strings.ToLower(methodInput["_from"].(common.Address).Hex())
 			diff.To = strings.ToLower(methodInput["_to"].(common.Address).Hex())
 			diff.Token = strings.ToLower(tx.To().Hex())
@@ -305,7 +305,7 @@ func (a *EthereumAdapter) onNewBlock(b *harvester.BCBlock) {
 	////amount.SetString("33190774000000000000000", 10)
 	//amount.SetString("1", 10)
 	//
-	//mockDiffs := []*harvester.BCDiff{
+	//mockDiffs := []*contracter.BCDiff{
 	//	{
 	//		From:   "0x2813fd17ea95b2655a7228383c5236e31090419e",
 	//		To:     "0x3f363b4e038a6e43ce8321c50f3efbf460196d4b",
@@ -314,7 +314,7 @@ func (a *EthereumAdapter) onNewBlock(b *harvester.BCBlock) {
 	//	},
 	//}
 
-	stakes := make([]*harvester.BCStake, 0)
+	stakes := make([]*contracter.BCStake, 0)
 	a.listener(b.Number, diffs, stakes)
 }
 

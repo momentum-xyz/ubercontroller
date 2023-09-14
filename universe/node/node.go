@@ -18,9 +18,9 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/momentum-xyz/ubercontroller/config"
+	"github.com/momentum-xyz/ubercontroller/contracter"
+	"github.com/momentum-xyz/ubercontroller/contracter/arbitrum_nova_adapter"
 	"github.com/momentum-xyz/ubercontroller/database"
-	"github.com/momentum-xyz/ubercontroller/harvester"
-	"github.com/momentum-xyz/ubercontroller/harvester/arbitrum_nova_adapter"
 	"github.com/momentum-xyz/ubercontroller/mplugin"
 	"github.com/momentum-xyz/ubercontroller/pkg/media"
 	"github.com/momentum-xyz/ubercontroller/seed"
@@ -304,7 +304,7 @@ func (n *Node) Run() error {
 		}
 		defer pool.Close()
 
-		t := harvester.NewTable(pool, adapter, n.Listener)
+		t := contracter.NewTable(pool, adapter, n.Listener)
 		t.Run()
 	}
 
