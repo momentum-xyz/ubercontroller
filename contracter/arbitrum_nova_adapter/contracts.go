@@ -1,10 +1,9 @@
 package arbitrum_nova_adapter
 
 import (
+	_ "embed"
 	"log"
 	"strings"
-
-	_ "embed"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -30,6 +29,7 @@ type Contracts struct {
 	dadTokenAddress common.Address
 	stakeAddress    common.Address
 	nftAddress      common.Address
+	nodeAddress     common.Address
 
 	AllAddresses []common.Address
 }
@@ -59,11 +59,12 @@ func NewContracts(cfg *config.Arbitrum) *Contracts {
 		dadTokenAddress: common.HexToAddress(cfg.DADTokenAddress),
 		stakeAddress:    common.HexToAddress(cfg.StakeAddress),
 		nftAddress:      common.HexToAddress(cfg.NFTAddress),
+		nodeAddress:     common.HexToAddress(cfg.NodeAddress),
 	}
 
 	allAddresses := make([]common.Address, 0)
 	allAddresses = append(allAddresses,
-		contracts.momTokenAddress, contracts.dadTokenAddress, contracts.stakeAddress, contracts.nftAddress)
+		contracts.momTokenAddress, contracts.dadTokenAddress, contracts.stakeAddress, contracts.nftAddress, contracts.nodeAddress)
 	contracts.AllAddresses = allAddresses
 
 	return contracts

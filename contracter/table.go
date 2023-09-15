@@ -33,10 +33,10 @@ type Table struct {
 	nftData           map[umid.UMID]string
 	db                *pgxpool.Pool
 	adapter           Adapter
-	harvesterListener func(bcName string, p []*UpdateEvent, s []*StakeEvent, n []*NftEvent) error
+	harvesterListener func(bcName string, p []*UpdateEvent, s []*StakeEvent, n []*NftEvent, t []*TransferOdysseyEvent) error
 }
 
-func NewTable(db *pgxpool.Pool, adapter Adapter, listener func(bcName string, p []*UpdateEvent, s []*StakeEvent, n []*NftEvent) error) *Table {
+func NewTable(db *pgxpool.Pool, adapter Adapter, listener func(bcName string, p []*UpdateEvent, s []*StakeEvent, n []*NftEvent, t []*TransferOdysseyEvent) error) *Table {
 	return &Table{
 		blockNumber:       0,
 		data:              make(map[string]map[string]*big.Int),
@@ -103,6 +103,7 @@ func (t *Table) ProcessLogs(blockNumber uint64, logs []any) {
 	events := make([]*UpdateEvent, 0)
 	stakeEvents := make([]*StakeEvent, 0)
 	nftEvents := make([]*NftEvent, 0)
+	transferEvents := make([]*TransferOdysseyEvent, 0)
 
 	nftLogs := make([]*TransferNFTLog, 0)
 	stakeLogs := make([]*StakeLog, 0)
@@ -203,6 +204,14 @@ func (t *Table) ProcessLogs(blockNumber uint64, logs []any) {
 				OdysseyID: e.TokenID,
 			})
 			nftLogs = append(nftLogs, e)
+
+		case *TransferOdysseyLog:
+			e := log.(*TransferOdysseyLog)
+			transferEvents = append(transferEvents, &TransferOdysseyEvent{
+				FromNodeID: e.FromNodeID,
+				ToNodeID:   e.ToNodeID,
+				OdysseyID:  e.OdysseyID,
+			})
 		}
 
 	}
@@ -210,7 +219,7 @@ func (t *Table) ProcessLogs(blockNumber uint64, logs []any) {
 	t.blockNumber = blockNumber
 
 	_, name, _ := t.adapter.GetInfo()
-	if err := t.harvesterListener(name, events, stakeEvents, nftEvents); err != nil {
+	if err := t.harvesterListener(name, events, stakeEvents, nftEvents, transferEvents); err != nil {
 		log.Printf("Error in harvester listener: %v\n", err)
 	}
 

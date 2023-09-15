@@ -17,7 +17,11 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
-func (n *Node) Listener(bcName string, events []*contracter.UpdateEvent, stakeEvents []*contracter.StakeEvent, nftEvent []*contracter.NftEvent) error {
+func (n *Node) Listener(bcName string,
+	events []*contracter.UpdateEvent,
+	stakeEvents []*contracter.StakeEvent,
+	nftEvent []*contracter.NftEvent,
+	transferEvents []*contracter.TransferOdysseyEvent) error {
 	if n.log.Level() == zapcore.DebugLevel {
 		n.log.Debugln("Table Listener:")
 		for k, v := range events {

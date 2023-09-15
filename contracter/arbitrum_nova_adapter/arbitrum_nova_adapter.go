@@ -229,6 +229,9 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 
 	logTransferNftHash := a.contracts.NftABI.Events["Transfer"].ID
 
+	logTransferOdysseySig := []byte("NodeMngmtEvent(uint256,uint256,uint256)")
+	logTransferOdysseySigHash := crypto.Keccak256Hash(logTransferOdysseySig)
+
 	for _, vLog := range bcLogs {
 		//fmt.Printf("Log Block Number: %d\n", vLog.BlockNumber)
 		//fmt.Printf("Log Index: %d\n", vLog.Index)
@@ -368,8 +371,24 @@ func (a *ArbitrumNovaAdapter) GetLogs(fromBlock, toBlock int64, contracts []comm
 
 				logs = append(logs, e)
 			}
-		}
+		case a.contracts.nodeAddress.Hex():
+			switch vLog.Topics[0].Hex() {
+			case logTransferOdysseySigHash.Hex():
 
+				var fromID, toID, odysseyID umid.UMID
+				vLog.Topics[1].Big().FillBytes(fromID[:])
+				vLog.Topics[2].Big().FillBytes(toID[:])
+				vLog.Topics[3].Big().FillBytes(odysseyID[:])
+
+				e := &contracter.TransferOdysseyLog{
+					FromNodeID: fromID,
+					ToNodeID:   toID,
+					OdysseyID:  odysseyID,
+				}
+
+				logs = append(logs, e)
+			}
+		}
 	}
 
 	return logs, nil

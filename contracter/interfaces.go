@@ -91,6 +91,12 @@ type TransferNFTLog struct {
 	Contract string
 }
 
+type TransferOdysseyLog struct {
+	FromNodeID umid.UMID
+	ToNodeID   umid.UMID
+	OdysseyID  umid.UMID
+}
+
 type BCBlock struct {
 	Hash   string
 	Number uint64
@@ -133,6 +139,12 @@ type NftEvent struct {
 	To        string
 	OdysseyID umid.UMID
 	Contract  string
+}
+
+type TransferOdysseyEvent struct {
+	FromNodeID umid.UMID
+	ToNodeID   umid.UMID
+	OdysseyID  umid.UMID
 }
 
 type AdapterListener func(blockNumber uint64, diffs []*BCDiff, stakes []*BCStake)
