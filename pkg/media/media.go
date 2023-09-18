@@ -2,12 +2,13 @@ package media
 
 import (
 	"fmt"
-	"go.uber.org/zap"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"path"
+
+	"go.uber.org/zap"
 
 	"github.com/gin-gonic/gin"
 	"github.com/h2non/filetype"
@@ -194,6 +195,30 @@ func (m *Media) DeleteAudio(filename string) error {
 	m.log.Info("Track deleted: ", filename)
 
 	return nil
+}
+
+func (m *Media) GetPlugin(filename string) (*fileTypes.Type, string, error) {
+	m.log.Debug("Endpoint Hit: Plugin Get: ", filename)
+
+	filepath := path.Join(m.processor.Assetpath, path.Base(filename))
+	buf := make([]byte, 264)
+	file, err := os.Open(filepath)
+	if err != nil {
+		return nil, "", errors.WithMessage(err, "error opening file")
+	}
+	defer file.Close()
+
+	n, err := file.Read(buf)
+	if err != nil {
+		return nil, "", errors.WithMessage(err, "error reading file buffer")
+	}
+
+	fileType, err := filetype.Get(buf[:n])
+	if err != nil {
+		return nil, "", errors.WithMessage(err, "error getting filetype")
+	}
+
+	return &fileType, filepath, nil
 }
 
 func (m *Media) GetAsset(filename string) (*fileTypes.Type, string, error) {

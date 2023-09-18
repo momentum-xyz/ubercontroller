@@ -384,3 +384,80 @@ func (n *Node) apiMediaGetAsset(c *gin.Context) {
 	c.File(filepath)
 	n.log.Infof("Endpoint Hit: Asset served: %s", filename)
 }
+
+// @Summary Gets an image from the (internal) media-manager
+// @Description Serves a generic image from the (internal) media-manager
+// @Tags media
+// @Security Bearer
+// @Accept json
+// @Produce json
+// @Param file path string true "image file"
+// @Success 200 {object} dto.HashResponse
+// @Failure 400 {object} api.HTTPError
+// @Router /render/plugin/{directory}/{filepath} [get]
+func (n *Node) apiMediaGetPlugin(c *gin.Context) {
+	filepath := c.Param("filepath")
+	match, err := regexp.MatchString(`^[a-zA-Z0-9]+$`, filename)
+	if !match {
+		err := errors.New("Node: apiMediaGetPlugin: invalid filename format")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_format", err, n.log)
+		return
+	}
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiMediaGetPlugin: failed to match regexp string")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_validate", err, n.log)
+		return
+	}
+
+	fileType, filepath, err := n.media.GetAsset(filename)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiMediaGetPlugin: failed to get asset")
+		api.AbortRequest(c, http.StatusNotFound, "failed_to_get_asset", err, n.log)
+		return
+	}
+
+	c.Header("Content-Type", fileType.MIME.Value)
+
+	c.File(filepath)
+	n.log.Infof("Endpoint Hit: Plugin served: %s", filename)
+}
+
+// @Summary Uploads a plugin to the media manager
+// @Description Sends a plugin file to the media manager and returns a hash (?)
+// @Tags media
+// @Security Bearer
+// @Accept multipart/form-data
+// @Param file formData file true "plugin file"
+// @Success 200 {object} dto.HashResponse
+// @Failure 400 {object} api.HTTPError
+// @Router /api/v4/media/upload/plugin [post]
+func (n *Node) apiMediaSetPlugin(c *gin.Context) {
+	videoFile, err := c.FormFile("file")
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiMediaSetPlugin: failed to read file")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_read", err, n.log)
+		return
+	}
+
+	openedFile, err := videoFile.Open()
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiMediaSetPlugin: failed to open file")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_open", err, n.log)
+		return
+	}
+
+	defer openedFile.Close()
+
+	hash, err := n.media.AddVideo(openedFile)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiMediaSetPlugin: failed to add image")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_add_image", err, n.log)
+		return
+	}
+
+	response := dto.HashResponse{
+		Hash: hash,
+	}
+
+	c.JSON(http.StatusOK, response)
+}
