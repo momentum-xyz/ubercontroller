@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"database/sql"
 	"embed"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
@@ -82,8 +83,16 @@ func (e EmbedFSWrapper) Open(name string) (fs.File, error) {
 	publicKeyBytes := crypto.FromECDSAPub(publicKeyECDSA)
 	privateKeyBytes := crypto.FromECDSA(privateKey)
 
-	constants["NODE_PRIVATE_KEY"] = hexutil.Encode(privateKeyBytes)
-	constants["NODE_PUBLIC_KEY"] = hexutil.Encode(publicKeyBytes)
+	publicKeyJson, _ := json.Marshal(map[string]string{
+		"node_public_key": hexutil.Encode(publicKeyBytes),
+	})
+
+	privateKeyJson, _ := json.Marshal(map[string]string{
+		"node_private_key": hexutil.Encode(privateKeyBytes),
+	})
+
+	constants["NODE_PRIVATE_KEY"] = string(privateKeyJson)
+	constants["NODE_PUBLIC_KEY"] = string(publicKeyJson)
 
 	for key, value := range constants {
 		s = strings.Replace(s, "{{"+key+"}}", value, -1)
