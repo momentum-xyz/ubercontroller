@@ -165,6 +165,11 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 		verifiedNode := verified.Group("/node")
 		{
 			verifiedNode.POST("/get-challenge", n.apiNodeGetChallenge)
+
+			verifiedNode.GET("/attributes", n.apiNodeGetAttributesValue)
+
+			verifiedNode.POST("/attributes", n.apiNodeSetAttributesValue)
+			verifiedNode.DELETE("/attributes", n.apiNodeRemoveAttributesValue)
 		}
 
 		verifiedObjects := verified.Group("/objects")
