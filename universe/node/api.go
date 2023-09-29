@@ -170,6 +170,9 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 			verifiedNode.POST("/attributes", n.apiNodeSetAttributesValue)
 			verifiedNode.DELETE("/attributes", n.apiNodeRemoveAttributesValue)
+
+			verifiedNode.POST("/hosting-allow-list", n.apiPostItemForHostingAllowList)
+			verifiedNode.DELETE("/hosting-allow-list/:userID", n.apiDeleteItemFromHostingAllowList)
 		}
 
 		verifiedObjects := verified.Group("/objects")

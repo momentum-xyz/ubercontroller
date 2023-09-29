@@ -168,3 +168,140 @@ func GetSignature(privateKey string, nodeID string, odysseyID string) ([]byte, e
 
 	return signature, nil
 }
+
+// @Summary Add user to node hosting allow list
+// @Description Add user to hosting allow list
+// @Tags hosting,node
+// @Security Bearer
+// @Param body body node.apiPostHostingAllowListItem.Body true "body params"
+// @Success 200 {object} nil
+// @Failure 400 {object} api.HTTPError
+// /api/v4/node/hosting-allow-list [post]
+func (n *Node) apiPostItemForHostingAllowList(c *gin.Context) {
+	type Body struct {
+		UserID *umid.UMID `json:"user_id"`
+		Wallet *string    `json:"wallet"`
+	}
+
+	var inBody Body
+	if err := c.ShouldBindJSON(&inBody); err != nil {
+		err = errors.WithMessage(err, "Node: apiPostHostingAllowListItem: failed to bind json")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
+	if inBody.Wallet == nil && inBody.UserID == nil {
+		err := errors.New("Node: apiPostHostingAllowListItem: user_id or wallet must be provided")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
+	if inBody.Wallet != nil && inBody.UserID != nil {
+		err := errors.New("Node: apiPostHostingAllowListItem: only one parameter should be provided: user_id or wallet")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
+	var userID umid.UMID
+	if inBody.Wallet != nil {
+		user, err := n.db.GetUsersDB().GetUserByWallet(c, *inBody.Wallet)
+		if err != nil {
+			err = errors.WithMessage(err, "Node: apiPostHostingAllowListItem: failed to GetUserByWallet")
+			api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+			return
+		}
+		userID = user.UserID
+	} else {
+		userID = *inBody.UserID
+	}
+
+	hostingAllowID := entry.NewAttributeID(universe.GetSystemPluginID(), "hosting_allow_list")
+	hostingAllowValue, ok := n.GetNodeAttributes().GetValue(hostingAllowID)
+	if !ok || hostingAllowValue == nil {
+		err := errors.New("Node: apiNodeGetChallenge: node attribute not found")
+		api.AbortRequest(c, http.StatusNotFound, "attribute_not_found", err, n.log)
+		return
+	}
+
+	modifyFunc := func(v *entry.AttributeValue) (*entry.AttributeValue, error) {
+		if v == nil {
+			v = &entry.AttributeValue{}
+			(*v)["users"] = []interface{}{}
+		}
+		users := utils.GetFromAny((*v)["users"], []string{})
+		if users == nil {
+			return nil, errors.New("Node: apiPostHostingAllowListItem: failed to get users from attribute value")
+		}
+
+		if !utils.Contains(users, userID.String()) {
+			(*v)["users"] = append(users, userID.String())
+		}
+
+		return v, nil
+	}
+
+	_, err := n.GetNodeAttributes().UpdateValue(hostingAllowID, modifyFunc, true)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiPostHostingAllowListItem: failed to update attribute value")
+		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+		return
+	}
+
+	c.JSON(http.StatusOK, nil)
+}
+
+// @Summary Remove user from node hosting allow list
+// @Description Remove user from hosting allow list
+// @Tags hosting,node
+// @Security Bearer
+// @Param user_id path string true "user_id"
+// @Success 200 {object} nil
+// @Failure 400 {object} api.HTTPError
+// /api/v4/node/hosting-allow-list/{user_id} [delete]
+func (n *Node) apiDeleteItemFromHostingAllowList(c *gin.Context) {
+	userID, err := umid.Parse(c.Param("userID"))
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiDeleteItemForHostingAllowList: failed to parse user_id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
+	hostingAllowID := entry.NewAttributeID(universe.GetSystemPluginID(), "hosting_allow_list")
+	hostingAllowValue, ok := n.GetNodeAttributes().GetValue(hostingAllowID)
+	if !ok || hostingAllowValue == nil {
+		err := errors.New("Node: apiNodeGetChallenge: node attribute not found")
+		api.AbortRequest(c, http.StatusNotFound, "attribute_not_found", err, n.log)
+		return
+	}
+
+	modifyFunc := func(v *entry.AttributeValue) (*entry.AttributeValue, error) {
+		if v == nil {
+			v = &entry.AttributeValue{}
+			(*v)["users"] = []interface{}{}
+		}
+
+		users := utils.GetFromAny((*v)["users"], []string{})
+		if users == nil {
+			return nil, errors.New("Node: apiDeleteItemForHostingAllowList: failed to get users from attribute value")
+		}
+
+		var filtered []string
+		for _, id := range users {
+			if id != userID.String() {
+				filtered = append(filtered, id)
+			}
+		}
+		(*v)["users"] = filtered
+
+		return v, nil
+	}
+
+	_, err = n.GetNodeAttributes().UpdateValue(hostingAllowID, modifyFunc, true)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiDeleteItemForHostingAllowList: failed to update attribute value")
+		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+		return
+	}
+
+	c.JSON(http.StatusOK, nil)
+}
