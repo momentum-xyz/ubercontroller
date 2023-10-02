@@ -171,6 +171,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 			verifiedNode.POST("/attributes", n.apiNodeSetAttributesValue)
 			verifiedNode.DELETE("/attributes", n.apiNodeRemoveAttributesValue)
 
+			verifiedNode.GET("/hosting-allow-list", n.apiGetHostingAllowList)
 			verifiedNode.POST("/hosting-allow-list", n.apiPostItemForHostingAllowList)
 			verifiedNode.DELETE("/hosting-allow-list/:userID", n.apiDeleteItemFromHostingAllowList)
 		}

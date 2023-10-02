@@ -13,6 +13,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
@@ -167,6 +168,59 @@ func GetSignature(privateKey string, nodeID string, odysseyID string) ([]byte, e
 	fmt.Println("signature len:", len(signature), "signature[64]", signature[64])
 
 	return signature, nil
+}
+
+// @Summary Get node hosting allow list users
+// @Description Returns node hosting allow list users with resolved details
+// @Tags hosting,node
+// @Security Bearer
+// @Success 200 {array} dto.AllowListItem
+// @Failure 400 {object} api.HTTPError
+// @Router /api/v4/node/hosting-allow-list [get]
+func (n *Node) apiGetHostingAllowList(c *gin.Context) {
+	hostingAllowID := entry.NewAttributeID(universe.GetSystemPluginID(), "hosting_allow_list")
+	hostingAllowValue, ok := n.GetNodeAttributes().GetValue(hostingAllowID)
+	if !ok || hostingAllowValue == nil {
+		err := errors.New("Node: apiNodeGetChallenge: node attribute not found")
+		api.AbortRequest(c, http.StatusNotFound, "attribute_not_found", err, n.log)
+		return
+	}
+
+	allowedUserIDsInterface := utils.GetFromAnyMap(*hostingAllowValue, "users", []interface{}{})
+	allowedUserIDs := make([]string, 0, len(allowedUserIDsInterface))
+	for _, v := range allowedUserIDsInterface {
+		allowedUserIDs = append(allowedUserIDs, v.(string))
+	}
+
+	resolvedUsers := make([]*dto.AllowListItem, 0, len(allowedUserIDs))
+
+	for _, allowListUserID := range allowedUserIDs {
+		umidUserID := umid.MustParse(allowListUserID)
+
+		user, err := n.db.GetUsersDB().GetUserByID(c, umidUserID)
+		if err != nil {
+			err = errors.WithMessage(err, "Node: apiGetHostingAllowList: failed to GetUser")
+			api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+			return
+		}
+
+		wallets, err := n.db.GetUsersDB().GetUserWalletsByUserID(c, umidUserID)
+		if err != nil {
+			err = errors.WithMessage(err, "Node: apiGetHostingAllowList: failed to GetUserWalletsByUserID")
+			api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+			return
+		}
+
+		item := &dto.AllowListItem{
+			UserID:     user.UserID.String(),
+			Wallets:    wallets,
+			AvatarHash: *user.Profile.AvatarHash,
+			Name:       *user.Profile.Name,
+		}
+		resolvedUsers = append(resolvedUsers, item)
+	}
+
+	c.JSON(http.StatusOK, resolvedUsers)
 }
 
 // @Summary Add user to node hosting allow list

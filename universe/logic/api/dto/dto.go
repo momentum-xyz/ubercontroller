@@ -475,3 +475,10 @@ type WalletInfo struct {
 	Staked         string    `json:"staked"`
 	Unbonding      string    `json:"unbonding"`
 }
+
+type AllowListItem struct {
+	UserID     string    `json:"user_id"`
+	Name       string    `json:"name"`
+	AvatarHash string    `json:"avatar_hash"`
+	Wallets    []*string `json:"wallets"`
+}
