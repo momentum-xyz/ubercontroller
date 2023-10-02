@@ -173,7 +173,7 @@ func GetSignature(privateKey string, nodeID string, odysseyID string) ([]byte, e
 // @Description Add user to hosting allow list
 // @Tags hosting,node
 // @Security Bearer
-// @Param body body node.apiPostHostingAllowListItem.Body true "body params"
+// @Param body body node.apiPostItemForHostingAllowList.Body true "body params"
 // @Success 200 {object} nil
 // @Failure 400 {object} api.HTTPError
 // /api/v4/node/hosting-allow-list [post]
