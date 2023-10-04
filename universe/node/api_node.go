@@ -59,7 +59,7 @@ func (n *Node) apiNodeGetChallenge(c *gin.Context) {
 	fmt.Println("hostingAllowValue:", hostingAllowValue)
 	fmt.Println("nodePrivateKeyValue:", nodePrivateKeyValue)
 
-	allowedUserIDs := utils.GetFromAnyMap(*hostingAllowValue, "users", []string{})
+	allowedUserIDs := utils.GetFromAnyMap(*hostingAllowValue, "users", []interface{}{})
 	privateKey := utils.GetFromAnyMap(*nodePrivateKeyValue, "node_private_key", "")
 	userID, err := api.GetUserIDFromContext(c)
 	if err != nil {
@@ -77,7 +77,7 @@ func (n *Node) apiNodeGetChallenge(c *gin.Context) {
 		return
 	}
 
-	if !n.cfg.Common.HostingAllowAll && !utils.Contains(allowedUserIDs, userID.String()) {
+	if !n.cfg.Common.HostingAllowAll && !utils.AnyContains(allowedUserIDs, userID.String()) {
 		fmt.Println("allowedUserIDs:", allowedUserIDs)
 		err := errors.New("Node: apiNodeGetChallenge: allow list does not contain user id: " + userID.String())
 		api.AbortRequest(c, http.StatusBadRequest, "user_not_allowed", err, n.log)
@@ -282,12 +282,12 @@ func (n *Node) apiPostItemForHostingAllowList(c *gin.Context) {
 			v = &entry.AttributeValue{}
 			(*v)["users"] = []interface{}{}
 		}
-		users := utils.GetFromAny((*v)["users"], []string{})
+		users := utils.GetFromAny((*v)["users"], []interface{}{})
 		if users == nil {
 			return nil, errors.New("Node: apiPostHostingAllowListItem: failed to get users from attribute value")
 		}
 
-		if !utils.Contains(users, userID.String()) {
+		if !utils.AnyContains(users, userID.String()) {
 			(*v)["users"] = append(users, userID.String())
 		}
 
@@ -334,14 +334,16 @@ func (n *Node) apiDeleteItemFromHostingAllowList(c *gin.Context) {
 			(*v)["users"] = []interface{}{}
 		}
 
-		users := utils.GetFromAny((*v)["users"], []string{})
+		users := utils.GetFromAny((*v)["users"], []interface{}{})
 		if users == nil {
 			return nil, errors.New("Node: apiDeleteItemForHostingAllowList: failed to get users from attribute value")
 		}
 
-		var filtered []string
+		userIDStr := userID.String()
+
+		var filtered []interface{}
 		for _, id := range users {
-			if id != userID.String() {
+			if id.(string) != userIDStr {
 				filtered = append(filtered, id)
 			}
 		}
