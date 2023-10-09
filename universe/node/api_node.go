@@ -178,6 +178,11 @@ func GetSignature(privateKey string, nodeID string, odysseyID string) ([]byte, e
 // @Failure 400 {object} api.HTTPError
 // @Router /api/v4/node/hosting-allow-list [get]
 func (n *Node) apiGetHostingAllowList(c *gin.Context) {
+	if n.ValidateNodeAdmin(c) != nil {
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", errors.New("Node: apiGetHostingAllowList: user is not admin"), n.log)
+		return
+	}
+
 	hostingAllowID := entry.NewAttributeID(universe.GetSystemPluginID(), "hosting_allow_list")
 	hostingAllowValue, ok := n.GetNodeAttributes().GetValue(hostingAllowID)
 	if !ok || hostingAllowValue == nil {
@@ -232,6 +237,11 @@ func (n *Node) apiGetHostingAllowList(c *gin.Context) {
 // @Failure 400 {object} api.HTTPError
 // /api/v4/node/hosting-allow-list [post]
 func (n *Node) apiPostItemForHostingAllowList(c *gin.Context) {
+	if n.ValidateNodeAdmin(c) != nil {
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", errors.New("Node: apiGetHostingAllowList: user is not admin"), n.log)
+		return
+	}
+
 	type Body struct {
 		UserID *umid.UMID `json:"user_id"`
 		Wallet *string    `json:"wallet"`
@@ -313,6 +323,11 @@ func (n *Node) apiPostItemForHostingAllowList(c *gin.Context) {
 // @Failure 400 {object} api.HTTPError
 // /api/v4/node/hosting-allow-list/{user_id} [delete]
 func (n *Node) apiDeleteItemFromHostingAllowList(c *gin.Context) {
+	if n.ValidateNodeAdmin(c) != nil {
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", errors.New("Node: apiGetHostingAllowList: user is not admin"), n.log)
+		return
+	}
+
 	userID, err := umid.Parse(c.Param("userID"))
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiDeleteItemForHostingAllowList: failed to parse user_id")
@@ -360,4 +375,30 @@ func (n *Node) apiDeleteItemFromHostingAllowList(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, nil)
+}
+
+func (n *Node) ValidateNodeAdmin(
+	c *gin.Context,
+) error {
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiNodeGetChallenge: failed to get user umid from context")
+		return err
+	}
+
+	// owner is always considered an admin, TODO: add this to check function
+	if n.GetOwnerID() == userID {
+		return nil
+	}
+	// we have to lookup through the db user tree
+	userObjectID := entry.NewUserObjectID(userID, n.GetID())
+	isAdmin, err := n.db.GetUserObjectsDB().CheckIsIndirectAdminByID(c, userObjectID)
+	if err != nil {
+		return errors.WithMessage(err, "failed to check admin status")
+	}
+	if isAdmin {
+		return nil
+	}
+	return errors.New("operation not permitted")
+
 }
