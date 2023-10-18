@@ -53,10 +53,10 @@ func (n *Node) Listener(bcName string, events []*harvester.UpdateEvent, stakeEve
 
 				objectName := "Odyssey#" + strconv.FormatUint(seqID, 10)
 
-				isLocal := n.IsLocalWorld(world)
-				if !isLocal {
-					worldTemplate.ObjectTypeID = universe.RemoteWorldObjectTypeID
-				}
+				// isLocal := n.IsLocalWorld(world)
+				// if !isLocal {
+				// 	worldTemplate.ObjectTypeID = universe.RemoteWorldObjectTypeID
+				// }
 
 				worldTemplate.ObjectID = &event.OdysseyID
 				worldTemplate.ObjectName = &objectName

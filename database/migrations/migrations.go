@@ -27,7 +27,6 @@ import (
 
 	"github.com/momentum-xyz/ubercontroller/config"
 	"github.com/momentum-xyz/ubercontroller/types"
-	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
@@ -84,17 +83,16 @@ func (e EmbedFSWrapper) Open(name string) (fs.File, error) {
 	publicKeyBytes := crypto.FromECDSAPub(publicKeyECDSA)
 	privateKeyBytes := crypto.FromECDSA(privateKey)
 
-	keyPair := universe.NodeKeyPair{
-		PublicKey:  hexutil.Encode(publicKeyBytes),
-		PrivateKey: hexutil.Encode(privateKeyBytes),
-	}
+	publicKeyJson, _ := json.Marshal(map[string]string{
+		"node_public_key": hexutil.Encode(publicKeyBytes),
+	})
 
-	keyPairJson, err := json.Marshal(keyPair)
-	if err != nil {
-		return nil, err
-	}
+	privateKeyJson, _ := json.Marshal(map[string]string{
+		"node_private_key": hexutil.Encode(privateKeyBytes),
+	})
 
-	constants["NODE_KEY"] = string(keyPairJson)
+	constants["NODE_PRIVATE_KEY"] = string(privateKeyJson)
+	constants["NODE_PUBLIC_KEY"] = string(publicKeyJson)
 
 	for key, value := range constants {
 		s = strings.Replace(s, "{{"+key+"}}", value, -1)
