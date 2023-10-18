@@ -397,7 +397,7 @@ func (n *Node) apiMediaGetAsset(c *gin.Context) {
 // @Router /render/plugin/{directory}/{filepath} [get]
 func (n *Node) apiMediaGetPlugin(c *gin.Context) {
 	filepath := c.Param("filepath")
-	match, err := regexp.MatchString(`^[a-zA-Z0-9]+$`, filename)
+	match, err := regexp.MatchString(`^[a-zA-Z0-9]+$`, filepath)
 	if !match {
 		err := errors.New("Node: apiMediaGetPlugin: invalid filename format")
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_format", err, n.log)
@@ -409,7 +409,7 @@ func (n *Node) apiMediaGetPlugin(c *gin.Context) {
 		return
 	}
 
-	fileType, filepath, err := n.media.GetAsset(filename)
+	fileType, filepath, err := n.media.GetAsset(filepath)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiMediaGetPlugin: failed to get asset")
 		api.AbortRequest(c, http.StatusNotFound, "failed_to_get_asset", err, n.log)
@@ -419,7 +419,7 @@ func (n *Node) apiMediaGetPlugin(c *gin.Context) {
 	c.Header("Content-Type", fileType.MIME.Value)
 
 	c.File(filepath)
-	n.log.Infof("Endpoint Hit: Plugin served: %s", filename)
+	n.log.Infof("Endpoint Hit: Plugin served: %s", filepath)
 }
 
 // @Summary Uploads a plugin to the media manager
