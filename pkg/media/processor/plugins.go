@@ -5,18 +5,44 @@ import (
 	"compress/gzip"
 	"crypto/md5"
 	"encoding/hex"
+	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 
 	"github.com/pkg/errors"
 )
 
-func createMd5Hash(input string) string {
-	hash := md5.New()
-	hash.Write([]byte(input))
-	hashInBytes := hash.Sum(nil)[:16]
-	return hex.EncodeToString(hashInBytes)
+func dirMD5(dirPath string) (string, error) {
+	fileSystem := os.DirFS(dirPath)
+	hasher := md5.New()
+	err := fs.WalkDir(
+		fileSystem, ".", func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if d.Type().IsRegular() {
+				fmt.Println(filepath.Join(dirPath, path))
+				f, err := os.Open(filepath.Join(dirPath, path))
+				if err != nil {
+					return err
+				}
+				defer f.Close()
+				_, err = io.Copy(hasher, f)
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		},
+	)
+	if err != nil {
+		return "", err
+	}
+	binHash := hasher.Sum(nil)
+	hash := hex.EncodeToString(binHash[:])
+	return hash, nil
 }
 
 func extract(gzipStream io.Reader, targetDir string) error {
@@ -67,13 +93,13 @@ func extract(gzipStream io.Reader, targetDir string) error {
 }
 
 func (p *Processor) ProcessPlugin(archivePath string) (string, error) {
-	hash := createMd5Hash(filepath.Base(archivePath))
 
-	targetDir := p.Pluginpath + "/" + hash
-	if err := os.MkdirAll(targetDir, 0755); err != nil {
-		err := errors.WithMessage(err, "Error creating directory")
+	tempDir, err := os.MkdirTemp(p.Pluginpath, ".upload-")
+	if err != nil {
+		err := errors.WithMessage(err, "Error creating temporary directory")
 		return "", err
 	}
+	defer os.RemoveAll(tempDir)
 
 	file, err := os.Open(archivePath)
 	if err != nil {
@@ -82,10 +108,35 @@ func (p *Processor) ProcessPlugin(archivePath string) (string, error) {
 	}
 	defer file.Close()
 
-	if err := extract(file, targetDir); err != nil {
+	if err := extract(file, tempDir); err != nil {
 		err := errors.WithMessage(err, "Error extracting archive")
 		return "", err
 	}
+
+	hash, err := dirMD5(tempDir)
+	if err != nil {
+		err := errors.WithMessage(err, "Error calculating md5 hash of content")
+		return "", err
+	}
+
+	targetDir := p.Pluginpath + "/" + hash
+	tStat, err := os.Stat(targetDir)
+	if err == nil {
+		if tStat.IsDir() {
+			return hash, nil
+		} else {
+			return "", errors.New("There is already regular file with such name")
+		}
+	}
+
+	err = os.Rename(tempDir, targetDir)
+
+	if err != nil {
+		err := errors.WithMessage(err, "Error renaming temp dir to target name")
+		return "", err
+	}
+
+	os.Chmod(targetDir, 0755)
 
 	return hash, nil
 }
