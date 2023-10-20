@@ -16,5 +16,6 @@ func (x *Media) Init() {
 	x.Videopath = "./storage/videos"
 	x.Audiopath = "./storage/tracks"
 	x.Assetpath = "./storage/assets"
+	x.Pluginpath = "./storage/plugins"
 	x.LogLevel = 0
 }
