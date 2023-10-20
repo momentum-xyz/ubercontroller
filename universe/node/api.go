@@ -177,6 +177,8 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 			verifiedNode.GET("/hosting-allow-list", n.apiGetHostingAllowList)
 			verifiedNode.POST("/hosting-allow-list", n.apiPostItemForHostingAllowList)
 			verifiedNode.DELETE("/hosting-allow-list/:userID", n.apiDeleteItemFromHostingAllowList)
+
+			verifiedNode.POST("/activate-plugin", n.apiNodeActivatePlugin)
 		}
 
 		verifiedObjects := verified.Group("/objects")

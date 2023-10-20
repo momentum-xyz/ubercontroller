@@ -5,10 +5,12 @@ import (
 	"compress/gzip"
 	"crypto/md5"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -130,6 +132,45 @@ func storeToFile(body io.ReadCloser) (string, error) {
 	return file.Name(), nil
 }
 
+type AttributeTypeDescription struct {
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	Sync        *string `json:"sync"`
+}
+
+type Manifest struct {
+	Name           string                      `json:"name"`
+	Description    string                      `json:"description"`
+	Version        string                      `json:"version"`
+	AttributeTypes *[]AttributeTypeDescription `json:"attribute_types"`
+	Scopes         map[string][]string         `json:"scopes"`
+}
+
+func (p *Processor) LoadPluginManifest(pluginHash string) (*Manifest, error) {
+	manifestFn := filepath.Join(p.Pluginpath, pluginHash, "manifest.json")
+
+	_, err := os.Stat(manifestFn)
+	if err != nil {
+		err := errors.WithMessage(err, "manifest.json not found")
+		return nil, err
+	}
+
+	file, err := os.Open(manifestFn)
+	if err != nil {
+		err := errors.WithMessage(err, "Error opening file")
+		return nil, err
+	}
+
+	var manifest Manifest
+	err = json.NewDecoder(file).Decode(&manifest)
+	if err != nil {
+		err := errors.WithMessage(err, "Error decoding manifest")
+		return nil, err
+	}
+
+	return &manifest, nil
+}
+
 func (p *Processor) ProcessPlugin(body io.ReadCloser) (string, error) {
 	archivePath, err := storeToFile(body)
 	if err != nil {
@@ -165,11 +206,8 @@ func (p *Processor) ProcessPlugin(body io.ReadCloser) (string, error) {
 		return "", err
 	}
 
-	manifestFn := filepath.Join(tempDir, "manifest.json")
-	_, err = os.Stat(manifestFn)
-	if err != nil {
-		fmt.Println("Error statting manifest.json", err)
-		err := errors.WithMessage(err, "manifest.json not found")
+	if _, err := p.LoadPluginManifest(path.Base(tempDir)); err != nil {
+		err := errors.WithMessage(err, "Error loading manifest")
 		return "", err
 	}
 

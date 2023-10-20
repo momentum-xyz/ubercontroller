@@ -221,6 +221,15 @@ func (m *Media) GetPlugin(filename string) (*fileTypes.Type, string, error) {
 	return &fileType, filepath, nil
 }
 
+func (m *Media) GetPluginManifest(pluginHash string) (*processor.Manifest, error) {
+	meta, err := m.processor.LoadPluginManifest(pluginHash)
+	if err != nil {
+		return nil, errors.WithMessage(err, "error loading plugin manifest")
+	}
+
+	return meta, nil
+}
+
 func (m *Media) GetAsset(filename string) (*fileTypes.Type, string, error) {
 	m.log.Debug("Endpoint Hit: Asset Get: ", filename)
 

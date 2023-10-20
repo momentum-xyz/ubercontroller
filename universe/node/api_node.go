@@ -377,6 +377,41 @@ func (n *Node) apiDeleteItemFromHostingAllowList(c *gin.Context) {
 	c.JSON(http.StatusOK, nil)
 }
 
+// @Summary Activate plugin by hash
+// @Description Activate plugin by hash
+// @Tags plugins
+// @Security Bearer
+// @Param body body node.
+// @Success 200 {object} nil
+// @Failure 400 {object} api.
+// @Router /api/v4/node/register_plugin [post]
+func (n *Node) apiNodeActivatePlugin(c *gin.Context) {
+	if n.ValidateNodeAdmin(c) != nil {
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", errors.New("Node: apiNodeRegisterPlugin: user is not admin"), n.log)
+		return
+	}
+
+	type Body struct {
+		PluginHash string `json:"plugin_hash" binding:"required"`
+	}
+
+	var inBody Body
+	if err := c.ShouldBindJSON(&inBody); err != nil {
+		err = errors.WithMessage(err, "Node: apiNodeRegisterPlugin: failed to bind json")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
+	manifest, err := n.media.GetPluginManifest(inBody.PluginHash)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiNodeRegisterPlugin: failed to get plugin manifest")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+	// TODO
+	fmt.Println("TODO Register plugin by manifest:", manifest)
+}
+
 func (n *Node) ValidateNodeAdmin(
 	c *gin.Context,
 ) error {
