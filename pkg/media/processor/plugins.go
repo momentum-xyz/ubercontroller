@@ -132,6 +132,15 @@ func (p *Processor) ProcessPlugin(archivePath string) (string, error) {
 	err = os.Rename(tempDir, targetDir)
 
 	if err != nil {
+		if errors.Is(err, fs.ErrExist) {
+			tStat, err = os.Stat(targetDir)
+			if err == nil {
+				if tStat.IsDir() {
+					return hash, nil
+				}
+			}
+		}
+
 		err := errors.WithMessage(err, "Error renaming temp dir to target name")
 		return "", err
 	}
