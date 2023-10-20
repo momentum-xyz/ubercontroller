@@ -10,6 +10,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -45,7 +46,7 @@ func dirMD5(dirPath string) (string, error) {
 	return hash, nil
 }
 
-func extract(gzipStream io.Reader, targetDir string) error {
+func extract(gzipStream io.Reader, targetDir string, stripFirstLevel bool) error {
 	uncompressedStream, err := gzip.NewReader(gzipStream)
 	if err != nil {
 		return err
@@ -60,6 +61,16 @@ func extract(gzipStream io.Reader, targetDir string) error {
 		}
 		if err != nil {
 			return err
+		}
+
+		if stripFirstLevel {
+			// Strip the first level of directory structure
+			parts := strings.SplitN(filepath.Clean(header.Name), "/", 2)
+			if len(parts) > 1 {
+				header.Name = parts[1]
+			} else {
+				continue // skip the top-level directory itself
+			}
 		}
 
 		target := filepath.Join(targetDir, header.Name)
@@ -149,7 +160,7 @@ func (p *Processor) ProcessPlugin(body io.ReadCloser) (string, error) {
 	}
 	defer file.Close()
 
-	if err := extract(file, tempDir); err != nil {
+	if err := extract(file, tempDir, true); err != nil {
 		err := errors.WithMessage(err, "Error extracting archive")
 		return "", err
 	}
