@@ -179,7 +179,7 @@ func (p *Processor) ProcessPlugin(body io.ReadCloser) (string, error) {
 		return "", err
 	}
 
-	targetDir := p.Pluginpath + "/" + hash
+	targetDir := filepath.Join(p.Pluginpath, hash)
 	tStat, err := os.Stat(targetDir)
 	if err == nil {
 		if tStat.IsDir() {
@@ -189,6 +189,7 @@ func (p *Processor) ProcessPlugin(body io.ReadCloser) (string, error) {
 		}
 	}
 
+	fmt.Println("Renaming", tempDir, "to", targetDir)
 	err = os.Rename(tempDir, targetDir)
 
 	if err != nil {
