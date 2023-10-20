@@ -255,3 +255,14 @@ func (m *Media) AddAsset(file multipart.File) (string, error) {
 
 	return hash, err
 }
+
+func (m *Media) AddPlugin(file multipart.File) (string, error) {
+	m.log.Info("Endpoint Hit: AddPlugin")
+
+	hash, err := m.processor.ProcessPlugin(file)
+	if err != nil {
+		return "", errors.WithMessage(err, "error writing plugin")
+	}
+
+	return hash, err
+}

@@ -431,7 +431,7 @@ func (n *Node) apiMediaGetPlugin(c *gin.Context) {
 // @Success 200 {object} dto.HashResponse
 // @Failure 400 {object} api.HTTPError
 // @Router /api/v4/media/upload/plugin [post]
-func (n *Node) apiMediaSetPlugin(c *gin.Context) {
+func (n *Node) apiMediaUploadPlugin(c *gin.Context) {
 	videoFile, err := c.FormFile("file")
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiMediaSetPlugin: failed to read file")
@@ -448,10 +448,10 @@ func (n *Node) apiMediaSetPlugin(c *gin.Context) {
 
 	defer openedFile.Close()
 
-	hash, err := n.media.AddVideo(openedFile)
+	hash, err := n.media.AddPlugin(openedFile)
 	if err != nil {
-		err := errors.WithMessage(err, "Node: apiMediaSetPlugin: failed to add image")
-		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_add_image", err, n.log)
+		err := errors.WithMessage(err, "Node: apiMediaSetPlugin: failed to add plugin")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_add_plugin", err, n.log)
 		return
 	}
 

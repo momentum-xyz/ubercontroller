@@ -52,7 +52,6 @@ func extract(gzipStream io.Reader, targetDir string) error {
 	}
 
 	tarReader := tar.NewReader(uncompressedStream)
-	manifestExists := false
 
 	for {
 		header, err := tarReader.Next()
@@ -64,6 +63,7 @@ func extract(gzipStream io.Reader, targetDir string) error {
 		}
 
 		target := filepath.Join(targetDir, header.Name)
+		fmt.Println("Extracting", target)
 
 		switch header.Typeflag {
 		case tar.TypeDir:
@@ -71,9 +71,6 @@ func extract(gzipStream io.Reader, targetDir string) error {
 				return err
 			}
 		case tar.TypeReg:
-			if header.Name == "manifest.json" {
-				manifestExists = true
-			}
 			file, err := os.Create(target)
 			if err != nil {
 				return err
@@ -85,21 +82,65 @@ func extract(gzipStream io.Reader, targetDir string) error {
 		}
 	}
 
-	if !manifestExists {
-		return errors.New("manifest.json not found")
-	}
-
 	return nil
 }
 
-func (p *Processor) ProcessPlugin(archivePath string) (string, error) {
+func storeToFile(body io.ReadCloser) (string, error) {
+	buf := make([]byte, 265)
+
+	n, err := body.Read(buf)
+	if err != nil {
+		return "", err
+	}
+
+	file, err := os.CreateTemp("", "tmp")
+	if err != nil {
+		return "", err
+	}
+	fmt.Println("Created tmp file", file.Name())
+
+	defer func() {
+		// _, err := os.Stat(file.Name())
+		// if err == nil {
+		if err != nil {
+			fmt.Println("Removing tmp file after error", file.Name())
+			os.Remove(file.Name())
+		}
+	}()
+
+	file.Write(buf[:n])
+	_, err = io.Copy(file, body)
+	if err != nil {
+		return "", err
+	}
+
+	file.Close()
+
+	return file.Name(), nil
+}
+
+func (p *Processor) ProcessPlugin(body io.ReadCloser) (string, error) {
+	archivePath, err := storeToFile(body)
+	if err != nil {
+		return "", err
+	}
+	// defer os.Remove(archivePath)
+	defer func() {
+		fmt.Println("Removing tmp file", archivePath)
+		os.Remove(archivePath)
+	}()
 
 	tempDir, err := os.MkdirTemp(p.Pluginpath, ".upload-")
 	if err != nil {
 		err := errors.WithMessage(err, "Error creating temporary directory")
 		return "", err
 	}
-	defer os.RemoveAll(tempDir)
+	fmt.Println("Created tmp dir", tempDir)
+	// defer os.RemoveAll(tempDir)
+	defer func() {
+		fmt.Println("Removing tmp dir", tempDir)
+		os.RemoveAll(tempDir)
+	}()
 
 	file, err := os.Open(archivePath)
 	if err != nil {
@@ -110,6 +151,14 @@ func (p *Processor) ProcessPlugin(archivePath string) (string, error) {
 
 	if err := extract(file, tempDir); err != nil {
 		err := errors.WithMessage(err, "Error extracting archive")
+		return "", err
+	}
+
+	manifestFn := filepath.Join(tempDir, "manifest.json")
+	_, err = os.Stat(manifestFn)
+	if err != nil {
+		fmt.Println("Error statting manifest.json", err)
+		err := errors.WithMessage(err, "manifest.json not found")
 		return "", err
 	}
 

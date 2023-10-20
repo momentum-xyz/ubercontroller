@@ -89,7 +89,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 			media.POST("/upload/image", n.apiMediaUploadImage)
 
 			media.GET("/get/:file", n.apiMediaGetPlugin)
-			media.POST("/upload/plugin", n.apiMediaSetPlugin)
+			media.POST("/upload/plugin", n.apiMediaUploadPlugin)
 
 			media.GET("/render/video/:file", n.apiMediaGetVideo)
 			media.POST("/upload/video", n.apiMediaUploadVideo)
