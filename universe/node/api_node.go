@@ -381,10 +381,10 @@ func (n *Node) apiDeleteItemFromHostingAllowList(c *gin.Context) {
 // @Description Activate plugin by hash
 // @Tags plugins
 // @Security Bearer
-// @Param body body node.
+// @Param body body node.apiNodeActivatePlugin.Body true "body params"
 // @Success 200 {object} nil
-// @Failure 400 {object} api.
-// @Router /api/v4/node/register_plugin [post]
+// @Failure 400 {object} api.HTTPError
+// @Router /api/v4/node/activate-plugin [post]
 func (n *Node) apiNodeActivatePlugin(c *gin.Context) {
 	if n.ValidateNodeAdmin(c) != nil {
 		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", errors.New("Node: apiNodeRegisterPlugin: user is not admin"), n.log)
