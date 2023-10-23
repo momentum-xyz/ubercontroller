@@ -140,10 +140,11 @@ type AttributeTypeDescription struct {
 
 type Manifest struct {
 	Name           string                      `json:"name"`
+	DisplayName    *string                     `json:"displayName"`
 	Description    string                      `json:"description"`
 	Version        string                      `json:"version"`
 	AttributeTypes *[]AttributeTypeDescription `json:"attribute_types"`
-	Scopes         map[string][]string         `json:"scopes"`
+	Scopes         *map[string][]string        `json:"scopes"`
 }
 
 func (p *Processor) LoadPluginManifest(pluginHash string) (*Manifest, error) {

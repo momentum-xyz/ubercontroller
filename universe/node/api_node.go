@@ -408,8 +408,53 @@ func (n *Node) apiNodeActivatePlugin(c *gin.Context) {
 		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
 		return
 	}
-	// TODO
-	fmt.Println("TODO Register plugin by manifest:", manifest)
+	fmt.Println("Register plugin by manifest:", manifest)
+
+	var plugin universe.Plugin
+
+	n.GetPlugins().FilterPlugins(func(pluginID umid.UMID, p universe.Plugin) bool {
+		if p.GetMeta()["name"] == manifest.Name {
+			plugin = p
+		}
+		return false
+	})
+
+	pluginMeta := entry.PluginMeta{
+		"name":            manifest.Name,
+		"displayName":     manifest.DisplayName,
+		"description":     manifest.Description,
+		"version":         manifest.Version,
+		"attribute_types": manifest.AttributeTypes,
+		"scopes":          manifest.Scopes,
+		"scopeName":       manifest.Name,
+		"hash":            inBody.PluginHash,
+		"scriptUrl":       inBody.PluginHash,
+	}
+
+	if plugin == nil {
+		plugin, err = n.plugins.CreatePlugin(umid.New())
+		if err != nil {
+			err = errors.WithMessage(err, "Node: apiNodeRegisterPlugin: failed to create plugin")
+			api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+			return
+		}
+
+		err = n.plugins.Save()
+		if err != nil {
+			err = errors.WithMessage(err, "Node: apiNodeRegisterPlugin: failed to save plugins")
+			api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+			return
+		}
+	}
+
+	err = plugin.SetMeta(pluginMeta, true)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiNodeRegisterPlugin: failed to set plugin meta")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
+	// TODO create attributes
 }
 
 func (n *Node) ValidateNodeAdmin(
