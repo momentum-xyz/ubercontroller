@@ -197,30 +197,6 @@ func (m *Media) DeleteAudio(filename string) error {
 	return nil
 }
 
-func (m *Media) GetPlugin(filename string) (*fileTypes.Type, string, error) {
-	m.log.Debug("Endpoint Hit: Plugin Get: ", filename)
-
-	filepath := path.Join(m.processor.Assetpath, path.Base(filename))
-	buf := make([]byte, 264)
-	file, err := os.Open(filepath)
-	if err != nil {
-		return nil, "", errors.WithMessage(err, "error opening file")
-	}
-	defer file.Close()
-
-	n, err := file.Read(buf)
-	if err != nil {
-		return nil, "", errors.WithMessage(err, "error reading file buffer")
-	}
-
-	fileType, err := filetype.Get(buf[:n])
-	if err != nil {
-		return nil, "", errors.WithMessage(err, "error getting filetype")
-	}
-
-	return &fileType, filepath, nil
-}
-
 func (m *Media) GetPluginManifest(pluginHash string) (*processor.Manifest, error) {
 	meta, err := m.processor.LoadPluginManifest(pluginHash)
 	if err != nil {
