@@ -90,7 +90,7 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 
 			// media.GET("/get/:file", n.apiMediaGetPlugin)
 			media.Static("/render/plugin/", n.CFG.Media.Pluginpath)
-			media.POST("/upload/plugin", n.apiMediaUploadPlugin)
+			media.POST("/upload/plugin", middleware.VerifyUser(n.log), middleware.AuthorizeNodeAdmin(n.log), n.apiMediaUploadPlugin)
 
 			media.GET("/render/video/:file", n.apiMediaGetVideo)
 			media.POST("/upload/video", n.apiMediaUploadVideo)
@@ -175,11 +175,11 @@ func (n *Node) RegisterAPI(r *gin.Engine) {
 			verifiedNode.POST("/attributes", n.apiNodeSetAttributesValue)
 			verifiedNode.DELETE("/attributes", n.apiNodeRemoveAttributesValue)
 
-			verifiedNode.GET("/hosting-allow-list", n.apiGetHostingAllowList)
-			verifiedNode.POST("/hosting-allow-list", n.apiPostItemForHostingAllowList)
-			verifiedNode.DELETE("/hosting-allow-list/:userID", n.apiDeleteItemFromHostingAllowList)
+			verifiedNode.GET("/hosting-allow-list", middleware.AuthorizeNodeAdmin(n.log), n.apiGetHostingAllowList)
+			verifiedNode.POST("/hosting-allow-list", middleware.AuthorizeNodeAdmin(n.log), n.apiPostItemForHostingAllowList)
+			verifiedNode.DELETE("/hosting-allow-list/:userID", middleware.AuthorizeNodeAdmin(n.log), n.apiDeleteItemFromHostingAllowList)
 
-			verifiedNode.POST("/activate-plugin", n.apiNodeActivatePlugin)
+			verifiedNode.POST("/activate-plugin", middleware.AuthorizeNodeAdmin(n.log), n.apiNodeActivatePlugin)
 		}
 
 		verifiedObjects := verified.Group("/objects")
