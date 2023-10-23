@@ -410,6 +410,8 @@ func (n *Node) apiNodeActivatePlugin(c *gin.Context) {
 	}
 	fmt.Println("Register plugin by manifest:", manifest)
 
+	// Create/Update plugin
+
 	var plugin universe.Plugin
 
 	n.GetPlugins().FilterPlugins(func(pluginID umid.UMID, p universe.Plugin) bool {
@@ -454,7 +456,64 @@ func (n *Node) apiNodeActivatePlugin(c *gin.Context) {
 		return
 	}
 
-	// TODO create attributes
+	// Create/Update attributes
+
+	if manifest.AttributeTypes != nil {
+		for _, attrTypeDescription := range *manifest.AttributeTypes {
+			fmt.Println("Process attrTypeDescription:", attrTypeDescription, "plugin.GetID():", plugin.GetID().String())
+			attrTypeID := entry.NewAttributeTypeID(plugin.GetID(), attrTypeDescription.Name)
+
+			attrType, _ := n.attributeTypes.GetAttributeType(attrTypeID)
+
+			if attrType == nil {
+				fmt.Println("Create attribute type:", attrTypeID)
+				attrType, err = n.attributeTypes.CreateAttributeType(attrTypeID)
+				if err != nil {
+					err = errors.WithMessage(err, "Node: apiNodeRegisterPlugin: failed to create attribute type")
+					api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+					return
+				}
+			}
+
+			description := attrTypeDescription.Description
+			err = attrType.SetDescription(&description, true)
+			if err != nil {
+				err = errors.WithMessage(err, "Node: apiNodeRegisterPlugin: failed to set attribute type description")
+				api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+				return
+			}
+
+			modifyFn := func(options *entry.AttributeOptions) (*entry.AttributeOptions, error) {
+				if attrTypeDescription.Sync == nil {
+					return nil, nil
+				}
+
+				if *attrTypeDescription.Sync == "object" {
+					scope := make([]string, 1)
+					scope[0] = "object"
+
+					posbus_auto := make(map[string]interface{})
+					posbus_auto["scope"] = scope
+					posbus_auto["send_to"] = 1
+
+					options = &entry.AttributeOptions{
+						"posbus_auto": posbus_auto,
+					}
+				}
+
+				return options, nil
+			}
+
+			attrType.SetOptions(modifyFn, false)
+		}
+
+		err = n.attributeTypes.Save()
+		if err != nil {
+			err = errors.WithMessage(err, "Node: apiNodeRegisterPlugin: failed to save attribute types")
+			api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+			return
+		}
+	}
 }
 
 func (n *Node) ValidateNodeAdmin(
