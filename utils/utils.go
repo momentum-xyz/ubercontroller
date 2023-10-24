@@ -203,3 +203,12 @@ func Contains[T comparable](s []T, e T) bool {
 	}
 	return false
 }
+
+func AnyContains[T comparable](s []any, e T) bool {
+	for _, a := range s {
+		if a.(T) == e {
+			return true
+		}
+	}
+	return false
+}

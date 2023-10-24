@@ -13,6 +13,7 @@ import (
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/api"
+	"github.com/momentum-xyz/ubercontroller/universe/logic/api/dto"
 	"github.com/momentum-xyz/ubercontroller/utils"
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
@@ -58,7 +59,7 @@ func (n *Node) apiNodeGetChallenge(c *gin.Context) {
 	fmt.Println("hostingAllowValue:", hostingAllowValue)
 	fmt.Println("nodePrivateKeyValue:", nodePrivateKeyValue)
 
-	allowedUserIDs := utils.GetFromAnyMap(*hostingAllowValue, "users", []string{})
+	allowedUserIDs := utils.GetFromAnyMap(*hostingAllowValue, "users", []interface{}{})
 	privateKey := utils.GetFromAnyMap(*nodePrivateKeyValue, "node_private_key", "")
 	userID, err := api.GetUserIDFromContext(c)
 	if err != nil {
@@ -76,7 +77,7 @@ func (n *Node) apiNodeGetChallenge(c *gin.Context) {
 		return
 	}
 
-	if !n.cfg.Common.HostingAllowAll && !utils.Contains(allowedUserIDs, userID.String()) {
+	if !n.cfg.Common.HostingAllowAll && !utils.AnyContains(allowedUserIDs, userID.String()) {
 		fmt.Println("allowedUserIDs:", allowedUserIDs)
 		err := errors.New("Node: apiNodeGetChallenge: allow list does not contain user id: " + userID.String())
 		api.AbortRequest(c, http.StatusBadRequest, "user_not_allowed", err, n.log)
@@ -167,4 +168,237 @@ func GetSignature(privateKey string, nodeID string, odysseyID string) ([]byte, e
 	fmt.Println("signature len:", len(signature), "signature[64]", signature[64])
 
 	return signature, nil
+}
+
+// @Summary Get node hosting allow list users
+// @Description Returns node hosting allow list users with resolved details
+// @Tags hosting,node
+// @Security Bearer
+// @Success 200 {array} dto.AllowListItem
+// @Failure 400 {object} api.HTTPError
+// @Router /api/v4/node/hosting-allow-list [get]
+func (n *Node) apiGetHostingAllowList(c *gin.Context) {
+	if n.ValidateNodeAdmin(c) != nil {
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", errors.New("Node: apiGetHostingAllowList: user is not admin"), n.log)
+		return
+	}
+
+	hostingAllowID := entry.NewAttributeID(universe.GetSystemPluginID(), "hosting_allow_list")
+	hostingAllowValue, ok := n.GetNodeAttributes().GetValue(hostingAllowID)
+	if !ok || hostingAllowValue == nil {
+		err := errors.New("Node: apiNodeGetChallenge: node attribute not found")
+		api.AbortRequest(c, http.StatusNotFound, "attribute_not_found", err, n.log)
+		return
+	}
+
+	allowedUserIDsInterface := utils.GetFromAnyMap(*hostingAllowValue, "users", []interface{}{})
+	allowedUserIDs := make([]string, 0, len(allowedUserIDsInterface))
+	for _, v := range allowedUserIDsInterface {
+		allowedUserIDs = append(allowedUserIDs, v.(string))
+	}
+
+	resolvedUsers := make([]*dto.AllowListItem, 0, len(allowedUserIDs))
+
+	for _, allowListUserID := range allowedUserIDs {
+		umidUserID := umid.MustParse(allowListUserID)
+
+		user, err := n.db.GetUsersDB().GetUserByID(c, umidUserID)
+		if err != nil {
+			err = errors.WithMessage(err, "Node: apiGetHostingAllowList: failed to GetUser")
+			api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+			return
+		}
+
+		wallets, err := n.db.GetUsersDB().GetUserWalletsByUserID(c, umidUserID)
+		if err != nil {
+			err = errors.WithMessage(err, "Node: apiGetHostingAllowList: failed to GetUserWalletsByUserID")
+			api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+			return
+		}
+
+		item := &dto.AllowListItem{
+			UserID:     user.UserID.String(),
+			Wallets:    wallets,
+			AvatarHash: *user.Profile.AvatarHash,
+			Name:       *user.Profile.Name,
+		}
+		resolvedUsers = append(resolvedUsers, item)
+	}
+
+	c.JSON(http.StatusOK, resolvedUsers)
+}
+
+// @Summary Add user to node hosting allow list
+// @Description Add user to hosting allow list
+// @Tags hosting,node
+// @Security Bearer
+// @Param body body node.apiPostItemForHostingAllowList.Body true "body params"
+// @Success 200 {object} nil
+// @Failure 400 {object} api.HTTPError
+// /api/v4/node/hosting-allow-list [post]
+func (n *Node) apiPostItemForHostingAllowList(c *gin.Context) {
+	if n.ValidateNodeAdmin(c) != nil {
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", errors.New("Node: apiGetHostingAllowList: user is not admin"), n.log)
+		return
+	}
+
+	type Body struct {
+		UserID *umid.UMID `json:"user_id"`
+		Wallet *string    `json:"wallet"`
+	}
+
+	var inBody Body
+	if err := c.ShouldBindJSON(&inBody); err != nil {
+		err = errors.WithMessage(err, "Node: apiPostHostingAllowListItem: failed to bind json")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
+	if inBody.Wallet == nil && inBody.UserID == nil {
+		err := errors.New("Node: apiPostHostingAllowListItem: user_id or wallet must be provided")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
+	if inBody.Wallet != nil && inBody.UserID != nil {
+		err := errors.New("Node: apiPostHostingAllowListItem: only one parameter should be provided: user_id or wallet")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
+	var userID umid.UMID
+	if inBody.Wallet != nil {
+		user, err := n.db.GetUsersDB().GetUserByWallet(c, *inBody.Wallet)
+		if err != nil {
+			err = errors.WithMessage(err, "Node: apiPostHostingAllowListItem: failed to GetUserByWallet")
+			api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+			return
+		}
+		userID = user.UserID
+	} else {
+		userID = *inBody.UserID
+	}
+
+	hostingAllowID := entry.NewAttributeID(universe.GetSystemPluginID(), "hosting_allow_list")
+	hostingAllowValue, ok := n.GetNodeAttributes().GetValue(hostingAllowID)
+	if !ok || hostingAllowValue == nil {
+		err := errors.New("Node: apiNodeGetChallenge: node attribute not found")
+		api.AbortRequest(c, http.StatusNotFound, "attribute_not_found", err, n.log)
+		return
+	}
+
+	modifyFunc := func(v *entry.AttributeValue) (*entry.AttributeValue, error) {
+		if v == nil {
+			v = &entry.AttributeValue{}
+			(*v)["users"] = []interface{}{}
+		}
+		users := utils.GetFromAny((*v)["users"], []interface{}{})
+		if users == nil {
+			return nil, errors.New("Node: apiPostHostingAllowListItem: failed to get users from attribute value")
+		}
+
+		if !utils.AnyContains(users, userID.String()) {
+			(*v)["users"] = append(users, userID.String())
+		}
+
+		return v, nil
+	}
+
+	_, err := n.GetNodeAttributes().UpdateValue(hostingAllowID, modifyFunc, true)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiPostHostingAllowListItem: failed to update attribute value")
+		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+		return
+	}
+
+	c.JSON(http.StatusOK, nil)
+}
+
+// @Summary Remove user from node hosting allow list
+// @Description Remove user from hosting allow list
+// @Tags hosting,node
+// @Security Bearer
+// @Param user_id path string true "user_id"
+// @Success 200 {object} nil
+// @Failure 400 {object} api.HTTPError
+// /api/v4/node/hosting-allow-list/{user_id} [delete]
+func (n *Node) apiDeleteItemFromHostingAllowList(c *gin.Context) {
+	if n.ValidateNodeAdmin(c) != nil {
+		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", errors.New("Node: apiGetHostingAllowList: user is not admin"), n.log)
+		return
+	}
+
+	userID, err := umid.Parse(c.Param("userID"))
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiDeleteItemForHostingAllowList: failed to parse user_id")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
+	hostingAllowID := entry.NewAttributeID(universe.GetSystemPluginID(), "hosting_allow_list")
+	hostingAllowValue, ok := n.GetNodeAttributes().GetValue(hostingAllowID)
+	if !ok || hostingAllowValue == nil {
+		err := errors.New("Node: apiNodeGetChallenge: node attribute not found")
+		api.AbortRequest(c, http.StatusNotFound, "attribute_not_found", err, n.log)
+		return
+	}
+
+	modifyFunc := func(v *entry.AttributeValue) (*entry.AttributeValue, error) {
+		if v == nil {
+			v = &entry.AttributeValue{}
+			(*v)["users"] = []interface{}{}
+		}
+
+		users := utils.GetFromAny((*v)["users"], []interface{}{})
+		if users == nil {
+			return nil, errors.New("Node: apiDeleteItemForHostingAllowList: failed to get users from attribute value")
+		}
+
+		userIDStr := userID.String()
+
+		var filtered []interface{}
+		for _, id := range users {
+			if id.(string) != userIDStr {
+				filtered = append(filtered, id)
+			}
+		}
+		(*v)["users"] = filtered
+
+		return v, nil
+	}
+
+	_, err = n.GetNodeAttributes().UpdateValue(hostingAllowID, modifyFunc, true)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiDeleteItemForHostingAllowList: failed to update attribute value")
+		api.AbortRequest(c, http.StatusInternalServerError, "internal_error", err, n.log)
+		return
+	}
+
+	c.JSON(http.StatusOK, nil)
+}
+
+func (n *Node) ValidateNodeAdmin(
+	c *gin.Context,
+) error {
+	userID, err := api.GetUserIDFromContext(c)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiNodeGetChallenge: failed to get user umid from context")
+		return err
+	}
+
+	// owner is always considered an admin, TODO: add this to check function
+	if n.GetOwnerID() == userID {
+		return nil
+	}
+	// we have to lookup through the db user tree
+	userObjectID := entry.NewUserObjectID(userID, n.GetID())
+	isAdmin, err := n.db.GetUserObjectsDB().CheckIsIndirectAdminByID(c, userObjectID)
+	if err != nil {
+		return errors.WithMessage(err, "failed to check admin status")
+	}
+	if isAdmin {
+		return nil
+	}
+	return errors.New("operation not permitted")
+
 }
