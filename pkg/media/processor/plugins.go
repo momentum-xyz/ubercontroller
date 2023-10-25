@@ -143,6 +143,10 @@ type Manifest struct {
 	DisplayName    *string                     `json:"displayName"`
 	Description    string                      `json:"description"`
 	Version        string                      `json:"version"`
+	Author         *string                     `json:"author"`
+	Repository     *string                     `json:"repository"`
+	Homepage       *string                     `json:"homepage"`
+	License        *string                     `json:"license"`
 	AttributeTypes *[]AttributeTypeDescription `json:"attribute_types"`
 	Scopes         *map[string][]string        `json:"scopes"`
 }
