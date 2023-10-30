@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/momentum-xyz/ubercontroller/harvester"
+	"github.com/momentum-xyz/ubercontroller/contracter"
 	"github.com/momentum-xyz/ubercontroller/types/entry"
 	"github.com/momentum-xyz/ubercontroller/universe"
 	"github.com/momentum-xyz/ubercontroller/universe/logic/tree"
@@ -17,7 +17,11 @@ import (
 	"github.com/momentum-xyz/ubercontroller/utils/umid"
 )
 
-func (n *Node) Listener(bcName string, events []*harvester.UpdateEvent, stakeEvents []*harvester.StakeEvent, nftEvent []*harvester.NftEvent) error {
+func (n *Node) Listener(bcName string,
+	events []*contracter.UpdateEvent,
+	stakeEvents []*contracter.StakeEvent,
+	nftEvent []*contracter.NftEvent,
+	transferEvents []*contracter.TransferOdysseyEvent) error {
 	if n.log.Level() == zapcore.DebugLevel {
 		n.log.Debugln("Table Listener:")
 		for k, v := range events {
@@ -78,11 +82,11 @@ func (n *Node) IsLocalWorld(world universe.Object) bool {
 	return n.GetID() == world.GetParent().GetID()
 }
 
-func (n *Node) AddStakeActivities(stakeEvents []*harvester.StakeEvent) error {
+func (n *Node) AddStakeActivities(stakeEvents []*contracter.StakeEvent) error {
 	node := universe.GetNode()
 	activities := node.GetActivities().GetActivities()
 
-	newStakeEvents := make([]*harvester.StakeEvent, 0)
+	newStakeEvents := make([]*contracter.StakeEvent, 0)
 
 	for _, s := range stakeEvents {
 		exists := false
@@ -109,7 +113,7 @@ func (n *Node) AddStakeActivities(stakeEvents []*harvester.StakeEvent) error {
 	return nil
 }
 
-func (n *Node) AddStakeActivity(stakeEvent *harvester.StakeEvent) error {
+func (n *Node) AddStakeActivity(stakeEvent *contracter.StakeEvent) error {
 	node := universe.GetNode()
 
 	_, ok := n.GetObject(stakeEvent.OdysseyID, true)
