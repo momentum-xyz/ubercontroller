@@ -2,12 +2,13 @@ package media
 
 import (
 	"fmt"
-	"go.uber.org/zap"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"path"
+
+	"go.uber.org/zap"
 
 	"github.com/gin-gonic/gin"
 	"github.com/h2non/filetype"
@@ -196,6 +197,15 @@ func (m *Media) DeleteAudio(filename string) error {
 	return nil
 }
 
+func (m *Media) GetPluginManifest(pluginHash string) (*processor.Manifest, error) {
+	meta, err := m.processor.LoadPluginManifest(pluginHash)
+	if err != nil {
+		return nil, errors.WithMessage(err, "error loading plugin manifest")
+	}
+
+	return meta, nil
+}
+
 func (m *Media) GetAsset(filename string) (*fileTypes.Type, string, error) {
 	m.log.Debug("Endpoint Hit: Asset Get: ", filename)
 
@@ -226,6 +236,17 @@ func (m *Media) AddAsset(file multipart.File) (string, error) {
 	hash, err := m.processor.ProcessAsset(file)
 	if err != nil {
 		return "", errors.WithMessage(err, "error writing asset")
+	}
+
+	return hash, err
+}
+
+func (m *Media) AddPlugin(file multipart.File) (string, error) {
+	m.log.Info("Endpoint Hit: AddPlugin")
+
+	hash, err := m.processor.ProcessPlugin(file)
+	if err != nil {
+		return "", errors.WithMessage(err, "error writing plugin")
 	}
 
 	return hash, err

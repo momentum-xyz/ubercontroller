@@ -56,8 +56,6 @@ func (n *Node) apiNodeGetChallenge(c *gin.Context) {
 		api.AbortRequest(c, http.StatusNotFound, "attribute_not_found", err, n.log)
 		return
 	}
-	fmt.Println("hostingAllowValue:", hostingAllowValue)
-	fmt.Println("nodePrivateKeyValue:", nodePrivateKeyValue)
 
 	allowedUserIDs := utils.GetFromAnyMap(*hostingAllowValue, "users", []interface{}{})
 	privateKey := utils.GetFromAnyMap(*nodePrivateKeyValue, "node_private_key", "")
@@ -69,7 +67,6 @@ func (n *Node) apiNodeGetChallenge(c *gin.Context) {
 	}
 
 	nodeID := n.GetID().String()
-	fmt.Println("nodeID:", nodeID)
 	signature, err := GetSignature(privateKey, nodeID, inBody.OdysseyID)
 	if err != nil {
 		err := errors.WithMessage(err, "Node: apiNodeGetChallenge: failed to get signature")
@@ -78,7 +75,6 @@ func (n *Node) apiNodeGetChallenge(c *gin.Context) {
 	}
 
 	if !n.cfg.Common.HostingAllowAll && !utils.AnyContains(allowedUserIDs, userID.String()) {
-		fmt.Println("allowedUserIDs:", allowedUserIDs)
 		err := errors.New("Node: apiNodeGetChallenge: allow list does not contain user id: " + userID.String())
 		api.AbortRequest(c, http.StatusBadRequest, "user_not_allowed", err, n.log)
 		return
@@ -89,7 +85,6 @@ func (n *Node) apiNodeGetChallenge(c *gin.Context) {
 
 func signHash(data []byte) []byte {
 	msg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(data), data)
-	fmt.Println("msg:", msg, "data len:", len(data))
 	return crypto.Keccak256([]byte(msg))
 }
 
@@ -106,19 +101,13 @@ func GetSignature(privateKey string, nodeID string, odysseyID string) ([]byte, e
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("privateKeyBytes: %x\n", privateKeyBytes)
 
 	privateECDSAKey, err := crypto.ToECDSA(privateKeyBytes)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("privateECDSAKey:", privateECDSAKey)
-
-	fmt.Println("nodeID:", nodeID)
-	fmt.Println("odysseyID:", odysseyID)
 
 	uuidNodeID, err := umid.Parse(nodeID)
-	// uuidObj, err := uuid.Parse(nodeID)
 	if err != nil {
 		return nil, err
 	}
@@ -129,43 +118,21 @@ func GetSignature(privateKey string, nodeID string, odysseyID string) ([]byte, e
 
 	nodeIDBigInt := new(big.Int)
 	nodeIDBigInt.SetBytes(uuidNodeID[:])
-	// nodeIDBigInt.SetBytes(uuidObj.Bytes())
 
 	odysseyIDBigInt := new(big.Int)
-	// odysseyIDBigInt.SetString(odysseyID, 10)
 	odysseyIDBigInt.SetBytes(uuidOdysseyID[:])
 
-	// nodeIDDecStr := nodeIDBigInt.String()
-	// nodeIDDecStr := strconv.FormatUint(utils.UMIDToSEQ((nodeID)), 10)
-	// fmt.Println("Converted nodeID ", nodeID, "to decimal:", nodeIDDecStr)
-
-	// message := []byte(nodeIDDecStr + ":" + odysseyID)
-	// message := []byte(nodeIDDecStr + odysseyID)
-	// message := []byte(nodeID + odysseyID)
-	// messageHash := crypto.Keccak256Hash(message)
-
 	message := append(padTo256bits(nodeIDBigInt.Bytes()), padTo256bits(odysseyIDBigInt.Bytes())...)
-	fmt.Printf("message: %x\n", message)
 	hashedMessage := crypto.Keccak256(message)
-	fmt.Printf("hashedMessage: %x\n", hashedMessage)
-	// signature, err := crypto.Sign(hashedMessage, privateECDSAKey)
-
-	// messageHash := crypto.Keccak256Hash(message)
-	// messageHash := signHash(message)
 
 	prefixedMessageHash := signHash(hashedMessage)
-	fmt.Printf("prefixedMessageHash: %x\n", prefixedMessageHash)
 	signature, err := crypto.Sign(prefixedMessageHash, privateECDSAKey)
 
-	// signature, err := crypto.Sign(messageHash, privateECDSAKey)
-	// signature, err := crypto.Sign(messageHash.Bytes(), privateECDSAKey)
 	if err != nil {
 		return nil, err
 	}
 
 	signature[64] += 27
-	fmt.Printf("signature: %x\n", signature)
-	fmt.Println("signature len:", len(signature), "signature[64]", signature[64])
 
 	return signature, nil
 }
@@ -178,11 +145,6 @@ func GetSignature(privateKey string, nodeID string, odysseyID string) ([]byte, e
 // @Failure 400 {object} api.HTTPError
 // @Router /api/v4/node/hosting-allow-list [get]
 func (n *Node) apiGetHostingAllowList(c *gin.Context) {
-	if n.ValidateNodeAdmin(c) != nil {
-		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", errors.New("Node: apiGetHostingAllowList: user is not admin"), n.log)
-		return
-	}
-
 	hostingAllowID := entry.NewAttributeID(universe.GetSystemPluginID(), "hosting_allow_list")
 	hostingAllowValue, ok := n.GetNodeAttributes().GetValue(hostingAllowID)
 	if !ok || hostingAllowValue == nil {
@@ -237,11 +199,6 @@ func (n *Node) apiGetHostingAllowList(c *gin.Context) {
 // @Failure 400 {object} api.HTTPError
 // /api/v4/node/hosting-allow-list [post]
 func (n *Node) apiPostItemForHostingAllowList(c *gin.Context) {
-	if n.ValidateNodeAdmin(c) != nil {
-		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", errors.New("Node: apiGetHostingAllowList: user is not admin"), n.log)
-		return
-	}
-
 	type Body struct {
 		UserID *umid.UMID `json:"user_id"`
 		Wallet *string    `json:"wallet"`
@@ -323,11 +280,6 @@ func (n *Node) apiPostItemForHostingAllowList(c *gin.Context) {
 // @Failure 400 {object} api.HTTPError
 // /api/v4/node/hosting-allow-list/{user_id} [delete]
 func (n *Node) apiDeleteItemFromHostingAllowList(c *gin.Context) {
-	if n.ValidateNodeAdmin(c) != nil {
-		api.AbortRequest(c, http.StatusForbidden, "operation_not_permitted", errors.New("Node: apiGetHostingAllowList: user is not admin"), n.log)
-		return
-	}
-
 	userID, err := umid.Parse(c.Param("userID"))
 	if err != nil {
 		err = errors.WithMessage(err, "Node: apiDeleteItemForHostingAllowList: failed to parse user_id")
@@ -377,28 +329,140 @@ func (n *Node) apiDeleteItemFromHostingAllowList(c *gin.Context) {
 	c.JSON(http.StatusOK, nil)
 }
 
-func (n *Node) ValidateNodeAdmin(
-	c *gin.Context,
-) error {
-	userID, err := api.GetUserIDFromContext(c)
-	if err != nil {
-		err := errors.WithMessage(err, "Node: apiNodeGetChallenge: failed to get user umid from context")
-		return err
+// @Summary Activate plugin by hash
+// @Description Activate plugin by hash
+// @Tags plugins
+// @Security Bearer
+// @Param body body node.apiNodeActivatePlugin.Body true "body params"
+// @Success 200 {object} nil
+// @Failure 400 {object} api.HTTPError
+// @Router /api/v4/node/activate-plugin [post]
+func (n *Node) apiNodeActivatePlugin(c *gin.Context) {
+	type Body struct {
+		PluginHash string `json:"plugin_hash" binding:"required"`
 	}
 
-	// owner is always considered an admin, TODO: add this to check function
-	if n.GetOwnerID() == userID {
-		return nil
+	var inBody Body
+	if err := c.ShouldBindJSON(&inBody); err != nil {
+		err = errors.WithMessage(err, "Node: apiNodeRegisterPlugin: failed to bind json")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
 	}
-	// we have to lookup through the db user tree
-	userObjectID := entry.NewUserObjectID(userID, n.GetID())
-	isAdmin, err := n.db.GetUserObjectsDB().CheckIsIndirectAdminByID(c, userObjectID)
-	if err != nil {
-		return errors.WithMessage(err, "failed to check admin status")
-	}
-	if isAdmin {
-		return nil
-	}
-	return errors.New("operation not permitted")
 
+	manifest, err := n.media.GetPluginManifest(inBody.PluginHash)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiNodeRegisterPlugin: failed to get plugin manifest")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+	n.log.Debug("Register plugin by manifest:", manifest)
+
+	// Create/Update plugin
+
+	var plugin universe.Plugin
+
+	n.GetPlugins().FilterPlugins(func(pluginID umid.UMID, p universe.Plugin) bool {
+		if p.GetMeta()["name"] == manifest.Name {
+			plugin = p
+		}
+		return false
+	})
+
+	pluginMeta := entry.PluginMeta{
+		"name":            manifest.Name,
+		"displayName":     manifest.DisplayName,
+		"description":     manifest.Description,
+		"version":         manifest.Version,
+		"author":          manifest.Author,
+		"repository":      manifest.Repository,
+		"homepage":        manifest.Homepage,
+		"license":         manifest.License,
+		"attribute_types": manifest.AttributeTypes,
+		"scopes":          manifest.Scopes,
+		"scopeName":       manifest.Name,
+		"hash":            inBody.PluginHash,
+		"scriptUrl":       inBody.PluginHash,
+	}
+
+	if plugin == nil {
+		plugin, err = n.plugins.CreatePlugin(umid.New())
+		if err != nil {
+			err = errors.WithMessage(err, "Node: apiNodeRegisterPlugin: failed to create plugin")
+			api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+			return
+		}
+
+		err = n.plugins.Save()
+		if err != nil {
+			err = errors.WithMessage(err, "Node: apiNodeRegisterPlugin: failed to save plugins")
+			api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+			return
+		}
+	}
+
+	err = plugin.SetMeta(pluginMeta, true)
+	if err != nil {
+		err = errors.WithMessage(err, "Node: apiNodeRegisterPlugin: failed to set plugin meta")
+		api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+		return
+	}
+
+	// Create/Update attributes
+
+	if manifest.AttributeTypes != nil {
+		for _, attrTypeDescription := range *manifest.AttributeTypes {
+			n.log.Debug("Process attrTypeDescription:", attrTypeDescription, "plugin.GetID():", plugin.GetID().String())
+			attrTypeID := entry.NewAttributeTypeID(plugin.GetID(), attrTypeDescription.Name)
+
+			attrType, _ := n.attributeTypes.GetAttributeType(attrTypeID)
+
+			if attrType == nil {
+				n.log.Debug("Create attribute type:", attrTypeID)
+				attrType, err = n.attributeTypes.CreateAttributeType(attrTypeID)
+				if err != nil {
+					err = errors.WithMessage(err, "Node: apiNodeRegisterPlugin: failed to create attribute type")
+					api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+					return
+				}
+			}
+
+			description := attrTypeDescription.Description
+			err = attrType.SetDescription(&description, true)
+			if err != nil {
+				err = errors.WithMessage(err, "Node: apiNodeRegisterPlugin: failed to set attribute type description")
+				api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+				return
+			}
+
+			modifyFn := func(options *entry.AttributeOptions) (*entry.AttributeOptions, error) {
+				if attrTypeDescription.Sync == nil {
+					return nil, nil
+				}
+
+				if *attrTypeDescription.Sync == "object" {
+					scope := make([]string, 1)
+					scope[0] = "object"
+
+					posbus_auto := make(map[string]interface{})
+					posbus_auto["scope"] = scope
+					posbus_auto["send_to"] = 1
+
+					options = &entry.AttributeOptions{
+						"posbus_auto": posbus_auto,
+					}
+				}
+
+				return options, nil
+			}
+
+			attrType.SetOptions(modifyFn, false)
+		}
+
+		err = n.attributeTypes.Save()
+		if err != nil {
+			err = errors.WithMessage(err, "Node: apiNodeRegisterPlugin: failed to save attribute types")
+			api.AbortRequest(c, http.StatusBadRequest, "invalid_request_body", err, n.log)
+			return
+		}
+	}
 }

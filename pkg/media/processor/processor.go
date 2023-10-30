@@ -4,8 +4,6 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
-	"github.com/pkg/errors"
-	"go.uber.org/zap"
 	"image"
 	"os"
 	"path"
@@ -13,6 +11,9 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"github.com/getsentry/sentry-go"
 	lru "github.com/hashicorp/golang-lru"
@@ -26,11 +27,12 @@ type Processor struct {
 	log *zap.SugaredLogger
 	cfg *config.Config
 
-	Fontpath  string
-	Imagepath string
-	Audiopath string
-	Videopath string
-	Assetpath string
+	Fontpath   string
+	Imagepath  string
+	Audiopath  string
+	Videopath  string
+	Assetpath  string
+	Pluginpath string
 
 	ImPathF string
 	ImPathS map[string]string
@@ -64,6 +66,7 @@ func (p *Processor) Initialize(ctx types.NodeContext) *Processor {
 	p.Videopath = strings.TrimSuffix(p.cfg.Media.Videopath, "/") + "/"
 	p.Audiopath = strings.TrimSuffix(p.cfg.Media.Audiopath, "/") + "/"
 	p.Assetpath = strings.TrimSuffix(p.cfg.Media.Assetpath, "/") + "/"
+	p.Pluginpath = strings.TrimSuffix(p.cfg.Media.Pluginpath, "/") + "/"
 	p.Fontpath = strings.TrimSuffix(p.cfg.Media.Fontpath, "/") + "/"
 	p.framesinprogress = make(map[string]bool)
 	p.RenderQueue = make(chan *types.FrameRenderRequest, 512)
@@ -72,6 +75,7 @@ func (p *Processor) Initialize(ctx types.NodeContext) *Processor {
 	os.MkdirAll(p.Videopath, os.ModePerm)
 	os.MkdirAll(p.Audiopath, os.ModePerm)
 	os.MkdirAll(p.Assetpath, os.ModePerm)
+	os.MkdirAll(p.Pluginpath, os.ModePerm)
 
 	os.MkdirAll(p.Imagepath+"F", os.ModePerm)
 	p.ImPathF = p.Imagepath + "F/"

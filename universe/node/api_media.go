@@ -384,3 +384,43 @@ func (n *Node) apiMediaGetAsset(c *gin.Context) {
 	c.File(filepath)
 	n.log.Infof("Endpoint Hit: Asset served: %s", filename)
 }
+
+// @Summary Uploads a plugin to the media manager
+// @Description Sends a plugin file to the media manager and returns a hash (?)
+// @Tags media
+// @Security Bearer
+// @Accept multipart/form-data
+// @Param file formData file true "plugin file"
+// @Success 200 {object} dto.HashResponse
+// @Failure 400 {object} api.HTTPError
+// @Router /api/v4/media/upload/plugin [post]
+func (n *Node) apiMediaUploadPlugin(c *gin.Context) {
+	videoFile, err := c.FormFile("file")
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiMediaSetPlugin: failed to read file")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_read", err, n.log)
+		return
+	}
+
+	openedFile, err := videoFile.Open()
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiMediaSetPlugin: failed to open file")
+		api.AbortRequest(c, http.StatusBadRequest, "failed_to_open", err, n.log)
+		return
+	}
+
+	defer openedFile.Close()
+
+	hash, err := n.media.AddPlugin(openedFile)
+	if err != nil {
+		err := errors.WithMessage(err, "Node: apiMediaSetPlugin: failed to add plugin")
+		api.AbortRequest(c, http.StatusInternalServerError, "failed_to_add_plugin", err, n.log)
+		return
+	}
+
+	response := dto.HashResponse{
+		Hash: hash,
+	}
+
+	c.JSON(http.StatusOK, response)
+}
