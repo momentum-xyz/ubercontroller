@@ -3,6 +3,7 @@ DOCKER_IMAGE  ?= ubercontroller
 DOCKER_TAG    ?= develop
 LDFLAGS       ?=
 ACR_REPO      ?= odysseyprod.azurecr.io
+GHCR_REPO     ?= ghcr.io/momentum-xyz
 
 all: build
 
@@ -49,8 +50,14 @@ docker-push-acr:
 	# az acr login -n odysseyprod
 	docker push ${ACR_REPO}/${DOCKER_IMAGE}:${DOCKER_TAG}
 
+docker-push-ghcr:
+	docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${GHCR_REPO}/${DOCKER_IMAGE}:${DOCKER_TAG}
+	gh auth token | docker login ghcr.io --username=${GITHUB_USER} --password-stdin
+	docker push ${GHCR_REPO}/${DOCKER_IMAGE}:${DOCKER_TAG}
+
+
 # docker run ...
 docker: docker-build
 	docker run --rm ${DOCKER_IMAGE}:${DOCKER_TAG}
 
-.PHONY: build gen run test docker docker-build build-docs docker-build-ui
+.PHONY: build gen run test docker docker-build build-docs docker-build-ui docker-push-acr docker-push-ghcr

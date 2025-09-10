@@ -1,71 +1,74 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-buildMetadata: [managedByLabel]
+buildMetadata:
+- managedByLabel
 namespace: momentum-dev
-commonLabels:
-  environment: dev
 
 resources:
-  - ../../base
-  - namespace.yml
-  - ingress.yml
+- ../../base
+- namespace.yml
+- ingress.yml
 
 components:
-  - ../../components/postgresql
+- ../../components/postgresql
 
 images:
-  - name: ghcr.io/momentum-xyz/ubercontroller
-    newTag: develop
-  - name: ghcr.io/momentum-xyz/ui-client
-    newTag: develop
-  - name: postgres
-    newTag: "15.4"
+- name: ghcr.io/momentum-xyz/ubercontroller
+  newTag: develop
+- name: ghcr.io/momentum-xyz/ui-client
+  newTag: develop
+- name: postgres
+  newTag: "15.4"
 
 configMapGenerator:
-  - name: controller-config
-    behavior: merge
-    envs:
-      - controller.env
+- behavior: merge
+  envs:
+  - controller.env
+  name: controller-config
 
 secretGenerator:
-  - name: momentum-db
-    behavior: replace
-    envs:
-      - db-auth.env
+- behavior: replace
+  envs:
+  - db-auth.env
+  name: momentum-db
 
 patches:
-  - path: media.pvc.patch.yml
-  - path: db-data.pvc.patch.yml
+- path: media.pvc.patch.yml
+- path: db-data.pvc.patch.yml
 
-replacements:
   # Basically copy the values to db secret because of different naming
-  - source:
+replacements:
+- source:
+    fieldPath: data.DB_USERNAME
+    kind: Secret
+    name: momentum-db
+  targets:
+  - fieldPaths:
+    - data.POSTGRES_USER
+    select:
       kind: Secret
-      name: momentum-db
-      fieldPath: data.DB_USERNAME
-    targets:
-      - select:
-          kind: Secret
-          name: db-credentials
-        fieldPaths:
-          - data.POSTGRES_USER
-  - source:
+      name: db-credentials
+- source:
+    fieldPath: data.DB_PASSWORD
+    kind: Secret
+    name: momentum-db
+  targets:
+  - fieldPaths:
+    - data.POSTGRES_PASSWORD
+    select:
       kind: Secret
-      name: momentum-db
-      fieldPath: data.DB_PASSWORD
-    targets:
-      - select:
-          kind: Secret
-          name: db-credentials
-        fieldPaths:
-          - data.POSTGRES_PASSWORD
-  - source:
+      name: db-credentials
+- source:
+    fieldPath: data.DB_DATABASE
+    kind: Secret
+    name: momentum-db
+  targets:
+  - fieldPaths:
+    - data.POSTGRES_DB
+    select:
       kind: Secret
-      name: momentum-db
-      fieldPath: data.DB_DATABASE
-    targets:
-      - select:
-          kind: Secret
-          name: db-credentials
-        fieldPaths:
-          - data.POSTGRES_DB
+      name: db-credentials
+labels:
+- includeSelectors: true
+  pairs:
+    environment: dev
