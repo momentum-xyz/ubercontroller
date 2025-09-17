@@ -78,11 +78,12 @@ docker compose down -v --rmi local
 The `deploy/k8s` contains a [Kustomize](https://kubectl.docs.kubernetes.io/) configuration to deploy the platform to a cluster.
 
 ```console
-kubectl kustomize deploy/k8s/overlays/dev/ | kubectl apply -f -
+kubectl kustomize deploy/k8s/overlays/dev/ | kubectl apply -f - -n your-namespace
 ```
 
 The example is for a development environment that uses a standalone postgresql database.
-The `FRONTEND_URL` should match how you expose the cluster ingress.
+The `FRONTEND_URL` should match how you expose the cluster ingress 
+so that should be changed in the controller configmap or the kustomize controller.env.
 
 For production environment it is advised to use a [postgres operator](https://operatorhub.io/?keyword=postgres) to manage your database and configure SSL certificates for https access.
 
