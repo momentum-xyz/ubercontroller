@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: build
-        uses: momentum-xyz/docker-build-action@8e8254d5a827360439e920f613fa49ca522dcd47 # v7.0.0
+        uses: momentum-xyz/docker-build-action@ed5261ad6179f517b9727183787716229df74730 # v7.0.1
         with:
           backfeed-repo-token: ${{ secrets.BACKFEED }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
