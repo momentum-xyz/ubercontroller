@@ -21,6 +21,10 @@ func (v ObjectDefinition) MarshalMUS(buf []byte) int {
 		i += si
 	}
 	{
+		si := v.ObjectTypeID.MarshalMUS(buf[i:])
+		i += si
+	}
+	{
 		si := v.AssetType.MarshalMUS(buf[i:])
 		i += si
 	}
@@ -110,6 +114,18 @@ func (v *ObjectDefinition) UnmarshalMUS(buf []byte) (int, error) {
 	}
 	if err != nil {
 		return i, muserrs.NewFieldError("ParentID", err)
+	}
+	{
+		var sv umid.UMID
+		si := 0
+		si, err = sv.UnmarshalMUS(buf[i:])
+		if err == nil {
+			v.ObjectTypeID = sv
+			i += si
+		}
+	}
+	if err != nil {
+		return i, muserrs.NewFieldError("ObjectTypeID", err)
 	}
 	{
 		var sv umid.UMID
@@ -256,6 +272,10 @@ func (v ObjectDefinition) SizeMUS() int {
 	}
 	{
 		ss := v.ParentID.SizeMUS()
+		size += ss
+	}
+	{
+		ss := v.ObjectTypeID.SizeMUS()
 		size += ss
 	}
 	{

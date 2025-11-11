@@ -9,6 +9,7 @@ import (
 type ObjectDefinition struct {
 	ID               umid.UMID       `json:"id"`
 	ParentID         umid.UMID       `json:"parent_id"`
+	ObjectTypeID     umid.UMID       `json:"object_type_id"`
 	AssetType        umid.UMID       `json:"asset_type"`
 	AssetFormat      dto.Asset3dType `json:"asset_format"` // TODO: Rename AssetType to AssetID, so Type can be used for this.
 	Name             string          `json:"name"`
